@@ -16,7 +16,9 @@ function DanubeBackground() {
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext?.("2d");
+    if (!ctx) return undefined;
     let frame = 0, raf;
     const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
     resize();
@@ -103,7 +105,6 @@ export default function App() {
   const [segments,setSegments]=useState([]); // segmenty bieżącej sesji
   const [analysisStatus,setAnalysisStatus]=useState(null);
   const [recordings,setRecordings]=useState([]);
-  const [activeTab,setActiveTab]=useState("transcript");
   const [speakerNames,setSpeakerNames]=useState({});
   const [editingSpeaker,setEditingSpeaker]=useState(null);
   const [permission,setPermission]=useState("idle");
@@ -253,14 +254,16 @@ ${raw}`;
 
   // Synchronizuj wyniki analizy do nagrania po zakończeniu
   useEffect(()=>{
-    if(analysisStatus==="done"&&recordings.length>0){
-      const lastId=recordings[recordings.length-1].id;
-      setRecordings(prev=>prev.map(r=>r.id===lastId
+    if(analysisStatus!=="done") return;
+    setRecordings(prev=>{
+      if(prev.length===0) return prev;
+      const lastId=prev[prev.length-1].id;
+      return prev.map(r=>r.id===lastId
         ? {...r, speakerNames, summary, speakerCount}
         : r
-      ));
-    }
-  },[analysisStatus, summary, speakerCount]);
+      );
+    });
+  },[analysisStatus, speakerNames, summary, speakerCount]);
 
   // Speech recognition
   useEffect(()=>{
@@ -323,7 +326,7 @@ ${raw}`;
     a.download="transkrypcja.txt"; a.click();
   };
 
-  useEffect(()=>{ if(!selectedRecId) transcriptEndRef.current?.scrollIntoView({behavior:"smooth"}); },[segments,liveText]);
+  useEffect(()=>{ if(!selectedRecId) transcriptEndRef.current?.scrollIntoView({behavior:"smooth"}); },[selectedRecId, segments, liveText]);
   useEffect(()=>()=>{ cancelAnimationFrame(animFrameRef.current); clearInterval(timerRef.current); },[]);
 
   return (
