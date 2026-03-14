@@ -21,3 +21,11 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
 }));
 
 window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
+if (!window.URL.createObjectURL) {
+  window.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+}
+
+if (!window.URL.revokeObjectURL) {
+  window.URL.revokeObjectURL = jest.fn();
+}

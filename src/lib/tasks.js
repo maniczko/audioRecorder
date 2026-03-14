@@ -190,6 +190,10 @@ function taskFromCandidate(candidate, meeting, index, columns) {
     notes: candidate.sourceQuote || "",
     priority: inferPriority(candidate),
     tags: uniqueStrings([...(meeting.tags || []), ...safeArray(candidate.tags)]),
+    comments: [],
+    history: [],
+    dependencies: [],
+    recurrence: null,
   };
 }
 
@@ -227,16 +231,22 @@ function mergeTaskState(task, state, currentUser, columns) {
     status: completed ? defaultDoneColumnId(columns) : status,
     completed,
     archived: Boolean(state?.archived),
+    comments: safeArray(state?.comments).length ? safeArray(state.comments) : safeArray(task.comments),
+    history: safeArray(state?.history).length ? safeArray(state.history) : safeArray(task.history),
+    dependencies: safeArray(state?.dependencies).length
+      ? uniqueStrings(state.dependencies)
+      : uniqueStrings(task.dependencies),
+    recurrence: state?.recurrence ?? task.recurrence ?? null,
     assignedToMe: matchesCurrentUser(owner, currentUser),
   };
 }
 
-export function buildTaskColumns(taskBoards, currentUserId) {
-  return normalizeColumns(taskBoards?.[currentUserId]?.columns || DEFAULT_TASK_COLUMNS);
+export function buildTaskColumns(taskBoards, workspaceId) {
+  return normalizeColumns(taskBoards?.[workspaceId]?.columns || DEFAULT_TASK_COLUMNS);
 }
 
-export function createTaskColumn(taskBoards, currentUserId, draft) {
-  const columns = buildTaskColumns(taskBoards, currentUserId);
+export function createTaskColumn(taskBoards, workspaceId, draft) {
+  const columns = buildTaskColumns(taskBoards, workspaceId);
   const label = titleCase(draft.label);
   if (!label) {
     throw new Error("Dodaj nazwe kolumny.");
@@ -244,7 +254,7 @@ export function createTaskColumn(taskBoards, currentUserId, draft) {
 
   return {
     ...taskBoards,
-    [currentUserId]: {
+    [workspaceId]: {
       columns: [
         ...columns,
         {
@@ -259,10 +269,10 @@ export function createTaskColumn(taskBoards, currentUserId, draft) {
   };
 }
 
-export function updateTaskColumns(taskBoards, currentUserId, nextColumns) {
+export function updateTaskColumns(taskBoards, workspaceId, nextColumns) {
   return {
     ...taskBoards,
-    [currentUserId]: {
+    [workspaceId]: {
       columns: normalizeColumns(nextColumns),
     },
   };
@@ -322,6 +332,10 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     notes: String(draft.notes || "").trim(),
     priority: normalizePriority(draft.priority),
     tags: parseTagInput(draft.tags),
+    comments: safeArray(draft.comments),
+    history: safeArray(draft.history),
+    dependencies: uniqueStrings(draft.dependencies),
+    recurrence: draft.recurrence || null,
   };
 }
 
@@ -355,6 +369,10 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     notes,
     priority: "medium",
     tags: [],
+    comments: [],
+    history: [],
+    dependencies: [],
+    recurrence: null,
   };
 }
 

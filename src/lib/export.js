@@ -23,6 +23,40 @@ function list(items) {
   return `<ul>${safeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
+export function slugifyExportTitle(value, fallback = "meeting") {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || fallback;
+}
+
+export function buildMeetingNotesText(meeting, analysis, formatDateTime) {
+  if (!meeting) {
+    return "";
+  }
+
+  const safeAnalysis = analysis || {};
+  return [
+    `Spotkanie: ${meeting.title}`,
+    `Start: ${formatDateTime(meeting.startsAt)}`,
+    `Tagi: ${(meeting.tags || []).join(", ") || "Brak"}`,
+    `Potrzeby: ${(meeting.needs || []).join(", ") || "Brak"}`,
+    `Outputy: ${(meeting.desiredOutputs || []).join(", ") || "Brak"}`,
+    "",
+    "Podsumowanie:",
+    safeAnalysis.summary || "Brak",
+    "",
+    "Decyzje:",
+    ...(safeAnalysis.decisions || []).map((item) => `- ${item}`),
+    "",
+    "Zadania:",
+    ...(safeAnalysis.actionItems || []).map((item) => `- ${item}`),
+  ].join("\n");
+}
+
 export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime, formatDuration) {
   if (typeof window === "undefined" || !meeting) {
     return;
