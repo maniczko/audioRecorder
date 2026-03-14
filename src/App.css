@@ -162,6 +162,37 @@ textarea {
   padding: 28px;
 }
 
+.google-auth-block {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.google-button-slot {
+  min-height: 46px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--soft);
+  font-size: 0.86rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .panel-header {
   display: flex;
   align-items: center;
@@ -333,6 +364,35 @@ textarea:focus {
   font-size: clamp(1.6rem, 2vw, 2.4rem);
 }
 
+.topbar-title {
+  display: grid;
+  gap: 14px;
+}
+
+.tab-switcher {
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-pill {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tab-pill.active {
+  background: linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%);
+  color: #03222a;
+  font-weight: 600;
+}
+
 .status-chip,
 .need-chip,
 .live-pill {
@@ -361,6 +421,14 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .user-card strong,
@@ -494,6 +562,201 @@ textarea:focus {
   width: 100%;
 }
 
+.align-center {
+  align-items: center;
+}
+
+.calendar-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.calendar-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.calendar-board {
+  display: grid;
+  gap: 16px;
+}
+
+.calendar-board-header,
+.calendar-board-actions,
+.mini-calendar-header,
+.agenda-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mini-calendar-weekday {
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--soft);
+  text-transform: uppercase;
+}
+
+.calendar-nav-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mini-day[data-faded="true"] {
+  color: var(--soft);
+}
+
+.mini-day.today,
+.calendar-day-number.today {
+  background: rgba(116, 208, 191, 0.14);
+  color: var(--accent-strong);
+}
+
+.mini-day.selected {
+  background: linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%);
+  color: #03222a;
+  font-weight: 700;
+}
+
+.calendar-sync-card,
+.selected-day-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.calendar-sync-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.calendar-weekday {
+  padding: 10px 12px;
+  color: var(--soft);
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+}
+
+.calendar-grid {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.calendar-day {
+  min-height: 148px;
+  padding: 10px;
+  background: rgba(9, 24, 36, 0.92);
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.calendar-day[data-muted="true"] {
+  background: rgba(7, 17, 27, 0.88);
+}
+
+.calendar-day.selected {
+  background: rgba(23, 47, 67, 0.96);
+}
+
+.calendar-day-number {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.calendar-day-events {
+  display: grid;
+  gap: 6px;
+}
+
+.calendar-pill {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.82rem;
+}
+
+.calendar-pill.meeting {
+  background: rgba(116, 208, 191, 0.18);
+  color: var(--accent-strong);
+}
+
+.calendar-pill.google {
+  background: rgba(90, 147, 255, 0.16);
+  color: #b5d0ff;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 12px;
+}
+
+.agenda-card {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.agenda-card.static {
+  cursor: default;
+}
+
+.agenda-card span,
+.agenda-card p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
 .empty-panel {
   display: grid;
   gap: 6px;
@@ -534,6 +797,7 @@ textarea:focus {
 
 @media (max-width: 1120px) {
   .auth-shell,
+  .calendar-layout,
   .workspace-layout,
   .main-grid,
   .hero-grid {
@@ -564,13 +828,17 @@ textarea:focus {
 
   .topbar,
   .topbar-actions,
-  .user-card {
+  .user-card,
+  .calendar-board-header,
+  .calendar-board-actions,
+  .mini-calendar-header {
     flex-direction: column;
     align-items: stretch;
   }
 
   .button-row,
-  .mode-switch {
+  .mode-switch,
+  .tab-switcher {
     flex-direction: column;
   }
 

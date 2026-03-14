@@ -1,70 +1,44 @@
-# Getting Started with Create React App
+# VoiceLog OS
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Workspace do planowania spotkan, nagrywania rozmow, diarization i analizy spotkan z uwzglednieniem potrzeb uzytkownika.
 
-## Available Scripts
+## Co jest w aplikacji
 
-In the project directory, you can run:
+- lokalne logowanie i rejestracja
+- logowanie przez Google Identity Services
+- zakladka `Kalendarz` z miesiecznym widokiem spotkan w stylu Google Calendar
+- import wydarzen z podstawowego Google Calendar po autoryzacji `calendar.readonly`
+- recorder z live transcript i diarization oparta o sygnatury audio
+- analiza spotkania z decyzjami, action items i odpowiedziami na zapisane potrzeby
 
-### `npm start`
+## Konfiguracja
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Skopiuj `.env.example` do `.env` i uzupelnij potrzebne wartosci:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```env
+REACT_APP_ANTHROPIC_API_KEY=
+REACT_APP_ANTHROPIC_MODEL=claude-3-5-haiku-latest
+REACT_APP_GOOGLE_CLIENT_ID=
+```
 
-### `npm test`
+### Google login i kalendarz
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Potrzebujesz klienta OAuth dla aplikacji web w Google Cloud.
 
-### `npm run build`
+- zalogowanie przez Google korzysta z Google Identity Services
+- import wydarzen korzysta ze scope `https://www.googleapis.com/auth/calendar.readonly`
+- bez `REACT_APP_GOOGLE_CLIENT_ID` aplikacja nadal dziala, ale bez Google Sign-In i importu wydarzen
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Uruchomienie
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm install
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Weryfikacja
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+npm test -- --watchAll=false --runInBand
+npm run build
+```

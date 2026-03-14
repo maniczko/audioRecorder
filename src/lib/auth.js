@@ -92,3 +92,53 @@ export function updateUserProfile(existingUsers, userId, updates) {
       : user
   );
 }
+
+export function upsertGoogleUser(existingUsers, googleProfile) {
+  const email = normalizeEmail(googleProfile.email);
+  const existingUser = existingUsers.find(
+    (user) => normalizeEmail(user.email) === email || user.googleSub === googleProfile.sub
+  );
+
+  if (existingUser) {
+    const users = existingUsers.map((user) =>
+      user.id !== existingUser.id
+        ? user
+        : {
+            ...user,
+            email,
+            name: googleProfile.name || existingUser.name,
+            googleEmail: email,
+            googleSub: googleProfile.sub || existingUser.googleSub,
+            avatarUrl: googleProfile.picture || existingUser.avatarUrl || "",
+            provider: "google",
+            updatedAt: new Date().toISOString(),
+          }
+    );
+
+    return {
+      user: users.find((user) => user.id === existingUser.id),
+      users,
+    };
+  }
+
+  const user = {
+    id: createId("user"),
+    email,
+    passwordHash: null,
+    name: String(googleProfile.name || googleProfile.given_name || "Google user").trim(),
+    role: "",
+    company: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+    googleEmail: email,
+    googleSub: googleProfile.sub || "",
+    avatarUrl: googleProfile.picture || "",
+    preferredInsights: [],
+    provider: "google",
+    createdAt: new Date().toISOString(),
+  };
+
+  return {
+    user,
+    users: [...existingUsers, user],
+  };
+}
