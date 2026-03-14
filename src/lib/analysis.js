@@ -28,6 +28,38 @@ function dedupeList(items) {
   return [...new Set(safeArray(items).map((item) => String(item || "").trim()).filter(Boolean))];
 }
 
+function normalizeTask(task, index, speakerNames) {
+  if (!task) {
+    return null;
+  }
+
+  if (typeof task === "string") {
+    const match = task.match(/^([^:]{2,40}):\s*(.+)$/);
+    return {
+      id: `task_${index}`,
+      title: match ? match[2].trim() : task.trim(),
+      owner: match ? match[1].trim() : "Nieprzypisane",
+      sourceQuote: task.trim(),
+    };
+  }
+
+  const title = String(task.title || task.text || "").trim();
+  if (!title) {
+    return null;
+  }
+
+  const owner = String(task.owner || task.assignee || "").trim();
+  return {
+    id: task.id || `task_${index}`,
+    title,
+    owner:
+      owner ||
+      speakerNames?.[String(task.speakerId)] ||
+      "Nieprzypisane",
+    sourceQuote: String(task.sourceQuote || task.quote || title).trim(),
+  };
+}
+
 function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }) {
   const transcript = safeArray(segments);
   const importantPhrases = transcript
@@ -56,6 +88,9 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
         return `${speaker}: ${segment.text}`;
       })
   ).slice(0, 5);
+  const tasks = actionItems
+    .map((item, index) => normalizeTask(item, index, speakerNames))
+    .filter(Boolean);
 
   const answersToNeeds = safeArray(meeting?.needs).map((need) => {
     const matches = findRelevantSegments(transcript, need).slice(0, 2);
@@ -74,6 +109,7 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     summary,
     decisions,
     actionItems,
+    tasks,
     followUps: dedupeList(
       safeArray(meeting?.desiredOutputs).map(
         (item) => `Zweryfikuj po spotkaniu: ${item}`
@@ -114,7 +150,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "No desired outputs specified."}`,
     "",
     "Return JSON in this shape:",
-    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Client"},"summary":"...","decisions":["..."],"actionItems":["..."],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}]}',
+    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Client"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"..."}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}]}',
     "",
     transcriptText(segments, speakerNames),
   ].join("\n");
@@ -150,6 +186,9 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
       summary: parsed.summary || fallback.summary,
       decisions: dedupeList(parsed.decisions).slice(0, 5),
       actionItems: dedupeList(parsed.actionItems).slice(0, 6),
+      tasks: safeArray(parsed.tasks)
+        .map((task, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames))
+        .filter(Boolean),
       followUps: dedupeList(parsed.followUps).slice(0, 5),
       answersToNeeds: safeArray(parsed.answersToNeeds).length ? parsed.answersToNeeds : fallback.answersToNeeds,
     };

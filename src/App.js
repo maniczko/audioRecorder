@@ -38,6 +38,8 @@ import {
   readStorage,
   writeStorage,
 } from "./lib/storage";
+import TasksTab from "./TasksTab";
+import { buildTasksFromMeetings, taskListStats } from "./lib/tasks";
 
 const DEFAULT_BARS = Array.from({ length: 24 }, (_, index) => (index % 4 === 0 ? 24 : 10));
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -525,6 +527,7 @@ export default function App() {
   const [users, setUsers] = useStoredState(STORAGE_KEYS.users, []);
   const [session, setSession] = useStoredState(STORAGE_KEYS.session, null);
   const [meetings, setMeetings] = useStoredState(STORAGE_KEYS.meetings, []);
+  const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [authMode, setAuthMode] = useState("register");
   const [authDraft, setAuthDraft] = useState({ name: "", role: "", company: "", email: "", password: "" });
   const [authError, setAuthError] = useState("");
@@ -538,6 +541,8 @@ export default function App() {
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const [activeTab, setActiveTab] = useState("studio");
+  const [taskFilter, setTaskFilter] = useState("all");
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   const [recordPermission, setRecordPermission] = useState("idle");
   const [isRecording, setIsRecording] = useState(false);
@@ -596,6 +601,27 @@ export default function App() {
   const displayRecording = liveRecording || selectedRecording;
   const displaySpeakerNames = displayRecording?.speakerNames || selectedMeeting?.speakerNames || {};
   const studioAnalysis = selectedRecording?.analysis || selectedMeeting?.analysis || null;
+  const meetingTasks = buildTasksFromMeetings(userMeetings, taskState, currentUser);
+  const taskStats = taskListStats(meetingTasks);
+  const taskFilters = [
+    { id: "all", label: "Wszystkie", description: "Wszystkie taski ze spotkan", count: taskStats.all },
+    { id: "assigned", label: "Przypisane", description: "Taski przypisane do Ciebie", count: taskStats.assigned },
+    { id: "important", label: "Wazne", description: "Rzeczy oznaczone jako wazne", count: taskStats.important },
+    { id: "completed", label: "Zakonczone", description: "Taski juz zamkniete", count: taskStats.completed },
+  ];
+  const visibleTasks = meetingTasks.filter((task) => {
+    if (taskFilter === "assigned") {
+      return task.assignedToMe;
+    }
+    if (taskFilter === "important") {
+      return task.important;
+    }
+    if (taskFilter === "completed") {
+      return task.completed;
+    }
+    return true;
+  });
+  const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
   const bucket = groupMeetingsByDay(userMeetings, googleCalendarEvents);
   const monthMatrix = buildMonthMatrix(calendarMonth);
   const miniMatrix = buildMonthMatrix(calendarMonth);
@@ -617,6 +643,8 @@ export default function App() {
       setSelectedRecordingId(null);
       setMeetingDraft(createEmptyMeetingDraft());
       setActiveTab("studio");
+      setTaskFilter("all");
+      setSelectedTaskId(null);
       setGoogleCalendarStatus("idle");
       setGoogleCalendarEvents([]);
       setGoogleCalendarMessage("");
@@ -653,6 +681,17 @@ export default function App() {
 
     setMeetingDraft(meetingToDraft(selectedMeeting));
   }, [selectedMeeting]);
+
+  useEffect(() => {
+    if (!visibleTasks.length) {
+      setSelectedTaskId(null);
+      return;
+    }
+
+    if (!visibleTasks.some((task) => task.id === selectedTaskId)) {
+      setSelectedTaskId(visibleTasks[0].id);
+    }
+  }, [selectedTaskId, visibleTasks]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.permissions?.query) {
@@ -1066,6 +1105,16 @@ export default function App() {
     setWorkspaceMessage("Spotkanie zapisane.");
   }
 
+  function updateTaskStatus(taskId, updates) {
+    setTaskState((previous) => ({
+      ...previous,
+      [taskId]: {
+        ...(previous[taskId] || {}),
+        ...updates,
+      },
+    }));
+  }
+
   function renameSpeaker(speakerId, nextValue) {
     if (!selectedMeeting || !selectedRecording) {
       return;
@@ -1123,6 +1172,8 @@ export default function App() {
     }
 
     setSession(null);
+    setTaskFilter("all");
+    setSelectedTaskId(null);
     setGoogleCalendarEvents([]);
     setGoogleCalendarMessage("");
     setGoogleCalendarStatus("idle");
@@ -1224,6 +1275,13 @@ export default function App() {
             >
               Kalendarz
             </button>
+            <button
+              type="button"
+              className={activeTab === "tasks" ? "tab-pill active" : "tab-pill"}
+              onClick={() => setActiveTab("tasks")}
+            >
+              Zadania
+            </button>
           </div>
         </div>
 
@@ -1264,6 +1322,18 @@ export default function App() {
           openMeetingFromCalendar={openMeetingFromCalendar}
           openGoogleCalendarForMeeting={openGoogleCalendarForMeeting}
           googleCalendarEnabled={googleEnabled}
+        />
+      ) : activeTab === "tasks" ? (
+        <TasksTab
+          filters={taskFilters}
+          activeFilter={taskFilter}
+          onFilterChange={setTaskFilter}
+          stats={taskStats}
+          tasks={visibleTasks}
+          selectedTask={selectedTask}
+          onSelectTask={setSelectedTaskId}
+          onUpdateTaskState={updateTaskStatus}
+          onOpenMeeting={openMeetingFromCalendar}
         />
       ) : (
         <div className="workspace-layout">
