@@ -74,7 +74,15 @@ export function buildSidebarLists(tasks, boardColumns) {
     count: tasks.filter((task) => task.status === column.id).length,
   }));
 
-  return { baseLists, workspaceLists };
+  const customGroups = [...new Set(tasks.map((task) => String(task.group || "").trim()).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right))
+    .map((group) => ({
+      id: `group:${group}`,
+      label: group,
+      count: tasks.filter((task) => task.group === group).length,
+    }));
+
+  return { baseLists, workspaceLists, customGroups };
 }
 
 export function applyMainListFilter(tasks, mainListId, boardColumns) {
@@ -104,6 +112,11 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
     if (boardColumns.some((column) => column.id === columnId)) {
       return tasks.filter((task) => task.status === columnId);
     }
+  }
+
+  if (mainListId.startsWith("group:")) {
+    const groupName = mainListId.slice("group:".length);
+    return tasks.filter((task) => task.group === groupName);
   }
 
   return tasks;
@@ -150,6 +163,9 @@ export function groupTasks(tasks, groupBy, boardColumns) {
     } else if (groupBy === "priority") {
       key = task.priority;
       label = TASK_PRIORITIES.find((priority) => priority.id === task.priority)?.label || task.priority;
+    } else if (groupBy === "group") {
+      key = task.group || "__ungrouped__";
+      label = task.group || "Bez grupy";
     } else if (groupBy === "source") {
       key = task.sourceType;
       label = task.sourceType === "meeting" ? "Spotkania" : task.sourceType === "google" ? "Google Tasks" : "Reczne";
@@ -167,6 +183,7 @@ export function createQuickDraft(boardColumns) {
   return {
     title: "",
     owner: "",
+    group: "",
     dueDate: "",
     description: "",
     status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
@@ -182,6 +199,83 @@ export function canDrop(event) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }
+}
+
+export function writeDragTask(event, taskId) {
+  if (!event.dataTransfer) {
+    return;
+  }
+
+  event.dataTransfer.setData("text/plain", taskId);
+  event.dataTransfer.setData("application/x-voicelog-task", taskId);
+  event.dataTransfer.effectAllowed = "move";
+}
+
+export function readDragTask(event) {
+  if (!event.dataTransfer) {
+    return "";
+  }
+
+  return (
+    event.dataTransfer.getData("application/x-voicelog-task") ||
+    event.dataTransfer.getData("text/plain") ||
+    ""
+  );
+}
+
+export function getSelectedListLabel(sidebarLists, selectedListId) {
+  return (
+    sidebarLists.baseLists.find((item) => item.id === selectedListId)?.label ||
+    sidebarLists.workspaceLists.find((item) => item.id === selectedListId)?.label ||
+    sidebarLists.customGroups.find((item) => item.id === selectedListId)?.label ||
+    "Tasks"
+  );
+}
+
+export function buildContextualDraft(quickDraft, selectedListId, boardColumns) {
+  const nextDraft = { ...quickDraft };
+
+  if (selectedListId?.startsWith("column:")) {
+    const columnId = selectedListId.slice("column:".length);
+    if (boardColumns.some((column) => column.id === columnId)) {
+      nextDraft.status = columnId;
+    }
+  }
+
+  if (selectedListId?.startsWith("group:") && !nextDraft.group) {
+    nextDraft.group = selectedListId.slice("group:".length);
+  }
+
+  return nextDraft;
+}
+
+export function taskMatchesVisibleContext(task, filters) {
+  if (!task) {
+    return false;
+  }
+
+  if (filters.ownerFilter !== "all" && task.owner !== filters.ownerFilter) {
+    return false;
+  }
+
+  if (filters.tagFilter !== "all" && !(task.tags || []).includes(filters.tagFilter)) {
+    return false;
+  }
+
+  if (filters.query.trim()) {
+    const haystack = [task.title, task.owner, task.group, task.description, task.notes, safeArray(task.tags).join(" ")]
+      .join(" ")
+      .toLowerCase();
+    if (!haystack.includes(filters.query.trim().toLowerCase())) {
+      return false;
+    }
+  }
+
+  if (!filters.selectedListId || filters.selectedListId === "smart:all") {
+    return true;
+  }
+
+  return applyMainListFilter([task], filters.selectedListId, filters.boardColumns).length > 0;
 }
 
 export function handleCardKeyDown(event, callback) {

@@ -1,3 +1,12 @@
+function StatMiniCard({ label, value, tone = "neutral" }) {
+  return (
+    <div className={`todo-stat-mini ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 export default function TasksSidebar({
   sidebarLists,
   selectedListId,
@@ -5,6 +14,7 @@ export default function TasksSidebar({
   workspaceName,
   workspaceInviteCode,
   stats,
+  visibleStats,
   googleTasksEnabled,
   googleTasksStatus,
   googleTasksMessage,
@@ -64,16 +74,46 @@ export default function TasksSidebar({
               </button>
             ))}
           </div>
+
+          {sidebarLists.customGroups.length ? (
+            <div className="todo-workspace-group">
+              <div className="todo-workspace-title">
+                <strong>Moje grupy</strong>
+                <small>Wlasne grupowanie zadan</small>
+              </div>
+              {sidebarLists.customGroups.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={selectedListId === item.id ? "todo-side-link active workspace" : "todo-side-link workspace"}
+                  onClick={() => setSelectedListId(item.id)}
+                >
+                  <span>{item.label}</span>
+                  <strong>{item.count}</strong>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <div className="todo-sidebar-footer">
         <div className="todo-progress-card">
-          <span>Zakonczone</span>
-          <strong>{stats.completed}</strong>
+          <span>Postep workspace</span>
+          <strong>{stats.completed} zakonczonych</strong>
           <div className="todo-progress-track">
             <span style={{ width: `${stats.progress}%` }} />
           </div>
+          <small>{stats.progress}% wszystkich zadan jest zamkniete.</small>
+        </div>
+
+        <div className="todo-stats-mini-grid">
+          <StatMiniCard label="Otwarte" value={visibleStats.open} />
+          <StatMiniCard label="Na dzisiaj" value={visibleStats.dueToday} tone="info" />
+          <StatMiniCard label="Po terminie" value={visibleStats.overdue} tone="danger" />
+          <StatMiniCard label="Bez ownera" value={visibleStats.unassigned} tone="warning" />
+          <StatMiniCard label="W toku" value={visibleStats.inProgress} tone="info" />
+          <StatMiniCard label="W grupach" value={visibleStats.grouped} tone="success" />
         </div>
 
         <div className="todo-google-card">
@@ -94,7 +134,7 @@ export default function TasksSidebar({
               onClick={onConnectGoogleTasks}
               disabled={!googleTasksEnabled || googleTasksStatus === "loading"}
             >
-              Connect
+              Polacz
             </button>
             <button
               type="button"
@@ -129,7 +169,7 @@ export default function TasksSidebar({
           className="todo-inline-link"
           onClick={() => setShowColumnManager((previous) => !previous)}
         >
-          {showColumnManager ? "Ukryj kolumny" : "Manage columns"}
+          {showColumnManager ? "Ukryj kolumny" : "Zarzadzaj kolumnami"}
         </button>
 
         {showColumnManager ? (
@@ -152,7 +192,7 @@ export default function TasksSidebar({
                   onClick={() => onDeleteColumn(column.id)}
                   disabled={column.system}
                 >
-                  Remove
+                  Usun
                 </button>
               </div>
             ))}
@@ -179,7 +219,7 @@ export default function TasksSidebar({
                 <span>Done</span>
               </label>
               <button type="submit" className="todo-command-button primary">
-                Add
+                Dodaj
               </button>
             </form>
           </div>

@@ -26,6 +26,10 @@ function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizeGroup(value) {
+  return titleCase(normalizeWhitespace(value));
+}
+
 export function parseTagInput(value) {
   return uniqueStrings(
     String(value || "")
@@ -190,6 +194,7 @@ function taskFromCandidate(candidate, meeting, index, columns) {
     notes: candidate.sourceQuote || "",
     priority: inferPriority(candidate),
     tags: uniqueStrings([...(meeting.tags || []), ...safeArray(candidate.tags)]),
+    group: normalizeGroup(candidate.group),
     comments: [],
     history: [],
     dependencies: [],
@@ -216,6 +221,7 @@ function mergeTaskState(task, state, currentUser, columns) {
   const dueDate = state?.dueDate ?? task.dueDate ?? "";
   const notes = state?.notes ?? task.notes ?? "";
   const tags = uniqueStrings([...(task.tags || []), ...safeArray(state?.tags)]);
+  const group = normalizeGroup(state?.group ?? task.group);
 
   return {
     ...task,
@@ -225,6 +231,7 @@ function mergeTaskState(task, state, currentUser, columns) {
     dueDate,
     notes,
     tags,
+    group,
     updatedAt: state?.updatedAt || task.updatedAt || task.createdAt,
     important: typeof state?.important === "boolean" ? state.important : Boolean(task.important),
     priority: normalizePriority(state?.priority || task.priority),
@@ -300,6 +307,10 @@ export function buildTaskTags(tasks, meetings) {
   ]);
 }
 
+export function buildTaskGroups(tasks) {
+  return uniqueStrings(safeArray(tasks).map((task) => task.group));
+}
+
 export function createManualTask(userId, draft, columns, workspaceId) {
   const now = new Date().toISOString();
   const title = titleCase(draft.title);
@@ -332,6 +343,7 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     notes: String(draft.notes || "").trim(),
     priority: normalizePriority(draft.priority),
     tags: parseTagInput(draft.tags),
+    group: normalizeGroup(draft.group),
     comments: safeArray(draft.comments),
     history: safeArray(draft.history),
     dependencies: uniqueStrings(draft.dependencies),
@@ -369,6 +381,7 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     notes,
     priority: "medium",
     tags: [],
+    group: normalizeGroup(taskList.title || ""),
     comments: [],
     history: [],
     dependencies: [],
@@ -433,13 +446,59 @@ export function buildTasksFromMeetings(meetings, manualTasks, taskState, current
 
 export function taskListStats(tasks) {
   const list = safeArray(tasks);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekEdge = new Date(today);
+  weekEdge.setDate(today.getDate() + 7);
+  const completedCount = list.filter((task) => task.completed).length;
+  const byPriority = TASK_PRIORITIES.reduce(
+    (accumulator, priority) => ({
+      ...accumulator,
+      [priority.id]: list.filter((task) => task.priority === priority.id).length,
+    }),
+    {}
+  );
+  const byStatus = list.reduce((accumulator, task) => {
+    const key = task.status || "unknown";
+    return {
+      ...accumulator,
+      [key]: (accumulator[key] || 0) + 1,
+    };
+  }, {});
+
   return {
     all: list.length,
     assigned: list.filter((task) => task.assignedToMe).length,
     important: list.filter((task) => task.important).length,
-    completed: list.filter((task) => task.completed).length,
+    completed: completedCount,
     open: list.filter((task) => !task.completed).length,
     manual: list.filter((task) => task.sourceType === "manual").length,
-    progress: list.length ? Math.round((list.filter((task) => task.completed).length / list.length) * 100) : 0,
+    overdue: list.filter((task) => {
+      if (!task.dueDate || task.completed) {
+        return false;
+      }
+      return new Date(task.dueDate).getTime() < today.getTime();
+    }).length,
+    dueToday: list.filter((task) => {
+      if (!task.dueDate || task.completed) {
+        return false;
+      }
+      return new Date(task.dueDate).toDateString() === today.toDateString();
+    }).length,
+    dueThisWeek: list.filter((task) => {
+      if (!task.dueDate || task.completed) {
+        return false;
+      }
+      const dueDate = new Date(task.dueDate).getTime();
+      return dueDate >= today.getTime() && dueDate < weekEdge.getTime();
+    }).length,
+    scheduled: list.filter((task) => Boolean(task.dueDate)).length,
+    unassigned: list.filter((task) => !task.owner || task.owner === "Nieprzypisane").length,
+    waiting: list.filter((task) => task.status === "waiting").length,
+    inProgress: list.filter((task) => task.status === "in_progress").length,
+    grouped: list.filter((task) => Boolean(task.group)).length,
+    progress: list.length ? Math.round((completedCount / list.length) * 100) : 0,
+    byPriority,
+    byStatus,
   };
 }

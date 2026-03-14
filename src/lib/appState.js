@@ -42,6 +42,7 @@ export function normalizeTaskUpdatePayload(previousTask, updates, columns) {
     ...updates,
     title: updates.title ?? previousTask.title,
     owner: updates.owner ?? previousTask.owner,
+    group: updates.group ?? previousTask.group,
     description: updates.description ?? previousTask.description,
     dueDate: updates.dueDate ?? previousTask.dueDate,
     notes: updates.notes ?? previousTask.notes,

@@ -11,12 +11,22 @@ import { formatDateTime } from "./lib/storage";
 const CALENDAR_WEEKDAYS = weekdayLabels();
 
 function eventTypeLabel(type) {
-  return type === "google" ? "Google" : "VoiceLog";
+  if (type === "google") {
+    return "Google";
+  }
+  if (type === "task") {
+    return "Zadanie";
+  }
+  return "VoiceLog";
 }
 
 function eventTimeLabel(entry) {
   if (!entry.startsAt) {
     return "Caly dzien";
+  }
+
+  if (entry.type === "task" && entry.startsAt.endsWith("00:00")) {
+    return "Termin";
   }
 
   return formatCalendarEventTime(entry.startsAt);
@@ -31,6 +41,7 @@ export default function CalendarTab({
   miniMatrix,
   bucket,
   userMeetings,
+  calendarTasks,
   googleCalendarEvents,
   googleCalendarStatus,
   googleCalendarMessage,
@@ -38,6 +49,7 @@ export default function CalendarTab({
   disconnectGoogleCalendar,
   openMeetingFromCalendar,
   openGoogleCalendarForMeeting,
+  openTaskFromCalendar,
   googleCalendarEnabled,
 }) {
   const selectedDayEntries = meetingsForDay(bucket, selectedDate).sort(
@@ -46,6 +58,10 @@ export default function CalendarTab({
   const upcomingMeetings = [...userMeetings]
     .filter((meeting) => new Date(meeting.startsAt).getTime() >= Date.now() - 6 * 60 * 60 * 1000)
     .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
+    .slice(0, 6);
+  const upcomingTasks = [...calendarTasks]
+    .filter((task) => Boolean(task.dueDate) && !task.completed)
+    .sort((left, right) => new Date(left.dueDate).getTime() - new Date(right.dueDate).getTime())
     .slice(0, 6);
 
   function shiftMonth(amount) {
@@ -163,6 +179,30 @@ export default function CalendarTab({
             )}
           </div>
         </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Tasks</div>
+              <h2>Najblizsze terminy</h2>
+            </div>
+          </div>
+          <div className="agenda-list">
+            {upcomingTasks.length ? (
+              upcomingTasks.map((task) => (
+                <button type="button" key={task.id} className="agenda-card" onClick={() => openTaskFromCalendar(task.id)}>
+                  <strong>{task.title}</strong>
+                  <span>{formatDateTime(task.dueDate)}</span>
+                </button>
+              ))
+            ) : (
+              <div className="empty-panel">
+                <strong>Brak terminow zadan</strong>
+                <span>Dodaj termin do zadania, a pojawi sie tutaj i w miesiecznym widoku.</span>
+              </div>
+            )}
+          </div>
+        </section>
       </aside>
 
       <section className="panel calendar-board">
@@ -185,6 +225,7 @@ export default function CalendarTab({
           <div className="status-cluster">
             <span className="status-chip">{userMeetings.length} spotkan VoiceLog</span>
             <span className="status-chip">{googleCalendarEvents.length} wydarzen Google</span>
+            <span className="status-chip">{calendarTasks.length} terminow zadan</span>
           </div>
         </div>
 
@@ -217,15 +258,23 @@ export default function CalendarTab({
                   {entries.map((entry) => (
                     <span
                       key={`${entry.type}-${entry.id}`}
-                      className={entry.type === "google" ? "calendar-pill google" : "calendar-pill meeting"}
+                      className={
+                        entry.type === "google"
+                          ? "calendar-pill google"
+                          : entry.type === "task"
+                            ? "calendar-pill task"
+                            : "calendar-pill meeting"
+                      }
                       onClick={(event) => {
                         event.stopPropagation();
                         if (entry.type === "meeting") {
                           openMeetingFromCalendar(entry.id);
+                        } else if (entry.type === "task") {
+                          openTaskFromCalendar(entry.id);
                         }
                       }}
                     >
-                      {entry.type === "google" ? "G" : "V"} {eventTimeLabel(entry)} {entry.title}
+                      {entry.type === "google" ? "G" : entry.type === "task" ? "T" : "V"} {eventTimeLabel(entry)} {entry.title}
                     </span>
                   ))}
                 </div>
@@ -258,6 +307,12 @@ export default function CalendarTab({
                       </button>
                       <button type="button" className="ghost-button" onClick={() => openGoogleCalendarForMeeting(entry.id)}>
                         Otworz w Google Calendar
+                      </button>
+                    </div>
+                  ) : entry.type === "task" ? (
+                    <div className="button-row">
+                      <button type="button" className="ghost-button" onClick={() => openTaskFromCalendar(entry.id)}>
+                        Otworz w Zadaniach
                       </button>
                     </div>
                   ) : null}

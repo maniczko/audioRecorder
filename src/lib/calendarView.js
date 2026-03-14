@@ -39,7 +39,7 @@ export function buildMonthMatrix(activeDate) {
   );
 }
 
-export function groupMeetingsByDay(meetings, googleEvents = []) {
+export function groupMeetingsByDay(meetings, googleEvents = [], tasks = []) {
   const bucket = new Map();
 
   function append(dateValue, entry) {
@@ -71,6 +71,23 @@ export function groupMeetingsByDay(meetings, googleEvents = []) {
       startsAt: eventStart,
       durationMinutes: 30,
       type: "google",
+    });
+  });
+
+  tasks.forEach((task) => {
+    if (!task?.dueDate) {
+      return;
+    }
+
+    append(new Date(task.dueDate), {
+      id: task.id,
+      title: task.title,
+      startsAt: task.dueDate,
+      durationMinutes: 15,
+      type: "task",
+      owner: task.owner || "",
+      status: task.status || "",
+      group: task.group || "",
     });
   });
 

@@ -5,6 +5,7 @@ import { toInputDateTime } from "./taskViewUtils";
 export default function TaskDetailsPanel({
   selectedTask,
   peopleOptions,
+  taskGroups,
   boardColumns,
   onUpdateTask,
   onMoveTaskToColumn,
@@ -27,17 +28,17 @@ export default function TaskDetailsPanel({
               <h2>{selectedTask.title}</h2>
             </div>
             <button type="button" className="todo-icon-button danger" onClick={() => onDeleteTask(selectedTask.id)}>
-              {selectedTask.sourceType === "meeting" ? "Hide" : "Delete"}
+              {selectedTask.sourceType === "meeting" ? "Ukryj" : "Usun"}
             </button>
           </div>
 
           <div className="todo-detail-form">
             <label>
-              <span>Title</span>
+              <span>Tytul</span>
               <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
             </label>
             <label>
-              <span>Owner</span>
+              <span>Osoba</span>
               <select value={selectedTask.owner} onChange={(event) => onUpdateTask(selectedTask.id, { owner: event.target.value })}>
                 <option value="">Nieprzypisane</option>
                 {peopleOptions.map((person) => (
@@ -46,6 +47,20 @@ export default function TaskDetailsPanel({
                   </option>
                 ))}
               </select>
+            </label>
+            <label>
+              <span>Grupa</span>
+              <input
+                list="detail-task-groups"
+                value={selectedTask.group || ""}
+                onChange={(event) => onUpdateTask(selectedTask.id, { group: event.target.value })}
+                placeholder="Bez grupy"
+              />
+              <datalist id="detail-task-groups">
+                {taskGroups.map((group) => (
+                  <option key={group} value={group} />
+                ))}
+              </datalist>
             </label>
             <label>
               <span>Status</span>
@@ -58,7 +73,7 @@ export default function TaskDetailsPanel({
               </select>
             </label>
             <label>
-              <span>Due date</span>
+              <span>Termin</span>
               <input
                 type="datetime-local"
                 value={toInputDateTime(selectedTask.dueDate)}
@@ -66,7 +81,7 @@ export default function TaskDetailsPanel({
               />
             </label>
             <label>
-              <span>Priority</span>
+              <span>Priorytet</span>
               <select value={selectedTask.priority} onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}>
                 {TASK_PRIORITIES.map((priority) => (
                   <option key={priority.id} value={priority.id}>
@@ -75,44 +90,52 @@ export default function TaskDetailsPanel({
                 ))}
               </select>
             </label>
-            <label>
-              <span>Tags</span>
+            <label className="full">
+              <span>Tagi</span>
               <input value={(selectedTask.tags || []).join(", ")} onChange={(event) => onUpdateTask(selectedTask.id, { tags: event.target.value })} />
             </label>
             <label className="full">
-              <span>Description</span>
+              <span>Opis</span>
               <textarea rows="3" value={selectedTask.description || ""} onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })} />
             </label>
             <label className="full">
-              <span>Notes</span>
+              <span>Notatki</span>
               <textarea rows="6" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} />
             </label>
           </div>
 
           <div className="todo-detail-actions">
-            <button type="button" className="todo-command-button primary" onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}>
-              {selectedTask.completed ? "Reopen" : "Mark complete"}
+            <button
+              type="button"
+              className="todo-command-button primary"
+              onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}
+            >
+              {selectedTask.completed ? "Otworz ponownie" : "Oznacz jako zrobione"}
             </button>
-            <button type="button" className="todo-command-button" onClick={() => onUpdateTask(selectedTask.id, { important: !selectedTask.important })}>
-              {selectedTask.important ? "Remove star" : "Add star"}
+            <button
+              type="button"
+              className="todo-command-button"
+              onClick={() => onUpdateTask(selectedTask.id, { important: !selectedTask.important })}
+            >
+              {selectedTask.important ? "Usun waznosc" : "Oznacz jako wazne"}
             </button>
             {selectedTask.sourceMeetingId ? (
               <button type="button" className="todo-command-button" onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}>
-                Open meeting
+                Otworz spotkanie
               </button>
             ) : null}
           </div>
 
           <div className="todo-detail-meta-card">
-            <strong>Source</strong>
+            <strong>Zrodlo</strong>
             <p>{selectedTask.sourceQuote || selectedTask.sourceMeetingTitle || "Brak cytatu zrodlowego."}</p>
             <small>{formatDateTime(selectedTask.updatedAt || selectedTask.createdAt)}</small>
           </div>
         </div>
       ) : (
         <div className="todo-detail-card empty">
-          <h2>Select a task</h2>
-          <p>Tutaj zobaczysz szczegoly zadania, ownera, status i notatki.</p>
+          <h2>Wybierz zadanie</h2>
+          <p>Tutaj zobaczysz szczegoly zadania, ownera, status, grupe i notatki.</p>
         </div>
       )}
     </aside>

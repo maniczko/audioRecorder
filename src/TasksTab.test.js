@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import TasksTab from "./TasksTab";
 
 function createDataTransfer() {
@@ -20,6 +21,7 @@ function renderTasksTab(overrides = {}) {
         id: "task_1",
         title: "Przenies zadanie",
         owner: "Anna",
+        group: "Sprint 14",
         description: "Sprawdz pipeline",
         dueDate: "2026-03-20T10:00:00.000Z",
         notes: "",
@@ -65,6 +67,8 @@ function renderTasksTab(overrides = {}) {
     onExportGoogleTasks: jest.fn(),
     workspaceName: "Produkt",
     workspaceInviteCode: "ABC123",
+    externalSelectedTaskId: "",
+    onTaskSelectionHandled: jest.fn(),
     ...overrides,
   };
 
@@ -78,17 +82,41 @@ describe("TasksTab", () => {
   test("moves a task between kanban columns with drag and drop", () => {
     const { props } = renderTasksTab();
     const dataTransfer = createDataTransfer();
-    const taskCardLabel = screen
-      .getAllByText("Przenies zadanie")
-      .find((element) => element.closest(".todo-kanban-card"));
-    const doneColumnLabel = screen
+    const dragHandle = screen.getByTitle("Przeciagnij zadanie");
+    const doneColumn = screen
       .getAllByText("Zakonczone")
-      .find((element) => element.closest(".todo-kanban-column"));
+      .find((element) => element.closest(".todo-kanban-column"))
+      .closest(".todo-kanban-column");
 
-    fireEvent.dragStart(taskCardLabel.closest(".todo-kanban-card"), { dataTransfer });
-    fireEvent.dragOver(doneColumnLabel.closest(".todo-kanban-column"), { dataTransfer });
-    fireEvent.drop(doneColumnLabel.closest(".todo-kanban-column"), { dataTransfer });
+    fireEvent.dragStart(dragHandle, { dataTransfer });
+    fireEvent.dragEnter(doneColumn, { dataTransfer });
+    fireEvent.dragOver(doneColumn, { dataTransfer });
+    fireEvent.drop(doneColumn.querySelector(".todo-kanban-body"), { dataTransfer });
 
     expect(props.onMoveTaskToColumn).toHaveBeenCalledWith("task_1", "done");
+  });
+
+  test("creates a task inside the selected custom group", async () => {
+    const createdTask = {
+      id: "task_2",
+      title: "Nowe zadanie",
+      status: "todo",
+      group: "Sprint 14",
+    };
+    const { props } = renderTasksTab({
+      defaultView: "list",
+      onCreateTask: jest.fn().mockReturnValue(createdTask),
+    });
+
+    await userEvent.click(
+      screen
+        .getAllByText("Sprint 14")
+        .find((element) => element.closest(".todo-side-link"))
+        .closest(".todo-side-link")
+    );
+    await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowe zadanie");
+    await userEvent.click(screen.getByRole("button", { name: "Dodaj" }));
+
+    expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie", group: "Sprint 14" }));
   });
 });

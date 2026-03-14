@@ -50,6 +50,7 @@ export default function MainApp() {
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => new Date());
+  const [pendingTaskId, setPendingTaskId] = useState("");
 
   const google = useGoogleIntegrations({
     currentUser: workspace.currentUser,
@@ -77,10 +78,14 @@ export default function MainApp() {
   const selectedRecordingAudioUrl = meetings.selectedRecording
     ? recorder.audioUrls[meetings.selectedRecording.id]
     : "";
+  const calendarTasks = useMemo(
+    () => meetings.meetingTasks.filter((task) => Boolean(task.dueDate)),
+    [meetings.meetingTasks]
+  );
 
   const bucket = useMemo(
-    () => groupMeetingsByDay(meetings.userMeetings, google.googleCalendarEvents),
-    [google.googleCalendarEvents, meetings.userMeetings]
+    () => groupMeetingsByDay(meetings.userMeetings, google.googleCalendarEvents, calendarTasks),
+    [calendarTasks, google.googleCalendarEvents, meetings.userMeetings]
   );
   const monthMatrix = useMemo(() => buildMonthMatrix(calendarMonth), [calendarMonth]);
   const miniMatrix = useMemo(() => buildMonthMatrix(calendarMonth), [calendarMonth]);
@@ -141,10 +146,16 @@ export default function MainApp() {
     window.open(buildGoogleCalendarUrl(meeting), "_blank", "noopener,noreferrer");
   }
 
+  function openTaskFromCalendar(taskId) {
+    setPendingTaskId(taskId);
+    setActiveTab("tasks");
+  }
+
   function switchWorkspace(workspaceId) {
     workspace.switchWorkspace(workspaceId);
     meetings.resetSelectionState();
     google.resetGoogleSession();
+    setPendingTaskId("");
   }
 
   function logout() {
@@ -157,6 +168,7 @@ export default function MainApp() {
     google.resetGoogleSession();
     recorder.resetRecorderState();
     setActiveTab("studio");
+    setPendingTaskId("");
   }
 
   if (!workspace.currentUser) {
@@ -259,6 +271,7 @@ export default function MainApp() {
           miniMatrix={miniMatrix}
           bucket={bucket}
           userMeetings={meetings.userMeetings}
+          calendarTasks={calendarTasks}
           googleCalendarEvents={google.googleCalendarEvents}
           googleCalendarStatus={google.googleCalendarStatus}
           googleCalendarMessage={google.googleCalendarMessage}
@@ -266,12 +279,12 @@ export default function MainApp() {
           disconnectGoogleCalendar={google.disconnectGoogleCalendar}
           openMeetingFromCalendar={openMeetingFromCalendar}
           openGoogleCalendarForMeeting={openGoogleCalendarForMeeting}
+          openTaskFromCalendar={openTaskFromCalendar}
           googleCalendarEnabled={google.googleEnabled}
         />
       ) : activeTab === "tasks" ? (
         <TasksTab
           tasks={meetings.meetingTasks}
-          meetings={meetings.userMeetings}
           peopleOptions={meetings.taskPeople}
           tagOptions={meetings.taskTags}
           boardColumns={meetings.taskColumns}
@@ -295,6 +308,8 @@ export default function MainApp() {
           onExportGoogleTasks={google.exportTasksToGoogle}
           workspaceName={workspace.currentWorkspace?.name || ""}
           workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ""}
+          externalSelectedTaskId={pendingTaskId}
+          onTaskSelectionHandled={() => setPendingTaskId("")}
         />
       ) : activeTab === "people" ? (
         <PeopleTab profiles={meetings.peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />

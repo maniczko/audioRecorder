@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { taskListStats } from "./lib/tasks";
+import { buildTaskGroups, taskListStats } from "./lib/tasks";
 import TaskDetailsPanel from "./tasks/TaskDetailsPanel";
 import TasksSidebar from "./tasks/TasksSidebar";
 import TasksWorkspaceView from "./tasks/TasksWorkspaceView";
 import {
   applyMainListFilter,
+  buildContextualDraft,
   buildSidebarLists,
   canDrop,
   createQuickDraft,
+  getSelectedListLabel,
   groupTasks,
+  readDragTask,
   sortVisibleTasks,
   safeArray,
+  taskMatchesVisibleContext,
 } from "./tasks/taskViewUtils";
 
 export default function TasksTab({
@@ -38,6 +42,8 @@ export default function TasksTab({
   onExportGoogleTasks,
   workspaceName,
   workspaceInviteCode,
+  externalSelectedTaskId,
+  onTaskSelectionHandled,
 }) {
   const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
   const [selectedListId, setSelectedListId] = useState("smart:all");
@@ -68,6 +74,24 @@ export default function TasksTab({
     }
   }, [boardColumns, quickDraft.status]);
 
+  useEffect(() => {
+    if (selectedListId.startsWith("column:")) {
+      const columnId = selectedListId.slice("column:".length);
+      if (columnId !== quickDraft.status && boardColumns.some((column) => column.id === columnId)) {
+        setQuickDraft((previous) => ({ ...previous, status: columnId }));
+      }
+      return;
+    }
+
+    if (selectedListId.startsWith("group:")) {
+      const groupName = selectedListId.slice("group:".length);
+      if (groupName !== quickDraft.group) {
+        setQuickDraft((previous) => ({ ...previous, group: groupName }));
+      }
+    }
+  }, [boardColumns, quickDraft.group, quickDraft.status, selectedListId]);
+
+  const taskGroups = useMemo(() => buildTaskGroups(tasks), [tasks]);
   const stats = useMemo(() => taskListStats(tasks), [tasks]);
   const sidebarLists = useMemo(() => buildSidebarLists(tasks, boardColumns), [tasks, boardColumns]);
 
@@ -80,13 +104,7 @@ export default function TasksTab({
         return false;
       }
       if (query.trim()) {
-        const haystack = [
-          task.title,
-          task.owner,
-          task.description,
-          task.notes,
-          safeArray(task.tags).join(" "),
-        ]
+        const haystack = [task.title, task.owner, task.group, task.description, task.notes, safeArray(task.tags).join(" ")]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(query.trim().toLowerCase())) {
@@ -99,6 +117,8 @@ export default function TasksTab({
     return sortVisibleTasks(filtered, sortBy);
   }, [boardColumns, ownerFilter, query, selectedListId, sortBy, tagFilter, tasks]);
 
+  const visibleStats = useMemo(() => taskListStats(visibleTasks), [visibleTasks]);
+
   useEffect(() => {
     if (!visibleTasks.length) {
       setSelectedTaskId("");
@@ -109,6 +129,28 @@ export default function TasksTab({
       setSelectedTaskId(visibleTasks[0].id);
     }
   }, [visibleTasks, selectedTaskId]);
+
+  useEffect(() => {
+    if (!externalSelectedTaskId) {
+      return;
+    }
+
+    const matchingTask = tasks.find((task) => task.id === externalSelectedTaskId);
+    if (!matchingTask) {
+      onTaskSelectionHandled?.();
+      return;
+    }
+
+    setViewMode("list");
+    setSelectedTaskId(matchingTask.id);
+    setSelectedListId(matchingTask.group ? `group:${matchingTask.group}` : matchingTask.dueDate ? "smart:planned" : "smart:all");
+    setGroupBy("none");
+    setQuery("");
+    setOwnerFilter("all");
+    setTagFilter("all");
+    setMessage(`Otwarto zadanie: ${matchingTask.title}`);
+    onTaskSelectionHandled?.();
+  }, [externalSelectedTaskId, onTaskSelectionHandled, tasks]);
 
   const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
   const groupedTasks = useMemo(() => groupTasks(visibleTasks, groupBy, boardColumns), [boardColumns, groupBy, visibleTasks]);
@@ -123,12 +165,40 @@ export default function TasksTab({
 
   function submitQuickTask(event) {
     event.preventDefault();
+
     try {
-      const taskId = onCreateTask(quickDraft);
+      const contextualDraft = buildContextualDraft(quickDraft, selectedListId, boardColumns);
+      const createdTask = onCreateTask(contextualDraft);
+      const createdTaskId = createdTask?.id || createdTask;
+
       setQuickDraft(createQuickDraft(boardColumns));
-      setMessage("Dodano zadanie.");
-      if (taskId) {
-        setSelectedTaskId(taskId);
+      setShowAdvancedCreate(false);
+      setMessage("Dodano zadanie do listy.");
+
+      if (createdTaskId) {
+        const createdTaskData =
+          typeof createdTask === "object" && createdTask
+            ? createdTask
+            : tasks.find((task) => task.id === createdTaskId) || { id: createdTaskId };
+
+        if (
+          !taskMatchesVisibleContext(createdTaskData, {
+            selectedListId,
+            ownerFilter,
+            tagFilter,
+            query,
+            boardColumns,
+          })
+        ) {
+          setSelectedListId(
+            createdTaskData.group ? `group:${createdTaskData.group}` : `column:${createdTaskData.status || quickDraft.status}`
+          );
+          setOwnerFilter("all");
+          setTagFilter("all");
+          setQuery("");
+        }
+
+        setSelectedTaskId(createdTaskId);
       }
     } catch (error) {
       setMessage(error.message);
@@ -146,17 +216,42 @@ export default function TasksTab({
     }
   }
 
-  function handleDrop(columnId, event) {
-    canDrop(event);
-    const taskId = event.dataTransfer?.getData("text/plain") || dragTaskId;
+  function finalizeDrop(taskId, update, successMessage) {
     if (!taskId) {
       return;
     }
 
-    onMoveTaskToColumn(taskId, columnId);
+    if (typeof update === "string") {
+      onMoveTaskToColumn(taskId, update);
+    } else {
+      onUpdateTask(taskId, update);
+    }
+
     setDragTaskId("");
     setDropColumnId("");
-    setMessage("Przeniesiono zadanie.");
+    setMessage(successMessage);
+  }
+
+  function handleDrop(columnId, event) {
+    canDrop(event);
+    finalizeDrop(readDragTask(event) || dragTaskId, columnId, "Przeniesiono zadanie do nowej kolumny.");
+  }
+
+  function handleGroupDrop(groupId, event) {
+    canDrop(event);
+    const taskId = readDragTask(event) || dragTaskId;
+    if (!taskId) {
+      return;
+    }
+
+    if (groupBy === "status") {
+      finalizeDrop(taskId, groupId, "Przeniesiono zadanie do nowej kolumny.");
+      return;
+    }
+
+    if (groupBy === "group") {
+      finalizeDrop(taskId, { group: groupId === "__ungrouped__" ? "" : groupId }, "Zmieniono grupe zadania.");
+    }
   }
 
   async function shareWorkspace() {
@@ -187,6 +282,7 @@ export default function TasksTab({
         workspaceName={workspaceName}
         workspaceInviteCode={workspaceInviteCode}
         stats={stats}
+        visibleStats={visibleStats}
         googleTasksEnabled={googleTasksEnabled}
         googleTasksStatus={googleTasksStatus}
         googleTasksMessage={googleTasksMessage}
@@ -207,8 +303,7 @@ export default function TasksTab({
       />
 
       <TasksWorkspaceView
-        sidebarLists={sidebarLists}
-        selectedListId={selectedListId}
+        selectedListLabel={getSelectedListLabel(sidebarLists, selectedListId)}
         viewMode={viewMode}
         setViewMode={setViewMode}
         sortBy={sortBy}
@@ -222,6 +317,7 @@ export default function TasksTab({
         showAdvancedCreate={showAdvancedCreate}
         setShowAdvancedCreate={setShowAdvancedCreate}
         peopleOptions={peopleOptions}
+        taskGroups={taskGroups}
         boardColumns={boardColumns}
         query={query}
         setQuery={setQuery}
@@ -235,16 +331,21 @@ export default function TasksTab({
         selectedTask={selectedTask}
         setSelectedTaskId={setSelectedTaskId}
         onUpdateTask={onUpdateTask}
+        onMoveTaskToColumn={onMoveTaskToColumn}
         kanbanColumns={kanbanColumns}
         dropColumnId={dropColumnId}
         setDropColumnId={setDropColumnId}
         handleDrop={handleDrop}
+        handleGroupDrop={handleGroupDrop}
         setDragTaskId={setDragTaskId}
+        stats={stats}
+        visibleStats={visibleStats}
       />
 
       <TaskDetailsPanel
         selectedTask={selectedTask}
         peopleOptions={peopleOptions}
+        taskGroups={taskGroups}
         boardColumns={boardColumns}
         onUpdateTask={onUpdateTask}
         onMoveTaskToColumn={onMoveTaskToColumn}

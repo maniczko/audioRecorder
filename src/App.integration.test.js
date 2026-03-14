@@ -8,7 +8,7 @@ function writeStorage(key, value) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
-function seedWorkspaceAppState() {
+function seedWorkspaceAppState({ manualTasks = [] } = {}) {
   const user = {
     id: "user_1",
     name: "Anna Nowak",
@@ -73,7 +73,7 @@ function seedWorkspaceAppState() {
   writeStorage(STORAGE_KEYS.users, [user]);
   writeStorage(STORAGE_KEYS.workspaces, workspaces);
   writeStorage(STORAGE_KEYS.meetings, meetings);
-  writeStorage(STORAGE_KEYS.manualTasks, []);
+  writeStorage(STORAGE_KEYS.manualTasks, manualTasks);
   writeStorage(STORAGE_KEYS.taskState, {});
   writeStorage(STORAGE_KEYS.taskBoards, {});
   writeStorage(STORAGE_KEYS.session, {
@@ -185,6 +185,54 @@ describe("App integration", () => {
     expect(openSpy).toHaveBeenCalled();
     expect(popup.document.write).toHaveBeenCalled();
     expect(popup.print).toHaveBeenCalled();
+  });
+
+  test("shows task deadlines in the calendar and opens the task details", async () => {
+    seedWorkspaceAppState({
+      manualTasks: [
+        {
+          id: "task_manual_1",
+          userId: "user_1",
+          workspaceId: "workspace_1",
+          createdByUserId: "user_1",
+          title: "Przygotuj demo",
+          owner: "Anna Nowak",
+          group: "Sprint 14",
+          description: "",
+          dueDate: "2026-03-14T12:00:00.000Z",
+          sourceType: "manual",
+          sourceMeetingId: "",
+          sourceMeetingTitle: "Reczne zadanie",
+          sourceMeetingDate: "2026-03-14T12:00:00.000Z",
+          sourceRecordingId: "",
+          sourceQuote: "",
+          createdAt: "2026-03-14T09:00:00.000Z",
+          updatedAt: "2026-03-14T09:00:00.000Z",
+          status: "todo",
+          important: false,
+          completed: false,
+          notes: "",
+          priority: "high",
+          tags: ["demo"],
+          comments: [],
+          history: [],
+          dependencies: [],
+          recurrence: null,
+        },
+      ],
+    });
+    render(<App />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Kalendarz" }));
+    await userEvent.click(
+      screen
+        .getAllByText("Przygotuj demo")
+        .find((element) => element.closest(".agenda-card"))
+        .closest(".agenda-card")
+    );
+
+    const openTaskFields = await screen.findAllByDisplayValue("Przygotuj demo");
+    expect(openTaskFields.length).toBeGreaterThan(0);
   });
 
   test("shows a microphone error for ad hoc recording when permission is blocked", async () => {

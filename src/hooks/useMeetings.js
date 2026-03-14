@@ -218,7 +218,7 @@ export default function useMeetings({
 
     const task = createManualTask(currentUser.id, draft, taskColumns, currentWorkspaceId);
     setManualTasks((previous) => [task, ...previous]);
-    return task.id;
+    return task;
   }
 
   function updateTask(taskId, updates) {
