@@ -371,6 +371,9 @@ export default function MainApp() {
           displaySpeakerNames={displaySpeakerNames}
           selectedRecordingAudioUrl={selectedRecordingAudioUrl}
           updateTranscriptSegment={meetings.updateTranscriptSegment}
+          assignSpeakerToTranscriptSegments={meetings.assignSpeakerToTranscriptSegments}
+          mergeTranscriptSegments={meetings.mergeTranscriptSegments}
+          splitTranscriptSegment={meetings.splitTranscriptSegment}
           renameSpeaker={meetings.renameSpeaker}
           selectedRecordingId={meetings.selectedRecordingId}
           setSelectedRecordingId={meetings.setSelectedRecordingId}

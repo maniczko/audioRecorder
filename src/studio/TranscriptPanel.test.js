@@ -44,6 +44,9 @@ function renderTranscriptPanel(overrides = {}) {
     },
     selectedRecordingAudioUrl: "",
     updateTranscriptSegment: jest.fn(),
+    assignSpeakerToTranscriptSegments: jest.fn(),
+    mergeTranscriptSegments: jest.fn(),
+    splitTranscriptSegment: jest.fn(),
     ...overrides,
   };
 
@@ -69,5 +72,25 @@ describe("TranscriptPanel", () => {
 
     expect(screen.getByDisplayValue("Potrzebujemy dopiac budzet na przyszly tydzien.")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("Wysle podsumowanie i zadania po spotkaniu.")).not.toBeInTheDocument();
+  });
+
+  test("filters transcript by speaker and low confidence", async () => {
+    renderTranscriptPanel();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /^speaker$/i }), "0");
+    await userEvent.click(screen.getByRole("button", { name: /confidence < 60%/i }));
+
+    expect(screen.getByDisplayValue("Potrzebujemy dopiac budzet na przyszly tydzien.")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Wysle podsumowanie i zadania po spotkaniu.")).not.toBeInTheDocument();
+  });
+
+  test("applies speaker change to selected segment range", async () => {
+    const { props } = renderTranscriptPanel();
+
+    await userEvent.click(screen.getAllByRole("checkbox")[0]);
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /speaker dla zakresu/i }), "1");
+    await userEvent.click(screen.getByRole("button", { name: /zmien speakera zaznaczonych/i }));
+
+    expect(props.assignSpeakerToTranscriptSegments).toHaveBeenCalledWith(["seg_1"], 1);
   });
 });

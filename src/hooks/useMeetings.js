@@ -10,7 +10,7 @@ import {
   upsertMeeting,
 } from "../lib/meeting";
 import { buildPeopleProfiles } from "../lib/people";
-import { STORAGE_KEYS } from "../lib/storage";
+import { createId, STORAGE_KEYS } from "../lib/storage";
 import {
   buildTaskChangeHistory,
   buildTaskColumns,
@@ -81,6 +81,74 @@ export default function useMeetings({
   const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks);
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
   const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
+
+  function buildTranscriptReviewSummary(transcript) {
+    const safeTranscript = Array.isArray(transcript) ? transcript : [];
+    return {
+      needsReview: safeTranscript.filter((segment) => segment.verificationStatus === "review").length,
+      approved: safeTranscript.filter((segment) => segment.verificationStatus === "verified").length,
+    };
+  }
+
+  function finalizeRecordingTranscript(recording, transcript, overrides = {}) {
+    const safeTranscript = Array.isArray(transcript) ? transcript : [];
+    const speakerNames = {
+      ...(recording.speakerNames || {}),
+      ...(overrides.speakerNames || {}),
+    };
+    const uniqueSpeakerIds = [...new Set(safeTranscript.map((segment) => String(segment.speakerId)).filter(Boolean))];
+    uniqueSpeakerIds.forEach((speakerId) => {
+      if (!speakerNames[speakerId]) {
+        speakerNames[speakerId] = `Speaker ${Number(speakerId) + 1}`;
+      }
+    });
+
+    return {
+      ...recording,
+      ...overrides,
+      transcript: safeTranscript,
+      speakerNames,
+      speakerCount: uniqueSpeakerIds.length,
+      reviewSummary: buildTranscriptReviewSummary(safeTranscript),
+    };
+  }
+
+  function updateSelectedRecording(mutator) {
+    if (!selectedMeeting || !selectedRecording) {
+      return;
+    }
+
+    setMeetings((previous) =>
+      previous.map((meeting) => {
+        if (meeting.id !== selectedMeeting.id) {
+          return meeting;
+        }
+
+        let nextSelectedRecording = null;
+        const nextRecordings = (meeting.recordings || []).map((recording) => {
+          if (recording.id !== selectedRecording.id) {
+            return recording;
+          }
+
+          nextSelectedRecording = mutator(recording);
+          return nextSelectedRecording;
+        });
+
+        if (!nextSelectedRecording) {
+          return meeting;
+        }
+
+        const isLatestRecording = meeting.latestRecordingId === nextSelectedRecording.id;
+        return {
+          ...meeting,
+          recordings: nextRecordings,
+          speakerNames: isLatestRecording ? nextSelectedRecording.speakerNames : meeting.speakerNames,
+          speakerCount: isLatestRecording ? nextSelectedRecording.speakerCount : meeting.speakerCount,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }
 
   useEffect(() => {
     const migration = migrateWorkspaceData({
@@ -583,52 +651,162 @@ export default function useMeetings({
   }
 
   function updateTranscriptSegment(segmentId, updates) {
-    if (!selectedMeeting || !selectedRecording) {
+    updateSelectedRecording((recording) => {
+      const transcript = (recording.transcript || []).map((segment) =>
+        segment.id !== segmentId
+          ? segment
+          : {
+              ...segment,
+              ...updates,
+              verificationStatus:
+                updates.verificationStatus ||
+                (updates.text ? "verified" : segment.verificationStatus),
+              verificationReasons: updates.verificationReasons || (updates.text ? [] : segment.verificationReasons),
+            }
+      );
+
+      return finalizeRecordingTranscript(recording, transcript);
+    });
+  }
+
+  function assignSpeakerToTranscriptSegments(segmentIds, nextSpeakerId) {
+    const selectedSegmentIds = new Set((Array.isArray(segmentIds) ? segmentIds : []).map(String));
+    if (!selectedSegmentIds.size) {
       return;
     }
 
-    setMeetings((previous) =>
-      previous.map((meeting) => {
-        if (meeting.id !== selectedMeeting.id) {
-          return meeting;
-        }
+    updateSelectedRecording((recording) => {
+      const transcript = (recording.transcript || []).map((segment) =>
+        selectedSegmentIds.has(segment.id)
+          ? {
+              ...segment,
+              speakerId: Number(nextSpeakerId),
+              verificationReasons: [
+                ...new Set([...(segment.verificationReasons || []), "speaker zmieniony recznie dla zakresu"]),
+              ],
+            }
+          : segment
+      );
 
-        return {
-          ...meeting,
-          recordings: meeting.recordings.map((recording) =>
-            recording.id !== selectedRecording.id
-              ? recording
-              : (() => {
-                  const transcript = (recording.transcript || []).map((segment) =>
-                    segment.id !== segmentId
-                      ? segment
-                      : {
-                          ...segment,
-                          ...updates,
-                          verificationStatus:
-                            updates.verificationStatus ||
-                            (updates.text ? "verified" : segment.verificationStatus),
-                          verificationReasons:
-                            updates.verificationReasons || (updates.text ? [] : segment.verificationReasons),
-                        }
-                  );
-                  return {
-                    ...recording,
-                    transcript,
-                    reviewSummary: {
-                      needsReview: transcript.filter(
-                        (segment) => segment.verificationStatus === "review"
-                      ).length,
-                      approved: transcript.filter(
-                        (segment) => segment.verificationStatus === "verified"
-                      ).length,
-                    },
-                  };
-                })()
+      return finalizeRecordingTranscript(recording, transcript);
+    });
+  }
+
+  function mergeTranscriptSegments(segmentIds) {
+    const selectedIds = new Set((Array.isArray(segmentIds) ? segmentIds : []).map(String));
+    if (selectedIds.size < 2) {
+      return;
+    }
+
+    updateSelectedRecording((recording) => {
+      const transcript = Array.isArray(recording.transcript) ? [...recording.transcript] : [];
+      const indexedSegments = transcript
+        .map((segment, index) => ({ segment, index }))
+        .filter(({ segment }) => selectedIds.has(segment.id));
+
+      if (indexedSegments.length < 2) {
+        return recording;
+      }
+
+      const sorted = [...indexedSegments].sort((left, right) => left.index - right.index);
+      const firstIndex = sorted[0].index;
+      const lastIndex = sorted[sorted.length - 1].index;
+      const contiguous = sorted.every((item, index) => item.index === firstIndex + index);
+      if (!contiguous) {
+        return recording;
+      }
+
+      const firstSegment = sorted[0].segment;
+      const lastSegment = sorted[sorted.length - 1].segment;
+      const merged = {
+        ...firstSegment,
+        text: sorted
+          .map(({ segment }) => String(segment.text || "").trim())
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim(),
+        timestamp: firstSegment.timestamp,
+        endTimestamp: lastSegment.endTimestamp || lastSegment.timestamp || firstSegment.endTimestamp || firstSegment.timestamp,
+        speakerId: firstSegment.speakerId,
+        rawConfidence:
+          sorted.reduce((sum, { segment }) => sum + Number(segment.rawConfidence || 0), 0) / sorted.length,
+        verificationScore:
+          sorted.reduce((sum, { segment }) => sum + Number(segment.verificationScore || 0), 0) / sorted.length,
+        verificationStatus: sorted.some(({ segment }) => segment.verificationStatus === "review")
+          ? "review"
+          : "verified",
+        verificationReasons: [
+          ...new Set(
+            sorted.flatMap(({ segment }) => segment.verificationReasons || []).concat("polaczono recznie z kilku segmentow")
           ),
-        };
-      })
-    );
+        ],
+        verificationEvidence: {
+          comparisonText: sorted
+            .map(({ segment }) => segment.verificationEvidence?.comparisonText || "")
+            .filter(Boolean)
+            .join(" "),
+        },
+      };
+
+      const nextTranscript = [
+        ...transcript.slice(0, firstIndex),
+        merged,
+        ...transcript.slice(lastIndex + 1),
+      ];
+
+      return finalizeRecordingTranscript(recording, nextTranscript);
+    });
+  }
+
+  function splitTranscriptSegment(segmentId, splitIndex) {
+    updateSelectedRecording((recording) => {
+      const transcript = Array.isArray(recording.transcript) ? [...recording.transcript] : [];
+      const segmentIndex = transcript.findIndex((segment) => segment.id === segmentId);
+      if (segmentIndex === -1) {
+        return recording;
+      }
+
+      const segment = transcript[segmentIndex];
+      const text = String(segment.text || "");
+      const normalizedSplitIndex = Math.max(1, Math.min(text.length - 1, Number(splitIndex) || Math.floor(text.length / 2)));
+      const leftText = text.slice(0, normalizedSplitIndex).trim();
+      const rightText = text.slice(normalizedSplitIndex).trim();
+      if (!leftText || !rightText) {
+        return recording;
+      }
+
+      const startTimestamp = Number(segment.timestamp || 0);
+      const endTimestamp = Number(segment.endTimestamp || segment.timestamp || startTimestamp + 2) || startTimestamp + 2;
+      const splitRatio = normalizedSplitIndex / Math.max(text.length, 1);
+      const middleTimestamp = startTimestamp + (endTimestamp - startTimestamp) * splitRatio;
+      const baseReasons = [...new Set([...(segment.verificationReasons || []), "podzielono recznie - sprawdz ponownie"])];
+      const leftSegment = {
+        ...segment,
+        text: leftText,
+        endTimestamp: middleTimestamp,
+        verificationStatus: "review",
+        verificationReasons: baseReasons,
+      };
+      const rightSegment = {
+        ...segment,
+        id: createId("segment"),
+        text: rightText,
+        timestamp: middleTimestamp,
+        endTimestamp,
+        verificationStatus: "review",
+        verificationReasons: baseReasons,
+      };
+
+      const nextTranscript = [
+        ...transcript.slice(0, segmentIndex),
+        leftSegment,
+        rightSegment,
+        ...transcript.slice(segmentIndex + 1),
+      ];
+
+      return finalizeRecordingTranscript(recording, nextTranscript);
+    });
   }
 
   function resetSelectionState() {
@@ -682,6 +860,9 @@ export default function useMeetings({
     deleteTask,
     renameSpeaker,
     updateTranscriptSegment,
+    assignSpeakerToTranscriptSegments,
+    mergeTranscriptSegments,
+    splitTranscriptSegment,
     resetSelectionState,
   };
 }

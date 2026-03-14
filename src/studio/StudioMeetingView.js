@@ -22,6 +22,9 @@ export default function StudioMeetingView({
   displaySpeakerNames,
   selectedRecordingAudioUrl,
   updateTranscriptSegment,
+  assignSpeakerToTranscriptSegments,
+  mergeTranscriptSegments,
+  splitTranscriptSegment,
   renameSpeaker,
   selectedRecordingId,
   setSelectedRecordingId,
@@ -173,6 +176,9 @@ export default function StudioMeetingView({
           displaySpeakerNames={displaySpeakerNames}
           selectedRecordingAudioUrl={selectedRecordingAudioUrl}
           updateTranscriptSegment={updateTranscriptSegment}
+          assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
+          mergeTranscriptSegments={mergeTranscriptSegments}
+          splitTranscriptSegment={splitTranscriptSegment}
         />
 
         <section className="panel">

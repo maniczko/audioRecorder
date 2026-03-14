@@ -588,6 +588,68 @@ select:focus {
   gap: 14px;
 }
 
+.transcript-toolbar,
+.transcript-bulk-toolbar,
+.transcript-advanced-filters,
+.transcript-bulk-actions,
+.segment-card-top,
+.segment-select {
+  display: flex;
+  gap: 12px;
+}
+
+.transcript-toolbar,
+.transcript-bulk-toolbar {
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.transcript-toolbar,
+.transcript-bulk-toolbar {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.transcript-advanced-filters,
+.transcript-bulk-actions {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.transcript-advanced-filters label,
+.transcript-bulk-actions label {
+  display: grid;
+  gap: 6px;
+}
+
+.transcript-selection-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.transcript-selection-copy span,
+.segment-select span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.segment-card-top {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.segment-select {
+  align-items: center;
+}
+
+.segment-select input {
+  width: auto;
+}
+
 .review-queue-panel {
   padding: 16px;
   border-radius: 22px;
@@ -3036,6 +3098,11 @@ select:focus {
 
   .review-queue-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transcript-toolbar,
+  .transcript-bulk-toolbar {
+    align-items: stretch;
   }
 
   .tasks-layout.ms-todo .todo-filter-row,
