@@ -1,5 +1,6 @@
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 let googleScriptPromise = null;
 
@@ -79,6 +80,13 @@ export async function renderGoogleSignInButton(container, callback) {
 }
 
 export async function requestGoogleCalendarAccess({ loginHint } = {}) {
+  return requestGoogleAccess({
+    loginHint,
+    scope: CALENDAR_SCOPE,
+  });
+}
+
+async function requestGoogleAccess({ loginHint, scope }) {
   if (!GOOGLE_CLIENT_ID) {
     throw new Error("Missing REACT_APP_GOOGLE_CLIENT_ID.");
   }
@@ -88,7 +96,7 @@ export async function requestGoogleCalendarAccess({ loginHint } = {}) {
   return new Promise((resolve, reject) => {
     const tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: CALENDAR_SCOPE,
+      scope,
       prompt: "consent",
       login_hint: loginHint || undefined,
       callback: (response) => {
@@ -101,6 +109,13 @@ export async function requestGoogleCalendarAccess({ loginHint } = {}) {
     });
 
     tokenClient.requestAccessToken();
+  });
+}
+
+export async function requestGoogleTasksAccess({ loginHint } = {}) {
+  return requestGoogleAccess({
+    loginHint,
+    scope: TASKS_SCOPE,
   });
 }
 
@@ -124,6 +139,56 @@ export async function fetchPrimaryCalendarEvents(accessToken, { timeMin, timeMax
 
   if (!response.ok) {
     throw new Error(`Google Calendar API returned ${response.status}.`);
+  }
+
+  return response.json();
+}
+
+export async function fetchGoogleTaskLists(accessToken) {
+  const response = await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Tasks API returned ${response.status} while loading task lists.`);
+  }
+
+  return response.json();
+}
+
+export async function fetchGoogleTasks(accessToken, taskListId) {
+  const params = new URLSearchParams({
+    showCompleted: "true",
+    showHidden: "true",
+    maxResults: "100",
+  });
+  const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Tasks API returned ${response.status} while loading tasks.`);
+  }
+
+  return response.json();
+}
+
+export async function createGoogleTask(accessToken, taskListId, task) {
+  const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(task),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Tasks API returned ${response.status} while creating a task.`);
   }
 
   return response.json();

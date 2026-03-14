@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   meetings: "voicelog.meetings.v3",
   taskState: "voicelog.taskState.v1",
   manualTasks: "voicelog.manualTasks.v1",
+  taskBoards: "voicelog.taskBoards.v1",
 };
 
 export function readStorage(key, fallbackValue) {

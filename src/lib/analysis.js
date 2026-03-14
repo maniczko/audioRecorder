@@ -40,6 +40,8 @@ function normalizeTask(task, index, speakerNames) {
       title: match ? match[2].trim() : task.trim(),
       owner: match ? match[1].trim() : "Nieprzypisane",
       sourceQuote: task.trim(),
+      priority: /pilne|asap|natychmiast|krytyczne/i.test(task) ? "high" : "medium",
+      tags: [],
     };
   }
 
@@ -57,6 +59,8 @@ function normalizeTask(task, index, speakerNames) {
       speakerNames?.[String(task.speakerId)] ||
       "Nieprzypisane",
     sourceQuote: String(task.sourceQuote || task.quote || title).trim(),
+    priority: String(task.priority || "").trim() || "medium",
+    tags: Array.isArray(task.tags) ? task.tags : [],
   };
 }
 
@@ -150,7 +154,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "No desired outputs specified."}`,
     "",
     "Return JSON in this shape:",
-    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Client"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"..."}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}]}',
+    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Client"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":["..."]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}]}',
     "",
     transcriptText(segments, speakerNames),
   ].join("\n");

@@ -23,8 +23,12 @@ import { diarizeSegments, signatureAroundTimestamp, summarizeSpectrum } from "./
 import {
   GOOGLE_CLIENT_ID,
   fetchPrimaryCalendarEvents,
+  fetchGoogleTaskLists,
+  fetchGoogleTasks,
+  createGoogleTask,
   renderGoogleSignInButton,
   requestGoogleCalendarAccess,
+  requestGoogleTasksAccess,
   signOutGoogleSession,
 } from "./lib/google";
 import {
@@ -45,8 +49,21 @@ import {
   writeStorage,
 } from "./lib/storage";
 import ProfileTab from "./ProfileTab";
+import PeopleTab from "./PeopleTab";
 import TasksTab from "./TasksTab";
-import { buildTaskPeople, buildTasksFromMeetings, createManualTask, TASK_STATUSES, taskListStats } from "./lib/tasks";
+import { buildPeopleProfiles } from "./lib/people";
+import {
+  buildTaskColumns,
+  buildTaskPeople,
+  buildTaskTags,
+  buildTasksFromMeetings,
+  createManualTask,
+  createTaskColumn,
+  createTaskFromGoogle,
+  parseTagInput,
+  updateTaskColumns,
+  upsertGoogleImportedTasks,
+} from "./lib/tasks";
 
 const DEFAULT_BARS = Array.from({ length: 24 }, (_, index) => (index % 4 === 0 ? 24 : 10));
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -80,10 +97,24 @@ function buildProfileDraft(user) {
   };
 }
 
-function normalizeTaskUpdatePayload(previousTask, updates) {
-  const nextStatus = updates.status || previousTask.status;
+function normalizeTaskUpdatePayload(previousTask, updates, columns) {
+  const openColumnId = columns.find((column) => !column.isDone)?.id || columns[0]?.id || previousTask.status;
+  const doneColumnId = columns.find((column) => column.isDone)?.id || previousTask.status;
+  const statusExists = columns.some((column) => column.id === updates.status);
+  let nextStatus = statusExists ? updates.status : previousTask.status;
+
+  if (typeof updates.completed === "boolean" && !updates.status) {
+    nextStatus = updates.completed ? doneColumnId : openColumnId;
+  }
+
+  if (!columns.some((column) => column.id === nextStatus)) {
+    nextStatus = openColumnId;
+  }
+
   const completed =
-    typeof updates.completed === "boolean" ? updates.completed : (updates.status || previousTask.status) === "done";
+    typeof updates.completed === "boolean"
+      ? updates.completed
+      : columns.some((column) => column.id === nextStatus && column.isDone);
 
   return {
     ...updates,
@@ -92,8 +123,15 @@ function normalizeTaskUpdatePayload(previousTask, updates) {
     description: updates.description ?? previousTask.description,
     dueDate: updates.dueDate ?? previousTask.dueDate,
     notes: updates.notes ?? previousTask.notes,
+    tags:
+      updates.tags === undefined
+        ? previousTask.tags
+        : Array.isArray(updates.tags)
+          ? updates.tags
+          : parseTagInput(updates.tags),
     important: typeof updates.important === "boolean" ? updates.important : previousTask.important,
-    status: completed ? "done" : nextStatus,
+    priority: updates.priority ?? previousTask.priority,
+    status: completed ? doneColumnId : nextStatus,
     completed,
   };
 }
@@ -563,6 +601,7 @@ export default function App() {
   const [meetings, setMeetings] = useStoredState(STORAGE_KEYS.meetings, []);
   const [manualTasks, setManualTasks] = useStoredState(STORAGE_KEYS.manualTasks, []);
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
+  const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
   const [authMode, setAuthMode] = useState("register");
   const [authDraft, setAuthDraft] = useState({ name: "", role: "", company: "", email: "", password: "" });
   const [authError, setAuthError] = useState("");
@@ -582,8 +621,6 @@ export default function App() {
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const [activeTab, setActiveTab] = useState("studio");
-  const [taskFilter, setTaskFilter] = useState("all");
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   const [recordPermission, setRecordPermission] = useState("idle");
   const [isRecording, setIsRecording] = useState(false);
@@ -600,6 +637,10 @@ export default function App() {
   const [googleCalendarStatus, setGoogleCalendarStatus] = useState("idle");
   const [googleCalendarEvents, setGoogleCalendarEvents] = useState([]);
   const [googleCalendarMessage, setGoogleCalendarMessage] = useState("");
+  const [googleTasksStatus, setGoogleTasksStatus] = useState("idle");
+  const [googleTaskLists, setGoogleTaskLists] = useState([]);
+  const [selectedGoogleTaskListId, setSelectedGoogleTaskListId] = useState("");
+  const [googleTasksMessage, setGoogleTasksMessage] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -617,6 +658,7 @@ export default function App() {
   const audioUrlsRef = useRef({});
   const googleButtonRef = useRef(null);
   const googleCalendarTokenRef = useRef("");
+  const googleTasksTokenRef = useRef("");
 
   const currentUser = users.find((user) => user.id === session?.userId) || null;
   const currentUserId = currentUser?.id || null;
@@ -642,32 +684,11 @@ export default function App() {
   const displayRecording = liveRecording || selectedRecording;
   const displaySpeakerNames = displayRecording?.speakerNames || selectedMeeting?.speakerNames || {};
   const studioAnalysis = selectedRecording?.analysis || selectedMeeting?.analysis || null;
-  const meetingTasks = buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser);
+  const taskColumns = buildTaskColumns(taskBoards, currentUserId);
+  const meetingTasks = buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser, taskColumns);
   const taskPeople = buildTaskPeople(userMeetings, currentUser);
-  const taskStats = taskListStats(meetingTasks);
-  const taskFilters = [
-    { id: "all", label: "Wszystkie", description: "Spotkania i reczne zadania", count: taskStats.all },
-    { id: "assigned", label: "Przypisane", description: "Taski przypisane do Ciebie", count: taskStats.assigned },
-    { id: "important", label: "Wazne", description: "Rzeczy oznaczone jako wazne", count: taskStats.important },
-    { id: "completed", label: "Zakonczone", description: "Taski juz zamkniete", count: taskStats.completed },
-    { id: "manual", label: "Reczne", description: "Taski dodane poza spotkaniami", count: taskStats.manual },
-  ];
-  const visibleTasks = meetingTasks.filter((task) => {
-    if (taskFilter === "assigned") {
-      return task.assignedToMe;
-    }
-    if (taskFilter === "important") {
-      return task.important;
-    }
-    if (taskFilter === "completed") {
-      return task.completed;
-    }
-    if (taskFilter === "manual") {
-      return task.sourceType === "manual";
-    }
-    return true;
-  });
-  const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
+  const taskTags = buildTaskTags(meetingTasks, userMeetings);
+  const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser);
   const bucket = groupMeetingsByDay(userMeetings, googleCalendarEvents);
   const monthMatrix = buildMonthMatrix(calendarMonth);
   const miniMatrix = buildMonthMatrix(calendarMonth);
@@ -689,12 +710,15 @@ export default function App() {
       setSelectedRecordingId(null);
       setMeetingDraft(createEmptyMeetingDraft());
       setActiveTab("studio");
-      setTaskFilter("all");
-      setSelectedTaskId(null);
       setGoogleCalendarStatus("idle");
       setGoogleCalendarEvents([]);
       setGoogleCalendarMessage("");
+      setGoogleTasksStatus("idle");
+      setGoogleTaskLists([]);
+      setSelectedGoogleTaskListId("");
+      setGoogleTasksMessage("");
       googleCalendarTokenRef.current = "";
+      googleTasksTokenRef.current = "";
       return;
     }
 
@@ -730,17 +754,6 @@ export default function App() {
 
     setMeetingDraft(meetingToDraft(selectedMeeting));
   }, [selectedMeeting]);
-
-  useEffect(() => {
-    if (!visibleTasks.length) {
-      setSelectedTaskId(null);
-      return;
-    }
-
-    if (!visibleTasks.some((task) => task.id === selectedTaskId)) {
-      setSelectedTaskId(visibleTasks[0].id);
-    }
-  }, [selectedTaskId, visibleTasks]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.permissions?.query) {
@@ -1178,9 +1191,8 @@ export default function App() {
       return null;
     }
 
-    const task = createManualTask(currentUser.id, draft);
+    const task = createManualTask(currentUser.id, draft, taskColumns);
     setManualTasks((previous) => [task, ...previous]);
-    setTaskFilter("all");
     return task.id;
   }
 
@@ -1190,9 +1202,9 @@ export default function App() {
       return;
     }
 
-    const normalizedUpdates = normalizeTaskUpdatePayload(task, updates);
+    const normalizedUpdates = normalizeTaskUpdatePayload(task, updates, taskColumns);
 
-    if (task.sourceType === "manual") {
+    if (task.sourceType === "manual" || task.sourceType === "google") {
       setManualTasks((previous) =>
         previous.map((item) =>
           item.id !== taskId
@@ -1215,6 +1227,52 @@ export default function App() {
         updatedAt: new Date().toISOString(),
       },
     }));
+  }
+
+  function moveTaskToColumn(taskId, columnId) {
+    updateTask(taskId, { status: columnId });
+  }
+
+  function addTaskColumn(draft) {
+    if (!currentUserId) {
+      return;
+    }
+
+    setTaskBoards((previous) => createTaskColumn(previous, currentUserId, draft));
+  }
+
+  function changeTaskColumn(columnId, updates) {
+    if (!currentUserId) {
+      return;
+    }
+
+    const nextColumns = taskColumns.map((column) => (column.id === columnId ? { ...column, ...updates } : column));
+    setTaskBoards((previous) => updateTaskColumns(previous, currentUserId, nextColumns));
+  }
+
+  function removeTaskColumn(columnId) {
+    if (!currentUserId) {
+      return;
+    }
+
+    const column = taskColumns.find((item) => item.id === columnId);
+    if (!column) {
+      return;
+    }
+
+    const fallbackColumnId =
+      taskColumns.find((item) => item.id !== columnId && !item.isDone)?.id ||
+      taskColumns.find((item) => item.id !== columnId)?.id ||
+      columnId;
+
+    meetingTasks
+      .filter((task) => task.status === columnId)
+      .forEach((task) => {
+        updateTask(task.id, { status: fallbackColumnId });
+      });
+
+    const nextColumns = taskColumns.filter((item) => item.id !== columnId);
+    setTaskBoards((previous) => updateTaskColumns(previous, currentUserId, nextColumns));
   }
 
   function deleteTask(taskId) {
@@ -1296,15 +1354,18 @@ export default function App() {
 
     setSession(null);
     setActiveTab("studio");
-    setTaskFilter("all");
-    setSelectedTaskId(null);
     setProfileMessage("");
     setSecurityMessage("");
     setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setGoogleCalendarEvents([]);
     setGoogleCalendarMessage("");
     setGoogleCalendarStatus("idle");
+    setGoogleTaskLists([]);
+    setSelectedGoogleTaskListId("");
+    setGoogleTasksStatus("idle");
+    setGoogleTasksMessage("");
     googleCalendarTokenRef.current = "";
+    googleTasksTokenRef.current = "";
     signOutGoogleSession();
   }
 
@@ -1339,6 +1400,90 @@ export default function App() {
     setGoogleCalendarStatus("idle");
     setGoogleCalendarEvents([]);
     setGoogleCalendarMessage("Polaczenie z Google Calendar zostalo odlaczone.");
+  }
+
+  async function connectGoogleTasks() {
+    if (!currentUser) {
+      return;
+    }
+
+    if (!googleEnabled) {
+      setGoogleTasksStatus("error");
+      setGoogleTasksMessage("Dodaj REACT_APP_GOOGLE_CLIENT_ID, aby laczyc Google Tasks.");
+      return;
+    }
+
+    try {
+      setGoogleTasksStatus("loading");
+      setGoogleTasksMessage("");
+      const response = await requestGoogleTasksAccess({
+        loginHint: currentUser.googleEmail || currentUser.email,
+      });
+      googleTasksTokenRef.current = response.access_token;
+      const payload = await fetchGoogleTaskLists(response.access_token);
+      const lists = payload.items || [];
+      setGoogleTaskLists(lists);
+      setSelectedGoogleTaskListId((previous) => previous || lists[0]?.id || "");
+      setGoogleTasksStatus("connected");
+      setGoogleTasksMessage("Polaczono z Google Tasks.");
+    } catch (error) {
+      console.error("Google Tasks connect failed.", error);
+      setGoogleTasksStatus("error");
+      setGoogleTasksMessage("Nie udalo sie polaczyc z Google Tasks.");
+    }
+  }
+
+  async function importGoogleTasksFromList() {
+    if (!currentUser || !googleTasksTokenRef.current || !selectedGoogleTaskListId) {
+      return;
+    }
+
+    try {
+      setGoogleTasksStatus("loading");
+      const payload = await fetchGoogleTasks(googleTasksTokenRef.current, selectedGoogleTaskListId);
+      const selectedList = googleTaskLists.find((list) => list.id === selectedGoogleTaskListId) || {
+        id: selectedGoogleTaskListId,
+        title: "Google Tasks",
+      };
+      const importedTasks = (payload.items || []).map((task) =>
+        createTaskFromGoogle(currentUser.id, task, selectedList, taskColumns, currentUser)
+      );
+      setManualTasks((previous) => upsertGoogleImportedTasks(previous, importedTasks, currentUser.id));
+      setGoogleTasksStatus("connected");
+      setGoogleTasksMessage(`Zaimportowano ${importedTasks.length} zadan z Google Tasks.`);
+    } catch (error) {
+      console.error("Google Tasks import failed.", error);
+      setGoogleTasksStatus("error");
+      setGoogleTasksMessage("Nie udalo sie zaimportowac zadan z Google Tasks.");
+    }
+  }
+
+  async function exportTasksToGoogle() {
+    if (!googleTasksTokenRef.current || !selectedGoogleTaskListId) {
+      return;
+    }
+
+    try {
+      setGoogleTasksStatus("loading");
+      const exportableTasks = meetingTasks.filter((task) => task.sourceType !== "google" && !task.completed);
+      for (const task of exportableTasks) {
+        const notes = [task.description, task.notes, task.tags?.length ? `Tagi: ${task.tags.join(", ")}` : "", `Priorytet: ${task.priority}`]
+          .filter(Boolean)
+          .join("\n\n");
+
+        await createGoogleTask(googleTasksTokenRef.current, selectedGoogleTaskListId, {
+          title: task.title,
+          notes,
+          due: task.dueDate ? new Date(task.dueDate).toISOString() : undefined,
+        });
+      }
+      setGoogleTasksStatus("connected");
+      setGoogleTasksMessage(`Wyeksportowano ${exportableTasks.length} otwartych zadan do Google Tasks.`);
+    } catch (error) {
+      console.error("Google Tasks export failed.", error);
+      setGoogleTasksStatus("error");
+      setGoogleTasksMessage("Nie udalo sie wyeksportowac zadan do Google Tasks.");
+    }
   }
 
   function openMeetingFromCalendar(meetingId) {
@@ -1411,10 +1556,10 @@ export default function App() {
             </button>
             <button
               type="button"
-              className={activeTab === "profile" ? "tab-pill active" : "tab-pill"}
-              onClick={() => setActiveTab("profile")}
+              className={activeTab === "people" ? "tab-pill active" : "tab-pill"}
+              onClick={() => setActiveTab("people")}
             >
-              Profil
+              Osoby
             </button>
           </div>
         </div>
@@ -1431,6 +1576,14 @@ export default function App() {
                 {currentUser.provider === "google" ? " - Google sign-in" : ""}
               </span>
             </div>
+            <button
+              type="button"
+              className="settings-button"
+              aria-label="Otworz ustawienia"
+              onClick={() => setActiveTab("profile")}
+            >
+              {"\u2699"}
+            </button>
             <button type="button" className="ghost-button" onClick={logout}>
               Wyloguj
             </button>
@@ -1459,21 +1612,32 @@ export default function App() {
         />
       ) : activeTab === "tasks" ? (
         <TasksTab
-          filters={taskFilters}
-          activeFilter={taskFilter}
-          onFilterChange={setTaskFilter}
-          stats={taskStats}
-          tasks={visibleTasks}
-          selectedTask={selectedTask}
-          onSelectTask={setSelectedTaskId}
+          tasks={meetingTasks}
+          meetings={userMeetings}
+          peopleOptions={taskPeople}
+          tagOptions={taskTags}
+          boardColumns={taskColumns}
           onCreateTask={createTaskFromComposer}
           onUpdateTask={updateTask}
           onDeleteTask={deleteTask}
+          onMoveTaskToColumn={moveTaskToColumn}
+          onCreateColumn={addTaskColumn}
+          onUpdateColumn={changeTaskColumn}
+          onDeleteColumn={removeTaskColumn}
           onOpenMeeting={openMeetingFromCalendar}
-          peopleOptions={taskPeople}
           defaultView={currentUser.preferredTaskView || "list"}
-          statuses={TASK_STATUSES}
+          googleTasksEnabled={googleEnabled}
+          googleTasksStatus={googleTasksStatus}
+          googleTasksMessage={googleTasksMessage}
+          googleTaskLists={googleTaskLists}
+          selectedGoogleTaskListId={selectedGoogleTaskListId}
+          onSelectGoogleTaskList={setSelectedGoogleTaskListId}
+          onConnectGoogleTasks={connectGoogleTasks}
+          onImportGoogleTasks={importGoogleTasksFromList}
+          onExportGoogleTasks={exportTasksToGoogle}
         />
+      ) : activeTab === "people" ? (
+        <PeopleTab profiles={peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />
       ) : activeTab === "profile" ? (
         <ProfileTab
           currentUser={currentUser}
@@ -1513,7 +1677,7 @@ export default function App() {
                     <strong>{currentUser.name}</strong>
                     <span>
                       {currentUser.role || "Brak roli"}
-                      {currentUser.company ? ` • ${currentUser.company}` : ""}
+                      {currentUser.company ? ` | ${currentUser.company}` : ""}
                     </span>
                   </div>
                 </div>
@@ -1594,6 +1758,15 @@ export default function App() {
                     rows="3"
                     value={meetingDraft.attendees}
                     onChange={(event) => setMeetingDraft((previous) => ({ ...previous, attendees: event.target.value }))}
+                  />
+                </label>
+                <label>
+                  <span>Tagi</span>
+                  <textarea
+                    rows="2"
+                    value={meetingDraft.tags}
+                    onChange={(event) => setMeetingDraft((previous) => ({ ...previous, tags: event.target.value }))}
+                    placeholder={"np. klient\nbudzet\nfollow-up"}
                   />
                 </label>
                 <label>
@@ -1756,12 +1929,19 @@ export default function App() {
                         <h2>Potrzeby i outputy</h2>
                       </div>
                     </div>
-                    <div className="chip-list">
-                      {selectedMeeting.needs.length ? (
-                        selectedMeeting.needs.map((need) => (
-                          <span className="need-chip" key={need}>
-                            {need}
-                          </span>
+                  <div className="chip-list">
+                    {selectedMeeting.tags?.length ? (
+                      selectedMeeting.tags.map((tag) => (
+                        <span className="task-tag-chip neutral" key={tag}>
+                          #{tag}
+                        </span>
+                      ))
+                    ) : null}
+                    {selectedMeeting.needs.length ? (
+                      selectedMeeting.needs.map((need) => (
+                        <span className="need-chip" key={need}>
+                          {need}
+                        </span>
                         ))
                       ) : (
                         <span className="soft-copy">Dodaj potrzeby, aby analiza odpowiadala na nie osobno.</span>

@@ -334,6 +334,7 @@ textarea:focus,
 select:focus {
   outline: 1px solid rgba(158, 242, 219, 0.55);
   border-color: transparent;
+  box-shadow: 0 0 0 4px rgba(117, 214, 196, 0.14), 0 0 26px rgba(117, 214, 196, 0.16);
 }
 
 .inline-alert {
@@ -424,6 +425,20 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.settings-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.settings-button:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .avatar {
@@ -658,7 +673,7 @@ select:focus {
 .task-source-card span,
 .task-source-card p,
 .task-empty-state span {
-  color: var(--muted);
+  color: rgba(237, 247, 246, 0.74);
 }
 
 .task-filter-card.active {
@@ -711,7 +726,7 @@ select:focus {
 
 .task-row {
   width: 100%;
-  padding: 16px;
+  padding: 12px 14px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.03);
@@ -756,6 +771,13 @@ select:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.task-inline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .task-check {
@@ -832,6 +854,8 @@ select:focus {
 
 .task-note-field span {
   color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
 }
 
 .calendar-sidebar {
@@ -1346,14 +1370,299 @@ select:focus {
   font-size: 0.84rem;
 }
 
+.segmented-control {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.segment {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(237, 247, 246, 0.74);
+  cursor: pointer;
+}
+
+.segment:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.segment.active {
+  background: linear-gradient(135deg, rgba(116, 208, 191, 0.92) 0%, rgba(91, 179, 220, 0.92) 100%);
+  color: #03222a;
+  font-weight: 600;
+}
+
+.task-toolbar {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(5, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.task-search-field {
+  display: grid;
+  gap: 6px;
+}
+
+.task-composer-card.premium,
+.tasks-layout.premium .task-detail-panel,
+.tasks-layout.premium .tasks-main-panel,
+.tasks-layout.premium .tasks-brand-panel,
+.tasks-layout.premium .tasks-list-panel {
+  border-radius: 26px;
+}
+
+.task-composer-header,
+.composer-footer,
+.task-group-header,
+.task-progress-row,
+.column-editor-row,
+.column-create-form,
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-composer-header,
+.composer-footer,
+.task-group-header {
+  justify-content: space-between;
+}
+
+.task-group,
+.tasks-list-groups,
+.column-badge-list,
+.column-editor,
+.people-list,
+.people-task-list,
+.people-main,
+.people-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.task-progress-row {
+  margin-top: 8px;
+}
+
+.task-progress-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.task-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #67d59f 0%, #9ef2db 100%);
+}
+
+.task-progress-row small {
+  color: #90f0c0;
+}
+
+.column-badge,
+.priority-chip,
+.task-tag-chip,
+.task-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.column-badge {
+  background: color-mix(in srgb, var(--column-color, #5a92ff) 14%, transparent);
+  color: color-mix(in srgb, var(--column-color, #5a92ff) 78%, white);
+  border-color: color-mix(in srgb, var(--column-color, #5a92ff) 30%, transparent);
+}
+
+.priority-chip {
+  background: color-mix(in srgb, var(--priority-color, #75d6c4) 14%, transparent);
+  color: color-mix(in srgb, var(--priority-color, #75d6c4) 78%, white);
+  border-color: color-mix(in srgb, var(--priority-color, #75d6c4) 34%, transparent);
+}
+
+.task-tag-chip {
+  background: rgba(255, 255, 255, 0.05);
+  color: #dcecf5;
+}
+
+.task-tag-chip.neutral {
+  background: rgba(90, 147, 255, 0.08);
+  color: #c9dcff;
+}
+
+.task-source-badge {
+  background: rgba(90, 147, 255, 0.12);
+  color: #c5d9ff;
+}
+
+.column-editor-row,
+.column-create-form {
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.column-editor-row input[type="color"],
+.column-create-form input[type="color"] {
+  width: 54px;
+  padding: 4px;
+  min-height: 40px;
+}
+
+.toggle-card.inline {
+  width: auto;
+  min-width: 96px;
+}
+
+.tasks-items.compact {
+  gap: 10px;
+}
+
+.task-row.dense {
+  min-height: 82px;
+}
+
+.task-status-chip {
+  background: color-mix(in srgb, var(--status-color, #75d6c4) 14%, transparent);
+  border-color: color-mix(in srgb, var(--status-color, #75d6c4) 30%, transparent);
+  color: color-mix(in srgb, var(--status-color, #75d6c4) 74%, white);
+}
+
+.kanban-column.drop-target {
+  border-color: color-mix(in srgb, var(--column-color, #5a92ff) 42%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--column-color, #5a92ff) 20%, transparent);
+}
+
+.kanban-column-header.premium {
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--column-color, #5a92ff) 20%, transparent);
+}
+
+.danger-hover:hover {
+  border-color: rgba(241, 125, 114, 0.34);
+  color: #ffd1cb;
+  background: rgba(241, 125, 114, 0.08);
+}
+
+.task-detail-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.markdown-toolbar {
+  display: flex;
+  gap: 10px;
+}
+
+.markdown-field textarea {
+  min-height: 140px;
+}
+
+.markdown-preview {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(237, 247, 246, 0.86);
+}
+
+.markdown-preview p,
+.markdown-preview ul {
+  margin: 0 0 10px;
+}
+
+.stack-form.roomy {
+  gap: 14px;
+}
+
+.stack-form.roomy label span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.people-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.people-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.person-row {
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-row.active {
+  border-color: rgba(134, 189, 255, 0.28);
+  background: linear-gradient(135deg, rgba(83, 144, 255, 0.16) 0%, rgba(116, 208, 191, 0.08) 100%);
+}
+
+.people-search-field {
+  display: grid;
+  gap: 6px;
+}
+
+.person-row span,
+.people-search-field span,
+.person-task-card p {
+  color: var(--muted);
+}
+
+.people-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.person-task-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 @media (max-width: 1120px) {
   .auth-shell,
   .calendar-layout,
   .tasks-layout,
+  .people-layout,
   .profile-grid,
   .profile-hero,
   .task-composer-grid,
+  .task-toolbar,
   .kanban-board,
+  .people-grid,
   .toggle-grid,
   .profile-quick-grid,
   .workspace-layout,
@@ -1402,7 +1711,12 @@ select:focus {
   .button-row,
   .mode-switch,
   .tab-switcher,
-  .view-toggle {
+  .view-toggle,
+  .segmented-control,
+  .task-composer-header,
+  .composer-footer,
+  .task-group-header,
+  .task-detail-source {
     flex-direction: column;
   }
 
@@ -1418,7 +1732,8 @@ select:focus {
   .integration-row,
   .profile-hero-main,
   .kanban-card-meta,
-  .kanban-card-actions {
+  .kanban-card-actions,
+  .task-toolbar {
     grid-template-columns: 1fr;
     grid-auto-flow: row;
   }
