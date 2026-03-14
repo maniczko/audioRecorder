@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
-test("renders VoiceLog header", () => {
+test("renders meeting intelligence screen", () => {
   render(<App />);
-  expect(screen.getByText(/voicelog/i)).toBeInTheDocument();
+  expect(screen.getByText(/meeting intelligence/i)).toBeInTheDocument();
 });
