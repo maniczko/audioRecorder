@@ -42,6 +42,7 @@ export default function useMeetings({
   const [manualTasks, setManualTasks] = useStoredState(STORAGE_KEYS.manualTasks, []);
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
+  const [calendarMeta, setCalendarMeta] = useStoredState(STORAGE_KEYS.calendarMeta, {});
   const [meetingDraft, setMeetingDraft] = useState(createEmptyMeetingDraft());
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
@@ -300,6 +301,35 @@ export default function useMeetings({
     });
   }
 
+  function rescheduleTask(taskId, dueDate) {
+    updateTask(taskId, { dueDate });
+  }
+
+  function rescheduleMeeting(meetingId, startsAt) {
+    setMeetings((previous) =>
+      previous.map((meeting) =>
+        meeting.id !== meetingId
+          ? meeting
+          : {
+              ...meeting,
+              startsAt,
+              updatedAt: new Date().toISOString(),
+            }
+      )
+    );
+  }
+
+  function updateCalendarEntryMeta(entryType, entryId, updates) {
+    const key = `${entryType}:${entryId}`;
+    setCalendarMeta((previous) => ({
+      ...previous,
+      [key]: {
+        ...(previous[key] || {}),
+        ...updates,
+      },
+    }));
+  }
+
   function reorderTask(taskId, placement) {
     const task = meetingTasks.find((item) => item.id === taskId);
     if (!task) {
@@ -481,6 +511,8 @@ export default function useMeetings({
     setTaskState,
     taskBoards,
     setTaskBoards,
+    calendarMeta,
+    setCalendarMeta,
     meetingDraft,
     setMeetingDraft,
     selectedMeetingId,
@@ -504,6 +536,9 @@ export default function useMeetings({
     createTaskFromComposer,
     updateTask,
     moveTaskToColumn,
+    rescheduleTask,
+    rescheduleMeeting,
+    updateCalendarEntryMeta,
     reorderTask,
     addTaskColumn,
     changeTaskColumn,

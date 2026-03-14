@@ -12,7 +12,6 @@ import useMeetings from "./hooks/useMeetings";
 import useRecorder from "./hooks/useRecorder";
 import useWorkspace from "./hooks/useWorkspace";
 import { buildGoogleCalendarUrl } from "./lib/calendar";
-import { buildMonthMatrix, groupMeetingsByDay } from "./lib/calendarView";
 import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from "./lib/export";
 import { downloadTextFile, formatDateTime, formatDuration } from "./lib/storage";
 
@@ -82,13 +81,6 @@ export default function MainApp() {
     () => meetings.meetingTasks.filter((task) => Boolean(task.dueDate)),
     [meetings.meetingTasks]
   );
-
-  const bucket = useMemo(
-    () => groupMeetingsByDay(meetings.userMeetings, google.googleCalendarEvents, calendarTasks),
-    [calendarTasks, google.googleCalendarEvents, meetings.userMeetings]
-  );
-  const monthMatrix = useMemo(() => buildMonthMatrix(calendarMonth), [calendarMonth]);
-  const miniMatrix = useMemo(() => buildMonthMatrix(calendarMonth), [calendarMonth]);
 
   function exportTranscript() {
     if (!displayRecording) {
@@ -267,9 +259,6 @@ export default function MainApp() {
           setActiveMonth={setCalendarMonth}
           selectedDate={selectedCalendarDate}
           setSelectedDate={setSelectedCalendarDate}
-          monthMatrix={monthMatrix}
-          miniMatrix={miniMatrix}
-          bucket={bucket}
           userMeetings={meetings.userMeetings}
           calendarTasks={calendarTasks}
           googleCalendarEvents={google.googleCalendarEvents}
@@ -281,6 +270,10 @@ export default function MainApp() {
           openGoogleCalendarForMeeting={openGoogleCalendarForMeeting}
           openTaskFromCalendar={openTaskFromCalendar}
           googleCalendarEnabled={google.googleEnabled}
+          onRescheduleMeeting={meetings.rescheduleMeeting}
+          onRescheduleTask={meetings.rescheduleTask}
+          calendarMeta={meetings.calendarMeta}
+          onUpdateCalendarEntryMeta={meetings.updateCalendarEntryMeta}
         />
       ) : activeTab === "tasks" ? (
         <TasksTab

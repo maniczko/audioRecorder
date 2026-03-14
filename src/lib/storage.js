@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   taskState: "voicelog.taskState.v1",
   manualTasks: "voicelog.manualTasks.v1",
   taskBoards: "voicelog.taskBoards.v1",
+  calendarMeta: "voicelog.calendarMeta.v1",
 };
 
 export function readStorage(key, fallbackValue) {

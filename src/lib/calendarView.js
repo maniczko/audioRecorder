@@ -1,13 +1,37 @@
-function startOfDay(date) {
+export const REMINDER_PRESETS = [
+  { value: 10, label: "10 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "1 godz." },
+  { value: 180, label: "3 godz." },
+  { value: 1440, label: "1 dzien" },
+];
+
+function uniqueNumbers(values) {
+  return [...new Set((Array.isArray(values) ? values : []).map((value) => Number(value)).filter((value) => value > 0))].sort(
+    (left, right) => left - right
+  );
+}
+
+export function normalizeReminderOffsets(value) {
+  return uniqueNumbers(value);
+}
+
+export function startOfDay(date) {
   const next = new Date(date);
   next.setHours(0, 0, 0, 0);
   return next;
 }
 
-function addDays(date, amount) {
+export function addDays(date, amount) {
   const next = new Date(date);
   next.setDate(next.getDate() + amount);
   return next;
+}
+
+export function startOfWeek(date) {
+  const next = startOfDay(date);
+  const offset = (next.getDay() + 6) % 7;
+  return addDays(next, -offset);
 }
 
 function sameDay(left, right) {
@@ -39,23 +63,49 @@ export function buildMonthMatrix(activeDate) {
   );
 }
 
-export function groupMeetingsByDay(meetings, googleEvents = [], tasks = []) {
-  const bucket = new Map();
+export function buildWeekDays(activeDate) {
+  const weekStart = startOfWeek(activeDate);
+  return Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+}
 
-  function append(dateValue, entry) {
-    const date = startOfDay(dateValue);
-    const key = date.toISOString();
-    const current = bucket.get(key) || [];
-    bucket.set(key, [...current, entry]);
+export function buildTimeSlots(startHour = 6, endHour = 21) {
+  return Array.from({ length: endHour - startHour + 1 }, (_, index) => startHour + index);
+}
+
+function createEntryKey(type, id) {
+  return `${type}:${id}`;
+}
+
+function calculateEnd(value, durationMinutes = 0) {
+  const start = new Date(value);
+  if (Number.isNaN(start.getTime())) {
+    return value;
   }
 
+  return new Date(start.getTime() + Math.max(0, Number(durationMinutes) || 0) * 60 * 1000).toISOString();
+}
+
+export function buildCalendarEntries(meetings, googleEvents = [], tasks = [], calendarMeta = {}) {
+  const entries = [];
+
   meetings.forEach((meeting) => {
-    append(new Date(meeting.startsAt), {
+    if (!meeting?.startsAt) {
+      return;
+    }
+
+    const key = createEntryKey("meeting", meeting.id);
+    entries.push({
+      key,
       id: meeting.id,
+      type: "meeting",
       title: meeting.title,
       startsAt: meeting.startsAt,
+      endsAt: calculateEnd(meeting.startsAt, meeting.durationMinutes),
       durationMinutes: meeting.durationMinutes,
-      type: "meeting",
+      editable: true,
+      reminders: normalizeReminderOffsets(calendarMeta[key]?.reminders),
+      colorTone: "meeting",
+      source: meeting,
     });
   });
 
@@ -65,12 +115,20 @@ export function groupMeetingsByDay(meetings, googleEvents = [], tasks = []) {
       return;
     }
 
-    append(new Date(eventStart), {
+    const durationMinutes = event.start?.date ? 24 * 60 : 30;
+    entries.push({
+      key: createEntryKey("google", event.id),
       id: event.id,
+      type: "google",
       title: event.summary || "Google event",
       startsAt: eventStart,
-      durationMinutes: 30,
-      type: "google",
+      endsAt: calculateEnd(eventStart, durationMinutes),
+      durationMinutes,
+      editable: false,
+      reminders: [],
+      colorTone: "google",
+      source: event,
+      htmlLink: event.htmlLink || "",
     });
   });
 
@@ -79,19 +137,39 @@ export function groupMeetingsByDay(meetings, googleEvents = [], tasks = []) {
       return;
     }
 
-    append(new Date(task.dueDate), {
+    const key = createEntryKey("task", task.id);
+    entries.push({
+      key,
       id: task.id,
+      type: "task",
       title: task.title,
       startsAt: task.dueDate,
+      endsAt: calculateEnd(task.dueDate, 15),
       durationMinutes: 15,
-      type: "task",
-      owner: task.owner || "",
-      status: task.status || "",
-      group: task.group || "",
+      editable: true,
+      reminders: normalizeReminderOffsets(calendarMeta[key]?.reminders),
+      colorTone: "task",
+      source: task,
     });
   });
 
+  return entries.sort((left, right) => new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime());
+}
+
+export function groupMeetingsByDay(meetings, googleEvents = [], tasks = [], calendarMeta = {}) {
+  const bucket = new Map();
+
+  buildCalendarEntries(meetings, googleEvents, tasks, calendarMeta).forEach((entry) => {
+    const key = startOfDay(new Date(entry.startsAt)).toISOString();
+    const current = bucket.get(key) || [];
+    bucket.set(key, [...current, entry]);
+  });
+
   return bucket;
+}
+
+export function entriesForDay(entries, date) {
+  return entries.filter((entry) => sameDay(new Date(entry.startsAt), startOfDay(date)));
 }
 
 export function meetingsForDay(bucket, date) {
@@ -111,4 +189,73 @@ export function formatCalendarEventTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+export function formatCalendarDayLabel(date, options = {}) {
+  return new Intl.DateTimeFormat("pl-PL", {
+    weekday: options.short ? "short" : "long",
+    day: "2-digit",
+    month: options.month ? "long" : "short",
+  }).format(date);
+}
+
+export function toLocalDateTimeValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const offset = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+export function mergeDatePreservingTime(targetDate, sourceValue) {
+  const base = new Date(targetDate);
+  const source = sourceValue ? new Date(sourceValue) : new Date(targetDate);
+
+  base.setHours(source.getHours(), source.getMinutes(), 0, 0);
+  return base.toISOString();
+}
+
+export function mergeDateWithHour(targetDate, hour, sourceValue) {
+  const base = new Date(targetDate);
+  const source = sourceValue ? new Date(sourceValue) : new Date(targetDate);
+  base.setHours(hour, source.getMinutes(), 0, 0);
+  return base.toISOString();
+}
+
+export function reminderLabel(minutes) {
+  const preset = REMINDER_PRESETS.find((item) => item.value === minutes);
+  return preset ? preset.label : `${minutes} min`;
+}
+
+export function buildUpcomingReminders(entries, now = new Date()) {
+  const nowTime = now.getTime();
+  const edge = nowTime + 48 * 60 * 60 * 1000;
+
+  return entries
+    .flatMap((entry) =>
+      normalizeReminderOffsets(entry.reminders).map((minutes) => {
+        const remindAt = new Date(new Date(entry.startsAt).getTime() - minutes * 60 * 1000);
+        return {
+          id: `${entry.key}:${minutes}`,
+          entryKey: entry.key,
+          entryType: entry.type,
+          entryId: entry.id,
+          title: entry.title,
+          startsAt: entry.startsAt,
+          remindAt: remindAt.toISOString(),
+          minutes,
+        };
+      })
+    )
+    .filter((reminder) => {
+      const remindAt = new Date(reminder.remindAt).getTime();
+      return remindAt >= nowTime - 60 * 1000 && remindAt <= edge;
+    })
+    .sort((left, right) => new Date(left.remindAt).getTime() - new Date(right.remindAt).getTime());
 }
