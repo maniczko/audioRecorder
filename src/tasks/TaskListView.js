@@ -50,20 +50,20 @@ export default function TaskListView({
                   tabIndex={0}
                   key={task.id}
                   className={isActive ? "todo-table-row active editable" : "todo-table-row"}
+                  draggable={!isActive}
+                  onDragStart={(event) => {
+                    setSelectedTaskId(task.id);
+                    setDragTaskId(task.id);
+                    writeDragTask(event, task.id);
+                  }}
+                  onDragEnd={() => setDragTaskId("")}
                   onClick={() => setSelectedTaskId(task.id)}
                   onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                 >
                   <div className="todo-row-tools">
                     <span
                       className="todo-drag-handle"
-                      draggable
                       title="Przeciagnij zadanie"
-                      onDragStart={(event) => {
-                        setSelectedTaskId(task.id);
-                        setDragTaskId(task.id);
-                        writeDragTask(event, task.id);
-                      }}
-                      onDragEnd={() => setDragTaskId("")}
                     >
                       {"\u22EE"}
                     </span>

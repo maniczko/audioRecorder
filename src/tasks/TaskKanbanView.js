@@ -35,6 +35,16 @@ export default function TaskKanbanView({
                   role="button"
                   tabIndex={0}
                   className={selectedTask?.id === task.id ? "todo-kanban-card active" : "todo-kanban-card"}
+                  draggable
+                  onDragStart={(event) => {
+                    setSelectedTaskId(task.id);
+                    setDragTaskId(task.id);
+                    writeDragTask(event, task.id);
+                  }}
+                  onDragEnd={() => {
+                    setDragTaskId("");
+                    setDropColumnId("");
+                  }}
                   onClick={() => setSelectedTaskId(task.id)}
                   onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                 >
@@ -42,17 +52,7 @@ export default function TaskKanbanView({
                     <div className="todo-kanban-title">
                       <span
                         className="todo-drag-handle"
-                        draggable
                         title="Przeciagnij zadanie"
-                        onDragStart={(event) => {
-                          setSelectedTaskId(task.id);
-                          setDragTaskId(task.id);
-                          writeDragTask(event, task.id);
-                        }}
-                        onDragEnd={() => {
-                          setDragTaskId("");
-                          setDropColumnId("");
-                        }}
                       >
                         {"\u22EE"}
                       </span>

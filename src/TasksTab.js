@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buildTaskGroups, taskListStats } from "./lib/tasks";
 import TaskDetailsPanel from "./tasks/TaskDetailsPanel";
 import TasksSidebar from "./tasks/TasksSidebar";
@@ -60,6 +60,7 @@ export default function TasksTab({
   const [message, setMessage] = useState("");
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
+  const dragTaskIdRef = useRef("");
 
   useEffect(() => {
     setViewMode(defaultView === "kanban" ? "kanban" : "list");
@@ -163,11 +164,25 @@ export default function TasksTab({
     [boardColumns, visibleTasks]
   );
 
+  function rememberDraggedTask(taskId) {
+    dragTaskIdRef.current = taskId || "";
+    setDragTaskId(taskId || "");
+  }
+
   function submitQuickTask(event) {
     event.preventDefault();
 
     try {
-      const contextualDraft = buildContextualDraft(quickDraft, selectedListId, boardColumns);
+      const contextualDraft = buildContextualDraft(
+        {
+          ...quickDraft,
+          title: quickDraft.title.trim(),
+          group: String(quickDraft.group || "").trim(),
+          tags: String(quickDraft.tags || "").trim(),
+        },
+        selectedListId,
+        boardColumns
+      );
       const createdTask = onCreateTask(contextualDraft);
       const createdTaskId = createdTask?.id || createdTask;
 
@@ -218,6 +233,7 @@ export default function TasksTab({
 
   function finalizeDrop(taskId, update, successMessage) {
     if (!taskId) {
+      setMessage("Nie udalo sie odczytac przeciaganego zadania. Sprobuj przeciagnac jeszcze raz.");
       return;
     }
 
@@ -227,19 +243,19 @@ export default function TasksTab({
       onUpdateTask(taskId, update);
     }
 
-    setDragTaskId("");
+    rememberDraggedTask("");
     setDropColumnId("");
     setMessage(successMessage);
   }
 
   function handleDrop(columnId, event) {
     canDrop(event);
-    finalizeDrop(readDragTask(event) || dragTaskId, columnId, "Przeniesiono zadanie do nowej kolumny.");
+    finalizeDrop(readDragTask(event) || dragTaskIdRef.current || dragTaskId, columnId, "Przeniesiono zadanie do nowej kolumny.");
   }
 
   function handleGroupDrop(groupId, event) {
     canDrop(event);
-    const taskId = readDragTask(event) || dragTaskId;
+    const taskId = readDragTask(event) || dragTaskIdRef.current || dragTaskId;
     if (!taskId) {
       return;
     }
@@ -337,7 +353,7 @@ export default function TasksTab({
         setDropColumnId={setDropColumnId}
         handleDrop={handleDrop}
         handleGroupDrop={handleGroupDrop}
-        setDragTaskId={setDragTaskId}
+        setDragTaskId={rememberDraggedTask}
         stats={stats}
         visibleStats={visibleStats}
       />

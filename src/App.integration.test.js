@@ -235,6 +235,18 @@ describe("App integration", () => {
     expect(openTaskFields.length).toBeGreaterThan(0);
   });
 
+  test("adds a manual task from the tasks tab", async () => {
+    seedWorkspaceAppState();
+    render(<App />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Zadania" }));
+    await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowy follow-up");
+    await userEvent.click(screen.getByRole("button", { name: "Dodaj" }));
+
+    const createdTaskFields = await screen.findAllByDisplayValue("Nowy follow-up");
+    expect(createdTaskFields.length).toBeGreaterThan(0);
+  });
+
   test("shows a microphone error for ad hoc recording when permission is blocked", async () => {
     seedWorkspaceAppState();
     jest.spyOn(console, "error").mockImplementation(() => {});
