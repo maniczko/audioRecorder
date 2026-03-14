@@ -27,6 +27,10 @@ VOICELOG_API_PORT=4000
 VOICELOG_API_HOST=127.0.0.1
 VOICELOG_DB_PATH=server/data/voicelog.sqlite
 VOICELOG_UPLOAD_DIR=server/data/uploads
+OPENAI_API_KEY=
+VOICELOG_AUDIO_LANGUAGE=pl
+VOICELOG_AUDIO_DIARIZE_MODEL=gpt-4o-transcribe-diarize
+VOICELOG_AUDIO_VERIFY_MODEL=whisper-1
 ```
 
 ### Google login i kalendarz
@@ -51,10 +55,16 @@ Backend wystawia:
 
 - auth i reset hasla
 - workspace i role `owner / admin / member`
-- trwały stan spotkan, zadan i kalendarza w SQLite
+- trwaly stan spotkan, zadan i kalendarza w SQLite
 - trwale pliki audio na dysku serwera
+- serwerowy pipeline audio: upload, STT, diarization i confidence scoring
 
-Uwaga: serwerowy pipeline STT jest na ten moment przygotowany kontraktowo. Audio zapisuje sie juz na backendzie, ale transkrypcja wraca jako `queued`, dopoki nie podepniesz docelowego silnika STT/diarization.
+Pipeline audio korzysta z:
+
+- `gpt-4o-transcribe-diarize` dla segmentow rozmowy i speaker diarization
+- `whisper-1` w `verbose_json` jako przebiegu weryfikujacego do confidence score i oznaczania fragmentow do review
+
+Uwaga: aktualna implementacja korzysta z limitu 25 MB po stronie API audio. Dla dlugich spotkan warto w kolejnym kroku dodac chunking plikow po stronie backendu.
 
 ## Uruchomienie
 

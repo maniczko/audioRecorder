@@ -89,7 +89,10 @@ function createRemoteMediaService() {
           confidence: response.confidence || 0,
         },
         verifiedSegments: response.segments || [],
-        providerId: REMOTE_TRANSCRIPTION_PROVIDER.id,
+        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
+        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
+        pipelineStatus: response.pipelineStatus || "completed",
+        reviewSummary: response.reviewSummary || null,
       };
     },
   };

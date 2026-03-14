@@ -351,15 +351,18 @@ export default function useRecorder({
             speakerNames: analysis.speakerLabels || transcription.diarization.speakerNames,
             speakerCount: analysis.speakerCount || transcription.diarization.speakerCount,
             diarizationConfidence: transcription.diarization.confidence,
-            reviewSummary: {
-              needsReview: transcription.verifiedSegments.filter(
-                (segment) => segment.verificationStatus === "review"
-              ).length,
-              approved: transcription.verifiedSegments.filter(
-                (segment) => segment.verificationStatus === "verified"
-              ).length,
-            },
+            reviewSummary:
+              transcription.reviewSummary || {
+                needsReview: transcription.verifiedSegments.filter(
+                  (segment) => segment.verificationStatus === "review"
+                ).length,
+                approved: transcription.verifiedSegments.filter(
+                  (segment) => segment.verificationStatus === "verified"
+                ).length,
+              },
             transcriptionProvider: transcription.providerId,
+            transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
+            pipelineStatus: transcription.pipelineStatus || "completed",
             storageMode: persisted.storageMode,
             analysis,
           };
@@ -376,7 +379,11 @@ export default function useRecorder({
         } catch (error) {
           console.error("Recording finalization failed.", error);
           setAnalysisStatus("error");
-          setRecordingMessage("Audio zapisano, ale finalizacja nagrania nie powiodla sie.");
+          setRecordingMessage(
+            error.message
+              ? `Audio zapisano, ale finalizacja nagrania nie powiodla sie: ${error.message}`
+              : "Audio zapisano, ale finalizacja nagrania nie powiodla sie."
+          );
         } finally {
           setIsRecording(false);
           setRecordingMeetingId(null);

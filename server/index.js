@@ -15,10 +15,13 @@ const {
   saveWorkspaceState,
   upsertMediaAsset,
   getMediaAsset,
+  saveTranscriptionResult,
+  markTranscriptionFailure,
   queueTranscription,
   updateWorkspaceMemberRole,
   getHealth,
 } = require("./database");
+const { transcribeRecording } = require("./audioPipeline");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
@@ -301,7 +304,16 @@ async function handleRequest(request, response) {
     }
 
     ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
-    sendJson(response, 200, queueTranscription(recordingId, body));
+    queueTranscription(recordingId, body);
+
+    try {
+      const result = await transcribeRecording(asset, body);
+      saveTranscriptionResult(recordingId, result);
+      sendJson(response, 200, result);
+    } catch (error) {
+      markTranscriptionFailure(recordingId, error.message);
+      throw error;
+    }
     return;
   }
 

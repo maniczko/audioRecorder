@@ -50,7 +50,7 @@ export default function RecorderPanel({
               ? "Mikrofon zablokowany. Odblokuj go przy pasku adresu."
               : speechRecognitionSupported
                 ? "Live transcript wlacza sie automatycznie."
-                : "Audio zlapiesz normalnie, ale bez live transcriptu w tej przegladarce."}
+                : "Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review."}
           </div>
         </div>
         {liveText ? <div className="live-text">Na zywo: {liveText}</div> : null}

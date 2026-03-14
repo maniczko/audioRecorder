@@ -876,6 +876,45 @@ function getMediaAsset(recordingId) {
   return database.prepare("SELECT * FROM media_assets WHERE id = ?").get(recordingId);
 }
 
+function saveTranscriptionResult(recordingId, result = {}) {
+  database
+    .prepare(
+      `
+        UPDATE media_assets
+        SET transcription_status = ?,
+            transcript_json = ?,
+            diarization_json = ?,
+            updated_at = ?
+        WHERE id = ?
+      `
+    )
+    .run(
+      clean(result.pipelineStatus) || "completed",
+      JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
+      JSON.stringify(result.diarization && typeof result.diarization === "object" ? result.diarization : {}),
+      nowIso(),
+      recordingId
+    );
+
+  return getMediaAsset(recordingId);
+}
+
+function markTranscriptionFailure(recordingId, errorMessage) {
+  database
+    .prepare(
+      `
+        UPDATE media_assets
+        SET transcription_status = 'failed',
+            diarization_json = ?,
+            updated_at = ?
+        WHERE id = ?
+      `
+    )
+    .run(JSON.stringify({ errorMessage: clean(errorMessage) }), nowIso(), recordingId);
+
+  return getMediaAsset(recordingId);
+}
+
 function queueTranscription(recordingId, updates = {}) {
   const asset = getMediaAsset(recordingId);
   if (!asset) {
@@ -950,6 +989,8 @@ module.exports = {
   saveWorkspaceState,
   upsertMediaAsset,
   getMediaAsset,
+  saveTranscriptionResult,
+  markTranscriptionFailure,
   queueTranscription,
   updateWorkspaceMemberRole,
   getHealth,
