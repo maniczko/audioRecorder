@@ -32,7 +32,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -317,7 +318,8 @@ textarea {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -328,7 +330,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: 1px solid rgba(158, 242, 219, 0.55);
   border-color: transparent;
 }
@@ -1047,15 +1050,312 @@ textarea:focus {
   align-items: center;
 }
 
+.profile-layout,
+.profile-grid,
+.profile-hero,
+.profile-hero-main,
+.profile-hero-side,
+.integration-card,
+.integration-row,
+.toggle-grid,
+.profile-quick-grid,
+.workspace-owner-card,
+.tasks-header-actions,
+.view-toggle,
+.task-composer-grid,
+.kanban-board,
+.kanban-column-body,
+.kanban-card-meta,
+.kanban-card-actions {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-layout {
+  position: relative;
+  z-index: 1;
+  gap: 22px;
+}
+
+.profile-hero {
+  grid-template-columns: minmax(0, 1.3fr) 320px;
+  padding: 26px;
+  border-radius: 28px;
+  backdrop-filter: blur(18px);
+  background:
+    radial-gradient(circle at top right, rgba(83, 144, 255, 0.2), transparent 28%),
+    linear-gradient(160deg, rgba(8, 24, 38, 0.94) 0%, rgba(7, 18, 28, 0.98) 100%);
+  border: 1px solid rgba(170, 216, 255, 0.12);
+  box-shadow: var(--shadow);
+}
+
+.profile-hero-main {
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+}
+
+.profile-hero-main h2 {
+  margin: 8px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.profile-hero-main p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.profile-avatar-lg,
+.profile-avatar-fallback {
+  width: 112px;
+  height: 112px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.profile-avatar-lg {
+  object-fit: cover;
+}
+
+.profile-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(116, 208, 191, 0.16) 0%, rgba(91, 179, 220, 0.28) 100%);
+  color: var(--accent-strong);
+  font-size: 2.8rem;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.profile-hero-side {
+  grid-template-columns: 1fr;
+}
+
+.profile-stat-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-stat-card span,
+.integration-row p {
+  color: var(--muted);
+}
+
+.profile-stat-card strong {
+  display: block;
+  margin-top: 8px;
+}
+
+.profile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.integration-card,
+.workspace-owner-card {
+  padding: 2px 0;
+}
+
+.integration-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.integration-row strong,
+.toggle-card strong,
+.kanban-column-header strong,
+.kanban-card strong {
+  display: block;
+}
+
+.toggle-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.toggle-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toggle-card.compact {
+  padding: 14px 16px;
+}
+
+.toggle-card input {
+  width: auto;
+  margin-top: 4px;
+}
+
+.toggle-card span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.workspace-owner-card {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-quick-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .empty-workspace {
   min-height: 300px;
   align-content: center;
+}
+
+.tasks-header-actions {
+  display: flex;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: end;
+}
+
+.view-toggle {
+  display: flex;
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.task-composer-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.task-composer-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.task-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(116, 208, 191, 0.1);
+  border: 1px solid rgba(116, 208, 191, 0.18);
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+}
+
+.task-status-chip.in_progress {
+  color: #bdddff;
+  border-color: rgba(128, 181, 255, 0.22);
+  background: rgba(128, 181, 255, 0.12);
+}
+
+.task-status-chip.waiting {
+  color: #f6d892;
+  border-color: rgba(246, 216, 146, 0.22);
+  background: rgba(246, 216, 146, 0.12);
+}
+
+.task-status-chip.done {
+  color: #90f0c0;
+  border-color: rgba(144, 240, 192, 0.24);
+  background: rgba(144, 240, 192, 0.12);
+}
+
+.kanban-board {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+.kanban-column {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kanban-column-header span,
+.kanban-card p,
+.kanban-card-meta span,
+.kanban-empty {
+  color: var(--muted);
+}
+
+.kanban-card {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 24, 38, 0.86);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kanban-card.active {
+  border-color: rgba(134, 189, 255, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(134, 189, 255, 0.1);
+}
+
+.kanban-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kanban-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.kanban-card-meta {
+  grid-auto-flow: column;
+  justify-content: space-between;
+}
+
+.kanban-card-actions {
+  grid-auto-flow: column;
+  justify-content: start;
+}
+
+.kanban-empty {
+  min-height: 88px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.ghost-button.small {
+  padding: 8px 12px;
+  font-size: 0.84rem;
 }
 
 @media (max-width: 1120px) {
   .auth-shell,
   .calendar-layout,
   .tasks-layout,
+  .profile-grid,
+  .profile-hero,
+  .task-composer-grid,
+  .kanban-board,
+  .toggle-grid,
+  .profile-quick-grid,
   .workspace-layout,
   .main-grid,
   .hero-grid {
@@ -1091,6 +1391,7 @@ textarea:focus {
   .calendar-board-actions,
   .mini-calendar-header,
   .tasks-header,
+  .tasks-header-actions,
   .task-row,
   .task-row-left,
   .task-row-right {
@@ -1100,7 +1401,8 @@ textarea:focus {
 
   .button-row,
   .mode-switch,
-  .tab-switcher {
+  .tab-switcher,
+  .view-toggle {
     flex-direction: column;
   }
 
@@ -1108,7 +1410,16 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .task-smart-summary {
+  .task-smart-summary,
+  .profile-quick-grid {
     grid-template-columns: 1fr;
+  }
+
+  .integration-row,
+  .profile-hero-main,
+  .kanban-card-meta,
+  .kanban-card-actions {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
   }
 }

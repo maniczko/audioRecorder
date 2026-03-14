@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import { analyzeMeeting } from "./lib/analysis";
-import { loginUser, registerUser, updateUserProfile, upsertGoogleUser } from "./lib/auth";
+import {
+  changeUserPassword,
+  loginUser,
+  registerUser,
+  updateUserProfile,
+  upsertGoogleUser,
+} from "./lib/auth";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "./lib/calendar";
 import {
   buildMonthMatrix,
@@ -38,8 +44,9 @@ import {
   readStorage,
   writeStorage,
 } from "./lib/storage";
+import ProfileTab from "./ProfileTab";
 import TasksTab from "./TasksTab";
-import { buildTasksFromMeetings, taskListStats } from "./lib/tasks";
+import { buildTaskPeople, buildTasksFromMeetings, createManualTask, TASK_STATUSES, taskListStats } from "./lib/tasks";
 
 const DEFAULT_BARS = Array.from({ length: 24 }, (_, index) => (index % 4 === 0 ? 24 : 10));
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -61,6 +68,33 @@ function buildProfileDraft(user) {
     company: user?.company || "",
     timezone: user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
     googleEmail: user?.googleEmail || user?.email || "",
+    phone: user?.phone || "",
+    location: user?.location || "",
+    team: user?.team || "",
+    bio: user?.bio || "",
+    avatarUrl: user?.avatarUrl || "",
+    preferredInsights: Array.isArray(user?.preferredInsights) ? user.preferredInsights.join("\n") : "",
+    notifyDailyDigest: Boolean(user?.notifyDailyDigest ?? true),
+    autoTaskCapture: Boolean(user?.autoTaskCapture ?? true),
+    preferredTaskView: user?.preferredTaskView === "kanban" ? "kanban" : "list",
+  };
+}
+
+function normalizeTaskUpdatePayload(previousTask, updates) {
+  const nextStatus = updates.status || previousTask.status;
+  const completed =
+    typeof updates.completed === "boolean" ? updates.completed : (updates.status || previousTask.status) === "done";
+
+  return {
+    ...updates,
+    title: updates.title ?? previousTask.title,
+    owner: updates.owner ?? previousTask.owner,
+    description: updates.description ?? previousTask.description,
+    dueDate: updates.dueDate ?? previousTask.dueDate,
+    notes: updates.notes ?? previousTask.notes,
+    important: typeof updates.important === "boolean" ? updates.important : previousTask.important,
+    status: completed ? "done" : nextStatus,
+    completed,
   };
 }
 
@@ -527,6 +561,7 @@ export default function App() {
   const [users, setUsers] = useStoredState(STORAGE_KEYS.users, []);
   const [session, setSession] = useStoredState(STORAGE_KEYS.session, null);
   const [meetings, setMeetings] = useStoredState(STORAGE_KEYS.meetings, []);
+  const [manualTasks, setManualTasks] = useStoredState(STORAGE_KEYS.manualTasks, []);
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [authMode, setAuthMode] = useState("register");
   const [authDraft, setAuthDraft] = useState({ name: "", role: "", company: "", email: "", password: "" });
@@ -535,6 +570,12 @@ export default function App() {
 
   const [profileDraft, setProfileDraft] = useState(buildProfileDraft(null));
   const [profileMessage, setProfileMessage] = useState("");
+  const [passwordDraft, setPasswordDraft] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [securityMessage, setSecurityMessage] = useState("");
 
   const [meetingDraft, setMeetingDraft] = useState(createEmptyMeetingDraft());
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
@@ -601,13 +642,15 @@ export default function App() {
   const displayRecording = liveRecording || selectedRecording;
   const displaySpeakerNames = displayRecording?.speakerNames || selectedMeeting?.speakerNames || {};
   const studioAnalysis = selectedRecording?.analysis || selectedMeeting?.analysis || null;
-  const meetingTasks = buildTasksFromMeetings(userMeetings, taskState, currentUser);
+  const meetingTasks = buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser);
+  const taskPeople = buildTaskPeople(userMeetings, currentUser);
   const taskStats = taskListStats(meetingTasks);
   const taskFilters = [
-    { id: "all", label: "Wszystkie", description: "Wszystkie taski ze spotkan", count: taskStats.all },
+    { id: "all", label: "Wszystkie", description: "Spotkania i reczne zadania", count: taskStats.all },
     { id: "assigned", label: "Przypisane", description: "Taski przypisane do Ciebie", count: taskStats.assigned },
     { id: "important", label: "Wazne", description: "Rzeczy oznaczone jako wazne", count: taskStats.important },
     { id: "completed", label: "Zakonczone", description: "Taski juz zamkniete", count: taskStats.completed },
+    { id: "manual", label: "Reczne", description: "Taski dodane poza spotkaniami", count: taskStats.manual },
   ];
   const visibleTasks = meetingTasks.filter((task) => {
     if (taskFilter === "assigned") {
@@ -618,6 +661,9 @@ export default function App() {
     }
     if (taskFilter === "completed") {
       return task.completed;
+    }
+    if (taskFilter === "manual") {
+      return task.sourceType === "manual";
     }
     return true;
   });
@@ -672,6 +718,9 @@ export default function App() {
 
   useEffect(() => {
     setProfileDraft(buildProfileDraft(currentUser));
+    setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setProfileMessage("");
+    setSecurityMessage("");
   }, [currentUser]);
 
   useEffect(() => {
@@ -1082,8 +1131,27 @@ export default function App() {
       return;
     }
 
+    setSecurityMessage("");
     setUsers((previous) => updateUserProfile(previous, currentUser.id, profileDraft));
     setProfileMessage("Profil zapisany.");
+  }
+
+  async function updatePassword(event) {
+    event.preventDefault();
+    if (!currentUser) {
+      return;
+    }
+
+    setProfileMessage("");
+
+    try {
+      const nextUsers = await changeUserPassword(users, currentUser.id, passwordDraft);
+      setUsers(nextUsers);
+      setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setSecurityMessage("Haslo zostalo zmienione.");
+    } catch (error) {
+      setSecurityMessage(error.message);
+    }
   }
 
   function saveMeeting() {
@@ -1105,12 +1173,67 @@ export default function App() {
     setWorkspaceMessage("Spotkanie zapisane.");
   }
 
-  function updateTaskStatus(taskId, updates) {
+  function createTaskFromComposer(draft) {
+    if (!currentUser) {
+      return null;
+    }
+
+    const task = createManualTask(currentUser.id, draft);
+    setManualTasks((previous) => [task, ...previous]);
+    setTaskFilter("all");
+    return task.id;
+  }
+
+  function updateTask(taskId, updates) {
+    const task = meetingTasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+
+    const normalizedUpdates = normalizeTaskUpdatePayload(task, updates);
+
+    if (task.sourceType === "manual") {
+      setManualTasks((previous) =>
+        previous.map((item) =>
+          item.id !== taskId
+            ? item
+            : {
+                ...item,
+                ...normalizedUpdates,
+                updatedAt: new Date().toISOString(),
+              }
+        )
+      );
+      return;
+    }
+
     setTaskState((previous) => ({
       ...previous,
       [taskId]: {
         ...(previous[taskId] || {}),
-        ...updates,
+        ...normalizedUpdates,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+  }
+
+  function deleteTask(taskId) {
+    const task = meetingTasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+
+    if (task.sourceType === "manual") {
+      setManualTasks((previous) => previous.filter((item) => item.id !== taskId));
+      return;
+    }
+
+    setTaskState((previous) => ({
+      ...previous,
+      [taskId]: {
+        ...(previous[taskId] || {}),
+        archived: true,
+        updatedAt: new Date().toISOString(),
       },
     }));
   }
@@ -1172,8 +1295,12 @@ export default function App() {
     }
 
     setSession(null);
+    setActiveTab("studio");
     setTaskFilter("all");
     setSelectedTaskId(null);
+    setProfileMessage("");
+    setSecurityMessage("");
+    setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setGoogleCalendarEvents([]);
     setGoogleCalendarMessage("");
     setGoogleCalendarStatus("idle");
@@ -1282,6 +1409,13 @@ export default function App() {
             >
               Zadania
             </button>
+            <button
+              type="button"
+              className={activeTab === "profile" ? "tab-pill active" : "tab-pill"}
+              onClick={() => setActiveTab("profile")}
+            >
+              Profil
+            </button>
           </div>
         </div>
 
@@ -1332,8 +1466,31 @@ export default function App() {
           tasks={visibleTasks}
           selectedTask={selectedTask}
           onSelectTask={setSelectedTaskId}
-          onUpdateTaskState={updateTaskStatus}
+          onCreateTask={createTaskFromComposer}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
           onOpenMeeting={openMeetingFromCalendar}
+          peopleOptions={taskPeople}
+          defaultView={currentUser.preferredTaskView || "list"}
+          statuses={TASK_STATUSES}
+        />
+      ) : activeTab === "profile" ? (
+        <ProfileTab
+          currentUser={currentUser}
+          profileDraft={profileDraft}
+          setProfileDraft={setProfileDraft}
+          saveProfile={saveProfile}
+          profileMessage={profileMessage}
+          googleEnabled={googleEnabled}
+          googleCalendarStatus={googleCalendarStatus}
+          googleCalendarMessage={googleCalendarMessage}
+          googleCalendarEventsCount={googleCalendarEvents.length}
+          connectGoogleCalendar={connectGoogleCalendar}
+          disconnectGoogleCalendar={disconnectGoogleCalendar}
+          passwordDraft={passwordDraft}
+          setPasswordDraft={setPasswordDraft}
+          updatePassword={updatePassword}
+          securityMessage={securityMessage}
         />
       ) : (
         <div className="workspace-layout">
@@ -1341,53 +1498,41 @@ export default function App() {
             <section className="panel">
               <div className="panel-header compact">
                 <div>
-                  <div className="eyebrow">Profil</div>
-                  <h2>Uzytkownik</h2>
+                  <div className="eyebrow">Account</div>
+                  <h2>Workspace owner</h2>
                 </div>
+                <button type="button" className="ghost-button" onClick={() => setActiveTab("profile")}>
+                  Otworz profil
+                </button>
               </div>
 
-              <form className="stack-form" onSubmit={saveProfile}>
-                <label>
-                  <span>Imie</span>
-                  <input
-                    value={profileDraft.name}
-                    onChange={(event) => setProfileDraft((previous) => ({ ...previous, name: event.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Rola</span>
-                  <input
-                    value={profileDraft.role}
-                    onChange={(event) => setProfileDraft((previous) => ({ ...previous, role: event.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Firma</span>
-                  <input
-                    value={profileDraft.company}
-                    onChange={(event) => setProfileDraft((previous) => ({ ...previous, company: event.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Timezone</span>
-                  <input
-                    value={profileDraft.timezone}
-                    onChange={(event) => setProfileDraft((previous) => ({ ...previous, timezone: event.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Google email</span>
-                  <input
-                    value={profileDraft.googleEmail}
-                    onChange={(event) => setProfileDraft((previous) => ({ ...previous, googleEmail: event.target.value }))}
-                  />
-                </label>
-                <button type="submit" className="secondary-button">
-                  Zapisz profil
-                </button>
-              </form>
+              <div className="workspace-owner-card">
+                <div className="user-card">
+                  {currentUser.avatarUrl ? <img src={currentUser.avatarUrl} alt={currentUser.name} className="avatar" /> : null}
+                  <div>
+                    <strong>{currentUser.name}</strong>
+                    <span>
+                      {currentUser.role || "Brak roli"}
+                      {currentUser.company ? ` • ${currentUser.company}` : ""}
+                    </span>
+                  </div>
+                </div>
 
-              {profileMessage ? <div className="inline-alert success">{profileMessage}</div> : null}
+                <div className="profile-quick-grid">
+                  <div className="task-detail-chip">
+                    <span>Email</span>
+                    <strong>{currentUser.email}</strong>
+                  </div>
+                  <div className="task-detail-chip">
+                    <span>Team</span>
+                    <strong>{currentUser.team || "Brak"}</strong>
+                  </div>
+                  <div className="task-detail-chip">
+                    <span>Timezone</span>
+                    <strong>{currentUser.timezone || "Europe/Warsaw"}</strong>
+                  </div>
+                </div>
+              </div>
             </section>
 
             <section className="panel">

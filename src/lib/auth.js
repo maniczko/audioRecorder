@@ -4,6 +4,13 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function normalizeLines(value) {
+  return String(value || "")
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function fallbackHash(secret) {
   let hash = 0;
   const input = `voicelog:${secret}`;
@@ -54,7 +61,15 @@ export async function registerUser(existingUsers, draft) {
     company: String(draft.company || "").trim(),
     timezone: draft.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
     googleEmail: email,
+    phone: "",
+    location: "",
+    team: "",
+    bio: "",
+    avatarUrl: "",
     preferredInsights: [],
+    notifyDailyDigest: true,
+    autoTaskCapture: true,
+    preferredTaskView: "list",
     createdAt: new Date().toISOString(),
   };
 
@@ -88,8 +103,61 @@ export function updateUserProfile(existingUsers, userId, updates) {
           company: String(updates.company || "").trim(),
           timezone: updates.timezone || user.timezone,
           googleEmail: String(updates.googleEmail || "").trim(),
+          phone: String(updates.phone || "").trim(),
+          location: String(updates.location || "").trim(),
+          team: String(updates.team || "").trim(),
+          bio: String(updates.bio || "").trim(),
+          avatarUrl: String(updates.avatarUrl || "").trim(),
+          preferredInsights: normalizeLines(updates.preferredInsights),
+          notifyDailyDigest: Boolean(updates.notifyDailyDigest),
+          autoTaskCapture: Boolean(updates.autoTaskCapture),
+          preferredTaskView: updates.preferredTaskView === "kanban" ? "kanban" : "list",
+          updatedAt: new Date().toISOString(),
         }
       : user
+  );
+}
+
+export async function changeUserPassword(existingUsers, userId, draft) {
+  const currentPassword = String(draft.currentPassword || "");
+  const newPassword = String(draft.newPassword || "");
+  const confirmPassword = String(draft.confirmPassword || "");
+  const user = existingUsers.find((candidate) => candidate.id === userId);
+
+  if (!user) {
+    throw new Error("Nie znaleziono konta.");
+  }
+
+  if (!user.passwordHash) {
+    throw new Error("Haslem tego konta zarzadza Google.");
+  }
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    throw new Error("Uzupelnij wszystkie pola hasla.");
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error("Nowe haslo musi miec przynajmniej 6 znakow.");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new Error("Nowe hasla nie sa identyczne.");
+  }
+
+  const currentHash = await hashSecret(currentPassword);
+  if (currentHash !== user.passwordHash) {
+    throw new Error("Aktualne haslo jest niepoprawne.");
+  }
+
+  const nextHash = await hashSecret(newPassword);
+  return existingUsers.map((candidate) =>
+    candidate.id !== userId
+      ? candidate
+      : {
+          ...candidate,
+          passwordHash: nextHash,
+          updatedAt: new Date().toISOString(),
+        }
   );
 }
 
@@ -133,6 +201,13 @@ export function upsertGoogleUser(existingUsers, googleProfile) {
     googleSub: googleProfile.sub || "",
     avatarUrl: googleProfile.picture || "",
     preferredInsights: [],
+    phone: "",
+    location: "",
+    team: "",
+    bio: "",
+    notifyDailyDigest: true,
+    autoTaskCapture: true,
+    preferredTaskView: "list",
     provider: "google",
     createdAt: new Date().toISOString(),
   };

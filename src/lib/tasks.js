@@ -1,3 +1,12 @@
+import { createId } from "./storage";
+
+export const TASK_STATUSES = [
+  { id: "todo", label: "Do zrobienia", shortLabel: "Todo" },
+  { id: "in_progress", label: "W toku", shortLabel: "W toku" },
+  { id: "waiting", label: "Oczekuje", shortLabel: "Czeka" },
+  { id: "done", label: "Gotowe", shortLabel: "Done" },
+];
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -16,11 +25,29 @@ function normalizeOwner(owner, candidates) {
     return "";
   }
 
-  const match = safeArray(candidates).find(
-    (candidate) => candidate.toLowerCase() === cleaned.toLowerCase()
-  );
-
+  const match = safeArray(candidates).find((candidate) => candidate.toLowerCase() === cleaned.toLowerCase());
   return match || cleaned;
+}
+
+function statusFromValue(value) {
+  return TASK_STATUSES.some((status) => status.id === value) ? value : "todo";
+}
+
+function matchesCurrentUser(owner, currentUser) {
+  const normalizedOwner = normalizeWhitespace(owner).toLowerCase();
+  if (!normalizedOwner || !currentUser) {
+    return false;
+  }
+
+  const signals = uniqueStrings([
+    currentUser.name,
+    currentUser.email,
+    currentUser.googleEmail,
+  ]).map((item) => item.toLowerCase());
+
+  return signals.some(
+    (signal) => normalizedOwner.includes(signal) || signal.includes(normalizedOwner)
+  );
 }
 
 function knownOwnersForMeeting(meeting) {
@@ -78,12 +105,18 @@ function taskFromCandidate(candidate, meeting, index) {
     id: `${meeting.id}::task::${index}`,
     title,
     owner,
+    description: normalizeWhitespace(candidate.description || ""),
+    dueDate: meeting.startsAt || "",
+    sourceType: "meeting",
     sourceMeetingId: meeting.id,
     sourceMeetingTitle: meeting.title,
     sourceMeetingDate: meeting.startsAt,
     sourceRecordingId: meeting.latestRecordingId || "",
+    sourceQuote: candidate.sourceQuote || "",
     createdAt: meeting.updatedAt || meeting.createdAt,
-    status: "open",
+    status: "todo",
+    important: false,
+    completed: false,
     notes: candidate.sourceQuote || "",
   };
 }
@@ -97,37 +130,100 @@ function fallbackTaskCandidates(meeting) {
   }));
 }
 
+function mergeTaskState(task, state, currentUser) {
+  const nextStatus = statusFromValue(
+    state?.status || (state?.completed === true ? "done" : "") || task.status
+  );
+  const completed = typeof state?.completed === "boolean" ? state.completed : nextStatus === "done";
+  const owner = state?.owner ?? task.owner;
+  const title = state?.title ?? task.title;
+  const description = state?.description ?? task.description ?? "";
+  const dueDate = state?.dueDate ?? task.dueDate ?? "";
+  const notes = state?.notes ?? task.notes ?? "";
+
+  return {
+    ...task,
+    title,
+    owner: normalizeWhitespace(owner) || "Nieprzypisane",
+    description,
+    dueDate,
+    notes,
+    updatedAt: state?.updatedAt || task.updatedAt || task.createdAt,
+    important: typeof state?.important === "boolean" ? state.important : Boolean(task.important),
+    status: completed ? "done" : nextStatus,
+    completed,
+    archived: Boolean(state?.archived),
+    assignedToMe: matchesCurrentUser(owner, currentUser),
+  };
+}
+
+export function buildTaskPeople(meetings, currentUser) {
+  return uniqueStrings([
+    currentUser?.name,
+    currentUser?.email,
+    currentUser?.googleEmail,
+    ...safeArray(meetings).flatMap((meeting) => [
+      ...safeArray(meeting.attendees),
+      ...Object.values(meeting.speakerNames || {}),
+      ...Object.values(meeting.analysis?.speakerLabels || {}),
+      ...safeArray(meeting.recordings?.flatMap((recording) => Object.values(recording.speakerNames || {}))),
+    ]),
+  ]);
+}
+
+export function createManualTask(userId, draft) {
+  const now = new Date().toISOString();
+  const title = titleCase(draft.title);
+
+  if (!title) {
+    throw new Error("Dodaj tytul zadania.");
+  }
+
+  return {
+    id: createId("task"),
+    userId,
+    title,
+    owner: normalizeWhitespace(draft.owner) || "Nieprzypisane",
+    description: String(draft.description || "").trim(),
+    dueDate: draft.dueDate || "",
+    sourceType: "manual",
+    sourceMeetingId: "",
+    sourceMeetingTitle: "Reczne zadanie",
+    sourceMeetingDate: draft.dueDate || now,
+    sourceRecordingId: "",
+    sourceQuote: "",
+    createdAt: now,
+    updatedAt: now,
+    status: statusFromValue(draft.status),
+    important: Boolean(draft.important),
+    completed: draft.status === "done",
+    notes: String(draft.notes || "").trim(),
+  };
+}
+
 export function extractMeetingTasks(meeting) {
   const analysis = meeting.analysis || {};
   const candidates = safeArray(analysis.tasks).length ? analysis.tasks : fallbackTaskCandidates(meeting);
 
-  return candidates
-    .map((candidate, index) => taskFromCandidate(candidate, meeting, index))
-    .filter(Boolean);
+  return candidates.map((candidate, index) => taskFromCandidate(candidate, meeting, index)).filter(Boolean);
 }
 
-export function buildTasksFromMeetings(meetings, taskState, currentUser) {
-  const currentUserName = String(currentUser?.name || "").trim().toLowerCase();
-
-  const tasks = safeArray(meetings)
+export function buildTasksFromMeetings(meetings, manualTasks, taskState, currentUser) {
+  const meetingTasks = safeArray(meetings)
     .flatMap((meeting) => extractMeetingTasks(meeting))
-    .map((task) => {
-      const state = taskState?.[task.id] || {};
-      const assignedToMe = currentUserName
-        ? task.owner.toLowerCase().includes(currentUserName) || currentUserName.includes(task.owner.toLowerCase())
-        : false;
+    .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser))
+    .filter((task) => !task.archived);
 
-      return {
-        ...task,
-        completed: Boolean(state.completed),
-        important: Boolean(state.important),
-        notes: state.notes ?? task.notes ?? "",
-        assignedToMe,
-      };
-    })
-    .sort((left, right) => new Date(right.sourceMeetingDate).getTime() - new Date(left.sourceMeetingDate).getTime());
+  const standaloneTasks = safeArray(manualTasks)
+    .filter((task) => task.userId === currentUser?.id)
+    .map((task) => mergeTaskState(task, {}, currentUser))
+    .filter((task) => !task.archived);
 
-  return tasks;
+  return [...meetingTasks, ...standaloneTasks].sort(
+    (left, right) =>
+      new Date(right.updatedAt || right.dueDate || right.sourceMeetingDate || right.createdAt).getTime() -
+      new Date(left.updatedAt || left.dueDate || left.sourceMeetingDate || left.createdAt).getTime()
+  );
 }
 
 export function taskListStats(tasks) {
@@ -138,5 +234,6 @@ export function taskListStats(tasks) {
     important: list.filter((task) => task.important).length,
     completed: list.filter((task) => task.completed).length,
     open: list.filter((task) => !task.completed).length,
+    manual: list.filter((task) => task.sourceType === "manual").length,
   };
 }
