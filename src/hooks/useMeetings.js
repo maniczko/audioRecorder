@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useStoredState from "./useStoredState";
 import { normalizeTaskUpdatePayload } from "../lib/appState";
 import {
@@ -25,6 +25,7 @@ import {
   updateTaskColumns,
 } from "../lib/tasks";
 import { migrateWorkspaceData } from "../lib/workspace";
+import { createStateService } from "../services/stateService";
 
 export default function useMeetings({
   users,
@@ -47,6 +48,12 @@ export default function useMeetings({
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
+  const stateService = useMemo(() => createStateService(), []);
+  const syncTimerRef = useRef(null);
+  const hydratedWorkspaceIdRef = useRef("");
+  const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
+    stateService.mode === "remote" && Boolean(session?.token)
+  );
 
   const userMeetings = useMemo(
     () =>
@@ -108,6 +115,135 @@ export default function useMeetings({
     taskBoards,
     users,
     workspaces,
+  ]);
+
+  useEffect(() => {
+    if (stateService.mode !== "remote") {
+      hydratedWorkspaceIdRef.current = currentWorkspaceId || "";
+      setIsHydratingRemoteState(false);
+      return;
+    }
+
+    if (!session?.token || !session?.userId) {
+      hydratedWorkspaceIdRef.current = "";
+      setIsHydratingRemoteState(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsHydratingRemoteState(true);
+
+    stateService
+      .bootstrap(session.workspaceId)
+      .then((result) => {
+        if (cancelled || !result) {
+          return;
+        }
+
+        if (Array.isArray(result.users)) {
+          setUsers(result.users);
+        }
+        if (Array.isArray(result.workspaces)) {
+          setWorkspaces(result.workspaces);
+        }
+
+        const nextState = result.state || {};
+        setMeetings(Array.isArray(nextState.meetings) ? nextState.meetings : []);
+        setManualTasks(Array.isArray(nextState.manualTasks) ? nextState.manualTasks : []);
+        setTaskState(nextState.taskState && typeof nextState.taskState === "object" ? nextState.taskState : {});
+        setTaskBoards(nextState.taskBoards && typeof nextState.taskBoards === "object" ? nextState.taskBoards : {});
+        setCalendarMeta(
+          nextState.calendarMeta && typeof nextState.calendarMeta === "object" ? nextState.calendarMeta : {}
+        );
+
+        hydratedWorkspaceIdRef.current = result.workspaceId || session.workspaceId || "";
+        if (result.workspaceId && result.workspaceId !== session.workspaceId) {
+          setSession((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  workspaceId: result.workspaceId,
+                }
+              : previous
+          );
+        }
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+
+        console.error("Remote workspace bootstrap failed.", error);
+        setWorkspaceMessage(error.message || "Nie udalo sie pobrac danych workspace z backendu.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsHydratingRemoteState(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentWorkspaceId,
+    session?.token,
+    session?.userId,
+    session?.workspaceId,
+    setCalendarMeta,
+    setManualTasks,
+    setMeetings,
+    setSession,
+    setTaskBoards,
+    setTaskState,
+    setUsers,
+    setWorkspaces,
+    stateService,
+  ]);
+
+  useEffect(() => {
+    if (stateService.mode !== "remote") {
+      return undefined;
+    }
+
+    if (!session?.token || !currentWorkspaceId || isHydratingRemoteState) {
+      return undefined;
+    }
+
+    if (hydratedWorkspaceIdRef.current !== currentWorkspaceId) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      stateService
+        .syncWorkspaceState(currentWorkspaceId, {
+          meetings,
+          manualTasks,
+          taskState,
+          taskBoards,
+          calendarMeta,
+        })
+        .catch((error) => {
+          console.error("Remote workspace sync failed.", error);
+          setWorkspaceMessage(error.message || "Nie udalo sie zapisac workspace na backendzie.");
+        });
+    }, 350);
+
+    syncTimerRef.current = timeout;
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [
+    calendarMeta,
+    currentWorkspaceId,
+    isHydratingRemoteState,
+    manualTasks,
+    meetings,
+    session?.token,
+    stateService,
+    taskBoards,
+    taskState,
   ]);
 
   useEffect(() => {

@@ -163,6 +163,21 @@ export default function MainApp() {
     setPendingTaskId("");
   }
 
+  if (workspace.isHydratingSession) {
+    return (
+      <div className="app-shell app-shell-loading">
+        <div className="topbar">
+          <div className="topbar-title">
+            <div>
+              <div className="eyebrow">VoiceLog OS</div>
+              <h1>Przywracamy sesje i workspace...</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!workspace.currentUser) {
     return (
       <AuthScreen

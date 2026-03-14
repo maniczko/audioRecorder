@@ -26,6 +26,24 @@ const EMPTY_PASSWORD_DRAFT = {
   confirmPassword: "",
 };
 
+function mergeUserIntoCollection(existingUsers, user) {
+  if (!user) {
+    return existingUsers;
+  }
+
+  const nextUsers = Array.isArray(existingUsers) ? [...existingUsers] : [];
+  const existingIndex = nextUsers.findIndex((candidate) => candidate.id === user.id);
+  if (existingIndex === -1) {
+    return [...nextUsers, user];
+  }
+
+  nextUsers[existingIndex] = {
+    ...nextUsers[existingIndex],
+    ...user,
+  };
+  return nextUsers;
+}
+
 export default function useAuth({
   currentUser,
   users,
@@ -75,14 +93,24 @@ export default function useAuth({
         const result = await authService.register({ users, workspaces, draft: authDraft });
         if (result.users) {
           setUsers(result.users);
+        } else if (result.user) {
+          setUsers((previous) => mergeUserIntoCollection(previous, result.user));
         }
         if (result.workspaces) {
           setWorkspaces(result.workspaces);
         }
-        setSession({ userId: result.user.id, workspaceId: result.workspaceId });
+        setSession({ userId: result.user.id, workspaceId: result.workspaceId, token: result.token || "" });
       } else {
         const result = await authService.login({ users, workspaces, draft: authDraft });
-        setSession({ userId: result.user.id, workspaceId: result.workspaceId });
+        if (result.users) {
+          setUsers(result.users);
+        } else if (result.user) {
+          setUsers((previous) => mergeUserIntoCollection(previous, result.user));
+        }
+        if (result.workspaces) {
+          setWorkspaces(result.workspaces);
+        }
+        setSession({ userId: result.user.id, workspaceId: result.workspaceId, token: result.token || "" });
       }
     } catch (error) {
       setAuthError(error.message);
@@ -133,11 +161,13 @@ export default function useAuth({
       const result = await authService.signInWithGoogle({ users, workspaces, profile });
       if (result.users) {
         setUsers(result.users);
+      } else if (result.user) {
+        setUsers((previous) => mergeUserIntoCollection(previous, result.user));
       }
       if (result.workspaces) {
         setWorkspaces(result.workspaces);
       }
-      setSession({ userId: result.user.id, workspaceId: result.workspaceId });
+      setSession({ userId: result.user.id, workspaceId: result.workspaceId, token: result.token || "" });
       setGoogleAuthMessage(`Zalogowano przez Google jako ${profile.email}.`);
       setAuthError("");
     } catch (error) {
@@ -162,6 +192,8 @@ export default function useAuth({
         setUsers(result);
       } else if (Array.isArray(result?.users)) {
         setUsers(result.users);
+      } else if (result?.user) {
+        setUsers((previous) => mergeUserIntoCollection(previous, result.user));
       }
       setProfileMessage("Profil zapisany.");
     } catch (error) {
@@ -186,6 +218,8 @@ export default function useAuth({
         setUsers(result);
       } else if (Array.isArray(result?.users)) {
         setUsers(result.users);
+      } else if (result?.user) {
+        setUsers((previous) => mergeUserIntoCollection(previous, result.user));
       }
       setPasswordDraft(EMPTY_PASSWORD_DRAFT);
       setSecurityMessage("Haslo zostalo zmienione.");

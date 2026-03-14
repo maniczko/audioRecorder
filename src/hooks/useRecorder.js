@@ -305,7 +305,10 @@ export default function useRecorder({
         try {
           const recordingId = createId("recording");
           const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-          const persisted = await mediaService.persistRecordingAudio(recordingId, blob);
+          const persisted = await mediaService.persistRecordingAudio(recordingId, blob, {
+            workspaceId: targetMeeting?.workspaceId || activeMeeting?.workspaceId || "",
+            meetingId: targetMeeting?.id || activeMeeting?.id || "",
+          });
           const transcription = await mediaService.finalizeTranscription({
             recordingId,
             blob,

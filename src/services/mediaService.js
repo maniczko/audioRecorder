@@ -50,12 +50,14 @@ function createRemoteMediaService() {
     createLiveController() {
       return null;
     },
-    async persistRecordingAudio(recordingId, blob) {
+    async persistRecordingAudio(recordingId, blob, options = {}) {
       await apiRequest(`/media/recordings/${recordingId}/audio`, {
         method: "PUT",
         body: blob,
         headers: {
           "Content-Type": blob?.type || "application/octet-stream",
+          ...(options.workspaceId ? { "X-Workspace-Id": options.workspaceId } : {}),
+          ...(options.meetingId ? { "X-Meeting-Id": options.meetingId } : {}),
         },
       });
       return {
@@ -74,6 +76,7 @@ function createRemoteMediaService() {
         method: "POST",
         body: {
           meetingId: meeting?.id || "",
+          workspaceId: meeting?.workspaceId || "",
           contentType: blob?.type || "audio/webm",
         },
       });

@@ -1,4 +1,5 @@
 import { API_BASE_URL, remoteApiEnabled } from "./config";
+import { STORAGE_KEYS } from "../lib/storage";
 
 function buildUrl(path) {
   const safePath = String(path || "").startsWith("/") ? path : `/${String(path || "")}`;
@@ -18,11 +19,31 @@ async function parseResponse(response) {
   return response.text();
 }
 
+function readSessionToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.session);
+    if (!raw) {
+      return "";
+    }
+    const session = JSON.parse(raw);
+    return String(session?.token || "");
+  } catch (error) {
+    console.error("Unable to read auth token from storage.", error);
+    return "";
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const { body, headers, parseAs = "json", ...rest } = options;
+  const token = readSessionToken();
   const requestInit = {
     ...rest,
     headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body && !(body instanceof Blob) ? { "Content-Type": "application/json" } : {}),
       ...headers,
     },
@@ -38,7 +59,9 @@ export async function apiRequest(path, options = {}) {
   if (!response.ok) {
     const message =
       (typeof payload === "object" && payload?.message) || (typeof payload === "string" && payload) || "Request failed.";
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
