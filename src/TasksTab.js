@@ -1,36 +1,171 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 import { TASK_PRIORITIES, taskListStats } from "./lib/tasks";
 
-function filterLabel(filter) {
-  switch (filter) {
-    case "assigned":
-      return "Przypisane do mnie";
-    case "important":
-      return "Wazne";
-    case "completed":
-      return "Zakonczone";
-    case "manual":
-      return "Reczne zadania";
-    case "google":
-      return "Google Tasks";
-    default:
-      return "Wszystkie zadania";
-  }
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
 }
 
-function toLocalInputValue(value) {
+function toInputDateTime(value) {
   if (!value) {
     return "";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return String(value).slice(0, 16);
+    return "";
   }
 
-  const timezoneOffset = date.getTimezoneOffset() * 60 * 1000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
+  const offset = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function formatListDueDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function dueTone(value) {
+  if (!value) {
+    return "normal";
+  }
+
+  const date = new Date(value).getTime();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date < today.getTime()) {
+    return "danger";
+  }
+
+  return "normal";
+}
+
+function buildSidebarLists(tasks, boardColumns) {
+  const baseLists = [
+    {
+      id: "smart:my_day",
+      label: "My Day",
+      count: tasks.filter((task) => {
+        if (!task.dueDate || task.completed) {
+          return false;
+        }
+        return new Date(task.dueDate).toDateString() === new Date().toDateString();
+      }).length,
+    },
+    { id: "smart:important", label: "Important", count: tasks.filter((task) => task.important).length },
+    { id: "smart:planned", label: "Planned", count: tasks.filter((task) => task.dueDate).length },
+    { id: "smart:assigned", label: "Assigned to me", count: tasks.filter((task) => task.assignedToMe).length },
+    { id: "smart:all", label: "Tasks", count: tasks.length },
+  ];
+
+  const workspaceLists = boardColumns.map((column) => ({
+    id: `column:${column.id}`,
+    label: column.label,
+    count: tasks.filter((task) => task.status === column.id).length,
+  }));
+
+  return { baseLists, workspaceLists };
+}
+
+function applyMainListFilter(tasks, mainListId, boardColumns) {
+  if (!mainListId || mainListId === "smart:all") {
+    return tasks;
+  }
+
+  if (mainListId === "smart:my_day") {
+    const today = new Date().toDateString();
+    return tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).toDateString() === today);
+  }
+
+  if (mainListId === "smart:important") {
+    return tasks.filter((task) => task.important);
+  }
+
+  if (mainListId === "smart:planned") {
+    return tasks.filter((task) => Boolean(task.dueDate));
+  }
+
+  if (mainListId === "smart:assigned") {
+    return tasks.filter((task) => task.assignedToMe);
+  }
+
+  if (mainListId.startsWith("column:")) {
+    const columnId = mainListId.slice("column:".length);
+    if (boardColumns.some((column) => column.id === columnId)) {
+      return tasks.filter((task) => task.status === columnId);
+    }
+  }
+
+  return tasks;
+}
+
+function priorityRank(priority) {
+  return ["urgent", "high", "medium", "low"].indexOf(priority);
+}
+
+function groupTasks(tasks, groupBy, boardColumns) {
+  if (groupBy === "none") {
+    return [{ id: "all", label: "", tasks }];
+  }
+
+  const map = new Map();
+  tasks.forEach((task) => {
+    let key = "other";
+    let label = "Other";
+
+    if (groupBy === "status") {
+      key = task.status;
+      label = boardColumns.find((column) => column.id === task.status)?.label || task.status;
+    } else if (groupBy === "owner") {
+      key = task.owner || "unassigned";
+      label = task.owner || "Nieprzypisane";
+    } else if (groupBy === "priority") {
+      key = task.priority;
+      label = TASK_PRIORITIES.find((priority) => priority.id === task.priority)?.label || task.priority;
+    } else if (groupBy === "source") {
+      key = task.sourceType;
+      label = task.sourceType === "meeting" ? "Spotkania" : task.sourceType === "google" ? "Google Tasks" : "Reczne";
+    }
+
+    const bucket = map.get(key) || { id: key, label, tasks: [] };
+    bucket.tasks.push(task);
+    map.set(key, bucket);
+  });
+
+  return [...map.values()];
+}
+
+function createQuickDraft(boardColumns) {
+  return {
+    title: "",
+    owner: "",
+    dueDate: "",
+    description: "",
+    status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
+    important: false,
+    priority: "medium",
+    tags: "",
+    notes: "",
+  };
+}
+
+function canDrop(event) {
+  if (event.dataTransfer) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
 }
 
 function handleCardKeyDown(event, callback) {
@@ -38,107 +173,6 @@ function handleCardKeyDown(event, callback) {
     event.preventDefault();
     callback();
   }
-}
-
-function priorityRank(priority) {
-  return ["urgent", "high", "medium", "low"].indexOf(priority);
-}
-
-function renderMarkdownPreview(markdown) {
-  const escapeHtml = (value) =>
-    String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-  const lines = String(markdown || "").split(/\r?\n/);
-  const html = [];
-  let listBuffer = [];
-
-  function flushList() {
-    if (!listBuffer.length) {
-      return;
-    }
-    html.push(`<ul>${listBuffer.map((item) => `<li>${item}</li>`).join("")}</ul>`);
-    listBuffer = [];
-  }
-
-  lines.forEach((line) => {
-    const escaped = escapeHtml(line).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    if (/^\s*-\s+/.test(line)) {
-      listBuffer.push(escaped.replace(/^\s*-\s+/, ""));
-      return;
-    }
-
-    flushList();
-    if (escaped.trim()) {
-      html.push(`<p>${escaped}</p>`);
-    }
-  });
-
-  flushList();
-  return html.join("") || "<p>Brak notatek.</p>";
-}
-
-function dueBucket(task) {
-  if (!task.dueDate) {
-    return "Bez terminu";
-  }
-
-  const due = new Date(task.dueDate).getTime();
-  const now = Date.now();
-  const day = 24 * 60 * 60 * 1000;
-
-  if (due < now - day) {
-    return "Po terminie";
-  }
-  if (due < now + day) {
-    return "Dzisiaj";
-  }
-  if (due < now + 7 * day) {
-    return "Ten tydzien";
-  }
-  return "Pozniej";
-}
-
-function groupTasks(tasks, groupBy, boardColumns) {
-  if (groupBy === "none") {
-    return [{ id: "all", label: "Wszystkie", tasks }];
-  }
-
-  const groups = new Map();
-
-  tasks.forEach((task) => {
-    let key = "Inne";
-    let label = "Inne";
-
-    if (groupBy === "status") {
-      const column = boardColumns.find((item) => item.id === task.status);
-      key = task.status;
-      label = column?.label || task.status;
-    } else if (groupBy === "owner") {
-      key = task.owner || "Nieprzypisane";
-      label = key;
-    } else if (groupBy === "priority") {
-      key = task.priority;
-      label = TASK_PRIORITIES.find((item) => item.id === task.priority)?.label || task.priority;
-    } else if (groupBy === "source") {
-      key = task.sourceType;
-      label = task.sourceType === "meeting" ? "Spotkanie" : task.sourceType === "google" ? "Google Tasks" : "Reczne";
-    } else if (groupBy === "tag") {
-      key = task.tags?.[0] || "Bez tagow";
-      label = task.tags?.[0] ? `#${task.tags[0]}` : "Bez tagow";
-    } else if (groupBy === "due") {
-      key = dueBucket(task);
-      label = key;
-    }
-
-    const existing = groups.get(key) || { id: key, label, tasks: [] };
-    existing.tasks.push(task);
-    groups.set(key, existing);
-  });
-
-  return [...groups.values()];
 }
 
 export default function TasksTab({
@@ -164,122 +198,82 @@ export default function TasksTab({
   onConnectGoogleTasks,
   onImportGoogleTasks,
   onExportGoogleTasks,
+  workspaceName,
+  workspaceInviteCode,
 }) {
-  const [viewMode, setViewMode] = useState(defaultView || "list");
-  const [quickFilter, setQuickFilter] = useState("all");
+  const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
+  const [selectedListId, setSelectedListId] = useState("smart:all");
+  const [selectedTaskId, setSelectedTaskId] = useState("");
   const [sortBy, setSortBy] = useState("updated");
   const [groupBy, setGroupBy] = useState("none");
+  const [query, setQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [query, setQuery] = useState("");
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [boardEditorOpen, setBoardEditorOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   const [dragTaskId, setDragTaskId] = useState("");
-  const [taskMessage, setTaskMessage] = useState("");
-  const [draft, setDraft] = useState({
-    title: "",
-    owner: "",
-    dueDate: "",
-    description: "",
-    status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
-    important: false,
-    priority: "medium",
-    tags: "",
-    notes: "",
-  });
-  const [columnDraft, setColumnDraft] = useState({
-    label: "",
-    color: "#5a92ff",
-    isDone: false,
-  });
-  const notesRef = useRef(null);
+  const [dropColumnId, setDropColumnId] = useState("");
+  const [message, setMessage] = useState("");
+  const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
+  const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
 
   useEffect(() => {
-    setViewMode(defaultView || "list");
+    setViewMode(defaultView === "kanban" ? "kanban" : "list");
   }, [defaultView]);
 
   useEffect(() => {
-    if (!boardColumns.some((column) => column.id === draft.status)) {
-      setDraft((previous) => ({
+    if (!boardColumns.some((column) => column.id === quickDraft.status)) {
+      setQuickDraft((previous) => ({
         ...previous,
         status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
       }));
     }
-  }, [boardColumns, draft.status]);
+  }, [boardColumns, quickDraft.status]);
 
   const stats = useMemo(() => taskListStats(tasks), [tasks]);
-
-  const smartFilters = useMemo(
-    () => [
-      { id: "all", label: "Wszystkie", description: "Wszystkie zadania i follow-upy", count: stats.all },
-      { id: "assigned", label: "Przypisane", description: "Zadania przypisane do mnie", count: stats.assigned },
-      { id: "important", label: "Wazne", description: "Najwazniejsze priorytety", count: stats.important },
-      { id: "completed", label: "Zakonczone", description: "Rzeczy juz domkniete", count: stats.completed },
-      { id: "manual", label: "Reczne", description: "Dodane recznie poza spotkaniami", count: stats.manual },
-      {
-        id: "google",
-        label: "Google",
-        description: "Zadania zaimportowane z Google Tasks",
-        count: tasks.filter((task) => task.sourceType === "google").length,
-      },
-    ],
-    [stats, tasks]
-  );
+  const sidebarLists = useMemo(() => buildSidebarLists(tasks, boardColumns), [tasks, boardColumns]);
 
   const visibleTasks = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return tasks
-      .filter((task) => {
-        if (quickFilter === "assigned" && !task.assignedToMe) {
+    const filtered = applyMainListFilter(tasks, selectedListId, boardColumns).filter((task) => {
+      if (ownerFilter !== "all" && task.owner !== ownerFilter) {
+        return false;
+      }
+      if (tagFilter !== "all" && !(task.tags || []).includes(tagFilter)) {
+        return false;
+      }
+      if (query.trim()) {
+        const haystack = [
+          task.title,
+          task.owner,
+          task.description,
+          task.notes,
+          safeArray(task.tags).join(" "),
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(query.trim().toLowerCase())) {
           return false;
         }
-        if (quickFilter === "important" && !task.important) {
-          return false;
-        }
-        if (quickFilter === "completed" && !task.completed) {
-          return false;
-        }
-        if (quickFilter === "manual" && task.sourceType !== "manual") {
-          return false;
-        }
-        if (quickFilter === "google" && task.sourceType !== "google") {
-          return false;
-        }
-        if (ownerFilter !== "all" && task.owner !== ownerFilter) {
-          return false;
-        }
-        if (tagFilter !== "all" && !(task.tags || []).includes(tagFilter)) {
-          return false;
-        }
-        if (priorityFilter !== "all" && task.priority !== priorityFilter) {
-          return false;
-        }
-        if (term) {
-          const haystack = `${task.title} ${task.description} ${task.owner} ${task.notes} ${(task.tags || []).join(" ")}`.toLowerCase();
-          if (!haystack.includes(term)) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .sort((left, right) => {
-        if (sortBy === "title") {
-          return left.title.localeCompare(right.title);
-        }
-        if (sortBy === "owner") {
-          return left.owner.localeCompare(right.owner);
-        }
-        if (sortBy === "due") {
-          return new Date(left.dueDate || 0).getTime() - new Date(right.dueDate || 0).getTime();
-        }
-        if (sortBy === "priority") {
-          return priorityRank(left.priority) - priorityRank(right.priority);
-        }
-        return new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime();
-      });
-  }, [tasks, quickFilter, ownerFilter, tagFilter, priorityFilter, query, sortBy]);
+      }
+      return true;
+    });
+
+    return [...filtered].sort((left, right) => {
+      if (sortBy === "title") {
+        return left.title.localeCompare(right.title);
+      }
+      if (sortBy === "due") {
+        return new Date(left.dueDate || 0).getTime() - new Date(right.dueDate || 0).getTime();
+      }
+      if (sortBy === "owner") {
+        return (left.owner || "").localeCompare(right.owner || "");
+      }
+      if (sortBy === "priority") {
+        return priorityRank(left.priority) - priorityRank(right.priority);
+      }
+      return new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime();
+    });
+  }, [tasks, selectedListId, boardColumns, ownerFilter, tagFilter, query, sortBy]);
 
   useEffect(() => {
     if (!visibleTasks.length) {
@@ -290,7 +284,7 @@ export default function TasksTab({
     if (!visibleTasks.some((task) => task.id === selectedTaskId)) {
       setSelectedTaskId(visibleTasks[0].id);
     }
-  }, [selectedTaskId, visibleTasks]);
+  }, [visibleTasks, selectedTaskId]);
 
   const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
   const groupedTasks = useMemo(() => groupTasks(visibleTasks, groupBy, boardColumns), [visibleTasks, groupBy, boardColumns]);
@@ -303,61 +297,18 @@ export default function TasksTab({
     [boardColumns, visibleTasks]
   );
 
-  function resetDraft() {
-    setDraft({
-      title: "",
-      owner: peopleOptions[0] || "",
-      dueDate: "",
-      description: "",
-      status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
-      important: false,
-      priority: "medium",
-      tags: "",
-      notes: "",
-    });
-  }
-
-  function submitTask(event) {
+  function submitQuickTask(event) {
     event.preventDefault();
-
     try {
-      const nextId = onCreateTask(draft);
-      resetDraft();
-      setComposerOpen(false);
-      setTaskMessage("Zadanie dodane.");
-      if (nextId) {
-        setSelectedTaskId(nextId);
+      const taskId = onCreateTask(quickDraft);
+      setQuickDraft(createQuickDraft(boardColumns));
+      setMessage("Dodano zadanie.");
+      if (taskId) {
+        setSelectedTaskId(taskId);
       }
     } catch (error) {
-      setTaskMessage(error.message);
+      setMessage(error.message);
     }
-  }
-
-  function insertMarkdown(type) {
-    if (!selectedTask || !notesRef.current) {
-      return;
-    }
-
-    const field = notesRef.current;
-    const start = field.selectionStart || 0;
-    const end = field.selectionEnd || 0;
-    const currentValue = selectedTask.notes || "";
-    const selectedText = currentValue.slice(start, end) || (type === "list" ? "element" : "tekst");
-    let replacement = selectedText;
-
-    if (type === "bold") {
-      replacement = `**${selectedText}**`;
-    }
-
-    if (type === "list") {
-      replacement = selectedText
-        .split(/\r?\n/)
-        .map((item) => `- ${item.replace(/^-\s*/, "")}`)
-        .join("\n");
-    }
-
-    const nextValue = `${currentValue.slice(0, start)}${replacement}${currentValue.slice(end)}`;
-    onUpdateTask(selectedTask.id, { notes: nextValue });
   }
 
   function submitColumn(event) {
@@ -365,142 +316,161 @@ export default function TasksTab({
     try {
       onCreateColumn(columnDraft);
       setColumnDraft({ label: "", color: "#5a92ff", isDone: false });
+      setMessage("Dodano kolumne.");
     } catch (error) {
-      setTaskMessage(error.message);
+      setMessage(error.message);
     }
   }
 
+  function handleDrop(columnId, event) {
+    canDrop(event);
+    const taskId = event.dataTransfer?.getData("text/plain") || dragTaskId;
+    if (!taskId) {
+      return;
+    }
+
+    onMoveTaskToColumn(taskId, columnId);
+    setDragTaskId("");
+    setDropColumnId("");
+    setMessage("Przeniesiono zadanie.");
+  }
+
+  async function shareWorkspace() {
+    if (!workspaceInviteCode) {
+      setMessage("Brak kodu workspace.");
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(workspaceInviteCode);
+        setMessage(`Skopiowano kod workspace: ${workspaceInviteCode}`);
+        return;
+      }
+    } catch (error) {
+      console.error("Clipboard write failed.", error);
+    }
+
+    setMessage(`Udostepnij workspace kodem: ${workspaceInviteCode}`);
+  }
+
   return (
-    <div className="tasks-layout premium">
-      <aside className="tasks-sidebar">
-        <section className="tasks-brand-panel">
-          <div className="eyebrow">Tasks</div>
-          <h2>Focus, follow-up i execution</h2>
-          <p>
-            Widok jest zbudowany jak premium task manager: smart lists, szybkie sortowanie, kanban z drag and drop i
-            szczegoly zadania pod reka.
-          </p>
-        </section>
+    <div className="tasks-layout ms-todo">
+      <aside className="todo-sidebar">
+        <div className="todo-sidebar-top">
+          <button type="button" className="todo-menu-button" aria-label="Menu">
+            <span />
+            <span />
+            <span />
+          </button>
 
-        <section className="tasks-list-panel">
-          {smartFilters.map((filter) => (
-            <button
-              type="button"
-              key={filter.id}
-              className={quickFilter === filter.id ? "task-filter-card active" : "task-filter-card"}
-              onClick={() => setQuickFilter(filter.id)}
-            >
-              <div>
-                <strong>{filter.label}</strong>
-                <span>{filter.description}</span>
-                {filter.id === "completed" ? (
-                  <div className="task-progress-row">
-                    <div className="task-progress-bar">
-                      <span style={{ width: `${stats.progress}%` }} />
-                    </div>
-                    <small>{stats.progress}%</small>
-                  </div>
-                ) : null}
+          <div className="todo-sidebar-scroll">
+            <div className="todo-sidebar-group">
+              {sidebarLists.baseLists.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={selectedListId === item.id ? "todo-side-link active" : "todo-side-link"}
+                  onClick={() => setSelectedListId(item.id)}
+                >
+                  <span>{item.label}</span>
+                  <strong>{item.count}</strong>
+                </button>
+              ))}
+            </div>
+
+            <div className="todo-workspace-group">
+              <div className="todo-workspace-title">
+                <strong>{workspaceName || "Workspace"}</strong>
+                {workspaceInviteCode ? <small>Kod: {workspaceInviteCode}</small> : null}
               </div>
-              <div className="task-filter-count">{filter.count}</div>
-            </button>
-          ))}
-
-          <div className="task-smart-summary">
-            <div>
-              <span>Otwarte</span>
-              <strong>{stats.open}</strong>
-            </div>
-            <div>
-              <span>W kanbanie</span>
-              <strong>{boardColumns.length} kolumn</strong>
-            </div>
-            <div>
-              <span>Tagi</span>
-              <strong>{tagOptions.length}</strong>
+              {sidebarLists.workspaceLists.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={selectedListId === item.id ? "todo-side-link active workspace" : "todo-side-link workspace"}
+                  onClick={() => setSelectedListId(item.id)}
+                >
+                  <span>{item.label}</span>
+                  <strong>{item.count}</strong>
+                </button>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="tasks-list-panel">
-          <div className="panel-header compact">
-            <div>
-              <div className="eyebrow">Google Tasks</div>
-              <h2>Integracja</h2>
+        <div className="todo-sidebar-footer">
+          <div className="todo-progress-card">
+            <span>Zakonczone</span>
+            <strong>{stats.completed}</strong>
+            <div className="todo-progress-track">
+              <span style={{ width: `${stats.progress}%` }} />
             </div>
           </div>
-          <div className="integration-card compact">
-            <div className="button-row">
+
+          <div className="todo-google-card">
+            <div className="todo-google-head">
+              <strong>Google Tasks</strong>
+              <span>
+                {googleTasksStatus === "connected"
+                  ? "Polaczone"
+                  : googleTasksStatus === "loading"
+                    ? "Laczenie..."
+                    : "Offline"}
+              </span>
+            </div>
+            <div className="todo-google-actions">
               <button
                 type="button"
-                className="secondary-button"
+                className="todo-command-button"
                 onClick={onConnectGoogleTasks}
                 disabled={!googleTasksEnabled || googleTasksStatus === "loading"}
               >
-                {googleTasksStatus === "loading" ? "Laczenie..." : "Polacz"}
+                Connect
               </button>
-              <button type="button" className="ghost-button" onClick={onImportGoogleTasks} disabled={!selectedGoogleTaskListId}>
-                Importuj
+              <button type="button" className="todo-command-button" onClick={onImportGoogleTasks} disabled={!selectedGoogleTaskListId}>
+                Import
               </button>
-              <button type="button" className="ghost-button" onClick={onExportGoogleTasks} disabled={!selectedGoogleTaskListId}>
-                Eksportuj
+              <button type="button" className="todo-command-button" onClick={onExportGoogleTasks} disabled={!selectedGoogleTaskListId}>
+                Export
               </button>
             </div>
-
-            <label>
-              <span>Lista zadan Google</span>
-              <select value={selectedGoogleTaskListId} onChange={(event) => onSelectGoogleTaskList(event.target.value)}>
-                <option value="">Wybierz liste</option>
-                {googleTaskLists.map((list) => (
-                  <option key={list.id} value={list.id}>
-                    {list.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {googleTasksMessage ? <div className="inline-alert info">{googleTasksMessage}</div> : null}
-          </div>
-        </section>
-
-        <section className="tasks-list-panel">
-          <div className="panel-header compact">
-            <div>
-              <div className="eyebrow">Columns</div>
-              <h2>Kanban</h2>
-            </div>
-            <button type="button" className="ghost-button" onClick={() => setBoardEditorOpen((previous) => !previous)}>
-              {boardEditorOpen ? "Ukryj" : "Edytuj"}
-            </button>
+            <select value={selectedGoogleTaskListId} onChange={(event) => onSelectGoogleTaskList(event.target.value)}>
+              <option value="">Wybierz liste</option>
+              {googleTaskLists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.title}
+                </option>
+              ))}
+            </select>
+            {googleTasksMessage ? <div className="todo-helper">{googleTasksMessage}</div> : null}
           </div>
 
-          <div className="column-badge-list">
-            {boardColumns.map((column) => (
-              <span key={column.id} className="column-badge" style={{ "--column-color": column.color }}>
-                {column.label}
-              </span>
-            ))}
-          </div>
+          <button type="button" className="todo-inline-link" onClick={() => setShowColumnManager((previous) => !previous)}>
+            {showColumnManager ? "Ukryj kolumny" : "Manage columns"}
+          </button>
 
-          {boardEditorOpen ? (
-            <div className="column-editor">
+          {showColumnManager ? (
+            <div className="todo-column-manager">
               {boardColumns.map((column) => (
-                <div key={column.id} className="column-editor-row">
+                <div key={column.id} className="todo-column-row">
                   <input value={column.label} onChange={(event) => onUpdateColumn(column.id, { label: event.target.value })} />
                   <input type="color" value={column.color} onChange={(event) => onUpdateColumn(column.id, { color: event.target.value })} />
-                  <label className="toggle-card compact inline">
-                    <input type="checkbox" checked={column.isDone} onChange={(event) => onUpdateColumn(column.id, { isDone: event.target.checked })} />
-                    <div>
-                      <strong>Done</strong>
-                    </div>
+                  <label className="todo-inline-check">
+                    <input
+                      type="checkbox"
+                      checked={column.isDone}
+                      onChange={(event) => onUpdateColumn(column.id, { isDone: event.target.checked })}
+                    />
+                    <span>Done</span>
                   </label>
-                  <button type="button" className="ghost-button small danger-hover" onClick={() => onDeleteColumn(column.id)} disabled={column.system}>
-                    Usun
+                  <button type="button" className="todo-icon-button danger" onClick={() => onDeleteColumn(column.id)} disabled={column.system}>
+                    Remove
                   </button>
                 </div>
               ))}
 
-              <form className="column-create-form" onSubmit={submitColumn}>
+              <form className="todo-column-create" onSubmit={submitColumn}>
                 <input
                   value={columnDraft.label}
                   onChange={(event) => setColumnDraft((previous) => ({ ...previous, label: event.target.value }))}
@@ -511,139 +481,105 @@ export default function TasksTab({
                   value={columnDraft.color}
                   onChange={(event) => setColumnDraft((previous) => ({ ...previous, color: event.target.value }))}
                 />
-                <label className="toggle-card compact inline">
+                <label className="todo-inline-check">
                   <input
                     type="checkbox"
                     checked={columnDraft.isDone}
                     onChange={(event) => setColumnDraft((previous) => ({ ...previous, isDone: event.target.checked }))}
                   />
-                  <div>
-                    <strong>Done</strong>
-                  </div>
+                  <span>Done</span>
                 </label>
-                <button type="submit" className="secondary-button small">
-                  Dodaj
+                <button type="submit" className="todo-command-button primary">
+                  Add
                 </button>
               </form>
             </div>
           ) : null}
-        </section>
+        </div>
       </aside>
 
-      <section className="tasks-main-panel">
-        <div className="tasks-header premium">
-          <div>
-            <div className="eyebrow">Task list</div>
-            <h2>{filterLabel(quickFilter)}</h2>
-          </div>
-
-          <div className="tasks-header-actions">
-            <div className="segmented-control">
-              <button type="button" className={viewMode === "list" ? "segment active" : "segment"} onClick={() => setViewMode("list")}>
-                Lista
-              </button>
-              <button type="button" className={viewMode === "kanban" ? "segment active" : "segment"} onClick={() => setViewMode("kanban")}>
-                Kanban
-              </button>
-            </div>
-
-            <button type="button" className="primary-button" onClick={() => setComposerOpen((previous) => !previous)}>
-              {composerOpen ? "Zamknij" : "Nowe zadanie"}
-            </button>
-          </div>
-        </div>
-
-        <div className="task-toolbar">
-          <label className="task-search-field">
-            <span>Szukaj</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tytul, owner, tag, notatka..." />
-          </label>
-
-          <label>
-            <span>Sortuj</span>
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-              <option value="updated">Ostatnia aktywnosc</option>
-              <option value="due">Termin</option>
-              <option value="priority">Priorytet</option>
-              <option value="owner">Osoba</option>
-              <option value="title">Tytul</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Grupuj</span>
-            <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
-              <option value="none">Bez grupowania</option>
-              <option value="status">Po statusie</option>
-              <option value="owner">Po osobie</option>
-              <option value="priority">Po priorytecie</option>
-              <option value="source">Po zrodle</option>
-              <option value="tag">Po tagu</option>
-              <option value="due">Po terminie</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Osoba</span>
-            <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
-              <option value="all">Wszystkie osoby</option>
-              {peopleOptions.map((person) => (
-                <option key={person} value={person}>
-                  {person}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>Tag</span>
-            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-              <option value="all">Wszystkie tagi</option>
-              {tagOptions.map((tag) => (
-                <option key={tag} value={tag}>
-                  #{tag}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>Priorytet</span>
-            <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
-              <option value="all">Kazdy</option>
-              {TASK_PRIORITIES.map((priority) => (
-                <option key={priority.id} value={priority.id}>
-                  {priority.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        {composerOpen ? (
-          <form className="task-composer-card premium" onSubmit={submitTask}>
-            <div className="task-composer-header">
-              <div>
-                <div className="eyebrow">Composer</div>
-                <h3>Dodaj zadanie</h3>
+      <section className="todo-main">
+        <div className="todo-shell">
+          <div className="todo-commandbar">
+            <div className="todo-commandbar-left">
+              <div className="todo-list-title">
+                <span className="todo-list-icon" />
+                <strong>
+                  {sidebarLists.baseLists.find((item) => item.id === selectedListId)?.label ||
+                    sidebarLists.workspaceLists.find((item) => item.id === selectedListId)?.label ||
+                    "Tasks"}
+                </strong>
               </div>
-              <button type="button" className="ghost-button small" onClick={() => setComposerOpen(false)}>
-                Zamknij
-              </button>
+
+              <div className="todo-view-switch">
+                <button
+                  type="button"
+                  className={viewMode === "kanban" ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("kanban")}
+                >
+                  Grid
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "list" ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("list")}
+                >
+                  List
+                </button>
+              </div>
             </div>
 
-            <div className="task-composer-grid">
-              <label>
-                <span>Tytul</span>
-                <input
-                  value={draft.title}
-                  onChange={(event) => setDraft((previous) => ({ ...previous, title: event.target.value }))}
-                  placeholder="np. Przygotowac podsumowanie dla klienta"
-                />
+            <div className="todo-commandbar-right">
+              <label className="todo-filter-item">
+                <span>Sort</span>
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                  <option value="updated">Updated</option>
+                  <option value="title">Title</option>
+                  <option value="due">Due date</option>
+                  <option value="owner">Owner</option>
+                  <option value="priority">Importance</option>
+                </select>
               </label>
+              <label className="todo-filter-item">
+                <span>Group</span>
+                <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
+                  <option value="none">None</option>
+                  <option value="status">Status</option>
+                  <option value="owner">Owner</option>
+                  <option value="priority">Priority</option>
+                  <option value="source">Source</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="todo-command-button"
+                onClick={shareWorkspace}
+              >
+                Share
+              </button>
+            </div>
+          </div>
+
+          <form className="todo-add-row" onSubmit={submitQuickTask}>
+            <button type="submit" className="todo-task-circle" aria-label="Dodaj zadanie" />
+            <input
+              value={quickDraft.title}
+              onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
+              placeholder="Add a task"
+            />
+            <button type="button" className="todo-command-button" onClick={() => setShowAdvancedCreate((previous) => !previous)}>
+              {showAdvancedCreate ? "Hide details" : "Details"}
+            </button>
+            <button type="submit" className="todo-command-button primary">
+              Add
+            </button>
+          </form>
+
+          {showAdvancedCreate ? (
+            <div className="todo-add-advanced">
               <label>
-                <span>Osoba</span>
-                <select value={draft.owner} onChange={(event) => setDraft((previous) => ({ ...previous, owner: event.target.value }))}>
+                <span>Owner</span>
+                <select value={quickDraft.owner} onChange={(event) => setQuickDraft((previous) => ({ ...previous, owner: event.target.value }))}>
                   <option value="">Nieprzypisane</option>
                   {peopleOptions.map((person) => (
                     <option key={person} value={person}>
@@ -653,22 +589,16 @@ export default function TasksTab({
                 </select>
               </label>
               <label>
-                <span>Termin</span>
-                <input type="datetime-local" value={draft.dueDate} onChange={(event) => setDraft((previous) => ({ ...previous, dueDate: event.target.value }))} />
+                <span>Due date</span>
+                <input
+                  type="datetime-local"
+                  value={quickDraft.dueDate}
+                  onChange={(event) => setQuickDraft((previous) => ({ ...previous, dueDate: event.target.value }))}
+                />
               </label>
               <label>
-                <span>Kolumna</span>
-                <select value={draft.status} onChange={(event) => setDraft((previous) => ({ ...previous, status: event.target.value }))}>
-                  {boardColumns.map((column) => (
-                    <option key={column.id} value={column.id}>
-                      {column.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Priorytet</span>
-                <select value={draft.priority} onChange={(event) => setDraft((previous) => ({ ...previous, priority: event.target.value }))}>
+                <span>Importance</span>
+                <select value={quickDraft.priority} onChange={(event) => setQuickDraft((previous) => ({ ...previous, priority: event.target.value }))}>
                   {TASK_PRIORITIES.map((priority) => (
                     <option key={priority.id} value={priority.id}>
                       {priority.label}
@@ -677,233 +607,216 @@ export default function TasksTab({
                 </select>
               </label>
               <label>
-                <span>Tagi</span>
-                <input value={draft.tags} onChange={(event) => setDraft((previous) => ({ ...previous, tags: event.target.value }))} placeholder="np. klient, budzet, follow-up" />
+                <span>Status</span>
+                <select value={quickDraft.status} onChange={(event) => setQuickDraft((previous) => ({ ...previous, status: event.target.value }))}>
+                  {boardColumns.map((column) => (
+                    <option key={column.id} value={column.id}>
+                      {column.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Tags</span>
+                <input value={quickDraft.tags} onChange={(event) => setQuickDraft((previous) => ({ ...previous, tags: event.target.value }))} placeholder="client, budget" />
+              </label>
+              <label className="todo-inline-check">
+                <input
+                  type="checkbox"
+                  checked={quickDraft.important}
+                  onChange={(event) => setQuickDraft((previous) => ({ ...previous, important: event.target.checked }))}
+                />
+                <span>Important</span>
               </label>
             </div>
+          ) : null}
 
-            <label>
-              <span>Opis</span>
-              <textarea rows="3" value={draft.description} onChange={(event) => setDraft((previous) => ({ ...previous, description: event.target.value }))} />
+          <div className="todo-filter-row">
+            <label className="todo-filter-search">
+              <span>Search</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks" />
             </label>
-
-            <label>
-              <span>Notatki</span>
-              <textarea rows="4" value={draft.notes} onChange={(event) => setDraft((previous) => ({ ...previous, notes: event.target.value }))} />
+            <label className="todo-filter-item">
+              <span>Person</span>
+              <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
+                <option value="all">All</option>
+                {peopleOptions.map((person) => (
+                  <option key={person} value={person}>
+                    {person}
+                  </option>
+                ))}
+              </select>
             </label>
+            <label className="todo-filter-item">
+              <span>Tag</span>
+              <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+                <option value="all">All</option>
+                {tagOptions.map((tag) => (
+                  <option key={tag} value={tag}>
+                    #{tag}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <div className="composer-footer">
-              <label className="toggle-card compact inline">
-                <input type="checkbox" checked={draft.important} onChange={(event) => setDraft((previous) => ({ ...previous, important: event.target.checked }))} />
-                <div>
-                  <strong>Wazne</strong>
-                </div>
-              </label>
+          {message ? <div className="todo-helper banner">{message}</div> : null}
 
-              <div className="button-row">
-                <button type="submit" className="primary-button">
-                  Dodaj zadanie
-                </button>
-                <button type="button" className="ghost-button" onClick={resetDraft}>
-                  Wyczysc
-                </button>
+          {viewMode === "list" ? (
+            <div className="todo-table-wrap">
+              <div className="todo-table-head">
+                <span />
+                <span>Title</span>
+                <span>Due Date</span>
+                <span>Importance</span>
               </div>
-            </div>
 
-            {taskMessage ? <div className="inline-alert info">{taskMessage}</div> : null}
-          </form>
-        ) : null}
-
-        {viewMode === "list" ? (
-          <div className="tasks-list-groups">
-            {groupedTasks.map((group) => (
-              <section key={group.id} className="task-group">
-                {groupBy !== "none" ? (
-                  <div className="task-group-header">
-                    <strong>{group.label}</strong>
-                    <span>{group.tasks.length} zadan</span>
-                  </div>
-                ) : null}
-
-                <div className="tasks-items compact">
+              {groupedTasks.map((group) => (
+                <div key={group.id} className="todo-table-group">
+                  {groupBy !== "none" ? <div className="todo-group-label">{group.label}</div> : null}
                   {group.tasks.length ? (
-                    group.tasks.map((task) => {
-                      const priority = TASK_PRIORITIES.find((item) => item.id === task.priority);
-                      const column = boardColumns.find((item) => item.id === task.status);
-
-                      return (
+                    group.tasks.map((task) => (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        key={task.id}
+                        className={selectedTask?.id === task.id ? "todo-table-row active" : "todo-table-row"}
+                        onClick={() => setSelectedTaskId(task.id)}
+                        onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
+                      >
+                        <button
+                          type="button"
+                          className={task.completed ? "todo-task-circle completed" : "todo-task-circle"}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onUpdateTask(task.id, { completed: !task.completed });
+                          }}
+                        />
+                        <span className="todo-title-cell">
+                          <strong>{task.title}</strong>
+                          <small>{task.owner || "Nieprzypisane"}</small>
+                        </span>
+                        <span className={dueTone(task.dueDate) === "danger" ? "todo-date danger" : "todo-date"}>
+                          {formatListDueDate(task.dueDate)}
+                        </span>
+                        <button
+                          type="button"
+                          className={task.important ? "todo-star active" : "todo-star"}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onUpdateTask(task.id, { important: !task.important });
+                          }}
+                        >
+                          {"\u2605"}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="todo-empty">Brak zadan w tej sekcji.</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="todo-kanban">
+              {kanbanColumns.map((column) => (
+                <section
+                  key={column.id}
+                  className={dropColumnId === column.id ? "todo-kanban-column drop" : "todo-kanban-column"}
+                  onDragOver={canDrop}
+                  onDragEnter={() => setDropColumnId(column.id)}
+                  onDragLeave={() => setDropColumnId((previous) => (previous === column.id ? "" : previous))}
+                  onDrop={(event) => handleDrop(column.id, event)}
+                >
+                  <header className="todo-kanban-header" style={{ "--column-color": column.color }}>
+                    <strong>{column.label}</strong>
+                    <span>{column.tasks.length}</span>
+                  </header>
+                  <div className="todo-kanban-body">
+                    {column.tasks.length ? (
+                      column.tasks.map((task) => (
                         <div
                           key={task.id}
                           role="button"
                           tabIndex={0}
-                          className={selectedTask?.id === task.id ? "task-row active dense" : "task-row dense"}
-                          onClick={() => setSelectedTaskId(task.id)}
-                          onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
-                        >
-                          <div className="task-row-left">
-                            <button
-                              type="button"
-                              className={task.completed ? "task-check completed" : "task-check"}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onUpdateTask(task.id, { completed: !task.completed });
-                              }}
-                            >
-                              {task.completed ? "OK" : ""}
-                            </button>
-                            <div className="task-copy">
-                              <strong>{task.title}</strong>
-                              <span>{`${task.owner || "Nieprzypisane"} | ${task.sourceMeetingTitle}`}</span>
-                              <div className="task-inline-meta">
-                                <span className={`task-status-chip ${task.status}`} style={{ "--status-color": column?.color || "#5a92ff" }}>
-                                  {column?.label || task.status}
-                                </span>
-                                <span className={`priority-chip ${task.priority}`} style={{ "--priority-color": priority?.color || "#75d6c4" }}>
-                                  {priority?.label || task.priority}
-                                </span>
-                                {task.important ? <span className="task-flag">Wazne</span> : null}
-                                {(task.tags || []).slice(0, 3).map((tag) => (
-                                  <span key={`${task.id}-${tag}`} className="task-tag-chip">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="task-row-right">
-                            {task.dueDate ? <span className="task-date">{formatDateTime(task.dueDate)}</span> : null}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="task-empty-state">
-                      <strong>Brak taskow</strong>
-                      <span>Ten segment jest pusty.</span>
-                    </div>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          <div className="kanban-board premium">
-            {kanbanColumns.map((column) => (
-              <section
-                key={column.id}
-                className={dragTaskId ? "kanban-column drop-target" : "kanban-column"}
-                style={{ "--column-color": column.color }}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const taskId = event.dataTransfer.getData("text/plain") || dragTaskId;
-                  if (taskId) {
-                    onMoveTaskToColumn(taskId, column.id);
-                    setDragTaskId("");
-                  }
-                }}
-              >
-                <div className="kanban-column-header premium" style={{ "--column-color": column.color }}>
-                  <div>
-                    <strong>{column.label}</strong>
-                    <span>{column.tasks.length} zadan</span>
-                  </div>
-                </div>
-
-                <div className="kanban-column-body">
-                  {column.tasks.length ? (
-                    column.tasks.map((task) => {
-                      const priority = TASK_PRIORITIES.find((item) => item.id === task.priority);
-                      return (
-                        <article
-                          key={task.id}
-                          role="button"
-                          tabIndex={0}
+                          className={selectedTask?.id === task.id ? "todo-kanban-card active" : "todo-kanban-card"}
                           draggable
-                          className={selectedTask?.id === task.id ? "kanban-card active" : "kanban-card"}
-                          onClick={() => setSelectedTaskId(task.id)}
-                          onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                           onDragStart={(event) => {
                             setDragTaskId(task.id);
                             event.dataTransfer.setData("text/plain", task.id);
+                            event.dataTransfer.effectAllowed = "move";
                           }}
-                          onDragEnd={() => setDragTaskId("")}
+                          onDragEnd={() => {
+                            setDragTaskId("");
+                            setDropColumnId("");
+                          }}
+                          onClick={() => setSelectedTaskId(task.id)}
+                          onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                         >
-                          <div className="kanban-card-top">
+                          <div className="todo-kanban-card-top">
                             <strong>{task.title}</strong>
-                            <span className={`priority-chip ${task.priority}`} style={{ "--priority-color": priority?.color || "#75d6c4" }}>
-                              {priority?.label || task.priority}
-                            </span>
+                            <button
+                              type="button"
+                              className={task.important ? "todo-star active inline" : "todo-star inline"}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onUpdateTask(task.id, { important: !task.important });
+                              }}
+                            >
+                              {"\u2605"}
+                            </button>
                           </div>
-                          <p>{task.description || task.sourceQuote || "Task z analizy spotkania."}</p>
-                          <div className="kanban-card-meta">
-                            <span>{task.owner}</span>
-                            <span>{task.sourceType === "manual" ? "Reczne" : task.sourceMeetingTitle}</span>
+                          <p>{task.description || task.sourceQuote || "Task powstal na podstawie spotkania."}</p>
+                          <div className="todo-kanban-meta">
+                            <span>{task.owner || "Nieprzypisane"}</span>
+                            <span>{formatListDueDate(task.dueDate) || "No date"}</span>
                           </div>
-                          <div className="chip-list compact">
-                            {task.important ? <span className="task-flag">Wazne</span> : null}
+                          <div className="todo-tag-list">
                             {(task.tags || []).slice(0, 3).map((tag) => (
-                              <span key={`${task.id}-${tag}`} className="task-tag-chip">
+                              <span key={`${task.id}-${tag}`} className="todo-tag">
                                 #{tag}
                               </span>
                             ))}
                           </div>
-                        </article>
-                      );
-                    })
-                  ) : (
-                    <div className="kanban-empty">Przeciagnij tu zadanie albo dodaj nowe.</div>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="todo-empty">Przeciagnij tu zadanie.</div>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
-      <aside className="task-detail-panel premium">
+      <aside className="todo-details">
         {selectedTask ? (
-          <>
-            <div className="panel-header compact">
+          <div className="todo-detail-card">
+            <div className="todo-detail-header">
               <div>
-                <div className="eyebrow">Szczegoly</div>
+                <span className="todo-detail-eyebrow">
+                  {selectedTask.sourceType === "meeting"
+                    ? "Spotkanie"
+                    : selectedTask.sourceType === "google"
+                      ? "Google Tasks"
+                      : "Reczne"}
+                </span>
                 <h2>{selectedTask.title}</h2>
               </div>
+              <button type="button" className="todo-icon-button danger" onClick={() => onDeleteTask(selectedTask.id)}>
+                {selectedTask.sourceType === "meeting" ? "Hide" : "Delete"}
+              </button>
             </div>
 
-            <div className="task-detail-source">
-              <span className="task-source-badge">
-                {selectedTask.sourceType === "meeting"
-                  ? "Spotkanie"
-                  : selectedTask.sourceType === "google"
-                    ? "Google Tasks"
-                    : "Reczne"}
-              </span>
-              {selectedTask.sourceMeetingTitle ? <span className="soft-copy">{selectedTask.sourceMeetingTitle}</span> : null}
-            </div>
-
-            <div className="task-detail-meta">
-              <div className="task-detail-chip">
-                <span>Osoba</span>
-                <strong>{selectedTask.owner}</strong>
-              </div>
-              <div className="task-detail-chip">
-                <span>Status</span>
-                <strong>{boardColumns.find((status) => status.id === selectedTask.status)?.label || selectedTask.status}</strong>
-              </div>
-              <div className="task-detail-chip">
-                <span>Priorytet</span>
-                <strong>{TASK_PRIORITIES.find((item) => item.id === selectedTask.priority)?.label || selectedTask.priority}</strong>
-              </div>
-            </div>
-
-            <div className="stack-form roomy">
+            <div className="todo-detail-form">
               <label>
-                <span>Tytul</span>
+                <span>Title</span>
                 <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
               </label>
               <label>
-                <span>Osoba</span>
+                <span>Owner</span>
                 <select value={selectedTask.owner} onChange={(event) => onUpdateTask(selectedTask.id, { owner: event.target.value })}>
                   <option value="">Nieprzypisane</option>
                   {peopleOptions.map((person) => (
@@ -924,7 +837,15 @@ export default function TasksTab({
                 </select>
               </label>
               <label>
-                <span>Priorytet</span>
+                <span>Due date</span>
+                <input
+                  type="datetime-local"
+                  value={toInputDateTime(selectedTask.dueDate)}
+                  onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
+                />
+              </label>
+              <label>
+                <span>Priority</span>
                 <select value={selectedTask.priority} onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}>
                   {TASK_PRIORITIES.map((priority) => (
                     <option key={priority.id} value={priority.id}>
@@ -934,78 +855,48 @@ export default function TasksTab({
                 </select>
               </label>
               <label>
-                <span>Termin</span>
-                <input
-                  type="datetime-local"
-                  value={toLocalInputValue(selectedTask.dueDate)}
-                  onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
-                />
-              </label>
-              <label>
-                <span>Tagi</span>
+                <span>Tags</span>
                 <input value={(selectedTask.tags || []).join(", ")} onChange={(event) => onUpdateTask(selectedTask.id, { tags: event.target.value })} />
               </label>
-              <label className="task-note-field">
-                <span>Opis</span>
+              <label className="full">
+                <span>Description</span>
                 <textarea rows="3" value={selectedTask.description || ""} onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })} />
+              </label>
+              <label className="full">
+                <span>Notes</span>
+                <textarea rows="6" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} />
               </label>
             </div>
 
-            <div className="markdown-toolbar">
-              <button type="button" className="ghost-button small" onClick={() => insertMarkdown("bold")}>
-                Pogrub
+            <div className="todo-detail-actions">
+              <button type="button" className="todo-command-button primary" onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}>
+                {selectedTask.completed ? "Reopen" : "Mark complete"}
               </button>
-              <button type="button" className="ghost-button small" onClick={() => insertMarkdown("list")}>
-                Lista
+              <button type="button" className="todo-command-button" onClick={() => onUpdateTask(selectedTask.id, { important: !selectedTask.important })}>
+                {selectedTask.important ? "Remove star" : "Add star"}
               </button>
-            </div>
-
-            <label className="task-note-field markdown-field">
-              <span>Notatki</span>
-              <textarea
-                ref={notesRef}
-                rows="6"
-                value={selectedTask.notes || ""}
-                onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
-                placeholder="Dodaj prywatne notatki, checklisty albo format markdown."
-              />
-            </label>
-
-            <div className="markdown-preview" dangerouslySetInnerHTML={{ __html: renderMarkdownPreview(selectedTask.notes) }} />
-
-            <div className="task-detail-actions premium">
-              <button
-                type="button"
-                className={selectedTask.completed ? "secondary-button" : "primary-button"}
-                onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}
-              >
-                {selectedTask.completed ? "Przywroc jako otwarte" : "Oznacz jako zrobione"}
-              </button>
-              <button type="button" className={selectedTask.important ? "secondary-button" : "ghost-button"} onClick={() => onUpdateTask(selectedTask.id, { important: !selectedTask.important })}>
-                {selectedTask.important ? "Usun waznosc" : "Oznacz jako wazne"}
-              </button>
-              <button type="button" className="ghost-button danger-hover" onClick={() => onDeleteTask(selectedTask.id)}>
-                {selectedTask.sourceType === "meeting" ? "Ukryj z listy" : "Usun zadanie"}
-              </button>
-            </div>
-
-            <div className="task-source-card">
-              <span>Zrodlo</span>
-              <p>{selectedTask.sourceQuote || selectedTask.description || "Task powstal na bazie analizy spotkania."}</p>
-              {selectedTask.sourceType === "meeting" ? (
-                <button type="button" className="ghost-button" onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}>
-                  Otworz spotkanie
+              {selectedTask.sourceMeetingId ? (
+                <button type="button" className="todo-command-button" onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}>
+                  Open meeting
                 </button>
               ) : null}
             </div>
-          </>
+
+            <div className="todo-detail-meta-card">
+              <strong>Source</strong>
+              <p>{selectedTask.sourceQuote || selectedTask.sourceMeetingTitle || "Brak cytatu zrodlowego."}</p>
+              <small>{formatDateTime(selectedTask.updatedAt || selectedTask.createdAt)}</small>
+            </div>
+          </div>
         ) : (
-          <div className="task-empty-state detail">
-            <strong>Wybierz zadanie</strong>
-            <span>Tutaj zobaczysz szczegoly, ownera, termin, tagi i notatki w Markdown.</span>
+          <div className="todo-detail-card empty">
+            <h2>Select a task</h2>
+            <p>Tutaj zobaczysz szczegoly zadania, ownera, status i notatki.</p>
           </div>
         )}
       </aside>
     </div>
   );
 }
+
+

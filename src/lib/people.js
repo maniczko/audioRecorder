@@ -60,9 +60,10 @@ function personSummary(name, meetings, tasks, needs, outputs) {
   return `${name} ${firstTrait}. Najczesciej oczekuje: ${firstNeed}. Po spotkaniach najbardziej licza sie dla tej osoby: ${firstOutput}.`;
 }
 
-export function buildPeopleProfiles(meetings, tasks, currentUser) {
+export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembers = []) {
   const names = uniqueStrings([
     currentUser?.name,
+    ...safeArray(workspaceMembers).flatMap((member) => [member.name, member.email, member.googleEmail]),
     ...safeArray(meetings).flatMap((meeting) => [
       ...safeArray(meeting.attendees),
       ...Object.values(meeting.speakerNames || {}),

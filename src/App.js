@@ -4,7 +4,9 @@ import { analyzeMeeting } from "./lib/analysis";
 import {
   changeUserPassword,
   loginUser,
+  requestPasswordReset,
   registerUser,
+  resetPasswordWithCode,
   updateUserProfile,
   upsertGoogleUser,
 } from "./lib/auth";
@@ -19,7 +21,12 @@ import {
   monthLabel,
   weekdayLabels,
 } from "./lib/calendarView";
-import { diarizeSegments, signatureAroundTimestamp, summarizeSpectrum } from "./lib/diarization";
+import {
+  diarizeSegments,
+  signatureAroundTimestamp,
+  summarizeSpectrum,
+  verifyRecognizedSegments,
+} from "./lib/diarization";
 import {
   GOOGLE_CLIENT_ID,
   fetchPrimaryCalendarEvents,
@@ -48,6 +55,7 @@ import {
   readStorage,
   writeStorage,
 } from "./lib/storage";
+import { printMeetingPdf } from "./lib/export";
 import ProfileTab from "./ProfileTab";
 import PeopleTab from "./PeopleTab";
 import TasksTab from "./TasksTab";
@@ -64,6 +72,7 @@ import {
   updateTaskColumns,
   upsertGoogleImportedTasks,
 } from "./lib/tasks";
+import { migrateWorkspaceData, resolveWorkspaceForUser, workspaceMembers } from "./lib/workspace";
 
 const DEFAULT_BARS = Array.from({ length: 24 }, (_, index) => (index % 4 === 0 ? 24 : 10));
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -203,7 +212,17 @@ function AuthScreen({
   googleEnabled,
   googleButtonRef,
   googleAuthMessage,
+  resetDraft,
+  setResetDraft,
+  resetMessage,
+  resetPreviewCode,
+  resetExpiresAt,
+  requestResetCode,
+  completeReset,
 }) {
+  const isRegister = authMode === "register";
+  const isForgot = authMode === "forgot";
+
   return (
     <div className="auth-shell">
       <div className="backdrop-orb backdrop-orb-left" />
@@ -237,12 +256,12 @@ function AuthScreen({
         <div className="panel-header">
           <div>
             <div className="eyebrow">Workspace access</div>
-            <h2>{authMode === "register" ? "Stworz konto" : "Zaloguj sie"}</h2>
+            <h2>{isRegister ? "Stworz konto" : isForgot ? "Reset hasla" : "Zaloguj sie"}</h2>
           </div>
           <div className="mode-switch">
             <button
               type="button"
-              className={authMode === "register" ? "pill active" : "pill"}
+              className={isRegister ? "pill active" : "pill"}
               onClick={() => setAuthMode("register")}
             >
               Rejestracja
@@ -253,6 +272,13 @@ function AuthScreen({
               onClick={() => setAuthMode("login")}
             >
               Logowanie
+            </button>
+            <button
+              type="button"
+              className={isForgot ? "pill active" : "pill"}
+              onClick={() => setAuthMode("forgot")}
+            >
+              Reset
             </button>
           </div>
         </div>
@@ -274,59 +300,167 @@ function AuthScreen({
 
         <div className="auth-divider"><span>albo klasycznie</span></div>
 
-        <form className="auth-form" onSubmit={submitAuth}>
-          {authMode === "register" ? (
-            <>
-              <label>
-                <span>Imie</span>
-                <input
-                  value={authDraft.name}
-                  onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
-                  placeholder="np. Anna Nowak"
-                />
-              </label>
-              <label>
-                <span>Rola</span>
-                <input
-                  value={authDraft.role}
-                  onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
-                  placeholder="np. Product Manager"
-                />
-              </label>
-              <label>
-                <span>Firma</span>
-                <input
-                  value={authDraft.company}
-                  onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
-                  placeholder="np. VoiceLog"
-                />
-              </label>
-            </>
-          ) : null}
+        {isForgot ? (
+          <div className="auth-form">
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                value={resetDraft.email}
+                onChange={(event) => setResetDraft((previous) => ({ ...previous, email: event.target.value }))}
+                placeholder="name@company.com"
+              />
+            </label>
 
-          <label>
-            <span>Email</span>
-            <input
-              type="email"
-              value={authDraft.email}
-              onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
-              placeholder="name@company.com"
-            />
-          </label>
-          <label>
-            <span>Haslo</span>
-            <input
-              type="password"
-              value={authDraft.password}
-              onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
-              placeholder="minimum 6 znakow"
-            />
-          </label>
-          {authError ? <div className="inline-alert error">{authError}</div> : null}
-          <button type="submit" className="primary-button">
-            {authMode === "register" ? "Wejdz do workspace" : "Zaloguj"}
-          </button>
-        </form>
+            <button type="button" className="primary-button" onClick={requestResetCode}>
+              Wyslij kod resetu
+            </button>
+
+            {resetPreviewCode ? (
+              <div className="inline-alert info">
+                W tej lokalnej wersji kod pokazujemy tutaj zamiast wysylki mailem:
+                <strong> {resetPreviewCode}</strong>
+                {resetExpiresAt ? ` (wazny do ${formatDateTime(resetExpiresAt)})` : ""}
+              </div>
+            ) : null}
+
+            <label>
+              <span>Kod resetu</span>
+              <input
+                value={resetDraft.code}
+                onChange={(event) => setResetDraft((previous) => ({ ...previous, code: event.target.value }))}
+                placeholder="6-cyfrowy kod"
+              />
+            </label>
+            <label>
+              <span>Nowe haslo</span>
+              <input
+                type="password"
+                value={resetDraft.newPassword}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({ ...previous, newPassword: event.target.value }))
+                }
+                placeholder="minimum 6 znakow"
+              />
+            </label>
+            <label>
+              <span>Powtorz nowe haslo</span>
+              <input
+                type="password"
+                value={resetDraft.confirmPassword}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({ ...previous, confirmPassword: event.target.value }))
+                }
+                placeholder="powtorz haslo"
+              />
+            </label>
+            {resetMessage ? <div className="inline-alert info">{resetMessage}</div> : null}
+            {authError ? <div className="inline-alert error">{authError}</div> : null}
+            <button type="button" className="secondary-button" onClick={completeReset}>
+              Ustaw nowe haslo
+            </button>
+          </div>
+        ) : (
+          <form className="auth-form" onSubmit={submitAuth}>
+            {isRegister ? (
+              <>
+                <label>
+                  <span>Imie</span>
+                  <input
+                    value={authDraft.name}
+                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
+                    placeholder="np. Anna Nowak"
+                  />
+                </label>
+                <label>
+                  <span>Rola</span>
+                  <input
+                    value={authDraft.role}
+                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
+                    placeholder="np. Product Manager"
+                  />
+                </label>
+                <label>
+                  <span>Firma</span>
+                  <input
+                    value={authDraft.company}
+                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
+                    placeholder="np. VoiceLog"
+                  />
+                </label>
+
+                <div className="mode-switch split">
+                  <button
+                    type="button"
+                    className={authDraft.workspaceMode === "join" ? "pill" : "pill active"}
+                    onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "create" }))}
+                  >
+                    Nowy workspace
+                  </button>
+                  <button
+                    type="button"
+                    className={authDraft.workspaceMode === "join" ? "pill active" : "pill"}
+                    onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "join" }))}
+                  >
+                    Dolacz po kodzie
+                  </button>
+                </div>
+
+                {authDraft.workspaceMode === "join" ? (
+                  <label>
+                    <span>Kod workspace</span>
+                    <input
+                      value={authDraft.workspaceCode}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({ ...previous, workspaceCode: event.target.value }))
+                      }
+                      placeholder="np. AB12CD"
+                    />
+                  </label>
+                ) : (
+                  <label>
+                    <span>Nazwa workspace</span>
+                    <input
+                      value={authDraft.workspaceName}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))
+                      }
+                      placeholder="np. Zespol sprzedazy"
+                    />
+                  </label>
+                )}
+              </>
+            ) : null}
+
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                value={authDraft.email}
+                onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
+                placeholder="name@company.com"
+              />
+            </label>
+            <label>
+              <span>Haslo</span>
+              <input
+                type="password"
+                value={authDraft.password}
+                onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
+                placeholder="minimum 6 znakow"
+              />
+            </label>
+            {!isRegister ? (
+              <button type="button" className="link-button" onClick={() => setAuthMode("forgot")}>
+                Zapomnialem hasla
+              </button>
+            ) : null}
+            {authError ? <div className="inline-alert error">{authError}</div> : null}
+            <button type="submit" className="primary-button">
+              {isRegister ? "Wejdz do workspace" : "Zaloguj"}
+            </button>
+          </form>
+        )}
       </section>
     </div>
   );
@@ -598,14 +732,33 @@ function CalendarTab({
 export default function App() {
   const [users, setUsers] = useStoredState(STORAGE_KEYS.users, []);
   const [session, setSession] = useStoredState(STORAGE_KEYS.session, null);
+  const [workspaces, setWorkspaces] = useStoredState(STORAGE_KEYS.workspaces, []);
   const [meetings, setMeetings] = useStoredState(STORAGE_KEYS.meetings, []);
   const [manualTasks, setManualTasks] = useStoredState(STORAGE_KEYS.manualTasks, []);
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
   const [authMode, setAuthMode] = useState("register");
-  const [authDraft, setAuthDraft] = useState({ name: "", role: "", company: "", email: "", password: "" });
+  const [authDraft, setAuthDraft] = useState({
+    name: "",
+    role: "",
+    company: "",
+    email: "",
+    password: "",
+    workspaceMode: "create",
+    workspaceName: "",
+    workspaceCode: "",
+  });
   const [authError, setAuthError] = useState("");
   const [googleAuthMessage, setGoogleAuthMessage] = useState("");
+  const [resetDraft, setResetDraft] = useState({
+    email: "",
+    code: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetPreviewCode, setResetPreviewCode] = useState("");
+  const [resetExpiresAt, setResetExpiresAt] = useState("");
 
   const [profileDraft, setProfileDraft] = useState(buildProfileDraft(null));
   const [profileMessage, setProfileMessage] = useState("");
@@ -662,9 +815,15 @@ export default function App() {
 
   const currentUser = users.find((user) => user.id === session?.userId) || null;
   const currentUserId = currentUser?.id || null;
-  const userMeetings = currentUser
+  const currentWorkspaceId = currentUser ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId) : null;
+  const currentWorkspace = workspaces.find((workspace) => workspace.id === currentWorkspaceId) || null;
+  const currentWorkspaceMembers = workspaceMembers(users, currentWorkspace);
+  const availableWorkspaces = currentUser
+    ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id))
+    : [];
+  const userMeetings = currentWorkspaceId
     ? [...meetings]
-        .filter((meeting) => meeting.userId === currentUser.id)
+        .filter((meeting) => meeting.workspaceId === currentWorkspaceId)
         .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
     : [];
   const selectedMeeting = userMeetings.find((meeting) => meeting.id === selectedMeetingId) || null;
@@ -684,17 +843,61 @@ export default function App() {
   const displayRecording = liveRecording || selectedRecording;
   const displaySpeakerNames = displayRecording?.speakerNames || selectedMeeting?.speakerNames || {};
   const studioAnalysis = selectedRecording?.analysis || selectedMeeting?.analysis || null;
-  const taskColumns = buildTaskColumns(taskBoards, currentUserId);
-  const meetingTasks = buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser, taskColumns);
-  const taskPeople = buildTaskPeople(userMeetings, currentUser);
+  const taskColumns = buildTaskColumns(taskBoards, currentWorkspaceId);
+  const meetingTasks = buildTasksFromMeetings(
+    userMeetings,
+    manualTasks,
+    taskState,
+    currentUser,
+    taskColumns,
+    currentWorkspaceId
+  );
+  const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers);
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
-  const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser);
+  const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
   const bucket = groupMeetingsByDay(userMeetings, googleCalendarEvents);
   const monthMatrix = buildMonthMatrix(calendarMonth);
   const miniMatrix = buildMonthMatrix(calendarMonth);
   const selectedRecordingAudioUrl = selectedRecording ? audioUrls[selectedRecording.id] : "";
   const speechRecognitionSupported = Boolean(getSpeechRecognitionClass());
   const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
+
+  useEffect(() => {
+    const migration = migrateWorkspaceData({
+      users,
+      workspaces,
+      meetings,
+      manualTasks,
+      taskBoards,
+      session,
+    });
+
+    if (!migration.changed) {
+      return;
+    }
+
+    setUsers(migration.users);
+    setWorkspaces(migration.workspaces);
+    setMeetings(migration.meetings);
+    setManualTasks(migration.manualTasks);
+    setTaskBoards(migration.taskBoards);
+    setSession(migration.session);
+  }, [users, workspaces, meetings, manualTasks, taskBoards, session, setManualTasks, setMeetings, setSession, setTaskBoards, setUsers, setWorkspaces]);
+
+  useEffect(() => {
+    if (!currentUser || !currentWorkspaceId || session?.workspaceId === currentWorkspaceId) {
+      return;
+    }
+
+    setSession((previous) =>
+      previous
+        ? {
+            ...previous,
+            workspaceId: currentWorkspaceId,
+          }
+        : previous
+    );
+  }, [currentUser, currentWorkspaceId, session?.workspaceId, setSession]);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -705,7 +908,7 @@ export default function App() {
   }, [audioUrls]);
 
   useEffect(() => {
-    if (!currentUserId) {
+    if (!currentUserId || !currentWorkspaceId) {
       setSelectedMeetingId(null);
       setSelectedRecordingId(null);
       setMeetingDraft(createEmptyMeetingDraft());
@@ -723,7 +926,7 @@ export default function App() {
     }
 
     const personalMeetings = [...meetings]
-      .filter((meeting) => meeting.userId === currentUserId)
+      .filter((meeting) => meeting.workspaceId === currentWorkspaceId)
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
 
     if (!personalMeetings.length) {
@@ -738,7 +941,7 @@ export default function App() {
       setSelectedRecordingId(nextSelectedMeeting.latestRecordingId || nextSelectedMeeting.recordings[0]?.id || null);
       setMeetingDraft(meetingToDraft(nextSelectedMeeting));
     }
-  }, [currentUserId, meetings, selectedMeetingId]);
+  }, [currentUserId, currentWorkspaceId, meetings, selectedMeetingId]);
 
   useEffect(() => {
     setProfileDraft(buildProfileDraft(currentUser));
@@ -754,6 +957,16 @@ export default function App() {
 
     setMeetingDraft(meetingToDraft(selectedMeeting));
   }, [selectedMeeting]);
+
+  useEffect(() => {
+    setAuthError("");
+    setGoogleAuthMessage("");
+    if (authMode !== "forgot") {
+      setResetMessage("");
+      setResetPreviewCode("");
+      setResetExpiresAt("");
+    }
+  }, [authMode]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.permissions?.query) {
@@ -800,13 +1013,10 @@ export default function App() {
         return;
       }
 
-      let nextUserId = null;
-      setUsers((previous) => {
-        const result = upsertGoogleUser(previous, profile);
-        nextUserId = result.user.id;
-        return result.users;
-      });
-      setSession({ userId: nextUserId });
+      const result = upsertGoogleUser(users, workspaces, profile);
+      setUsers(result.users);
+      setWorkspaces(result.workspaces);
+      setSession({ userId: result.user.id, workspaceId: result.workspaceId });
       setGoogleAuthMessage(`Zalogowano przez Google jako ${profile.email}.`);
       setAuthError("");
     }).catch((error) => {
@@ -820,7 +1030,7 @@ export default function App() {
       active = false;
       googleButtonNode.innerHTML = "";
     };
-  }, [currentUser, googleEnabled, setSession, setUsers]);
+  }, [currentUser, googleEnabled, setSession, setUsers, setWorkspaces, users, workspaces]);
 
   useEffect(
     () => () => {
@@ -858,6 +1068,37 @@ export default function App() {
     setSelectedRecordingId(meeting.latestRecordingId || meeting.recordings[0]?.id || null);
     setMeetingDraft(meetingToDraft(meeting));
     setWorkspaceMessage("");
+  }
+
+  function createAdHocMeeting() {
+    if (!currentUser || !currentWorkspaceId) {
+      return null;
+    }
+
+    const timestamp = new Date();
+    const adHocMeeting = createMeeting(
+      currentUser.id,
+      {
+        title: `Ad hoc ${new Intl.DateTimeFormat("pl-PL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(timestamp)}`,
+        context: "Szybkie nagranie bez wczesniejszego briefu.",
+        startsAt: new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 16),
+        durationMinutes: 30,
+        attendees: currentWorkspaceMembers.map((member) => member.name).filter(Boolean).join("\n"),
+        tags: "ad-hoc",
+        needs: "",
+        desiredOutputs: "",
+        location: "",
+      },
+      {
+        workspaceId: currentWorkspaceId,
+        createdByUserId: currentUser.id,
+      }
+    );
+
+    setMeetings((previous) => upsertMeeting(previous, adHocMeeting));
+    selectMeeting(adHocMeeting);
+    setWorkspaceMessage("Utworzono spotkanie ad hoc.");
+    return adHocMeeting;
   }
 
   function cleanupRecorder() {
@@ -918,9 +1159,10 @@ export default function App() {
     frameRef.current = window.requestAnimationFrame(pumpVisualizer);
   }
 
-  async function startRecording() {
-    if (!selectedMeeting) {
-      setRecordingMessage("Najpierw utworz albo wybierz spotkanie.");
+  async function startRecording(options = {}) {
+    const activeMeeting = options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting;
+    if (!activeMeeting) {
+      setRecordingMessage("Nie udalo sie przygotowac spotkania do nagrania.");
       return;
     }
 
@@ -951,7 +1193,7 @@ export default function App() {
     chunksRef.current = [];
     transcriptRef.current = [];
     signatureTimelineRef.current = [];
-    recordingMeetingIdRef.current = selectedMeeting.id;
+    recordingMeetingIdRef.current = activeMeeting.id;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -978,19 +1220,20 @@ export default function App() {
       };
 
       recorder.onstop = async () => {
-        const targetMeeting = userMeetings.find((meeting) => meeting.id === recordingMeetingIdRef.current) || selectedMeeting;
+        const targetMeeting = userMeetings.find((meeting) => meeting.id === recordingMeetingIdRef.current) || activeMeeting;
         const rawSegments = transcriptRef.current.map((segment) => ({
           ...segment,
           signature: segment.signature || signatureAroundTimestamp(signatureTimelineRef.current, segment.timestamp),
         }));
 
         const diarization = diarizeSegments(rawSegments);
-        setCurrentSegments(diarization.segments);
+        const verifiedSegments = verifyRecognizedSegments(diarization.segments);
+        setCurrentSegments(verifiedSegments);
         setAnalysisStatus("analyzing");
 
         const analysis = await analyzeMeeting({
           meeting: targetMeeting,
-          segments: diarization.segments,
+          segments: verifiedSegments,
           speakerNames: diarization.speakerNames,
           diarization,
         });
@@ -1002,10 +1245,14 @@ export default function App() {
           id: recordingId,
           createdAt: new Date().toISOString(),
           duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
-          transcript: diarization.segments,
+          transcript: verifiedSegments,
           speakerNames: analysis.speakerLabels || diarization.speakerNames,
           speakerCount: analysis.speakerCount || diarization.speakerCount,
           diarizationConfidence: diarization.confidence,
+          reviewSummary: {
+            needsReview: verifiedSegments.filter((segment) => segment.verificationStatus === "review").length,
+            approved: verifiedSegments.filter((segment) => segment.verificationStatus === "verified").length,
+          },
           analysis,
         };
 
@@ -1019,8 +1266,10 @@ export default function App() {
         setSelectedRecordingId(recordingId);
         setAnalysisStatus("done");
         setRecordingMessage(
-          diarization.segments.length
-            ? "Nagranie zapisane i przeanalizowane."
+          verifiedSegments.length
+            ? verifiedSegments.some((segment) => segment.verificationStatus === "review")
+              ? "Nagranie zapisane. Czesci transkrypcji oznaczono do dodatkowej weryfikacji."
+              : "Nagranie zapisane i przeanalizowane."
             : "Audio zapisane, ale ta przegladarka nie dostarczyla transkrypcji live."
         );
         setRecordPermission("granted");
@@ -1054,6 +1303,7 @@ export default function App() {
                 timestamp,
                 speakerId: 0,
                 signature: signatureAroundTimestamp(signatureTimelineRef.current, timestamp),
+                rawConfidence: Number(result[0]?.confidence || 0),
               };
               transcriptRef.current = [...transcriptRef.current, segment];
               setCurrentSegments([...transcriptRef.current]);
@@ -1123,16 +1373,48 @@ export default function App() {
   async function submitAuth(event) {
     event.preventDefault();
     setAuthError("");
+    setResetMessage("");
 
     try {
       if (authMode === "register") {
-        const result = await registerUser(users, authDraft);
+        const result = await registerUser(users, workspaces, authDraft);
         setUsers(result.users);
-        setSession({ userId: result.user.id });
+        setWorkspaces(result.workspaces);
+        setSession({ userId: result.user.id, workspaceId: result.workspaceId });
       } else {
-        const user = await loginUser(users, authDraft);
-        setSession({ userId: user.id });
+        const result = await loginUser(users, workspaces, authDraft);
+        setSession({ userId: result.user.id, workspaceId: result.workspaceId });
       }
+    } catch (error) {
+      setAuthError(error.message);
+    }
+  }
+
+  async function requestResetCode() {
+    setAuthError("");
+    setResetMessage("");
+    try {
+      const result = await requestPasswordReset(users, resetDraft);
+      setUsers(result.users);
+      setResetPreviewCode(result.recoveryCode);
+      setResetExpiresAt(result.expiresAt);
+      setResetMessage("Kod resetu jest gotowy. Ustaw nowe haslo ponizej.");
+    } catch (error) {
+      setAuthError(error.message);
+    }
+  }
+
+  async function completeReset() {
+    setAuthError("");
+    setResetMessage("");
+    try {
+      const nextUsers = await resetPasswordWithCode(users, resetDraft);
+      setUsers(nextUsers);
+      setResetMessage("Haslo zostalo zmienione. Mozesz sie teraz zalogowac.");
+      setResetPreviewCode("");
+      setResetExpiresAt("");
+      setResetDraft({ email: resetDraft.email, code: "", newPassword: "", confirmPassword: "" });
+      setAuthMode("login");
     } catch (error) {
       setAuthError(error.message);
     }
@@ -1168,12 +1450,15 @@ export default function App() {
   }
 
   function saveMeeting() {
-    if (!currentUser) {
+    if (!currentUser || !currentWorkspaceId) {
       return;
     }
 
     if (!selectedMeeting) {
-      const meeting = createMeeting(currentUser.id, meetingDraft);
+      const meeting = createMeeting(currentUser.id, meetingDraft, {
+        workspaceId: currentWorkspaceId,
+        createdByUserId: currentUser.id,
+      });
       setMeetings((previous) => upsertMeeting(previous, meeting));
       selectMeeting(meeting);
       setWorkspaceMessage("Spotkanie utworzone.");
@@ -1187,11 +1472,11 @@ export default function App() {
   }
 
   function createTaskFromComposer(draft) {
-    if (!currentUser) {
+    if (!currentUser || !currentWorkspaceId) {
       return null;
     }
 
-    const task = createManualTask(currentUser.id, draft, taskColumns);
+    const task = createManualTask(currentUser.id, draft, taskColumns, currentWorkspaceId);
     setManualTasks((previous) => [task, ...previous]);
     return task.id;
   }
@@ -1234,24 +1519,24 @@ export default function App() {
   }
 
   function addTaskColumn(draft) {
-    if (!currentUserId) {
+    if (!currentWorkspaceId) {
       return;
     }
 
-    setTaskBoards((previous) => createTaskColumn(previous, currentUserId, draft));
+    setTaskBoards((previous) => createTaskColumn(previous, currentWorkspaceId, draft));
   }
 
   function changeTaskColumn(columnId, updates) {
-    if (!currentUserId) {
+    if (!currentWorkspaceId) {
       return;
     }
 
     const nextColumns = taskColumns.map((column) => (column.id === columnId ? { ...column, ...updates } : column));
-    setTaskBoards((previous) => updateTaskColumns(previous, currentUserId, nextColumns));
+    setTaskBoards((previous) => updateTaskColumns(previous, currentWorkspaceId, nextColumns));
   }
 
   function removeTaskColumn(columnId) {
-    if (!currentUserId) {
+    if (!currentWorkspaceId) {
       return;
     }
 
@@ -1272,7 +1557,7 @@ export default function App() {
       });
 
     const nextColumns = taskColumns.filter((item) => item.id !== columnId);
-    setTaskBoards((previous) => updateTaskColumns(previous, currentUserId, nextColumns));
+    setTaskBoards((previous) => updateTaskColumns(previous, currentWorkspaceId, nextColumns));
   }
 
   function deleteTask(taskId) {
@@ -1338,6 +1623,50 @@ export default function App() {
     );
   }
 
+  function updateTranscriptSegment(segmentId, updates) {
+    if (!selectedMeeting || !selectedRecording) {
+      return;
+    }
+
+    setMeetings((previous) =>
+      previous.map((meeting) => {
+        if (meeting.id !== selectedMeeting.id) {
+          return meeting;
+        }
+
+        return {
+          ...meeting,
+          recordings: meeting.recordings.map((recording) =>
+            recording.id !== selectedRecording.id
+              ? recording
+              : (() => {
+                  const transcript = (recording.transcript || []).map((segment) =>
+                    segment.id !== segmentId
+                      ? segment
+                      : {
+                          ...segment,
+                          ...updates,
+                          verificationStatus:
+                            updates.verificationStatus || (updates.text ? "verified" : segment.verificationStatus),
+                          verificationReasons:
+                            updates.verificationReasons || (updates.text ? [] : segment.verificationReasons),
+                        }
+                  );
+                  return {
+                    ...recording,
+                    transcript,
+                    reviewSummary: {
+                      needsReview: transcript.filter((segment) => segment.verificationStatus === "review").length,
+                      approved: transcript.filter((segment) => segment.verificationStatus === "verified").length,
+                    },
+                  };
+                })()
+          ),
+        };
+      })
+    );
+  }
+
   function exportTranscript() {
     if (!displayRecording) {
       return;
@@ -1345,6 +1674,58 @@ export default function App() {
 
     const safeTitle = (selectedMeeting?.title || "meeting").toLowerCase().replace(/[^a-z0-9]+/g, "-");
     downloadTextFile(`${safeTitle || "meeting"}-transcript.txt`, recordingToText(displayRecording));
+  }
+
+  function exportMeetingNotes() {
+    if (!selectedMeeting) {
+      return;
+    }
+
+    const safeTitle = (selectedMeeting.title || "meeting").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const notes = [
+      `Spotkanie: ${selectedMeeting.title}`,
+      `Start: ${formatDateTime(selectedMeeting.startsAt)}`,
+      `Tagi: ${(selectedMeeting.tags || []).join(", ") || "Brak"}`,
+      `Potrzeby: ${selectedMeeting.needs.join(", ") || "Brak"}`,
+      `Outputy: ${selectedMeeting.desiredOutputs.join(", ") || "Brak"}`,
+      "",
+      "Podsumowanie:",
+      studioAnalysis?.summary || "Brak",
+      "",
+      "Decyzje:",
+      ...(studioAnalysis?.decisions || []).map((item) => `- ${item}`),
+      "",
+      "Zadania:",
+      ...(studioAnalysis?.actionItems || []).map((item) => `- ${item}`),
+    ].join("\n");
+
+    downloadTextFile(`${safeTitle || "meeting"}-notes.txt`, notes);
+  }
+
+  function exportMeetingPdfFile() {
+    if (!selectedMeeting) {
+      return;
+    }
+
+    printMeetingPdf(selectedMeeting, displayRecording, displaySpeakerNames, formatDateTime, formatDuration);
+  }
+
+  function switchWorkspace(workspaceId) {
+    if (!workspaceId || workspaceId === currentWorkspaceId) {
+      return;
+    }
+
+    setSession((previous) =>
+      previous
+        ? {
+            ...previous,
+            workspaceId,
+          }
+        : previous
+    );
+    setSelectedMeetingId(null);
+    setSelectedRecordingId(null);
+    setWorkspaceMessage("");
   }
 
   function logout() {
@@ -1446,7 +1827,7 @@ export default function App() {
         title: "Google Tasks",
       };
       const importedTasks = (payload.items || []).map((task) =>
-        createTaskFromGoogle(currentUser.id, task, selectedList, taskColumns, currentUser)
+        createTaskFromGoogle(currentUser.id, task, selectedList, taskColumns, currentUser, currentWorkspaceId)
       );
       setManualTasks((previous) => upsertGoogleImportedTasks(previous, importedTasks, currentUser.id));
       setGoogleTasksStatus("connected");
@@ -1517,6 +1898,13 @@ export default function App() {
         googleEnabled={googleEnabled}
         googleButtonRef={googleButtonRef}
         googleAuthMessage={googleAuthMessage}
+        resetDraft={resetDraft}
+        setResetDraft={setResetDraft}
+        resetMessage={resetMessage}
+        resetPreviewCode={resetPreviewCode}
+        resetExpiresAt={resetExpiresAt}
+        requestResetCode={requestResetCode}
+        completeReset={completeReset}
       />
     );
   }
@@ -1567,6 +1955,20 @@ export default function App() {
         <div className="topbar-actions">
           <div className="status-chip">{speechRecognitionSupported ? "Live transcript ready" : "Chrome for transcript"}</div>
           <div className="status-chip">{googleEnabled ? "Google ready" : "Google env missing"}</div>
+          {availableWorkspaces.length > 1 ? (
+            <label className="workspace-switch">
+              <span>Workspace</span>
+              <select value={currentWorkspaceId || ""} onChange={(event) => switchWorkspace(event.target.value)}>
+                {availableWorkspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>
+                    {workspace.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : currentWorkspace ? (
+            <div className="status-chip">{currentWorkspace.name}</div>
+          ) : null}
           <div className="user-card">
             {currentUser.avatarUrl ? <img src={currentUser.avatarUrl} alt={currentUser.name} className="avatar" /> : null}
             <div>
@@ -1635,6 +2037,8 @@ export default function App() {
           onConnectGoogleTasks={connectGoogleTasks}
           onImportGoogleTasks={importGoogleTasksFromList}
           onExportGoogleTasks={exportTasksToGoogle}
+          workspaceName={currentWorkspace?.name || ""}
+          workspaceInviteCode={currentWorkspace?.inviteCode || ""}
         />
       ) : activeTab === "people" ? (
         <PeopleTab profiles={peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />
@@ -1662,8 +2066,8 @@ export default function App() {
             <section className="panel">
               <div className="panel-header compact">
                 <div>
-                  <div className="eyebrow">Account</div>
-                  <h2>Workspace owner</h2>
+                  <div className="eyebrow">Workspace</div>
+                  <h2>{currentWorkspace?.name || "Workspace owner"}</h2>
                 </div>
                 <button type="button" className="ghost-button" onClick={() => setActiveTab("profile")}>
                   Otworz profil
@@ -1688,13 +2092,20 @@ export default function App() {
                     <strong>{currentUser.email}</strong>
                   </div>
                   <div className="task-detail-chip">
-                    <span>Team</span>
-                    <strong>{currentUser.team || "Brak"}</strong>
+                    <span>Kod dostepu</span>
+                    <strong>{currentWorkspace?.inviteCode || "Brak"}</strong>
                   </div>
                   <div className="task-detail-chip">
-                    <span>Timezone</span>
-                    <strong>{currentUser.timezone || "Europe/Warsaw"}</strong>
+                    <span>Czlonkowie</span>
+                    <strong>{currentWorkspaceMembers.length}</strong>
                   </div>
+                </div>
+                <div className="workspace-member-list">
+                  {currentWorkspaceMembers.map((member) => (
+                    <span key={member.id} className="task-tag-chip neutral">
+                      {member.name || member.email}
+                    </span>
+                  ))}
                 </div>
               </div>
             </section>
@@ -1876,7 +2287,13 @@ export default function App() {
                       ICS
                     </button>
                     <button type="button" className="secondary-button" onClick={exportTranscript} disabled={!displayRecording}>
-                      Eksport
+                      Transkrypt TXT
+                    </button>
+                    <button type="button" className="secondary-button" onClick={exportMeetingNotes}>
+                      Notatki TXT
+                    </button>
+                    <button type="button" className="secondary-button" onClick={exportMeetingPdfFile}>
+                      PDF
                     </button>
                   </div>
                 </section>
@@ -1905,10 +2322,15 @@ export default function App() {
                         <button
                           type="button"
                           className={isRecording ? "danger-button" : "primary-button"}
-                          onClick={isRecording ? stopRecording : startRecording}
+                          onClick={isRecording ? stopRecording : () => startRecording()}
                         >
                           {isRecording ? "Stop recording" : "Start recording"}
                         </button>
+                        {!isRecording ? (
+                          <button type="button" className="ghost-button" onClick={() => startRecording({ adHoc: true })}>
+                            Nagranie ad hoc
+                          </button>
+                        ) : null}
                         <div className="microcopy">
                           {recordPermission === "denied"
                             ? "Mikrofon zablokowany. Odblokuj go przy pasku adresu."
@@ -1983,6 +2405,11 @@ export default function App() {
                           <span className="status-chip">
                             {Math.round((selectedRecording.diarizationConfidence || 0) * 100)}% confidence
                           </span>
+                          {selectedRecording.reviewSummary?.needsReview ? (
+                            <span className="status-chip">
+                              {selectedRecording.reviewSummary.needsReview} fragmentow do sprawdzenia
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -1998,12 +2425,56 @@ export default function App() {
                     <div className="transcript-list">
                       {displayRecording?.transcript?.length ? (
                         displayRecording.transcript.map((segment) => (
-                          <article key={segment.id} className="segment-card">
+                          <article
+                            key={segment.id}
+                            className={
+                              segment.verificationStatus === "review" ? "segment-card needs-review" : "segment-card"
+                            }
+                          >
                             <div className="segment-meta">
                               <strong>{labelSpeaker(displaySpeakerNames, segment.speakerId)}</strong>
                               <span>{formatDuration(segment.timestamp)}</span>
+                              <span className={segment.verificationStatus === "review" ? "task-flag review" : "task-flag success"}>
+                                {segment.verificationStatus === "review" ? "Do weryfikacji" : "Zweryfikowane"}
+                              </span>
                             </div>
-                            <p>{segment.text}</p>
+                            <textarea
+                              rows="2"
+                              value={segment.text}
+                              onChange={(event) => updateTranscriptSegment(segment.id, { text: event.target.value })}
+                            />
+                            {segment.verificationReasons?.length ? (
+                              <div className="microcopy">Powod: {segment.verificationReasons.join(", ")}</div>
+                            ) : null}
+                            <div className="button-row">
+                              <button
+                                type="button"
+                                className="ghost-button small"
+                                onClick={() =>
+                                  updateTranscriptSegment(segment.id, {
+                                    verificationStatus: "verified",
+                                    verificationReasons: [],
+                                  })
+                                }
+                              >
+                                Zatwierdz
+                              </button>
+                              <button
+                                type="button"
+                                className="ghost-button small"
+                                onClick={() =>
+                                  updateTranscriptSegment(segment.id, {
+                                    verificationStatus: "review",
+                                    verificationReasons:
+                                      segment.verificationReasons?.length
+                                        ? segment.verificationReasons
+                                        : ["oznaczone recznie do ponownego sprawdzenia"],
+                                  })
+                                }
+                              >
+                                Oznacz do sprawdzenia
+                              </button>
+                            </div>
                           </article>
                         ))
                       ) : (
@@ -2140,6 +2611,21 @@ export default function App() {
                   Zacznij od briefu, potem uruchom recorder i przypnij rozmowe do konkretnego spotkania albo zaplanuj
                   termin w zakladce Kalendarz.
                 </p>
+                <div className="button-row">
+                  <button type="button" className="primary-button" onClick={() => startRecording({ adHoc: true })}>
+                    Zacznij nagranie ad hoc
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => {
+                      setSelectedMeetingId(null);
+                      setMeetingDraft(createEmptyMeetingDraft());
+                    }}
+                  >
+                    Przygotuj brief
+                  </button>
+                </div>
               </section>
             )}
           </main>

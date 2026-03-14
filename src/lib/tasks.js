@@ -268,11 +268,12 @@ export function updateTaskColumns(taskBoards, currentUserId, nextColumns) {
   };
 }
 
-export function buildTaskPeople(meetings, currentUser) {
+export function buildTaskPeople(meetings, currentUser, workspaceMembers = []) {
   return uniqueStrings([
     currentUser?.name,
     currentUser?.email,
     currentUser?.googleEmail,
+    ...safeArray(workspaceMembers).flatMap((member) => [member.name, member.email, member.googleEmail]),
     ...safeArray(meetings).flatMap((meeting) => [
       ...safeArray(meeting.attendees),
       ...Object.values(meeting.speakerNames || {}),
@@ -289,7 +290,7 @@ export function buildTaskTags(tasks, meetings) {
   ]);
 }
 
-export function createManualTask(userId, draft, columns) {
+export function createManualTask(userId, draft, columns, workspaceId) {
   const now = new Date().toISOString();
   const title = titleCase(draft.title);
   if (!title) {
@@ -301,6 +302,8 @@ export function createManualTask(userId, draft, columns) {
   return {
     id: createId("task"),
     userId,
+    workspaceId: workspaceId || draft.workspaceId || "",
+    createdByUserId: userId,
     title,
     owner: normalizeWhitespace(draft.owner) || "Nieprzypisane",
     description: String(draft.description || "").trim(),
@@ -322,7 +325,7 @@ export function createManualTask(userId, draft, columns) {
   };
 }
 
-export function createTaskFromGoogle(userId, googleTask, taskList, columns, currentUser) {
+export function createTaskFromGoogle(userId, googleTask, taskList, columns, currentUser, workspaceId) {
   const notes = String(googleTask.notes || "").trim();
   const dueDate = googleTask.due || googleTask.updated || new Date().toISOString();
   const completed = googleTask.status === "completed";
@@ -330,6 +333,8 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
   return {
     id: createId("google_task"),
     userId,
+    workspaceId: workspaceId || "",
+    createdByUserId: userId,
     googleTaskId: googleTask.id,
     googleTaskListId: taskList.id,
     title: titleCase(googleTask.title || "Google task"),
@@ -388,7 +393,7 @@ export function extractMeetingTasks(meeting, columns) {
   return candidates.map((candidate, index) => taskFromCandidate(candidate, meeting, index, columns)).filter(Boolean);
 }
 
-export function buildTasksFromMeetings(meetings, manualTasks, taskState, currentUser, columns) {
+export function buildTasksFromMeetings(meetings, manualTasks, taskState, currentUser, columns, workspaceId) {
   const normalizedColumns = normalizeColumns(columns);
 
   const meetingTasks = safeArray(meetings)
@@ -397,7 +402,7 @@ export function buildTasksFromMeetings(meetings, manualTasks, taskState, current
     .filter((task) => !task.archived);
 
   const standaloneTasks = safeArray(manualTasks)
-    .filter((task) => task.userId === currentUser?.id)
+    .filter((task) => (workspaceId ? task.workspaceId === workspaceId : task.userId === currentUser?.id))
     .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser, normalizedColumns))
     .filter((task) => !task.archived);
 

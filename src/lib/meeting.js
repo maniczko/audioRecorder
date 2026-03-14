@@ -7,12 +7,14 @@ export function parseList(text) {
     .filter(Boolean);
 }
 
-export function createMeeting(userId, draft) {
+export function createMeeting(userId, draft, options = {}) {
   const now = new Date().toISOString();
 
   return {
     id: createId("meeting"),
     userId,
+    workspaceId: options.workspaceId || draft.workspaceId || "",
+    createdByUserId: options.createdByUserId || userId,
     title: String(draft.title || "").trim() || "Nowe spotkanie",
     context: String(draft.context || "").trim(),
     startsAt: draft.startsAt || new Date().toISOString(),
@@ -35,6 +37,8 @@ export function createMeeting(userId, draft) {
 export function updateMeeting(meeting, draft) {
   return {
     ...meeting,
+    workspaceId: draft.workspaceId || meeting.workspaceId || "",
+    createdByUserId: meeting.createdByUserId || meeting.userId || "",
     title: String(draft.title || "").trim() || meeting.title,
     context: String(draft.context || "").trim(),
     startsAt: draft.startsAt || meeting.startsAt,

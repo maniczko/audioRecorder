@@ -3,6 +3,7 @@ const isBrowser = typeof window !== "undefined";
 export const STORAGE_KEYS = {
   users: "voicelog.users.v3",
   session: "voicelog.session.v3",
+  workspaces: "voicelog.workspaces.v1",
   meetings: "voicelog.meetings.v3",
   taskState: "voicelog.taskState.v1",
   manualTasks: "voicelog.manualTasks.v1",

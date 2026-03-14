@@ -109,6 +109,69 @@ function smoothAssignments(segments) {
   });
 }
 
+function repeatedPhrase(text) {
+  const words = String(text || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length < 4) {
+    return false;
+  }
+
+  const uniqueWords = new Set(words);
+  return uniqueWords.size <= Math.ceil(words.length / 2.4);
+}
+
+function verifySegment(segment, previousSegment) {
+  let score = typeof segment.rawConfidence === "number" && segment.rawConfidence > 0 ? segment.rawConfidence : 0.76;
+  const reasons = [];
+  const cleanText = String(segment.text || "").trim();
+
+  if (!cleanText) {
+    score -= 0.5;
+    reasons.push("brak rozpoznanego tekstu");
+  }
+
+  if (cleanText.length < 8) {
+    score -= 0.12;
+    reasons.push("bardzo krotki fragment");
+  }
+
+  if (/^(yyy+|eee+|hmm+|mmm+)$/i.test(cleanText)) {
+    score -= 0.22;
+    reasons.push("brzmi jak wypelnienie lub szum");
+  }
+
+  if (repeatedPhrase(cleanText)) {
+    score -= 0.16;
+    reasons.push("powtarzajace sie slowa");
+  }
+
+  if (!segment.signature) {
+    score -= 0.1;
+    reasons.push("brak sygnatury akustycznej");
+  }
+
+  if (segment.signature?.energy < 0.035) {
+    score -= 0.12;
+    reasons.push("niska energia dzwieku");
+  }
+
+  if (previousSegment && previousSegment.text?.trim().toLowerCase() === cleanText.toLowerCase()) {
+    score -= 0.14;
+    reasons.push("duplikat poprzedniego fragmentu");
+  }
+
+  const verificationScore = clamp(score, 0, 1);
+  return {
+    ...segment,
+    verificationScore,
+    verificationStatus: verificationScore >= 0.7 ? "verified" : "review",
+    verificationReasons: reasons,
+  };
+}
+
 export function diarizeSegments(segments) {
   if (!segments.length) {
     return { segments: [], speakerCount: 0, speakerNames: {}, confidence: 0 };
@@ -199,4 +262,10 @@ export function diarizeSegments(segments) {
     speakerNames,
     confidence,
   };
+}
+
+export function verifyRecognizedSegments(segments) {
+  return (Array.isArray(segments) ? segments : []).map((segment, index, collection) =>
+    verifySegment(segment, collection[index - 1])
+  );
 }
