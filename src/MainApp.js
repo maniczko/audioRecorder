@@ -292,6 +292,7 @@ export default function MainApp() {
           onUpdateTask={meetings.updateTask}
           onDeleteTask={meetings.deleteTask}
           onMoveTaskToColumn={meetings.moveTaskToColumn}
+          onReorderTask={meetings.reorderTask}
           onCreateColumn={meetings.addTaskColumn}
           onUpdateColumn={meetings.changeTaskColumn}
           onDeleteColumn={meetings.removeTaskColumn}
@@ -310,6 +311,7 @@ export default function MainApp() {
           workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ""}
           externalSelectedTaskId={pendingTaskId}
           onTaskSelectionHandled={() => setPendingTaskId("")}
+          currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
         />
       ) : activeTab === "people" ? (
         <PeopleTab profiles={meetings.peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />

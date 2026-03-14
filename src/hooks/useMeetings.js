@@ -12,12 +12,16 @@ import {
 import { buildPeopleProfiles } from "../lib/people";
 import { STORAGE_KEYS } from "../lib/storage";
 import {
+  buildTaskChangeHistory,
   buildTaskColumns,
   buildTaskPeople,
+  buildTaskReorderUpdate,
   buildTaskTags,
   buildTasksFromMeetings,
   createManualTask,
+  createRecurringTaskFromTask,
   createTaskColumn,
+  getNextTaskOrderTop,
   updateTaskColumns,
 } from "../lib/tasks";
 import { migrateWorkspaceData } from "../lib/workspace";
@@ -66,7 +70,7 @@ export default function useMeetings({
     taskColumns,
     currentWorkspaceId
   );
-  const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers);
+  const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks);
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
   const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
 
@@ -216,7 +220,15 @@ export default function useMeetings({
       return null;
     }
 
-    const task = createManualTask(currentUser.id, draft, taskColumns, currentWorkspaceId);
+    const task = createManualTask(
+      currentUser.id,
+      {
+        ...draft,
+        order: getNextTaskOrderTop(meetingTasks),
+      },
+      taskColumns,
+      currentWorkspaceId
+    );
     setManualTasks((previous) => [task, ...previous]);
     return task;
   }
@@ -228,18 +240,41 @@ export default function useMeetings({
     }
 
     const normalizedUpdates = normalizeTaskUpdatePayload(task, updates, taskColumns);
+    const updatedAt = new Date().toISOString();
+    const actor = currentUser?.name || currentUser?.email || "Ty";
+    const nextTask = {
+      ...task,
+      ...normalizedUpdates,
+      updatedAt,
+    };
+    const nextHistory = [
+      ...(normalizedUpdates.history || task.history || []),
+      ...buildTaskChangeHistory(task, nextTask, actor, taskColumns),
+    ];
+    const nextPayload = {
+      ...normalizedUpdates,
+      history: nextHistory,
+      updatedAt,
+    };
+    const shouldCreateRecurringFollowUp =
+      !task.completed && nextPayload.completed && currentUser && currentWorkspaceId && nextTask.recurrence;
+    const recurringTask = shouldCreateRecurringFollowUp
+      ? createRecurringTaskFromTask(nextTask, currentUser.id, currentWorkspaceId, taskColumns, meetingTasks)
+      : null;
 
     if (task.sourceType === "manual" || task.sourceType === "google") {
       setManualTasks((previous) =>
-        previous.map((item) =>
-          item.id !== taskId
-            ? item
-            : {
-                ...item,
-                ...normalizedUpdates,
-                updatedAt: new Date().toISOString(),
-              }
-        )
+        [
+          ...(recurringTask ? [recurringTask] : []),
+          ...previous.map((item) =>
+            item.id !== taskId
+              ? item
+              : {
+                  ...item,
+                  ...nextPayload,
+                }
+          ),
+        ]
       );
       return;
     }
@@ -248,14 +283,30 @@ export default function useMeetings({
       ...previous,
       [taskId]: {
         ...(previous[taskId] || {}),
-        ...normalizedUpdates,
-        updatedAt: new Date().toISOString(),
+        ...nextPayload,
       },
     }));
+
+    if (recurringTask) {
+      setManualTasks((previous) => [recurringTask, ...previous]);
+    }
   }
 
   function moveTaskToColumn(taskId, columnId) {
-    updateTask(taskId, { status: columnId });
+    const columnTasks = meetingTasks.filter((task) => task.id !== taskId && task.status === columnId);
+    updateTask(taskId, {
+      status: columnId,
+      order: getNextTaskOrderTop(columnTasks),
+    });
+  }
+
+  function reorderTask(taskId, placement) {
+    const task = meetingTasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+
+    updateTask(taskId, buildTaskReorderUpdate(meetingTasks, placement));
   }
 
   function addTaskColumn(draft) {
@@ -453,6 +504,7 @@ export default function useMeetings({
     createTaskFromComposer,
     updateTask,
     moveTaskToColumn,
+    reorderTask,
     addTaskColumn,
     changeTaskColumn,
     removeTaskColumn,

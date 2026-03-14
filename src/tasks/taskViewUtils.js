@@ -1,4 +1,4 @@
-import { TASK_PRIORITIES } from "../lib/tasks";
+import { getTaskOrder, TASK_PRIORITIES } from "../lib/tasks";
 
 export function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -128,6 +128,9 @@ function priorityRank(priority) {
 
 export function sortVisibleTasks(tasks, sortBy) {
   return [...tasks].sort((left, right) => {
+    if (sortBy === "manual") {
+      return getTaskOrder(left) - getTaskOrder(right);
+    }
     if (sortBy === "title") {
       return left.title.localeCompare(right.title);
     }

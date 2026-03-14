@@ -26,6 +26,7 @@ export default function TasksTab({
   onUpdateTask,
   onDeleteTask,
   onMoveTaskToColumn,
+  onReorderTask,
   onCreateColumn,
   onUpdateColumn,
   onDeleteColumn,
@@ -44,11 +45,12 @@ export default function TasksTab({
   workspaceInviteCode,
   externalSelectedTaskId,
   onTaskSelectionHandled,
+  currentUserName,
 }) {
   const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
   const [selectedListId, setSelectedListId] = useState("smart:all");
   const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [sortBy, setSortBy] = useState("updated");
+  const [sortBy, setSortBy] = useState("manual");
   const [groupBy, setGroupBy] = useState("none");
   const [query, setQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all");
@@ -170,7 +172,12 @@ export default function TasksTab({
   }
 
   function submitQuickTask(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
+
+    if (!quickDraft.title.trim()) {
+      setMessage("Dodaj tytul zadania.");
+      return;
+    }
 
     try {
       const contextualDraft = buildContextualDraft(
@@ -184,6 +191,9 @@ export default function TasksTab({
         boardColumns
       );
       const createdTask = onCreateTask(contextualDraft);
+      if (!createdTask) {
+        throw new Error("Nie udalo sie dodac zadania.");
+      }
       const createdTaskId = createdTask?.id || createdTask;
 
       setQuickDraft(createQuickDraft(boardColumns));
@@ -237,7 +247,18 @@ export default function TasksTab({
       return;
     }
 
-    if (typeof update === "string") {
+    if (update?.type === "move") {
+      onMoveTaskToColumn(taskId, update.columnId);
+    } else if (update?.type === "reorder") {
+      if (typeof onReorderTask === "function") {
+        onReorderTask(taskId, update.placement);
+      } else if (update.placement?.status && Object.keys(update.placement).length === 1) {
+        onMoveTaskToColumn(taskId, update.placement.status);
+      } else {
+        onUpdateTask(taskId, update.placement);
+      }
+      setSortBy("manual");
+    } else if (typeof update === "string") {
       onMoveTaskToColumn(taskId, update);
     } else {
       onUpdateTask(taskId, update);
@@ -248,9 +269,18 @@ export default function TasksTab({
     setMessage(successMessage);
   }
 
-  function handleDrop(columnId, event) {
+  function handleColumnDrop(columnId, event) {
     canDrop(event);
-    finalizeDrop(readDragTask(event) || dragTaskIdRef.current || dragTaskId, columnId, "Przeniesiono zadanie do nowej kolumny.");
+    finalizeDrop(
+      readDragTask(event) || dragTaskIdRef.current || dragTaskId,
+      {
+        type: "reorder",
+        placement: {
+          status: columnId,
+        },
+      },
+      "Przeniesiono zadanie do nowej kolumny."
+    );
   }
 
   function handleGroupDrop(groupId, event) {
@@ -261,13 +291,34 @@ export default function TasksTab({
     }
 
     if (groupBy === "status") {
-      finalizeDrop(taskId, groupId, "Przeniesiono zadanie do nowej kolumny.");
+      finalizeDrop(taskId, { type: "reorder", placement: { status: groupId } }, "Przeniesiono zadanie do nowej kolumny.");
       return;
     }
 
     if (groupBy === "group") {
-      finalizeDrop(taskId, { group: groupId === "__ungrouped__" ? "" : groupId }, "Zmieniono grupe zadania.");
+      finalizeDrop(
+        taskId,
+        {
+          type: "reorder",
+          placement: {
+            group: groupId === "__ungrouped__" ? "" : groupId,
+          },
+        },
+        "Zmieniono grupe zadania."
+      );
     }
+  }
+
+  function handleTaskDrop(placement, event, successMessage = "Zmieniono kolejnosc zadania.") {
+    canDrop(event);
+    finalizeDrop(
+      readDragTask(event) || dragTaskIdRef.current || dragTaskId,
+      {
+        type: "reorder",
+        placement,
+      },
+      successMessage
+    );
   }
 
   async function shareWorkspace() {
@@ -351,8 +402,9 @@ export default function TasksTab({
         kanbanColumns={kanbanColumns}
         dropColumnId={dropColumnId}
         setDropColumnId={setDropColumnId}
-        handleDrop={handleDrop}
+        handleDrop={handleColumnDrop}
         handleGroupDrop={handleGroupDrop}
+        handleTaskDrop={handleTaskDrop}
         setDragTaskId={rememberDraggedTask}
         stats={stats}
         visibleStats={visibleStats}
@@ -360,6 +412,7 @@ export default function TasksTab({
 
       <TaskDetailsPanel
         selectedTask={selectedTask}
+        tasks={tasks}
         peopleOptions={peopleOptions}
         taskGroups={taskGroups}
         boardColumns={boardColumns}
@@ -367,6 +420,7 @@ export default function TasksTab({
         onMoveTaskToColumn={onMoveTaskToColumn}
         onDeleteTask={onDeleteTask}
         onOpenMeeting={onOpenMeeting}
+        currentUserName={currentUserName}
       />
     </div>
   );

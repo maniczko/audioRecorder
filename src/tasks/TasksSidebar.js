@@ -114,6 +114,10 @@ export default function TasksSidebar({
           <StatMiniCard label="Bez ownera" value={visibleStats.unassigned} tone="warning" />
           <StatMiniCard label="W toku" value={visibleStats.inProgress} tone="info" />
           <StatMiniCard label="W grupach" value={visibleStats.grouped} tone="success" />
+          <StatMiniCard label="Cykliczne" value={visibleStats.recurring} tone="info" />
+          <StatMiniCard label="Zalezne" value={visibleStats.blocked} tone="warning" />
+          <StatMiniCard label="Komentarze" value={visibleStats.commented} />
+          <StatMiniCard label="Podzadania" value={visibleStats.subtasksOpen} tone="success" />
         </div>
 
         <div className="todo-google-card">
@@ -219,7 +223,7 @@ export default function TasksSidebar({
                 <span>Done</span>
               </label>
               <button type="submit" className="todo-command-button primary">
-                Dodaj
+                Dodaj kolumne
               </button>
             </form>
           </div>

@@ -9,6 +9,7 @@ function statCards(stats, visibleStats) {
     { id: "week", label: "Ten tydzien", value: visibleStats.dueThisWeek, tone: "info" },
     { id: "overdue", label: "Po terminie", value: visibleStats.overdue, tone: "danger" },
     { id: "assigned", label: "Przypisane", value: visibleStats.assigned, tone: "neutral" },
+    { id: "blocked", label: "Zalezne", value: visibleStats.blocked, tone: "warning" },
     { id: "progress", label: "Ukonczone", value: `${stats.progress}%`, tone: "success" },
   ];
 }
@@ -48,6 +49,7 @@ export default function TasksWorkspaceView({
   setDropColumnId,
   handleDrop,
   handleGroupDrop,
+  handleTaskDrop,
   setDragTaskId,
   stats,
   visibleStats,
@@ -84,6 +86,7 @@ export default function TasksWorkspaceView({
             <label className="todo-filter-item">
               <span>Sortowanie</span>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="manual">Kolejnosc reczna</option>
                 <option value="updated">Ostatnio zmienione</option>
                 <option value="title">Tytul</option>
                 <option value="due">Termin</option>
@@ -118,7 +121,12 @@ export default function TasksWorkspaceView({
         </div>
 
         <form className="todo-add-row" onSubmit={submitQuickTask}>
-          <button type="submit" className="todo-task-circle" aria-label="Dodaj zadanie" />
+          <button
+            type="button"
+            className="todo-task-circle"
+            aria-label="Szybkie dodanie zadania"
+            onClick={submitQuickTask}
+          />
           <input
             value={quickDraft.title}
             onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
@@ -131,8 +139,13 @@ export default function TasksWorkspaceView({
           >
             {showAdvancedCreate ? "Ukryj szczegoly" : "Szczegoly"}
           </button>
-          <button type="submit" className="todo-command-button primary" disabled={!quickDraft.title.trim()}>
-            Dodaj
+          <button
+            type="button"
+            className="todo-command-button primary"
+            disabled={!quickDraft.title.trim()}
+            onClick={submitQuickTask}
+          >
+            Dodaj zadanie
           </button>
         </form>
 
@@ -263,6 +276,7 @@ export default function TasksWorkspaceView({
             taskGroups={taskGroups}
             boardColumns={boardColumns}
             handleGroupDrop={handleGroupDrop}
+            handleTaskDrop={handleTaskDrop}
             setDragTaskId={setDragTaskId}
           />
         ) : (
@@ -271,6 +285,7 @@ export default function TasksWorkspaceView({
             dropColumnId={dropColumnId}
             setDropColumnId={setDropColumnId}
             handleDrop={handleDrop}
+            handleTaskDrop={handleTaskDrop}
             selectedTask={selectedTask}
             setSelectedTaskId={setSelectedTaskId}
             setDragTaskId={setDragTaskId}

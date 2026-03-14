@@ -1,5 +1,7 @@
 import { createId } from "./storage";
 
+const ORDER_GAP = 1024;
+
 export const DEFAULT_TASK_COLUMNS = [
   { id: "todo", label: "Do zrobienia", color: "#5a92ff", isDone: false, system: true },
   { id: "in_progress", label: "W toku", color: "#8a6bff", isDone: false, system: true },
@@ -14,8 +16,20 @@ export const TASK_PRIORITIES = [
   { id: "urgent", label: "Krytyczny", color: "#f17d72" },
 ];
 
+export const TASK_RECURRENCE_OPTIONS = [
+  { id: "none", label: "Bez cyklu" },
+  { id: "daily", label: "Codziennie" },
+  { id: "weekly", label: "Co tydzien" },
+  { id: "monthly", label: "Co miesiac" },
+  { id: "custom", label: "Wlasny interwal" },
+];
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function hasOwn(value, key) {
+  return Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
 }
 
 function uniqueStrings(items) {
@@ -30,16 +44,17 @@ function normalizeGroup(value) {
   return titleCase(normalizeWhitespace(value));
 }
 
-export function parseTagInput(value) {
-  return uniqueStrings(
-    String(value || "")
-      .split(/\r?\n|,|#/)
-      .map((item) => item.trim())
-  );
-}
-
 function normalizePriority(value) {
   return TASK_PRIORITIES.some((priority) => priority.id === value) ? value : "medium";
+}
+
+function titleCase(text) {
+  const normalized = normalizeWhitespace(text);
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 function normalizeColumns(columns) {
@@ -86,6 +101,10 @@ function isDoneStatus(columns, status) {
   return normalizeColumns(columns).some((column) => column.id === status && column.isDone);
 }
 
+function statusLabel(columns, status) {
+  return normalizeColumns(columns).find((column) => column.id === status)?.label || status || "Kolumna";
+}
+
 function knownOwnersForMeeting(meeting) {
   return uniqueStrings([
     ...safeArray(meeting.attendees),
@@ -127,15 +146,6 @@ function inferOwner(text, candidates) {
   };
 }
 
-function titleCase(text) {
-  const normalized = normalizeWhitespace(text);
-  if (!normalized) {
-    return "";
-  }
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
-
 function inferPriority(candidate) {
   const text = `${candidate.title || ""} ${candidate.sourceQuote || ""}`.toLowerCase();
   if (/pilne|natychmiast|asap|krytyczne/.test(text)) {
@@ -150,17 +160,381 @@ function inferPriority(candidate) {
   return normalizePriority(candidate.priority);
 }
 
-function matchesCurrentUser(owner, currentUser) {
-  const normalizedOwner = normalizeWhitespace(owner).toLowerCase();
-  if (!normalizedOwner || !currentUser) {
-    return false;
-  }
-
-  const signals = uniqueStrings([currentUser.name, currentUser.email, currentUser.googleEmail]).map((item) =>
+function matchesCurrentUser(ownerSignals, currentUser) {
+  const userSignals = uniqueStrings([currentUser?.name, currentUser?.email, currentUser?.googleEmail]).map((item) =>
     item.toLowerCase()
   );
 
-  return signals.some((signal) => normalizedOwner.includes(signal) || signal.includes(normalizedOwner));
+  if (!userSignals.length) {
+    return false;
+  }
+
+  return safeArray(ownerSignals).some((owner) => {
+    const normalizedOwner = normalizeWhitespace(owner).toLowerCase();
+    if (!normalizedOwner) {
+      return false;
+    }
+
+    return userSignals.some((signal) => normalizedOwner.includes(signal) || signal.includes(normalizedOwner));
+  });
+}
+
+function normalizeTaskArray(value, normalizer) {
+  return safeArray(value)
+    .map((item, index) => normalizer(item, index))
+    .filter(Boolean);
+}
+
+function normalizeTaskComment(item, index = 0) {
+  const text = normalizeWhitespace(item?.text ?? item);
+  if (!text) {
+    return null;
+  }
+
+  return {
+    id: normalizeWhitespace(item?.id) || createId(`comment_${index}`),
+    text,
+    author: normalizeWhitespace(item?.author) || "Ty",
+    createdAt: item?.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeTaskHistoryEntry(item, index = 0) {
+  const message = normalizeWhitespace(item?.message ?? item);
+  if (!message) {
+    return null;
+  }
+
+  return {
+    id: normalizeWhitespace(item?.id) || createId(`history_${index}`),
+    type: normalizeWhitespace(item?.type) || "updated",
+    actor: normalizeWhitespace(item?.actor) || "System",
+    message,
+    createdAt: item?.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeTaskSubtask(item, index = 0) {
+  const title = normalizeWhitespace(item?.title ?? item);
+  if (!title) {
+    return null;
+  }
+
+  return {
+    id: normalizeWhitespace(item?.id) || createId(`subtask_${index}`),
+    title,
+    completed: Boolean(item?.completed),
+    assignee: normalizeWhitespace(item?.assignee),
+    createdAt: item?.createdAt || new Date().toISOString(),
+    completedAt: item?.completedAt || "",
+  };
+}
+
+function recurrenceLabel(recurrence) {
+  if (!recurrence) {
+    return "";
+  }
+
+  const interval = Math.max(1, Number(recurrence.interval) || 1);
+  if (recurrence.frequency === "daily") {
+    return interval === 1 ? "Codziennie" : `Co ${interval} dni`;
+  }
+  if (recurrence.frequency === "weekly") {
+    return interval === 1 ? "Co tydzien" : `Co ${interval} tygodnie`;
+  }
+  if (recurrence.frequency === "monthly") {
+    return interval === 1 ? "Co miesiac" : `Co ${interval} miesiace`;
+  }
+  if (recurrence.frequency === "custom") {
+    return `Co ${interval} dni`;
+  }
+  return "";
+}
+
+function normalizeRecurrenceFrequency(value) {
+  return TASK_RECURRENCE_OPTIONS.some((option) => option.id === value) ? value : "none";
+}
+
+function sameTextList(left, right) {
+  return uniqueStrings(left).join("||") === uniqueStrings(right).join("||");
+}
+
+export function parseTagInput(value) {
+  return uniqueStrings(
+    String(value || "")
+      .split(/\r?\n|,|#/)
+      .map((item) => item.trim())
+  );
+}
+
+export function normalizeTaskPeopleList(value) {
+  if (typeof value === "string") {
+    return uniqueStrings(value.split(/\r?\n|,/));
+  }
+  return uniqueStrings(value);
+}
+
+export function normalizeTaskDependencies(value) {
+  return uniqueStrings(value);
+}
+
+export function normalizeTaskComments(value) {
+  return normalizeTaskArray(value, normalizeTaskComment);
+}
+
+export function normalizeTaskHistory(value) {
+  return normalizeTaskArray(value, normalizeTaskHistoryEntry);
+}
+
+export function normalizeTaskSubtasks(value) {
+  return normalizeTaskArray(value, normalizeTaskSubtask);
+}
+
+export function normalizeTaskRecurrence(value) {
+  if (!value || value === "none") {
+    return null;
+  }
+
+  const frequency = normalizeRecurrenceFrequency(value.frequency || value);
+  if (frequency === "none") {
+    return null;
+  }
+
+  return {
+    frequency,
+    interval: Math.max(1, Number(value.interval) || 1),
+  };
+}
+
+export function createTaskComment(text, author = "Ty") {
+  return normalizeTaskComment({
+    id: createId("comment"),
+    text,
+    author,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export function createTaskSubtask(title, assignee = "") {
+  return normalizeTaskSubtask({
+    id: createId("subtask"),
+    title,
+    assignee,
+    completed: false,
+    createdAt: new Date().toISOString(),
+    completedAt: "",
+  });
+}
+
+export function createTaskHistoryEntry(message, actor = "System", type = "updated") {
+  return normalizeTaskHistoryEntry({
+    id: createId("history"),
+    actor,
+    type,
+    message,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export function getTaskOrder(task, fallbackIndex = 0) {
+  const order = Number(task?.order);
+  if (Number.isFinite(order)) {
+    return order;
+  }
+
+  const timestamp = new Date(task?.updatedAt || task?.createdAt || task?.sourceMeetingDate || 0).getTime();
+  return (Number.isFinite(timestamp) ? -timestamp : 0) + fallbackIndex;
+}
+
+export function getNextTaskOrderTop(tasks) {
+  const orders = safeArray(tasks).map((task, index) => getTaskOrder(task, index));
+  return orders.length ? Math.min(...orders) - ORDER_GAP : -Date.now();
+}
+
+export function buildTaskReorderUpdate(tasks, placement = {}) {
+  const sorted = [...safeArray(tasks)].sort((left, right) => getTaskOrder(left) - getTaskOrder(right));
+  const previousTask = sorted.find((task) => task.id === placement.previousTaskId);
+  const nextTask = sorted.find((task) => task.id === placement.nextTaskId);
+  let order = getNextTaskOrderTop(sorted);
+
+  if (previousTask && nextTask) {
+    order = (getTaskOrder(previousTask) + getTaskOrder(nextTask)) / 2;
+  } else if (previousTask) {
+    order = getTaskOrder(previousTask) + ORDER_GAP;
+  } else if (nextTask) {
+    order = getTaskOrder(nextTask) - ORDER_GAP;
+  }
+
+  return {
+    ...(placement.status !== undefined ? { status: placement.status } : {}),
+    ...(placement.group !== undefined ? { group: placement.group } : {}),
+    order,
+  };
+}
+
+export function nextRecurringDueDate(value, recurrence) {
+  const normalizedRecurrence = normalizeTaskRecurrence(recurrence);
+  if (!normalizedRecurrence) {
+    return "";
+  }
+
+  const baseDate = new Date(value || new Date().toISOString());
+  if (Number.isNaN(baseDate.getTime())) {
+    return "";
+  }
+
+  const nextDate = new Date(baseDate);
+  const interval = Math.max(1, Number(normalizedRecurrence.interval) || 1);
+
+  if (normalizedRecurrence.frequency === "daily" || normalizedRecurrence.frequency === "custom") {
+    nextDate.setDate(nextDate.getDate() + interval);
+  } else if (normalizedRecurrence.frequency === "weekly") {
+    nextDate.setDate(nextDate.getDate() + interval * 7);
+  } else if (normalizedRecurrence.frequency === "monthly") {
+    nextDate.setMonth(nextDate.getMonth() + interval);
+  }
+
+  return nextDate.toISOString();
+}
+
+export function buildTaskChangeHistory(previousTask, nextTask, actor, columns) {
+  const entries = [];
+
+  if ((previousTask.title || "") !== (nextTask.title || "")) {
+    entries.push(createTaskHistoryEntry(`Zmieniono tytul na "${nextTask.title}".`, actor));
+  }
+
+  if ((previousTask.status || "") !== (nextTask.status || "")) {
+    entries.push(
+      createTaskHistoryEntry(
+        `Przeniesiono zadanie do kolumny "${statusLabel(columns, nextTask.status)}".`,
+        actor,
+        "status"
+      )
+    );
+  }
+
+  if ((previousTask.completed || false) !== (nextTask.completed || false)) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.completed ? "Oznaczono zadanie jako zakonczone." : "Otworzono zadanie ponownie.",
+        actor,
+        "completed"
+      )
+    );
+  }
+
+  if ((previousTask.owner || "") !== (nextTask.owner || "")) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.owner ? `Zmieniono glowna osobe na "${nextTask.owner}".` : "Usunieto glowna osobe.",
+        actor,
+        "owner"
+      )
+    );
+  }
+
+  if (!sameTextList(previousTask.assignedTo, nextTask.assignedTo)) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.assignedTo?.length
+          ? `Zmieniono przypisane osoby: ${nextTask.assignedTo.join(", ")}.`
+          : "Usunieto przypisane osoby.",
+        actor,
+        "assignees"
+      )
+    );
+  }
+
+  if ((previousTask.group || "") !== (nextTask.group || "")) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.group ? `Przeniesiono zadanie do grupy "${nextTask.group}".` : "Usunieto grupe zadania.",
+        actor,
+        "group"
+      )
+    );
+  }
+
+  if ((previousTask.priority || "") !== (nextTask.priority || "")) {
+    entries.push(createTaskHistoryEntry("Zmieniono priorytet zadania.", actor, "priority"));
+  }
+
+  if ((previousTask.dueDate || "") !== (nextTask.dueDate || "")) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.dueDate ? "Zmieniono termin zadania." : "Usunieto termin zadania.",
+        actor,
+        "due_date"
+      )
+    );
+  }
+
+  if ((previousTask.description || "") !== (nextTask.description || "")) {
+    entries.push(createTaskHistoryEntry("Zmieniono opis zadania.", actor, "description"));
+  }
+
+  if ((previousTask.notes || "") !== (nextTask.notes || "")) {
+    entries.push(createTaskHistoryEntry("Zmieniono notatki zadania.", actor, "notes"));
+  }
+
+  if ((previousTask.important || false) !== (nextTask.important || false)) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.important ? "Oznaczono zadanie jako wazne." : "Usunieto oznaczenie waznosci.",
+        actor,
+        "important"
+      )
+    );
+  }
+
+  if (!sameTextList(previousTask.tags, nextTask.tags)) {
+    entries.push(createTaskHistoryEntry("Zmieniono tagi zadania.", actor, "tags"));
+  }
+
+  if (!sameTextList(previousTask.dependencies, nextTask.dependencies)) {
+    entries.push(createTaskHistoryEntry("Zmieniono zaleznosci zadania.", actor, "dependencies"));
+  }
+
+  if ((previousTask.comments || []).length !== (nextTask.comments || []).length) {
+    entries.push(createTaskHistoryEntry("Dodano komentarz do zadania.", actor, "comment"));
+  }
+
+  if ((previousTask.subtasks || []).length !== (nextTask.subtasks || []).length) {
+    entries.push(createTaskHistoryEntry("Zmieniono liste podzadan.", actor, "subtasks"));
+  }
+
+  if (
+    normalizeWhitespace(recurrenceLabel(previousTask.recurrence)) !==
+    normalizeWhitespace(recurrenceLabel(nextTask.recurrence))
+  ) {
+    entries.push(
+      createTaskHistoryEntry(
+        nextTask.recurrence
+          ? `Ustawiono cykl zadania: ${recurrenceLabel(nextTask.recurrence)}.`
+          : "Usunieto cykl zadania.",
+        actor,
+        "recurrence"
+      )
+    );
+  }
+
+  if (previousTask.order !== nextTask.order) {
+    entries.push(createTaskHistoryEntry("Zmieniono kolejnosc zadania.", actor, "order"));
+  }
+
+  return entries;
+}
+
+export function getTaskAssigneeSummary(task) {
+  const people = normalizeTaskPeopleList(task?.assignedTo?.length ? task.assignedTo : task?.owner);
+  if (!people.length) {
+    return "Nieprzypisane";
+  }
+  if (people.length === 1) {
+    return people[0];
+  }
+  return `${people[0]} +${people.length - 1}`;
 }
 
 function taskFromCandidate(candidate, meeting, index, columns) {
@@ -174,10 +548,13 @@ function taskFromCandidate(candidate, meeting, index, columns) {
     return null;
   }
 
+  const assignedTo = owner && owner !== "Nieprzypisane" ? [owner] : [];
+
   return {
     id: `${meeting.id}::task::${index}`,
     title,
     owner,
+    assignedTo,
     description: normalizeWhitespace(candidate.description || ""),
     dueDate: meeting.startsAt || "",
     sourceType: "meeting",
@@ -199,6 +576,8 @@ function taskFromCandidate(candidate, meeting, index, columns) {
     history: [],
     dependencies: [],
     recurrence: null,
+    subtasks: [],
+    order: getTaskOrder({ updatedAt: meeting.updatedAt || meeting.createdAt }) + index,
   };
 }
 
@@ -215,36 +594,38 @@ function fallbackTaskCandidates(meeting) {
 function mergeTaskState(task, state, currentUser, columns) {
   const status = sanitizeStatus(columns, state?.status || task.status);
   const completed = typeof state?.completed === "boolean" ? state.completed : isDoneStatus(columns, status);
-  const owner = state?.owner ?? task.owner;
-  const title = state?.title ?? task.title;
-  const description = state?.description ?? task.description ?? "";
-  const dueDate = state?.dueDate ?? task.dueDate ?? "";
-  const notes = state?.notes ?? task.notes ?? "";
-  const tags = uniqueStrings([...(task.tags || []), ...safeArray(state?.tags)]);
-  const group = normalizeGroup(state?.group ?? task.group);
+  const stateAssignedTo = hasOwn(state, "assignedTo")
+    ? normalizeTaskPeopleList(state.assignedTo)
+    : normalizeTaskPeopleList(task.assignedTo?.length ? task.assignedTo : task.owner);
+  const stateOwner = hasOwn(state, "owner") ? normalizeWhitespace(state.owner) : normalizeWhitespace(task.owner);
+  const owner = stateOwner || stateAssignedTo[0] || "Nieprzypisane";
+  const assignedTo = stateAssignedTo.length ? stateAssignedTo : owner !== "Nieprzypisane" ? [owner] : [];
 
   return {
     ...task,
-    title,
-    owner: normalizeWhitespace(owner) || "Nieprzypisane",
-    description,
-    dueDate,
-    notes,
-    tags,
-    group,
+    title: hasOwn(state, "title") ? state.title : task.title,
+    owner,
+    assignedTo,
+    description: hasOwn(state, "description") ? state.description : task.description || "",
+    dueDate: hasOwn(state, "dueDate") ? state.dueDate : task.dueDate || "",
+    notes: hasOwn(state, "notes") ? state.notes : task.notes || "",
+    tags: hasOwn(state, "tags") ? parseTagInput(state.tags) : safeArray(task.tags),
+    group: normalizeGroup(hasOwn(state, "group") ? state.group : task.group),
     updatedAt: state?.updatedAt || task.updatedAt || task.createdAt,
     important: typeof state?.important === "boolean" ? state.important : Boolean(task.important),
     priority: normalizePriority(state?.priority || task.priority),
     status: completed ? defaultDoneColumnId(columns) : status,
     completed,
     archived: Boolean(state?.archived),
-    comments: safeArray(state?.comments).length ? safeArray(state.comments) : safeArray(task.comments),
-    history: safeArray(state?.history).length ? safeArray(state.history) : safeArray(task.history),
-    dependencies: safeArray(state?.dependencies).length
-      ? uniqueStrings(state.dependencies)
-      : uniqueStrings(task.dependencies),
-    recurrence: state?.recurrence ?? task.recurrence ?? null,
-    assignedToMe: matchesCurrentUser(owner, currentUser),
+    comments: hasOwn(state, "comments") ? normalizeTaskComments(state.comments) : normalizeTaskComments(task.comments),
+    history: hasOwn(state, "history") ? normalizeTaskHistory(state.history) : normalizeTaskHistory(task.history),
+    dependencies: hasOwn(state, "dependencies")
+      ? normalizeTaskDependencies(state.dependencies)
+      : normalizeTaskDependencies(task.dependencies),
+    recurrence: hasOwn(state, "recurrence") ? normalizeTaskRecurrence(state.recurrence) : normalizeTaskRecurrence(task.recurrence),
+    subtasks: hasOwn(state, "subtasks") ? normalizeTaskSubtasks(state.subtasks) : normalizeTaskSubtasks(task.subtasks),
+    order: hasOwn(state, "order") ? Number(state.order) : task.order,
+    assignedToMe: matchesCurrentUser([owner, ...assignedTo], currentUser),
   };
 }
 
@@ -285,7 +666,7 @@ export function updateTaskColumns(taskBoards, workspaceId, nextColumns) {
   };
 }
 
-export function buildTaskPeople(meetings, currentUser, workspaceMembers = []) {
+export function buildTaskPeople(meetings, currentUser, workspaceMembers = [], tasks = []) {
   return uniqueStrings([
     currentUser?.name,
     currentUser?.email,
@@ -297,6 +678,7 @@ export function buildTaskPeople(meetings, currentUser, workspaceMembers = []) {
       ...Object.values(meeting.analysis?.speakerLabels || {}),
       ...safeArray(meeting.recordings?.flatMap((recording) => Object.values(recording.speakerNames || {}))),
     ]),
+    ...safeArray(tasks).flatMap((task) => [task.owner, ...safeArray(task.assignedTo)]),
   ]);
 }
 
@@ -319,6 +701,8 @@ export function createManualTask(userId, draft, columns, workspaceId) {
   }
 
   const status = sanitizeStatus(columns, draft.status || defaultOpenColumnId(columns));
+  const assignedTo = normalizeTaskPeopleList(draft.assignedTo?.length ? draft.assignedTo : draft.owner);
+  const owner = assignedTo[0] || normalizeWhitespace(draft.owner) || "Nieprzypisane";
 
   return {
     id: createId("task"),
@@ -326,7 +710,8 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     workspaceId: workspaceId || draft.workspaceId || "",
     createdByUserId: userId,
     title,
-    owner: normalizeWhitespace(draft.owner) || "Nieprzypisane",
+    owner,
+    assignedTo,
     description: String(draft.description || "").trim(),
     dueDate: draft.dueDate || "",
     sourceType: "manual",
@@ -342,12 +727,16 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     completed: isDoneStatus(columns, status),
     notes: String(draft.notes || "").trim(),
     priority: normalizePriority(draft.priority),
-    tags: parseTagInput(draft.tags),
+    tags: Array.isArray(draft.tags) ? draft.tags : parseTagInput(draft.tags),
     group: normalizeGroup(draft.group),
-    comments: safeArray(draft.comments),
-    history: safeArray(draft.history),
-    dependencies: uniqueStrings(draft.dependencies),
-    recurrence: draft.recurrence || null,
+    comments: normalizeTaskComments(draft.comments),
+    history: normalizeTaskHistory(
+      draft.history?.length ? draft.history : [createTaskHistoryEntry("Utworzono zadanie.", "System", "created")]
+    ),
+    dependencies: normalizeTaskDependencies(draft.dependencies),
+    recurrence: normalizeTaskRecurrence(draft.recurrence),
+    subtasks: normalizeTaskSubtasks(draft.subtasks),
+    order: Number.isFinite(Number(draft.order)) ? Number(draft.order) : -Date.now(),
   };
 }
 
@@ -355,6 +744,7 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
   const notes = String(googleTask.notes || "").trim();
   const dueDate = googleTask.due || googleTask.updated || new Date().toISOString();
   const completed = googleTask.status === "completed";
+  const owner = currentUser?.name || currentUser?.email || "Ja";
 
   return {
     id: createId("google_task"),
@@ -364,7 +754,8 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     googleTaskId: googleTask.id,
     googleTaskListId: taskList.id,
     title: titleCase(googleTask.title || "Google task"),
-    owner: currentUser?.name || currentUser?.email || "Ja",
+    owner,
+    assignedTo: owner ? [owner] : [],
     description: notes,
     dueDate,
     sourceType: "google",
@@ -383,10 +774,53 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     tags: [],
     group: normalizeGroup(taskList.title || ""),
     comments: [],
-    history: [],
+    history: [createTaskHistoryEntry("Zaimportowano z Google Tasks.", "System", "import")],
     dependencies: [],
     recurrence: null,
+    subtasks: [],
+    order: -new Date(googleTask.updated || new Date().toISOString()).getTime(),
   };
+}
+
+export function createRecurringTaskFromTask(task, userId, workspaceId, columns, tasks = []) {
+  const recurrence = normalizeTaskRecurrence(task.recurrence);
+  if (!recurrence) {
+    return null;
+  }
+
+  const dueDate = nextRecurringDueDate(task.dueDate || new Date().toISOString(), recurrence);
+  if (!dueDate) {
+    return null;
+  }
+
+  return createManualTask(
+    userId,
+    {
+      title: task.title,
+      owner: task.owner,
+      assignedTo: task.assignedTo,
+      description: task.description,
+      dueDate,
+      status: defaultOpenColumnId(columns),
+      important: task.important,
+      priority: task.priority,
+      tags: task.tags,
+      notes: task.notes,
+      group: task.group,
+      recurrence,
+      dependencies: task.dependencies,
+      subtasks: safeArray(task.subtasks).map((subtask) => ({
+        ...subtask,
+        completed: false,
+        completedAt: "",
+      })),
+      history: [createTaskHistoryEntry("Utworzono kolejne cykliczne zadanie.", "System", "recurrence")],
+      order: getNextTaskOrderTop(tasks),
+      workspaceId,
+    },
+    columns,
+    workspaceId
+  );
 }
 
 export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) {
@@ -437,11 +871,17 @@ export function buildTasksFromMeetings(meetings, manualTasks, taskState, current
     .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser, normalizedColumns))
     .filter((task) => !task.archived);
 
-  return [...meetingTasks, ...standaloneTasks].sort(
-    (left, right) =>
+  return [...meetingTasks, ...standaloneTasks].sort((left, right) => {
+    const orderDelta = getTaskOrder(left) - getTaskOrder(right);
+    if (orderDelta !== 0) {
+      return orderDelta;
+    }
+
+    return (
       new Date(right.updatedAt || right.dueDate || right.sourceMeetingDate || right.createdAt).getTime() -
       new Date(left.updatedAt || left.dueDate || left.sourceMeetingDate || left.createdAt).getTime()
-  );
+    );
+  });
 }
 
 export function taskListStats(tasks) {
@@ -451,6 +891,7 @@ export function taskListStats(tasks) {
   const weekEdge = new Date(today);
   weekEdge.setDate(today.getDate() + 7);
   const completedCount = list.filter((task) => task.completed).length;
+  const allSubtasks = list.flatMap((task) => safeArray(task.subtasks));
   const byPriority = TASK_PRIORITIES.reduce(
     (accumulator, priority) => ({
       ...accumulator,
@@ -493,10 +934,16 @@ export function taskListStats(tasks) {
       return dueDate >= today.getTime() && dueDate < weekEdge.getTime();
     }).length,
     scheduled: list.filter((task) => Boolean(task.dueDate)).length,
-    unassigned: list.filter((task) => !task.owner || task.owner === "Nieprzypisane").length,
+    unassigned: list.filter((task) => !(task.assignedTo || []).length && (!task.owner || task.owner === "Nieprzypisane"))
+      .length,
     waiting: list.filter((task) => task.status === "waiting").length,
     inProgress: list.filter((task) => task.status === "in_progress").length,
     grouped: list.filter((task) => Boolean(task.group)).length,
+    recurring: list.filter((task) => Boolean(task.recurrence)).length,
+    blocked: list.filter((task) => (task.dependencies || []).length).length,
+    commented: list.filter((task) => (task.comments || []).length).length,
+    subtasksOpen: allSubtasks.filter((subtask) => !subtask.completed).length,
+    subtasksCompleted: allSubtasks.filter((subtask) => subtask.completed).length,
     progress: list.length ? Math.round((completedCount / list.length) * 100) : 0,
     byPriority,
     byStatus,

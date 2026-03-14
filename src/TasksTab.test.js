@@ -38,6 +38,13 @@ function renderTasksTab(overrides = {}) {
         completed: false,
         priority: "medium",
         tags: ["demo"],
+        assignedTo: ["Anna"],
+        comments: [],
+        history: [],
+        dependencies: [],
+        recurrence: null,
+        subtasks: [],
+        order: -100,
         assignedToMe: true,
       },
     ],
@@ -51,6 +58,7 @@ function renderTasksTab(overrides = {}) {
     onUpdateTask: jest.fn(),
     onDeleteTask: jest.fn(),
     onMoveTaskToColumn: jest.fn(),
+    onReorderTask: jest.fn(),
     onCreateColumn: jest.fn(),
     onUpdateColumn: jest.fn(),
     onDeleteColumn: jest.fn(),
@@ -69,6 +77,7 @@ function renderTasksTab(overrides = {}) {
     workspaceInviteCode: "ABC123",
     externalSelectedTaskId: "",
     onTaskSelectionHandled: jest.fn(),
+    currentUserName: "Anna",
     ...overrides,
   };
 
@@ -93,7 +102,7 @@ describe("TasksTab", () => {
     fireEvent.dragOver(doneColumn, { dataTransfer });
     fireEvent.drop(doneColumn.querySelector(".todo-kanban-body"), { dataTransfer });
 
-    expect(props.onMoveTaskToColumn).toHaveBeenCalledWith("task_1", "done");
+    expect(props.onReorderTask).toHaveBeenCalledWith("task_1", expect.objectContaining({ status: "done" }));
   });
 
   test("creates a task inside the selected custom group", async () => {
@@ -115,7 +124,7 @@ describe("TasksTab", () => {
         .closest(".todo-side-link")
     );
     await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowe zadanie");
-    await userEvent.click(screen.getByRole("button", { name: "Dodaj" }));
+    await userEvent.click(screen.getByRole("button", { name: "Dodaj zadanie" }));
 
     expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie", group: "Sprint 14" }));
   });

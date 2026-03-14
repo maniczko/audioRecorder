@@ -241,7 +241,7 @@ describe("App integration", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Zadania" }));
     await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowy follow-up");
-    await userEvent.click(screen.getByRole("button", { name: "Dodaj" }));
+    await userEvent.click(screen.getByRole("button", { name: "Dodaj zadanie" }));
 
     const createdTaskFields = await screen.findAllByDisplayValue("Nowy follow-up");
     expect(createdTaskFields.length).toBeGreaterThan(0);

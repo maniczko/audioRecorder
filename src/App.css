@@ -2137,6 +2137,11 @@ select:focus {
   border-color: #d5ebda;
 }
 
+.tasks-layout.ms-todo .todo-stat-card.warning {
+  background: #fffaf1;
+  border-color: #f3e0b5;
+}
+
 .tasks-layout.ms-todo .todo-add-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) 150px 120px;
@@ -2316,6 +2321,24 @@ select:focus {
   background: #eef5ff;
 }
 
+.tasks-layout.ms-todo .todo-list-row-shell {
+  display: grid;
+}
+
+.tasks-layout.ms-todo .todo-row-dropzone {
+  min-height: 12px;
+  margin: 0 16px;
+  border-radius: 999px;
+  border: 1px dashed transparent;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.tasks-layout.ms-todo .todo-row-dropzone:hover,
+.tasks-layout.ms-todo .todo-row-dropzone:focus-visible {
+  background: rgba(80, 122, 255, 0.08);
+  border-color: #86a9ff;
+}
+
 .tasks-layout.ms-todo .todo-row-tools {
   display: flex;
   align-items: center;
@@ -2391,6 +2414,25 @@ select:focus {
   display: grid;
   gap: 10px;
   align-content: start;
+  min-height: 260px;
+}
+
+.tasks-layout.ms-todo .todo-kanban-card-shell {
+  display: grid;
+  gap: 8px;
+}
+
+.tasks-layout.ms-todo .todo-kanban-drop-slot {
+  min-height: 12px;
+  border-radius: 999px;
+  border: 1px dashed transparent;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.tasks-layout.ms-todo .todo-kanban-drop-slot:hover,
+.tasks-layout.ms-todo .todo-kanban-drop-slot:focus-visible {
+  background: rgba(80, 122, 255, 0.08);
+  border-color: #86a9ff;
 }
 
 .tasks-layout.ms-todo .todo-kanban-card {
@@ -2431,6 +2473,16 @@ select:focus {
   font-size: 0.78rem;
 }
 
+.tasks-layout.ms-todo .todo-tag.tone-info {
+  background: #edf3ff;
+  color: #3f62cc;
+}
+
+.tasks-layout.ms-todo .todo-tag.tone-warning {
+  background: #fff5dd;
+  color: #9a6f1b;
+}
+
 .tasks-layout.ms-todo .todo-details {
   min-width: 0;
 }
@@ -2461,6 +2513,128 @@ select:focus {
 
 .tasks-layout.ms-todo .todo-detail-form .full {
   grid-column: 1 / -1;
+}
+
+.tasks-layout.ms-todo .todo-detail-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #e5ecf6;
+  background: #fbfcff;
+}
+
+.tasks-layout.ms-todo .todo-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #5d7394;
+}
+
+.tasks-layout.ms-todo .todo-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tasks-layout.ms-todo .todo-chip-grid.dense {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.tasks-layout.ms-todo .todo-chip {
+  border: 1px solid #d9e4f5;
+  background: #ffffff;
+  color: #355072;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.tasks-layout.ms-todo .todo-chip.active {
+  border-color: #5a92ff;
+  background: #edf4ff;
+  color: #2448a1;
+}
+
+.tasks-layout.ms-todo .todo-recurrence-grid,
+.tasks-layout.ms-todo .todo-subtask-create {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tasks-layout.ms-todo .todo-subtask-create {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+}
+
+.tasks-layout.ms-todo .todo-subtask-list,
+.tasks-layout.ms-todo .todo-comment-list,
+.tasks-layout.ms-todo .todo-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.tasks-layout.ms-todo .todo-subtask-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 170px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e6edf8;
+}
+
+.tasks-layout.ms-todo .todo-subtask-row.done {
+  background: #f5f9ff;
+}
+
+.tasks-layout.ms-todo .todo-subtask-row input,
+.tasks-layout.ms-todo .todo-subtask-row select {
+  min-height: 36px;
+}
+
+.tasks-layout.ms-todo .todo-comment-create {
+  display: grid;
+  gap: 10px;
+}
+
+.tasks-layout.ms-todo .todo-comment-card,
+.tasks-layout.ms-todo .todo-history-row {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e6edf8;
+  background: #ffffff;
+}
+
+.tasks-layout.ms-todo .todo-comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tasks-layout.ms-todo .todo-history-row p,
+.tasks-layout.ms-todo .todo-comment-card p,
+.tasks-layout.ms-todo .todo-section-empty {
+  margin: 0;
+  color: #667b98;
+  line-height: 1.5;
+}
+
+.tasks-layout.ms-todo .todo-history-row small,
+.tasks-layout.ms-todo .todo-comment-meta small {
+  color: #7286a3;
+}
+
+.tasks-layout.ms-todo .todo-icon-button.danger.subtle {
+  background: #ffffff;
+  border-color: #f2d4cf;
+  color: #b3503e;
 }
 
 .tasks-layout.ms-todo .todo-detail-meta-card {
@@ -2569,7 +2743,9 @@ select:focus {
   .tasks-layout.ms-todo .todo-filter-row,
   .tasks-layout.ms-todo .todo-add-advanced,
   .tasks-layout.ms-todo .todo-stats-strip,
-  .tasks-layout.ms-todo .todo-detail-form {
+  .tasks-layout.ms-todo .todo-detail-form,
+  .tasks-layout.ms-todo .todo-recurrence-grid,
+  .tasks-layout.ms-todo .todo-subtask-create {
     grid-template-columns: 1fr;
   }
 
