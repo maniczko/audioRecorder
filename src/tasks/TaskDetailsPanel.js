@@ -91,7 +91,6 @@ export default function TaskDetailsPanel({
   const assignedPeople = selectedTask.assignedTo || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
   const slaState = getTaskSlaState(selectedTask);
-  const statusLabel = resolveStatusLabel(selectedTask, boardColumns);
 
   function updateAssignees(nextAssignees) {
     onUpdateTask(selectedTask.id, {
@@ -264,24 +263,6 @@ export default function TaskDetailsPanel({
           </div>
         </div>
 
-        <div className="todo-detail-summary-grid">
-          <article className="todo-detail-summary-card">
-            <span>Owner</span>
-            <strong>{selectedTask.owner || "Nieprzypisane"}</strong>
-          </article>
-          <article className="todo-detail-summary-card">
-            <span>Status</span>
-            <strong>{statusLabel}</strong>
-          </article>
-          <article className="todo-detail-summary-card">
-            <span>Termin</span>
-            <strong>{selectedTask.dueDate ? formatDateTime(selectedTask.dueDate) : "Brak terminu"}</strong>
-          </article>
-          <article className="todo-detail-summary-card">
-            <span>Priorytet</span>
-            <strong>{TASK_PRIORITIES.find((priority) => priority.id === selectedTask.priority)?.label || selectedTask.priority}</strong>
-          </article>
-        </div>
 
         {selectedTask.googleSyncConflict ? (
           <section className="todo-detail-section todo-conflict-resolution">
