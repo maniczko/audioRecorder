@@ -36,6 +36,25 @@ function eventTimeLabel(entry) {
     : "Caly dzien";
 }
 
+function buildConflictDraft(conflict) {
+  const snapshot = conflict?.finalSnapshot || conflict?.localSnapshot || null;
+  if (!snapshot) {
+    return {
+      title: "",
+      startsAt: "",
+      durationMinutes: 15,
+      location: "",
+    };
+  }
+
+  return {
+    title: snapshot.title || "",
+    startsAt: toLocalDateTimeValue(snapshot.startsAt),
+    durationMinutes: Number(snapshot.durationMinutes) || 15,
+    location: snapshot.location || "",
+  };
+}
+
 function buildGoogleAttendees(entry, workspaceMembers) {
   return (entry.participants || [])
     .map((participant) => {
@@ -122,6 +141,7 @@ export default function CalendarTab({
   onRescheduleTask,
   calendarMeta,
   onUpdateCalendarEntryMeta,
+  onApplyCalendarSyncSnapshot,
   workspaceMembers = [],
   peopleProfiles = [],
   currentUserTimezone = "Europe/Warsaw",
@@ -131,6 +151,7 @@ export default function CalendarTab({
   const [selectedEntryKey, setSelectedEntryKey] = useState("");
   const [dragEntryKey, setDragEntryKey] = useState("");
   const [calendarMessage, setCalendarMessage] = useState("");
+  const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
 
   const monthMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
   const miniMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
@@ -170,6 +191,11 @@ export default function CalendarTab({
     () => buildParticipantTimezoneSummary(selectedEntry, workspaceMembers, peopleProfiles, currentUserTimezone),
     [currentUserTimezone, peopleProfiles, selectedEntry, workspaceMembers]
   );
+
+  useEffect(() => {
+    setConflictDraft(buildConflictDraft(selectedMeta.googleSyncConflict));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEntryKey, selectedMeta.googleSyncConflict?.id]);
 
   function shiftPeriod(amount) {
     if (viewMode === "month") {
@@ -228,6 +254,73 @@ export default function CalendarTab({
     const nextDate = new Date(startsAt);
     setSelectedDate(nextDate);
     setActiveMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+  }
+
+  async function resolveGoogleSyncConflict(mode) {
+    if (!selectedEntry || !selectedMeta.googleSyncConflict) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const snapshot =
+      mode === "google"
+        ? selectedMeta.googleSyncConflict.remoteSnapshot
+        : {
+            ...(mode === "local" ? selectedMeta.googleSyncConflict.localSnapshot : selectedMeta.googleSyncConflict.finalSnapshot),
+            title: conflictDraft.title,
+            startsAt: conflictDraft.startsAt ? new Date(conflictDraft.startsAt).toISOString() : selectedEntry.startsAt,
+            durationMinutes: Math.max(15, Number(conflictDraft.durationMinutes) || 15),
+            location: conflictDraft.location,
+          };
+    const endsAt =
+      snapshot.endsAt ||
+      new Date(new Date(snapshot.startsAt).getTime() + Number(snapshot.durationMinutes || 15) * 60000).toISOString();
+    const finalSnapshot = {
+      ...snapshot,
+      endsAt,
+    };
+
+    if (mode === "google") {
+      onApplyCalendarSyncSnapshot?.(selectedEntry.type, selectedEntry.id, finalSnapshot, {
+        googleSyncConflict: null,
+        googlePulledAt: now,
+        googleRemoteUpdatedAt: selectedMeta.googleSyncConflict.remoteUpdatedAt || now,
+      });
+      setCalendarMessage(`Przyjeto wersje Google dla "${selectedEntry.title}".`);
+      return;
+    }
+
+    if (!googleCalendarWritable) {
+      setCalendarMessage("Polacz Google Calendar, aby zapisac finalna wersje po konflikcie.");
+      return;
+    }
+
+    onApplyCalendarSyncSnapshot?.(selectedEntry.type, selectedEntry.id, finalSnapshot);
+    await syncToGoogle(
+      {
+        ...selectedEntry,
+        title: finalSnapshot.title,
+        startsAt: finalSnapshot.startsAt,
+        endsAt: finalSnapshot.endsAt,
+        source: {
+          ...(selectedEntry.source || {}),
+          location: finalSnapshot.location,
+        },
+      },
+      finalSnapshot.startsAt,
+      finalSnapshot.endsAt
+    );
+    onUpdateCalendarEntryMeta(selectedEntry.type, selectedEntry.id, {
+      googleSyncConflict: null,
+      googleSyncedAt: now,
+      googlePulledAt: now,
+      googleConflictResolvedAt: now,
+    });
+    setCalendarMessage(
+      mode === "merge"
+        ? `Scalono lokalne i zdalne zmiany dla "${selectedEntry.title}".`
+        : `Zachowano lokalna wersje "${selectedEntry.title}" i zsynchronizowano ja do Google.`
+    );
   }
 
   async function resizeEntry(entry, deltaMinutes) {
@@ -492,6 +585,91 @@ export default function CalendarTab({
                       </button>
                     ))}
                   </div>
+                ) : null}
+                {selectedMeta.googleSyncConflict ? (
+                  <section className="calendar-sync-conflict-panel">
+                    <div className="panel-header compact">
+                      <div>
+                        <div className="eyebrow">Google conflict</div>
+                        <h2>Rozwiaz konflikt synchronizacji</h2>
+                      </div>
+                    </div>
+                    <div className="calendar-sync-conflict-grid">
+                      <article className="calendar-sync-card">
+                        <strong>Lokalne</strong>
+                        <span>{selectedMeta.googleSyncConflict.localSnapshot.title}</span>
+                        <small>{formatDateTime(selectedMeta.googleSyncConflict.localSnapshot.startsAt)}</small>
+                      </article>
+                      <article className="calendar-sync-card">
+                        <strong>Google</strong>
+                        <span>{selectedMeta.googleSyncConflict.remoteSnapshot.title}</span>
+                        <small>{formatDateTime(selectedMeta.googleSyncConflict.remoteSnapshot.startsAt)}</small>
+                      </article>
+                      <article className="calendar-sync-card">
+                        <strong>Finalna wersja</strong>
+                        <label className="calendar-editor-field">
+                          <span>Tytul</span>
+                          <input
+                            value={conflictDraft.title}
+                            onChange={(event) => setConflictDraft((previous) => ({ ...previous, title: event.target.value }))}
+                          />
+                        </label>
+                        <label className="calendar-editor-field">
+                          <span>Start</span>
+                          <input
+                            type="datetime-local"
+                            value={conflictDraft.startsAt}
+                            onChange={(event) => setConflictDraft((previous) => ({ ...previous, startsAt: event.target.value }))}
+                          />
+                        </label>
+                        <label className="calendar-editor-field">
+                          <span>Minuty</span>
+                          <input
+                            type="number"
+                            min="15"
+                            step="15"
+                            value={conflictDraft.durationMinutes}
+                            onChange={(event) =>
+                              setConflictDraft((previous) => ({
+                                ...previous,
+                                durationMinutes: Number(event.target.value) || 15,
+                              }))
+                            }
+                          />
+                        </label>
+                        {selectedEntry.type === "meeting" ? (
+                          <label className="calendar-editor-field">
+                            <span>Lokalizacja</span>
+                            <input
+                              value={conflictDraft.location}
+                              onChange={(event) => setConflictDraft((previous) => ({ ...previous, location: event.target.value }))}
+                            />
+                          </label>
+                        ) : null}
+                      </article>
+                    </div>
+                    <div className="button-row">
+                      <button type="button" className="ghost-button" onClick={() => resolveGoogleSyncConflict("google")}>
+                        Zachowaj Google
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => resolveGoogleSyncConflict("local")}
+                        disabled={!googleCalendarWritable}
+                      >
+                        Zachowaj lokalne
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => resolveGoogleSyncConflict("merge")}
+                        disabled={!googleCalendarWritable}
+                      >
+                        Zapisz finalna wersje
+                      </button>
+                    </div>
+                  </section>
                 ) : null}
                 <div className="button-row">
                   {selectedEntry.type === "meeting" ? <button type="button" className="ghost-button" onClick={() => openMeetingFromCalendar(selectedEntry.id)}>Otworz w Studio</button> : null}

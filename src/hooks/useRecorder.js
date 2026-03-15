@@ -1,9 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { analyzeMeeting } from "../lib/analysis";
+import { getAudioBlob, saveAudioBlob } from "../lib/audioStore";
 import { summarizeSpectrum } from "../lib/diarization";
 import { DEFAULT_BARS, recordingErrorMessage } from "../lib/recording";
-import { createId } from "../lib/storage";
+import {
+  buildRecordingQueueSummary,
+  createRecordingQueueItem,
+  getNextProcessableRecordingQueueItem,
+  getNextPendingRecordingQueueItem,
+  getRecordingQueueForMeeting,
+  normalizeRecordingPipelineStatus,
+  removeRecordingQueueItem,
+  updateRecordingQueueItem,
+  upsertRecordingQueueItem,
+} from "../lib/recordingQueue";
+import { createId, STORAGE_KEYS } from "../lib/storage";
 import { createMediaService } from "../services/mediaService";
+import useStoredState from "./useStoredState";
 
 function revokeAudioUrl(url) {
   if (url && typeof URL !== "undefined" && URL.revokeObjectURL) {
@@ -23,6 +36,12 @@ function buildFallbackAnalysis(message, diarization) {
   };
 }
 
+function sleep(durationMs) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
+}
+
 export default function useRecorder({
   selectedMeeting,
   userMeetings,
@@ -40,6 +59,7 @@ export default function useRecorder({
   const [recordingMessage, setRecordingMessage] = useState("");
   const [audioUrls, setAudioUrls] = useState({});
   const [recordingMeetingId, setRecordingMeetingId] = useState(null);
+  const [recordingQueue, setRecordingQueue] = useStoredState(STORAGE_KEYS.recordingQueue, []);
 
   const mediaRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -55,6 +75,9 @@ export default function useRecorder({
   const recordingMeetingIdRef = useRef(null);
   const isRecordingRef = useRef(false);
   const audioUrlsRef = useRef({});
+  const queueProcessingRef = useRef(false);
+  const normalizedQueue = useMemo(() => recordingQueue, [recordingQueue]);
+  const queueSummary = useMemo(() => buildRecordingQueueSummary(normalizedQueue), [normalizedQueue]);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -165,6 +188,34 @@ export default function useRecorder({
     };
   }, [mediaService, userMeetings]);
 
+  useEffect(() => {
+    const nextItem = getNextProcessableRecordingQueueItem(normalizedQueue, (item) =>
+      Boolean(resolveMeetingForQueueItem(item)?.id)
+    );
+    if (!nextItem || queueProcessingRef.current) {
+      const blockedItem = getNextPendingRecordingQueueItem(normalizedQueue);
+      if (blockedItem && !queueProcessingRef.current && !resolveMeetingForQueueItem(blockedItem)?.id) {
+        updateQueueItem(blockedItem.recordingId, {
+          status: "failed",
+          errorMessage: "Nie znaleziono spotkania dla wpisu kolejki. Sprobuj nagrac ponownie.",
+        });
+        setAnalysisStatus("error");
+        setRecordingMessage("Jeden z wpisow kolejki nie ma juz przypisanego spotkania i zostal oznaczony jako failed.");
+      }
+      return undefined;
+    }
+
+    queueProcessingRef.current = true;
+    setAnalysisStatus(nextItem.status === "uploading" ? "uploading" : nextItem.status === "processing" ? "processing" : "queued");
+
+    Promise.resolve(processQueueItem(nextItem)).finally(() => {
+      queueProcessingRef.current = false;
+    });
+
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [normalizedQueue, userMeetings]);
+
   useEffect(
     () => () => {
       if (typeof window !== "undefined") {
@@ -206,6 +257,171 @@ export default function useRecorder({
 
     analyserRef.current = null;
     mediaRecorderRef.current = null;
+  }
+
+  function updateQueueItem(recordingId, updates) {
+    setRecordingQueue((previous) => updateRecordingQueueItem(previous, recordingId, updates));
+  }
+
+  function removeQueueItem(recordingId) {
+    setRecordingQueue((previous) => removeRecordingQueueItem(previous, recordingId));
+  }
+
+  function resolveMeetingForQueueItem(item) {
+    return userMeetings.find((meeting) => meeting.id === item.meetingId) || item.meetingSnapshot || null;
+  }
+
+  async function buildRecordingFromQueueItem(item, transcription) {
+    const targetMeeting = resolveMeetingForQueueItem(item);
+    if (!targetMeeting?.id) {
+      throw new Error("Nie znaleziono spotkania dla nagrania w kolejce.");
+    }
+
+    const verifiedSegments = Array.isArray(transcription.verifiedSegments) ? transcription.verifiedSegments : [];
+    setCurrentSegments(verifiedSegments);
+    setAnalysisStatus("processing");
+
+    let analysis;
+    try {
+      analysis = await analyzeMeeting({
+        meeting: targetMeeting,
+        segments: verifiedSegments,
+        speakerNames: transcription.diarization?.speakerNames || {},
+        diarization: transcription.diarization || {},
+      });
+    } catch (error) {
+      console.error("Meeting analysis failed.", error);
+      analysis = buildFallbackAnalysis(
+        "Analiza AI nie powiodla sie. Zachowalismy transkrypcje i segmenty do dalszej pracy.",
+        transcription.diarization || { speakerNames: {}, speakerCount: 0 }
+      );
+    }
+
+    return {
+      id: item.recordingId,
+      createdAt: item.createdAt || new Date().toISOString(),
+      duration: item.duration || 0,
+      transcript: verifiedSegments,
+      speakerNames: analysis.speakerLabels || transcription.diarization?.speakerNames || {},
+      speakerCount: analysis.speakerCount || transcription.diarization?.speakerCount || 0,
+      diarizationConfidence: transcription.diarization?.confidence || 0,
+      reviewSummary:
+        transcription.reviewSummary || {
+          needsReview: verifiedSegments.filter((segment) => segment.verificationStatus === "review").length,
+          approved: verifiedSegments.filter((segment) => segment.verificationStatus === "verified").length,
+        },
+      transcriptionProvider: transcription.providerId,
+      transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
+      pipelineStatus: "done",
+      storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
+      analysis,
+    };
+  }
+
+  async function pollRemoteTranscription(recordingId) {
+    let attempts = 0;
+    while (attempts < 120) {
+      attempts += 1;
+      const result = await mediaService.getTranscriptionJobStatus(recordingId);
+      const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
+      if (status === "done") {
+        return {
+          ...result,
+          pipelineStatus: "done",
+        };
+      }
+      if (status === "failed") {
+        throw new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
+      }
+
+      updateQueueItem(recordingId, {
+        status,
+        errorMessage: "",
+      });
+      await sleep(1500);
+    }
+
+    throw new Error("Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.");
+  }
+
+  async function processQueueItem(item) {
+    const targetMeeting = resolveMeetingForQueueItem(item);
+    if (!targetMeeting?.id) {
+      return false;
+    }
+
+    const localBlob = await getAudioBlob(item.recordingId);
+    if (!localBlob) {
+      updateQueueItem(item.recordingId, {
+        status: "failed",
+        errorMessage: "Brakuje lokalnego audio dla tego wpisu kolejki.",
+      });
+      return true;
+    }
+
+    try {
+      if (!item.uploaded) {
+        updateQueueItem(item.recordingId, {
+          status: "uploading",
+          attempts: (item.attempts || 0) + 1,
+          errorMessage: "",
+        });
+        await mediaService.persistRecordingAudio(item.recordingId, localBlob, {
+          workspaceId: targetMeeting.workspaceId || item.workspaceId || "",
+          meetingId: targetMeeting.id,
+        });
+      }
+
+      updateQueueItem(item.recordingId, {
+        status: "processing",
+        uploaded: true,
+        errorMessage: "",
+      });
+
+      const started =
+        item.uploaded && item.status === "processing"
+          ? await mediaService.getTranscriptionJobStatus(item.recordingId)
+          : await mediaService.startTranscriptionJob({
+              recordingId: item.recordingId,
+              blob: localBlob,
+              meeting: targetMeeting,
+              rawSegments: item.rawSegments,
+            });
+      const startStatus = normalizeRecordingPipelineStatus(started?.pipelineStatus);
+      const transcription =
+        startStatus === "done"
+          ? {
+              ...started,
+              pipelineStatus: "done",
+            }
+          : await pollRemoteTranscription(item.recordingId);
+
+      const recording = await buildRecordingFromQueueItem(item, transcription);
+      attachCompletedRecording(targetMeeting.id, recording);
+      removeQueueItem(item.recordingId);
+      setAnalysisStatus("done");
+      setRecordingMessage(
+        recording.transcript.length
+          ? recording.transcript.some((segment) => segment.verificationStatus === "review")
+            ? "Nagranie przeszlo przez kolejke i czeka czesciowo na review."
+            : "Nagranie zostalo wyslane, przetworzone i dodane do spotkania."
+          : "Audio zapisane, ale transkrypcja jest jeszcze pusta."
+      );
+      return true;
+    } catch (error) {
+      console.error("Recording queue item failed.", error);
+      updateQueueItem(item.recordingId, {
+        status: "failed",
+        errorMessage: error.message || "Nie udalo sie przetworzyc nagrania.",
+      });
+      setAnalysisStatus("error");
+      setRecordingMessage(
+        error.message
+          ? `Nagranie czeka w kolejce z bledem: ${error.message}`
+          : "Nagranie czeka w kolejce z bledem. Mozesz sprobowac ponownie."
+      );
+      return true;
+    }
   }
 
   function pumpVisualizer() {
@@ -305,17 +521,6 @@ export default function useRecorder({
         try {
           const recordingId = createId("recording");
           const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-          const persisted = await mediaService.persistRecordingAudio(recordingId, blob, {
-            workspaceId: targetMeeting?.workspaceId || activeMeeting?.workspaceId || "",
-            meetingId: targetMeeting?.id || activeMeeting?.id || "",
-          });
-          const transcription = await mediaService.finalizeTranscription({
-            recordingId,
-            blob,
-            meeting: targetMeeting,
-            rawSegments: transcriptRef.current,
-          });
-
           if (typeof URL !== "undefined" && URL.createObjectURL) {
             const nextAudioUrl = URL.createObjectURL(blob);
             setAudioUrls((previous) => ({
@@ -323,59 +528,21 @@ export default function useRecorder({
               [recordingId]: nextAudioUrl,
             }));
           }
-
-          setCurrentSegments(transcription.verifiedSegments);
-          setAnalysisStatus("analyzing");
-
-          let analysis;
-          try {
-            analysis = await analyzeMeeting({
-              meeting: targetMeeting,
-              segments: transcription.verifiedSegments,
-              speakerNames: transcription.diarization.speakerNames,
-              diarization: transcription.diarization,
-            });
-          } catch (error) {
-            console.error("Meeting analysis failed.", error);
-            analysis = buildFallbackAnalysis(
-              "Analiza AI nie powiodla sie. Zachowalismy transkrypcje i segmenty do dalszej pracy.",
-              transcription.diarization
-            );
-          }
-
-          const recording = {
-            id: recordingId,
-            createdAt: new Date().toISOString(),
-            duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
-            transcript: transcription.verifiedSegments,
-            speakerNames: analysis.speakerLabels || transcription.diarization.speakerNames,
-            speakerCount: analysis.speakerCount || transcription.diarization.speakerCount,
-            diarizationConfidence: transcription.diarization.confidence,
-            reviewSummary:
-              transcription.reviewSummary || {
-                needsReview: transcription.verifiedSegments.filter(
-                  (segment) => segment.verificationStatus === "review"
-                ).length,
-                approved: transcription.verifiedSegments.filter(
-                  (segment) => segment.verificationStatus === "verified"
-                ).length,
-              },
-            transcriptionProvider: transcription.providerId,
-            transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
-            pipelineStatus: transcription.pipelineStatus || "completed",
-            storageMode: persisted.storageMode,
-            analysis,
-          };
-
-          attachCompletedRecording(recordingMeetingIdRef.current, recording);
-          setAnalysisStatus("done");
-          setRecordingMessage(
-            transcription.verifiedSegments.length
-              ? transcription.verifiedSegments.some((segment) => segment.verificationStatus === "review")
-                ? "Nagranie zapisane. Czesc transkrypcji oznaczylismy do dodatkowej weryfikacji."
-                : "Nagranie zapisane, przeanalizowane i trwale zapisane."
-              : "Audio zapisane, ale nie otrzymalismy jeszcze transkrypcji live."
+          await saveAudioBlob(recordingId, blob);
+          setRecordingQueue((previous) =>
+            upsertRecordingQueueItem(
+              previous,
+              createRecordingQueueItem({
+                recordingId,
+                meeting: targetMeeting,
+                mimeType: recorder.mimeType || "audio/webm",
+                rawSegments: transcriptRef.current,
+                duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
+              })
+            )
           );
+          setAnalysisStatus("queued");
+          setRecordingMessage("Nagranie trafilo do kolejki. Upload rozpocznie sie automatycznie.");
         } catch (error) {
           console.error("Recording finalization failed.", error);
           setAnalysisStatus("error");
@@ -473,6 +640,22 @@ export default function useRecorder({
     setRecordingMeetingId(null);
   }
 
+  function retryRecordingQueueItem(recordingId) {
+    updateQueueItem(recordingId, {
+      status: "queued",
+      uploaded: false,
+      errorMessage: "",
+    });
+    setRecordingMessage("Ponawiamy nagranie z kolejki audio.");
+    setAnalysisStatus("queued");
+  }
+
+  const selectedMeetingQueue = useMemo(
+    () => getRecordingQueueForMeeting(normalizedQueue, selectedMeeting?.id || ""),
+    [normalizedQueue, selectedMeeting?.id]
+  );
+  const activeQueueItem = useMemo(() => getNextPendingRecordingQueueItem(normalizedQueue), [normalizedQueue]);
+
   return {
     recordPermission,
     isRecording,
@@ -484,9 +667,14 @@ export default function useRecorder({
     analysisStatus,
     recordingMessage,
     audioUrls,
+    recordingQueue: normalizedQueue,
+    queueSummary,
+    selectedMeetingQueue,
+    activeQueueItem,
     speechRecognitionSupported: mediaService.supportsLiveTranscription(),
     startRecording,
     stopRecording,
+    retryRecordingQueueItem,
     resetRecorderState,
   };
 }

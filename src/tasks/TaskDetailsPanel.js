@@ -70,6 +70,7 @@ export default function TaskDetailsPanel({
     setLinkDraft("");
     setLinkLabelDraft("");
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
 
   const availableDependencies = useMemo(
