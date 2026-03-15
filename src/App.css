@@ -1828,41 +1828,64 @@ select:focus {
 }
 
 .calendar-day-view {
-  display: grid;
-  gap: 8px;
-  max-height: 620px;
-  overflow: auto;
-  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  max-height: 680px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .calendar-time-row {
+  display: flex;
   align-items: stretch;
+  min-height: 64px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+.calendar-time-row:hover {
+  background: rgba(255,255,255,0.015);
 }
 
 .calendar-time-label {
-  width: 68px;
+  width: 56px;
   flex-shrink: 0;
   color: var(--soft);
-  font-size: 0.82rem;
-  padding-top: 12px;
+  font-size: 0.78rem;
+  padding-top: 10px;
+  padding-right: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 .calendar-time-slot {
   position: relative;
-  min-height: 56px;
-  border-radius: 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
-  padding: 10px 12px;
-  display: grid;
-  gap: 8px;
+  flex: 1;
+  min-height: 64px;
+  border-left: 2px solid rgba(255,255,255,0.06);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   align-content: start;
-  transition: background 0.12s, border-color 0.12s;
+  transition: border-color 0.12s;
+}
+.calendar-time-row:hover .calendar-time-slot {
+  border-left-color: rgba(117,214,196,0.2);
 }
 
+.calendar-time-row-current {
+  background: rgba(117,214,196,0.04);
+}
 .calendar-time-row-current .calendar-time-label {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
+}
+.calendar-time-row-current .calendar-time-slot {
+  border-left-color: rgba(117,214,196,0.5);
 }
 
 .calendar-now-dot {
@@ -7136,10 +7159,20 @@ select:focus {
   display: flex;
 }
 
-/* --- People tab task add button nicer --- */
-.panel-header .todo-command-button.primary {
-  font-size: 0.8rem;
-  padding: 5px 10px;
-  border-radius: 8px;
+/* --- People tab task add button --- */
+.people-add-task-btn {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(117,214,196,0.3);
+  background: rgba(117,214,196,0.08);
+  color: var(--accent);
+  cursor: pointer;
   white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+  font-weight: 500;
+}
+.people-add-task-btn:hover {
+  background: rgba(117,214,196,0.18);
+  border-color: rgba(117,214,196,0.6);
 }

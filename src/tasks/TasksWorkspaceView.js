@@ -48,32 +48,6 @@ function NotificationStrip({ notifications = [] }) {
   );
 }
 
-function ActivityStrip({ activity = [] }) {
-  if (!activity.length) {
-    return null;
-  }
-  return (
-    <section className="workspace-activity-strip todo-feed-panel" aria-label="Feed aktywnosci workspace">
-      <div className="panel-header compact">
-        <div>
-          <div className="eyebrow">Workspace feed</div>
-          <h2>Ostatnia aktywnosc</h2>
-        </div>
-      </div>
-      <div className="workspace-activity-list">
-        {activity.slice(0, 5).map((entry) => (
-          <article key={entry.id} className={`workspace-activity-card ${entry.tone || "neutral"}`}>
-            <strong>{entry.actor}</strong>
-            <span>{entry.message}</span>
-            <small>
-              {entry.entityType === "meeting" ? "Spotkanie" : "Zadanie"}: {entry.title}
-            </small>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function BulkToolbar({
   selectedTaskIds,
@@ -271,37 +245,6 @@ export default function TasksWorkspaceView({
   return (
     <section className="todo-main">
       <div className="todo-shell">
-        <section className="todo-hero-panel">
-          <div className="todo-hero-copy">
-            <div className="todo-list-title">
-              <span className="todo-list-icon" />
-              <strong>{selectedListLabel}</strong>
-            </div>
-            <p>{workspaceSummaryText(selectedListLabel, visibleTaskCount, viewMode)}</p>
-            {selectedTask ? (
-              <div className="todo-hero-highlight">
-                <span>Focus</span>
-                <strong>{selectedTask.title}</strong>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="todo-hero-metrics">
-            <article className="todo-hero-metric">
-              <span>Widoczne</span>
-              <strong>{visibleTaskCount}</strong>
-            </article>
-            <article className="todo-hero-metric">
-              <span>Na dzisiaj</span>
-              <strong>{visibleStats.dueToday}</strong>
-            </article>
-            <article className="todo-hero-metric">
-              <span>Zaznaczone</span>
-              <strong>{selectedTaskIds.length}</strong>
-            </article>
-          </div>
-        </section>
-
         <section className="todo-toolbar-panel">
           <div className="todo-commandbar">
             <div className="todo-commandbar-left">
@@ -602,7 +545,6 @@ export default function TasksWorkspaceView({
                   </article>
                 ))}
               </div>
-              <ActivityStrip activity={workspaceActivity} />
             </div>
           ) : isCharts ? (
             <TaskChartsView tasks={allVisibleTasks} boardColumns={boardColumns} />
