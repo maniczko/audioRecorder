@@ -3551,6 +3551,7 @@ select:focus {
   border-radius: 18px;
   background: #f8fbff;
   min-height: 440px;
+  align-content: start;
 }
 
 .tasks-layout.ms-todo .todo-kanban-column.drop {
@@ -3667,6 +3668,18 @@ select:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  overflow: hidden;
+}
+.tasks-layout.ms-todo .todo-detail-form label {
+  min-width: 0;
+  overflow: hidden;
+}
+.tasks-layout.ms-todo .todo-detail-form label input,
+.tasks-layout.ms-todo .todo-detail-form label select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .tasks-layout.ms-todo .todo-detail-form .full {
