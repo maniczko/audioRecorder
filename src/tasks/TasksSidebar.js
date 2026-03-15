@@ -9,19 +9,6 @@ function StatMiniCard({ label, value, tone = "neutral" }) {
   );
 }
 
-function statusLabel(status) {
-  if (status === "connected") {
-    return "Live";
-  }
-  if (status === "loading") {
-    return "Sync...";
-  }
-  if (status === "error") {
-    return "Blad";
-  }
-  return "Offline";
-}
-
 function cacheLabel(shellStatus) {
   if (!shellStatus.serviceWorkerSupported) {
     return "Brak wsparcia";
@@ -37,17 +24,6 @@ export default function TasksSidebar({
   workspaceInviteCode,
   stats,
   visibleStats,
-  googleTasksEnabled,
-  googleTasksStatus,
-  googleTasksMessage,
-  googleTasksLastSyncedAt,
-  selectedGoogleTaskListId,
-  onSelectGoogleTaskList,
-  googleTaskLists,
-  onConnectGoogleTasks,
-  onImportGoogleTasks,
-  onExportGoogleTasks,
-  onRefreshGoogleTasks,
   showColumnManager,
   setShowColumnManager,
   boardColumns,
@@ -259,69 +235,6 @@ export default function TasksSidebar({
             </div>
           </div>
         ) : null}
-
-        <div className="todo-google-card">
-          <div className="todo-card-head">
-            <div>
-              <span className="todo-card-eyebrow">Live sync</span>
-              <strong>Google Tasks</strong>
-            </div>
-            <span className={`todo-status-pill ${googleTasksStatus}`}>{statusLabel(googleTasksStatus)}</span>
-          </div>
-          <div className="todo-sync-grid">
-            <div className="todo-sync-stat">
-              <span>Tryb</span>
-              <strong>Auto refresh 45 s</strong>
-            </div>
-            <div className="todo-sync-stat">
-              <span>Ostatni sync</span>
-              <strong>{googleTasksLastSyncedAt ? formatDateTime(googleTasksLastSyncedAt) : "Jeszcze nie bylo"}</strong>
-            </div>
-          </div>
-          <div className="todo-google-actions">
-            <button
-              type="button"
-              className="todo-command-button primary"
-              onClick={onConnectGoogleTasks}
-              disabled={!googleTasksEnabled || googleTasksStatus === "loading"}
-            >
-              {googleTasksStatus === "connected" ? "Polacz ponownie" : "Polacz"}
-            </button>
-            <button
-              type="button"
-              className="todo-command-button"
-              onClick={onRefreshGoogleTasks}
-              disabled={!selectedGoogleTaskListId || googleTasksStatus === "loading" || typeof onRefreshGoogleTasks !== "function"}
-            >
-              Odswiez
-            </button>
-            <button
-              type="button"
-              className="todo-command-button"
-              onClick={onImportGoogleTasks}
-              disabled={!selectedGoogleTaskListId}
-            >
-              Import
-            </button>
-            <button
-              type="button"
-              className="todo-command-button"
-              onClick={onExportGoogleTasks}
-              disabled={!selectedGoogleTaskListId}
-            >
-              Export
-            </button>
-          </div>
-          <select value={selectedGoogleTaskListId} onChange={(event) => onSelectGoogleTaskList(event.target.value)}>
-            <option value="">Wybierz liste</option>
-            {googleTaskLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.title}
-              </option>
-            ))}
-          </select>
-          {googleTasksMessage ? <div className="todo-helper">{googleTasksMessage}</div> : null}
-        </div>
 
         <div className="todo-device-card">
           <div className="todo-card-head">

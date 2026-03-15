@@ -13,6 +13,11 @@ import { buildWorkspaceActivityFeed } from "../lib/activityFeed";
 import { buildPeopleProfiles } from "../lib/people";
 import { createId, STORAGE_KEYS } from "../lib/storage";
 import {
+  areCalendarSyncSnapshotsEqual,
+  buildCalendarSyncSnapshot,
+  createGoogleCalendarConflictState,
+} from "../lib/googleSync";
+import {
   buildTaskChangeHistory,
   buildTaskColumns,
   buildTaskNotifications,
@@ -57,6 +62,26 @@ function normalizeMeetingDraftValue(draft) {
 
 function areMeetingDraftsEqual(left, right) {
   return JSON.stringify(normalizeMeetingDraftValue(left)) === JSON.stringify(normalizeMeetingDraftValue(right));
+}
+
+function normalizeRecordingMarkers(markers = []) {
+  return (Array.isArray(markers) ? markers : [])
+    .map((marker, index) => {
+      const timestamp = Number(marker?.timestamp);
+      if (!Number.isFinite(timestamp) || timestamp < 0) {
+        return null;
+      }
+
+      return {
+        id: String(marker?.id || createId(`marker_${index}`)),
+        timestamp,
+        label: String(marker?.label || `Marker ${index + 1}`).trim() || `Marker ${index + 1}`,
+        note: String(marker?.note || "").trim(),
+        createdAt: marker?.createdAt || new Date().toISOString(),
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.timestamp - right.timestamp);
 }
 
 export default function useMeetings({
@@ -214,6 +239,7 @@ export default function useMeetings({
       transcript: safeTranscript,
       speakerNames,
       speakerCount: uniqueSpeakerIds.length,
+      markers: normalizeRecordingMarkers(overrides.markers || recording.markers),
       reviewSummary: buildTranscriptReviewSummary(safeTranscript),
     };
   }
@@ -712,14 +738,30 @@ export default function useMeetings({
     const nextTask = {
       ...task,
       ...normalizedUpdates,
+      ...(task.googleTaskId && updates.googleSyncStatus === undefined
+        ? {
+            googleSyncStatus: "local_changes",
+            googleLocalUpdatedAt: updatedAt,
+            googleSyncConflict: null,
+          }
+        : {}),
       updatedAt,
     };
+    const syncPayload =
+      task.googleTaskId && updates.googleSyncStatus === undefined
+        ? {
+            googleSyncStatus: "local_changes",
+            googleLocalUpdatedAt: updatedAt,
+            googleSyncConflict: null,
+          }
+        : {};
     const nextHistory = [
       ...(normalizedUpdates.history || task.history || []),
       ...buildTaskChangeHistory(task, nextTask, actor, taskColumns),
     ];
     const nextPayload = {
       ...normalizedUpdates,
+      ...syncPayload,
       history: nextHistory,
       updatedAt,
     };
@@ -813,14 +855,68 @@ export default function useMeetings({
     }));
   }
 
+  function applyCalendarSyncSnapshot(entryType, entryId, snapshot, metaUpdates = {}) {
+    if (!entryType || !entryId || !snapshot) {
+      return;
+    }
+
+    const nextStartsAt = snapshot.startsAt || "";
+    const nextDurationMinutes = Math.max(
+      15,
+      Number(snapshot.durationMinutes) ||
+        Math.round(
+          (new Date(snapshot.endsAt || snapshot.startsAt || 0).getTime() -
+            new Date(snapshot.startsAt || 0).getTime()) /
+            60000
+        ) ||
+        15
+    );
+
+    if (entryType === "meeting") {
+      setMeetings((previous) =>
+        previous.map((meeting) =>
+          meeting.id !== entryId
+            ? meeting
+            : {
+                ...meeting,
+                title: snapshot.title || meeting.title,
+                startsAt: nextStartsAt || meeting.startsAt,
+                durationMinutes: nextDurationMinutes || meeting.durationMinutes,
+                location:
+                  snapshot.location !== undefined
+                    ? String(snapshot.location || "").trim()
+                    : meeting.location,
+                updatedAt: new Date().toISOString(),
+              }
+        )
+      );
+    } else if (entryType === "task") {
+      updateTask(entryId, {
+        title: snapshot.title,
+        dueDate: nextStartsAt,
+      });
+    }
+
+    if (Object.keys(metaUpdates).length) {
+      updateCalendarEntryMeta(entryType, entryId, metaUpdates);
+    }
+  }
+
   const syncLinkedGoogleCalendarEvents = useCallback((googleEvents) => {
     const eventMap = new Map((Array.isArray(googleEvents) ? googleEvents : []).map((event) => [event.id, event]));
-    const touchedMetaKeys = [];
+    const metaUpdates = {};
+    const rememberMetaUpdate = (metaKey, patch) => {
+      metaUpdates[metaKey] = {
+        ...(metaUpdates[metaKey] || {}),
+        ...patch,
+      };
+    };
 
     setMeetings((previous) =>
       previous.map((meeting) => {
         const metaKey = `meeting:${meeting.id}`;
-        const linkedEventId = calendarMeta?.[metaKey]?.googleEventId;
+        const meta = calendarMeta?.[metaKey] || {};
+        const linkedEventId = meta.googleEventId;
         if (!linkedEventId || meeting.workspaceId !== currentWorkspaceId) {
           return meeting;
         }
@@ -830,20 +926,45 @@ export default function useMeetings({
           return meeting;
         }
 
-        const nextStartsAt = linkedEvent.start.dateTime;
-        const nextDurationMinutes = Math.max(
-          15,
-          Math.round((new Date(linkedEvent.end.dateTime).getTime() - new Date(linkedEvent.start.dateTime).getTime()) / (60 * 1000))
-        );
-        if (meeting.startsAt === nextStartsAt && Number(meeting.durationMinutes) === nextDurationMinutes) {
+        const localSnapshot = buildCalendarSyncSnapshot(meeting, { type: "meeting" });
+        const remoteSnapshot = buildCalendarSyncSnapshot(linkedEvent, { type: "meeting" });
+        const conflict = createGoogleCalendarConflictState({
+          entryType: "meeting",
+          localSnapshot,
+          remoteSnapshot,
+          localUpdatedAt: meeting.updatedAt || meeting.createdAt,
+          remoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+          lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || meeting.createdAt,
+        });
+        if (conflict) {
+          rememberMetaUpdate(metaKey, {
+            googleSyncConflict: conflict,
+            googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
+            googlePulledAt: new Date().toISOString(),
+          });
           return meeting;
         }
 
-        touchedMetaKeys.push(metaKey);
+        if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
+          rememberMetaUpdate(metaKey, {
+            googlePulledAt: new Date().toISOString(),
+            googleRemoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+            googleSyncConflict: null,
+          });
+          return meeting;
+        }
+
+        rememberMetaUpdate(metaKey, {
+          googlePulledAt: new Date().toISOString(),
+          googleRemoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+          googleSyncConflict: null,
+        });
         return {
           ...meeting,
-          startsAt: nextStartsAt,
-          durationMinutes: nextDurationMinutes,
+          title: remoteSnapshot.title || meeting.title,
+          startsAt: remoteSnapshot.startsAt || meeting.startsAt,
+          durationMinutes: remoteSnapshot.durationMinutes || meeting.durationMinutes,
+          location: remoteSnapshot.location || meeting.location,
           updatedAt: new Date().toISOString(),
         };
       })
@@ -852,7 +973,8 @@ export default function useMeetings({
     setManualTasks((previous) =>
       previous.map((task) => {
         const metaKey = `task:${task.id}`;
-        const linkedEventId = calendarMeta?.[metaKey]?.googleEventId;
+        const meta = calendarMeta?.[metaKey] || {};
+        const linkedEventId = meta.googleEventId;
         if (!linkedEventId || task.workspaceId !== currentWorkspaceId) {
           return task;
         }
@@ -862,26 +984,64 @@ export default function useMeetings({
           return task;
         }
 
-        if (task.dueDate === linkedEvent.start.dateTime) {
+        const localSnapshot = buildCalendarSyncSnapshot(task, { type: "task" });
+        const remoteSnapshot = buildCalendarSyncSnapshot(
+          {
+            title: linkedEvent.summary || task.title,
+            dueDate: linkedEvent.start.dateTime,
+            startsAt: linkedEvent.start.dateTime,
+            endsAt: linkedEvent.end?.dateTime || linkedEvent.start.dateTime,
+            durationMinutes: 15,
+          },
+          { type: "task" }
+        );
+        const conflict = createGoogleCalendarConflictState({
+          entryType: "task",
+          localSnapshot,
+          remoteSnapshot,
+          localUpdatedAt: task.updatedAt || task.createdAt,
+          remoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+          lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || task.createdAt,
+        });
+        if (conflict) {
+          rememberMetaUpdate(metaKey, {
+            googleSyncConflict: conflict,
+            googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
+            googlePulledAt: new Date().toISOString(),
+          });
           return task;
         }
 
-        touchedMetaKeys.push(metaKey);
+        if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
+          rememberMetaUpdate(metaKey, {
+            googlePulledAt: new Date().toISOString(),
+            googleRemoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+            googleSyncConflict: null,
+          });
+          return task;
+        }
+
+        rememberMetaUpdate(metaKey, {
+          googlePulledAt: new Date().toISOString(),
+          googleRemoteUpdatedAt: linkedEvent.updated || linkedEvent.created || linkedEvent.start.dateTime,
+          googleSyncConflict: null,
+        });
         return {
           ...task,
-          dueDate: linkedEvent.start.dateTime,
+          title: remoteSnapshot.title || task.title,
+          dueDate: remoteSnapshot.startsAt || linkedEvent.start.dateTime,
           updatedAt: new Date().toISOString(),
         };
       })
     );
 
-    if (touchedMetaKeys.length) {
+    if (Object.keys(metaUpdates).length) {
       setCalendarMeta((previous) => {
         const nextMeta = { ...previous };
-        touchedMetaKeys.forEach((metaKey) => {
+        Object.entries(metaUpdates).forEach(([metaKey, patch]) => {
           nextMeta[metaKey] = {
             ...(nextMeta[metaKey] || {}),
-            googlePulledAt: new Date().toISOString(),
+            ...patch,
           };
         });
         return nextMeta;
@@ -1242,6 +1402,92 @@ export default function useMeetings({
     });
   }
 
+  function addRecordingMarker(marker) {
+    if (!selectedRecording) {
+      return;
+    }
+
+    updateSelectedRecording((recording) => {
+      const nextMarkers = normalizeRecordingMarkers([
+        ...(recording.markers || []),
+        {
+          id: createId("marker"),
+          timestamp: marker?.timestamp,
+          label: marker?.label,
+          note: marker?.note,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
+      return finalizeRecordingTranscript(recording, recording.transcript || [], {
+        markers: nextMarkers,
+      });
+    });
+  }
+
+  function updateRecordingMarker(markerId, updates) {
+    if (!selectedRecording || !markerId) {
+      return;
+    }
+
+    updateSelectedRecording((recording) => {
+      const nextMarkers = normalizeRecordingMarkers(
+        (recording.markers || []).map((marker) =>
+          marker.id !== markerId
+            ? marker
+            : {
+                ...marker,
+                ...updates,
+              }
+        )
+      );
+
+      return finalizeRecordingTranscript(recording, recording.transcript || [], {
+        markers: nextMarkers,
+      });
+    });
+  }
+
+  function deleteRecordingMarker(markerId) {
+    if (!selectedRecording || !markerId) {
+      return;
+    }
+
+    updateSelectedRecording((recording) =>
+      finalizeRecordingTranscript(recording, recording.transcript || [], {
+        markers: normalizeRecordingMarkers((recording.markers || []).filter((marker) => marker.id !== markerId)),
+      })
+    );
+  }
+
+  function addMeetingComment(meetingId, text, authorName) {
+    const now = new Date().toISOString();
+    const comment = {
+      id: createId("comment"),
+      text: String(text || "").trim(),
+      author: String(authorName || "Ty"),
+      createdAt: now,
+      mentions: (String(text || "").match(/@(\w+)/g) || []).map((m) => m.slice(1)),
+    };
+    const activityEntry = {
+      id: createId("meeting_activity"),
+      type: "comment",
+      actorName: String(authorName || "Ty"),
+      message: String(text || "").length > 80 ? String(text || "").slice(0, 77) + "..." : String(text || ""),
+      createdAt: now,
+    };
+    setMeetings((previous) =>
+      previous.map((meeting) => {
+        if (meeting.id !== meetingId) return meeting;
+        return {
+          ...meeting,
+          comments: [...(Array.isArray(meeting.comments) ? meeting.comments : []), comment],
+          activity: [...(Array.isArray(meeting.activity) ? meeting.activity : []), activityEntry],
+        };
+      })
+    );
+  }
+
   function resetSelectionState() {
     const freshDraft = createEmptyMeetingDraft();
     setSelectedMeetingId(null);
@@ -1349,6 +1595,7 @@ export default function useMeetings({
     rescheduleTask,
     rescheduleMeeting,
     updateCalendarEntryMeta,
+    applyCalendarSyncSnapshot,
     syncLinkedGoogleCalendarEvents,
     reorderTask,
     addTaskColumn,
@@ -1361,6 +1608,10 @@ export default function useMeetings({
     assignSpeakerToTranscriptSegments,
     mergeTranscriptSegments,
     splitTranscriptSegment,
+    addRecordingMarker,
+    updateRecordingMarker,
+    deleteRecordingMarker,
+    addMeetingComment,
     resetSelectionState,
   };
 }

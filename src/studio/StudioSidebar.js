@@ -2,10 +2,8 @@ import { formatDateTime } from "../lib/storage";
 import { getMeetingLastActivity } from "../lib/activityFeed";
 
 export default function StudioSidebar({
-  currentUser,
-  currentWorkspace,
   currentWorkspaceMembers,
-  setActiveTab,
+  currentWorkspacePermissions,
   meetingDraft,
   setMeetingDraft,
   activeStoredMeetingDraft,
@@ -19,72 +17,28 @@ export default function StudioSidebar({
   selectMeeting,
   selectedMeeting,
 }) {
+  const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
+
   return (
     <aside className="workspace-sidebar">
-      <section className="panel">
-        <div className="panel-header compact">
-          <div>
-            <div className="eyebrow">Workspace</div>
-            <h2>{currentWorkspace?.name || "Workspace owner"}</h2>
-          </div>
-          <button type="button" className="ghost-button" onClick={() => setActiveTab("profile")}>
-            Otworz profil
-          </button>
-        </div>
-
-        <div className="workspace-owner-card">
-          <div className="user-card">
-            {currentUser.avatarUrl ? <img src={currentUser.avatarUrl} alt={currentUser.name} className="avatar" /> : null}
-            <div>
-              <strong>{currentUser.name}</strong>
-              <span>
-                {currentUser.role || "Brak roli"}
-                {currentUser.company ? ` | ${currentUser.company}` : ""}
-              </span>
-            </div>
-          </div>
-
-          <div className="profile-quick-grid">
-            <div className="task-detail-chip">
-              <span>Email</span>
-              <strong>{currentUser.email}</strong>
-            </div>
-            <div className="task-detail-chip">
-              <span>Kod dostepu</span>
-              <strong>{currentWorkspace?.inviteCode || "Brak"}</strong>
-            </div>
-            <div className="task-detail-chip">
-              <span>Czlonkowie</span>
-              <strong>{currentWorkspaceMembers.length}</strong>
-            </div>
-          </div>
-          <div className="workspace-member-list">
-            {currentWorkspaceMembers.map((member) => (
-              <span key={member.id} className="task-tag-chip neutral">
-                {member.name || member.email}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="panel">
         <div className="panel-header compact">
           <div>
             <div className="eyebrow">Meeting brief</div>
             <h2>{selectedMeeting ? "Edytuj spotkanie" : "Nowe spotkanie"}</h2>
           </div>
-          <button type="button" className="ghost-button" onClick={startNewMeetingDraft}>
+          <button type="button" className="ghost-button" onClick={startNewMeetingDraft} disabled={!canEditWorkspace}>
             Nowe
           </button>
         </div>
 
         <div className="studio-draft-toolbar">
           <span className="microcopy">
-            Autosave {activeStoredMeetingDraft?.updatedAt ? `zapisany ${formatDateTime(activeStoredMeetingDraft.updatedAt)}` : "aktywny"}
+            Autosave{" "}
+            {activeStoredMeetingDraft?.updatedAt ? `zapisany ${formatDateTime(activeStoredMeetingDraft.updatedAt)}` : "aktywny"}
           </span>
-          <button type="button" className="ghost-button" onClick={clearMeetingDraft}>
-            Wyczyść draft
+          <button type="button" className="ghost-button" onClick={clearMeetingDraft} disabled={!canEditWorkspace}>
+            Wyczysc draft
           </button>
         </div>
 
@@ -94,6 +48,7 @@ export default function StudioSidebar({
             <input
               value={meetingDraft.title}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -102,6 +57,7 @@ export default function StudioSidebar({
               rows="3"
               value={meetingDraft.context}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -110,6 +66,7 @@ export default function StudioSidebar({
               type="datetime-local"
               value={meetingDraft.startsAt}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -119,9 +76,8 @@ export default function StudioSidebar({
               min="15"
               step="15"
               value={meetingDraft.durationMinutes}
-              onChange={(event) =>
-                setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))
-              }
+              onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -130,6 +86,7 @@ export default function StudioSidebar({
               rows="3"
               value={meetingDraft.attendees}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, attendees: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -139,6 +96,7 @@ export default function StudioSidebar({
               value={meetingDraft.tags}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, tags: event.target.value }))}
               placeholder={"np. klient\nbudzet\nfollow-up"}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -148,6 +106,7 @@ export default function StudioSidebar({
               value={meetingDraft.needs}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))}
               placeholder={"np. Decyzje budzetowe\nRyzyka wdrozenia"}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -155,10 +114,9 @@ export default function StudioSidebar({
             <textarea
               rows="4"
               value={meetingDraft.desiredOutputs}
-              onChange={(event) =>
-                setMeetingDraft((previous) => ({ ...previous, desiredOutputs: event.target.value }))
-              }
+              onChange={(event) => setMeetingDraft((previous) => ({ ...previous, desiredOutputs: event.target.value }))}
               placeholder={"np. Kolejne kroki\nOwnerzy zadan"}
+              disabled={!canEditWorkspace}
             />
           </label>
           <label>
@@ -166,14 +124,15 @@ export default function StudioSidebar({
             <input
               value={meetingDraft.location}
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))}
+              disabled={!canEditWorkspace}
             />
           </label>
           <div className="button-row">
-            <button type="button" className="primary-button" onClick={saveMeeting}>
+            <button type="button" className="primary-button" onClick={saveMeeting} disabled={!canEditWorkspace}>
               Zapisz spotkanie
             </button>
-            <button type="button" className="ghost-button" onClick={clearMeetingDraft}>
-              Odrzuć zmiany
+            <button type="button" className="ghost-button" onClick={clearMeetingDraft} disabled={!canEditWorkspace}>
+              Odrzuc zmiany
             </button>
           </div>
         </div>

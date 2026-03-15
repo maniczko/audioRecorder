@@ -399,7 +399,7 @@ export default function CalendarTab({
               <CalendarFilterButton key={type} active={filters[type]} count={allEntries.filter((entry) => entry.type === type).length} label={eventTypeLabel(type)} onClick={() => setFilters((previous) => ({ ...previous, [type]: !previous[type] }))} />
             ))}
           </div>
-          <div className="todo-helper">{currentUserTimezone}</div>
+
           <div className="button-row">
             <button type="button" className="secondary-button" onClick={connectGoogleCalendar} disabled={!googleCalendarEnabled || googleCalendarStatus === "loading"}>
               {googleCalendarStatus === "loading" ? "Laczenie..." : "Google"}

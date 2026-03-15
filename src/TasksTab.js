@@ -695,17 +695,6 @@ export default function TasksTab({
         workspaceInviteCode={workspaceInviteCode}
         stats={stats}
         visibleStats={visibleStats}
-        googleTasksEnabled={googleTasksEnabled}
-        googleTasksStatus={googleTasksStatus}
-        googleTasksMessage={googleTasksMessage}
-        googleTasksLastSyncedAt={googleTasksLastSyncedAt}
-        selectedGoogleTaskListId={selectedGoogleTaskListId}
-        onSelectGoogleTaskList={onSelectGoogleTaskList}
-        googleTaskLists={googleTaskLists}
-        onConnectGoogleTasks={onConnectGoogleTasks}
-        onImportGoogleTasks={onImportGoogleTasks}
-        onExportGoogleTasks={onExportGoogleTasks}
-        onRefreshGoogleTasks={onRefreshGoogleTasks}
         showColumnManager={showColumnManager}
         setShowColumnManager={setShowColumnManager}
         boardColumns={boardColumns}

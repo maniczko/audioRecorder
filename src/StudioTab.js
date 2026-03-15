@@ -3,10 +3,8 @@ import StudioSidebar from "./studio/StudioSidebar";
 
 export default function StudioTab(props) {
   const {
-    currentUser,
-    currentWorkspace,
     currentWorkspaceMembers,
-    setActiveTab,
+    currentWorkspacePermissions,
     meetingDraft,
     setMeetingDraft,
     activeStoredMeetingDraft,
@@ -26,10 +24,8 @@ export default function StudioTab(props) {
   return (
     <div className="workspace-layout">
       <StudioSidebar
-        currentUser={currentUser}
-        currentWorkspace={currentWorkspace}
         currentWorkspaceMembers={currentWorkspaceMembers}
-        setActiveTab={setActiveTab}
+        currentWorkspacePermissions={currentWorkspacePermissions}
         meetingDraft={meetingDraft}
         setMeetingDraft={setMeetingDraft}
         activeStoredMeetingDraft={activeStoredMeetingDraft}

@@ -1,3 +1,5 @@
+import { formatDateTime } from "./lib/storage";
+
 function integrationStatusLabel(status, connectedCount) {
   if (connectedCount) {
     return `${connectedCount} wydarzen w kalendarzu`;
@@ -24,12 +26,26 @@ export default function ProfileTab({
   googleCalendarStatus,
   googleCalendarMessage,
   googleCalendarEventsCount,
+  googleCalendarLastSyncedAt,
   connectGoogleCalendar,
   disconnectGoogleCalendar,
+  refreshGoogleCalendar,
   passwordDraft,
   setPasswordDraft,
   updatePassword,
   securityMessage,
+  googleTasksEnabled,
+  googleTasksStatus,
+  googleTasksMessage,
+  googleTasksLastSyncedAt,
+  googleTaskLists = [],
+  selectedGoogleTaskListId,
+  onSelectGoogleTaskList,
+  onConnectGoogleTasks,
+  onImportGoogleTasks,
+  onExportGoogleTasks,
+  onRefreshGoogleTasks,
+  workspaceRole,
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
 
@@ -254,6 +270,8 @@ export default function ProfileTab({
               <div>
                 <strong>Google Calendar</strong>
                 <p>{integrationStatusLabel(googleCalendarStatus, googleCalendarEventsCount)}</p>
+                <p>{googleCalendarStatus === "connected" ? "Live sync co 45 sekund." : "Po polaczeniu wlaczy sie auto refresh."}</p>
+                {googleCalendarLastSyncedAt ? <p>Ostatni sync: {formatDateTime(googleCalendarLastSyncedAt)}</p> : null}
               </div>
               <div className="button-row">
                 <button
@@ -264,6 +282,11 @@ export default function ProfileTab({
                 >
                   {googleCalendarStatus === "loading" ? "Laczenie..." : "Polacz kalendarz"}
                 </button>
+                {googleCalendarStatus === "connected" ? (
+                  <button type="button" className="ghost-button" onClick={refreshGoogleCalendar}>
+                    Odswiez teraz
+                  </button>
+                ) : null}
                 {googleCalendarEventsCount ? (
                   <button type="button" className="ghost-button" onClick={disconnectGoogleCalendar}>
                     Odlacz
@@ -273,6 +296,99 @@ export default function ProfileTab({
             </div>
 
             {googleCalendarMessage ? <div className="inline-alert info">{googleCalendarMessage}</div> : null}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Tasks sync</div>
+              <h2>Google Tasks</h2>
+            </div>
+            <span className={`status-chip ${googleTasksStatus === "connected" ? "success" : ""}`}>
+              {googleTasksStatus === "connected" ? "Live" : googleTasksStatus === "loading" ? "Sync..." : "Offline"}
+            </span>
+          </div>
+
+          <div className="integration-card">
+            <div className="integration-row">
+              <div>
+                <strong>Synchronizacja zadań</strong>
+                <p>{googleTasksStatus === "connected" ? "Auto refresh co 45 s." : "Połącz konto Google, aby zsynchronizować zadania."}</p>
+                {googleTasksLastSyncedAt ? <p>Ostatni sync: {formatDateTime(googleTasksLastSyncedAt)}</p> : null}
+              </div>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={onConnectGoogleTasks}
+                  disabled={!googleTasksEnabled || googleTasksStatus === "loading"}
+                >
+                  {googleTasksStatus === "connected" ? "Połącz ponownie" : "Połącz"}
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={onImportGoogleTasks}
+                  disabled={!selectedGoogleTaskListId}
+                >
+                  Import
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={onExportGoogleTasks}
+                  disabled={!selectedGoogleTaskListId}
+                >
+                  Export
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={onRefreshGoogleTasks}
+                  disabled={!selectedGoogleTaskListId || googleTasksStatus === "loading"}
+                >
+                  Odśwież
+                </button>
+              </div>
+            </div>
+            <div className="integration-row">
+              <div>
+                <strong>Lista zadań</strong>
+                <p>Wybierz listę Google Tasks do synchronizacji.</p>
+              </div>
+              <select
+                value={selectedGoogleTaskListId || ""}
+                onChange={(event) => onSelectGoogleTaskList?.(event.target.value)}
+                style={{ minWidth: 180 }}
+              >
+                <option value="">Wybierz listę</option>
+                {googleTaskLists.map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {googleTasksMessage ? <div className="inline-alert info">{googleTasksMessage}</div> : null}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Workspace</div>
+              <h2>Twoja rola</h2>
+            </div>
+          </div>
+          <div className="integration-card">
+            <div className="integration-row">
+              <div>
+                <strong>Rola w workspace</strong>
+                <p>Twoja aktualna rola określa uprawnienia do edycji spotkań, zadań i zarządzania zespołem.</p>
+              </div>
+              <span className="status-chip">{workspaceRole || "member"}</span>
+            </div>
           </div>
         </section>
 

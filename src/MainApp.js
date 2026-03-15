@@ -419,7 +419,7 @@ export default function MainApp() {
           <div className="status-chip">
             {recorder.speechRecognitionSupported ? "Live transcript ready" : "Remote transcript required"}
           </div>
-          <div className="status-chip">Workspace role: {workspace.currentWorkspaceRole || "member"}</div>
+
           <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
           <NotificationCenter
             open={notificationCenterOpen}
@@ -436,6 +436,16 @@ export default function MainApp() {
           <button type="button" className="ghost-button command-palette-launcher" onClick={() => setCommandPaletteOpen(true)}>
             Szukaj
             <span>Ctrl+K</span>
+          </button>
+          <button
+            type="button"
+            className={recorder.isRecording ? "topbar-record-btn recording" : "topbar-record-btn"}
+            onClick={() => recorder.startRecording({ adHoc: true })}
+            disabled={recorder.isRecording || !workspace.currentWorkspacePermissions?.canRecordAudio}
+            title="Nagranie ad hoc"
+          >
+            <span className="topbar-record-dot" />
+            {recorder.isRecording ? "Nagrywam..." : "Nagraj"}
           </button>
           {workspace.availableWorkspaces.length > 1 ? (
             <label className="workspace-switch">
@@ -570,6 +580,18 @@ export default function MainApp() {
           setPasswordDraft={auth.setPasswordDraft}
           updatePassword={auth.updatePassword}
           securityMessage={auth.securityMessage}
+          googleTasksEnabled={google.googleEnabled}
+          googleTasksStatus={google.googleTasksStatus}
+          googleTasksMessage={google.googleTasksMessage}
+          googleTasksLastSyncedAt={google.googleTasksLastSyncedAt}
+          googleTaskLists={google.googleTaskLists}
+          selectedGoogleTaskListId={google.selectedGoogleTaskListId}
+          onSelectGoogleTaskList={google.setSelectedGoogleTaskListId}
+          onConnectGoogleTasks={google.connectGoogleTasks}
+          onImportGoogleTasks={google.importGoogleTasksFromList}
+          onExportGoogleTasks={google.exportTasksToGoogle}
+          onRefreshGoogleTasks={google.refreshGoogleTasks}
+          workspaceRole={workspace.currentWorkspaceRole}
         />
       ) : (
         <StudioTab
@@ -627,6 +649,8 @@ export default function MainApp() {
           onCreateTask={meetings.createTaskFromComposer}
           peopleProfiles={meetings.peopleProfiles}
           setSelectedMeetingId={meetings.setSelectedMeetingId}
+          addMeetingComment={meetings.addMeetingComment}
+          currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
         />
       )}
 

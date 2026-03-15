@@ -1,9 +1,23 @@
+import { useState } from "react";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
 import KpiDashboard from "./KpiDashboard";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
+
+function tagStyle(tag) {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return {
+    color: `hsl(${h},62%,62%)`,
+    background: `hsla(${h},62%,45%,0.13)`,
+    border: `1px solid hsla(${h},62%,55%,0.28)`,
+  };
+}
 
 export default function StudioMeetingView({
   selectedMeeting,
@@ -45,33 +59,42 @@ export default function StudioMeetingView({
   deleteRecordingMarker,
   onCreateTask,
   peopleProfiles,
+  addMeetingComment,
+  currentUserName,
 }) {
+  const [commentDraft, setCommentDraft] = useState("");
+
+  function handleAddComment() {
+    if (!commentDraft.trim() || !addMeetingComment) return;
+    addMeetingComment(selectedMeeting.id, commentDraft.trim(), currentUserName || "Ty");
+    setCommentDraft("");
+  }
+
   if (!selectedMeeting) {
     return (
       <section className="hero-panel empty-workspace">
-        <div className="eyebrow">Workspace</div>
-        <h2>Utworz pierwsze spotkanie</h2>
-        <p>
-          Zacznij od briefu, potem uruchom recorder i przypnij rozmowe do konkretnego spotkania albo zaplanuj
-          termin w zakladce Kalendarz.
-        </p>
-        <div className="button-row">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => startRecording({ adHoc: true })}
-            disabled={!currentWorkspacePermissions?.canRecordAudio}
-          >
-            Zacznij nagranie ad hoc
-          </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={startNewMeetingDraft}
-            disabled={!currentWorkspacePermissions?.canEditWorkspace}
-          >
-            Przygotuj brief
-          </button>
+        <div className="empty-workspace-inner">
+          <div className="eyebrow">Studio</div>
+          <h2>Wybierz lub utwórz spotkanie</h2>
+          <p>Zacznij od briefu albo uruchom nagranie ad hoc — spotkanie zostanie utworzone automatycznie.</p>
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => startRecording({ adHoc: true })}
+              disabled={!currentWorkspacePermissions?.canRecordAudio}
+            >
+              ⬤ Nagraj ad hoc
+            </button>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={startNewMeetingDraft}
+              disabled={!currentWorkspacePermissions?.canEditWorkspace}
+            >
+              Przygotuj brief
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -178,7 +201,7 @@ export default function StudioMeetingView({
           <div className="chip-list">
             {selectedMeeting.tags?.length
               ? selectedMeeting.tags.map((tag) => (
-                  <span className="task-tag-chip neutral" key={tag}>
+                  <span className="task-tag-chip" key={tag} style={tagStyle(tag)}>
                     #{tag}
                   </span>
                 ))
@@ -382,6 +405,58 @@ export default function StudioMeetingView({
                 <span>Pierwsze nagranie pojawi sie tutaj.</span>
               </div>
             ) : null}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Discussion</div>
+              <h2>Komentarze</h2>
+            </div>
+            <div className="status-chip">{(selectedMeeting.comments || []).length}</div>
+          </div>
+          <div className="meeting-comment-create">
+            <textarea
+              rows="3"
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+              placeholder="Dodaj komentarz... użyj @imię aby wspomnieć osobę"
+              disabled={!currentWorkspacePermissions?.canEditWorkspace}
+            />
+            <button
+              type="button"
+              className="secondary-button small"
+              onClick={handleAddComment}
+              disabled={!commentDraft.trim()}
+            >
+              Dodaj
+            </button>
+          </div>
+          <div className="meeting-comments-list">
+            {(selectedMeeting.comments || []).length ? (
+              [...selectedMeeting.comments].reverse().map((comment) => (
+                <article key={comment.id} className="meeting-comment-card">
+                  <div className="meeting-comment-meta">
+                    <strong>{comment.author}</strong>
+                    <small>{formatDateTime(comment.createdAt)}</small>
+                  </div>
+                  <p>{comment.text}</p>
+                  {comment.mentions?.length > 0 && (
+                    <div className="meeting-comment-mentions">
+                      {comment.mentions.map((m) => (
+                        <span key={m} className="mention-chip">@{m}</span>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))
+            ) : (
+              <div className="empty-panel">
+                <strong>Brak komentarzy</strong>
+                <span>Dodaj komentarz lub ustalenie do tego spotkania.</span>
+              </div>
+            )}
           </div>
         </section>
       </div>
