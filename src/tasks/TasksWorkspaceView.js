@@ -37,99 +37,6 @@ function NotificationStrip({ notifications = [] }) {
 }
 
 
-function BulkToolbar({
-  selectedTaskIds,
-  clearTaskSelection,
-  handleBulkUpdate,
-  handleBulkDelete,
-  boardColumns,
-  peopleOptions,
-}) {
-  if (!selectedTaskIds.length) {
-    return null;
-  }
-  return (
-    <section className="todo-bulk-toolbar" aria-label="Akcje zbiorcze">
-      <div className="todo-bulk-summary">
-        <strong>{selectedTaskIds.length}</strong>
-        <span>zadan zaznaczonych</span>
-      </div>
-      <div className="todo-bulk-actions">
-        <button
-          type="button"
-          className="todo-command-button"
-          onClick={() => handleBulkUpdate({ completed: true }, "Zakonczono zaznaczone zadania.")}
-        >
-          Zakoncz
-        </button>
-        <button
-          type="button"
-          className="todo-command-button"
-          onClick={() => handleBulkUpdate({ completed: false }, "Otwarto zaznaczone zadania ponownie.")}
-        >
-          Otworz
-        </button>
-        <label className="todo-filter-item compact">
-          <span>Status</span>
-          <select
-            onChange={(event) =>
-              event.target.value &&
-              handleBulkUpdate({ status: event.target.value }, "Zmieniono status zaznaczonych zadan.")
-            }
-            defaultValue=""
-          >
-            <option value="">Zmien status</option>
-            {boardColumns.map((column) => (
-              <option key={column.id} value={column.id}>
-                {column.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="todo-filter-item compact">
-          <span>Osoba</span>
-          <select
-            onChange={(event) =>
-              handleBulkUpdate({ owner: event.target.value }, "Zmieniono osobe dla zaznaczonych zadan.")
-            }
-            defaultValue=""
-          >
-            <option value="">Nieprzypisane</option>
-            {peopleOptions.map((person) => (
-              <option key={person} value={person}>
-                {person}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="todo-filter-item compact">
-          <span>Priorytet</span>
-          <select
-            onChange={(event) =>
-              event.target.value &&
-              handleBulkUpdate({ priority: event.target.value }, "Zmieniono priorytet zaznaczonych zadan.")
-            }
-            defaultValue=""
-          >
-            <option value="">Priorytet</option>
-            {TASK_PRIORITIES.map((priority) => (
-              <option key={priority.id} value={priority.id}>
-                {priority.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" className="todo-command-button danger" onClick={handleBulkDelete}>
-          Usun
-        </button>
-        <button type="button" className="todo-command-button" onClick={clearTaskSelection}>
-          Wyczysc
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setShowColumnManager, children }) {
   const [open, setOpen] = useState(false);
   return (
@@ -216,12 +123,7 @@ export default function TasksWorkspaceView({
   visibleStats,
   selectedTaskIds,
   toggleTaskSelection,
-  clearTaskSelection,
-  handleBulkUpdate,
-  handleBulkDelete,
   taskNotifications,
-  workspaceActivity,
-  visibleTaskCount,
   showColumnManager,
   setShowColumnManager,
 }) {
@@ -353,15 +255,6 @@ export default function TasksWorkspaceView({
         </section>
 
         <NotificationStrip notifications={taskNotifications} />
-
-        <BulkToolbar
-          selectedTaskIds={selectedTaskIds}
-          clearTaskSelection={clearTaskSelection}
-          handleBulkUpdate={handleBulkUpdate}
-          handleBulkDelete={handleBulkDelete}
-          boardColumns={boardColumns}
-          peopleOptions={peopleOptions}
-        />
 
         {!isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card">

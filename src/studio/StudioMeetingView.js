@@ -106,6 +106,23 @@ export default function StudioMeetingView({
 
   return (
     <>
+      <RecorderPanel
+        isRecording={isRecording}
+        analysisStatus={analysisStatus}
+        activeQueueItem={activeQueueItem}
+        selectedMeetingQueue={selectedMeetingQueue}
+        elapsed={elapsed}
+        visualBars={visualBars}
+        stopRecording={stopRecording}
+        startRecording={startRecording}
+        retryRecordingQueueItem={retryRecordingQueueItem}
+        recordPermission={recordPermission}
+        speechRecognitionSupported={speechRecognitionSupported}
+        liveText={liveText}
+        recordingMessage={recordingMessage}
+        canRecord={currentWorkspacePermissions?.canRecordAudio}
+      />
+
       <section className="hero-panel">
         <div>
           <div className="eyebrow">Active meeting</div>
@@ -166,23 +183,6 @@ export default function StudioMeetingView({
 
 
       <div className="main-grid">
-        <RecorderPanel
-          isRecording={isRecording}
-          analysisStatus={analysisStatus}
-          activeQueueItem={activeQueueItem}
-          selectedMeetingQueue={selectedMeetingQueue}
-          elapsed={elapsed}
-          visualBars={visualBars}
-          stopRecording={stopRecording}
-          startRecording={startRecording}
-          retryRecordingQueueItem={retryRecordingQueueItem}
-          recordPermission={recordPermission}
-          speechRecognitionSupported={speechRecognitionSupported}
-          liveText={liveText}
-          recordingMessage={recordingMessage}
-          canRecord={currentWorkspacePermissions?.canRecordAudio}
-        />
-
         <section className="panel">
           <div className="panel-header compact">
             <div>

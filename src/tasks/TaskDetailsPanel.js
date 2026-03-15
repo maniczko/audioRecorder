@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
@@ -88,6 +88,10 @@ export default function TaskDetailsPanel({
   const assignedPeople = selectedTask.assignedTo || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
   const slaState = getTaskSlaState(selectedTask);
+  const tagOptions = useMemo(
+    () => [...new Set((tasks || []).flatMap((t) => t.tags || []))].filter(Boolean).sort(),
+    [tasks]
+  );
 
   function updateAssignees(nextAssignees) {
     onUpdateTask(selectedTask.id, {
@@ -222,13 +226,11 @@ export default function TaskDetailsPanel({
       <div className="todo-detail-card">
         <div className="todo-detail-header">
           <div>
-            <span className="todo-detail-eyebrow">
-              {selectedTask.sourceType === "meeting"
-                ? "Spotkanie"
-                : selectedTask.sourceType === "google"
-                  ? "Google Tasks"
-                  : "Reczne"}
-            </span>
+            {selectedTask.sourceType === "meeting" || selectedTask.sourceType === "google" ? (
+              <span className="todo-detail-eyebrow">
+                {selectedTask.sourceType === "meeting" ? "Spotkanie" : "Google Tasks"}
+              </span>
+            ) : null}
             <h2>{selectedTask.title}</h2>
             <div className="todo-detail-badges">
               {selectedTask.dueDate ? <span className={`todo-sla-pill ${slaState.tone}`}>{slaState.label}</span> : null}
@@ -338,7 +340,7 @@ export default function TaskDetailsPanel({
         ) : null}
 
         <div className="todo-detail-form">
-          <label>
+          <label className="full">
             <span>Tytul</span>
             <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
           </label>
@@ -417,7 +419,17 @@ export default function TaskDetailsPanel({
           </label>
           <label className="full">
             <span>Tagi</span>
-            <input value={(selectedTask.tags || []).join(", ")} onChange={(event) => onUpdateTask(selectedTask.id, { tags: event.target.value })} />
+            <input
+              list="task-detail-tags-list"
+              value={(selectedTask.tags || []).join(", ")}
+              onChange={(event) => onUpdateTask(selectedTask.id, { tags: event.target.value })}
+              placeholder="np. klient, budzet"
+            />
+            <datalist id="task-detail-tags-list">
+              {tagOptions.map((tag) => (
+                <option key={tag} value={tag} />
+              ))}
+            </datalist>
           </label>
           <label className="full">
             <span>Opis</span>

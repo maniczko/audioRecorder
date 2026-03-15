@@ -49,7 +49,6 @@ export default function TasksSidebar({
             <div className="todo-workspace-group">
               <div className="todo-workspace-title">
                 <strong>Widoki workspace</strong>
-                <small>Statusy i glowne przeplywy pracy</small>
               </div>
               {sidebarLists.workspaceLists.map((item) => (
                 <button

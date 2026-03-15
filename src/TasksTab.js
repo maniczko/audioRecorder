@@ -378,7 +378,7 @@ export default function TasksTab({
           status: columnId,
         },
       },
-      "Przeniesiono zadanie do nowej kolumny."
+      ""
     );
   }
 
@@ -390,7 +390,7 @@ export default function TasksTab({
     }
 
     if (groupBy === "status") {
-      finalizeDrop(taskId, { type: "reorder", placement: { status: groupId } }, "Przeniesiono zadanie do nowej kolumny.");
+      finalizeDrop(taskId, { type: "reorder", placement: { status: groupId } }, "");
       return;
     }
 
