@@ -123,11 +123,7 @@ export default function StudioMeetingView({
           </div>
           <div className="metric-card">
             <span>Diarization</span>
-            <strong>{selectedMeeting.speakerCount || 0} speakerow</strong>
-          </div>
-          <div className="metric-card">
-            <span>Rola</span>
-            <strong>{currentWorkspaceRole || "member"}</strong>
+            <strong>{selectedMeeting.speakerCount || 0} rozmówców</strong>
           </div>
         </div>
         <div className="button-row">

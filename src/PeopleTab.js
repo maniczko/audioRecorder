@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
 export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState("");
+  const meetingsSectionRef = useRef(null);
+  const tasksSectionRef = useRef(null);
 
   const visibleProfiles = useMemo(() => {
     const term = String(query || "").trim().toLowerCase();
@@ -109,26 +113,33 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                   <h2>{selectedPerson.name}</h2>
                   <p>{selectedPerson.summary}</p>
                   <div className="status-cluster">
-                    <span className="status-chip">{selectedPerson.meetings.length} spotkan</span>
-                    <span className="status-chip">{selectedPerson.openTasks} otwartych zadan</span>
+                    <button type="button" className="status-chip status-chip-link" onClick={() => meetingsSectionRef.current?.scrollIntoView({ behavior: "smooth" })}>
+                      {selectedPerson.meetings.length} spotkan
+                    </button>
+                    <button type="button" className="status-chip status-chip-link" onClick={() => tasksSectionRef.current?.scrollIntoView({ behavior: "smooth" })}>
+                      {selectedPerson.openTasks} otwartych zadan
+                    </button>
                     <span className="status-chip">{selectedPerson.completedTasks} zakonczonych</span>
                   </div>
                 </div>
               </div>
 
               <div className="profile-hero-side">
-                <div className="profile-stat-card">
-                  <span>Nastepne spotkanie</span>
-                  <strong>{selectedPerson.nextMeeting ? formatDateTime(selectedPerson.nextMeeting.startsAt) : "Brak"}</strong>
-                </div>
-                <div className="profile-stat-card">
-                  <span>Potrzeby</span>
-                  <strong>{selectedPerson.needs[0] || "Brak danych"}</strong>
-                </div>
-                <div className="profile-stat-card">
-                  <span>Najwazniejszy output</span>
-                  <strong>{selectedPerson.outputs[0] || "Brak danych"}</strong>
-                </div>
+                {selectedPerson.nextMeeting ? (
+                  <button
+                    type="button"
+                    className="profile-stat-card profile-stat-link"
+                    onClick={() => onOpenMeeting(selectedPerson.nextMeeting.id)}
+                  >
+                    <span>Nastepne spotkanie</span>
+                    <strong>{formatDateTime(selectedPerson.nextMeeting.startsAt)}</strong>
+                  </button>
+                ) : (
+                  <div className="profile-stat-card">
+                    <span>Nastepne spotkanie</span>
+                    <strong>Brak</strong>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -139,10 +150,34 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                     <div className="eyebrow">AI profile</div>
                     <h2>Charakterystyka</h2>
                   </div>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    style={{fontSize:"0.8rem"}}
+                    onClick={() => { setSummaryDraft(selectedPerson.summary); setEditingSummary(true); }}
+                    title="Edytuj profil"
+                  >
+                    Edytuj
+                  </button>
                 </div>
 
                 <div className="analysis-block">
-                  <p>{selectedPerson.summary}</p>
+                  {editingSummary ? (
+                    <div className="profile-edit-form">
+                      <textarea
+                        className="profile-summary-edit"
+                        value={summaryDraft}
+                        onChange={(e) => setSummaryDraft(e.target.value)}
+                        rows={4}
+                        autoFocus
+                      />
+                      <div className="button-row">
+                        <button type="button" className="ghost-button" style={{fontSize:"0.8rem"}} onClick={() => setEditingSummary(false)}>Anuluj</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p>{selectedPerson.summary}</p>
+                  )}
                 </div>
 
                 <div className="chip-list">
@@ -190,7 +225,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                 </div>
               </section>
 
-              <section className="panel">
+              <section className="panel" ref={meetingsSectionRef}>
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Meetings</div>
@@ -221,7 +256,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                 </div>
               </section>
 
-              <section className="panel">
+              <section className="panel" ref={tasksSectionRef}>
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Tasks</div>
@@ -253,7 +288,9 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                           <strong>{task.title}</strong>
                           <span className={`task-status-chip ${task.status}`}>{task.completed ? "Done" : task.priority}</span>
                         </div>
-                        <p>{task.description || task.sourceMeetingTitle}</p>
+                        {(task.description || (task.sourceType !== "manual" && task.sourceMeetingTitle)) ? (
+                          <p>{task.description || task.sourceMeetingTitle}</p>
+                        ) : null}
                         <div className="chip-list">
                           {(task.tags || []).map((tag) => (
                             <span key={`${task.id}-${tag}`} className="task-tag-chip neutral">

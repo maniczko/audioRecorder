@@ -3313,7 +3313,20 @@ select:focus {
 
 .tasks-layout.ms-todo .todo-task-circle.completed {
   background: #507aff;
-  box-shadow: inset 0 0 0 4px #ffffff;
+  border-color: #507aff;
+  position: relative;
+}
+.tasks-layout.ms-todo .todo-task-circle.completed::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  width: 6px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(42deg);
 }
 
 .tasks-layout.ms-todo .todo-add-advanced {
@@ -4339,7 +4352,20 @@ select:focus {
 
 .tasks-layout.ms-todo .todo-task-circle.completed {
   background: var(--accent);
-  box-shadow: inset 0 0 0 4px rgba(7, 17, 27, 0.88);
+  border-color: var(--accent);
+  position: relative;
+}
+.tasks-layout.ms-todo .todo-task-circle.completed::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  width: 6px;
+  height: 9px;
+  border: 2px solid rgba(7, 17, 27, 0.88);
+  border-top: none;
+  border-left: none;
+  transform: rotate(42deg);
 }
 
 .tasks-layout.ms-todo .todo-add-advanced {
@@ -7284,4 +7310,39 @@ select:focus {
 .tasks-layout.ms-todo .todo-col-sort-btn:hover,
 .tasks-layout.ms-todo .todo-col-sort-btn.active {
   color: #2564ea;
+}
+
+.status-chip-link {
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.status-chip-link:hover {
+  opacity: 0.8;
+}
+.profile-stat-link {
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  width: 100%;
+}
+.profile-stat-link:hover {
+  opacity: 0.85;
+}
+.profile-summary-edit {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg, rgba(255,255,255,0.06));
+  color: var(--text);
+}
+.profile-edit-form {
+  display: grid;
+  gap: 8px;
 }

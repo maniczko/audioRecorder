@@ -3,7 +3,6 @@ import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
   createTaskSubtask,
-  getTaskDependencyDetails,
   getTaskSlaState,
   TASK_PRIORITIES,
   TASK_RECURRENCE_OPTIONS,
@@ -91,7 +90,6 @@ export default function TaskDetailsPanel({
 
   const assignedPeople = selectedTask.assignedTo || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
-  const dependencyState = getTaskDependencyDetails(selectedTask, tasks);
   const slaState = getTaskSlaState(selectedTask);
   const statusLabel = resolveStatusLabel(selectedTask, boardColumns);
 
@@ -238,9 +236,6 @@ export default function TaskDetailsPanel({
             <h2>{selectedTask.title}</h2>
             <div className="todo-detail-badges">
               {selectedTask.dueDate ? <span className={`todo-sla-pill ${slaState.tone}`}>{slaState.label}</span> : null}
-              {dependencyState.blocking ? (
-                <span className="todo-sla-pill warning">Zablokowane przez {dependencyState.unresolved.length}</span>
-              ) : null}
             </div>
           </div>
           <div className="todo-detail-header-actions">
