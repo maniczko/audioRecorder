@@ -37,6 +37,8 @@ export default function TaskListView({
   groupedTasks,
   allTasks,
   groupBy,
+  sortBy = "manual",
+  setSortBy = () => {},
   selectedTask,
   selectedTaskIds,
   toggleTaskSelection,
@@ -54,11 +56,19 @@ export default function TaskListView({
     <div className="todo-table-wrap">
       <div className="todo-table-head">
         <span />
-        <span>Tytul i osoby</span>
+        <button type="button" className={`todo-col-sort-btn${sortBy === "title" || sortBy === "owner" ? " active" : ""}`} onClick={() => setSortBy(sortBy === "title" ? "owner" : "title")}>
+          Tytul i osoby {sortBy === "title" ? "↑" : sortBy === "owner" ? "↑" : ""}
+        </button>
         <span>Grupa</span>
-        <span>Termin</span>
-        <span>Status</span>
-        <span>Priorytet</span>
+        <button type="button" className={`todo-col-sort-btn${sortBy === "due" ? " active" : ""}`} onClick={() => setSortBy("due")}>
+          Termin {sortBy === "due" ? "↑" : ""}
+        </button>
+        <button type="button" className={`todo-col-sort-btn${sortBy === "updated" ? " active" : ""}`} onClick={() => setSortBy("updated")}>
+          Status {sortBy === "updated" ? "↑" : ""}
+        </button>
+        <button type="button" className={`todo-col-sort-btn${sortBy === "priority" ? " active" : ""}`} onClick={() => setSortBy("priority")}>
+          Priorytet {sortBy === "priority" ? "↑" : ""}
+        </button>
       </div>
 
       {groupedTasks.map((group) => (

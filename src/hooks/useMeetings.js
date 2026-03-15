@@ -696,7 +696,6 @@ export default function useMeetings({
       setMeetings((previous) => upsertMeeting(previous, meeting));
       setIsDetachedMeetingDraft(false);
       selectMeeting(meeting);
-      setWorkspaceMessage("Spotkanie utworzone.");
       return;
     }
 

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
-import KpiDashboard from "./KpiDashboard";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
 
@@ -171,11 +170,6 @@ export default function StudioMeetingView({
         </div>
       </section>
 
-      <KpiDashboard
-        workspaceName={currentWorkspace?.name || ""}
-        meetings={userMeetings}
-        tasks={meetingTasks}
-      />
 
       <div className="main-grid">
         <RecorderPanel

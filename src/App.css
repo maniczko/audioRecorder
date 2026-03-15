@@ -1713,16 +1713,19 @@ select:focus {
 }
 
 .calendar-day {
-  min-height: 148px;
-  padding: 10px;
+  min-height: 96px;
+  padding: 8px;
   background: rgba(9, 24, 36, 0.92);
   border: none;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
   color: var(--text);
   cursor: pointer;
   text-align: left;
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 4px;
+  width: 100%;
 }
 
 .calendar-day[data-muted="true"] {
@@ -1734,28 +1737,29 @@ select:focus {
 }
 
 .calendar-day-number {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   font-weight: 600;
+  font-size: 0.82rem;
 }
 
 .calendar-day-events {
   display: grid;
-  gap: 6px;
+  gap: 3px;
 }
 
 .calendar-pill {
   display: block;
-  padding: 6px 10px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   user-select: none;
 }
 
@@ -3012,7 +3016,7 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 6px 12px;
   border: none;
   border-left: 2px solid transparent;
   border-radius: 0 14px 14px 0;
@@ -4150,7 +4154,7 @@ select:focus {
 .tasks-layout.ms-todo .todo-side-link {
   border: 1px solid transparent;
   border-radius: 16px;
-  padding: 12px 14px;
+  padding: 6px 12px;
   background: rgba(255, 255, 255, 0.02);
   color: var(--text);
 }
@@ -7187,6 +7191,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 5px 8px;
 }
 .kanban-col-sort {
   font-size: 0.7rem;
@@ -7200,4 +7205,54 @@ select:focus {
 }
 .kanban-col-sort:focus {
   outline: 1px solid var(--accent);
+}
+.todo-col-sort-btn {
+  background: none;
+  border: none;
+  color: var(--soft);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.todo-col-sort-btn:hover,
+.todo-col-sort-btn.active {
+  color: var(--accent);
+}
+.brief-attendee-input-wrap {
+  position: relative;
+}
+.attendee-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 200;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.attendee-suggestion-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+.attendee-suggestion-item:hover {
+  background: rgba(255,255,255,0.06);
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function StudioSidebar({
   currentWorkspacePermissions,
@@ -17,6 +17,8 @@ export default function StudioSidebar({
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
   const [activeSection, setActiveSection] = useState("basic");
   const [attendeeInput, setAttendeeInput] = useState("");
+  const [showAttendeeSuggestions, setShowAttendeeSuggestions] = useState(false);
+  const attendeeWrapRef = useRef(null);
 
   return (
     <aside className="workspace-sidebar">
@@ -134,34 +136,66 @@ export default function StudioSidebar({
                 ))}
               </div>
               {canEditWorkspace && (
-                <div className="brief-attendee-input-wrap">
+                <div className="brief-attendee-input-wrap" ref={attendeeWrapRef}>
                   <input
-                    list="attendee-suggestions"
                     value={attendeeInput}
-                    onChange={(e) => setAttendeeInput(e.target.value)}
+                    onChange={(e) => {
+                      setAttendeeInput(e.target.value);
+                      setShowAttendeeSuggestions(true);
+                    }}
                     onKeyDown={(e) => {
                       if ((e.key === "Enter" || e.key === ",") && attendeeInput.trim()) {
                         e.preventDefault();
                         const name = attendeeInput.trim().replace(/,$/, "");
-                        if (name) {
-                          setMeetingDraft((previous) => ({
-                            ...previous,
-                            attendees: previous.attendees
-                              ? previous.attendees.trim() + "\n" + name
-                              : name,
-                          }));
-                          setAttendeeInput("");
-                        }
+                        setMeetingDraft((previous) => ({
+                          ...previous,
+                          attendees: previous.attendees
+                            ? previous.attendees.trim() + "\n" + name
+                            : name,
+                        }));
+                        setAttendeeInput("");
+                        setShowAttendeeSuggestions(false);
+                      } else if (e.key === "Escape") {
+                        setShowAttendeeSuggestions(false);
                       }
                     }}
+                    onFocus={() => setShowAttendeeSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowAttendeeSuggestions(false), 150)}
                     placeholder="Dodaj uczestnika..."
                     className="brief-attendee-input"
                   />
-                  <datalist id="attendee-suggestions">
-                    {peopleOptions.filter((p) => !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)).map((person) => (
-                      <option key={person} value={person} />
-                    ))}
-                  </datalist>
+                  {showAttendeeSuggestions && peopleOptions.filter((p) =>
+                    p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
+                    !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)
+                  ).length > 0 && (
+                    <div className="attendee-suggestions-dropdown">
+                      {peopleOptions
+                        .filter((p) =>
+                          p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
+                          !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)
+                        )
+                        .map((person) => (
+                          <button
+                            key={person}
+                            type="button"
+                            className="attendee-suggestion-item"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setMeetingDraft((previous) => ({
+                                ...previous,
+                                attendees: previous.attendees
+                                  ? previous.attendees.trim() + "\n" + person
+                                  : person,
+                              }));
+                              setAttendeeInput("");
+                              setShowAttendeeSuggestions(false);
+                            }}
+                          >
+                            {person}
+                          </button>
+                        ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

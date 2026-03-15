@@ -548,6 +548,8 @@ export default function TasksWorkspaceView({
               groupedTasks={groupedTasks}
               allTasks={allVisibleTasks}
               groupBy={groupBy}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
               selectedTask={selectedTask}
               selectedTaskIds={selectedTaskIds}
               toggleTaskSelection={toggleTaskSelection}
