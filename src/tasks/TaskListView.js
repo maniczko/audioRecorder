@@ -6,8 +6,7 @@ import {
   toInputDateTime,
   writeDragTask,
 } from "./taskViewUtils";
-import { getTaskAssigneeSummary, getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
-import { getTaskLastActivity } from "../lib/activityFeed";
+import { getTaskAssigneeSummary, getTaskSlaState } from "../lib/tasks";
 
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
@@ -99,9 +98,7 @@ export default function TaskListView({
                 const nextTaskId = group.tasks[index].id;
                 const assigneeSummary = getTaskAssigneeSummary(task);
                 const hasMoreAssignees = (task.assignedTo || []).length > 1;
-                const dependencyState = getTaskDependencyDetails(task, allTasks);
                 const slaState = getTaskSlaState(task);
-                const lastActivity = getTaskLastActivity(task);
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -145,37 +142,21 @@ export default function TaskListView({
 
                       <span className="todo-title-cell">
                         {isActive ? (
-                          <>
-                            <input
-                              data-task-title-input={task.id}
-                              value={task.title}
-                              onFocus={() => setSelectedTaskId(task.id)}
-                              onChange={(event) => onUpdateTask(task.id, { title: event.target.value })}
-                            />
-                            <select
-                              value={task.owner}
-                              onFocus={() => setSelectedTaskId(task.id)}
-                              onChange={(event) => onUpdateTask(task.id, { owner: event.target.value })}
-                            >
-                              <option value="">Nieprzypisane</option>
-                              {peopleOptions.map((person) => (
-                                <option key={person} value={person}>
-                                  {person}
-                                </option>
-                              ))}
-                            </select>
-                          </>
+                          <input
+                            data-task-title-input={task.id}
+                            value={task.title}
+                            onFocus={() => setSelectedTaskId(task.id)}
+                            onChange={(event) => onUpdateTask(task.id, { title: event.target.value })}
+                          />
                         ) : (
                           <>
                             <strong>{task.title}</strong>
                             <small>
                               {assigneeSummary}
                               {hasMoreAssignees ? " | zespolowe" : ""}
-                              {dependencyState.blocking ? ` | blokuje ${dependencyState.unresolved[0]?.title}` : ""}
                               {task.myDay ? " | My Day" : ""}
                               {task.reminderAt ? " | przypomnienie" : ""}
                             </small>
-                            {lastActivity ? <small>Ostatnia aktywnosc: {lastActivity.actor} - {lastActivity.message}</small> : null}
                           </>
                         )}
                       </span>
