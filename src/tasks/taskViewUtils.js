@@ -55,20 +55,22 @@ export function buildSidebarLists(tasks, boardColumns) {
     {
       id: "smart:my_day",
       label: "My Day",
+      icon: "☀️",
       count: tasks.filter((task) => task.myDay && !task.completed).length,
     },
-    { id: "smart:important", label: "Important", count: tasks.filter((task) => task.important).length },
-    { id: "smart:planned", label: "Planned", count: tasks.filter((task) => task.dueDate).length },
-    { id: "smart:overdue", label: "Overdue", count: tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()).length },
-    { id: "smart:recurring", label: "Recurring", count: tasks.filter((task) => Boolean(task.recurrence)).length },
-    { id: "smart:completed", label: "Completed", count: tasks.filter((task) => task.completed).length },
-    { id: "smart:assigned", label: "Assigned to me", count: tasks.filter((task) => task.assignedToMe).length },
-    { id: "smart:all", label: "Tasks", count: tasks.length },
+    { id: "smart:important", label: "Important", icon: "⭐", count: tasks.filter((task) => task.important).length },
+    { id: "smart:planned", label: "Planned", icon: "📅", count: tasks.filter((task) => task.dueDate).length },
+    { id: "smart:overdue", label: "Overdue", icon: "⚠️", count: tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()).length },
+    { id: "smart:recurring", label: "Recurring", icon: "🔁", count: tasks.filter((task) => Boolean(task.recurrence)).length },
+    { id: "smart:completed", label: "Completed", icon: "✓", count: tasks.filter((task) => task.completed).length },
+    { id: "smart:assigned", label: "Assigned to me", icon: "👤", count: tasks.filter((task) => task.assignedToMe).length },
+    { id: "smart:all", label: "Tasks", icon: "✦", count: tasks.length },
   ];
 
   const workspaceLists = boardColumns.map((column) => ({
     id: `column:${column.id}`,
     label: column.label,
+    icon: "◉",
     count: tasks.filter((task) => task.status === column.id).length,
   }));
 

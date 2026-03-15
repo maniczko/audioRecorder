@@ -40,6 +40,7 @@ export default function TasksSidebar({
                   className={selectedListId === item.id ? "todo-side-link active" : "todo-side-link"}
                   onClick={() => setSelectedListId(item.id)}
                 >
+                  <span className="todo-side-icon">{item.icon}</span>
                   <span>{item.label}</span>
                   <strong>{item.count}</strong>
                 </button>
@@ -58,6 +59,7 @@ export default function TasksSidebar({
                   className={selectedListId === item.id ? "todo-side-link active workspace" : "todo-side-link workspace"}
                   onClick={() => setSelectedListId(item.id)}
                 >
+                  <span className="todo-side-icon">{item.icon}</span>
                   <span>{item.label}</span>
                   <strong>{item.count}</strong>
                 </button>

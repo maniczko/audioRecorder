@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { formatDateTime } from "../lib/storage";
 
 export default function StudioSidebar({
   currentWorkspacePermissions,
@@ -47,9 +46,6 @@ export default function StudioSidebar({
           >
             Szczegóły
           </button>
-          <span className="brief-autosave">
-            {activeStoredMeetingDraft?.updatedAt ? `Zapisano ${formatDateTime(activeStoredMeetingDraft.updatedAt)}` : "Autosave aktywny"}
-          </span>
         </div>
 
         {activeSection === "basic" ? (

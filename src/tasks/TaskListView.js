@@ -111,13 +111,6 @@ export default function TaskListView({
                       onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                     >
                       <div className="todo-row-tools">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          aria-label={`Zaznacz zadanie ${task.title}`}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={() => toggleTaskSelection(task.id)}
-                        />
                         <span
                           className="todo-drag-handle"
                           title="Przeciagnij zadanie"

@@ -7176,3 +7176,28 @@ select:focus {
   background: rgba(117,214,196,0.18);
   border-color: rgba(117,214,196,0.6);
 }
+.todo-side-icon {
+  font-size: 0.85rem;
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.todo-side-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kanban-col-sort {
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  cursor: pointer;
+  margin-left: auto;
+}
+.kanban-col-sort:focus {
+  outline: 1px solid var(--accent);
+}

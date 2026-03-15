@@ -456,6 +456,8 @@ export default function TaskKanbanView({
   swimlaneGroupBy = "none",
   onQuickAddToColumn,
   onReorderColumns,
+  sortBy = "manual",
+  setSortBy = () => {},
 }) {
   const [quickAddColumnId, setQuickAddColumnId] = useState("");
   const [dragHeaderId, setDragHeaderId] = useState("");
@@ -506,7 +508,7 @@ export default function TaskKanbanView({
       <div className="todo-kanban todo-kanban-swimlane">
         <div className="swimlane-header-row">
           <div className="swimlane-lane-cell swimlane-lane-header-spacer" />
-          {kanbanColumns.map((col) => {
+          {kanbanColumns.map((col, index) => {
             const wipExceeded = col.wipLimit && allTasks.filter((t) => t.status === col.id).length >= col.wipLimit;
             const count = allTasks.filter((t) => t.status === col.id).length;
             return (
@@ -524,6 +526,22 @@ export default function TaskKanbanView({
                 <span className={`wip-count${wipExceeded ? " exceeded" : ""}`}>
                   {count}{col.wipLimit ? `/${col.wipLimit}` : ""}
                 </span>
+                {index === 0 && (
+                  <select
+                    className="kanban-col-sort"
+                    value={sortBy}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { e.stopPropagation(); setSortBy(e.target.value); }}
+                    title="Sortuj karty"
+                  >
+                    <option value="manual">Ręcznie</option>
+                    <option value="updated">Ostatnio zmienione</option>
+                    <option value="due">Termin</option>
+                    <option value="priority">Priorytet</option>
+                    <option value="title">Tytuł</option>
+                    <option value="owner">Osoba</option>
+                  </select>
+                )}
               </div>
             );
           })}
@@ -550,7 +568,7 @@ export default function TaskKanbanView({
 
   return (
     <div className="todo-kanban">
-      {kanbanColumns.map((column) => {
+      {kanbanColumns.map((column, index) => {
         const wipExceeded = column.wipLimit && column.tasks.length >= column.wipLimit;
         return (
           <section
@@ -570,6 +588,22 @@ export default function TaskKanbanView({
               <span className={`wip-count${wipExceeded ? " exceeded" : ""}`}>
                 {column.tasks.length}{column.wipLimit ? `/${column.wipLimit}` : ""}
               </span>
+              {index === 0 && (
+                <select
+                  className="kanban-col-sort"
+                  value={sortBy}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => { e.stopPropagation(); setSortBy(e.target.value); }}
+                  title="Sortuj karty"
+                >
+                  <option value="manual">Ręcznie</option>
+                  <option value="updated">Ostatnio zmienione</option>
+                  <option value="due">Termin</option>
+                  <option value="priority">Priorytet</option>
+                  <option value="title">Tytuł</option>
+                  <option value="owner">Osoba</option>
+                </select>
+              )}
             </header>
             <ColumnBody column={column} tasks={column.tasks} {...sharedBodyProps} />
           </section>

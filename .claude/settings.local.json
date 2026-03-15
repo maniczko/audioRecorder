@@ -10,7 +10,8 @@
       "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/server -type f \\\\\\(-name *.js \\\\\\))",
       "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/public -type f \\\\\\(-name *.js -o -name *.json -o -name *.html \\\\\\))",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -579,6 +579,8 @@ export default function TasksWorkspaceView({
               swimlaneGroupBy={swimlaneGroupBy}
               onQuickAddToColumn={onQuickAddToColumn}
               onReorderColumns={onReorderColumns}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             />
           )}
         </section>

@@ -579,7 +579,6 @@ export default function useMeetings({
     setIsDetachedMeetingDraft(true);
     setHasMeetingDraftChanges(false);
     setMeetingDraftState(nextDraft);
-    setWorkspaceMessage("Nowy draft jest gotowy.");
     if (currentWorkspaceId) {
       setStoredMeetingDrafts((previous) => {
         if (!previous[currentWorkspaceId]) {
