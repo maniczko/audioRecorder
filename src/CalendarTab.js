@@ -144,6 +144,7 @@ export default function CalendarTab({
   currentUserTimezone = "Europe/Warsaw",
   startNewMeetingDraft,
   onNavigateToStudio,
+  onCreateMeeting,
 }) {
   const [viewMode, setViewMode] = useState("month");
   const [filters, setFilters] = useState({ meeting: true, task: true, google: true });
@@ -152,6 +153,7 @@ export default function CalendarTab({
   const [calendarMessage, setCalendarMessage] = useState("");
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
   const [tagFilter, setTagFilter] = useState("");
+  const [calendarCreateForm, setCalendarCreateForm] = useState(null);
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
@@ -384,11 +386,17 @@ export default function CalendarTab({
   }
 
   function createMeetingFromSlot(date, hour) {
-    if (typeof startNewMeetingDraft !== "function") return;
     const startsAt = new Date(date);
     startsAt.setHours(hour, 0, 0, 0);
-    startNewMeetingDraft({ startsAt: startsAt.toISOString() });
-    if (typeof onNavigateToStudio === "function") onNavigateToStudio();
+    const pad = (n) => String(n).padStart(2, "0");
+    const localStr = `${startsAt.getFullYear()}-${pad(startsAt.getMonth()+1)}-${pad(startsAt.getDate())}T${pad(startsAt.getHours())}:00`;
+    setCalendarCreateForm({ startsAt: localStr, title: "", durationMinutes: 30 });
+  }
+
+  function createMeetingFromDay(date) {
+    const pad = (n) => String(n).padStart(2, "0");
+    const localStr = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T09:00`;
+    setCalendarCreateForm({ startsAt: localStr, title: "", durationMinutes: 30 });
   }
 
   const isToday_ = selectedDate.toDateString() === new Date().toDateString();
@@ -561,10 +569,13 @@ export default function CalendarTab({
               {monthMatrix.flat().map((date) => {
                 const entries = entriesForDay(visibleEntries, date);
                 return (
-                  <button key={date.toISOString()} type="button" className={date.toDateString() === selectedDate.toDateString() ? "calendar-day selected" : "calendar-day"} data-muted={!isCurrentMonth(date, activeMonth)} onClick={() => setSelectedDate(date)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(date, event)}>
-                    <div className={isToday(date) ? "calendar-day-number today" : "calendar-day-number"}>{date.getDate()}</div>
-                    <div className="calendar-day-events">{entries.slice(0, 4).map((entry) => renderEntry(entry))}</div>
-                  </button>
+                  <div key={date.toISOString()} className={date.toDateString() === selectedDate.toDateString() ? "calendar-day-wrap selected" : "calendar-day-wrap"} data-muted={!isCurrentMonth(date, activeMonth)}>
+                    <button type="button" className={date.toDateString() === selectedDate.toDateString() ? "calendar-day selected" : "calendar-day"} data-muted={!isCurrentMonth(date, activeMonth)} onClick={() => setSelectedDate(date)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(date, event)}>
+                      <div className={isToday(date) ? "calendar-day-number today" : "calendar-day-number"}>{date.getDate()}</div>
+                      <div className="calendar-day-events">{entries.slice(0, 4).map((entry) => renderEntry(entry))}</div>
+                    </button>
+                    <button type="button" className="calendar-day-add-btn" onClick={() => createMeetingFromDay(date)} title="Nowe spotkanie">+</button>
+                  </div>
                 );
               })}
             </div>
@@ -617,6 +628,76 @@ export default function CalendarTab({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {calendarCreateForm && (
+          <div className="calendar-create-form-overlay">
+            <div className="calendar-create-form">
+              <div className="calendar-create-form-head">
+                <strong>Nowe spotkanie</strong>
+                <button type="button" className="calendar-create-close" onClick={() => setCalendarCreateForm(null)}>×</button>
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!calendarCreateForm.title.trim() || typeof onCreateMeeting !== "function") return;
+                  const startsAt = new Date(calendarCreateForm.startsAt).toISOString();
+                  onCreateMeeting({
+                    title: calendarCreateForm.title.trim(),
+                    startsAt,
+                    durationMinutes: calendarCreateForm.durationMinutes,
+                    context: "",
+                    attendees: "",
+                    needs: "",
+                    desiredOutputs: "",
+                    tags: "",
+                    location: "",
+                  });
+                  setCalendarCreateForm(null);
+                  setCalendarMessage(`Utworzono spotkanie: ${calendarCreateForm.title.trim()}`);
+                }}
+              >
+                <label className="calendar-create-field">
+                  <span>Tytuł <span style={{color:"var(--accent)"}}>*</span></span>
+                  <input
+                    autoFocus
+                    value={calendarCreateForm.title}
+                    onChange={(e) => setCalendarCreateForm((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="np. Spotkanie z klientem"
+                    required
+                  />
+                </label>
+                <label className="calendar-create-field">
+                  <span>Kiedy</span>
+                  <input
+                    type="datetime-local"
+                    value={calendarCreateForm.startsAt}
+                    onChange={(e) => setCalendarCreateForm((f) => ({ ...f, startsAt: e.target.value }))}
+                  />
+                </label>
+                <label className="calendar-create-field">
+                  <span>Czas trwania</span>
+                  <select
+                    value={calendarCreateForm.durationMinutes}
+                    onChange={(e) => setCalendarCreateForm((f) => ({ ...f, durationMinutes: Number(e.target.value) }))}
+                  >
+                    <option value={15}>15 min</option>
+                    <option value={30}>30 min</option>
+                    <option value={45}>45 min</option>
+                    <option value={60}>1 godz</option>
+                  </select>
+                </label>
+                <div className="calendar-create-actions">
+                  <button type="submit" className="primary-button" disabled={!calendarCreateForm.title.trim()}>
+                    Utwórz spotkanie
+                  </button>
+                  <button type="button" className="ghost-button" onClick={() => setCalendarCreateForm(null)}>
+                    Anuluj
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

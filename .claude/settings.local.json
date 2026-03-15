@@ -8,7 +8,9 @@
       "Bash(\"c:\\\\Users\\\\user\\\\AudoiRecorder\\\\audioRecorder\\\\TASK_DONE.md\":*)",
       "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/src -type f \\\\\\(-name *.js -o -name *.test.js -o -name *.css \\\\\\))",
       "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/server -type f \\\\\\(-name *.js \\\\\\))",
-      "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/public -type f \\\\\\(-name *.js -o -name *.json -o -name *.html \\\\\\))"
+      "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/public -type f \\\\\\(-name *.js -o -name *.json -o -name *.html \\\\\\))",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
     ]
   }
 }

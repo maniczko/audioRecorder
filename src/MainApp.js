@@ -561,6 +561,7 @@ export default function MainApp() {
           currentUserTimezone={workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
           startNewMeetingDraft={meetings.startNewMeetingDraft}
           onNavigateToStudio={() => setActiveTab("studio")}
+          onCreateMeeting={meetings.createMeetingDirect}
         />
       ) : activeTab === "tasks" ? (
         <TasksTab

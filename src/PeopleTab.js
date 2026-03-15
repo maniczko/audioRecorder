@@ -231,7 +231,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                     <button
                       type="button"
                       className="people-add-task-btn"
-                      onClick={() => onCreateTask({ owner: selectedPerson.name, title: "" })}
+                      onClick={() => onCreateTask({ owner: selectedPerson.name, title: `Zadanie dla ${selectedPerson.name}` })}
                       title="Dodaj zadanie dla tej osoby"
                     >
                       + zadanie

@@ -721,6 +721,19 @@ export default function useMeetings({
     setWorkspaceMessage("Spotkanie zapisane.");
   }
 
+  function createMeetingDirect(draft) {
+    if (!currentUser || !currentWorkspaceId) {
+      return null;
+    }
+    const meeting = createMeeting(currentUser.id, draft, {
+      workspaceId: currentWorkspaceId,
+      createdByUserId: currentUser.id,
+      createdByUserName: currentUser.name || currentUser.email || "Ty",
+    });
+    setMeetings((previous) => upsertMeeting(previous, meeting));
+    return meeting;
+  }
+
   function attachCompletedRecording(recordingMeetingId, recording) {
     setMeetings((previous) =>
       previous.map((meeting) =>
@@ -1626,6 +1639,7 @@ export default function useMeetings({
     clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,
+    createMeetingDirect,
     attachCompletedRecording,
     createTaskFromComposer,
     updateTask,

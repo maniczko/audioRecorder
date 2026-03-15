@@ -12,9 +12,12 @@ export default function StudioSidebar({
   startNewMeetingDraft,
   workspaceMessage,
   selectedMeeting,
+  peopleOptions = [],
+  tagOptions = [],
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
   const [activeSection, setActiveSection] = useState("basic");
+  const [attendeeInput, setAttendeeInput] = useState("");
 
   return (
     <aside className="workspace-sidebar">
@@ -52,7 +55,7 @@ export default function StudioSidebar({
         {activeSection === "basic" ? (
           <div className="stack-form brief-form-section">
             <label>
-              <span>Tytuł</span>
+              <span>Tytuł <span className="required-star">*</span></span>
               <input
                 value={meetingDraft.title}
                 onChange={(event) => setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))}
@@ -70,67 +73,116 @@ export default function StudioSidebar({
                 disabled={!canEditWorkspace}
               />
             </label>
-            <div className="brief-row">
-              <label>
-                <span>Termin</span>
-                <input
-                  type="datetime-local"
-                  value={meetingDraft.startsAt}
-                  onChange={(event) => setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))}
-                  disabled={!canEditWorkspace}
-                />
-              </label>
-              <label>
-                <span>Czas</span>
-                <div className="duration-picker">
-                  <select
-                    value={[15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) ? String(meetingDraft.durationMinutes) : "custom"}
-                    onChange={(event) => {
-                      if (event.target.value !== "custom") {
-                        setMeetingDraft((previous) => ({ ...previous, durationMinutes: Number(event.target.value) }));
-                      }
-                    }}
-                    disabled={!canEditWorkspace}
-                  >
-                    <option value="15">15 min</option>
-                    <option value="30">30 min</option>
-                    <option value="45">45 min</option>
-                    <option value="60">1 godz</option>
-                    <option value="custom">Własny</option>
-                  </select>
-                  {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
-                    <input
-                      type="number"
-                      min="5"
-                      step="5"
-                      value={meetingDraft.durationMinutes}
-                      onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
-                      disabled={!canEditWorkspace}
-                      placeholder="min"
-                      className="duration-custom-input"
-                    />
-                  )}
-                </div>
-              </label>
-            </div>
-            <label>
-              <span>Uczestnicy</span>
-              <textarea
-                rows="2"
-                value={meetingDraft.attendees}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, attendees: event.target.value }))}
-                placeholder={"np. Anna Kowalska\nJan Nowak"}
+            <label className="full">
+              <span>Termin</span>
+              <input
+                type="datetime-local"
+                value={meetingDraft.startsAt}
+                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))}
                 disabled={!canEditWorkspace}
               />
             </label>
             <label>
+              <span>Czas trwania</span>
+              <div className="duration-picker">
+                <select
+                  value={[15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) ? String(meetingDraft.durationMinutes) : "custom"}
+                  onChange={(event) => {
+                    if (event.target.value !== "custom") {
+                      setMeetingDraft((previous) => ({ ...previous, durationMinutes: Number(event.target.value) }));
+                    }
+                  }}
+                  disabled={!canEditWorkspace}
+                >
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                  <option value="60">1 godz</option>
+                  <option value="custom">Własny czas</option>
+                </select>
+                {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
+                  <input
+                    type="number"
+                    min="5"
+                    step="5"
+                    value={meetingDraft.durationMinutes}
+                    onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
+                    disabled={!canEditWorkspace}
+                    placeholder="min"
+                    className="duration-custom-input"
+                  />
+                )}
+              </div>
+            </label>
+            <div className="brief-attendees-field">
+              <span className="brief-field-label">Uczestnicy</span>
+              <div className="brief-attendees-chips">
+                {(meetingDraft.attendees || "").split("\n").filter(Boolean).map((name) => (
+                  <span key={name} className="brief-attendee-chip">
+                    {name}
+                    <button
+                      type="button"
+                      className="brief-attendee-remove"
+                      onClick={() =>
+                        setMeetingDraft((previous) => ({
+                          ...previous,
+                          attendees: (previous.attendees || "")
+                            .split("\n")
+                            .filter((n) => n.trim() && n.trim() !== name.trim())
+                            .join("\n"),
+                        }))
+                      }
+                      disabled={!canEditWorkspace}
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+              {canEditWorkspace && (
+                <div className="brief-attendee-input-wrap">
+                  <input
+                    list="attendee-suggestions"
+                    value={attendeeInput}
+                    onChange={(e) => setAttendeeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === ",") && attendeeInput.trim()) {
+                        e.preventDefault();
+                        const name = attendeeInput.trim().replace(/,$/, "");
+                        if (name) {
+                          setMeetingDraft((previous) => ({
+                            ...previous,
+                            attendees: previous.attendees
+                              ? previous.attendees.trim() + "\n" + name
+                              : name,
+                          }));
+                          setAttendeeInput("");
+                        }
+                      }
+                    }}
+                    placeholder="Dodaj uczestnika..."
+                    className="brief-attendee-input"
+                  />
+                  <datalist id="attendee-suggestions">
+                    {peopleOptions.filter((p) => !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)).map((person) => (
+                      <option key={person} value={person} />
+                    ))}
+                  </datalist>
+                </div>
+              )}
+            </div>
+            <label>
               <span>Tagi</span>
               <input
+                list="tag-suggestions"
                 value={meetingDraft.tags}
                 onChange={(event) => setMeetingDraft((previous) => ({ ...previous, tags: event.target.value }))}
                 placeholder="klient, budzet, follow-up"
                 disabled={!canEditWorkspace}
               />
+              <datalist id="tag-suggestions">
+                {tagOptions.map((tag) => (
+                  <option key={tag} value={tag} />
+                ))}
+              </datalist>
             </label>
           </div>
         ) : (
