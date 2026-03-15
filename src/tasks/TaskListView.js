@@ -6,7 +6,7 @@ import {
   toInputDateTime,
   writeDragTask,
 } from "./taskViewUtils";
-import { getTaskAssigneeSummary } from "../lib/tasks";
+import { getTaskAssigneeSummary, getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
 
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
@@ -34,8 +34,11 @@ function DropLine({ placement, onDropTask, label = "Upusc tutaj zadanie" }) {
 
 export default function TaskListView({
   groupedTasks,
+  allTasks,
   groupBy,
   selectedTask,
+  selectedTaskIds,
+  toggleTaskSelection,
   setSelectedTaskId,
   onUpdateTask,
   onMoveTaskToColumn,
@@ -81,9 +84,12 @@ export default function TaskListView({
 
               {group.tasks.map((task, index) => {
                 const isActive = selectedTask?.id === task.id;
+                const isSelected = selectedTaskIds.includes(task.id);
                 const nextTaskId = group.tasks[index].id;
                 const assigneeSummary = getTaskAssigneeSummary(task);
                 const hasMoreAssignees = (task.assignedTo || []).length > 1;
+                const dependencyState = getTaskDependencyDetails(task, allTasks);
+                const slaState = getTaskSlaState(task);
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -91,6 +97,7 @@ export default function TaskListView({
                       role="button"
                       tabIndex={0}
                       className={isActive ? "todo-table-row active editable" : "todo-table-row"}
+                      data-selected={isSelected}
                       draggable
                       onDragStart={(event) => {
                         setSelectedTaskId(task.id);
@@ -102,6 +109,13 @@ export default function TaskListView({
                       onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
                     >
                       <div className="todo-row-tools">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          aria-label={`Zaznacz zadanie ${task.title}`}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggleTaskSelection(task.id)}
+                        />
                         <span
                           className="todo-drag-handle"
                           title="Przeciagnij zadanie"
@@ -128,6 +142,7 @@ export default function TaskListView({
                         {isActive ? (
                           <>
                             <input
+                              data-task-title-input={task.id}
                               value={task.title}
                               onFocus={() => setSelectedTaskId(task.id)}
                               onChange={(event) => onUpdateTask(task.id, { title: event.target.value })}
@@ -151,6 +166,7 @@ export default function TaskListView({
                             <small>
                               {assigneeSummary}
                               {hasMoreAssignees ? " | zespolowe" : ""}
+                              {dependencyState.blocking ? ` | blokuje ${dependencyState.unresolved[0]?.title}` : ""}
                             </small>
                           </>
                         )}
@@ -186,7 +202,9 @@ export default function TaskListView({
                             onChange={(event) => onUpdateTask(task.id, { dueDate: event.target.value })}
                           />
                         ) : (
-                          formatListDueDate(task.dueDate) || "Brak terminu"
+                          <span className={`todo-sla-pill ${slaState.tone}`}>
+                            {formatListDueDate(task.dueDate) || "Brak terminu"} {task.dueDate ? `- ${slaState.label}` : ""}
+                          </span>
                         )}
                       </span>
 

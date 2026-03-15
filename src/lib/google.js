@@ -1,5 +1,5 @@
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
-const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 let googleScriptPromise = null;
@@ -142,6 +142,74 @@ export async function fetchPrimaryCalendarEvents(accessToken, { timeMin, timeMax
   }
 
   return response.json();
+}
+
+async function requestGoogleCalendar(accessToken, path, options = {}) {
+  const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Calendar API returned ${response.status}.`);
+  }
+
+  return response.json();
+}
+
+function normalizeGoogleEventAttendees(attendees = []) {
+  return (Array.isArray(attendees) ? attendees : [])
+    .map((attendee) => ({
+      email: String(attendee?.email || "").trim(),
+      displayName: String(attendee?.displayName || "").trim(),
+      responseStatus: attendee?.responseStatus || "needsAction",
+    }))
+    .filter((attendee) => attendee.email);
+}
+
+export function buildGoogleCalendarEventPayload(entry, options = {}) {
+  const attendees = normalizeGoogleEventAttendees(options.attendees);
+  const reminders = Array.isArray(options.reminders)
+    ? {
+        useDefault: false,
+        overrides: options.reminders.map((minutes) => ({
+          method: "popup",
+          minutes: Number(minutes),
+        })),
+      }
+    : undefined;
+
+  return {
+    summary: entry.title || options.summary || "VoiceLog event",
+    description: options.description || "",
+    location: options.location || "",
+    start: {
+      dateTime: new Date(entry.startsAt).toISOString(),
+    },
+    end: {
+      dateTime: new Date(entry.endsAt).toISOString(),
+    },
+    attendees,
+    reminders,
+  };
+}
+
+export async function createGoogleCalendarEvent(accessToken, event) {
+  return requestGoogleCalendar(accessToken, "/calendars/primary/events", {
+    method: "POST",
+    body: JSON.stringify(event),
+  });
+}
+
+export async function updateGoogleCalendarEvent(accessToken, eventId, updates) {
+  return requestGoogleCalendar(accessToken, `/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
 }
 
 export async function fetchGoogleTaskLists(accessToken) {

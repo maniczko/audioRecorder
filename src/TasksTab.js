@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { buildTaskGroups, taskListStats } from "./lib/tasks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildTaskGroups, getTaskSlaState, taskListStats } from "./lib/tasks";
 import TaskDetailsPanel from "./tasks/TaskDetailsPanel";
 import TasksSidebar from "./tasks/TasksSidebar";
 import TasksWorkspaceView from "./tasks/TasksWorkspaceView";
@@ -24,7 +24,9 @@ export default function TasksTab({
   boardColumns,
   onCreateTask,
   onUpdateTask,
+  onBulkUpdateTasks,
   onDeleteTask,
+  onBulkDeleteTasks,
   onMoveTaskToColumn,
   onReorderTask,
   onCreateColumn,
@@ -46,10 +48,12 @@ export default function TasksTab({
   externalSelectedTaskId,
   onTaskSelectionHandled,
   currentUserName,
+  taskNotifications = [],
 }) {
   const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
   const [selectedListId, setSelectedListId] = useState("smart:all");
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [sortBy, setSortBy] = useState("manual");
   const [groupBy, setGroupBy] = useState("none");
   const [query, setQuery] = useState("");
@@ -63,6 +67,8 @@ export default function TasksTab({
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
   const dragTaskIdRef = useRef("");
+  const quickAddInputRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     setViewMode(defaultView === "kanban" ? "kanban" : "list");
@@ -125,12 +131,15 @@ export default function TasksTab({
   useEffect(() => {
     if (!visibleTasks.length) {
       setSelectedTaskId("");
+      setSelectedTaskIds([]);
       return;
     }
 
     if (!visibleTasks.some((task) => task.id === selectedTaskId)) {
       setSelectedTaskId(visibleTasks[0].id);
     }
+
+    setSelectedTaskIds((previous) => previous.filter((taskId) => visibleTasks.some((task) => task.id === taskId)));
   }, [visibleTasks, selectedTaskId]);
 
   useEffect(() => {
@@ -146,6 +155,7 @@ export default function TasksTab({
 
     setViewMode("list");
     setSelectedTaskId(matchingTask.id);
+    setSelectedTaskIds([matchingTask.id]);
     setSelectedListId(matchingTask.group ? `group:${matchingTask.group}` : matchingTask.dueDate ? "smart:planned" : "smart:all");
     setGroupBy("none");
     setQuery("");
@@ -165,6 +175,84 @@ export default function TasksTab({
       })),
     [boardColumns, visibleTasks]
   );
+  const selectedTasks = useMemo(
+    () => tasks.filter((task) => selectedTaskIds.includes(task.id)),
+    [selectedTaskIds, tasks]
+  );
+  const selectedTaskSla = selectedTask ? getTaskSlaState(selectedTask) : null;
+
+  const runSafely = useCallback((action, successMessage = "") => {
+    try {
+      const result = action();
+      if (successMessage) {
+        setMessage(successMessage);
+      }
+      return result;
+    } catch (error) {
+      setMessage(error.message);
+      return null;
+    }
+  }, []);
+
+  const safeUpdateTask = useCallback(
+    (taskId, updates, successMessage = "") => runSafely(() => onUpdateTask(taskId, updates), successMessage),
+    [onUpdateTask, runSafely]
+  );
+
+  const safeMoveTaskToColumn = useCallback(
+    (taskId, columnId, successMessage = "") =>
+      runSafely(() => onMoveTaskToColumn(taskId, columnId), successMessage),
+    [onMoveTaskToColumn, runSafely]
+  );
+
+  const safeDeleteTask = useCallback(
+    (taskId, successMessage = "") => runSafely(() => onDeleteTask(taskId), successMessage),
+    [onDeleteTask, runSafely]
+  );
+
+  function toggleTaskSelection(taskId, forceValue) {
+    const normalizedTaskId = String(taskId || "");
+    if (!normalizedTaskId) {
+      return;
+    }
+
+    setSelectedTaskId(normalizedTaskId);
+    setSelectedTaskIds((previous) => {
+      const alreadySelected = previous.includes(normalizedTaskId);
+      const shouldSelect = forceValue === undefined ? !alreadySelected : Boolean(forceValue);
+      if (shouldSelect) {
+        return [...new Set([...previous, normalizedTaskId])];
+      }
+      return previous.filter((candidate) => candidate !== normalizedTaskId);
+    });
+  }
+
+  const clearTaskSelection = useCallback(() => {
+    setSelectedTaskIds([]);
+  }, []);
+
+  const handleBulkUpdate = useCallback((updates, successMessage) => {
+    if (!selectedTaskIds.length || typeof onBulkUpdateTasks !== "function") {
+      return;
+    }
+
+    runSafely(() => onBulkUpdateTasks(selectedTaskIds, updates), successMessage);
+  }, [onBulkUpdateTasks, runSafely, selectedTaskIds]);
+
+  const handleBulkDelete = useCallback(() => {
+    if (!selectedTaskIds.length) {
+      return;
+    }
+
+    runSafely(() => {
+      if (typeof onBulkDeleteTasks === "function") {
+        onBulkDeleteTasks(selectedTaskIds);
+      } else {
+        selectedTaskIds.forEach((taskId) => onDeleteTask(taskId));
+      }
+      setSelectedTaskIds([]);
+    }, "Usunieto zaznaczone zadania.");
+  }, [onBulkDeleteTasks, onDeleteTask, runSafely, selectedTaskIds]);
 
   function rememberDraggedTask(taskId) {
     dragTaskIdRef.current = taskId || "";
@@ -224,6 +312,7 @@ export default function TasksTab({
         }
 
         setSelectedTaskId(createdTaskId);
+        setSelectedTaskIds([createdTaskId]);
       }
     } catch (error) {
       setMessage(error.message);
@@ -248,20 +337,20 @@ export default function TasksTab({
     }
 
     if (update?.type === "move") {
-      onMoveTaskToColumn(taskId, update.columnId);
+      safeMoveTaskToColumn(taskId, update.columnId);
     } else if (update?.type === "reorder") {
       if (typeof onReorderTask === "function") {
-        onReorderTask(taskId, update.placement);
+        runSafely(() => onReorderTask(taskId, update.placement));
       } else if (update.placement?.status && Object.keys(update.placement).length === 1) {
-        onMoveTaskToColumn(taskId, update.placement.status);
+        safeMoveTaskToColumn(taskId, update.placement.status);
       } else {
-        onUpdateTask(taskId, update.placement);
+        safeUpdateTask(taskId, update.placement);
       }
       setSortBy("manual");
     } else if (typeof update === "string") {
-      onMoveTaskToColumn(taskId, update);
+      safeMoveTaskToColumn(taskId, update);
     } else {
-      onUpdateTask(taskId, update);
+      safeUpdateTask(taskId, update);
     }
 
     rememberDraggedTask("");
@@ -340,6 +429,98 @@ export default function TasksTab({
     setMessage(`Udostepnij workspace kodem: ${workspaceInviteCode}`);
   }
 
+  useEffect(() => {
+    function handleKeyboardShortcuts(event) {
+      const target = event.target;
+      const tagName = target?.tagName?.toLowerCase?.() || "";
+      const typingContext = ["input", "textarea", "select"].includes(tagName) || target?.isContentEditable;
+      const lowerKey = String(event.key || "").toLowerCase();
+
+      if (typingContext && lowerKey !== "escape") {
+        return;
+      }
+
+      if (lowerKey === "n") {
+        event.preventDefault();
+        quickAddInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "/") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (lowerKey === "escape") {
+        clearTaskSelection();
+        setMessage("");
+        return;
+      }
+
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedTaskIds.length) {
+        event.preventDefault();
+        handleBulkDelete();
+        return;
+      }
+
+      const activeTaskId = selectedTaskIds[0] || selectedTask?.id;
+      if (!activeTaskId) {
+        return;
+      }
+
+      if (lowerKey === "e") {
+        event.preventDefault();
+        setViewMode("list");
+        setSelectedTaskId(activeTaskId);
+        window.setTimeout(() => {
+          document.querySelector(`[data-task-title-input="${activeTaskId}"]`)?.focus();
+        }, 0);
+        return;
+      }
+
+      if (event.key === " ") {
+        event.preventDefault();
+        const activeTask = tasks.find((task) => task.id === activeTaskId);
+        if (activeTask) {
+          safeUpdateTask(activeTask.id, { completed: !activeTask.completed });
+        }
+        return;
+      }
+
+      if (["1", "2", "3", "4"].includes(event.key)) {
+        event.preventDefault();
+        const priorityMap = {
+          1: "low",
+          2: "medium",
+          3: "high",
+          4: "urgent",
+        };
+        const nextPriority = priorityMap[event.key];
+        if (selectedTaskIds.length > 1) {
+          handleBulkUpdate({ priority: nextPriority }, "Zmieniono priorytet zaznaczonych zadan.");
+        } else {
+          safeUpdateTask(activeTaskId, { priority: nextPriority }, "Zmieniono priorytet zadania.");
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => {
+      window.removeEventListener("keydown", handleKeyboardShortcuts);
+    };
+  }, [
+    clearTaskSelection,
+    handleBulkDelete,
+    handleBulkUpdate,
+    quickAddInputRef,
+    searchInputRef,
+    safeUpdateTask,
+    selectedTask,
+    selectedTaskIds,
+    tasks,
+  ]);
+
   return (
     <div className="tasks-layout ms-todo">
       <TasksSidebar
@@ -367,6 +548,17 @@ export default function TasksTab({
         columnDraft={columnDraft}
         setColumnDraft={setColumnDraft}
         submitColumn={submitColumn}
+        currentUserName={currentUserName}
+        quickAddInputRef={quickAddInputRef}
+        searchInputRef={searchInputRef}
+        selectedTaskIds={selectedTaskIds}
+        selectedTaskCount={selectedTaskIds.length}
+        clearTaskSelection={clearTaskSelection}
+        handleBulkUpdate={handleBulkUpdate}
+        handleBulkDelete={handleBulkDelete}
+        taskNotifications={taskNotifications}
+        selectedTasks={selectedTasks}
+        selectedTaskSla={selectedTaskSla}
       />
 
       <TasksWorkspaceView
@@ -393,12 +585,15 @@ export default function TasksTab({
         tagFilter={tagFilter}
         setTagFilter={setTagFilter}
         tagOptions={tagOptions}
+        quickAddInputRef={quickAddInputRef}
+        searchInputRef={searchInputRef}
         message={message}
         groupedTasks={groupedTasks}
+        allVisibleTasks={visibleTasks}
         selectedTask={selectedTask}
         setSelectedTaskId={setSelectedTaskId}
-        onUpdateTask={onUpdateTask}
-        onMoveTaskToColumn={onMoveTaskToColumn}
+        onUpdateTask={safeUpdateTask}
+        onMoveTaskToColumn={safeMoveTaskToColumn}
         kanbanColumns={kanbanColumns}
         dropColumnId={dropColumnId}
         setDropColumnId={setDropColumnId}
@@ -408,6 +603,12 @@ export default function TasksTab({
         setDragTaskId={rememberDraggedTask}
         stats={stats}
         visibleStats={visibleStats}
+        selectedTaskIds={selectedTaskIds}
+        toggleTaskSelection={toggleTaskSelection}
+        clearTaskSelection={clearTaskSelection}
+        handleBulkUpdate={handleBulkUpdate}
+        handleBulkDelete={handleBulkDelete}
+        taskNotifications={taskNotifications}
       />
 
       <TaskDetailsPanel
@@ -416,9 +617,9 @@ export default function TasksTab({
         peopleOptions={peopleOptions}
         taskGroups={taskGroups}
         boardColumns={boardColumns}
-        onUpdateTask={onUpdateTask}
-        onMoveTaskToColumn={onMoveTaskToColumn}
-        onDeleteTask={onDeleteTask}
+        onUpdateTask={safeUpdateTask}
+        onMoveTaskToColumn={safeMoveTaskToColumn}
+        onDeleteTask={safeDeleteTask}
         onOpenMeeting={onOpenMeeting}
         currentUserName={currentUserName}
       />

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   GOOGLE_CLIENT_ID,
+  buildGoogleCalendarEventPayload,
+  createGoogleCalendarEvent,
   createGoogleTask,
   fetchGoogleTaskLists,
   fetchGoogleTasks,
@@ -9,6 +11,7 @@ import {
   requestGoogleCalendarAccess,
   requestGoogleTasksAccess,
   signOutGoogleSession,
+  updateGoogleCalendarEvent,
 } from "../lib/google";
 import { createTaskFromGoogle, upsertGoogleImportedTasks } from "../lib/tasks";
 
@@ -141,6 +144,57 @@ export default function useGoogleIntegrations({
     setGoogleCalendarMessage("Polaczenie z Google Calendar zostalo odlaczone.");
   }
 
+  function upsertLocalGoogleEvent(nextEvent) {
+    setGoogleCalendarEvents((previous) => {
+      const existingIndex = previous.findIndex((event) => event.id === nextEvent.id);
+      if (existingIndex === -1) {
+        return [...previous, nextEvent].sort(
+          (left, right) =>
+            new Date(left.start?.dateTime || left.start?.date || 0).getTime() -
+            new Date(right.start?.dateTime || right.start?.date || 0).getTime()
+        );
+      }
+
+      return previous.map((event) => (event.id === nextEvent.id ? nextEvent : event));
+    });
+  }
+
+  async function syncCalendarEntryToGoogle(entry, options = {}) {
+    if (!googleCalendarTokenRef.current) {
+      throw new Error("Najpierw polacz Google Calendar.");
+    }
+
+    const payload = buildGoogleCalendarEventPayload(entry, options);
+    const response = options.googleEventId
+      ? await updateGoogleCalendarEvent(googleCalendarTokenRef.current, options.googleEventId, payload)
+      : await createGoogleCalendarEvent(googleCalendarTokenRef.current, payload);
+
+    upsertLocalGoogleEvent(response);
+    setGoogleCalendarStatus("connected");
+    setGoogleCalendarMessage(
+      options.googleEventId
+        ? `Zsynchronizowano wydarzenie "${entry.title}" z Google Calendar.`
+        : `Utworzono wydarzenie Google dla "${entry.title}".`
+    );
+
+    return response;
+  }
+
+  async function rescheduleGoogleCalendarEntry(eventId, startsAt, endsAt) {
+    if (!googleCalendarTokenRef.current) {
+      throw new Error("Najpierw polacz Google Calendar.");
+    }
+
+    const response = await updateGoogleCalendarEvent(googleCalendarTokenRef.current, eventId, {
+      start: { dateTime: new Date(startsAt).toISOString() },
+      end: { dateTime: new Date(endsAt).toISOString() },
+    });
+    upsertLocalGoogleEvent(response);
+    setGoogleCalendarStatus("connected");
+    setGoogleCalendarMessage(`Zaktualizowano termin wydarzenia Google "${response.summary || "Event"}".`);
+    return response;
+  }
+
   async function connectGoogleTasks() {
     if (!currentUser) {
       return;
@@ -256,9 +310,12 @@ export default function useGoogleIntegrations({
     googleTasksMessage,
     connectGoogleCalendar,
     disconnectGoogleCalendar,
+    syncCalendarEntryToGoogle,
+    rescheduleGoogleCalendarEntry,
     connectGoogleTasks,
     importGoogleTasksFromList,
     exportTasksToGoogle,
     resetGoogleSession,
+    googleCalendarWritable: Boolean(googleCalendarTokenRef.current),
   };
 }

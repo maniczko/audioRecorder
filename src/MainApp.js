@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthScreen from "./AuthScreen";
 import CalendarTab from "./CalendarTab";
@@ -81,6 +81,15 @@ export default function MainApp() {
     () => meetings.meetingTasks.filter((task) => Boolean(task.dueDate)),
     [meetings.meetingTasks]
   );
+  const syncLinkedGoogleCalendarEvents = meetings.syncLinkedGoogleCalendarEvents;
+
+  useEffect(() => {
+    if (!google.googleCalendarEvents.length) {
+      return;
+    }
+
+    syncLinkedGoogleCalendarEvents(google.googleCalendarEvents);
+  }, [google.googleCalendarEvents, syncLinkedGoogleCalendarEvents]);
 
   function exportTranscript() {
     if (!displayRecording) {
@@ -281,14 +290,20 @@ export default function MainApp() {
           googleCalendarMessage={google.googleCalendarMessage}
           connectGoogleCalendar={google.connectGoogleCalendar}
           disconnectGoogleCalendar={google.disconnectGoogleCalendar}
+          syncCalendarEntryToGoogle={google.syncCalendarEntryToGoogle}
+          rescheduleGoogleCalendarEntry={google.rescheduleGoogleCalendarEntry}
           openMeetingFromCalendar={openMeetingFromCalendar}
           openGoogleCalendarForMeeting={openGoogleCalendarForMeeting}
           openTaskFromCalendar={openTaskFromCalendar}
           googleCalendarEnabled={google.googleEnabled}
+          googleCalendarWritable={google.googleCalendarWritable}
           onRescheduleMeeting={meetings.rescheduleMeeting}
           onRescheduleTask={meetings.rescheduleTask}
           calendarMeta={meetings.calendarMeta}
           onUpdateCalendarEntryMeta={meetings.updateCalendarEntryMeta}
+          workspaceMembers={workspace.currentWorkspaceMembers}
+          peopleProfiles={meetings.peopleProfiles}
+          currentUserTimezone={workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
         />
       ) : activeTab === "tasks" ? (
         <TasksTab
@@ -298,7 +313,9 @@ export default function MainApp() {
           boardColumns={meetings.taskColumns}
           onCreateTask={meetings.createTaskFromComposer}
           onUpdateTask={meetings.updateTask}
+          onBulkUpdateTasks={meetings.bulkUpdateTasks}
           onDeleteTask={meetings.deleteTask}
+          onBulkDeleteTasks={meetings.bulkDeleteTasks}
           onMoveTaskToColumn={meetings.moveTaskToColumn}
           onReorderTask={meetings.reorderTask}
           onCreateColumn={meetings.addTaskColumn}
@@ -320,6 +337,7 @@ export default function MainApp() {
           externalSelectedTaskId={pendingTaskId}
           onTaskSelectionHandled={() => setPendingTaskId("")}
           currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
+          taskNotifications={meetings.taskNotifications}
         />
       ) : activeTab === "people" ? (
         <PeopleTab profiles={meetings.peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useStoredState from "./useStoredState";
 import { normalizeTaskUpdatePayload } from "../lib/appState";
 import {
@@ -14,6 +14,7 @@ import { createId, STORAGE_KEYS } from "../lib/storage";
 import {
   buildTaskChangeHistory,
   buildTaskColumns,
+  buildTaskNotifications,
   buildTaskPeople,
   buildTaskReorderUpdate,
   buildTaskTags,
@@ -23,9 +24,15 @@ import {
   createTaskColumn,
   getNextTaskOrderTop,
   updateTaskColumns,
+  validateTaskCompletion,
+  validateTaskDependencies,
 } from "../lib/tasks";
 import { migrateWorkspaceData } from "../lib/workspace";
 import { createStateService } from "../services/stateService";
+
+function serializeWorkspaceState(payload) {
+  return JSON.stringify(payload || {});
+}
 
 export default function useMeetings({
   users,
@@ -50,7 +57,9 @@ export default function useMeetings({
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const stateService = useMemo(() => createStateService(), []);
   const syncTimerRef = useRef(null);
+  const remotePollTimerRef = useRef(null);
   const hydratedWorkspaceIdRef = useRef("");
+  const remoteSnapshotRef = useRef("");
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService.mode === "remote" && Boolean(session?.token)
   );
@@ -81,6 +90,62 @@ export default function useMeetings({
   const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks);
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
   const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
+  const taskNotifications = buildTaskNotifications(meetingTasks);
+
+  const applyRemoteWorkspaceState = useCallback((result) => {
+    if (!result) {
+      return;
+    }
+
+    if (Array.isArray(result.users)) {
+      setUsers(result.users);
+    }
+    if (Array.isArray(result.workspaces)) {
+      setWorkspaces(result.workspaces);
+    }
+
+    const nextState = result.state || {};
+    const normalizedState = {
+      meetings: Array.isArray(nextState.meetings) ? nextState.meetings : [],
+      manualTasks: Array.isArray(nextState.manualTasks) ? nextState.manualTasks : [],
+      taskState: nextState.taskState && typeof nextState.taskState === "object" ? nextState.taskState : {},
+      taskBoards: nextState.taskBoards && typeof nextState.taskBoards === "object" ? nextState.taskBoards : {},
+      calendarMeta: nextState.calendarMeta && typeof nextState.calendarMeta === "object" ? nextState.calendarMeta : {},
+    };
+    const nextSnapshot = serializeWorkspaceState(normalizedState);
+    if (nextSnapshot === remoteSnapshotRef.current) {
+      return;
+    }
+
+    setMeetings(normalizedState.meetings);
+    setManualTasks(normalizedState.manualTasks);
+    setTaskState(normalizedState.taskState);
+    setTaskBoards(normalizedState.taskBoards);
+    setCalendarMeta(normalizedState.calendarMeta);
+    remoteSnapshotRef.current = nextSnapshot;
+
+    hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || "";
+    if (result.workspaceId && result.workspaceId !== session?.workspaceId) {
+      setSession((previous) =>
+        previous
+          ? {
+              ...previous,
+              workspaceId: result.workspaceId,
+            }
+          : previous
+      );
+    }
+  }, [
+    session?.workspaceId,
+    setCalendarMeta,
+    setManualTasks,
+    setMeetings,
+    setSession,
+    setTaskBoards,
+    setTaskState,
+    setUsers,
+    setWorkspaces,
+  ]);
 
   function buildTranscriptReviewSummary(transcript) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
@@ -207,34 +272,7 @@ export default function useMeetings({
         if (cancelled || !result) {
           return;
         }
-
-        if (Array.isArray(result.users)) {
-          setUsers(result.users);
-        }
-        if (Array.isArray(result.workspaces)) {
-          setWorkspaces(result.workspaces);
-        }
-
-        const nextState = result.state || {};
-        setMeetings(Array.isArray(nextState.meetings) ? nextState.meetings : []);
-        setManualTasks(Array.isArray(nextState.manualTasks) ? nextState.manualTasks : []);
-        setTaskState(nextState.taskState && typeof nextState.taskState === "object" ? nextState.taskState : {});
-        setTaskBoards(nextState.taskBoards && typeof nextState.taskBoards === "object" ? nextState.taskBoards : {});
-        setCalendarMeta(
-          nextState.calendarMeta && typeof nextState.calendarMeta === "object" ? nextState.calendarMeta : {}
-        );
-
-        hydratedWorkspaceIdRef.current = result.workspaceId || session.workspaceId || "";
-        if (result.workspaceId && result.workspaceId !== session.workspaceId) {
-          setSession((previous) =>
-            previous
-              ? {
-                  ...previous,
-                  workspaceId: result.workspaceId,
-                }
-              : previous
-          );
-        }
+        applyRemoteWorkspaceState(result);
       })
       .catch((error) => {
         if (cancelled) {
@@ -255,17 +293,11 @@ export default function useMeetings({
     };
   }, [
     currentWorkspaceId,
+    applyRemoteWorkspaceState,
     session?.token,
     session?.userId,
     session?.workspaceId,
-    setCalendarMeta,
-    setManualTasks,
-    setMeetings,
     setSession,
-    setTaskBoards,
-    setTaskState,
-    setUsers,
-    setWorkspaces,
     stateService,
   ]);
 
@@ -282,14 +314,23 @@ export default function useMeetings({
       return undefined;
     }
 
+    const payload = {
+      meetings,
+      manualTasks,
+      taskState,
+      taskBoards,
+      calendarMeta,
+    };
+    const nextSnapshot = serializeWorkspaceState(payload);
+    if (nextSnapshot === remoteSnapshotRef.current) {
+      return undefined;
+    }
+
     const timeout = window.setTimeout(() => {
       stateService
-        .syncWorkspaceState(currentWorkspaceId, {
-          meetings,
-          manualTasks,
-          taskState,
-          taskBoards,
-          calendarMeta,
+        .syncWorkspaceState(currentWorkspaceId, payload)
+        .then(() => {
+          remoteSnapshotRef.current = nextSnapshot;
         })
         .catch((error) => {
           console.error("Remote workspace sync failed.", error);
@@ -438,13 +479,13 @@ export default function useMeetings({
     return task;
   }
 
-  function updateTask(taskId, updates) {
-    const task = meetingTasks.find((item) => item.id === taskId);
-    if (!task) {
-      return;
-    }
-
+  function prepareTaskMutation(task, updates, taskCollection = meetingTasks) {
     const normalizedUpdates = normalizeTaskUpdatePayload(task, updates, taskColumns);
+    if (normalizedUpdates.dependencies !== undefined) {
+      validateTaskDependencies(task.id, normalizedUpdates.dependencies, taskCollection);
+    }
+    validateTaskCompletion(task, normalizedUpdates, taskCollection, taskColumns);
+
     const updatedAt = new Date().toISOString();
     const actor = currentUser?.name || currentUser?.email || "Ty";
     const nextTask = {
@@ -463,9 +504,24 @@ export default function useMeetings({
     };
     const shouldCreateRecurringFollowUp =
       !task.completed && nextPayload.completed && currentUser && currentWorkspaceId && nextTask.recurrence;
-    const recurringTask = shouldCreateRecurringFollowUp
-      ? createRecurringTaskFromTask(nextTask, currentUser.id, currentWorkspaceId, taskColumns, meetingTasks)
-      : null;
+
+    return {
+      task,
+      nextTask,
+      nextPayload,
+      recurringTask: shouldCreateRecurringFollowUp
+        ? createRecurringTaskFromTask(nextTask, currentUser.id, currentWorkspaceId, taskColumns, taskCollection)
+        : null,
+    };
+  }
+
+  function updateTask(taskId, updates) {
+    const task = meetingTasks.find((item) => item.id === taskId);
+    if (!task) {
+      return null;
+    }
+
+    const { nextPayload, nextTask, recurringTask } = prepareTaskMutation(task, updates);
 
     if (task.sourceType === "manual" || task.sourceType === "google") {
       setManualTasks((previous) =>
@@ -481,7 +537,7 @@ export default function useMeetings({
           ),
         ]
       );
-      return;
+      return nextTask;
     }
 
     setTaskState((previous) => ({
@@ -495,6 +551,8 @@ export default function useMeetings({
     if (recurringTask) {
       setManualTasks((previous) => [recurringTask, ...previous]);
     }
+
+    return nextTask;
   }
 
   function moveTaskToColumn(taskId, columnId) {
@@ -534,6 +592,82 @@ export default function useMeetings({
     }));
   }
 
+  const syncLinkedGoogleCalendarEvents = useCallback((googleEvents) => {
+    const eventMap = new Map((Array.isArray(googleEvents) ? googleEvents : []).map((event) => [event.id, event]));
+    const touchedMetaKeys = [];
+
+    setMeetings((previous) =>
+      previous.map((meeting) => {
+        const metaKey = `meeting:${meeting.id}`;
+        const linkedEventId = calendarMeta?.[metaKey]?.googleEventId;
+        if (!linkedEventId || meeting.workspaceId !== currentWorkspaceId) {
+          return meeting;
+        }
+
+        const linkedEvent = eventMap.get(linkedEventId);
+        if (!linkedEvent?.start?.dateTime || !linkedEvent?.end?.dateTime) {
+          return meeting;
+        }
+
+        const nextStartsAt = linkedEvent.start.dateTime;
+        const nextDurationMinutes = Math.max(
+          15,
+          Math.round((new Date(linkedEvent.end.dateTime).getTime() - new Date(linkedEvent.start.dateTime).getTime()) / (60 * 1000))
+        );
+        if (meeting.startsAt === nextStartsAt && Number(meeting.durationMinutes) === nextDurationMinutes) {
+          return meeting;
+        }
+
+        touchedMetaKeys.push(metaKey);
+        return {
+          ...meeting,
+          startsAt: nextStartsAt,
+          durationMinutes: nextDurationMinutes,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    setManualTasks((previous) =>
+      previous.map((task) => {
+        const metaKey = `task:${task.id}`;
+        const linkedEventId = calendarMeta?.[metaKey]?.googleEventId;
+        if (!linkedEventId || task.workspaceId !== currentWorkspaceId) {
+          return task;
+        }
+
+        const linkedEvent = eventMap.get(linkedEventId);
+        if (!linkedEvent?.start?.dateTime) {
+          return task;
+        }
+
+        if (task.dueDate === linkedEvent.start.dateTime) {
+          return task;
+        }
+
+        touchedMetaKeys.push(metaKey);
+        return {
+          ...task,
+          dueDate: linkedEvent.start.dateTime,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    if (touchedMetaKeys.length) {
+      setCalendarMeta((previous) => {
+        const nextMeta = { ...previous };
+        touchedMetaKeys.forEach((metaKey) => {
+          nextMeta[metaKey] = {
+            ...(nextMeta[metaKey] || {}),
+            googlePulledAt: new Date().toISOString(),
+          };
+        });
+        return nextMeta;
+      });
+    }
+  }, [calendarMeta, currentWorkspaceId, setCalendarMeta, setManualTasks, setMeetings]);
+
   function reorderTask(taskId, placement) {
     const task = meetingTasks.find((item) => item.id === taskId);
     if (!task) {
@@ -541,6 +675,78 @@ export default function useMeetings({
     }
 
     updateTask(taskId, buildTaskReorderUpdate(meetingTasks, placement));
+  }
+
+  function bulkUpdateTasks(taskIds, updates) {
+    const selectedIds = [...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean))];
+    if (!selectedIds.length) {
+      return;
+    }
+
+    const selectedSet = new Set(selectedIds);
+    const futureTaskMap = new Map(
+      meetingTasks.map((task) => {
+        if (!selectedSet.has(task.id)) {
+          return [task.id, task];
+        }
+
+        const normalizedUpdates = normalizeTaskUpdatePayload(task, updates, taskColumns);
+        return [
+          task.id,
+          {
+            ...task,
+            ...normalizedUpdates,
+          },
+        ];
+      })
+    );
+    const futureTasks = meetingTasks.map((task) => futureTaskMap.get(task.id) || task);
+
+    const mutations = selectedIds
+      .map((taskId) => meetingTasks.find((task) => task.id === taskId))
+      .filter(Boolean)
+      .map((task) => prepareTaskMutation(task, updates, futureTasks));
+
+    const recurringTasks = mutations.map((mutation) => mutation.recurringTask).filter(Boolean);
+    const manualPayloads = new Map(
+      mutations
+        .filter(({ task }) => task.sourceType === "manual" || task.sourceType === "google")
+        .map(({ task, nextPayload }) => [task.id, nextPayload])
+    );
+    const derivedPayloads = Object.fromEntries(
+      mutations
+        .filter(({ task }) => task.sourceType !== "manual" && task.sourceType !== "google")
+        .map(({ task, nextPayload }) => [task.id, nextPayload])
+    );
+
+    if (manualPayloads.size) {
+      setManualTasks((previous) => [
+        ...recurringTasks,
+        ...previous.map((item) =>
+          manualPayloads.has(item.id)
+            ? {
+                ...item,
+                ...manualPayloads.get(item.id),
+              }
+            : item
+        ),
+      ]);
+    } else if (recurringTasks.length) {
+      setManualTasks((previous) => [...recurringTasks, ...previous]);
+    }
+
+    if (Object.keys(derivedPayloads).length) {
+      setTaskState((previous) => {
+        const nextState = { ...previous };
+        Object.entries(derivedPayloads).forEach(([taskId, nextPayload]) => {
+          nextState[taskId] = {
+            ...(previous[taskId] || {}),
+            ...nextPayload,
+          };
+        });
+        return nextState;
+      });
+    }
   }
 
   function addTaskColumn(draft) {
@@ -606,6 +812,12 @@ export default function useMeetings({
         updatedAt: new Date().toISOString(),
       },
     }));
+  }
+
+  function bulkDeleteTasks(taskIds) {
+    [...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean))].forEach((taskId) => {
+      deleteTask(taskId);
+    });
   }
 
   function renameSpeaker(speakerId, nextValue) {
@@ -816,6 +1028,56 @@ export default function useMeetings({
     setWorkspaceMessage("");
   }
 
+  useEffect(() => {
+    if (stateService.mode !== "remote") {
+      return undefined;
+    }
+
+    if (!session?.token || !currentWorkspaceId || isHydratingRemoteState) {
+      return undefined;
+    }
+
+    const pullRemoteWorkspaceState = () => {
+      stateService
+        .bootstrap(currentWorkspaceId)
+        .then((result) => {
+          if (!result?.state) {
+            return;
+          }
+
+          const normalizedState = {
+            meetings: Array.isArray(result.state.meetings) ? result.state.meetings : [],
+            manualTasks: Array.isArray(result.state.manualTasks) ? result.state.manualTasks : [],
+            taskState: result.state.taskState && typeof result.state.taskState === "object" ? result.state.taskState : {},
+            taskBoards: result.state.taskBoards && typeof result.state.taskBoards === "object" ? result.state.taskBoards : {},
+            calendarMeta:
+              result.state.calendarMeta && typeof result.state.calendarMeta === "object" ? result.state.calendarMeta : {},
+          };
+          const incomingSnapshot = serializeWorkspaceState(normalizedState);
+          if (incomingSnapshot === remoteSnapshotRef.current) {
+            return;
+          }
+
+          applyRemoteWorkspaceState(result);
+        })
+        .catch((error) => {
+          console.error("Remote workspace pull failed.", error);
+        });
+    };
+
+    remotePollTimerRef.current = window.setInterval(() => {
+      if (document?.visibilityState === "hidden") {
+        return;
+      }
+
+      pullRemoteWorkspaceState();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(remotePollTimerRef.current);
+    };
+  }, [applyRemoteWorkspaceState, currentWorkspaceId, isHydratingRemoteState, session?.token, stateService]);
+
   return {
     meetings,
     setMeetings,
@@ -840,6 +1102,7 @@ export default function useMeetings({
     userMeetings,
     taskColumns,
     meetingTasks,
+    taskNotifications,
     taskPeople,
     taskTags,
     peopleProfiles,
@@ -849,15 +1112,18 @@ export default function useMeetings({
     attachCompletedRecording,
     createTaskFromComposer,
     updateTask,
+    bulkUpdateTasks,
     moveTaskToColumn,
     rescheduleTask,
     rescheduleMeeting,
     updateCalendarEntryMeta,
+    syncLinkedGoogleCalendarEvents,
     reorderTask,
     addTaskColumn,
     changeTaskColumn,
     removeTaskColumn,
     deleteTask,
+    bulkDeleteTasks,
     renameSpeaker,
     updateTranscriptSegment,
     assignSpeakerToTranscriptSegments,

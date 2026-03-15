@@ -259,6 +259,38 @@ function sameTextList(left, right) {
   return uniqueStrings(left).join("||") === uniqueStrings(right).join("||");
 }
 
+function toValidTimestamp(value) {
+  const timestamp = new Date(value || 0).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function taskLookup(tasks) {
+  return new Map(safeArray(tasks).map((task) => [task.id, task]));
+}
+
+function dependencyGraph(tasks) {
+  return safeArray(tasks).reduce((graph, task) => {
+    graph[task.id] = normalizeTaskDependencies(task.dependencies);
+    return graph;
+  }, {});
+}
+
+function visitDependency(nodeId, graph, seen, trail) {
+  if (trail.has(nodeId)) {
+    return true;
+  }
+  if (seen.has(nodeId)) {
+    return false;
+  }
+
+  seen.add(nodeId);
+  trail.add(nodeId);
+  const blockedBy = graph[nodeId] || [];
+  const hasCycle = blockedBy.some((dependencyId) => visitDependency(dependencyId, graph, seen, trail));
+  trail.delete(nodeId);
+  return hasCycle;
+}
+
 export function parseTagInput(value) {
   return uniqueStrings(
     String(value || "")
@@ -334,6 +366,103 @@ export function createTaskHistoryEntry(message, actor = "System", type = "update
     message,
     createdAt: new Date().toISOString(),
   });
+}
+
+export function getTaskDependencyDetails(task, tasks) {
+  const lookup = taskLookup(tasks);
+  const dependencies = normalizeTaskDependencies(task?.dependencies)
+    .map((dependencyId) => lookup.get(dependencyId))
+    .filter(Boolean);
+  const unresolved = dependencies.filter((dependency) => !dependency.completed);
+
+  return {
+    dependencies,
+    unresolved,
+    blocking: unresolved.length > 0,
+  };
+}
+
+export function validateTaskDependencies(taskId, dependencyIds, tasks) {
+  const normalizedDependencies = normalizeTaskDependencies(dependencyIds);
+  if (normalizedDependencies.includes(taskId)) {
+    throw new Error("Zadanie nie moze zalezec od samego siebie.");
+  }
+
+  const graph = dependencyGraph(tasks);
+  graph[taskId] = normalizedDependencies;
+  const hasCycle = visitDependency(taskId, graph, new Set(), new Set());
+  if (hasCycle) {
+    throw new Error("Ta zaleznosc tworzy petle miedzy zadaniami.");
+  }
+}
+
+export function validateTaskCompletion(task, updates, tasks, columns = DEFAULT_TASK_COLUMNS) {
+  const nextStatus = String(updates.status || task.status || "");
+  const shouldBeCompleted =
+    typeof updates.completed === "boolean"
+      ? updates.completed
+      : normalizeColumns(columns).some((column) => column.id === nextStatus && column.isDone);
+  if (!shouldBeCompleted) {
+    return;
+  }
+
+  const dependencyState = getTaskDependencyDetails(task, tasks);
+  if (dependencyState.unresolved.length) {
+    throw new Error(
+      `Najpierw zakoncz zalezne zadania: ${dependencyState.unresolved
+        .slice(0, 3)
+        .map((dependency) => dependency.title)
+        .join(", ")}.`
+    );
+  }
+}
+
+export function getTaskSlaState(task, now = new Date()) {
+  if (!task || task.completed || !task.dueDate) {
+    return { id: "none", label: "Brak SLA", tone: "neutral" };
+  }
+
+  const dueTime = toValidTimestamp(task.dueDate);
+  const deltaMinutes = Math.round((dueTime - now.getTime()) / (60 * 1000));
+  if (deltaMinutes < 0) {
+    const overdueHours = Math.abs(deltaMinutes) / 60;
+    if (overdueHours >= 24) {
+      return { id: "breached", label: "SLA naruszone", tone: "danger" };
+    }
+    return { id: "overdue", label: "Po SLA", tone: "danger" };
+  }
+  if (deltaMinutes <= 4 * 60) {
+    return { id: "critical", label: "Krytyczne", tone: "danger" };
+  }
+  if (deltaMinutes <= 24 * 60) {
+    return { id: "at_risk", label: "Zagrozone", tone: "warning" };
+  }
+
+  return { id: "healthy", label: "W normie", tone: "success" };
+}
+
+export function buildTaskNotifications(tasks, now = new Date()) {
+  return safeArray(tasks)
+    .filter((task) => !task.completed)
+    .map((task) => ({
+      task,
+      sla: getTaskSlaState(task, now),
+      dependencies: getTaskDependencyDetails(task, tasks),
+    }))
+    .filter(({ sla, dependencies }) => ["critical", "overdue", "breached"].includes(sla.id) || dependencies.blocking)
+    .sort((left, right) => {
+      const leftScore =
+        (left.sla.id === "breached" ? 4 : left.sla.id === "overdue" ? 3 : left.sla.id === "critical" ? 2 : 1) +
+        (left.dependencies.blocking ? 1 : 0);
+      const rightScore =
+        (right.sla.id === "breached" ? 4 : right.sla.id === "overdue" ? 3 : right.sla.id === "critical" ? 2 : 1) +
+        (right.dependencies.blocking ? 1 : 0);
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return toValidTimestamp(left.task.dueDate) - toValidTimestamp(right.task.dueDate);
+    });
 }
 
 export function getTaskOrder(task, fallbackIndex = 0) {
@@ -906,6 +1035,24 @@ export function taskListStats(tasks) {
       [key]: (accumulator[key] || 0) + 1,
     };
   }, {});
+  const slaSummary = list.reduce(
+    (summary, task) => {
+      const state = getTaskSlaState(task);
+      if (state.id === "healthy") {
+        summary.healthy += 1;
+      } else if (state.id === "at_risk") {
+        summary.atRisk += 1;
+      } else if (state.id === "critical") {
+        summary.critical += 1;
+      } else if (state.id === "overdue") {
+        summary.overdue += 1;
+      } else if (state.id === "breached") {
+        summary.breached += 1;
+      }
+      return summary;
+    },
+    { healthy: 0, atRisk: 0, critical: 0, overdue: 0, breached: 0 }
+  );
 
   return {
     all: list.length,
@@ -940,12 +1087,16 @@ export function taskListStats(tasks) {
     inProgress: list.filter((task) => task.status === "in_progress").length,
     grouped: list.filter((task) => Boolean(task.group)).length,
     recurring: list.filter((task) => Boolean(task.recurrence)).length,
-    blocked: list.filter((task) => (task.dependencies || []).length).length,
+    blocked: list.filter((task) => getTaskDependencyDetails(task, list).blocking).length,
     commented: list.filter((task) => (task.comments || []).length).length,
     subtasksOpen: allSubtasks.filter((subtask) => !subtask.completed).length,
     subtasksCompleted: allSubtasks.filter((subtask) => subtask.completed).length,
     progress: list.length ? Math.round((completedCount / list.length) * 100) : 0,
     byPriority,
     byStatus,
+    slaHealthy: slaSummary.healthy,
+    slaAtRisk: slaSummary.atRisk,
+    slaCritical: slaSummary.critical,
+    slaBreached: slaSummary.overdue + slaSummary.breached,
   };
 }

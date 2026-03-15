@@ -3,6 +3,8 @@ import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
   createTaskSubtask,
+  getTaskDependencyDetails,
+  getTaskSlaState,
   TASK_PRIORITIES,
   TASK_RECURRENCE_OPTIONS,
 } from "../lib/tasks";
@@ -68,6 +70,8 @@ export default function TaskDetailsPanel({
   const assignedPeople = selectedTask.assignedTo || [];
   const dependencyIds = selectedTask.dependencies || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
+  const dependencyState = getTaskDependencyDetails(selectedTask, tasks);
+  const slaState = getTaskSlaState(selectedTask);
 
   function updateAssignees(nextAssignees) {
     onUpdateTask(selectedTask.id, {
@@ -131,6 +135,12 @@ export default function TaskDetailsPanel({
                   : "Reczne"}
             </span>
             <h2>{selectedTask.title}</h2>
+            <div className="todo-detail-badges">
+              {selectedTask.dueDate ? <span className={`todo-sla-pill ${slaState.tone}`}>{slaState.label}</span> : null}
+              {dependencyState.blocking ? (
+                <span className="todo-sla-pill warning">Zablokowane przez {dependencyState.unresolved.length}</span>
+              ) : null}
+            </div>
           </div>
           <button type="button" className="todo-icon-button danger" onClick={() => onDeleteTask(selectedTask.id)}>
             {selectedTask.sourceType === "meeting" ? "Ukryj" : "Usun"}
@@ -287,6 +297,11 @@ export default function TaskDetailsPanel({
             <strong>Zaleznosci</strong>
             <span>{dependencyIds.length}</span>
           </div>
+          {dependencyState.blocking ? (
+            <div className="todo-inline-alert warning">
+              Najpierw zakoncz: {dependencyState.unresolved.map((task) => task.title).join(", ")}.
+            </div>
+          ) : null}
           <div className="todo-chip-grid dense">
             {availableDependencies.length ? (
               availableDependencies.map((task) => {

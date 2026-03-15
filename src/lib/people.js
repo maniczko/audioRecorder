@@ -98,6 +98,12 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         [...personMeetings]
           .filter((meeting) => new Date(meeting.startsAt).getTime() >= Date.now())
           .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())[0] || null;
+      const workspaceMemberMatch = safeArray(workspaceMembers).find((member) => {
+        const normalizedTarget = normalizeWhitespace(name).toLowerCase();
+        return [member.name, member.email, member.googleEmail]
+          .map((value) => normalizeWhitespace(value).toLowerCase())
+          .includes(normalizedTarget);
+      });
 
       return {
         id: slugify(name) || name,
@@ -112,6 +118,11 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         openTasks: personTasks.filter((task) => !task.completed).length,
         summary: personSummary(name, personMeetings, personTasks, needs, outputs),
         traits: inferTraits(personMeetings, personTasks, needs, outputs),
+        timezone:
+          workspaceMemberMatch?.timezone ||
+          (normalizeWhitespace(currentUser?.name).toLowerCase() === normalizeWhitespace(name).toLowerCase()
+            ? currentUser?.timezone
+            : ""),
       };
     })
     .filter((person) => person.name)

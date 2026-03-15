@@ -8,10 +8,101 @@ function statCards(stats, visibleStats) {
     { id: "today", label: "Na dzisiaj", value: visibleStats.dueToday, tone: "info" },
     { id: "week", label: "Ten tydzien", value: visibleStats.dueThisWeek, tone: "info" },
     { id: "overdue", label: "Po terminie", value: visibleStats.overdue, tone: "danger" },
-    { id: "assigned", label: "Przypisane", value: visibleStats.assigned, tone: "neutral" },
+    { id: "sla-risk", label: "SLA zagrozone", value: visibleStats.slaAtRisk + visibleStats.slaCritical, tone: "warning" },
+    { id: "sla-breached", label: "SLA naruszone", value: visibleStats.slaBreached, tone: "danger" },
     { id: "blocked", label: "Zalezne", value: visibleStats.blocked, tone: "warning" },
     { id: "progress", label: "Ukonczone", value: `${stats.progress}%`, tone: "success" },
   ];
+}
+
+function NotificationStrip({ notifications = [] }) {
+  if (!notifications.length) {
+    return null;
+  }
+
+  return (
+    <div className="todo-notification-strip">
+      {notifications.slice(0, 4).map(({ task, sla, dependencies }) => (
+        <article key={task.id} className={`todo-notification-card ${sla.tone}`}>
+          <strong>{task.title}</strong>
+          <span>{sla.label}</span>
+          {dependencies.blocking ? <small>Blokuje: {dependencies.unresolved[0]?.title}</small> : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function BulkToolbar({
+  selectedTaskIds,
+  clearTaskSelection,
+  handleBulkUpdate,
+  handleBulkDelete,
+  boardColumns,
+  peopleOptions,
+}) {
+  if (!selectedTaskIds.length) {
+    return null;
+  }
+
+  return (
+    <section className="todo-bulk-toolbar" aria-label="Akcje zbiorcze">
+      <div className="todo-bulk-summary">
+        <strong>{selectedTaskIds.length}</strong>
+        <span>zadan zaznaczonych</span>
+      </div>
+      <div className="todo-bulk-actions">
+        <button type="button" className="todo-command-button" onClick={() => handleBulkUpdate({ completed: true }, "Zakonczono zaznaczone zadania.")}>
+          Zakoncz
+        </button>
+        <button type="button" className="todo-command-button" onClick={() => handleBulkUpdate({ completed: false }, "Otwarto zaznaczone zadania ponownie.")}>
+          Otworz
+        </button>
+        <label className="todo-filter-item compact">
+          <span>Status</span>
+          <select onChange={(event) => event.target.value && handleBulkUpdate({ status: event.target.value }, "Zmieniono status zaznaczonych zadan.")} defaultValue="">
+            <option value="">Zmien status</option>
+            {boardColumns.map((column) => (
+              <option key={column.id} value={column.id}>
+                {column.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="todo-filter-item compact">
+          <span>Osoba</span>
+          <select onChange={(event) => handleBulkUpdate({ owner: event.target.value }, "Zmieniono osobe dla zaznaczonych zadan.")} defaultValue="">
+            <option value="">Nieprzypisane</option>
+            {peopleOptions.map((person) => (
+              <option key={person} value={person}>
+                {person}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="todo-filter-item compact">
+          <span>Priorytet</span>
+          <select
+            onChange={(event) => event.target.value && handleBulkUpdate({ priority: event.target.value }, "Zmieniono priorytet zaznaczonych zadan.")}
+            defaultValue=""
+          >
+            <option value="">Priorytet</option>
+            {TASK_PRIORITIES.map((priority) => (
+              <option key={priority.id} value={priority.id}>
+                {priority.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="todo-command-button danger" onClick={handleBulkDelete}>
+          Usun
+        </button>
+        <button type="button" className="todo-command-button" onClick={clearTaskSelection}>
+          Wyczysc
+        </button>
+      </div>
+    </section>
+  );
 }
 
 export default function TasksWorkspaceView({
@@ -38,8 +129,11 @@ export default function TasksWorkspaceView({
   tagFilter,
   setTagFilter,
   tagOptions,
+  quickAddInputRef,
+  searchInputRef,
   message,
   groupedTasks,
+  allVisibleTasks,
   selectedTask,
   setSelectedTaskId,
   onUpdateTask,
@@ -53,6 +147,12 @@ export default function TasksWorkspaceView({
   setDragTaskId,
   stats,
   visibleStats,
+  selectedTaskIds,
+  toggleTaskSelection,
+  clearTaskSelection,
+  handleBulkUpdate,
+  handleBulkDelete,
+  taskNotifications,
 }) {
   return (
     <section className="todo-main">
@@ -111,6 +211,8 @@ export default function TasksWorkspaceView({
           </div>
         </div>
 
+        <NotificationStrip notifications={taskNotifications} />
+
         <div className="todo-stats-strip">
           {statCards(stats, visibleStats).map((item) => (
             <article key={item.id} className={`todo-stat-card ${item.tone}`}>
@@ -120,6 +222,15 @@ export default function TasksWorkspaceView({
           ))}
         </div>
 
+        <BulkToolbar
+          selectedTaskIds={selectedTaskIds}
+          clearTaskSelection={clearTaskSelection}
+          handleBulkUpdate={handleBulkUpdate}
+          handleBulkDelete={handleBulkDelete}
+          boardColumns={boardColumns}
+          peopleOptions={peopleOptions}
+        />
+
         <form className="todo-add-row" onSubmit={submitQuickTask}>
           <button
             type="button"
@@ -128,6 +239,7 @@ export default function TasksWorkspaceView({
             onClick={submitQuickTask}
           />
           <input
+            ref={quickAddInputRef}
             value={quickDraft.title}
             onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
             placeholder="Dodaj zadanie"
@@ -236,7 +348,12 @@ export default function TasksWorkspaceView({
         <div className="todo-filter-row">
           <label className="todo-filter-search">
             <span>Szukaj</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj w zadaniach" />
+            <input
+              ref={searchInputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Szukaj w zadaniach"
+            />
           </label>
           <label className="todo-filter-item">
             <span>Osoba</span>
@@ -267,8 +384,11 @@ export default function TasksWorkspaceView({
         {viewMode === "list" ? (
           <TaskListView
             groupedTasks={groupedTasks}
+            allTasks={allVisibleTasks}
             groupBy={groupBy}
             selectedTask={selectedTask}
+            selectedTaskIds={selectedTaskIds}
+            toggleTaskSelection={toggleTaskSelection}
             setSelectedTaskId={setSelectedTaskId}
             onUpdateTask={onUpdateTask}
             onMoveTaskToColumn={onMoveTaskToColumn}
@@ -282,11 +402,14 @@ export default function TasksWorkspaceView({
         ) : (
           <TaskKanbanView
             kanbanColumns={kanbanColumns}
+            allTasks={allVisibleTasks}
             dropColumnId={dropColumnId}
             setDropColumnId={setDropColumnId}
             handleDrop={handleDrop}
             handleTaskDrop={handleTaskDrop}
             selectedTask={selectedTask}
+            selectedTaskIds={selectedTaskIds}
+            toggleTaskSelection={toggleTaskSelection}
             setSelectedTaskId={setSelectedTaskId}
             setDragTaskId={setDragTaskId}
             onUpdateTask={onUpdateTask}

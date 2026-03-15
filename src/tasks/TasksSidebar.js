@@ -32,6 +32,7 @@ export default function TasksSidebar({
   columnDraft,
   setColumnDraft,
   submitColumn,
+  taskNotifications = [],
 }) {
   return (
     <aside className="todo-sidebar">
@@ -111,6 +112,8 @@ export default function TasksSidebar({
           <StatMiniCard label="Otwarte" value={visibleStats.open} />
           <StatMiniCard label="Na dzisiaj" value={visibleStats.dueToday} tone="info" />
           <StatMiniCard label="Po terminie" value={visibleStats.overdue} tone="danger" />
+          <StatMiniCard label="SLA risk" value={visibleStats.slaAtRisk + visibleStats.slaCritical} tone="warning" />
+          <StatMiniCard label="SLA breach" value={visibleStats.slaBreached} tone="danger" />
           <StatMiniCard label="Bez ownera" value={visibleStats.unassigned} tone="warning" />
           <StatMiniCard label="W toku" value={visibleStats.inProgress} tone="info" />
           <StatMiniCard label="W grupach" value={visibleStats.grouped} tone="success" />
@@ -119,6 +122,16 @@ export default function TasksSidebar({
           <StatMiniCard label="Komentarze" value={visibleStats.commented} />
           <StatMiniCard label="Podzadania" value={visibleStats.subtasksOpen} tone="success" />
         </div>
+
+        {taskNotifications.length ? (
+          <div className="todo-notification-stack">
+            {taskNotifications.slice(0, 3).map(({ task, sla }) => (
+              <div key={task.id} className={`todo-helper tone-${sla.tone}`}>
+                {task.title}: {sla.label}
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <div className="todo-google-card">
           <div className="todo-google-head">
