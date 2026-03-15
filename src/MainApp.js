@@ -3,6 +3,7 @@ import "./App.css";
 import AuthScreen from "./AuthScreen";
 import CalendarTab from "./CalendarTab";
 import CommandPalette from "./CommandPalette";
+import NotesTab from "./NotesTab";
 import NotificationCenter from "./NotificationCenter";
 import PeopleTab from "./PeopleTab";
 import ProfileTab from "./ProfileTab";
@@ -408,6 +409,9 @@ export default function MainApp() {
             <button type="button" className={activeTab === "people" ? "tab-pill active" : "tab-pill"} onClick={() => setActiveTab("people")}>
               Osoby
             </button>
+            <button type="button" className={activeTab === "notes" ? "tab-pill active" : "tab-pill"} onClick={() => setActiveTab("notes")}>
+              Notatki
+            </button>
           </div>
         </div>
 
@@ -534,6 +538,11 @@ export default function MainApp() {
           currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
           taskNotifications={meetings.taskNotifications}
           workspaceActivity={meetings.workspaceActivity}
+        />
+      ) : activeTab === "notes" ? (
+        <NotesTab
+          userMeetings={meetings.userMeetings}
+          onOpenMeeting={openMeetingFromCalendar}
         />
       ) : activeTab === "people" ? (
         <PeopleTab
