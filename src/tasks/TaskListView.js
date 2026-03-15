@@ -58,7 +58,6 @@ export default function TaskListView({
         <button type="button" className={`todo-col-sort-btn${sortBy === "title" || sortBy === "owner" ? " active" : ""}`} onClick={() => setSortBy(sortBy === "title" ? "owner" : "title")}>
           Tytul i osoby {sortBy === "title" ? "↑" : sortBy === "owner" ? "↑" : ""}
         </button>
-        <span>Grupa</span>
         <button type="button" className={`todo-col-sort-btn${sortBy === "due" ? " active" : ""}`} onClick={() => setSortBy("due")}>
           Termin {sortBy === "due" ? "↑" : ""}
         </button>
@@ -161,26 +160,6 @@ export default function TaskListView({
                         )}
                       </span>
 
-                      <span className="todo-group-cell">
-                        {isActive ? (
-                          <>
-                            <input
-                              list="task-groups-inline"
-                              value={task.group || ""}
-                              onFocus={() => setSelectedTaskId(task.id)}
-                              onChange={(event) => onUpdateTask(task.id, { group: event.target.value })}
-                              placeholder="Bez grupy"
-                            />
-                            <datalist id="task-groups-inline">
-                              {taskGroups.map((groupItem) => (
-                                <option key={groupItem} value={groupItem} />
-                              ))}
-                            </datalist>
-                          </>
-                        ) : (
-                          <span className="todo-group-pill">{task.group || "Bez grupy"}</span>
-                        )}
-                      </span>
 
                       <span className={dueTone(task.dueDate) === "danger" ? "todo-date danger" : "todo-date"}>
                         {isActive ? (
