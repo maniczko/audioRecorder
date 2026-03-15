@@ -29,9 +29,6 @@ function recurrenceInterval(task) {
   return String(task?.recurrence?.interval || 1);
 }
 
-function resolveStatusLabel(task, boardColumns) {
-  return boardColumns.find((column) => column.id === task?.status)?.label || task?.status || "Brak";
-}
 
 function buildConflictDraft(conflict) {
   return {
