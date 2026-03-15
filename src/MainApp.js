@@ -415,6 +415,7 @@ export default function MainApp() {
           <div className="status-chip">
             {recorder.speechRecognitionSupported ? "Live transcript ready" : "Remote transcript required"}
           </div>
+          <div className="status-chip">Workspace role: {workspace.currentWorkspaceRole || "member"}</div>
           <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
           <NotificationCenter
             open={notificationCenterOpen}
@@ -491,6 +492,7 @@ export default function MainApp() {
           onRescheduleTask={meetings.rescheduleTask}
           calendarMeta={meetings.calendarMeta}
           onUpdateCalendarEntryMeta={meetings.updateCalendarEntryMeta}
+          onApplyCalendarSyncSnapshot={meetings.applyCalendarSyncSnapshot}
           workspaceMembers={workspace.currentWorkspaceMembers}
           peopleProfiles={meetings.peopleProfiles}
           currentUserTimezone={workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
@@ -516,12 +518,15 @@ export default function MainApp() {
           googleTasksEnabled={google.googleEnabled}
           googleTasksStatus={google.googleTasksStatus}
           googleTasksMessage={google.googleTasksMessage}
+          googleTasksLastSyncedAt={google.googleTasksLastSyncedAt}
           googleTaskLists={google.googleTaskLists}
           selectedGoogleTaskListId={google.selectedGoogleTaskListId}
           onSelectGoogleTaskList={google.setSelectedGoogleTaskListId}
           onConnectGoogleTasks={google.connectGoogleTasks}
           onImportGoogleTasks={google.importGoogleTasksFromList}
           onExportGoogleTasks={google.exportTasksToGoogle}
+          onRefreshGoogleTasks={google.refreshGoogleTasks}
+          onResolveGoogleTaskConflict={google.resolveGoogleTaskConflict}
           workspaceName={workspace.currentWorkspace?.name || ""}
           workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ""}
           externalSelectedTaskId={pendingTaskId}
@@ -548,8 +553,10 @@ export default function MainApp() {
           googleCalendarStatus={google.googleCalendarStatus}
           googleCalendarMessage={google.googleCalendarMessage}
           googleCalendarEventsCount={google.googleCalendarEvents.length}
+          googleCalendarLastSyncedAt={google.googleCalendarLastSyncedAt}
           connectGoogleCalendar={google.connectGoogleCalendar}
           disconnectGoogleCalendar={google.disconnectGoogleCalendar}
+          refreshGoogleCalendar={google.refreshGoogleCalendar}
           passwordDraft={auth.passwordDraft}
           setPasswordDraft={auth.setPasswordDraft}
           updatePassword={auth.updatePassword}
@@ -560,6 +567,9 @@ export default function MainApp() {
           currentUser={workspace.currentUser}
           currentWorkspace={workspace.currentWorkspace}
           currentWorkspaceMembers={workspace.currentWorkspaceMembers}
+          currentWorkspaceRole={workspace.currentWorkspaceRole}
+          currentWorkspacePermissions={workspace.currentWorkspacePermissions}
+          updateWorkspaceMemberRole={workspace.updateWorkspaceMemberRole}
           setActiveTab={setActiveTab}
           meetingDraft={meetings.meetingDraft}
           setMeetingDraft={meetings.setMeetingDraft}
@@ -577,10 +587,13 @@ export default function MainApp() {
           studioAnalysis={studioAnalysis}
           isRecording={recorder.isRecording}
           analysisStatus={recorder.analysisStatus}
+          activeQueueItem={recorder.activeQueueItem}
+          selectedMeetingQueue={recorder.selectedMeetingQueue}
           elapsed={recorder.elapsed}
           visualBars={recorder.visualBars}
           stopRecording={recorder.stopRecording}
           startRecording={recorder.startRecording}
+          retryRecordingQueueItem={recorder.retryRecordingQueueItem}
           recordPermission={recorder.recordPermission}
           speechRecognitionSupported={recorder.speechRecognitionSupported}
           liveText={recorder.liveText}
@@ -592,12 +605,18 @@ export default function MainApp() {
           assignSpeakerToTranscriptSegments={meetings.assignSpeakerToTranscriptSegments}
           mergeTranscriptSegments={meetings.mergeTranscriptSegments}
           splitTranscriptSegment={meetings.splitTranscriptSegment}
+          addRecordingMarker={meetings.addRecordingMarker}
+          updateRecordingMarker={meetings.updateRecordingMarker}
+          deleteRecordingMarker={meetings.deleteRecordingMarker}
           renameSpeaker={meetings.renameSpeaker}
           selectedRecordingId={meetings.selectedRecordingId}
           setSelectedRecordingId={meetings.setSelectedRecordingId}
           exportTranscript={exportTranscript}
           exportMeetingNotes={exportMeetingNotes}
           exportMeetingPdfFile={exportMeetingPdfFile}
+          meetingTasks={meetings.meetingTasks}
+          onCreateTask={meetings.createTaskFromComposer}
+          peopleProfiles={meetings.peopleProfiles}
           setSelectedMeetingId={meetings.setSelectedMeetingId}
         />
       )}

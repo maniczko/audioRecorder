@@ -1,5 +1,7 @@
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
+import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
+import KpiDashboard from "./KpiDashboard";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
 
@@ -9,10 +11,13 @@ export default function StudioMeetingView({
   studioAnalysis,
   isRecording,
   analysisStatus,
+  activeQueueItem,
+  selectedMeetingQueue,
   elapsed,
   visualBars,
   stopRecording,
   startRecording,
+  retryRecordingQueueItem,
   recordPermission,
   speechRecognitionSupported,
   liveText,
@@ -31,6 +36,15 @@ export default function StudioMeetingView({
   exportMeetingNotes,
   exportMeetingPdfFile,
   startNewMeetingDraft,
+  currentWorkspacePermissions,
+  currentWorkspaceRole,
+  currentWorkspace,
+  userMeetings,
+  meetingTasks,
+  addRecordingMarker,
+  deleteRecordingMarker,
+  onCreateTask,
+  peopleProfiles,
 }) {
   if (!selectedMeeting) {
     return (
@@ -42,13 +56,19 @@ export default function StudioMeetingView({
           termin w zakladce Kalendarz.
         </p>
         <div className="button-row">
-          <button type="button" className="primary-button" onClick={() => startRecording({ adHoc: true })}>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => startRecording({ adHoc: true })}
+            disabled={!currentWorkspacePermissions?.canRecordAudio}
+          >
             Zacznij nagranie ad hoc
           </button>
           <button
             type="button"
             className="ghost-button"
             onClick={startNewMeetingDraft}
+            disabled={!currentWorkspacePermissions?.canEditWorkspace}
           >
             Przygotuj brief
           </button>
@@ -78,6 +98,13 @@ export default function StudioMeetingView({
             <span>Diarization</span>
             <strong>{selectedMeeting.speakerCount || 0} speakerow</strong>
           </div>
+          <div className="metric-card">
+            <span>Rola</span>
+            <strong>{currentWorkspaceRole || "member"}</strong>
+          </div>
+        </div>
+        <div className="inline-alert info">
+          Edycja: owner, admin, member. Usuwanie: owner, admin. Eksport: owner, admin, member.
         </div>
         <div className="button-row">
           <button
@@ -90,30 +117,55 @@ export default function StudioMeetingView({
           <button type="button" className="secondary-button" onClick={() => downloadMeetingIcs(selectedMeeting)}>
             ICS
           </button>
-          <button type="button" className="secondary-button" onClick={exportTranscript} disabled={!displayRecording}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={exportTranscript}
+            disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}
+          >
             Transkrypt TXT
           </button>
-          <button type="button" className="secondary-button" onClick={exportMeetingNotes}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={exportMeetingNotes}
+            disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
+          >
             Notatki TXT
           </button>
-          <button type="button" className="secondary-button" onClick={exportMeetingPdfFile}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={exportMeetingPdfFile}
+            disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
+          >
             PDF
           </button>
         </div>
       </section>
 
+      <KpiDashboard
+        workspaceName={currentWorkspace?.name || ""}
+        meetings={userMeetings}
+        tasks={meetingTasks}
+      />
+
       <div className="main-grid">
         <RecorderPanel
           isRecording={isRecording}
           analysisStatus={analysisStatus}
+          activeQueueItem={activeQueueItem}
+          selectedMeetingQueue={selectedMeetingQueue}
           elapsed={elapsed}
           visualBars={visualBars}
           stopRecording={stopRecording}
           startRecording={startRecording}
+          retryRecordingQueueItem={retryRecordingQueueItem}
           recordPermission={recordPermission}
           speechRecognitionSupported={speechRecognitionSupported}
           liveText={liveText}
           recordingMessage={recordingMessage}
+          canRecord={currentWorkspacePermissions?.canRecordAudio}
         />
 
         <section className="panel">
@@ -174,6 +226,17 @@ export default function StudioMeetingView({
           assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
           mergeTranscriptSegments={mergeTranscriptSegments}
           splitTranscriptSegment={splitTranscriptSegment}
+          addRecordingMarker={addRecordingMarker}
+          deleteRecordingMarker={deleteRecordingMarker}
+          canEditTranscript={currentWorkspacePermissions?.canEditWorkspace}
+        />
+
+        <AiTaskSuggestionsPanel
+          selectedRecording={selectedRecording}
+          displaySpeakerNames={displaySpeakerNames}
+          peopleProfiles={peopleProfiles}
+          onCreateTask={onCreateTask}
+          canEdit={currentWorkspacePermissions?.canEditWorkspace}
         />
 
         <section className="panel">
@@ -264,6 +327,35 @@ export default function StudioMeetingView({
             <div className="status-chip">{selectedMeeting.recordings.length} zapisow</div>
           </div>
           <div className="recordings-list">
+            {selectedMeetingQueue.length ? (
+              selectedMeetingQueue.map((item) => (
+                <article key={item.recordingId} className={`recording-card pending ${item.status}`}>
+                  <div className="recording-card-top">
+                    <strong>{item.meetingTitle}</strong>
+                    <span>{item.status}</span>
+                  </div>
+                  <p>
+                    Status kolejki: {item.status}
+                    {item.errorMessage ? ` | ${item.errorMessage}` : ""}
+                  </p>
+                  <div className="meeting-card-meta">
+                    <span>Proba {Math.max(1, item.attempts || 0)}</span>
+                    <span>{formatDuration(item.duration || 0)}</span>
+                  </div>
+                  {item.status === "failed" ? (
+                    <div className="button-row">
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => retryRecordingQueueItem(item.recordingId)}
+                      >
+                        Ponow upload
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
+              ))
+            ) : null}
             {selectedMeeting.recordings.length ? (
               selectedMeeting.recordings.map((recording) => (
                 <button
@@ -280,15 +372,16 @@ export default function StudioMeetingView({
                   <div className="meeting-card-meta">
                     <span>{recording.speakerCount || 0} speakerow</span>
                     <span>{recording.transcript.length} segmentow</span>
+                    <span>{recording.pipelineStatus || "done"}</span>
                   </div>
                 </button>
               ))
-            ) : (
+            ) : !selectedMeetingQueue.length ? (
               <div className="empty-panel">
                 <strong>Brak nagran</strong>
                 <span>Pierwsze nagranie pojawi sie tutaj.</span>
               </div>
-            )}
+            ) : null}
           </div>
         </section>
       </div>

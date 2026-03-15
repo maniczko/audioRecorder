@@ -33,16 +33,6 @@ Postep:
 
 ---
 
-## 013. Prawdziwy waveform audio i markery na nagraniu
-Status: `todo`
-Priorytet: `P2`
-Cel: poprawic review nagran i uczynic prace na audio bardziej precyzyjna.
-Akceptacja:
-- waveform bazuje na realnym audio, a nie tylko uproszczonej osi czasu.
-- mozna dodawac markery / bookmarki do kluczowych momentow spotkania.
-- klik w marker przewija audio i ustawia odpowiedni segment transkrypcji.
-- markery sa zapisywane do nagrania i wracaja po odswiezeniu.
-
 ## 014. Tryb review transkrypcji ze skrotami klawiaturowymi
 Status: `todo`
 Priorytet: `P2`
@@ -112,30 +102,6 @@ Akceptacja:
 - da sie obsluzyc kluczowe flow klawiatura: nagranie, review, taski, command palette.
 - formularze i panele nie maja krytycznych problemow z czytnikami ekranu.
 - istnieje przynajmniej podstawowy zestaw testow pod accessibility smoke check.
-
----
-
-## 022. AI — inteligentne sugerowanie i kategoryzacja zadan po spotkaniu
-Status: `todo`
-Priorytet: `P1`
-Cel: zautomatyzowac i ulepszyc proces zamieniania ustalen ze spotkan na dobrze opisane, przypisane i skategoryzowane zadania.
-Zakres:
-- po zakonczeniu transkrypcji LLM (Claude) analizuje pelny tekst spotkania i proponuje liste zadan z polami: `tytul`, `opis`, `owner (osoba z transkryptu)`, `termin (jezeli wymieniony)`, `priorytet (na podstawie jezykowych sygnałow: pilne / wazne)`, `sugerowane tagi`.
-- interfejs pokazuje proponowane zadania w panelu `Sugestie AI` zanim uzytkownik je zatwierdzi — mozna edytowac kazde pole, odrzucic lub zatwierdzic jednym klikaniem.
-- po zatwierdzeniu zadania trafiaja do tablicy Kanban z oznaczeniem `sourceType: ai-suggestion`.
-- jezeli zadanie dotyczy osoby wymienionej w People, automatycznie prefiluje pole `assignedTo`.
-Akceptacja:
-- po analizie spotkania widac panel z N sugerowanymi zadaniami do zatwierdzenia.
-- kazde sugerowane zadanie ma tytul, opis, ewentualnego ownera i priorytet.
-- zatwierdzenie jednym kliknieciem lub edycja przed zatwierdzeniem.
-- odrzucone sugestie nie trafiaja do tablicy.
-- zadania AI maja widoczne oznaczenie zrodla w panelu detalu.
-Techniczne wskazowki:
-- wywolanie Claude API z promptem: "Na podstawie ponizszej transkrypcji wygeneruj JSON z lista zadan..."
-- schemat odpowiedzi: `{ tasks: [{ title, description, owner, dueDate, priority, tags }] }`.
-- uzyc `response_format` lub structured output jezeli dostepne w SDK.
-- nowy plik `src/lib/aiTaskSuggestions.js` z funkcja `suggestTasksFromTranscript(transcript, people)`.
-- wywolywa istniejacy `REACT_APP_ANTHROPIC_API_KEY`.
 
 ## 023. AI — inteligentny asystent priorytetu i terminu
 Status: `todo`

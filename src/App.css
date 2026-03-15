@@ -5196,3 +5196,171 @@ select:focus {
     min-width: max-content;
   }
 }
+
+/* ==========================================
+   013 — Waveform + Markers
+   ========================================== */
+
+.waveform-panel {
+  border: 1px solid var(--border, #2a2a45);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: var(--surface-1, #0e0e1a);
+}
+
+.waveform-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #2a2a45);
+  background: var(--surface-2, #12121f);
+}
+
+.waveform-toolbar .status-cluster {
+  margin-left: auto;
+}
+
+.waveform-svg-container {
+  cursor: crosshair;
+  display: block;
+  user-select: none;
+  line-height: 0;
+}
+
+.waveform-svg-container svg {
+  display: block;
+  width: 100%;
+}
+
+.waveform-add-marker-mode {
+  cursor: cell;
+  outline: 2px dashed #f59e0b;
+  outline-offset: -2px;
+}
+
+.waveform-markers-list {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--border, #2a2a45);
+}
+
+.waveform-marker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.marker-label {
+  font-size: 0.8rem;
+  color: var(--text-1, #e0e0f0);
+  flex: 1;
+}
+
+.marker-note {
+  font-size: 0.75rem;
+}
+
+/* ==========================================
+   022 — AI Task Suggestions Panel
+   ========================================== */
+
+.ai-suggestions-panel {
+  grid-column: span 2;
+}
+
+.ai-suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 12px;
+}
+
+.ai-suggestions-count {
+  font-size: 0.75rem;
+  color: var(--text-2, #a0a0b8);
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--border, #2a2a45);
+  margin-bottom: 4px;
+}
+
+.ai-suggestion-card {
+  border: 1px solid var(--border, #2a2a45);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--surface-2, #12121f);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-suggestion-card.editing {
+  border-color: var(--accent, #6366f1);
+}
+
+.ai-suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-suggestion-title {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text-1, #e0e0f0);
+}
+
+.ai-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff !important;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.ai-suggestion-desc {
+  font-size: 0.82rem;
+  color: var(--text-2, #a0a0b8);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ai-suggestion-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-suggestion-meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-suggestion-input {
+  background: var(--surface-1, #0e0e1a);
+  border: 1px solid var(--border, #2a2a45);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-1, #e0e0f0);
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.ai-suggestion-textarea {
+  background: var(--surface-1, #0e0e1a);
+  border: 1px solid var(--border, #2a2a45);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-1, #e0e0f0);
+  font-size: 0.85rem;
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}

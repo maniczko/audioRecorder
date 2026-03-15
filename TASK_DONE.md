@@ -161,3 +161,30 @@ Wynik:
 - TasksSidebar: pole WIP limit per kolumna w ColumnManager.
 - lib/tasks.js: normalizeColumns zachowuje wipLimit.
 - App.css: ~450 nowych linii CSS dla wszystkich powyzszych komponentow.
+
+---
+
+## 013. Prawdziwy waveform audio i markery na nagraniu
+Status: `done`
+Priorytet: `P2`
+Cel: poprawic review nagran i uczynic prace na audio bardziej precyzyjna.
+Wynik:
+- WaveformPanel w TranscriptPanel: Web Audio API dekoduje audio URL i renderuje 200 SVG bars z realnych danych kanalowych.
+- Klik na waveformie przewija audio do kliknieto pozycji.
+- Tryb "+ Dodaj marker": klik na waveformie dodaje marker z timestampem, marker persystuje przez addRecordingMarker (useMeetings).
+- Markery renderowane jako zlote piny (SVG line + circle) na waveformie.
+- Lista markerow pod waveformem z przyciskami seek i usun.
+- Playhead renderowany jako linia na waveformie, odswieza sie przez timeupdate event.
+
+---
+
+## 022. AI — inteligentne sugerowanie i kategoryzacja zadan po spotkaniu
+Status: `done`
+Priorytet: `P1`
+Cel: zautomatyzowac zamiane ustalen ze spotkan na dobrze opisane, przypisane i skategoryzowane zadania.
+Wynik:
+- src/lib/aiTaskSuggestions.js: funkcja suggestTasksFromTranscript(transcript, people) wywoluje Claude API (claude-sonnet-4-6), zwraca max 10 zadan z polami title/description/owner/dueDate/priority/tags.
+- src/studio/AiTaskSuggestionsPanel.js: panel w StudioMeetingView z przyciskiem "Generuj sugestie AI".
+- Kazda sugestia ma przyciski: Zatwierdz (tworzy task z sourceType: "ai-suggestion"), Edytuj (inline form), Odrzuc.
+- Panel jest ukryty jezeli REACT_APP_ANTHROPIC_API_KEY nie jest ustawiony.
+- Sugestie oznaczone wizualnie badgem "AI" i kolorem priorytetu.
