@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, externalSelectedPersonId, onPersonSelectionHandled }) {
+export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
 
@@ -227,6 +227,16 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, externa
                     <div className="eyebrow">Tasks</div>
                     <h2>Zadania tej osoby</h2>
                   </div>
+                  {typeof onCreateTask === "function" && (
+                    <button
+                      type="button"
+                      className="todo-command-button primary"
+                      onClick={() => onCreateTask({ owner: selectedPerson.name, title: "" })}
+                      title="Dodaj zadanie dla tej osoby"
+                    >
+                      + Nowe zadanie
+                    </button>
+                  )}
                 </div>
 
                 <div className="people-task-list">

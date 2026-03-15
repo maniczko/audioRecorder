@@ -693,6 +693,8 @@ export default function TasksTab({
         taskNotifications={taskNotifications}
         workspaceActivity={workspaceActivity}
         visibleTaskCount={visibleTasks.length}
+        showColumnManager={showColumnManager}
+        setShowColumnManager={setShowColumnManager}
       />
 
       <TaskDetailsPanel

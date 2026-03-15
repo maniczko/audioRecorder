@@ -195,6 +195,12 @@ function KanbanCard({
           </button>
         </div>
 
+        {task.description ? (
+          <p className="kanban-card-description">
+            {task.description.length > 80 ? task.description.slice(0, 80) + "…" : task.description}
+          </p>
+        ) : null}
+
         {tags.length > 0 ? (
           <div className="kanban-label-chips">
             {tags.slice(0, 4).map((tag) => (

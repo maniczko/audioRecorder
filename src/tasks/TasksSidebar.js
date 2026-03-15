@@ -32,27 +32,8 @@ export default function TasksSidebar({
   conflictTasks = [],
   onFocusConflictTask,
 }) {
-  const primarySelectedTask = selectedTasks[0];
-
   return (
     <aside className="todo-sidebar">
-      <div className="todo-sidebar-actions-bar">
-        <button
-          type="button"
-          className="todo-command-button primary"
-          onClick={() => quickAddInputRef?.current?.focus()}
-        >
-          + Nowe zadanie
-        </button>
-        <button
-          type="button"
-          className="todo-command-button"
-          onClick={() => searchInputRef?.current?.focus()}
-        >
-          Szukaj
-        </button>
-      </div>
-
       <div className="todo-sidebar-top">
         <div className="todo-sidebar-scroll">
           <div className="todo-nav-panel">
@@ -116,30 +97,6 @@ export default function TasksSidebar({
       </div>
 
       <div className="todo-sidebar-footer">
-        {selectedTaskCount ? (
-          <div className="todo-focus-card">
-            <div className="todo-card-head">
-              <div>
-                <span className="todo-card-eyebrow">Aktywna selekcja</span>
-                <strong>{selectedTaskCount > 1 ? `${selectedTaskCount} zadan zaznaczonych` : primarySelectedTask?.title}</strong>
-              </div>
-              <button type="button" className="todo-inline-link" onClick={clearTaskSelection}>
-                Wyczysc
-              </button>
-            </div>
-            <div className="todo-sync-grid">
-              <div className="todo-sync-stat">
-                <span>Owner</span>
-                <strong>{primarySelectedTask?.owner || "Nieprzypisane"}</strong>
-              </div>
-              <div className="todo-sync-stat">
-                <span>SLA</span>
-                <strong>{selectedTaskSla?.label || "Bez terminu"}</strong>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         <div className="todo-stats-mini-grid">
           <StatMiniCard label="Otwarte" value={visibleStats.open} />
           <StatMiniCard label="Na dzisiaj" value={visibleStats.dueToday} tone="info" />

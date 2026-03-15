@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
@@ -57,6 +57,9 @@ export default function TaskDetailsPanel({
   onResolveGoogleTaskConflict,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [showMentions, setShowMentions] = useState(false);
+  const commentTextareaRef = useRef(null);
   const [subtaskDraft, setSubtaskDraft] = useState("");
   const [subtaskAssignee, setSubtaskAssignee] = useState("");
   const [linkDraft, setLinkDraft] = useState("");
@@ -104,6 +107,41 @@ export default function TaskDetailsPanel({
     });
   }
 
+  function handleCommentChange(event) {
+    const val = event.target.value;
+    setCommentDraft(val);
+    const cursorPos = event.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (atMatch) {
+      setMentionQuery(atMatch[1]);
+      setShowMentions(true);
+    } else {
+      setShowMentions(false);
+      setMentionQuery("");
+    }
+  }
+
+  function insertMention(person) {
+    const textarea = commentTextareaRef.current;
+    if (!textarea) return;
+    const val = commentDraft;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (!atMatch) return;
+    const atStart = cursorPos - atMatch[0].length;
+    const newVal = val.slice(0, atStart) + `@${person} ` + val.slice(cursorPos);
+    setCommentDraft(newVal);
+    setShowMentions(false);
+    setMentionQuery("");
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = atStart + person.length + 2;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
+
   function addComment() {
     if (!commentDraft.trim()) {
       return;
@@ -113,6 +151,7 @@ export default function TaskDetailsPanel({
       comments: [...(selectedTask.comments || []), createTaskComment(commentDraft, currentUserName || "Ty")],
     });
     setCommentDraft("");
+    setShowMentions(false);
   }
 
   function addSubtask() {
@@ -640,8 +679,25 @@ export default function TaskDetailsPanel({
             <strong>Komentarze</strong>
             <span>{(selectedTask.comments || []).length}</span>
           </div>
-          <div className="todo-comment-create">
-            <textarea rows="3" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Dodaj komentarz lub ustalenie" />
+          <div className="todo-comment-create" style={{ position: "relative" }}>
+            <textarea
+              ref={commentTextareaRef}
+              rows="3"
+              value={commentDraft}
+              onChange={handleCommentChange}
+              placeholder="Dodaj komentarz... wpisz @ aby wspomnieć osobę"
+            />
+            {showMentions && (
+              <div className="todo-mention-dropdown">
+                {peopleOptions
+                  .filter((p) => p.toLowerCase().startsWith(mentionQuery.toLowerCase()))
+                  .map((person) => (
+                    <button key={person} type="button" className="todo-mention-option" onMouseDown={() => insertMention(person)}>
+                      @{person}
+                    </button>
+                  ))}
+              </div>
+            )}
             <button type="button" className="todo-command-button primary" onClick={addComment}>
               Dodaj komentarz
             </button>
@@ -696,11 +752,6 @@ export default function TaskDetailsPanel({
           )}
         </section>
 
-        <div className="todo-detail-meta-card">
-          <strong>Zrodlo</strong>
-          <p>{selectedTask.sourceQuote || selectedTask.sourceMeetingTitle || "Brak cytatu zrodlowego."}</p>
-          <small>{formatDateTime(selectedTask.updatedAt || selectedTask.createdAt)}</small>
-        </div>
       </div>
     </aside>
   );

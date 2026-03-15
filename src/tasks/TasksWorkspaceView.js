@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TASK_PRIORITIES } from "../lib/tasks";
 import TaskKanbanView from "./TaskKanbanView";
 import TaskListView from "./TaskListView";
@@ -167,6 +168,43 @@ function BulkToolbar({
   );
 }
 
+function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setShowColumnManager, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="todo-settings-dropdown-wrap" style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="todo-command-button todo-settings-btn"
+        onClick={() => setOpen((v) => !v)}
+        title="Ustawienia"
+        aria-label="Ustawienia widoku"
+      >
+        ⚙
+      </button>
+      {open && (
+        <div className="todo-settings-dropdown" onBlur={() => setOpen(false)}>
+          {typeof onExportCsv === "function" && (
+            <button type="button" className="todo-settings-item" onClick={() => { onExportCsv(); setOpen(false); }}>
+              Eksport CSV
+            </button>
+          )}
+          <button type="button" className="todo-settings-item" onClick={() => { shareWorkspace(); setOpen(false); }}>
+            Udostepnij workspace
+          </button>
+          <button
+            type="button"
+            className="todo-settings-item"
+            onClick={() => { setShowColumnManager((p) => !p); setOpen(false); }}
+          >
+            {showColumnManager ? "Ukryj konfigurację kolumn" : "Konfiguracja kolumn"}
+          </button>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TasksWorkspaceView({
   selectedListLabel,
   viewMode,
@@ -222,10 +260,13 @@ export default function TasksWorkspaceView({
   taskNotifications,
   workspaceActivity,
   visibleTaskCount,
+  showColumnManager,
+  setShowColumnManager,
 }) {
   const isCharts = viewMode === "charts";
   const isSchedule = viewMode === "schedule";
   const isKanban = viewMode === "kanban";
+  const isSummary = viewMode === "summary";
 
   return (
     <section className="todo-main">
@@ -294,6 +335,13 @@ export default function TasksWorkspaceView({
                 >
                   Harmonogram
                 </button>
+                <button
+                  type="button"
+                  className={isSummary ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("summary")}
+                >
+                  Podsumowanie
+                </button>
               </div>
 
               {isKanban ? (
@@ -314,18 +362,16 @@ export default function TasksWorkspaceView({
             </div>
 
             <div className="todo-commandbar-right">
-              {typeof onExportCsv === "function" ? (
-                <button type="button" className="todo-command-button" onClick={onExportCsv}>
-                  Eksport CSV
-                </button>
-              ) : null}
-              <button type="button" className="todo-command-button" onClick={shareWorkspace}>
-                Udostepnij
-              </button>
+              <SettingsDropdown
+                onExportCsv={onExportCsv}
+                shareWorkspace={shareWorkspace}
+                showColumnManager={showColumnManager}
+                setShowColumnManager={setShowColumnManager}
+              />
             </div>
           </div>
 
-          {!isCharts && !isSchedule ? (
+          {!isCharts && !isSchedule && !isSummary ? (
             <div className="todo-filter-row">
               <label className="todo-filter-search">
                 <span>Szukaj</span>
@@ -387,18 +433,6 @@ export default function TasksWorkspaceView({
         </section>
 
         <NotificationStrip notifications={taskNotifications} />
-        <ActivityStrip activity={workspaceActivity} />
-
-        {!isCharts && !isSchedule ? (
-          <div className="todo-stats-strip">
-            {statCards(stats, visibleStats).map((item) => (
-              <article key={item.id} className={`todo-stat-card ${item.tone}`}>
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </article>
-            ))}
-          </div>
-        ) : null}
 
         <BulkToolbar
           selectedTaskIds={selectedTaskIds}
@@ -409,7 +443,7 @@ export default function TasksWorkspaceView({
           peopleOptions={peopleOptions}
         />
 
-        {!isCharts && !isSchedule ? (
+        {!isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card">
             <div className="todo-create-head">
               <div>
@@ -559,7 +593,19 @@ export default function TasksWorkspaceView({
         {message ? <div className="todo-helper banner">{message}</div> : null}
 
         <section className="todo-view-panel">
-          {isCharts ? (
+          {isSummary ? (
+            <div className="todo-summary-view">
+              <div className="todo-stats-strip">
+                {statCards(stats, visibleStats).map((item) => (
+                  <article key={item.id} className={`todo-stat-card ${item.tone}`}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
+              </div>
+              <ActivityStrip activity={workspaceActivity} />
+            </div>
+          ) : isCharts ? (
             <TaskChartsView tasks={allVisibleTasks} boardColumns={boardColumns} />
           ) : isSchedule ? (
             <TaskScheduleView

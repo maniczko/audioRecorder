@@ -286,6 +286,15 @@ export default function MainApp() {
     setActiveTab("tasks");
   }
 
+  function createTaskForPerson(prefill = {}) {
+    const created = meetings.createTaskFromComposer({ title: "", ...prefill });
+    const createdId = created?.id || created;
+    if (createdId) {
+      setPendingTaskId(createdId);
+    }
+    setActiveTab("tasks");
+  }
+
   function openPersonFromPalette(personId) {
     setPendingPersonId(personId);
     setActiveTab("people");
@@ -593,6 +602,7 @@ export default function MainApp() {
           profiles={meetings.peopleProfiles}
           onOpenMeeting={openMeetingFromCalendar}
           onOpenTask={openTaskFromCalendar}
+          onCreateTask={createTaskForPerson}
           externalSelectedPersonId={pendingPersonId}
           onPersonSelectionHandled={() => setPendingPersonId("")}
         />
