@@ -37,12 +37,15 @@ export default function TasksTab({
   googleTasksEnabled,
   googleTasksStatus,
   googleTasksMessage,
+  googleTasksLastSyncedAt,
   googleTaskLists,
   selectedGoogleTaskListId,
   onSelectGoogleTaskList,
   onConnectGoogleTasks,
   onImportGoogleTasks,
   onExportGoogleTasks,
+  onRefreshGoogleTasks,
+  onResolveGoogleTaskConflict,
   workspaceName,
   workspaceInviteCode,
   externalSelectedTaskId,
@@ -57,6 +60,7 @@ export default function TasksTab({
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [sortBy, setSortBy] = useState("manual");
   const [groupBy, setGroupBy] = useState("none");
+  const [swimlaneGroupBy, setSwimlaneGroupBy] = useState("none");
   const [query, setQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("all");
@@ -65,6 +69,14 @@ export default function TasksTab({
   const [dragTaskId, setDragTaskId] = useState("");
   const [dropColumnId, setDropColumnId] = useState("");
   const [message, setMessage] = useState("");
+  const [shellStatus, setShellStatus] = useState(() => ({
+    isOnline: typeof navigator === "undefined" ? true : navigator.onLine,
+    isStandalone:
+      typeof window !== "undefined" &&
+      Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone),
+    serviceWorkerSupported: typeof navigator !== "undefined" && "serviceWorker" in navigator,
+    serviceWorkerReady: typeof navigator !== "undefined" && Boolean(navigator.serviceWorker?.controller),
+  }));
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
   const dragTaskIdRef = useRef("");
@@ -83,6 +95,79 @@ export default function TasksTab({
       }));
     }
   }, [boardColumns, quickDraft.status]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    function updateConnectionStatus() {
+      setShellStatus((previous) => ({
+        ...previous,
+        isOnline: navigator.onLine,
+      }));
+    }
+
+    function updateDisplayMode() {
+      setShellStatus((previous) => ({
+        ...previous,
+        isStandalone: Boolean(
+          window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone
+        ),
+      }));
+    }
+
+    updateConnectionStatus();
+    updateDisplayMode();
+
+    const mediaQuery = window.matchMedia ? window.matchMedia("(display-mode: standalone)") : null;
+    const handleDisplayModeChange = () => updateDisplayMode();
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+
+    if (mediaQuery?.addEventListener) {
+      mediaQuery.addEventListener("change", handleDisplayModeChange);
+    } else if (mediaQuery?.addListener) {
+      mediaQuery.addListener(handleDisplayModeChange);
+    }
+
+    let active = true;
+    if ("serviceWorker" in navigator) {
+      setShellStatus((previous) => ({
+        ...previous,
+        serviceWorkerSupported: true,
+        serviceWorkerReady: previous.serviceWorkerReady || Boolean(navigator.serviceWorker.controller),
+      }));
+
+      navigator.serviceWorker.ready
+        .then(() => {
+          if (active) {
+            setShellStatus((previous) => ({
+              ...previous,
+              serviceWorkerReady: true,
+            }));
+          }
+        })
+        .catch(() => {});
+    } else {
+      setShellStatus((previous) => ({
+        ...previous,
+        serviceWorkerSupported: false,
+        serviceWorkerReady: false,
+      }));
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener("online", updateConnectionStatus);
+      window.removeEventListener("offline", updateConnectionStatus);
+      if (mediaQuery?.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleDisplayModeChange);
+      } else if (mediaQuery?.removeListener) {
+        mediaQuery.removeListener(handleDisplayModeChange);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedListId.startsWith("column:")) {
@@ -181,6 +266,10 @@ export default function TasksTab({
     [selectedTaskIds, tasks]
   );
   const selectedTaskSla = selectedTask ? getTaskSlaState(selectedTask) : null;
+  const conflictTasks = useMemo(
+    () => tasks.filter((task) => task.googleSyncStatus === "conflict" && task.googleSyncConflict),
+    [tasks]
+  );
 
   const runSafely = useCallback((action, successMessage = "") => {
     try {
@@ -411,6 +500,80 @@ export default function TasksTab({
     );
   }
 
+  function handleQuickAddToColumn(columnId, title) {
+    try {
+      const draft = {
+        title: title.trim(),
+        status: columnId,
+        owner: "",
+        group: "",
+        dueDate: "",
+        reminderAt: "",
+        priority: "medium",
+        tags: "",
+        important: false,
+        myDay: false,
+      };
+      const created = onCreateTask(draft);
+      const createdId = created?.id || created;
+      if (createdId) {
+        setSelectedTaskId(createdId);
+        setSelectedTaskIds([createdId]);
+      }
+      setMessage("Dodano zadanie do kolumny.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  function handleColumnReorder(fromId, toId) {
+    if (typeof onUpdateColumn !== "function") {
+      return;
+    }
+    const fromIndex = boardColumns.findIndex((c) => c.id === fromId);
+    const toIndex = boardColumns.findIndex((c) => c.id === toId);
+    if (fromIndex === -1 || toIndex === -1) {
+      return;
+    }
+    const reordered = [...boardColumns];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    reordered.forEach((col, index) => {
+      if (boardColumns[index]?.id !== col.id) {
+        onUpdateColumn(col.id, { order: index });
+      }
+    });
+  }
+
+  function handleExportCsv() {
+    const header = ["id", "title", "status", "priority", "owner", "assignedTo", "dueDate", "group", "tags", "completed", "createdAt"].join(",");
+    const rows = visibleTasks.map((task) => {
+      const escape = (v) => `"${String(v || "").replace(/"/g, '""')}"`;
+      return [
+        escape(task.id),
+        escape(task.title),
+        escape(task.status),
+        escape(task.priority),
+        escape(task.owner),
+        escape((task.assignedTo || []).join(";")),
+        escape(task.dueDate || ""),
+        escape(task.group || ""),
+        escape((task.tags || []).join(";")),
+        task.completed ? "true" : "false",
+        escape(task.createdAt || ""),
+      ].join(",");
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `tasks-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage("Wyeksportowano zadania do CSV.");
+  }
+
   async function shareWorkspace() {
     if (!workspaceInviteCode) {
       setMessage("Brak kodu workspace.");
@@ -535,12 +698,14 @@ export default function TasksTab({
         googleTasksEnabled={googleTasksEnabled}
         googleTasksStatus={googleTasksStatus}
         googleTasksMessage={googleTasksMessage}
+        googleTasksLastSyncedAt={googleTasksLastSyncedAt}
         selectedGoogleTaskListId={selectedGoogleTaskListId}
         onSelectGoogleTaskList={onSelectGoogleTaskList}
         googleTaskLists={googleTaskLists}
         onConnectGoogleTasks={onConnectGoogleTasks}
         onImportGoogleTasks={onImportGoogleTasks}
         onExportGoogleTasks={onExportGoogleTasks}
+        onRefreshGoogleTasks={onRefreshGoogleTasks}
         showColumnManager={showColumnManager}
         setShowColumnManager={setShowColumnManager}
         boardColumns={boardColumns}
@@ -560,6 +725,13 @@ export default function TasksTab({
         taskNotifications={taskNotifications}
         selectedTasks={selectedTasks}
         selectedTaskSla={selectedTaskSla}
+        shellStatus={shellStatus}
+        conflictTasks={conflictTasks}
+        onFocusConflictTask={(taskId) => {
+          setSelectedTaskId(taskId);
+          setSelectedTaskIds([taskId]);
+          setViewMode("list");
+        }}
       />
 
       <TasksWorkspaceView
@@ -570,7 +742,10 @@ export default function TasksTab({
         setSortBy={setSortBy}
         groupBy={groupBy}
         setGroupBy={setGroupBy}
+        swimlaneGroupBy={swimlaneGroupBy}
+        setSwimlaneGroupBy={setSwimlaneGroupBy}
         shareWorkspace={shareWorkspace}
+        onExportCsv={handleExportCsv}
         submitQuickTask={submitQuickTask}
         quickDraft={quickDraft}
         setQuickDraft={setQuickDraft}
@@ -602,6 +777,8 @@ export default function TasksTab({
         handleGroupDrop={handleGroupDrop}
         handleTaskDrop={handleTaskDrop}
         setDragTaskId={rememberDraggedTask}
+        onQuickAddToColumn={handleQuickAddToColumn}
+        onReorderColumns={handleColumnReorder}
         stats={stats}
         visibleStats={visibleStats}
         selectedTaskIds={selectedTaskIds}
@@ -611,6 +788,7 @@ export default function TasksTab({
         handleBulkDelete={handleBulkDelete}
         taskNotifications={taskNotifications}
         workspaceActivity={workspaceActivity}
+        visibleTaskCount={visibleTasks.length}
       />
 
       <TaskDetailsPanel
@@ -624,6 +802,7 @@ export default function TasksTab({
         onDeleteTask={safeDeleteTask}
         onOpenMeeting={onOpenMeeting}
         currentUserName={currentUserName}
+        onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
       />
     </div>
   );

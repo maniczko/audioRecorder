@@ -1,4 +1,5 @@
 import { createId } from "./storage";
+import { createGoogleTaskConflictState } from "./googleSync";
 
 const ORDER_GAP = 1024;
 
@@ -71,6 +72,7 @@ function normalizeColumns(columns) {
         color: normalizeWhitespace(column.color) || DEFAULT_TASK_COLUMNS[index % DEFAULT_TASK_COLUMNS.length].color,
         isDone: Boolean(column.isDone),
         system: Boolean(column.system),
+        wipLimit: Number.isFinite(column.wipLimit) && column.wipLimit > 0 ? column.wipLimit : null,
       };
     })
     .filter(Boolean);
@@ -230,6 +232,20 @@ function normalizeTaskSubtask(item, index = 0) {
   };
 }
 
+function normalizeTaskLink(item, index = 0) {
+  const rawValue = typeof item === "string" ? item : item?.url || item?.href || "";
+  const url = normalizeWhitespace(rawValue);
+  if (!url) {
+    return null;
+  }
+
+  return {
+    id: normalizeWhitespace(item?.id) || createId(`link_${index}`),
+    label: normalizeWhitespace(item?.label) || url,
+    url,
+  };
+}
+
 function recurrenceLabel(recurrence) {
   if (!recurrence) {
     return "";
@@ -320,6 +336,13 @@ export function normalizeTaskHistory(value) {
 
 export function normalizeTaskSubtasks(value) {
   return normalizeTaskArray(value, normalizeTaskSubtask);
+}
+
+export function normalizeTaskLinks(value) {
+  if (typeof value === "string") {
+    return normalizeTaskArray(value.split(/\r?\n|,/), normalizeTaskLink);
+  }
+  return normalizeTaskArray(value, normalizeTaskLink);
 }
 
 export function normalizeTaskRecurrence(value) {
@@ -738,6 +761,8 @@ function mergeTaskState(task, state, currentUser, columns) {
     description: hasOwn(state, "description") ? state.description : task.description || "",
     dueDate: hasOwn(state, "dueDate") ? state.dueDate : task.dueDate || "",
     notes: hasOwn(state, "notes") ? state.notes : task.notes || "",
+    reminderAt: hasOwn(state, "reminderAt") ? String(state.reminderAt || "") : task.reminderAt || "",
+    myDay: typeof state?.myDay === "boolean" ? state.myDay : Boolean(task.myDay),
     tags: hasOwn(state, "tags") ? parseTagInput(state.tags) : safeArray(task.tags),
     group: normalizeGroup(hasOwn(state, "group") ? state.group : task.group),
     updatedAt: state?.updatedAt || task.updatedAt || task.createdAt,
@@ -753,6 +778,7 @@ function mergeTaskState(task, state, currentUser, columns) {
       : normalizeTaskDependencies(task.dependencies),
     recurrence: hasOwn(state, "recurrence") ? normalizeTaskRecurrence(state.recurrence) : normalizeTaskRecurrence(task.recurrence),
     subtasks: hasOwn(state, "subtasks") ? normalizeTaskSubtasks(state.subtasks) : normalizeTaskSubtasks(task.subtasks),
+    links: hasOwn(state, "links") ? normalizeTaskLinks(state.links) : normalizeTaskLinks(task.links),
     order: hasOwn(state, "order") ? Number(state.order) : task.order,
     assignedToMe: matchesCurrentUser([owner, ...assignedTo], currentUser),
   };
@@ -855,6 +881,8 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     important: Boolean(draft.important),
     completed: isDoneStatus(columns, status),
     notes: String(draft.notes || "").trim(),
+    reminderAt: String(draft.reminderAt || "").trim(),
+    myDay: Boolean(draft.myDay),
     priority: normalizePriority(draft.priority),
     tags: Array.isArray(draft.tags) ? draft.tags : parseTagInput(draft.tags),
     group: normalizeGroup(draft.group),
@@ -865,6 +893,7 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     dependencies: normalizeTaskDependencies(draft.dependencies),
     recurrence: normalizeTaskRecurrence(draft.recurrence),
     subtasks: normalizeTaskSubtasks(draft.subtasks),
+    links: normalizeTaskLinks(draft.links),
     order: Number.isFinite(Number(draft.order)) ? Number(draft.order) : -Date.now(),
   };
 }
@@ -874,6 +903,7 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
   const dueDate = googleTask.due || googleTask.updated || new Date().toISOString();
   const completed = googleTask.status === "completed";
   const owner = currentUser?.name || currentUser?.email || "Ja";
+  const syncedAt = new Date().toISOString();
 
   return {
     id: createId("google_task"),
@@ -899,6 +929,8 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     important: false,
     completed,
     notes,
+    reminderAt: "",
+    myDay: false,
     priority: "medium",
     tags: [],
     group: normalizeGroup(taskList.title || ""),
@@ -907,7 +939,13 @@ export function createTaskFromGoogle(userId, googleTask, taskList, columns, curr
     dependencies: [],
     recurrence: null,
     subtasks: [],
+    links: [],
     order: -new Date(googleTask.updated || new Date().toISOString()).getTime(),
+    googleUpdatedAt: googleTask.updated || googleTask.completed || dueDate,
+    googleSyncedAt: syncedAt,
+    googlePulledAt: syncedAt,
+    googleSyncStatus: "synced",
+    googleSyncConflict: null,
   };
 }
 
@@ -935,6 +973,8 @@ export function createRecurringTaskFromTask(task, userId, workspaceId, columns, 
       priority: task.priority,
       tags: task.tags,
       notes: task.notes,
+      reminderAt: task.reminderAt,
+      myDay: false,
       group: task.group,
       recurrence,
       dependencies: task.dependencies,
@@ -944,6 +984,7 @@ export function createRecurringTaskFromTask(task, userId, workspaceId, columns, 
         completedAt: "",
       })),
       history: [createTaskHistoryEntry("Utworzono kolejne cykliczne zadanie.", "System", "recurrence")],
+      links: task.links,
       order: getNextTaskOrderTop(tasks),
       workspaceId,
     },
@@ -955,6 +996,7 @@ export function createRecurringTaskFromTask(task, userId, workspaceId, columns, 
 export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) {
   const incoming = safeArray(importedTasks).filter(Boolean);
   const merged = [...safeArray(existingTasks)];
+  const syncedAt = new Date().toISOString();
 
   incoming.forEach((task) => {
     const index = merged.findIndex(
@@ -966,15 +1008,49 @@ export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) 
     );
 
     if (index >= 0) {
+      const existingTask = merged[index];
+      const conflict = createGoogleTaskConflictState(existingTask, task);
+      if (conflict) {
+        merged[index] = {
+          ...existingTask,
+          googleUpdatedAt: task.googleUpdatedAt || task.updatedAt || existingTask.googleUpdatedAt || "",
+          googlePulledAt: syncedAt,
+          googleSyncStatus: "conflict",
+          googleSyncConflict: conflict,
+        };
+        return;
+      }
+
       merged[index] = {
-        ...merged[index],
-        ...task,
-        id: merged[index].id,
+        ...existingTask,
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        sourceMeetingDate: task.sourceMeetingDate,
+        updatedAt: task.updatedAt,
+        status: task.status,
+        completed: task.completed,
+        notes: task.notes,
+        group: task.group,
+        owner: task.owner || existingTask.owner,
+        assignedTo: task.assignedTo?.length ? task.assignedTo : existingTask.assignedTo,
+        googleUpdatedAt: task.googleUpdatedAt || task.updatedAt || "",
+        googleSyncedAt: syncedAt,
+        googlePulledAt: syncedAt,
+        googleSyncStatus: "synced",
+        googleSyncConflict: null,
+        id: existingTask.id,
       };
       return;
     }
 
-    merged.unshift(task);
+    merged.unshift({
+      ...task,
+      googleSyncedAt: syncedAt,
+      googlePulledAt: syncedAt,
+      googleSyncStatus: "synced",
+      googleSyncConflict: null,
+    });
   });
 
   return merged;

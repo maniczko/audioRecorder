@@ -1,6 +1,8 @@
 import { TASK_PRIORITIES } from "../lib/tasks";
 import TaskKanbanView from "./TaskKanbanView";
 import TaskListView from "./TaskListView";
+import TaskChartsView from "./TaskChartsView";
+import TaskScheduleView from "./TaskScheduleView";
 
 function statCards(stats, visibleStats) {
   return [
@@ -15,11 +17,23 @@ function statCards(stats, visibleStats) {
   ];
 }
 
+function workspaceSummaryText(selectedListLabel, visibleTaskCount, viewMode) {
+  if (!visibleTaskCount) {
+    return `Lista ${selectedListLabel} jest gotowa na nowe zadania i follow-upy.`;
+  }
+  const viewLabels = {
+    list: "Lista wspiera szybka edycje inline.",
+    kanban: "Kanban pomaga planowac przeplyw pracy.",
+    charts: "Wykresy pokazuja rozklad zadan.",
+    schedule: "Harmonogram pokazuje terminy na osi czasu.",
+  };
+  return `${visibleTaskCount} zadan w widoku ${selectedListLabel}. ${viewLabels[viewMode] || ""}`;
+}
+
 function NotificationStrip({ notifications = [] }) {
   if (!notifications.length) {
     return null;
   }
-
   return (
     <div className="todo-notification-strip">
       {notifications.slice(0, 4).map(({ task, sla, dependencies }) => (
@@ -37,9 +51,8 @@ function ActivityStrip({ activity = [] }) {
   if (!activity.length) {
     return null;
   }
-
   return (
-    <section className="workspace-activity-strip" aria-label="Feed aktywnosci workspace">
+    <section className="workspace-activity-strip todo-feed-panel" aria-label="Feed aktywnosci workspace">
       <div className="panel-header compact">
         <div>
           <div className="eyebrow">Workspace feed</div>
@@ -72,7 +85,6 @@ function BulkToolbar({
   if (!selectedTaskIds.length) {
     return null;
   }
-
   return (
     <section className="todo-bulk-toolbar" aria-label="Akcje zbiorcze">
       <div className="todo-bulk-summary">
@@ -80,15 +92,29 @@ function BulkToolbar({
         <span>zadan zaznaczonych</span>
       </div>
       <div className="todo-bulk-actions">
-        <button type="button" className="todo-command-button" onClick={() => handleBulkUpdate({ completed: true }, "Zakonczono zaznaczone zadania.")}>
+        <button
+          type="button"
+          className="todo-command-button"
+          onClick={() => handleBulkUpdate({ completed: true }, "Zakonczono zaznaczone zadania.")}
+        >
           Zakoncz
         </button>
-        <button type="button" className="todo-command-button" onClick={() => handleBulkUpdate({ completed: false }, "Otwarto zaznaczone zadania ponownie.")}>
+        <button
+          type="button"
+          className="todo-command-button"
+          onClick={() => handleBulkUpdate({ completed: false }, "Otwarto zaznaczone zadania ponownie.")}
+        >
           Otworz
         </button>
         <label className="todo-filter-item compact">
           <span>Status</span>
-          <select onChange={(event) => event.target.value && handleBulkUpdate({ status: event.target.value }, "Zmieniono status zaznaczonych zadan.")} defaultValue="">
+          <select
+            onChange={(event) =>
+              event.target.value &&
+              handleBulkUpdate({ status: event.target.value }, "Zmieniono status zaznaczonych zadan.")
+            }
+            defaultValue=""
+          >
             <option value="">Zmien status</option>
             {boardColumns.map((column) => (
               <option key={column.id} value={column.id}>
@@ -99,7 +125,12 @@ function BulkToolbar({
         </label>
         <label className="todo-filter-item compact">
           <span>Osoba</span>
-          <select onChange={(event) => handleBulkUpdate({ owner: event.target.value }, "Zmieniono osobe dla zaznaczonych zadan.")} defaultValue="">
+          <select
+            onChange={(event) =>
+              handleBulkUpdate({ owner: event.target.value }, "Zmieniono osobe dla zaznaczonych zadan.")
+            }
+            defaultValue=""
+          >
             <option value="">Nieprzypisane</option>
             {peopleOptions.map((person) => (
               <option key={person} value={person}>
@@ -111,7 +142,10 @@ function BulkToolbar({
         <label className="todo-filter-item compact">
           <span>Priorytet</span>
           <select
-            onChange={(event) => event.target.value && handleBulkUpdate({ priority: event.target.value }, "Zmieniono priorytet zaznaczonych zadan.")}
+            onChange={(event) =>
+              event.target.value &&
+              handleBulkUpdate({ priority: event.target.value }, "Zmieniono priorytet zaznaczonych zadan.")
+            }
             defaultValue=""
           >
             <option value="">Priorytet</option>
@@ -141,7 +175,10 @@ export default function TasksWorkspaceView({
   setSortBy,
   groupBy,
   setGroupBy,
+  swimlaneGroupBy,
+  setSwimlaneGroupBy,
   shareWorkspace,
+  onExportCsv,
   submitQuickTask,
   quickDraft,
   setQuickDraft,
@@ -173,6 +210,8 @@ export default function TasksWorkspaceView({
   handleGroupDrop,
   handleTaskDrop,
   setDragTaskId,
+  onQuickAddToColumn,
+  onReorderColumns,
   stats,
   visibleStats,
   selectedTaskIds,
@@ -182,75 +221,184 @@ export default function TasksWorkspaceView({
   handleBulkDelete,
   taskNotifications,
   workspaceActivity,
+  visibleTaskCount,
 }) {
+  const isCharts = viewMode === "charts";
+  const isSchedule = viewMode === "schedule";
+  const isKanban = viewMode === "kanban";
+
   return (
     <section className="todo-main">
       <div className="todo-shell">
-        <div className="todo-commandbar">
-          <div className="todo-commandbar-left">
+        <section className="todo-hero-panel">
+          <div className="todo-hero-copy">
+            <div className="eyebrow">Tasks workspace</div>
             <div className="todo-list-title">
               <span className="todo-list-icon" />
               <strong>{selectedListLabel}</strong>
             </div>
+            <p>{workspaceSummaryText(selectedListLabel, visibleTaskCount, viewMode)}</p>
+            {selectedTask ? (
+              <div className="todo-hero-highlight">
+                <span>Focus</span>
+                <strong>{selectedTask.title}</strong>
+              </div>
+            ) : null}
+          </div>
 
-            <div className="todo-view-switch" role="tablist" aria-label="Widok zadan">
-              <button
-                type="button"
-                className={viewMode === "kanban" ? "todo-view-button active" : "todo-view-button"}
-                onClick={() => setViewMode("kanban")}
-              >
-                Kanban
-              </button>
-              <button
-                type="button"
-                className={viewMode === "list" ? "todo-view-button active" : "todo-view-button"}
-                onClick={() => setViewMode("list")}
-              >
-                Lista
+          <div className="todo-hero-metrics">
+            <article className="todo-hero-metric">
+              <span>Widoczne</span>
+              <strong>{visibleTaskCount}</strong>
+            </article>
+            <article className="todo-hero-metric">
+              <span>Na dzisiaj</span>
+              <strong>{visibleStats.dueToday}</strong>
+            </article>
+            <article className="todo-hero-metric">
+              <span>Zaznaczone</span>
+              <strong>{selectedTaskIds.length}</strong>
+            </article>
+          </div>
+        </section>
+
+        <section className="todo-toolbar-panel">
+          <div className="todo-commandbar">
+            <div className="todo-commandbar-left">
+              <div className="todo-view-switch" role="tablist" aria-label="Widok zadan">
+                <button
+                  type="button"
+                  className={isKanban ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("kanban")}
+                >
+                  Kanban
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "list" ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("list")}
+                >
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  className={isCharts ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("charts")}
+                >
+                  Wykresy
+                </button>
+                <button
+                  type="button"
+                  className={isSchedule ? "todo-view-button active" : "todo-view-button"}
+                  onClick={() => setViewMode("schedule")}
+                >
+                  Harmonogram
+                </button>
+              </div>
+
+              {isKanban ? (
+                <label className="todo-filter-item compact">
+                  <span>Swimlanes</span>
+                  <select
+                    value={swimlaneGroupBy || "none"}
+                    onChange={(event) => setSwimlaneGroupBy?.(event.target.value)}
+                  >
+                    <option value="none">Brak</option>
+                    <option value="person">Osoba</option>
+                    <option value="priority">Priorytet</option>
+                    <option value="label">Etykieta</option>
+                    <option value="due">Termin</option>
+                  </select>
+                </label>
+              ) : null}
+            </div>
+
+            <div className="todo-commandbar-right">
+              {typeof onExportCsv === "function" ? (
+                <button type="button" className="todo-command-button" onClick={onExportCsv}>
+                  Eksport CSV
+                </button>
+              ) : null}
+              <button type="button" className="todo-command-button" onClick={shareWorkspace}>
+                Udostepnij
               </button>
             </div>
           </div>
 
-          <div className="todo-commandbar-right">
-            <label className="todo-filter-item">
-              <span>Sortowanie</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-                <option value="manual">Kolejnosc reczna</option>
-                <option value="updated">Ostatnio zmienione</option>
-                <option value="title">Tytul</option>
-                <option value="due">Termin</option>
-                <option value="owner">Osoba</option>
-                <option value="priority">Priorytet</option>
-              </select>
-            </label>
-            <label className="todo-filter-item">
-              <span>Grupowanie</span>
-              <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
-                <option value="none">Brak</option>
-                <option value="status">Kolumna</option>
-                <option value="group">Grupa wlasna</option>
-                <option value="owner">Osoba</option>
-                <option value="priority">Priorytet</option>
-                <option value="source">Zrodlo</option>
-              </select>
-            </label>
-            <button type="button" className="todo-command-button" onClick={shareWorkspace}>
-              Udostepnij
-            </button>
-          </div>
-        </div>
+          {!isCharts && !isSchedule ? (
+            <div className="todo-filter-row">
+              <label className="todo-filter-search">
+                <span>Szukaj</span>
+                <input
+                  ref={searchInputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Szukaj w zadaniach"
+                />
+              </label>
+              <label className="todo-filter-item">
+                <span>Sortowanie</span>
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                  <option value="manual">Kolejnosc reczna</option>
+                  <option value="updated">Ostatnio zmienione</option>
+                  <option value="title">Tytul</option>
+                  <option value="due">Termin</option>
+                  <option value="owner">Osoba</option>
+                  <option value="priority">Priorytet</option>
+                </select>
+              </label>
+              {!isKanban ? (
+                <label className="todo-filter-item">
+                  <span>Grupowanie</span>
+                  <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
+                    <option value="none">Brak</option>
+                    <option value="status">Kolumna</option>
+                    <option value="group">Grupa wlasna</option>
+                    <option value="owner">Osoba</option>
+                    <option value="priority">Priorytet</option>
+                    <option value="source">Zrodlo</option>
+                  </select>
+                </label>
+              ) : null}
+              <label className="todo-filter-item">
+                <span>Osoba</span>
+                <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
+                  <option value="all">Wszystkie</option>
+                  {peopleOptions.map((person) => (
+                    <option key={person} value={person}>
+                      {person}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="todo-filter-item">
+                <span>Tag</span>
+                <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+                  <option value="all">Wszystkie</option>
+                  {tagOptions.map((tag) => (
+                    <option key={tag} value={tag}>
+                      #{tag}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
+        </section>
 
         <NotificationStrip notifications={taskNotifications} />
         <ActivityStrip activity={workspaceActivity} />
 
-        <div className="todo-stats-strip">
-          {statCards(stats, visibleStats).map((item) => (
-            <article key={item.id} className={`todo-stat-card ${item.tone}`}>
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-            </article>
-          ))}
-        </div>
+        {!isCharts && !isSchedule ? (
+          <div className="todo-stats-strip">
+            {statCards(stats, visibleStats).map((item) => (
+              <article key={item.id} className={`todo-stat-card ${item.tone}`}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </article>
+            ))}
+          </div>
+        ) : null}
 
         <BulkToolbar
           selectedTaskIds={selectedTaskIds}
@@ -261,112 +409,145 @@ export default function TasksWorkspaceView({
           peopleOptions={peopleOptions}
         />
 
-        <form className="todo-add-row" onSubmit={submitQuickTask}>
-          <button
-            type="button"
-            className="todo-task-circle"
-            aria-label="Szybkie dodanie zadania"
-            onClick={submitQuickTask}
-          />
-          <input
-            ref={quickAddInputRef}
-            value={quickDraft.title}
-            onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
-            placeholder="Dodaj zadanie"
-          />
-          <button
-            type="button"
-            className="todo-command-button"
-            onClick={() => setShowAdvancedCreate((previous) => !previous)}
-          >
-            {showAdvancedCreate ? "Ukryj szczegoly" : "Szczegoly"}
-          </button>
-          <button
-            type="button"
-            className="todo-command-button primary"
-            disabled={!quickDraft.title.trim()}
-            onClick={submitQuickTask}
-          >
-            Dodaj zadanie
-          </button>
-        </form>
+        {!isCharts && !isSchedule ? (
+          <section className="todo-create-card">
+            <div className="todo-create-head">
+              <div>
+                <div className="eyebrow">Quick add</div>
+                <strong>Nowe zadanie</strong>
+              </div>
+              <button
+                type="button"
+                className="todo-command-button"
+                onClick={() => setShowAdvancedCreate((previous) => !previous)}
+              >
+                {showAdvancedCreate ? "Ukryj szczegoly" : "Szczegoly"}
+              </button>
+            </div>
 
-        {showAdvancedCreate ? (
-          <div className="todo-add-advanced">
-            <label>
-              <span>Osoba</span>
-              <select
-                value={quickDraft.owner}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, owner: event.target.value }))}
+            <form className="todo-add-row" onSubmit={submitQuickTask}>
+              <button
+                type="button"
+                className="todo-task-circle"
+                aria-label="Szybkie dodanie zadania"
+                onClick={submitQuickTask}
+              />
+              <input
+                ref={quickAddInputRef}
+                value={quickDraft.title}
+                onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
+                placeholder="Dodaj zadanie"
+              />
+              <button
+                type="button"
+                className="todo-command-button primary"
+                disabled={!quickDraft.title.trim()}
+                onClick={submitQuickTask}
               >
-                <option value="">Nieprzypisane</option>
-                {peopleOptions.map((person) => (
-                  <option key={person} value={person}>
-                    {person}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Grupa</span>
-              <input
-                list="task-groups"
-                value={quickDraft.group}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, group: event.target.value }))}
-                placeholder="np. Sprint 14"
-              />
-            </label>
-            <label>
-              <span>Termin</span>
-              <input
-                type="datetime-local"
-                value={quickDraft.dueDate}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, dueDate: event.target.value }))}
-              />
-            </label>
-            <label>
-              <span>Priorytet</span>
-              <select
-                value={quickDraft.priority}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, priority: event.target.value }))}
-              >
-                {TASK_PRIORITIES.map((priority) => (
-                  <option key={priority.id} value={priority.id}>
-                    {priority.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Status</span>
-              <select
-                value={quickDraft.status}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, status: event.target.value }))}
-              >
-                {boardColumns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Tagi</span>
-              <input
-                value={quickDraft.tags}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, tags: event.target.value }))}
-                placeholder="klient, budzet"
-              />
-            </label>
-            <label className="todo-inline-check">
-              <input
-                type="checkbox"
-                checked={quickDraft.important}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, important: event.target.checked }))}
-              />
-              <span>Wazne</span>
-            </label>
-          </div>
+                Dodaj zadanie
+              </button>
+            </form>
+
+            {showAdvancedCreate ? (
+              <div className="todo-add-advanced">
+                <label>
+                  <span>Osoba</span>
+                  <select
+                    value={quickDraft.owner}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, owner: event.target.value }))}
+                  >
+                    <option value="">Nieprzypisane</option>
+                    {peopleOptions.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Grupa</span>
+                  <input
+                    list="task-groups"
+                    value={quickDraft.group}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, group: event.target.value }))}
+                    placeholder="np. Sprint 14"
+                  />
+                </label>
+                <label>
+                  <span>Termin</span>
+                  <input
+                    type="datetime-local"
+                    value={quickDraft.dueDate}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, dueDate: event.target.value }))}
+                  />
+                </label>
+                <label>
+                  <span>Przypomnienie</span>
+                  <input
+                    type="datetime-local"
+                    value={quickDraft.reminderAt}
+                    onChange={(event) =>
+                      setQuickDraft((previous) => ({ ...previous, reminderAt: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Priorytet</span>
+                  <select
+                    value={quickDraft.priority}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, priority: event.target.value }))}
+                  >
+                    {TASK_PRIORITIES.map((priority) => (
+                      <option key={priority.id} value={priority.id}>
+                        {priority.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select
+                    value={quickDraft.status}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, status: event.target.value }))}
+                  >
+                    {boardColumns.map((column) => (
+                      <option key={column.id} value={column.id}>
+                        {column.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Tagi</span>
+                  <input
+                    value={quickDraft.tags}
+                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, tags: event.target.value }))}
+                    placeholder="klient, budzet"
+                  />
+                </label>
+                <label className="todo-inline-check">
+                  <input
+                    type="checkbox"
+                    checked={quickDraft.important}
+                    onChange={(event) =>
+                      setQuickDraft((previous) => ({ ...previous, important: event.target.checked }))
+                    }
+                  />
+                  <span>Wazne</span>
+                </label>
+                <label className="todo-inline-check">
+                  <input
+                    type="checkbox"
+                    checked={quickDraft.myDay}
+                    onChange={(event) =>
+                      setQuickDraft((previous) => ({ ...previous, myDay: event.target.checked }))
+                    }
+                  />
+                  <span>My Day</span>
+                </label>
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         <datalist id="task-groups">
@@ -375,76 +556,57 @@ export default function TasksWorkspaceView({
           ))}
         </datalist>
 
-        <div className="todo-filter-row">
-          <label className="todo-filter-search">
-            <span>Szukaj</span>
-            <input
-              ref={searchInputRef}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Szukaj w zadaniach"
-            />
-          </label>
-          <label className="todo-filter-item">
-            <span>Osoba</span>
-            <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
-              <option value="all">Wszystkie</option>
-              {peopleOptions.map((person) => (
-                <option key={person} value={person}>
-                  {person}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="todo-filter-item">
-            <span>Tag</span>
-            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-              <option value="all">Wszystkie</option>
-              {tagOptions.map((tag) => (
-                <option key={tag} value={tag}>
-                  #{tag}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
         {message ? <div className="todo-helper banner">{message}</div> : null}
 
-        {viewMode === "list" ? (
-          <TaskListView
-            groupedTasks={groupedTasks}
-            allTasks={allVisibleTasks}
-            groupBy={groupBy}
-            selectedTask={selectedTask}
-            selectedTaskIds={selectedTaskIds}
-            toggleTaskSelection={toggleTaskSelection}
-            setSelectedTaskId={setSelectedTaskId}
-            onUpdateTask={onUpdateTask}
-            onMoveTaskToColumn={onMoveTaskToColumn}
-            peopleOptions={peopleOptions}
-            taskGroups={taskGroups}
-            boardColumns={boardColumns}
-            handleGroupDrop={handleGroupDrop}
-            handleTaskDrop={handleTaskDrop}
-            setDragTaskId={setDragTaskId}
-          />
-        ) : (
-          <TaskKanbanView
-            kanbanColumns={kanbanColumns}
-            allTasks={allVisibleTasks}
-            dropColumnId={dropColumnId}
-            setDropColumnId={setDropColumnId}
-            handleDrop={handleDrop}
-            handleTaskDrop={handleTaskDrop}
-            selectedTask={selectedTask}
-            selectedTaskIds={selectedTaskIds}
-            toggleTaskSelection={toggleTaskSelection}
-            setSelectedTaskId={setSelectedTaskId}
-            setDragTaskId={setDragTaskId}
-            onUpdateTask={onUpdateTask}
-          />
-        )}
+        <section className="todo-view-panel">
+          {isCharts ? (
+            <TaskChartsView tasks={allVisibleTasks} boardColumns={boardColumns} />
+          ) : isSchedule ? (
+            <TaskScheduleView
+              tasks={allVisibleTasks}
+              selectedTask={selectedTask}
+              onSelectTask={setSelectedTaskId}
+              onUpdateTask={onUpdateTask}
+            />
+          ) : viewMode === "list" ? (
+            <TaskListView
+              groupedTasks={groupedTasks}
+              allTasks={allVisibleTasks}
+              groupBy={groupBy}
+              selectedTask={selectedTask}
+              selectedTaskIds={selectedTaskIds}
+              toggleTaskSelection={toggleTaskSelection}
+              setSelectedTaskId={setSelectedTaskId}
+              onUpdateTask={onUpdateTask}
+              onMoveTaskToColumn={onMoveTaskToColumn}
+              peopleOptions={peopleOptions}
+              taskGroups={taskGroups}
+              boardColumns={boardColumns}
+              handleGroupDrop={handleGroupDrop}
+              handleTaskDrop={handleTaskDrop}
+              setDragTaskId={setDragTaskId}
+            />
+          ) : (
+            <TaskKanbanView
+              kanbanColumns={kanbanColumns}
+              allTasks={allVisibleTasks}
+              dropColumnId={dropColumnId}
+              setDropColumnId={setDropColumnId}
+              handleDrop={handleDrop}
+              handleTaskDrop={handleTaskDrop}
+              selectedTask={selectedTask}
+              selectedTaskIds={selectedTaskIds}
+              toggleTaskSelection={toggleTaskSelection}
+              setSelectedTaskId={setSelectedTaskId}
+              setDragTaskId={setDragTaskId}
+              onUpdateTask={onUpdateTask}
+              onMoveTaskToColumn={onMoveTaskToColumn}
+              swimlaneGroupBy={swimlaneGroupBy}
+              onQuickAddToColumn={onQuickAddToColumn}
+              onReorderColumns={onReorderColumns}
+            />
+          )}
+        </section>
       </div>
     </section>
   );
