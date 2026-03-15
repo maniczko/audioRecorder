@@ -85,29 +85,10 @@ function WaveformPanel({
     function handleTimeUpdate() {
       const dur = audio.duration || 0;
       if (dur > 0) setPlayhead(audio.currentTime / dur);
-      setCurrentTime(audio.currentTime || 0);
-    }
-
-    function handleDurationChange() {
-      setAudioDuration(audio.duration || 0);
-    }
-
-    function handlePlayPause() {
-      setIsPlaying(!audio.paused);
     }
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("durationchange", handleDurationChange);
-    audio.addEventListener("play", handlePlayPause);
-    audio.addEventListener("pause", handlePlayPause);
-    audio.addEventListener("ended", handlePlayPause);
-    return () => {
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
-      audio.removeEventListener("durationchange", handleDurationChange);
-      audio.removeEventListener("play", handlePlayPause);
-      audio.removeEventListener("pause", handlePlayPause);
-      audio.removeEventListener("ended", handlePlayPause);
-    };
+    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -421,6 +402,29 @@ export default function TranscriptPanel({
       };
     });
   }, [totalDuration]);
+
+  useEffect(() => {
+    const audio = audioRef?.current;
+    if (!audio) return undefined;
+
+    function onTimeUpdate() { setCurrentTime(audio.currentTime || 0); }
+    function onDuration() { setAudioDuration(audio.duration || 0); }
+    function onPlayPause() { setIsPlaying(!audio.paused); }
+
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("durationchange", onDuration);
+    audio.addEventListener("play", onPlayPause);
+    audio.addEventListener("pause", onPlayPause);
+    audio.addEventListener("ended", onPlayPause);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("durationchange", onDuration);
+      audio.removeEventListener("play", onPlayPause);
+      audio.removeEventListener("pause", onPlayPause);
+      audio.removeEventListener("ended", onPlayPause);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!filteredSegments.length) {
