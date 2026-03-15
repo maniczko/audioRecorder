@@ -312,17 +312,7 @@ export default function TasksWorkspaceView({
                   placeholder="Szukaj w zadaniach"
                 />
               </label>
-              <label className="todo-filter-item">
-                <span>Sortowanie</span>
-                <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-                  <option value="manual">Kolejnosc reczna</option>
-                  <option value="updated">Ostatnio zmienione</option>
-                  <option value="title">Tytul</option>
-                  <option value="due">Termin</option>
-                  <option value="owner">Osoba</option>
-                  <option value="priority">Priorytet</option>
-                </select>
-              </label>
+
               {!isKanban ? (
                 <label className="todo-filter-item">
                   <span>Grupowanie</span>

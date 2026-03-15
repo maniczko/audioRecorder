@@ -370,20 +370,7 @@ export default function TaskDetailsPanel({
               ))}
             </select>
           </label>
-          <label>
-            <span>Grupa</span>
-            <input
-              list="detail-task-groups"
-              value={selectedTask.group || ""}
-              onChange={(event) => onUpdateTask(selectedTask.id, { group: event.target.value })}
-              placeholder="Bez grupy"
-            />
-            <datalist id="detail-task-groups">
-              {taskGroups.map((group) => (
-                <option key={group} value={group} />
-              ))}
-            </datalist>
-          </label>
+
           <label>
             <span>Status</span>
             <select value={selectedTask.status} onChange={(event) => onMoveTaskToColumn(selectedTask.id, event.target.value)}>
@@ -645,7 +632,7 @@ export default function TaskDetailsPanel({
                 </article>
               ))
             ) : (
-              <p className="todo-section-empty">Jeszcze nie ma komentarzy.</p>
+              null
             )}
           </div>
         </section>
