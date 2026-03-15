@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
@@ -77,10 +77,6 @@ export default function TaskDetailsPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
 
-  const availableDependencies = useMemo(
-    () => (selectedTask ? tasks.filter((task) => task.id !== selectedTask.id) : []),
-    [selectedTask, tasks]
-  );
 
   if (!selectedTask) {
     return (
@@ -94,7 +90,6 @@ export default function TaskDetailsPanel({
   }
 
   const assignedPeople = selectedTask.assignedTo || [];
-  const dependencyIds = selectedTask.dependencies || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
   const dependencyState = getTaskDependencyDetails(selectedTask, tasks);
   const slaState = getTaskSlaState(selectedTask);
@@ -370,6 +365,10 @@ export default function TaskDetailsPanel({
         ) : null}
 
         <div className="todo-detail-form">
+          <label>
+            <span>Tytul</span>
+            <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
+          </label>
           <div className="full">
             <span className="todo-detail-form-label">Kolor karty</span>
             <div className="kanban-cover-picker">
@@ -388,11 +387,7 @@ export default function TaskDetailsPanel({
             </div>
           </div>
           <label>
-            <span>Tytul</span>
-            <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
-          </label>
-          <label>
-            <span>Glowna osoba</span>
+            <span>Osoba odpowiedzialna</span>
             <select value={selectedTask.owner} onChange={(event) => onUpdateTask(selectedTask.id, { owner: event.target.value })}>
               <option value="">Nieprzypisane</option>
               {peopleOptions.map((person) => (
@@ -578,43 +573,6 @@ export default function TaskDetailsPanel({
                 />
               </label>
             ) : null}
-          </div>
-        </section>
-
-        <section className="todo-detail-section">
-          <div className="todo-section-head">
-            <strong>Zaleznosci</strong>
-            <span>{dependencyIds.length}</span>
-          </div>
-          {dependencyState.blocking ? (
-            <div className="todo-inline-alert warning">
-              Najpierw zakoncz: {dependencyState.unresolved.map((task) => task.title).join(", ")}.
-            </div>
-          ) : null}
-          <div className="todo-chip-grid dense">
-            {availableDependencies.length ? (
-              availableDependencies.map((task) => {
-                const active = dependencyIds.includes(task.id);
-                return (
-                  <button
-                    key={task.id}
-                    type="button"
-                    className={active ? "todo-chip active" : "todo-chip"}
-                    onClick={() =>
-                      onUpdateTask(selectedTask.id, {
-                        dependencies: active
-                          ? dependencyIds.filter((item) => item !== task.id)
-                          : [...dependencyIds, task.id],
-                      })
-                    }
-                  >
-                    {task.title}
-                  </button>
-                );
-              })
-            ) : (
-              <p className="todo-section-empty">Brak innych zadan do powiazania.</p>
-            )}
           </div>
         </section>
 

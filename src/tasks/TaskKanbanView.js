@@ -164,13 +164,6 @@ function KanbanCard({
 
         <div className="todo-kanban-card-top">
           <div className="todo-kanban-title">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              aria-label={`Zaznacz zadanie ${task.title}`}
-              onClick={(event) => event.stopPropagation()}
-              onChange={() => toggleTaskSelection(task.id)}
-            />
             <button
               type="button"
               className={`todo-task-circle${task.completed ? " completed" : ""}`}

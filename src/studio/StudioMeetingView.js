@@ -67,8 +67,6 @@ export default function StudioMeetingView({
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
-  const [addOutputOpen, setAddOutputOpen] = useState(false);
-  const [outputDraft, setOutputDraft] = useState("");
 
   function handleAddComment() {
     if (!commentDraft.trim() || !addMeetingComment) return;
@@ -192,8 +190,8 @@ export default function StudioMeetingView({
         <section className="panel">
           <div className="panel-header compact">
             <div>
-              <div className="eyebrow">What matters</div>
-              <h2>Potrzeby i outputy</h2>
+              <div className="eyebrow">Potrzeby</div>
+              <h2>Potrzeby i obawy</h2>
             </div>
           </div>
           <div className="chip-list">
@@ -217,50 +215,6 @@ export default function StudioMeetingView({
           <div className="brief-columns">
             <div>
               <div className="what-matters-row-head">
-                <h3>Desired outputs</h3>
-                <button
-                  type="button"
-                  className="what-matters-add-btn"
-                  onClick={() => setAddOutputOpen((v) => !v)}
-                  title="Dodaj output"
-                >
-                  +
-                </button>
-              </div>
-              {addOutputOpen && (
-                <form
-                  className="what-matters-add-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!outputDraft.trim()) return;
-                    const current = (meetingDraft?.desiredOutputs || "");
-                    const updated = current ? current.trim() + "\n" + outputDraft.trim() : outputDraft.trim();
-                    setMeetingDraft((d) => ({ ...d, desiredOutputs: updated }));
-                    setOutputDraft("");
-                    setAddOutputOpen(false);
-                    setTimeout(() => saveMeeting(), 0);
-                  }}
-                >
-                  <input
-                    autoFocus
-                    value={outputDraft}
-                    onChange={(e) => setOutputDraft(e.target.value)}
-                    placeholder="np. Kolejne kroki"
-                  />
-                  <button type="submit" className="ghost-button">Dodaj</button>
-                </form>
-              )}
-              <ul className="clean-list">
-                {selectedMeeting.desiredOutputs.length ? (
-                  selectedMeeting.desiredOutputs.map((item) => <li key={item}>{item}</li>)
-                ) : (
-                  <li>Brak outputow.</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <div className="what-matters-row-head">
-                <h3>Potrzeby</h3>
                 <button
                   type="button"
                   className="what-matters-add-btn"
@@ -278,10 +232,11 @@ export default function StudioMeetingView({
                     if (!needDraft.trim()) return;
                     const current = (meetingDraft?.needs || "");
                     const updated = current ? current.trim() + "\n" + needDraft.trim() : needDraft.trim();
-                    setMeetingDraft((d) => ({ ...d, needs: updated }));
+                    const newDraft = { ...meetingDraft, needs: updated };
+                    setMeetingDraft(() => newDraft);
                     setNeedDraft("");
                     setAddNeedOpen(false);
-                    setTimeout(() => saveMeeting(), 0);
+                    saveMeeting(newDraft);
                   }}
                 >
                   <input

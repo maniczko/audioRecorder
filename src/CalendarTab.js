@@ -584,7 +584,11 @@ export default function CalendarTab({
           <div className="calendar-week-view">
             {weekDays.map((day) => (
               <section key={day.toISOString()} className="calendar-column" onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(day, event)}>
-                <header className="calendar-column-head"><strong>{formatCalendarDayLabel(day, { short: true })}</strong><span>{day.getDate()}</span></header>
+                <header className="calendar-column-head">
+                  <strong>{formatCalendarDayLabel(day, { short: true })}</strong>
+                  <span>{day.getDate()}</span>
+                  <button type="button" className="calendar-day-add-btn" onClick={() => createMeetingFromDay(day)} title="Nowe spotkanie">+</button>
+                </header>
                 <div className="calendar-column-body">
                   {entriesForDay(visibleEntries, day).length ? entriesForDay(visibleEntries, day).map((entry) => renderEntry(entry, true)) : <div className="calendar-column-empty">Upusc tutaj wydarzenie.</div>}
                 </div>

@@ -682,7 +682,7 @@ export default function useMeetings({
     return adHocMeeting;
   }
 
-  function saveMeeting() {
+  function saveMeeting(draftOverride) {
     if (!currentUser || !currentWorkspaceId) {
       return;
     }
@@ -700,7 +700,7 @@ export default function useMeetings({
     }
 
     const nextMeeting = {
-      ...updateMeeting(selectedMeeting, meetingDraft),
+      ...updateMeeting(selectedMeeting, (draftOverride || meetingDraft)),
       activity: [
         ...(selectedMeeting.activity || []),
         {
@@ -716,7 +716,6 @@ export default function useMeetings({
     setMeetings((previous) => upsertMeeting(previous, nextMeeting));
     setIsDetachedMeetingDraft(false);
     selectMeeting(nextMeeting);
-    setWorkspaceMessage("Spotkanie zapisane.");
   }
 
   function createMeetingDirect(draft) {

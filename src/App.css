@@ -964,10 +964,10 @@ select:focus {
 
 /* --- Kanban card description preview --- */
 .kanban-card-description {
-  font-size: 0.75rem;
-  color: var(--muted);
+  font-size: 0.8rem;
+  color: #677a97;
   margin: 2px 0 4px;
-  line-height: 1.4;
+  line-height: 1.5;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3580,12 +3580,13 @@ select:focus {
 
 .tasks-layout.ms-todo .todo-kanban-card {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 6px;
+  padding: 12px;
   border: 1px solid #dfe8f5;
-  border-radius: 16px;
+  border-radius: 12px;
   background: #ffffff;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .tasks-layout.ms-todo .todo-kanban-card.active {
@@ -7255,4 +7256,32 @@ select:focus {
 }
 .attendee-suggestion-item:hover {
   background: rgba(255,255,255,0.06);
+}
+
+/* Kanban card readable preview */
+.tasks-layout.ms-todo .kanban-card-description {
+  font-size: 0.8rem;
+  color: #677a97;
+  line-height: 1.5;
+}
+.tasks-layout.ms-todo .kanban-card-title {
+  font-size: 0.9rem;
+  color: #1f3553;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.tasks-layout.ms-todo .kanban-label-chip {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  opacity: 0.9;
+}
+
+.tasks-layout.ms-todo .todo-col-sort-btn {
+  color: #5f7392;
+}
+.tasks-layout.ms-todo .todo-col-sort-btn:hover,
+.tasks-layout.ms-todo .todo-col-sort-btn.active {
+  color: #2564ea;
 }

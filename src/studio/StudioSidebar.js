@@ -18,6 +18,8 @@ export default function StudioSidebar({
   const [activeSection, setActiveSection] = useState("basic");
   const [attendeeInput, setAttendeeInput] = useState("");
   const [showAttendeeSuggestions, setShowAttendeeSuggestions] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const attendeeWrapRef = useRef(null);
 
   return (
@@ -199,21 +201,84 @@ export default function StudioSidebar({
                 </div>
               )}
             </div>
-            <label>
-              <span>Tagi</span>
-              <input
-                list="tag-suggestions"
-                value={meetingDraft.tags}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, tags: event.target.value }))}
-                placeholder="klient, budzet, follow-up"
-                disabled={!canEditWorkspace}
-              />
-              <datalist id="tag-suggestions">
-                {tagOptions.map((tag) => (
-                  <option key={tag} value={tag} />
+            <div className="brief-attendees-field">
+              <span className="brief-field-label">Tagi</span>
+              <div className="brief-attendees-chips">
+                {(meetingDraft.tags || "").split(",").map(t => t.trim()).filter(Boolean).map((tag) => (
+                  <span key={tag} className="brief-attendee-chip">
+                    {tag}
+                    <button
+                      type="button"
+                      className="brief-attendee-remove"
+                      onClick={() =>
+                        setMeetingDraft((previous) => ({
+                          ...previous,
+                          tags: (previous.tags || "").split(",").map(t => t.trim()).filter(t => t && t !== tag).join(", "),
+                        }))
+                      }
+                      disabled={!canEditWorkspace}
+                    >×</button>
+                  </span>
                 ))}
-              </datalist>
-            </label>
+              </div>
+              {canEditWorkspace && (
+                <div className="brief-attendee-input-wrap">
+                  <input
+                    value={tagInput}
+                    onChange={(e) => { setTagInput(e.target.value); setShowTagSuggestions(true); }}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                        e.preventDefault();
+                        const tag = tagInput.trim().replace(/,$/, "");
+                        setMeetingDraft((previous) => ({
+                          ...previous,
+                          tags: previous.tags ? previous.tags.trim() + ", " + tag : tag,
+                        }));
+                        setTagInput("");
+                        setShowTagSuggestions(false);
+                      } else if (e.key === "Escape") {
+                        setShowTagSuggestions(false);
+                      }
+                    }}
+                    onFocus={() => setShowTagSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
+                    placeholder="Dodaj tag..."
+                    className="brief-attendee-input"
+                    disabled={!canEditWorkspace}
+                  />
+                  {showTagSuggestions && tagOptions.filter((t) =>
+                    t.toLowerCase().includes(tagInput.toLowerCase()) &&
+                    !(meetingDraft.tags || "").split(",").map(x => x.trim()).includes(t)
+                  ).length > 0 && (
+                    <div className="attendee-suggestions-dropdown">
+                      {tagOptions
+                        .filter((t) =>
+                          t.toLowerCase().includes(tagInput.toLowerCase()) &&
+                          !(meetingDraft.tags || "").split(",").map(x => x.trim()).includes(t)
+                        )
+                        .map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className="attendee-suggestion-item"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setMeetingDraft((previous) => ({
+                                ...previous,
+                                tags: previous.tags ? previous.tags.trim() + ", " + tag : tag,
+                              }));
+                              setTagInput("");
+                              setShowTagSuggestions(false);
+                            }}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="stack-form brief-form-section">
@@ -254,11 +319,10 @@ export default function StudioSidebar({
             {isDetachedMeetingDraft ? "Utwórz spotkanie" : "Zapisz zmiany"}
           </button>
           <button type="button" className="ghost-button" onClick={clearMeetingDraft} disabled={!canEditWorkspace}>
-            Wyczyść
+            Anuluj
           </button>
         </div>
 
-        {workspaceMessage ? <div className="inline-alert success">{workspaceMessage}</div> : null}
       </section>
     </aside>
   );
