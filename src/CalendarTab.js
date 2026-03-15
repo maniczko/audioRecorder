@@ -126,16 +126,13 @@ export default function CalendarTab({
   userMeetings,
   calendarTasks,
   googleCalendarEvents,
-  googleCalendarStatus,
   googleCalendarMessage,
-  connectGoogleCalendar,
   disconnectGoogleCalendar,
   syncCalendarEntryToGoogle,
   rescheduleGoogleCalendarEntry,
   openMeetingFromCalendar,
   openGoogleCalendarForMeeting,
   openTaskFromCalendar,
-  googleCalendarEnabled,
   googleCalendarWritable,
   onRescheduleMeeting,
   onRescheduleTask,
@@ -448,12 +445,11 @@ export default function CalendarTab({
             ))}
           </div>
 
-          <div className="button-row">
-            <button type="button" className="secondary-button" onClick={connectGoogleCalendar} disabled={!googleCalendarEnabled || googleCalendarStatus === "loading"}>
-              {googleCalendarStatus === "loading" ? "Laczenie..." : "Google"}
-            </button>
-            {googleCalendarEvents.length ? <button type="button" className="ghost-button" onClick={disconnectGoogleCalendar}>Odlacz</button> : null}
-          </div>
+          {googleCalendarEvents.length ? (
+            <div className="button-row">
+              <button type="button" className="ghost-button" onClick={disconnectGoogleCalendar}>Odlacz Google</button>
+            </div>
+          ) : null}
           {googleCalendarMessage ? <div className="inline-alert info">{googleCalendarMessage}</div> : null}
 
           {allMeetingTags.length > 0 && (

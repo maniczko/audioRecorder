@@ -273,7 +273,6 @@ export default function TasksWorkspaceView({
       <div className="todo-shell">
         <section className="todo-hero-panel">
           <div className="todo-hero-copy">
-            <div className="eyebrow">Tasks workspace</div>
             <div className="todo-list-title">
               <span className="todo-list-icon" />
               <strong>{selectedListLabel}</strong>

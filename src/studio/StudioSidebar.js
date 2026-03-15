@@ -81,15 +81,36 @@ export default function StudioSidebar({
                 />
               </label>
               <label>
-                <span>Czas (min)</span>
-                <input
-                  type="number"
-                  min="15"
-                  step="15"
-                  value={meetingDraft.durationMinutes}
-                  onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
-                  disabled={!canEditWorkspace}
-                />
+                <span>Czas</span>
+                <div className="duration-picker">
+                  <select
+                    value={[15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) ? String(meetingDraft.durationMinutes) : "custom"}
+                    onChange={(event) => {
+                      if (event.target.value !== "custom") {
+                        setMeetingDraft((previous) => ({ ...previous, durationMinutes: Number(event.target.value) }));
+                      }
+                    }}
+                    disabled={!canEditWorkspace}
+                  >
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">1 godz</option>
+                    <option value="custom">Własny</option>
+                  </select>
+                  {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
+                    <input
+                      type="number"
+                      min="5"
+                      step="5"
+                      value={meetingDraft.durationMinutes}
+                      onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
+                      disabled={!canEditWorkspace}
+                      placeholder="min"
+                      className="duration-custom-input"
+                    />
+                  )}
+                </div>
               </label>
             </div>
             <label>

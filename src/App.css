@@ -7070,3 +7070,76 @@ select:focus {
   z-index: 100;
   overflow: visible !important;
 }
+
+/* --- Duration picker in sidebar --- */
+.duration-picker {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.duration-picker select {
+  flex: 1;
+}
+.duration-custom-input {
+  width: 70px;
+}
+
+/* --- What matters inline add --- */
+.what-matters-row-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.what-matters-row-head h3 {
+  margin: 0;
+}
+.what-matters-add-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(117,214,196,0.1);
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.what-matters-add-btn:hover {
+  background: rgba(117,214,196,0.25);
+}
+.what-matters-add-form {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.what-matters-add-form input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+/* --- Kanban hover actions: true hover-only --- */
+.kanban-hover-actions {
+  display: none;
+}
+.todo-kanban-card:hover .kanban-hover-actions,
+.todo-kanban-card.active .kanban-hover-actions {
+  display: flex;
+}
+
+/* --- People tab task add button nicer --- */
+.panel-header .todo-command-button.primary {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}

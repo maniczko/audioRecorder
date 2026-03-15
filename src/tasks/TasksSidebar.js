@@ -1,14 +1,5 @@
 import { formatDateTime } from "../lib/storage";
 
-function StatMiniCard({ label, value, tone = "neutral" }) {
-  return (
-    <div className={`todo-stat-mini ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
 export default function TasksSidebar({
   sidebarLists,
   selectedListId,
@@ -97,21 +88,6 @@ export default function TasksSidebar({
       </div>
 
       <div className="todo-sidebar-footer">
-        <div className="todo-stats-mini-grid">
-          <StatMiniCard label="Otwarte" value={visibleStats.open} />
-          <StatMiniCard label="Na dzisiaj" value={visibleStats.dueToday} tone="info" />
-          <StatMiniCard label="Po terminie" value={visibleStats.overdue} tone="danger" />
-          <StatMiniCard label="SLA risk" value={visibleStats.slaAtRisk + visibleStats.slaCritical} tone="warning" />
-          <StatMiniCard label="SLA breach" value={visibleStats.slaBreached} tone="danger" />
-          <StatMiniCard label="Bez ownera" value={visibleStats.unassigned} tone="warning" />
-          <StatMiniCard label="W toku" value={visibleStats.inProgress} tone="info" />
-          <StatMiniCard label="W grupach" value={visibleStats.grouped} tone="success" />
-          <StatMiniCard label="Cykliczne" value={visibleStats.recurring} tone="info" />
-          <StatMiniCard label="Zalezne" value={visibleStats.blocked} tone="warning" />
-          <StatMiniCard label="Komentarze" value={visibleStats.commented} />
-          <StatMiniCard label="Podzadania" value={visibleStats.subtasksOpen} tone="success" />
-        </div>
-
         {taskNotifications.length ? (
           <div className="todo-notification-stack">
             {taskNotifications.slice(0, 3).map(({ task, sla }) => (

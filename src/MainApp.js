@@ -483,9 +483,16 @@ export default function MainApp() {
           <button
             type="button"
             className={recorder.isRecording ? "topbar-record-btn recording" : "topbar-record-btn"}
-            onClick={() => { recorder.startRecording({ adHoc: true }); setActiveTab("studio"); }}
-            disabled={recorder.isRecording || !workspace.currentWorkspacePermissions?.canRecordAudio}
-            title="Nagranie ad hoc"
+            onClick={() => {
+              if (recorder.isRecording) {
+                recorder.stopRecording();
+              } else {
+                recorder.startRecording({ adHoc: true });
+              }
+              setActiveTab("studio");
+            }}
+            disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
+            title={recorder.isRecording ? "Zatrzymaj nagranie" : "Nagranie ad hoc"}
           >
             <span className="topbar-record-dot" />
             {recorder.isRecording ? "Nagrywam..." : "Nagraj"}
@@ -510,10 +517,12 @@ export default function MainApp() {
             ) : null}
             <div>
               <strong>{workspace.currentUser.name}</strong>
-              <span>
-                {workspace.currentUser.role || "No role"}
-                {workspace.currentUser.provider === "google" ? " - Google sign-in" : ""}
-              </span>
+              {(workspace.currentUser.role && workspace.currentUser.role !== "No role") || workspace.currentUser.provider === "google" ? (
+                <span>
+                  {workspace.currentUser.role || ""}
+                  {workspace.currentUser.provider === "google" ? " - Google sign-in" : ""}
+                </span>
+              ) : null}
             </div>
             <button type="button" className="settings-button" aria-label="Otworz ustawienia" onClick={() => setActiveTab("profile")}>
               {"\u2699"}

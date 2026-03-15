@@ -61,8 +61,15 @@ export default function StudioMeetingView({
   peopleProfiles,
   addMeetingComment,
   currentUserName,
+  meetingDraft,
+  setMeetingDraft,
+  saveMeeting,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
+  const [addNeedOpen, setAddNeedOpen] = useState(false);
+  const [needDraft, setNeedDraft] = useState("");
+  const [addOutputOpen, setAddOutputOpen] = useState(false);
+  const [outputDraft, setOutputDraft] = useState("");
 
   function handleAddComment() {
     if (!commentDraft.trim() || !addMeetingComment) return;
@@ -125,9 +132,6 @@ export default function StudioMeetingView({
             <span>Rola</span>
             <strong>{currentWorkspaceRole || "member"}</strong>
           </div>
-        </div>
-        <div className="inline-alert info">
-          Edycja: owner, admin, member. Usuwanie: owner, admin. Eksport: owner, admin, member.
         </div>
         <div className="button-row">
           <button
@@ -218,7 +222,40 @@ export default function StudioMeetingView({
           </div>
           <div className="brief-columns">
             <div>
-              <h3>Desired outputs</h3>
+              <div className="what-matters-row-head">
+                <h3>Desired outputs</h3>
+                <button
+                  type="button"
+                  className="what-matters-add-btn"
+                  onClick={() => setAddOutputOpen((v) => !v)}
+                  title="Dodaj output"
+                >
+                  +
+                </button>
+              </div>
+              {addOutputOpen && (
+                <form
+                  className="what-matters-add-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!outputDraft.trim()) return;
+                    const current = (meetingDraft?.desiredOutputs || "");
+                    const updated = current ? current.trim() + "\n" + outputDraft.trim() : outputDraft.trim();
+                    setMeetingDraft((d) => ({ ...d, desiredOutputs: updated }));
+                    setOutputDraft("");
+                    setAddOutputOpen(false);
+                    setTimeout(() => saveMeeting(), 0);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={outputDraft}
+                    onChange={(e) => setOutputDraft(e.target.value)}
+                    placeholder="np. Kolejne kroki"
+                  />
+                  <button type="submit" className="ghost-button">Dodaj</button>
+                </form>
+              )}
               <ul className="clean-list">
                 {selectedMeeting.desiredOutputs.length ? (
                   selectedMeeting.desiredOutputs.map((item) => <li key={item}>{item}</li>)
@@ -228,12 +265,45 @@ export default function StudioMeetingView({
               </ul>
             </div>
             <div>
-              <h3>Attendees</h3>
+              <div className="what-matters-row-head">
+                <h3>Potrzeby</h3>
+                <button
+                  type="button"
+                  className="what-matters-add-btn"
+                  onClick={() => setAddNeedOpen((v) => !v)}
+                  title="Dodaj potrzebę"
+                >
+                  +
+                </button>
+              </div>
+              {addNeedOpen && (
+                <form
+                  className="what-matters-add-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!needDraft.trim()) return;
+                    const current = (meetingDraft?.needs || "");
+                    const updated = current ? current.trim() + "\n" + needDraft.trim() : needDraft.trim();
+                    setMeetingDraft((d) => ({ ...d, needs: updated }));
+                    setNeedDraft("");
+                    setAddNeedOpen(false);
+                    setTimeout(() => saveMeeting(), 0);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={needDraft}
+                    onChange={(e) => setNeedDraft(e.target.value)}
+                    placeholder="np. Decyzje budzetowe"
+                  />
+                  <button type="submit" className="ghost-button">Dodaj</button>
+                </form>
+              )}
               <ul className="clean-list">
-                {selectedMeeting.attendees.length ? (
-                  selectedMeeting.attendees.map((item) => <li key={item}>{item}</li>)
+                {selectedMeeting.needs.length ? (
+                  selectedMeeting.needs.map((item) => <li key={item}>{item}</li>)
                 ) : (
-                  <li>Brak uczestnikow.</li>
+                  <li>Brak potrzeb.</li>
                 )}
               </ul>
             </div>
