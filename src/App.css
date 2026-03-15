@@ -7165,6 +7165,36 @@ select:focus {
   width: 70px;
 }
 
+/* --- Brief two-column layout --- */
+.brief-columns.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.brief-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.brief-col-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: 1;
+}
+.what-matters-add-btn.concern {
+  background: rgba(241, 125, 114, 0.12);
+  color: var(--danger);
+  border-color: rgba(241, 125, 114, 0.3);
+}
+.what-matters-add-btn.concern:hover {
+  background: rgba(241, 125, 114, 0.25);
+}
+
 /* --- What matters inline add --- */
 .what-matters-row-head {
   display: flex;

@@ -48,6 +48,7 @@ const MEETING_DRAFT_FIELDS = [
   "attendees",
   "tags",
   "needs",
+  "concerns",
   "desiredOutputs",
   "location",
 ];

@@ -67,6 +67,8 @@ export default function StudioMeetingView({
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
+  const [addConcernOpen, setAddConcernOpen] = useState(false);
+  const [concernDraft, setConcernDraft] = useState("");
 
   function handleAddComment() {
     if (!commentDraft.trim() || !addMeetingComment) return;
@@ -186,31 +188,23 @@ export default function StudioMeetingView({
         <section className="panel">
           <div className="panel-header compact">
             <div>
-              <div className="eyebrow">Potrzeby</div>
+              <div className="eyebrow">Kontekst spotkania</div>
               <h2>Potrzeby i obawy</h2>
             </div>
           </div>
-          <div className="chip-list">
-            {selectedMeeting.tags?.length
-              ? selectedMeeting.tags.map((tag) => (
-                  <span className="task-tag-chip" key={tag} style={tagStyle(tag)}>
-                    #{tag}
-                  </span>
-                ))
-              : null}
-            {selectedMeeting.needs.length ? (
-              selectedMeeting.needs.map((need) => (
-                <span className="need-chip" key={need}>
-                  {need}
+          {selectedMeeting.tags?.length ? (
+            <div className="chip-list">
+              {selectedMeeting.tags.map((tag) => (
+                <span className="task-tag-chip" key={tag} style={tagStyle(tag)}>
+                  #{tag}
                 </span>
-              ))
-            ) : (
-              <span className="soft-copy">Dodaj potrzeby, aby analiza odpowiadala na nie osobno.</span>
-            )}
-          </div>
-          <div className="brief-columns">
-            <div>
-              <div className="what-matters-row-head">
+              ))}
+            </div>
+          ) : null}
+          <div className="brief-columns two-col">
+            <div className="brief-col">
+              <div className="brief-col-head">
+                <span className="brief-col-label">Potrzeby</span>
                 <button
                   type="button"
                   className="what-matters-add-btn"
@@ -248,7 +242,52 @@ export default function StudioMeetingView({
                 {selectedMeeting.needs.length ? (
                   selectedMeeting.needs.map((item) => <li key={item}>{item}</li>)
                 ) : (
-                  <li>Brak potrzeb.</li>
+                  <li className="soft-copy">Brak potrzeb.</li>
+                )}
+              </ul>
+            </div>
+
+            <div className="brief-col">
+              <div className="brief-col-head">
+                <span className="brief-col-label">Obawy</span>
+                <button
+                  type="button"
+                  className="what-matters-add-btn concern"
+                  onClick={() => setAddConcernOpen((v) => !v)}
+                  title="Dodaj obawę"
+                >
+                  +
+                </button>
+              </div>
+              {addConcernOpen && (
+                <form
+                  className="what-matters-add-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!concernDraft.trim()) return;
+                    const current = (meetingDraft?.concerns || "");
+                    const updated = current ? current.trim() + "\n" + concernDraft.trim() : concernDraft.trim();
+                    const newDraft = { ...meetingDraft, concerns: updated };
+                    setMeetingDraft(() => newDraft);
+                    setConcernDraft("");
+                    setAddConcernOpen(false);
+                    saveMeeting(newDraft);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={concernDraft}
+                    onChange={(e) => setConcernDraft(e.target.value)}
+                    placeholder="np. Ryzyko budzetu"
+                  />
+                  <button type="submit" className="ghost-button">Dodaj</button>
+                </form>
+              )}
+              <ul className="clean-list">
+                {(selectedMeeting.concerns || []).length ? (
+                  (selectedMeeting.concerns || []).map((item) => <li key={item}>{item}</li>)
+                ) : (
+                  <li className="soft-copy">Brak obaw.</li>
                 )}
               </ul>
             </div>

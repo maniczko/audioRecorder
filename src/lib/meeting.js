@@ -22,6 +22,7 @@ export function createMeeting(userId, draft, options = {}) {
     attendees: parseList(draft.attendees),
     tags: parseList(draft.tags),
     needs: parseList(draft.needs),
+    concerns: parseList(draft.concerns),
     desiredOutputs: parseList(draft.desiredOutputs),
     location: String(draft.location || "").trim(),
     recordings: [],
@@ -56,6 +57,7 @@ export function updateMeeting(meeting, draft) {
     attendees: parseList(draft.attendees),
     tags: parseList(draft.tags),
     needs: parseList(draft.needs),
+    concerns: parseList(draft.concerns),
     desiredOutputs: parseList(draft.desiredOutputs),
     location: String(draft.location || "").trim(),
     updatedAt: new Date().toISOString(),
@@ -118,6 +120,7 @@ export function meetingToDraft(meeting) {
     attendees: meeting.attendees.join("\n"),
     tags: (meeting.tags || []).join("\n"),
     needs: meeting.needs.join("\n"),
+    concerns: (meeting.concerns || []).join("\n"),
     desiredOutputs: meeting.desiredOutputs.join("\n"),
     location: meeting.location || "",
   };
