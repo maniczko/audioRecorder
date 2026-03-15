@@ -3,6 +3,7 @@ import "./App.css";
 import AuthScreen from "./AuthScreen";
 import CalendarTab from "./CalendarTab";
 import CommandPalette from "./CommandPalette";
+import NotificationCenter from "./NotificationCenter";
 import PeopleTab from "./PeopleTab";
 import ProfileTab from "./ProfileTab";
 import StudioTab from "./StudioTab";
@@ -11,11 +12,14 @@ import useAuth from "./hooks/useAuth";
 import useGoogleIntegrations from "./hooks/useGoogleIntegrations";
 import useMeetings from "./hooks/useMeetings";
 import useRecorder from "./hooks/useRecorder";
+import useStoredState from "./hooks/useStoredState";
 import useWorkspace from "./hooks/useWorkspace";
 import { buildGoogleCalendarUrl } from "./lib/calendar";
+import { buildCalendarEntries, buildUpcomingReminders } from "./lib/calendarView";
 import { buildCommandPaletteItems } from "./lib/commandPalette";
 import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from "./lib/export";
-import { downloadTextFile, formatDateTime, formatDuration } from "./lib/storage";
+import { buildWorkspaceNotifications, getBrowserNotificationCandidates } from "./lib/notifications";
+import { downloadTextFile, formatDateTime, formatDuration, STORAGE_KEYS } from "./lib/storage";
 
 export default function MainApp() {
   const workspace = useWorkspace();
@@ -54,6 +58,16 @@ export default function MainApp() {
   const [pendingTaskId, setPendingTaskId] = useState("");
   const [pendingPersonId, setPendingPersonId] = useState("");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [notificationState, setNotificationState] = useStoredState(STORAGE_KEYS.notificationState, {
+    dismissedIds: [],
+    deliveredIds: [],
+  });
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    typeof window !== "undefined" && typeof window.Notification?.permission === "string"
+      ? window.Notification.permission
+      : "unsupported"
+  );
 
   const google = useGoogleIntegrations({
     currentUser: workspace.currentUser,
@@ -85,6 +99,30 @@ export default function MainApp() {
     () => meetings.meetingTasks.filter((task) => Boolean(task.dueDate)),
     [meetings.meetingTasks]
   );
+  const calendarEntries = useMemo(
+    () =>
+      buildCalendarEntries(
+        meetings.userMeetings,
+        google.googleCalendarEvents,
+        calendarTasks,
+        meetings.calendarMeta
+      ),
+    [calendarTasks, google.googleCalendarEvents, meetings.calendarMeta, meetings.userMeetings]
+  );
+  const upcomingReminders = useMemo(() => buildUpcomingReminders(calendarEntries), [calendarEntries]);
+  const notificationItems = useMemo(
+    () =>
+      buildWorkspaceNotifications({
+        reminders: upcomingReminders,
+        taskNotifications: meetings.taskNotifications,
+      }).filter((item) => !(notificationState.dismissedIds || []).includes(item.id)),
+    [meetings.taskNotifications, notificationState.dismissedIds, upcomingReminders]
+  );
+  const unreadNotificationCount = notificationItems.length;
+  const browserNotificationsSupported =
+    typeof window !== "undefined" &&
+    typeof window.Notification === "function" &&
+    typeof window.Notification.requestPermission === "function";
   const syncLinkedGoogleCalendarEvents = meetings.syncLinkedGoogleCalendarEvents;
   const commandPaletteItems = useMemo(
     () =>
@@ -117,6 +155,47 @@ export default function MainApp() {
       window.removeEventListener("keydown", handlePaletteShortcut);
     };
   }, []);
+
+  useEffect(() => {
+    if (!browserNotificationsSupported) {
+      return;
+    }
+
+    setNotificationPermission(window.Notification.permission || "default");
+  }, [browserNotificationsSupported]);
+
+  useEffect(() => {
+    if (!browserNotificationsSupported || notificationPermission !== "granted") {
+      return;
+    }
+
+    const candidates = getBrowserNotificationCandidates(notificationItems, notificationState.deliveredIds);
+    if (!candidates.length) {
+      return;
+    }
+
+    candidates.forEach((item) => {
+      try {
+        new window.Notification(item.title, {
+          body: item.body,
+          tag: item.id,
+        });
+      } catch (error) {
+        console.error("Browser notification failed.", error);
+      }
+    });
+
+    setNotificationState((previous) => ({
+      ...previous,
+      deliveredIds: [...new Set([...(previous.deliveredIds || []), ...candidates.map((item) => item.id)])],
+    }));
+  }, [
+    browserNotificationsSupported,
+    notificationItems,
+    notificationPermission,
+    notificationState.deliveredIds,
+    setNotificationState,
+  ]);
 
   function exportTranscript() {
     if (!displayRecording) {
@@ -202,6 +281,45 @@ export default function MainApp() {
     setCommandPaletteOpen(false);
   }
 
+  async function requestBrowserNotificationPermission() {
+    if (!browserNotificationsSupported || notificationPermission === "granted") {
+      return;
+    }
+
+    try {
+      const nextPermission = await window.Notification.requestPermission();
+      setNotificationPermission(nextPermission);
+    } catch (error) {
+      console.error("Unable to request notification permission.", error);
+    }
+  }
+
+  function dismissNotification(notificationId) {
+    setNotificationState((previous) => ({
+      ...previous,
+      dismissedIds: [...new Set([...(previous.dismissedIds || []), notificationId])],
+    }));
+  }
+
+  function activateNotification(item) {
+    if (!item?.action) {
+      dismissNotification(item?.id);
+      setNotificationCenterOpen(false);
+      return;
+    }
+
+    if (item.action.type === "meeting") {
+      openMeetingFromCalendar(item.action.id);
+    } else if (item.action.type === "task") {
+      openTaskFromCalendar(item.action.id);
+    } else {
+      setActiveTab("calendar");
+    }
+
+    dismissNotification(item.id);
+    setNotificationCenterOpen(false);
+  }
+
   function switchWorkspace(workspaceId) {
     workspace.switchWorkspace(workspaceId);
     meetings.resetSelectionState();
@@ -209,6 +327,7 @@ export default function MainApp() {
     setPendingTaskId("");
     setPendingPersonId("");
     setCommandPaletteOpen(false);
+    setNotificationCenterOpen(false);
   }
 
   function logout() {
@@ -224,6 +343,7 @@ export default function MainApp() {
     setPendingTaskId("");
     setPendingPersonId("");
     setCommandPaletteOpen(false);
+    setNotificationCenterOpen(false);
   }
 
   if (workspace.isHydratingSession) {
@@ -296,6 +416,18 @@ export default function MainApp() {
             {recorder.speechRecognitionSupported ? "Live transcript ready" : "Remote transcript required"}
           </div>
           <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
+          <NotificationCenter
+            open={notificationCenterOpen}
+            unreadCount={unreadNotificationCount}
+            items={notificationItems}
+            permissionState={notificationPermission}
+            browserNotificationsSupported={browserNotificationsSupported}
+            onToggle={() => setNotificationCenterOpen((previous) => !previous)}
+            onClose={() => setNotificationCenterOpen(false)}
+            onRequestPermission={requestBrowserNotificationPermission}
+            onDismiss={dismissNotification}
+            onActivate={activateNotification}
+          />
           <button type="button" className="ghost-button command-palette-launcher" onClick={() => setCommandPaletteOpen(true)}>
             Szukaj
             <span>Ctrl+K</span>
@@ -396,6 +528,7 @@ export default function MainApp() {
           onTaskSelectionHandled={() => setPendingTaskId("")}
           currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
           taskNotifications={meetings.taskNotifications}
+          workspaceActivity={meetings.workspaceActivity}
         />
       ) : activeTab === "people" ? (
         <PeopleTab
@@ -430,8 +563,12 @@ export default function MainApp() {
           setActiveTab={setActiveTab}
           meetingDraft={meetings.meetingDraft}
           setMeetingDraft={meetings.setMeetingDraft}
+          activeStoredMeetingDraft={meetings.activeStoredMeetingDraft}
+          clearMeetingDraft={meetings.clearMeetingDraft}
           saveMeeting={meetings.saveMeeting}
+          startNewMeetingDraft={meetings.startNewMeetingDraft}
           workspaceMessage={meetings.workspaceMessage}
+          workspaceActivity={meetings.workspaceActivity}
           userMeetings={meetings.userMeetings}
           selectedMeetingId={meetings.selectedMeetingId}
           selectMeeting={meetings.selectMeeting}

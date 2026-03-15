@@ -1,8 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 import { registerUser } from "./lib/auth";
 import { STORAGE_KEYS } from "./lib/storage";
+
+const originalNotification = window.Notification;
 
 function writeStorage(key, value) {
   window.localStorage.setItem(key, JSON.stringify(value));
@@ -86,6 +88,7 @@ describe("App integration", () => {
   beforeEach(() => {
     window.localStorage.clear();
     jest.restoreAllMocks();
+    window.Notification = originalNotification;
   });
 
   test("registers a user and enters the workspace", async () => {
@@ -245,6 +248,81 @@ describe("App integration", () => {
 
     const createdTaskFields = await screen.findAllByDisplayValue("Nowy follow-up");
     expect(createdTaskFields.length).toBeGreaterThan(0);
+  });
+
+  test("restores an autosaved meeting draft after refresh", async () => {
+    seedWorkspaceAppState();
+    const { unmount } = render(<App />);
+
+    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await userEvent.click(screen.getByRole("button", { name: "Nowe" }));
+    await userEvent.type(screen.getByLabelText("Tytul"), "Plan retro");
+    await userEvent.type(screen.getByLabelText("Kontekst"), "Podsumowanie sprintu");
+
+    unmount();
+    render(<App />);
+
+    expect(await screen.findByDisplayValue("Plan retro")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Podsumowanie sprintu")).toBeInTheDocument();
+  });
+
+  test("shows notification center items and requests browser notification permission", async () => {
+    const NotificationMock = jest.fn();
+    NotificationMock.permission = "default";
+    NotificationMock.requestPermission = jest.fn().mockImplementation(async () => {
+      NotificationMock.permission = "granted";
+      return "granted";
+    });
+    window.Notification = NotificationMock;
+
+    seedWorkspaceAppState({
+      manualTasks: [
+        {
+          id: "task_manual_critical",
+          userId: "user_1",
+          workspaceId: "workspace_1",
+          createdByUserId: "user_1",
+          title: "Pilny follow-up",
+          owner: "Anna Nowak",
+          assignedTo: ["Anna Nowak"],
+          group: "Sprint 14",
+          description: "",
+          dueDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          sourceType: "manual",
+          sourceMeetingId: "",
+          sourceMeetingTitle: "Reczne zadanie",
+          sourceMeetingDate: new Date().toISOString(),
+          sourceRecordingId: "",
+          sourceQuote: "",
+          createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          status: "todo",
+          important: true,
+          completed: false,
+          notes: "",
+          priority: "urgent",
+          tags: ["follow-up"],
+          comments: [],
+          history: [],
+          dependencies: [],
+          recurrence: null,
+        },
+      ],
+    });
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await userEvent.click(screen.getByRole("button", { name: "Powiadomienia" }));
+
+    expect(await screen.findByText("Pilny follow-up")).toBeInTheDocument();
+    await act(async () => {
+      await userEvent.click(screen.getByRole("button", { name: "Wlacz w przegladarce" }));
+    });
+
+    await waitFor(() => {
+      expect(NotificationMock.requestPermission).toHaveBeenCalled();
+      expect(NotificationMock).toHaveBeenCalled();
+    });
   });
 
   test("opens task details from the command palette", async () => {

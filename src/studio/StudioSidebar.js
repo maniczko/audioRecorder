@@ -1,5 +1,5 @@
-import { createEmptyMeetingDraft } from "../lib/meeting";
 import { formatDateTime } from "../lib/storage";
+import { getMeetingLastActivity } from "../lib/activityFeed";
 
 export default function StudioSidebar({
   currentUser,
@@ -8,14 +8,16 @@ export default function StudioSidebar({
   setActiveTab,
   meetingDraft,
   setMeetingDraft,
+  activeStoredMeetingDraft,
+  clearMeetingDraft,
   saveMeeting,
+  startNewMeetingDraft,
   workspaceMessage,
+  workspaceActivity = [],
   userMeetings,
   selectedMeetingId,
   selectMeeting,
   selectedMeeting,
-  setSelectedMeetingId,
-  setSelectedRecordingId,
 }) {
   return (
     <aside className="workspace-sidebar">
@@ -72,16 +74,17 @@ export default function StudioSidebar({
             <div className="eyebrow">Meeting brief</div>
             <h2>{selectedMeeting ? "Edytuj spotkanie" : "Nowe spotkanie"}</h2>
           </div>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => {
-              setSelectedMeetingId(null);
-              setSelectedRecordingId(null);
-              setMeetingDraft(createEmptyMeetingDraft());
-            }}
-          >
+          <button type="button" className="ghost-button" onClick={startNewMeetingDraft}>
             Nowe
+          </button>
+        </div>
+
+        <div className="studio-draft-toolbar">
+          <span className="microcopy">
+            Autosave {activeStoredMeetingDraft?.updatedAt ? `zapisany ${formatDateTime(activeStoredMeetingDraft.updatedAt)}` : "aktywny"}
+          </span>
+          <button type="button" className="ghost-button" onClick={clearMeetingDraft}>
+            Wyczyść draft
           </button>
         </div>
 
@@ -165,9 +168,14 @@ export default function StudioSidebar({
               onChange={(event) => setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))}
             />
           </label>
-          <button type="button" className="primary-button" onClick={saveMeeting}>
-            Zapisz spotkanie
-          </button>
+          <div className="button-row">
+            <button type="button" className="primary-button" onClick={saveMeeting}>
+              Zapisz spotkanie
+            </button>
+            <button type="button" className="ghost-button" onClick={clearMeetingDraft}>
+              Odrzuć zmiany
+            </button>
+          </div>
         </div>
 
         {workspaceMessage ? <div className="inline-alert success">{workspaceMessage}</div> : null}
@@ -182,28 +190,63 @@ export default function StudioSidebar({
         </div>
         <div className="meeting-list">
           {userMeetings.length ? (
-            userMeetings.map((meeting) => (
-              <button
-                type="button"
-                key={meeting.id}
-                className={meeting.id === selectedMeetingId ? "meeting-card active" : "meeting-card"}
-                onClick={() => selectMeeting(meeting)}
-              >
-                <div className="meeting-card-top">
-                  <strong>{meeting.title}</strong>
-                  <span>{formatDateTime(meeting.startsAt)}</span>
-                </div>
-                <p>{meeting.context || "Brak kontekstu."}</p>
-                <div className="meeting-card-meta">
-                  <span>{meeting.recordings.length} nagran</span>
-                  <span>{meeting.speakerCount || 0} speakerow</span>
-                </div>
-              </button>
-            ))
+            userMeetings.map((meeting) => {
+              const lastActivity = getMeetingLastActivity(meeting, currentWorkspaceMembers);
+              return (
+                <button
+                  type="button"
+                  key={meeting.id}
+                  className={meeting.id === selectedMeetingId ? "meeting-card active" : "meeting-card"}
+                  onClick={() => selectMeeting(meeting)}
+                >
+                  <div className="meeting-card-top">
+                    <strong>{meeting.title}</strong>
+                    <span>{formatDateTime(meeting.startsAt)}</span>
+                  </div>
+                  <p>{meeting.context || "Brak kontekstu."}</p>
+                  {lastActivity ? (
+                    <small className="meeting-activity-copy">
+                      Ostatnia aktywnosc: {lastActivity.actor} - {lastActivity.message}
+                    </small>
+                  ) : null}
+                  <div className="meeting-card-meta">
+                    <span>{meeting.recordings.length} nagran</span>
+                    <span>{meeting.speakerCount || 0} speakerow</span>
+                  </div>
+                </button>
+              );
+            })
           ) : (
             <div className="empty-panel">
               <strong>Brak spotkan</strong>
               <span>Utworz pierwsze spotkanie powyzej albo zaloguj sie przez Google.</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header compact">
+          <div>
+            <div className="eyebrow">Workspace feed</div>
+            <h2>Aktywnosc zespolu</h2>
+          </div>
+        </div>
+        <div className="workspace-activity-list">
+          {workspaceActivity.length ? (
+            workspaceActivity.slice(0, 6).map((entry) => (
+              <article key={entry.id} className={`workspace-activity-card ${entry.tone || "neutral"}`}>
+                <strong>{entry.actor}</strong>
+                <span>{entry.message}</span>
+                <small>
+                  {entry.entityType === "meeting" ? "Spotkanie" : "Zadanie"}: {entry.title}
+                </small>
+              </article>
+            ))
+          ) : (
+            <div className="empty-panel">
+              <strong>Brak aktywnosci</strong>
+              <span>Nowe spotkania, komentarze i zmiany statusow pojawia sie tutaj.</span>
             </div>
           )}
         </div>

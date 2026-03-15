@@ -29,6 +29,16 @@ export function createMeeting(userId, draft, options = {}) {
     analysis: null,
     speakerNames: {},
     speakerCount: 0,
+    activity: [
+      {
+        id: createId("meeting_activity"),
+        type: "created",
+        actorId: options.createdByUserId || userId,
+        actorName: options.createdByUserName || "",
+        message: "Utworzono spotkanie.",
+        createdAt: now,
+      },
+    ],
     createdAt: now,
     updatedAt: now,
   };

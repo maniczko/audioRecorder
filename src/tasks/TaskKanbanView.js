@@ -1,4 +1,5 @@
 import { getTaskAssigneeSummary, getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
+import { getTaskLastActivity } from "../lib/activityFeed";
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from "./taskViewUtils";
 
 function DropSlot({ placement, onDropTask, onDragEnter, label = "Upusc tutaj zadanie" }) {
@@ -58,6 +59,7 @@ export default function TaskKanbanView({
                   const dependencyState = getTaskDependencyDetails(task, allTasks);
                   const slaState = getTaskSlaState(task);
                   const isSelected = selectedTaskIds.includes(task.id);
+                  const lastActivity = getTaskLastActivity(task);
 
                   return (
                     <div key={task.id} className="todo-kanban-card-shell">
@@ -118,6 +120,11 @@ export default function TaskKanbanView({
                           <span>{getTaskAssigneeSummary(task)}</span>
                           <span>{formatListDueDate(task.dueDate) || "Brak terminu"}</span>
                         </div>
+                        {lastActivity ? (
+                          <small className="todo-activity-copy">
+                            Ostatnia aktywnosc: {lastActivity.actor} - {lastActivity.message}
+                          </small>
+                        ) : null}
                         <div className="todo-tag-list">
                           {task.group ? <span className="todo-tag">{task.group}</span> : null}
                           {task.recurrence ? <span className="todo-tag tone-info">Cykliczne</span> : null}

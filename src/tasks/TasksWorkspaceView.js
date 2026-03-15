@@ -33,6 +33,34 @@ function NotificationStrip({ notifications = [] }) {
   );
 }
 
+function ActivityStrip({ activity = [] }) {
+  if (!activity.length) {
+    return null;
+  }
+
+  return (
+    <section className="workspace-activity-strip" aria-label="Feed aktywnosci workspace">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Workspace feed</div>
+          <h2>Ostatnia aktywnosc</h2>
+        </div>
+      </div>
+      <div className="workspace-activity-list">
+        {activity.slice(0, 5).map((entry) => (
+          <article key={entry.id} className={`workspace-activity-card ${entry.tone || "neutral"}`}>
+            <strong>{entry.actor}</strong>
+            <span>{entry.message}</span>
+            <small>
+              {entry.entityType === "meeting" ? "Spotkanie" : "Zadanie"}: {entry.title}
+            </small>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function BulkToolbar({
   selectedTaskIds,
   clearTaskSelection,
@@ -153,6 +181,7 @@ export default function TasksWorkspaceView({
   handleBulkUpdate,
   handleBulkDelete,
   taskNotifications,
+  workspaceActivity,
 }) {
   return (
     <section className="todo-main">
@@ -212,6 +241,7 @@ export default function TasksWorkspaceView({
         </div>
 
         <NotificationStrip notifications={taskNotifications} />
+        <ActivityStrip activity={workspaceActivity} />
 
         <div className="todo-stats-strip">
           {statCards(stats, visibleStats).map((item) => (

@@ -15,33 +15,39 @@ Wynik:
 - wdrozone w UI wraz z testem integracyjnym.
 
 ## 002. Autosave draftow spotkan i przywracanie po odswiezeniu
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: ograniczyc utrate danych przy odswiezeniu strony lub przypadkowym wyjsciu.
 Akceptacja:
 - formularz briefu spotkania zapisuje draft automatycznie.
 - po odswiezeniu draft wraca dla biezacego workspace.
 - uzytkownik moze wyczyscic draft recznie.
+Wynik:
+- wdrozone autosave per workspace, restore po odswiezeniu i reczne czyszczenie draftu w Studio.
 
-Nastepny do realizacji: `002. Autosave draftow spotkan i przywracanie po odswiezeniu`
+Nastepny do realizacji: `005. Upload queue i retry dla audio`
 
 ## 003. Centrum powiadomien i browser notifications
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: poprawic obsluge terminow, przypomnien i taskow po SLA.
 Akceptacja:
 - jest panel powiadomien w aplikacji.
 - przypomnienia o zadaniach i spotkaniach trafiaja do panelu.
 - po zgodzie przegladarki pojawiaja sie browser notifications.
+Wynik:
+- dodane centrum powiadomien w topbarze, alerty o przypomnieniach i SLA oraz browser notifications po zgodzie.
 
 ## 004. Aktywnosc workspace i realtime feed
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: lepiej pokazac prace zespolowa i zmiany bez recznego odswiezania.
 Akceptacja:
 - widac feed: kto dodal komentarz, task, spotkanie lub zmienil status.
 - feed odswieza sie automatycznie w trybie `remote`.
 - przy taskach i spotkaniach widac ostatnia aktywnosc.
+Wynik:
+- dodany feed aktywnosci workspace, ostatnia aktywnosc przy spotkaniach i zadaniach oraz test helpera aktywnosci.
 
 ## 005. Upload queue i retry dla audio
 Status: `todo`

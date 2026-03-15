@@ -1,5 +1,4 @@
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
-import { createEmptyMeetingDraft } from "../lib/meeting";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
@@ -31,8 +30,7 @@ export default function StudioMeetingView({
   exportTranscript,
   exportMeetingNotes,
   exportMeetingPdfFile,
-  setSelectedMeetingId,
-  setMeetingDraft,
+  startNewMeetingDraft,
 }) {
   if (!selectedMeeting) {
     return (
@@ -50,10 +48,7 @@ export default function StudioMeetingView({
           <button
             type="button"
             className="ghost-button"
-            onClick={() => {
-              setSelectedMeetingId(null);
-              setMeetingDraft(createEmptyMeetingDraft());
-            }}
+            onClick={startNewMeetingDraft}
           >
             Przygotuj brief
           </button>

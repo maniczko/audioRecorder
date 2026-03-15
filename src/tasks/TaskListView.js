@@ -7,6 +7,7 @@ import {
   writeDragTask,
 } from "./taskViewUtils";
 import { getTaskAssigneeSummary, getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
+import { getTaskLastActivity } from "../lib/activityFeed";
 
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
@@ -90,6 +91,7 @@ export default function TaskListView({
                 const hasMoreAssignees = (task.assignedTo || []).length > 1;
                 const dependencyState = getTaskDependencyDetails(task, allTasks);
                 const slaState = getTaskSlaState(task);
+                const lastActivity = getTaskLastActivity(task);
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -168,6 +170,7 @@ export default function TaskListView({
                               {hasMoreAssignees ? " | zespolowe" : ""}
                               {dependencyState.blocking ? ` | blokuje ${dependencyState.unresolved[0]?.title}` : ""}
                             </small>
+                            {lastActivity ? <small>Ostatnia aktywnosc: {lastActivity.actor} - {lastActivity.message}</small> : null}
                           </>
                         )}
                       </span>

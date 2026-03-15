@@ -3150,6 +3150,197 @@ select:focus {
   font-size: 0.72rem;
 }
 
+.notification-anchor {
+  position: relative;
+}
+
+.notification-trigger {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.notification-trigger.active,
+.notification-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.notification-trigger-icon {
+  font-size: 1rem;
+}
+
+.notification-trigger-badge {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f3ca72 0%, #f17d72 100%);
+  color: #172436;
+  font-size: 0.72rem;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(420px, 92vw);
+  max-height: min(70vh, 620px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(12, 23, 37, 0.98), rgba(8, 16, 27, 0.98));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+  z-index: 40;
+}
+
+.notification-panel-header,
+.notification-panel-tools,
+.notification-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notification-panel-tools {
+  align-items: flex-start;
+}
+
+.notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notification-card.info {
+  border-color: rgba(117, 214, 196, 0.18);
+}
+
+.notification-card.warning {
+  border-color: rgba(243, 202, 114, 0.22);
+}
+
+.notification-card.danger {
+  border-color: rgba(241, 125, 114, 0.22);
+}
+
+.notification-card-main,
+.notification-dismiss {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.notification-card-main {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  text-align: left;
+}
+
+.notification-card-main p,
+.notification-card-top span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.notification-dismiss {
+  align-self: start;
+  padding: 6px 0;
+  color: var(--muted);
+}
+
+.notification-tone {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-tone.info,
+.notification-tone.neutral {
+  color: var(--accent-strong);
+  background: rgba(117, 214, 196, 0.08);
+}
+
+.notification-tone.warning {
+  color: #ffd891;
+  background: rgba(243, 202, 114, 0.1);
+}
+
+.notification-tone.danger {
+  color: #ffd8d3;
+  background: rgba(241, 125, 114, 0.12);
+}
+
+.studio-draft-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.workspace-activity-strip,
+.workspace-activity-list {
+  display: grid;
+  gap: 10px;
+}
+
+.workspace-activity-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.workspace-activity-card span,
+.workspace-activity-card small,
+.meeting-activity-copy,
+.todo-activity-copy {
+  color: var(--muted);
+}
+
+.workspace-activity-card.warning {
+  border-color: rgba(243, 202, 114, 0.22);
+}
+
+.workspace-activity-card.info {
+  border-color: rgba(117, 214, 196, 0.18);
+}
+
+.workspace-activity-card.danger {
+  border-color: rgba(241, 125, 114, 0.22);
+}
+
 .command-palette-backdrop {
   position: fixed;
   inset: 0;

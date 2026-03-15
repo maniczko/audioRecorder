@@ -9,6 +9,7 @@ import {
   updateMeeting,
   upsertMeeting,
 } from "../lib/meeting";
+import { buildWorkspaceActivityFeed } from "../lib/activityFeed";
 import { buildPeopleProfiles } from "../lib/people";
 import { createId, STORAGE_KEYS } from "../lib/storage";
 import {
@@ -34,6 +35,30 @@ function serializeWorkspaceState(payload) {
   return JSON.stringify(payload || {});
 }
 
+const MEETING_DRAFT_FIELDS = [
+  "title",
+  "context",
+  "startsAt",
+  "durationMinutes",
+  "attendees",
+  "tags",
+  "needs",
+  "desiredOutputs",
+  "location",
+];
+
+function normalizeMeetingDraftValue(draft) {
+  const safeDraft = draft && typeof draft === "object" ? draft : createEmptyMeetingDraft();
+  return MEETING_DRAFT_FIELDS.reduce((accumulator, field) => {
+    accumulator[field] = field === "durationMinutes" ? Number(safeDraft[field]) || 45 : String(safeDraft[field] ?? "");
+    return accumulator;
+  }, {});
+}
+
+function areMeetingDraftsEqual(left, right) {
+  return JSON.stringify(normalizeMeetingDraftValue(left)) === JSON.stringify(normalizeMeetingDraftValue(right));
+}
+
 export default function useMeetings({
   users,
   setUsers,
@@ -51,18 +76,28 @@ export default function useMeetings({
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
   const [calendarMeta, setCalendarMeta] = useStoredState(STORAGE_KEYS.calendarMeta, {});
-  const [meetingDraft, setMeetingDraft] = useState(createEmptyMeetingDraft());
+  const [storedMeetingDrafts, setStoredMeetingDrafts] = useStoredState(STORAGE_KEYS.meetingDrafts, {});
+  const [meetingDraft, setMeetingDraftState] = useState(createEmptyMeetingDraft());
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+  const [isDetachedMeetingDraft, setIsDetachedMeetingDraft] = useState(false);
+  const [hasMeetingDraftChanges, setHasMeetingDraftChanges] = useState(false);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const stateService = useMemo(() => createStateService(), []);
   const syncTimerRef = useRef(null);
   const remotePollTimerRef = useRef(null);
   const hydratedWorkspaceIdRef = useRef("");
   const remoteSnapshotRef = useRef("");
+  const restoredDraftWorkspaceRef = useRef("");
+  const skipSelectedMeetingDraftSyncRef = useRef("");
+  const draftBaselineRef = useRef(createEmptyMeetingDraft());
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService.mode === "remote" && Boolean(session?.token)
   );
+  const setMeetingDraft = useCallback((value) => {
+    setHasMeetingDraftChanges(true);
+    setMeetingDraftState((previous) => (typeof value === "function" ? value(previous) : value));
+  }, []);
 
   const userMeetings = useMemo(
     () =>
@@ -91,6 +126,11 @@ export default function useMeetings({
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
   const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
   const taskNotifications = buildTaskNotifications(meetingTasks);
+  const workspaceActivity = useMemo(
+    () => buildWorkspaceActivityFeed(userMeetings, meetingTasks, currentWorkspaceMembers, users),
+    [currentWorkspaceMembers, meetingTasks, userMeetings, users]
+  );
+  const activeStoredMeetingDraft = currentWorkspaceId ? storedMeetingDrafts[currentWorkspaceId] || null : null;
 
   const applyRemoteWorkspaceState = useCallback((result) => {
     if (!result) {
@@ -359,7 +399,37 @@ export default function useMeetings({
     if (!currentUserId || !currentWorkspaceId) {
       setSelectedMeetingId(null);
       setSelectedRecordingId(null);
-      setMeetingDraft(createEmptyMeetingDraft());
+      setIsDetachedMeetingDraft(false);
+      const freshDraft = createEmptyMeetingDraft();
+      draftBaselineRef.current = freshDraft;
+      restoredDraftWorkspaceRef.current = "";
+      skipSelectedMeetingDraftSyncRef.current = "";
+      setHasMeetingDraftChanges(false);
+      setMeetingDraftState(freshDraft);
+      return;
+    }
+
+    const storedDraft = storedMeetingDrafts[currentWorkspaceId] || null;
+    if (storedDraft && restoredDraftWorkspaceRef.current !== currentWorkspaceId) {
+      if (storedDraft.selectedMeetingId && !userMeetings.length) {
+        return;
+      }
+
+      const matchingMeeting = storedDraft.selectedMeetingId
+        ? userMeetings.find((meeting) => meeting.id === storedDraft.selectedMeetingId) || null
+        : null;
+      const baselineDraft = storedDraft.baselineDraft || (matchingMeeting ? meetingToDraft(matchingMeeting) : createEmptyMeetingDraft());
+      const nextDraft = normalizeMeetingDraftValue(storedDraft.draft || baselineDraft);
+
+      restoredDraftWorkspaceRef.current = currentWorkspaceId;
+      draftBaselineRef.current = baselineDraft;
+      skipSelectedMeetingDraftSyncRef.current = matchingMeeting?.id || "";
+      setSelectedMeetingId(matchingMeeting?.id || null);
+      setSelectedRecordingId(matchingMeeting?.latestRecordingId || matchingMeeting?.recordings[0]?.id || null);
+      setIsDetachedMeetingDraft(!matchingMeeting);
+      setHasMeetingDraftChanges(false);
+      setMeetingDraftState(nextDraft);
+      setWorkspaceMessage("Przywrocono ostatni autosave briefu.");
       return;
     }
 
@@ -369,28 +439,145 @@ export default function useMeetings({
       return;
     }
 
+    if (isDetachedMeetingDraft) {
+      return;
+    }
+
     const nextSelectedMeeting =
       userMeetings.find((meeting) => meeting.id === selectedMeetingId) || userMeetings[0];
     if (nextSelectedMeeting.id !== selectedMeetingId) {
+      const nextDraft = meetingToDraft(nextSelectedMeeting);
       setSelectedMeetingId(nextSelectedMeeting.id);
       setSelectedRecordingId(nextSelectedMeeting.latestRecordingId || nextSelectedMeeting.recordings[0]?.id || null);
-      setMeetingDraft(meetingToDraft(nextSelectedMeeting));
+      draftBaselineRef.current = nextDraft;
+      setHasMeetingDraftChanges(false);
+      setMeetingDraftState(nextDraft);
     }
-  }, [currentUserId, currentWorkspaceId, selectedMeetingId, userMeetings]);
+  }, [currentUserId, currentWorkspaceId, isDetachedMeetingDraft, selectedMeetingId, storedMeetingDrafts, userMeetings]);
 
   useEffect(() => {
     if (!selectedMeeting) {
       return;
     }
 
-    setMeetingDraft(meetingToDraft(selectedMeeting));
+    if (skipSelectedMeetingDraftSyncRef.current === selectedMeeting.id) {
+      skipSelectedMeetingDraftSyncRef.current = "";
+      return;
+    }
+
+    const nextDraft = meetingToDraft(selectedMeeting);
+    draftBaselineRef.current = nextDraft;
+    setHasMeetingDraftChanges(false);
+    setMeetingDraftState(nextDraft);
   }, [selectedMeeting]);
+
+  useEffect(() => {
+    if (!currentWorkspaceId) {
+      return;
+    }
+
+    const baselineDraft = selectedMeeting ? meetingToDraft(selectedMeeting) : draftBaselineRef.current;
+    const hasDraftChanges = !areMeetingDraftsEqual(meetingDraft, baselineDraft);
+    if (!hasMeetingDraftChanges && !activeStoredMeetingDraft) {
+      return;
+    }
+
+    setStoredMeetingDrafts((previous) => {
+      const next = { ...previous };
+      if (!hasDraftChanges) {
+        if (!next[currentWorkspaceId]) {
+          return previous;
+        }
+        delete next[currentWorkspaceId];
+        return next;
+      }
+
+      const currentEntry = next[currentWorkspaceId];
+      const normalizedDraft = normalizeMeetingDraftValue(meetingDraft);
+      const normalizedBaselineDraft = normalizeMeetingDraftValue(baselineDraft);
+      if (
+        currentEntry &&
+        areMeetingDraftsEqual(currentEntry.draft, normalizedDraft) &&
+        areMeetingDraftsEqual(currentEntry.baselineDraft, normalizedBaselineDraft) &&
+        String(currentEntry.selectedMeetingId || "") === String(selectedMeeting?.id || "")
+      ) {
+        return previous;
+      }
+
+      next[currentWorkspaceId] = {
+        draft: normalizedDraft,
+        baselineDraft: normalizedBaselineDraft,
+        selectedMeetingId: selectedMeeting?.id || "",
+        updatedAt: new Date().toISOString(),
+      };
+      return next;
+    });
+  }, [
+    currentWorkspaceId,
+    hasMeetingDraftChanges,
+    meetingDraft,
+    selectedMeeting,
+    activeStoredMeetingDraft,
+    setStoredMeetingDrafts,
+  ]);
 
   function selectMeeting(meeting) {
     setSelectedMeetingId(meeting.id);
     setSelectedRecordingId(meeting.latestRecordingId || meeting.recordings[0]?.id || null);
-    setMeetingDraft(meetingToDraft(meeting));
+    setIsDetachedMeetingDraft(false);
+    const nextDraft = meetingToDraft(meeting);
+    draftBaselineRef.current = nextDraft;
+    setHasMeetingDraftChanges(false);
+    setMeetingDraftState(nextDraft);
     setWorkspaceMessage("");
+  }
+
+  function startNewMeetingDraft() {
+    const freshDraft = createEmptyMeetingDraft();
+    restoredDraftWorkspaceRef.current = currentWorkspaceId || "";
+    draftBaselineRef.current = freshDraft;
+    setSelectedMeetingId(null);
+    setSelectedRecordingId(null);
+    setIsDetachedMeetingDraft(true);
+    setHasMeetingDraftChanges(false);
+    setMeetingDraftState(freshDraft);
+    setWorkspaceMessage("Nowy draft jest gotowy.");
+    if (currentWorkspaceId) {
+      setStoredMeetingDrafts((previous) => {
+        if (!previous[currentWorkspaceId]) {
+          return previous;
+        }
+
+        const next = { ...previous };
+        delete next[currentWorkspaceId];
+        return next;
+      });
+    }
+  }
+
+  function clearMeetingDraft() {
+    const nextDraft = selectedMeeting ? meetingToDraft(selectedMeeting) : createEmptyMeetingDraft();
+    draftBaselineRef.current = nextDraft;
+    restoredDraftWorkspaceRef.current = currentWorkspaceId || "";
+    if (!selectedMeeting) {
+      setIsDetachedMeetingDraft(true);
+      setSelectedMeetingId(null);
+      setSelectedRecordingId(null);
+    }
+    setHasMeetingDraftChanges(false);
+    setMeetingDraftState(nextDraft);
+    setWorkspaceMessage(selectedMeeting ? "Przywrocono ostatnia zapisana wersje spotkania." : "Wyczyszczono draft spotkania.");
+    if (currentWorkspaceId) {
+      setStoredMeetingDrafts((previous) => {
+        if (!previous[currentWorkspaceId]) {
+          return previous;
+        }
+
+        const next = { ...previous };
+        delete next[currentWorkspaceId];
+        return next;
+      });
+    }
   }
 
   function createAdHocMeeting() {
@@ -422,6 +609,7 @@ export default function useMeetings({
       {
         workspaceId: currentWorkspaceId,
         createdByUserId: currentUser.id,
+        createdByUserName: currentUser.name || currentUser.email || "Ty",
       }
     );
 
@@ -440,22 +628,55 @@ export default function useMeetings({
       const meeting = createMeeting(currentUser.id, meetingDraft, {
         workspaceId: currentWorkspaceId,
         createdByUserId: currentUser.id,
+        createdByUserName: currentUser.name || currentUser.email || "Ty",
       });
       setMeetings((previous) => upsertMeeting(previous, meeting));
+      setIsDetachedMeetingDraft(false);
       selectMeeting(meeting);
       setWorkspaceMessage("Spotkanie utworzone.");
       return;
     }
 
-    const nextMeeting = updateMeeting(selectedMeeting, meetingDraft);
+    const nextMeeting = {
+      ...updateMeeting(selectedMeeting, meetingDraft),
+      activity: [
+        ...(selectedMeeting.activity || []),
+        {
+          id: createId("meeting_activity"),
+          type: "updated",
+          actorId: currentUser.id,
+          actorName: currentUser.name || currentUser.email || "Ty",
+          message: "Zmieniono brief spotkania.",
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
     setMeetings((previous) => upsertMeeting(previous, nextMeeting));
+    setIsDetachedMeetingDraft(false);
     selectMeeting(nextMeeting);
     setWorkspaceMessage("Spotkanie zapisane.");
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
     setMeetings((previous) =>
-      previous.map((meeting) => (meeting.id === recordingMeetingId ? attachRecording(meeting, recording) : meeting))
+      previous.map((meeting) =>
+        meeting.id === recordingMeetingId
+          ? {
+              ...attachRecording(meeting, recording),
+              activity: [
+                ...(meeting.activity || []),
+                {
+                  id: createId("meeting_activity"),
+                  type: "recording",
+                  actorId: currentUser?.id || "",
+                  actorName: currentUser?.name || currentUser?.email || "Ty",
+                  message: "Dodano nowe nagranie do spotkania.",
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : meeting
+      )
     );
     setSelectedMeetingId(recordingMeetingId);
     setSelectedRecordingId(recording.id);
@@ -1022,9 +1243,15 @@ export default function useMeetings({
   }
 
   function resetSelectionState() {
+    const freshDraft = createEmptyMeetingDraft();
     setSelectedMeetingId(null);
     setSelectedRecordingId(null);
-    setMeetingDraft(createEmptyMeetingDraft());
+    setIsDetachedMeetingDraft(false);
+    draftBaselineRef.current = freshDraft;
+    restoredDraftWorkspaceRef.current = "";
+    skipSelectedMeetingDraftSyncRef.current = "";
+    setHasMeetingDraftChanges(false);
+    setMeetingDraftState(freshDraft);
     setWorkspaceMessage("");
   }
 
@@ -1091,6 +1318,8 @@ export default function useMeetings({
     setCalendarMeta,
     meetingDraft,
     setMeetingDraft,
+    activeStoredMeetingDraft,
+    isDetachedMeetingDraft,
     selectedMeetingId,
     setSelectedMeetingId,
     selectedRecordingId,
@@ -1103,10 +1332,13 @@ export default function useMeetings({
     taskColumns,
     meetingTasks,
     taskNotifications,
+    workspaceActivity,
     taskPeople,
     taskTags,
     peopleProfiles,
     selectMeeting,
+    startNewMeetingDraft,
+    clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,
     attachCompletedRecording,

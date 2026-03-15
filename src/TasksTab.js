@@ -49,6 +49,7 @@ export default function TasksTab({
   onTaskSelectionHandled,
   currentUserName,
   taskNotifications = [],
+  workspaceActivity = [],
 }) {
   const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
   const [selectedListId, setSelectedListId] = useState("smart:all");
@@ -609,6 +610,7 @@ export default function TasksTab({
         handleBulkUpdate={handleBulkUpdate}
         handleBulkDelete={handleBulkDelete}
         taskNotifications={taskNotifications}
+        workspaceActivity={workspaceActivity}
       />
 
       <TaskDetailsPanel

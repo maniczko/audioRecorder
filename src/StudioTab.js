@@ -9,8 +9,12 @@ export default function StudioTab(props) {
     setActiveTab,
     meetingDraft,
     setMeetingDraft,
+    activeStoredMeetingDraft,
+    clearMeetingDraft,
     saveMeeting,
+    startNewMeetingDraft,
     workspaceMessage,
+    workspaceActivity,
     userMeetings,
     selectedMeetingId,
     selectMeeting,
@@ -28,8 +32,12 @@ export default function StudioTab(props) {
         setActiveTab={setActiveTab}
         meetingDraft={meetingDraft}
         setMeetingDraft={setMeetingDraft}
+        activeStoredMeetingDraft={activeStoredMeetingDraft}
+        clearMeetingDraft={clearMeetingDraft}
         saveMeeting={saveMeeting}
+        startNewMeetingDraft={startNewMeetingDraft}
         workspaceMessage={workspaceMessage}
+        workspaceActivity={workspaceActivity}
         userMeetings={userMeetings}
         selectedMeetingId={selectedMeetingId}
         selectMeeting={selectMeeting}
