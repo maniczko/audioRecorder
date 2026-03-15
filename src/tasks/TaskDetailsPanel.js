@@ -62,6 +62,10 @@ export default function TaskDetailsPanel({
   const [linkLabelDraft, setLinkLabelDraft] = useState("");
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const tagOptions = useMemo(
+    () => [...new Set((tasks || []).flatMap((t) => t.tags || []))].filter(Boolean).sort(),
+    [tasks]
+  );
 
   useEffect(() => {
     setCommentDraft("");
@@ -88,10 +92,6 @@ export default function TaskDetailsPanel({
   const assignedPeople = selectedTask.assignedTo || [];
   const activeRecurrence = recurrenceFrequency(selectedTask);
   const slaState = getTaskSlaState(selectedTask);
-  const tagOptions = useMemo(
-    () => [...new Set((tasks || []).flatMap((t) => t.tags || []))].filter(Boolean).sort(),
-    [tasks]
-  );
 
   function updateAssignees(nextAssignees) {
     onUpdateTask(selectedTask.id, {
