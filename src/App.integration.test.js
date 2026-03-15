@@ -247,6 +247,52 @@ describe("App integration", () => {
     expect(createdTaskFields.length).toBeGreaterThan(0);
   });
 
+  test("opens task details from the command palette", async () => {
+    seedWorkspaceAppState({
+      manualTasks: [
+        {
+          id: "task_1",
+          userId: "user_1",
+          workspaceId: "workspace_1",
+          createdByUserId: "user_1",
+          title: "Przygotuj demo",
+          owner: "Anna Nowak",
+          assignedTo: ["Anna Nowak"],
+          description: "Pokaz dla klienta",
+          dueDate: "2026-03-14T12:00:00.000Z",
+          sourceType: "manual",
+          sourceMeetingId: "",
+          sourceMeetingTitle: "Reczne zadanie",
+          sourceMeetingDate: "2026-03-14T12:00:00.000Z",
+          sourceRecordingId: "",
+          sourceQuote: "",
+          createdAt: "2026-03-14T09:00:00.000Z",
+          updatedAt: "2026-03-14T09:00:00.000Z",
+          status: "todo",
+          important: false,
+          completed: false,
+          notes: "",
+          priority: "high",
+          tags: ["demo"],
+          comments: [],
+          history: [],
+          dependencies: [],
+          recurrence: null,
+        },
+      ],
+    });
+    render(<App />);
+
+    await userEvent.keyboard("{Control>}k{/Control}");
+    expect(screen.getByText("Szybkie przejscie")).toBeInTheDocument();
+
+    await userEvent.type(screen.getByPlaceholderText("Zakladka, spotkanie, zadanie, osoba..."), "Przygotuj demo");
+    await userEvent.click(screen.getByRole("button", { name: /Przygotuj demo/i }));
+
+    const createdTaskFields = await screen.findAllByDisplayValue("Przygotuj demo");
+    expect(createdTaskFields.length).toBeGreaterThan(0);
+  });
+
   test("shows a microphone error for ad hoc recording when permission is blocked", async () => {
     seedWorkspaceAppState();
     jest.spyOn(console, "error").mockImplementation(() => {});

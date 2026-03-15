@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting }) {
+export default function PeopleTab({ profiles, onOpenMeeting, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
 
@@ -27,6 +27,22 @@ export default function PeopleTab({ profiles, onOpenMeeting }) {
       setSelectedPersonId(visibleProfiles[0].id);
     }
   }, [selectedPersonId, visibleProfiles]);
+
+  useEffect(() => {
+    if (!externalSelectedPersonId) {
+      return;
+    }
+
+    const matchingProfile = profiles.find((profile) => profile.id === externalSelectedPersonId);
+    if (!matchingProfile) {
+      onPersonSelectionHandled?.();
+      return;
+    }
+
+    setQuery("");
+    setSelectedPersonId(matchingProfile.id);
+    onPersonSelectionHandled?.();
+  }, [externalSelectedPersonId, onPersonSelectionHandled, profiles]);
 
   const selectedPerson = visibleProfiles.find((profile) => profile.id === selectedPersonId) || visibleProfiles[0] || null;
 

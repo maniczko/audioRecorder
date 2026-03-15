@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthScreen from "./AuthScreen";
 import CalendarTab from "./CalendarTab";
+import CommandPalette from "./CommandPalette";
 import PeopleTab from "./PeopleTab";
 import ProfileTab from "./ProfileTab";
 import StudioTab from "./StudioTab";
@@ -12,6 +13,7 @@ import useMeetings from "./hooks/useMeetings";
 import useRecorder from "./hooks/useRecorder";
 import useWorkspace from "./hooks/useWorkspace";
 import { buildGoogleCalendarUrl } from "./lib/calendar";
+import { buildCommandPaletteItems } from "./lib/commandPalette";
 import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from "./lib/export";
 import { downloadTextFile, formatDateTime, formatDuration } from "./lib/storage";
 
@@ -50,6 +52,8 @@ export default function MainApp() {
   );
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => new Date());
   const [pendingTaskId, setPendingTaskId] = useState("");
+  const [pendingPersonId, setPendingPersonId] = useState("");
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const google = useGoogleIntegrations({
     currentUser: workspace.currentUser,
@@ -82,6 +86,15 @@ export default function MainApp() {
     [meetings.meetingTasks]
   );
   const syncLinkedGoogleCalendarEvents = meetings.syncLinkedGoogleCalendarEvents;
+  const commandPaletteItems = useMemo(
+    () =>
+      buildCommandPaletteItems({
+        meetings: meetings.userMeetings,
+        tasks: meetings.meetingTasks,
+        people: meetings.peopleProfiles,
+      }),
+    [meetings.meetingTasks, meetings.peopleProfiles, meetings.userMeetings]
+  );
 
   useEffect(() => {
     if (!google.googleCalendarEvents.length) {
@@ -90,6 +103,20 @@ export default function MainApp() {
 
     syncLinkedGoogleCalendarEvents(google.googleCalendarEvents);
   }, [google.googleCalendarEvents, syncLinkedGoogleCalendarEvents]);
+
+  useEffect(() => {
+    function handlePaletteShortcut(event) {
+      if ((event.ctrlKey || event.metaKey) && String(event.key || "").toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handlePaletteShortcut);
+    return () => {
+      window.removeEventListener("keydown", handlePaletteShortcut);
+    };
+  }, []);
 
   function exportTranscript() {
     if (!displayRecording) {
@@ -152,11 +179,36 @@ export default function MainApp() {
     setActiveTab("tasks");
   }
 
+  function openPersonFromPalette(personId) {
+    setPendingPersonId(personId);
+    setActiveTab("people");
+  }
+
+  function handleCommandPaletteSelect(item) {
+    if (!item) {
+      return;
+    }
+
+    if (item.type === "tab") {
+      setActiveTab(item.payload.tabId);
+    } else if (item.type === "meeting") {
+      openMeetingFromCalendar(item.payload.meetingId);
+    } else if (item.type === "task") {
+      openTaskFromCalendar(item.payload.taskId);
+    } else if (item.type === "person") {
+      openPersonFromPalette(item.payload.personId);
+    }
+
+    setCommandPaletteOpen(false);
+  }
+
   function switchWorkspace(workspaceId) {
     workspace.switchWorkspace(workspaceId);
     meetings.resetSelectionState();
     google.resetGoogleSession();
     setPendingTaskId("");
+    setPendingPersonId("");
+    setCommandPaletteOpen(false);
   }
 
   function logout() {
@@ -170,6 +222,8 @@ export default function MainApp() {
     recorder.resetRecorderState();
     setActiveTab("studio");
     setPendingTaskId("");
+    setPendingPersonId("");
+    setCommandPaletteOpen(false);
   }
 
   if (workspace.isHydratingSession) {
@@ -242,6 +296,10 @@ export default function MainApp() {
             {recorder.speechRecognitionSupported ? "Live transcript ready" : "Remote transcript required"}
           </div>
           <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
+          <button type="button" className="ghost-button command-palette-launcher" onClick={() => setCommandPaletteOpen(true)}>
+            Szukaj
+            <span>Ctrl+K</span>
+          </button>
           {workspace.availableWorkspaces.length > 1 ? (
             <label className="workspace-switch">
               <span>Workspace</span>
@@ -340,7 +398,12 @@ export default function MainApp() {
           taskNotifications={meetings.taskNotifications}
         />
       ) : activeTab === "people" ? (
-        <PeopleTab profiles={meetings.peopleProfiles} onOpenMeeting={openMeetingFromCalendar} />
+        <PeopleTab
+          profiles={meetings.peopleProfiles}
+          onOpenMeeting={openMeetingFromCalendar}
+          externalSelectedPersonId={pendingPersonId}
+          onPersonSelectionHandled={() => setPendingPersonId("")}
+        />
       ) : activeTab === "profile" ? (
         <ProfileTab
           currentUser={workspace.currentUser}
@@ -401,6 +464,13 @@ export default function MainApp() {
           setSelectedMeetingId={meetings.setSelectedMeetingId}
         />
       )}
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        items={commandPaletteItems}
+        onClose={() => setCommandPaletteOpen(false)}
+        onSelect={handleCommandPaletteSelect}
+      />
     </div>
   );
 }
