@@ -18,18 +18,6 @@ function statCards(stats, visibleStats) {
   ];
 }
 
-function workspaceSummaryText(selectedListLabel, visibleTaskCount, viewMode) {
-  if (!visibleTaskCount) {
-    return `Lista ${selectedListLabel} jest gotowa na nowe zadania i follow-upy.`;
-  }
-  const viewLabels = {
-    list: "Lista wspiera szybka edycje inline.",
-    kanban: "Kanban pomaga planowac przeplyw pracy.",
-    charts: "Wykresy pokazuja rozklad zadan.",
-    schedule: "Harmonogram pokazuje terminy na osi czasu.",
-  };
-  return `${visibleTaskCount} zadan w widoku ${selectedListLabel}. ${viewLabels[viewMode] || ""}`;
-}
 
 function NotificationStrip({ notifications = [] }) {
   if (!notifications.length) {
