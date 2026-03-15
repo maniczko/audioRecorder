@@ -119,6 +119,7 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
             ...workspace,
             ownerUserId: user.id,
             memberIds: [user.id],
+            memberRoles: { [user.id]: "owner" },
             updatedAt: new Date().toISOString(),
           }
     );
@@ -368,6 +369,7 @@ export function upsertGoogleUser(existingUsers, existingWorkspaces, googleProfil
       ...workspace,
       ownerUserId: user.id,
       memberIds: [user.id],
+      memberRoles: { [user.id]: "owner" },
     },
   ];
 

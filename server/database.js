@@ -201,7 +201,7 @@ function workspaceMembers(workspaceId) {
   return database
     .prepare(
       `
-        SELECT users.*
+        SELECT users.*, workspace_members.member_role AS workspace_member_role
         FROM workspace_members
         JOIN users ON users.id = workspace_members.user_id
         WHERE workspace_members.workspace_id = ?
@@ -224,6 +224,13 @@ function buildWorkspaceFromRow(row, currentUserId = "") {
     .prepare("SELECT user_id FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC")
     .all(row.id)
     .map((item) => item.user_id);
+  const memberRoles = database
+    .prepare("SELECT user_id, member_role FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC")
+    .all(row.id)
+    .reduce((result, item) => {
+      result[item.user_id] = item.member_role;
+      return result;
+    }, {});
   const membership = currentUserId
     ? database
         .prepare("SELECT member_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?")
@@ -236,6 +243,7 @@ function buildWorkspaceFromRow(row, currentUserId = "") {
     ownerUserId: row.owner_user_id,
     inviteCode: row.invite_code,
     memberIds,
+    memberRoles,
     memberRole: membership?.member_role || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -876,6 +884,21 @@ function getMediaAsset(recordingId) {
   return database.prepare("SELECT * FROM media_assets WHERE id = ?").get(recordingId);
 }
 
+function markTranscriptionProcessing(recordingId) {
+  database
+    .prepare(
+      `
+        UPDATE media_assets
+        SET transcription_status = 'processing',
+            updated_at = ?
+        WHERE id = ?
+      `
+    )
+    .run(nowIso(), recordingId);
+
+  return getMediaAsset(recordingId);
+}
+
 function saveTranscriptionResult(recordingId, result = {}) {
   database
     .prepare(
@@ -891,7 +914,14 @@ function saveTranscriptionResult(recordingId, result = {}) {
     .run(
       clean(result.pipelineStatus) || "completed",
       JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
-      JSON.stringify(result.diarization && typeof result.diarization === "object" ? result.diarization : {}),
+      JSON.stringify(
+        result.diarization && typeof result.diarization === "object"
+          ? {
+              ...result.diarization,
+              reviewSummary: result.reviewSummary || null,
+            }
+          : { reviewSummary: result.reviewSummary || null }
+      ),
       nowIso(),
       recordingId
     );
@@ -925,7 +955,13 @@ function queueTranscription(recordingId, updates = {}) {
     .prepare(
       `
         UPDATE media_assets
-        SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', updated_at = ?
+        SET workspace_id = ?,
+            meeting_id = ?,
+            content_type = ?,
+            transcription_status = 'queued',
+            transcript_json = '[]',
+            diarization_json = '{}',
+            updated_at = ?
         WHERE id = ?
       `
     )
@@ -953,7 +989,7 @@ function queueTranscription(recordingId, updates = {}) {
 }
 
 function updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
-  const nextRole = ["owner", "admin", "member"].includes(memberRole) ? memberRole : "member";
+  const nextRole = ["owner", "admin", "member", "viewer"].includes(memberRole) ? memberRole : "member";
   database
     .prepare("UPDATE workspace_members SET member_role = ? WHERE workspace_id = ? AND user_id = ?")
     .run(nextRole, workspaceId, targetUserId);
@@ -989,6 +1025,7 @@ module.exports = {
   saveWorkspaceState,
   upsertMediaAsset,
   getMediaAsset,
+  markTranscriptionProcessing,
   saveTranscriptionResult,
   markTranscriptionFailure,
   queueTranscription,

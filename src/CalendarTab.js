@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   REMINDER_PRESETS,
   buildCalendarEntries,
@@ -145,6 +145,8 @@ export default function CalendarTab({
   workspaceMembers = [],
   peopleProfiles = [],
   currentUserTimezone = "Europe/Warsaw",
+  startNewMeetingDraft,
+  onNavigateToStudio,
 }) {
   const [viewMode, setViewMode] = useState("month");
   const [filters, setFilters] = useState({ meeting: true, task: true, google: true });
@@ -153,6 +155,11 @@ export default function CalendarTab({
   const [calendarMessage, setCalendarMessage] = useState("");
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
   const [tagFilter, setTagFilter] = useState("");
+  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  });
+  const currentTimeRef = useRef(null);
   const allMeetingTags = useMemo(() => {
     const s = new Set();
     userMeetings.forEach((m) => (m.tags || []).forEach((t) => s.add(t)));
@@ -199,6 +206,20 @@ export default function CalendarTab({
       setSelectedEntryKey(selectedDayEntries[0]?.key || "");
     }
   }, [selectedDayEntries, selectedEntryKey, visibleEntries]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      setCurrentTimeMinutes(now.getHours() * 60 + now.getMinutes());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === "day" && currentTimeRef.current) {
+      currentTimeRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [viewMode]);
 
   const selectedEntry = visibleEntries.find((entry) => entry.key === selectedEntryKey) || selectedDayEntries[0] || null;
   const selectedMeta = selectedEntry ? calendarMeta?.[`${selectedEntry.type}:${selectedEntry.id}`] || {} : {};
@@ -364,6 +385,17 @@ export default function CalendarTab({
     setSelectedEntryKey(entry.key);
     setDragEntryKey("");
   }
+
+  function createMeetingFromSlot(date, hour) {
+    if (typeof startNewMeetingDraft !== "function") return;
+    const startsAt = new Date(date);
+    startsAt.setHours(hour, 0, 0, 0);
+    startNewMeetingDraft({ startsAt: startsAt.toISOString() });
+    if (typeof onNavigateToStudio === "function") onNavigateToStudio();
+  }
+
+  const isToday_ = selectedDate.toDateString() === new Date().toDateString();
+  const currentHour = Math.floor(currentTimeMinutes / 60);
 
   function renderEntry(entry, showResize = false) {
     return (
@@ -554,14 +586,41 @@ export default function CalendarTab({
           </div>
         ) : (
           <div className="calendar-day-view">
-            {CALENDAR_HOURS.map((hour) => (
-              <div key={hour} className="calendar-time-row">
-                <div className="calendar-time-label">{String(hour).padStart(2, "0")}:00</div>
-                <div className="calendar-time-slot" onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(selectedDate, event, hour)}>
-                  {selectedDayEntries.filter((entry) => new Date(entry.startsAt).getHours() === hour).length ? selectedDayEntries.filter((entry) => new Date(entry.startsAt).getHours() === hour).map((entry) => renderEntry(entry, true)) : <span className="calendar-slot-placeholder">Przeciagnij tutaj wydarzenie</span>}
+            {CALENDAR_HOURS.map((hour) => {
+              const slotEntries = selectedDayEntries.filter((entry) => new Date(entry.startsAt).getHours() === hour);
+              const isCurrentHour = isToday_ && hour === currentHour;
+              const isNowSlot = isToday_ && currentTimeMinutes >= hour * 60 && currentTimeMinutes < (hour + 1) * 60;
+              const nowOffset = isNowSlot ? ((currentTimeMinutes - hour * 60) / 60) * 100 : null;
+              return (
+                <div key={hour} className={`calendar-time-row${isCurrentHour ? " calendar-time-row-current" : ""}`}>
+                  <div className="calendar-time-label">
+                    {String(hour).padStart(2, "0")}:00
+                    {isCurrentHour && <span className="calendar-now-dot" />}
+                  </div>
+                  <div
+                    className="calendar-time-slot"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => handleDrop(selectedDate, event, hour)}
+                  >
+                    {isNowSlot && nowOffset !== null && (
+                      <div className="calendar-now-line" ref={currentTimeRef} style={{ top: `${nowOffset}%` }} />
+                    )}
+                    {slotEntries.length ? (
+                      slotEntries.map((entry) => renderEntry(entry, true))
+                    ) : (
+                      <button
+                        type="button"
+                        className="calendar-slot-create-btn"
+                        onClick={() => createMeetingFromSlot(selectedDate, hour)}
+                        title={`Utwórz spotkanie ${String(hour).padStart(2, "0")}:00`}
+                      >
+                        <span className="calendar-slot-create-icon">+</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

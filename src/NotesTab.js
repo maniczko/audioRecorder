@@ -332,11 +332,14 @@ function NoteDetail({ note, onOpenMeeting }) {
 
 /* ── NotesTab ─────────────────────────────────────────── */
 
-export default function NotesTab({ userMeetings = [], onOpenMeeting }) {
+export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNote }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [groupBy, setGroupBy] = useState("date");
   const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [showNewNote, setShowNewNote] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteBody, setNewNoteBody] = useState("");
 
   const allNotes = useMemo(
     () =>
@@ -385,12 +388,60 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting }) {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
+  function saveNewNote() {
+    if (!newNoteTitle.trim()) return;
+    if (typeof onCreateNote === "function") {
+      onCreateNote({ title: newNoteTitle.trim(), context: newNoteBody.trim() });
+    }
+    setNewNoteTitle("");
+    setNewNoteBody("");
+    setShowNewNote(false);
+  }
+
   const hasFilters = searchQuery.trim() || selectedTags.length > 0;
 
   return (
     <div className="notes-layout">
       {/* ─ Sidebar ─────────────────────────────────────── */}
       <aside className="notes-sidebar">
+        <div className="notes-sidebar-actions">
+          <button
+            type="button"
+            className="primary-button small"
+            onClick={() => setShowNewNote((v) => !v)}
+          >
+            {showNewNote ? "Anuluj" : "+ Nowa notatka"}
+          </button>
+        </div>
+
+        {showNewNote && (
+          <div className="notes-new-note-form">
+            <input
+              className="notes-new-note-title"
+              type="text"
+              placeholder="Tytuł notatki…"
+              value={newNoteTitle}
+              onChange={(e) => setNewNoteTitle(e.target.value)}
+              autoFocus
+            />
+            <textarea
+              className="notes-new-note-body"
+              rows={4}
+              placeholder="Treść notatki…"
+              value={newNoteBody}
+              onChange={(e) => setNewNoteBody(e.target.value)}
+            />
+            <button
+              type="button"
+              className="primary-button small"
+              onClick={saveNewNote}
+              disabled={!newNoteTitle.trim()}
+            >
+              Zapisz notatkę
+            </button>
+          </div>
+        )}
+
         <div className="notes-search-wrap">
           <span className="notes-search-icon" aria-hidden="true">⌕</span>
           <input

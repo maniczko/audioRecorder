@@ -62,6 +62,7 @@ export default function TaskDetailsPanel({
   const [linkDraft, setLinkDraft] = useState("");
   const [linkLabelDraft, setLinkLabelDraft] = useState("");
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   useEffect(() => {
     setCommentDraft("");
@@ -665,21 +666,34 @@ export default function TaskDetailsPanel({
         <section className="todo-detail-section">
           <div className="todo-section-head">
             <strong>Historia zmian</strong>
-            <span>{(selectedTask.history || []).length}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span>{(selectedTask.history || []).length}</span>
+              {(selectedTask.history || []).length > 0 && (
+                <button
+                  type="button"
+                  className="todo-history-toggle"
+                  onClick={() => setHistoryExpanded((v) => !v)}
+                  title={historyExpanded ? "Ukryj historię" : "Pokaż historię"}
+                >
+                  {historyExpanded ? "▲" : "▼"}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="todo-history-list">
-            {(selectedTask.history || []).length ? (
-              [...selectedTask.history].reverse().map((entry) => (
+          {historyExpanded && (
+            <div className="todo-history-list">
+              {[...selectedTask.history].reverse().map((entry) => (
                 <article key={entry.id} className="todo-history-row">
                   <strong>{entry.actor || "System"}</strong>
                   <p>{entry.message}</p>
                   <small>{formatDateTime(entry.createdAt)}</small>
                 </article>
-              ))
-            ) : (
-              <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
+          {!historyExpanded && (selectedTask.history || []).length === 0 && (
+            <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
+          )}
         </section>
 
         <div className="todo-detail-meta-card">

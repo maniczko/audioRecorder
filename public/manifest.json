@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "VoiceLog",
+  "name": "VoiceLog OS - Meeting Intelligence Studio",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +18,12 @@
       "sizes": "512x512"
     }
   ],
+  "id": "/",
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#071119",
+  "background_color": "#071119",
+  "description": "Meeting intelligence workspace z nagrywaniem, transkrypcja, taskami i kalendarzem.",
+  "categories": ["productivity", "business", "utilities"]
 }

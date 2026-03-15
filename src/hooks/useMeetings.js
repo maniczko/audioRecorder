@@ -558,15 +558,27 @@ export default function useMeetings({
     setWorkspaceMessage("");
   }
 
-  function startNewMeetingDraft() {
+  function startNewMeetingDraft(prefill = null) {
     const freshDraft = createEmptyMeetingDraft();
+    let nextDraft = freshDraft;
+    if (prefill) {
+      nextDraft = {
+        ...freshDraft,
+        ...(prefill.title ? { title: prefill.title } : {}),
+        ...(prefill.context ? { context: prefill.context } : {}),
+      };
+      if (prefill.startsAt) {
+        const d = new Date(prefill.startsAt);
+        nextDraft.startsAt = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      }
+    }
     restoredDraftWorkspaceRef.current = currentWorkspaceId || "";
-    draftBaselineRef.current = freshDraft;
+    draftBaselineRef.current = nextDraft;
     setSelectedMeetingId(null);
     setSelectedRecordingId(null);
     setIsDetachedMeetingDraft(true);
     setHasMeetingDraftChanges(false);
-    setMeetingDraftState(freshDraft);
+    setMeetingDraftState(nextDraft);
     setWorkspaceMessage("Nowy draft jest gotowy.");
     if (currentWorkspaceId) {
       setStoredMeetingDrafts((previous) => {
@@ -604,6 +616,32 @@ export default function useMeetings({
         return next;
       });
     }
+  }
+
+  function createManualNote({ title, context }) {
+    if (!currentUser || !currentWorkspaceId || !title) return;
+    const now = new Date();
+    const note = createMeeting(
+      currentUser.id,
+      {
+        title,
+        context: context || "",
+        startsAt: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+        durationMinutes: 0,
+        attendees: "",
+        tags: "notatka",
+        needs: "",
+        desiredOutputs: "",
+        location: "",
+      },
+      {
+        workspaceId: currentWorkspaceId,
+        createdByUserId: currentUser.id,
+        createdByUserName: currentUser.name || currentUser.email || "Ty",
+      }
+    );
+    setMeetings((previous) => upsertMeeting(previous, note));
+    setWorkspaceMessage("Notatka zapisana.");
   }
 
   function createAdHocMeeting() {
@@ -1584,6 +1622,7 @@ export default function useMeetings({
     peopleProfiles,
     selectMeeting,
     startNewMeetingDraft,
+    createManualNote,
     clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,

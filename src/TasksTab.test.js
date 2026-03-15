@@ -128,4 +128,50 @@ describe("TasksTab", () => {
 
     expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie", group: "Sprint 14" }));
   });
+
+  test("shows richer smart lists similar to task apps", () => {
+    renderTasksTab({
+      defaultView: "list",
+      tasks: [
+        {
+          id: "task_1",
+          title: "Recurring task",
+          owner: "Anna",
+          group: "Sprint 14",
+          description: "",
+          dueDate: "2026-03-20T10:00:00.000Z",
+          reminderAt: "2026-03-20T09:00:00.000Z",
+          myDay: true,
+          notes: "",
+          sourceType: "manual",
+          sourceMeetingId: "",
+          sourceMeetingTitle: "Reczne zadanie",
+          sourceMeetingDate: "2026-03-20T10:00:00.000Z",
+          sourceRecordingId: "",
+          sourceQuote: "",
+          createdAt: "2026-03-14T09:00:00.000Z",
+          updatedAt: "2026-03-14T09:00:00.000Z",
+          status: "todo",
+          important: true,
+          completed: false,
+          priority: "medium",
+          tags: ["demo"],
+          assignedTo: ["Anna"],
+          comments: [],
+          history: [],
+          dependencies: [],
+          recurrence: { frequency: "weekly", interval: 1 },
+          subtasks: [],
+          links: [],
+          order: -100,
+          assignedToMe: true,
+        },
+      ],
+    });
+
+    expect(screen.getAllByText("My Day").length).toBeGreaterThan(0);
+    expect(screen.getByText("Recurring")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
+    expect(screen.getByText("Overdue")).toBeInTheDocument();
+  });
 });

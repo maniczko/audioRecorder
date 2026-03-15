@@ -1,4 +1,4 @@
-import { migrateWorkspaceData, resolveWorkspaceForUser, workspaceMembers } from "./workspace";
+import { getWorkspaceMemberRole, migrateWorkspaceData, resolveWorkspaceForUser, workspaceMembers } from "./workspace";
 
 describe("workspace helpers", () => {
   test("migrates legacy data to workspace-based storage", () => {
@@ -39,6 +39,7 @@ describe("workspace helpers", () => {
     expect(migration.changed).toBe(true);
     expect(migration.workspaces).toHaveLength(1);
     expect(migration.users[0].defaultWorkspaceId).toBe(migration.workspaces[0].id);
+    expect(migration.workspaces[0].memberRoles[migration.users[0].id]).toBe("owner");
     expect(migration.meetings[0].workspaceId).toBe(migration.workspaces[0].id);
     expect(migration.manualTasks[0].workspaceId).toBe(migration.workspaces[0].id);
     expect(migration.taskBoards[migration.workspaces[0].id]).toBeTruthy();
@@ -71,8 +72,29 @@ describe("workspace helpers", () => {
     const workspace = {
       id: "workspace_1",
       memberIds: ["user_1", "user_3"],
+      ownerUserId: "user_1",
+      memberRoles: {
+        user_1: "owner",
+        user_3: "viewer",
+      },
     };
 
-    expect(workspaceMembers(users, workspace).map((user) => user.name)).toEqual(["Anna", "Marta"]);
+    expect(workspaceMembers(users, workspace).map((user) => `${user.name}:${user.workspaceMemberRole}`)).toEqual([
+      "Anna:owner",
+      "Marta:viewer",
+    ]);
+  });
+
+  test("returns workspace member roles with owner fallback", () => {
+    const workspace = {
+      ownerUserId: "user_1",
+      memberRoles: {
+        user_2: "admin",
+      },
+    };
+
+    expect(getWorkspaceMemberRole(workspace, "user_1")).toBe("owner");
+    expect(getWorkspaceMemberRole(workspace, "user_2")).toBe("admin");
+    expect(getWorkspaceMemberRole(workspace, "user_3")).toBe("member");
   });
 });

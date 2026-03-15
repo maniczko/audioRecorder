@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TranscriptPanel from "./TranscriptPanel";
 
@@ -92,5 +92,28 @@ describe("TranscriptPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: /zmien speakera zaznaczonych/i }));
 
     expect(props.assignSpeakerToTranscriptSegments).toHaveBeenCalledWith(["seg_1"], 1);
+  });
+
+  test("assigns speaker to segments inside selected audio range", async () => {
+    const { props } = renderTranscriptPanel();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: /speaker dla zakresu/i }), "1");
+    fireEvent.change(screen.getByRole("slider", { name: /poczatek zakresu/i }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("slider", { name: /koniec zakresu/i }), {
+      target: { value: "9" },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /przypisz speakera dla zakresu audio/i }));
+
+    expect(props.assignSpeakerToTranscriptSegments).toHaveBeenCalledWith(["seg_1"], 1);
+  });
+
+  test("renders clickable timeline segments", () => {
+    renderTranscriptPanel();
+
+    expect(screen.getByLabelText(/transcript timeline/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /segment ania 00:04/i })).toBeInTheDocument();
   });
 });

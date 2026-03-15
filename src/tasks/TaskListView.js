@@ -169,6 +169,8 @@ export default function TaskListView({
                               {assigneeSummary}
                               {hasMoreAssignees ? " | zespolowe" : ""}
                               {dependencyState.blocking ? ` | blokuje ${dependencyState.unresolved[0]?.title}` : ""}
+                              {task.myDay ? " | My Day" : ""}
+                              {task.reminderAt ? " | przypomnienie" : ""}
                             </small>
                             {lastActivity ? <small>Ostatnia aktywnosc: {lastActivity.actor} - {lastActivity.message}</small> : null}
                           </>
@@ -242,16 +244,30 @@ export default function TaskListView({
                             <option value="urgent">Krytyczny</option>
                           </select>
                         ) : (
-                          <button
-                            type="button"
-                            className={task.important ? "todo-star active" : "todo-star"}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onUpdateTask(task.id, { important: !task.important });
-                            }}
-                          >
-                            {"\u2605"}
-                          </button>
+                          <div className="todo-inline-actions">
+                            <button
+                              type="button"
+                              className={task.myDay ? "todo-star active" : "todo-star"}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onUpdateTask(task.id, { myDay: !task.myDay });
+                              }}
+                              title="Dodaj do My Day"
+                            >
+                              {"+"}
+                            </button>
+                            <button
+                              type="button"
+                              className={task.important ? "todo-star active" : "todo-star"}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onUpdateTask(task.id, { important: !task.important });
+                              }}
+                              title="Oznacz jako wazne"
+                            >
+                              {"\u2605"}
+                            </button>
+                          </div>
                         )}
                       </span>
                     </div>

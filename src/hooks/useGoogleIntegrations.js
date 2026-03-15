@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   GOOGLE_CLIENT_ID,
   buildGoogleCalendarEventPayload,
@@ -12,8 +12,9 @@ import {
   requestGoogleTasksAccess,
   signOutGoogleSession,
   updateGoogleCalendarEvent,
+  updateGoogleTask,
 } from "../lib/google";
-import { createTaskFromGoogle, upsertGoogleImportedTasks } from "../lib/tasks";
+import { createTaskFromGoogle, createTaskHistoryEntry, upsertGoogleImportedTasks } from "../lib/tasks";
 
 export default function useGoogleIntegrations({
   currentUser,
@@ -32,11 +33,24 @@ export default function useGoogleIntegrations({
   const [googleTaskLists, setGoogleTaskLists] = useState([]);
   const [selectedGoogleTaskListId, setSelectedGoogleTaskListId] = useState("");
   const [googleTasksMessage, setGoogleTasksMessage] = useState("");
+  const [googleCalendarLastSyncedAt, setGoogleCalendarLastSyncedAt] = useState("");
+  const [googleTasksLastSyncedAt, setGoogleTasksLastSyncedAt] = useState("");
 
   const googleButtonRef = useRef(null);
   const googleCalendarTokenRef = useRef("");
   const googleTasksTokenRef = useRef("");
   const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
+  const openTaskColumnId = taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || "todo";
+  const doneTaskColumnId = taskColumns.find((column) => column.isDone)?.id || taskColumns[taskColumns.length - 1]?.id || "done";
+
+  function buildGoogleTaskPayloadFromSnapshot(snapshot) {
+    return {
+      title: String(snapshot?.title || "").trim() || "VoiceLog task",
+      notes: String(snapshot?.notes || "").trim(),
+      due: snapshot?.dueDate ? new Date(snapshot.dueDate).toISOString() : undefined,
+      status: snapshot?.completed ? "completed" : "needsAction",
+    };
+  }
 
   useEffect(() => {
     if (!currentWorkspaceId) {
@@ -47,6 +61,8 @@ export default function useGoogleIntegrations({
       setGoogleTaskLists([]);
       setSelectedGoogleTaskListId("");
       setGoogleTasksMessage("");
+      setGoogleCalendarLastSyncedAt("");
+      setGoogleTasksLastSyncedAt("");
       googleCalendarTokenRef.current = "";
       googleTasksTokenRef.current = "";
     }
@@ -80,7 +96,7 @@ export default function useGoogleIntegrations({
     };
   }, [currentUser, googleEnabled, onGoogleError, onGoogleProfile]);
 
-  async function loadGoogleMonthEvents(accessToken, monthDate) {
+  const loadGoogleMonthEvents = useCallback(async (accessToken, monthDate) => {
     const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
     const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
     const payload = await fetchPrimaryCalendarEvents(accessToken, {
@@ -88,9 +104,10 @@ export default function useGoogleIntegrations({
       timeMax: monthEnd,
     });
     setGoogleCalendarEvents(payload.items || []);
+    setGoogleCalendarLastSyncedAt(new Date().toISOString());
     setGoogleCalendarStatus("connected");
     setGoogleCalendarMessage("Pobrano wydarzenia z podstawowego kalendarza Google.");
-  }
+  }, []);
 
   useEffect(() => {
     if (!googleCalendarTokenRef.current) {
@@ -102,7 +119,21 @@ export default function useGoogleIntegrations({
       setGoogleCalendarStatus("error");
       setGoogleCalendarMessage("Nie udalo sie odswiezyc wydarzen Google. Polacz kalendarz ponownie.");
     });
-  }, [calendarMonth]);
+  }, [calendarMonth, loadGoogleMonthEvents]);
+
+  useEffect(() => {
+    if (!googleCalendarTokenRef.current) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth).catch((error) => {
+        console.error("Google Calendar live refresh failed.", error);
+      });
+    }, 45000);
+
+    return () => window.clearInterval(timer);
+  }, [calendarMonth, loadGoogleMonthEvents]);
 
   useEffect(
     () => () => {
@@ -141,6 +172,7 @@ export default function useGoogleIntegrations({
     googleCalendarTokenRef.current = "";
     setGoogleCalendarStatus("idle");
     setGoogleCalendarEvents([]);
+    setGoogleCalendarLastSyncedAt("");
     setGoogleCalendarMessage("Polaczenie z Google Calendar zostalo odlaczone.");
   }
 
@@ -170,6 +202,7 @@ export default function useGoogleIntegrations({
       : await createGoogleCalendarEvent(googleCalendarTokenRef.current, payload);
 
     upsertLocalGoogleEvent(response);
+    setGoogleCalendarLastSyncedAt(new Date().toISOString());
     setGoogleCalendarStatus("connected");
     setGoogleCalendarMessage(
       options.googleEventId
@@ -190,6 +223,7 @@ export default function useGoogleIntegrations({
       end: { dateTime: new Date(endsAt).toISOString() },
     });
     upsertLocalGoogleEvent(response);
+    setGoogleCalendarLastSyncedAt(new Date().toISOString());
     setGoogleCalendarStatus("connected");
     setGoogleCalendarMessage(`Zaktualizowano termin wydarzenia Google "${response.summary || "Event"}".`);
     return response;
@@ -217,6 +251,7 @@ export default function useGoogleIntegrations({
       const lists = payload.items || [];
       setGoogleTaskLists(lists);
       setSelectedGoogleTaskListId((previous) => previous || lists[0]?.id || "");
+      setGoogleTasksLastSyncedAt(new Date().toISOString());
       setGoogleTasksStatus("connected");
       setGoogleTasksMessage("Polaczono z Google Tasks.");
     } catch (error) {
@@ -226,7 +261,7 @@ export default function useGoogleIntegrations({
     }
   }
 
-  async function importGoogleTasksFromList() {
+  const importGoogleTasksFromList = useCallback(async () => {
     if (!currentUser || !googleTasksTokenRef.current || !selectedGoogleTaskListId) {
       return;
     }
@@ -241,15 +276,41 @@ export default function useGoogleIntegrations({
       const importedTasks = (payload.items || []).map((task) =>
         createTaskFromGoogle(currentUser.id, task, selectedList, taskColumns, currentUser, currentWorkspaceId)
       );
-      setManualTasks((previous) => upsertGoogleImportedTasks(previous, importedTasks, currentUser.id));
+      let conflictCount = 0;
+      setManualTasks((previous) => {
+        const merged = upsertGoogleImportedTasks(previous, importedTasks, currentUser.id);
+        conflictCount = merged.filter((task) => task.googleSyncStatus === "conflict").length;
+        return merged;
+      });
+      setGoogleTasksLastSyncedAt(new Date().toISOString());
       setGoogleTasksStatus("connected");
-      setGoogleTasksMessage(`Zaimportowano ${importedTasks.length} zadan z Google Tasks.`);
+      setGoogleTasksMessage(
+        conflictCount
+          ? `Zaimportowano ${importedTasks.length} zadan z Google Tasks. Wykryto ${conflictCount} konfliktow do rozwiazania.`
+          : `Zaimportowano ${importedTasks.length} zadan z Google Tasks.`
+      );
     } catch (error) {
       console.error("Google Tasks import failed.", error);
       setGoogleTasksStatus("error");
       setGoogleTasksMessage("Nie udalo sie zaimportowac zadan z Google Tasks.");
     }
-  }
+  }, [currentUser, currentWorkspaceId, googleTaskLists, selectedGoogleTaskListId, setManualTasks, taskColumns]);
+
+  const refreshGoogleCalendar = useCallback(async () => {
+    if (!googleCalendarTokenRef.current) {
+      throw new Error("Najpierw polacz Google Calendar.");
+    }
+
+    await loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth);
+  }, [calendarMonth, loadGoogleMonthEvents]);
+
+  const refreshGoogleTasks = useCallback(async () => {
+    if (!googleTasksTokenRef.current || !selectedGoogleTaskListId) {
+      throw new Error("Wybierz i polacz liste Google Tasks.");
+    }
+
+    await importGoogleTasksFromList();
+  }, [importGoogleTasksFromList, selectedGoogleTaskListId]);
 
   async function exportTasksToGoogle() {
     if (!googleTasksTokenRef.current || !selectedGoogleTaskListId) {
@@ -275,6 +336,7 @@ export default function useGoogleIntegrations({
           due: task.dueDate ? new Date(task.dueDate).toISOString() : undefined,
         });
       }
+      setGoogleTasksLastSyncedAt(new Date().toISOString());
       setGoogleTasksStatus("connected");
       setGoogleTasksMessage(`Wyeksportowano ${exportableTasks.length} otwartych zadan do Google Tasks.`);
     } catch (error) {
@@ -284,6 +346,105 @@ export default function useGoogleIntegrations({
     }
   }
 
+  const resolveGoogleTaskConflict = useCallback(
+    async (taskId, mode, finalSnapshot = null) => {
+      const task = meetingTasks.find((item) => item.id === taskId);
+      const conflict = task?.googleSyncConflict;
+      if (!task || !conflict) {
+        return;
+      }
+
+      const nextSnapshot =
+        mode === "google"
+          ? conflict.remoteSnapshot
+          : mode === "merge" && finalSnapshot
+            ? {
+                ...conflict.finalSnapshot,
+                ...finalSnapshot,
+              }
+            : conflict.localSnapshot;
+      const now = new Date().toISOString();
+      let remoteResponse = null;
+
+      if (mode !== "google") {
+        if (!googleTasksTokenRef.current || !task.googleTaskId || !task.googleTaskListId) {
+          throw new Error("Najpierw polacz Google Tasks, aby zapisac finalna wersje.");
+        }
+
+        remoteResponse = await updateGoogleTask(
+          googleTasksTokenRef.current,
+          task.googleTaskListId,
+          task.googleTaskId,
+          buildGoogleTaskPayloadFromSnapshot(nextSnapshot)
+        );
+      }
+
+      setManualTasks((previous) =>
+        previous.map((item) =>
+          item.id !== taskId
+            ? item
+            : {
+                ...item,
+                title: nextSnapshot.title || item.title,
+                dueDate: nextSnapshot.dueDate || "",
+                notes: nextSnapshot.notes || "",
+                description: nextSnapshot.notes || "",
+                completed: Boolean(nextSnapshot.completed),
+                status: nextSnapshot.completed ? doneTaskColumnId : openTaskColumnId,
+                updatedAt: now,
+                googleUpdatedAt:
+                  remoteResponse?.updated ||
+                  task.googleSyncConflict?.remoteUpdatedAt ||
+                  task.googleUpdatedAt ||
+                  now,
+                googleSyncedAt: now,
+                googlePulledAt: now,
+                googleLocalUpdatedAt: now,
+                googleSyncStatus: "synced",
+                googleSyncConflict: null,
+                history: [
+                  ...(item.history || []),
+                  createTaskHistoryEntry(
+                    mode === "google"
+                      ? "Przyjeto wersje z Google po konflikcie synchronizacji."
+                      : mode === "merge"
+                        ? "Scalono lokalne i zdalne zmiany po konflikcie synchronizacji."
+                        : "Zachowano lokalna wersje zadania i zsynchronizowano ja do Google.",
+                    currentUser?.name || currentUser?.email || "Ty",
+                    "google_sync"
+                  ),
+                ],
+              }
+        )
+      );
+      setGoogleTasksLastSyncedAt(now);
+      setGoogleTasksStatus("connected");
+      setGoogleTasksMessage(
+        mode === "google"
+          ? `Przyjeto wersje Google dla "${task.title}".`
+          : mode === "merge"
+            ? `Scalono konflikt dla "${task.title}".`
+            : `Zachowano lokalna wersje "${task.title}" i zapisano ja do Google.`
+      );
+    },
+    [currentUser, doneTaskColumnId, meetingTasks, openTaskColumnId, setManualTasks]
+  );
+
+  useEffect(() => {
+    if (!currentUser || !googleTasksTokenRef.current || !selectedGoogleTaskListId) {
+      return undefined;
+    }
+
+    const syncTasksFromGoogle = () => {
+      importGoogleTasksFromList().catch((error) => {
+        console.error("Google Tasks live refresh failed.", error);
+      });
+    };
+
+    const timer = window.setInterval(syncTasksFromGoogle, 45000);
+    return () => window.clearInterval(timer);
+  }, [currentUser, importGoogleTasksFromList, selectedGoogleTaskListId]);
+
   function resetGoogleSession() {
     setGoogleCalendarEvents([]);
     setGoogleCalendarMessage("");
@@ -292,6 +453,8 @@ export default function useGoogleIntegrations({
     setSelectedGoogleTaskListId("");
     setGoogleTasksStatus("idle");
     setGoogleTasksMessage("");
+    setGoogleCalendarLastSyncedAt("");
+    setGoogleTasksLastSyncedAt("");
     googleCalendarTokenRef.current = "";
     googleTasksTokenRef.current = "";
     signOutGoogleSession();
@@ -308,13 +471,18 @@ export default function useGoogleIntegrations({
     selectedGoogleTaskListId,
     setSelectedGoogleTaskListId,
     googleTasksMessage,
+    googleCalendarLastSyncedAt,
+    googleTasksLastSyncedAt,
     connectGoogleCalendar,
     disconnectGoogleCalendar,
+    refreshGoogleCalendar,
     syncCalendarEntryToGoogle,
     rescheduleGoogleCalendarEntry,
     connectGoogleTasks,
     importGoogleTasksFromList,
     exportTasksToGoogle,
+    refreshGoogleTasks,
+    resolveGoogleTaskConflict,
     resetGoogleSession,
     googleCalendarWritable: Boolean(googleCalendarTokenRef.current),
   };

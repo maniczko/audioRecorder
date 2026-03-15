@@ -85,10 +85,29 @@ function WaveformPanel({
     function handleTimeUpdate() {
       const dur = audio.duration || 0;
       if (dur > 0) setPlayhead(audio.currentTime / dur);
+      setCurrentTime(audio.currentTime || 0);
+    }
+
+    function handleDurationChange() {
+      setAudioDuration(audio.duration || 0);
+    }
+
+    function handlePlayPause() {
+      setIsPlaying(!audio.paused);
     }
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("durationchange", handleDurationChange);
+    audio.addEventListener("play", handlePlayPause);
+    audio.addEventListener("pause", handlePlayPause);
+    audio.addEventListener("ended", handlePlayPause);
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("durationchange", handleDurationChange);
+      audio.removeEventListener("play", handlePlayPause);
+      audio.removeEventListener("pause", handlePlayPause);
+      audio.removeEventListener("ended", handlePlayPause);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -285,6 +304,9 @@ export default function TranscriptPanel({
 }) {
   const audioRef = useRef(null);
   const activeReviewItemRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [filterMode, setFilterMode] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
@@ -631,9 +653,71 @@ export default function TranscriptPanel({
       </div>
 
       {selectedRecordingAudioUrl ? (
-        <audio ref={audioRef} className="audio-player" controls src={selectedRecordingAudioUrl}>
-          <track kind="captions" />
-        </audio>
+        <>
+          <audio ref={audioRef} src={selectedRecordingAudioUrl} style={{ display: "none" }}>
+            <track kind="captions" />
+          </audio>
+          <div className="custom-audio-player">
+            <button
+              type="button"
+              className="audio-play-btn"
+              onClick={() => {
+                const audio = audioRef.current;
+                if (!audio) return;
+                if (audio.paused) audio.play().catch(() => {});
+                else audio.pause();
+              }}
+              aria-label={isPlaying ? "Pauza" : "Odtwórz"}
+            >
+              {isPlaying ? "⏸" : "▶"}
+            </button>
+            <div className="audio-progress-wrap">
+              <div
+                className="audio-progress-bar"
+                role="slider"
+                aria-label="Pozycja odtwarzania"
+                aria-valuemin={0}
+                aria-valuemax={audioDuration || 1}
+                aria-valuenow={currentTime}
+                onClick={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+                  const audio = audioRef.current;
+                  if (audio && audioDuration) {
+                    audio.currentTime = ratio * audioDuration;
+                    audio.play().catch(() => {});
+                  }
+                }}
+              >
+                <div
+                  className="audio-progress-fill"
+                  style={{ width: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }}
+                />
+                <div
+                  className="audio-progress-thumb"
+                  style={{ left: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }}
+                />
+              </div>
+            </div>
+            <span className="audio-time-display">
+              {formatDuration(currentTime)} / {formatDuration(audioDuration)}
+            </span>
+            <button
+              type="button"
+              className="audio-speed-btn"
+              onClick={() => {
+                const audio = audioRef.current;
+                if (!audio) return;
+                const rates = [1, 1.25, 1.5, 1.75, 2];
+                const idx = rates.indexOf(audio.playbackRate);
+                audio.playbackRate = rates[(idx + 1) % rates.length];
+              }}
+              title="Zmień prędkość"
+            >
+              ×{audioRef.current?.playbackRate || 1}
+            </button>
+          </div>
+        </>
       ) : selectedRecording ? (
         <div className="soft-copy">Audio nie zostalo jeszcze zhydratowane do odsluchu w tej sesji.</div>
       ) : null}
@@ -1009,7 +1093,15 @@ export default function TranscriptPanel({
                   </label>
                   <div className="segment-meta">
                     <strong>{labelSpeaker(displaySpeakerNames, segment.speakerId)}</strong>
-                    <span>{formatDuration(segment.timestamp)}</span>
+                    <button
+                      type="button"
+                      className="segment-timestamp-btn"
+                      onClick={() => playFromTimestamp(segment.timestamp)}
+                      disabled={!selectedRecordingAudioUrl}
+                      title="Odtwórz od tego momentu"
+                    >
+                      ▶ {formatDuration(segment.timestamp)}
+                    </button>
                     <span>{Math.round((segment.verificationScore || 0) * 100)}%</span>
                     <span
                       className={segment.verificationStatus === "review" ? "task-flag review" : "task-flag success"}

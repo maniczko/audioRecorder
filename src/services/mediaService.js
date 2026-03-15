@@ -28,7 +28,7 @@ function createLocalMediaService() {
     getRecordingAudioBlob(recordingId) {
       return getAudioBlob(recordingId);
     },
-    async finalizeTranscription({ rawSegments }) {
+    async startTranscriptionJob({ rawSegments }) {
       const diarization = diarizeSegments(rawSegments || []);
       const verifiedSegments = verifyRecognizedSegments(diarization.segments);
 
@@ -36,7 +36,16 @@ function createLocalMediaService() {
         diarization,
         verifiedSegments,
         providerId: TRANSCRIPTION_PROVIDER.id,
+        providerLabel: TRANSCRIPTION_PROVIDER.label,
+        pipelineStatus: "done",
+        reviewSummary: {
+          needsReview: verifiedSegments.filter((segment) => segment.verificationStatus === "review").length,
+          approved: verifiedSegments.filter((segment) => segment.verificationStatus === "verified").length,
+        },
       };
+    },
+    async getTranscriptionJobStatus() {
+      return null;
     },
   };
 }
@@ -71,7 +80,7 @@ function createRemoteMediaService() {
       });
       return response.blob();
     },
-    async finalizeTranscription({ recordingId, blob, meeting }) {
+    async startTranscriptionJob({ recordingId, blob, meeting }) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: "POST",
         body: {
@@ -82,17 +91,28 @@ function createRemoteMediaService() {
       });
 
       return {
-        diarization: response.diarization || {
-          segments: response.segments || [],
-          speakerNames: response.speakerNames || {},
-          speakerCount: response.speakerCount || 0,
-          confidence: response.confidence || 0,
-        },
+        diarization: response.diarization || {},
         verifiedSegments: response.segments || [],
         providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
         providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
-        pipelineStatus: response.pipelineStatus || "completed",
+        pipelineStatus: response.pipelineStatus || "queued",
         reviewSummary: response.reviewSummary || null,
+        errorMessage: response.errorMessage || "",
+      };
+    },
+    async getTranscriptionJobStatus(recordingId) {
+      const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
+        method: "GET",
+      });
+
+      return {
+        diarization: response.diarization || {},
+        verifiedSegments: response.segments || [],
+        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
+        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
+        pipelineStatus: response.pipelineStatus || "queued",
+        reviewSummary: response.reviewSummary || null,
+        errorMessage: response.errorMessage || "",
       };
     },
   };

@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   calendarMeta: "voicelog.calendarMeta.v1",
   meetingDrafts: "voicelog.meetingDrafts.v1",
   notificationState: "voicelog.notificationState.v1",
+  recordingQueue: "voicelog.recordingQueue.v1",
 };
 
 export function readStorage(key, fallbackValue) {

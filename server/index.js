@@ -15,6 +15,7 @@ const {
   saveWorkspaceState,
   upsertMediaAsset,
   getMediaAsset,
+  markTranscriptionProcessing,
   saveTranscriptionResult,
   markTranscriptionFailure,
   queueTranscription,
@@ -25,6 +26,7 @@ const { transcribeRecording } = require("./audioPipeline");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
+const transcriptionJobs = new Map();
 
 function corsHeaders() {
   return {
@@ -53,6 +55,69 @@ function sendText(response, statusCode, body) {
 function sendNoContent(response) {
   response.writeHead(204, corsHeaders());
   response.end();
+}
+
+function safeJsonParse(raw, fallbackValue) {
+  if (!raw) {
+    return fallbackValue;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return fallbackValue;
+  }
+}
+
+function normalizePipelineStatus(value) {
+  if (value === "completed") {
+    return "done";
+  }
+  if (["queued", "processing", "failed", "done"].includes(String(value || ""))) {
+    return value;
+  }
+  return "queued";
+}
+
+function buildTranscriptionStatusPayload(asset) {
+  const diarization = safeJsonParse(asset?.diarization_json, {});
+  const segments = safeJsonParse(asset?.transcript_json, []);
+  return {
+    recordingId: asset?.id || "",
+    pipelineStatus: normalizePipelineStatus(asset?.transcription_status),
+    segments: Array.isArray(segments) ? segments : [],
+    diarization: diarization && typeof diarization === "object" ? diarization : {},
+    speakerNames: diarization?.speakerNames || {},
+    speakerCount: diarization?.speakerCount || 0,
+    confidence: diarization?.confidence || 0,
+    reviewSummary: diarization?.reviewSummary || null,
+    errorMessage: diarization?.errorMessage || "",
+    updatedAt: asset?.updated_at || "",
+  };
+}
+
+function ensureTranscriptionJob(recordingId, asset, options) {
+  if (!recordingId || transcriptionJobs.has(recordingId)) {
+    return;
+  }
+
+  const jobPromise = Promise.resolve()
+    .then(async () => {
+      markTranscriptionProcessing(recordingId);
+      const result = await transcribeRecording(asset, options);
+      saveTranscriptionResult(recordingId, {
+        ...result,
+        pipelineStatus: "completed",
+      });
+    })
+    .catch((error) => {
+      markTranscriptionFailure(recordingId, error.message);
+    })
+    .finally(() => {
+      transcriptionJobs.delete(recordingId);
+    });
+
+  transcriptionJobs.set(recordingId, jobPromise);
 }
 
 function readJsonBody(request) {
@@ -305,15 +370,22 @@ async function handleRequest(request, response) {
 
     ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
     queueTranscription(recordingId, body);
+    ensureTranscriptionJob(recordingId, asset, body);
+    sendJson(response, 202, buildTranscriptionStatusPayload(getMediaAsset(recordingId)));
+    return;
+  }
 
-    try {
-      const result = await transcribeRecording(asset, body);
-      saveTranscriptionResult(recordingId, result);
-      sendJson(response, 200, result);
-    } catch (error) {
-      markTranscriptionFailure(recordingId, error.message);
-      throw error;
+  if (mediaTranscribeMatch && request.method === "GET") {
+    const session = requireSession(request);
+    const recordingId = mediaTranscribeMatch[1];
+    const asset = getMediaAsset(recordingId);
+    if (!asset) {
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." });
+      return;
     }
+
+    ensureWorkspaceAccess(session, asset.workspace_id);
+    sendJson(response, 200, buildTranscriptionStatusPayload(asset));
     return;
   }
 

@@ -51,7 +51,29 @@ export default function MainApp() {
     attachCompletedRecording: meetings.attachCompletedRecording,
   });
 
-  const [activeTab, setActiveTab] = useState("studio");
+  const [activeTab, setActiveTabRaw] = useState("studio");
+  const [tabHistory, setTabHistory] = useState(["studio"]);
+  const [theme, setTheme] = useState(() => localStorage.getItem("voicelog_theme") || "dark");
+
+  function setActiveTab(tab) {
+    setActiveTabRaw((prev) => {
+      if (prev === tab) return prev;
+      setTabHistory((h) => [...h.slice(-19), prev]);
+      return tab;
+    });
+  }
+
+  function navigateBack() {
+    setTabHistory((h) => {
+      if (!h.length) return h;
+      const prev = h[h.length - 1];
+      const next = h.slice(0, -1);
+      setActiveTabRaw(prev);
+      return next;
+    });
+  }
+
+  const canGoBack = tabHistory.length > 0;
   const [calendarMonth, setCalendarMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -134,6 +156,11 @@ export default function MainApp() {
       }),
     [meetings.meetingTasks, meetings.peopleProfiles, meetings.userMeetings]
   );
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("voicelog_theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!google.googleCalendarEvents.length) {
@@ -397,6 +424,17 @@ export default function MainApp() {
             <h1>Meeting intelligence studio</h1>
           </div>
           <div className="tab-switcher">
+            {canGoBack && (
+              <button
+                type="button"
+                className="tab-back-btn"
+                onClick={navigateBack}
+                title="Cofnij"
+                aria-label="Wróć do poprzedniej zakładki"
+              >
+                ←
+              </button>
+            )}
             <button type="button" className={activeTab === "studio" ? "tab-pill active" : "tab-pill"} onClick={() => setActiveTab("studio")}>
               Studio
             </button>
@@ -503,6 +541,8 @@ export default function MainApp() {
           workspaceMembers={workspace.currentWorkspaceMembers}
           peopleProfiles={meetings.peopleProfiles}
           currentUserTimezone={workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
+          startNewMeetingDraft={meetings.startNewMeetingDraft}
+          onNavigateToStudio={() => setActiveTab("studio")}
         />
       ) : activeTab === "tasks" ? (
         <TasksTab
@@ -546,11 +586,13 @@ export default function MainApp() {
         <NotesTab
           userMeetings={meetings.userMeetings}
           onOpenMeeting={openMeetingFromCalendar}
+          onCreateNote={meetings.createManualNote}
         />
       ) : activeTab === "people" ? (
         <PeopleTab
           profiles={meetings.peopleProfiles}
           onOpenMeeting={openMeetingFromCalendar}
+          onOpenTask={openTaskFromCalendar}
           externalSelectedPersonId={pendingPersonId}
           onPersonSelectionHandled={() => setPendingPersonId("")}
         />
@@ -586,6 +628,8 @@ export default function MainApp() {
           onExportGoogleTasks={google.exportTasksToGoogle}
           onRefreshGoogleTasks={google.refreshGoogleTasks}
           workspaceRole={workspace.currentWorkspaceRole}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         />
       ) : (
         <StudioTab

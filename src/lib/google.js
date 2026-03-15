@@ -262,6 +262,23 @@ export async function createGoogleTask(accessToken, taskListId, task) {
   return response.json();
 }
 
+export async function updateGoogleTask(accessToken, taskListId, taskId, updates) {
+  const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks/${taskId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Tasks API returned ${response.status} while updating a task.`);
+  }
+
+  return response.json();
+}
+
 export function signOutGoogleSession() {
   if (typeof window === "undefined") {
     return;

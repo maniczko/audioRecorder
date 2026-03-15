@@ -47,6 +47,8 @@ export default function ProfileTab({
   onRefreshGoogleTasks,
   workspaceRole,
   onLogout,
+  theme,
+  onToggleTheme,
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
 
@@ -442,6 +444,26 @@ export default function ProfileTab({
           )}
 
           {securityMessage ? <div className="inline-alert success">{securityMessage}</div> : null}
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Wygląd</div>
+              <h2>Motyw</h2>
+            </div>
+          </div>
+          <div className="integration-card">
+            <div className="integration-row">
+              <div>
+                <strong>Motyw interfejsu</strong>
+                <p>Aktywny: <strong>{theme === "light" ? "Jasny" : "Ciemny"}</strong></p>
+              </div>
+              <button type="button" className="ghost-button theme-toggle-btn" onClick={onToggleTheme}>
+                {theme === "light" ? "🌙 Ciemny" : "☀️ Jasny"}
+              </button>
+            </div>
+          </div>
         </section>
 
         <section className="panel">

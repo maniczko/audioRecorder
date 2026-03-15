@@ -55,15 +55,13 @@ export function buildSidebarLists(tasks, boardColumns) {
     {
       id: "smart:my_day",
       label: "My Day",
-      count: tasks.filter((task) => {
-        if (!task.dueDate || task.completed) {
-          return false;
-        }
-        return new Date(task.dueDate).toDateString() === new Date().toDateString();
-      }).length,
+      count: tasks.filter((task) => task.myDay && !task.completed).length,
     },
     { id: "smart:important", label: "Important", count: tasks.filter((task) => task.important).length },
     { id: "smart:planned", label: "Planned", count: tasks.filter((task) => task.dueDate).length },
+    { id: "smart:overdue", label: "Overdue", count: tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()).length },
+    { id: "smart:recurring", label: "Recurring", count: tasks.filter((task) => Boolean(task.recurrence)).length },
+    { id: "smart:completed", label: "Completed", count: tasks.filter((task) => task.completed).length },
     { id: "smart:assigned", label: "Assigned to me", count: tasks.filter((task) => task.assignedToMe).length },
     { id: "smart:all", label: "Tasks", count: tasks.length },
   ];
@@ -91,8 +89,7 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
   }
 
   if (mainListId === "smart:my_day") {
-    const today = new Date().toDateString();
-    return tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).toDateString() === today);
+    return tasks.filter((task) => task.myDay && !task.completed);
   }
 
   if (mainListId === "smart:important") {
@@ -101,6 +98,18 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
 
   if (mainListId === "smart:planned") {
     return tasks.filter((task) => Boolean(task.dueDate));
+  }
+
+  if (mainListId === "smart:overdue") {
+    return tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now());
+  }
+
+  if (mainListId === "smart:recurring") {
+    return tasks.filter((task) => Boolean(task.recurrence));
+  }
+
+  if (mainListId === "smart:completed") {
+    return tasks.filter((task) => task.completed);
   }
 
   if (mainListId === "smart:assigned") {
@@ -188,12 +197,15 @@ export function createQuickDraft(boardColumns) {
     owner: "",
     group: "",
     dueDate: "",
+    reminderAt: "",
     description: "",
     status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
     important: false,
+    myDay: false,
     priority: "medium",
     tags: "",
     notes: "",
+    links: [],
   };
 }
 

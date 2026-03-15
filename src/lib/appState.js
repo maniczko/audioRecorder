@@ -2,6 +2,7 @@ import {
   normalizeTaskComments,
   normalizeTaskDependencies,
   normalizeTaskHistory,
+  normalizeTaskLinks,
   normalizeTaskPeopleList,
   normalizeTaskRecurrence,
   normalizeTaskSubtasks,
@@ -70,6 +71,8 @@ export function normalizeTaskUpdatePayload(previousTask, updates, columns) {
     description: updates.description ?? previousTask.description,
     dueDate: updates.dueDate ?? previousTask.dueDate,
     notes: updates.notes ?? previousTask.notes,
+    reminderAt: updates.reminderAt ?? previousTask.reminderAt,
+    myDay: typeof updates.myDay === "boolean" ? updates.myDay : previousTask.myDay,
     tags:
       updates.tags === undefined
         ? previousTask.tags
@@ -88,6 +91,7 @@ export function normalizeTaskUpdatePayload(previousTask, updates, columns) {
         : normalizeTaskDependencies(updates.dependencies),
     recurrence: updates.recurrence === undefined ? previousTask.recurrence : normalizeTaskRecurrence(updates.recurrence),
     subtasks: updates.subtasks === undefined ? previousTask.subtasks : normalizeTaskSubtasks(updates.subtasks),
+    links: updates.links === undefined ? previousTask.links : normalizeTaskLinks(updates.links),
     order: Number.isFinite(Number(updates.order)) ? Number(updates.order) : previousTask.order,
   };
 }

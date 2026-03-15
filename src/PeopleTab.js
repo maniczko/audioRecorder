@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting, externalSelectedPersonId, onPersonSelectionHandled }) {
+export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
 
@@ -232,7 +232,13 @@ export default function PeopleTab({ profiles, onOpenMeeting, externalSelectedPer
                 <div className="people-task-list">
                   {selectedPerson.tasks.length ? (
                     selectedPerson.tasks.map((task) => (
-                      <div key={task.id} className="person-task-card">
+                      <button
+                        type="button"
+                        key={task.id}
+                        className="person-task-card person-task-card-clickable"
+                        onClick={() => typeof onOpenTask === "function" && onOpenTask(task.id)}
+                        title="Przejdź do zadania"
+                      >
                         <div className="kanban-card-top">
                           <strong>{task.title}</strong>
                           <span className={`task-status-chip ${task.status}`}>{task.completed ? "Done" : task.priority}</span>
@@ -245,7 +251,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, externalSelectedPer
                             </span>
                           ))}
                         </div>
-                      </div>
+                      </button>
                     ))
                   ) : (
                     <div className="empty-panel">

@@ -1,4 +1,5 @@
 import { createId } from "./storage";
+import { normalizeWorkspaceRole } from "./permissions";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -31,6 +32,7 @@ export function createWorkspace(name, ownerUserId) {
     name: clean(name) || "Shared workspace",
     ownerUserId,
     memberIds: ownerUserId ? [ownerUserId] : [],
+    memberRoles: ownerUserId ? { [ownerUserId]: "owner" } : {},
     inviteCode: generateInviteCode(),
     createdAt,
     updatedAt: createdAt,
@@ -44,9 +46,25 @@ export function addUserToWorkspace(workspaces, workspaceId, userId) {
       : {
           ...workspace,
           memberIds: unique([...(workspace.memberIds || []), userId]),
+          memberRoles: {
+            ...(workspace.memberRoles || {}),
+            [userId]: normalizeWorkspaceRole(workspace.memberRoles?.[userId] || "member"),
+          },
           updatedAt: nowIso(),
         }
   );
+}
+
+export function getWorkspaceMemberRole(workspace, userId) {
+  if (!workspace || !userId) {
+    return "";
+  }
+
+  if (workspace.ownerUserId === userId) {
+    return "owner";
+  }
+
+  return normalizeWorkspaceRole(workspace.memberRoles?.[userId] || "member");
 }
 
 export function workspaceMembers(users, workspace) {
@@ -55,7 +73,12 @@ export function workspaceMembers(users, workspace) {
   }
 
   const memberIds = new Set(workspace.memberIds || []);
-  return safeArray(users).filter((user) => memberIds.has(user.id));
+  return safeArray(users)
+    .filter((user) => memberIds.has(user.id))
+    .map((user) => ({
+      ...user,
+      workspaceMemberRole: getWorkspaceMemberRole(workspace, user.id),
+    }));
 }
 
 export function userWorkspaceIds(user, workspaces) {
@@ -99,6 +122,7 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
   let nextWorkspaces = safeArray(workspaces).map((workspace) => ({
     ...workspace,
     memberIds: unique(workspace.memberIds),
+    memberRoles: workspace.memberRoles && typeof workspace.memberRoles === "object" ? { ...workspace.memberRoles } : {},
     inviteCode: normalizeWorkspaceCode(workspace.inviteCode) || generateInviteCode(),
   }));
   let nextMeetings = safeArray(meetings).map((meeting) => ({ ...meeting }));
@@ -152,12 +176,23 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
 
   nextWorkspaces = nextWorkspaces.map((workspace) => {
     const normalizedMemberIds = unique(workspace.memberIds);
+    const nextMemberRoles = normalizedMemberIds.reduce((result, memberId) => {
+      result[memberId] =
+        memberId === workspace.ownerUserId
+          ? "owner"
+          : normalizeWorkspaceRole(workspace.memberRoles?.[memberId] || "member");
+      return result;
+    }, {});
     if (normalizedMemberIds.length !== (workspace.memberIds || []).length) {
+      changed = true;
+    }
+    if (JSON.stringify(nextMemberRoles) !== JSON.stringify(workspace.memberRoles || {})) {
       changed = true;
     }
     return {
       ...workspace,
       memberIds: normalizedMemberIds,
+      memberRoles: nextMemberRoles,
       name: clean(workspace.name) || "Shared workspace",
       inviteCode: normalizeWorkspaceCode(workspace.inviteCode) || generateInviteCode(),
     };
