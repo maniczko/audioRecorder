@@ -284,6 +284,7 @@ export default function TranscriptPanel({
   canEditTranscript = true,
 }) {
   const audioRef = useRef(null);
+  const activeReviewItemRef = useRef(null);
   const [filterMode, setFilterMode] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
@@ -291,6 +292,7 @@ export default function TranscriptPanel({
   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]);
   const [bulkSpeakerId, setBulkSpeakerId] = useState("");
   const [splitCursor, setSplitCursor] = useState({ segmentId: "", start: 0 });
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   const transcript = useMemo(
     () => (Array.isArray(displayRecording?.transcript) ? displayRecording.transcript : []),
@@ -431,6 +433,99 @@ export default function TranscriptPanel({
       setBulkSpeakerId(speakerOptions[0].id);
     }
   }, [bulkSpeakerId, speakerOptions]);
+
+  useEffect(() => {
+    if (!activeReviewItemRef.current) return;
+    activeReviewItemRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeSegmentId]);
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      const tag = (event.target?.tagName || "").toLowerCase();
+      if (["input", "textarea", "select"].includes(tag) || event.target?.isContentEditable) return;
+
+      const key = event.key;
+
+      if (key === "]" || key === "ArrowRight") {
+        event.preventDefault();
+        const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
+        const next = reviewSegments[idx + 1] || reviewSegments[0];
+        if (next) {
+          setActiveSegmentId(next.id);
+          playFromTimestamp(next.timestamp);
+        }
+        return;
+      }
+
+      if (key === "[" || key === "ArrowLeft") {
+        event.preventDefault();
+        const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
+        const prev = reviewSegments[idx > 0 ? idx - 1 : reviewSegments.length - 1];
+        if (prev) {
+          setActiveSegmentId(prev.id);
+          playFromTimestamp(prev.timestamp);
+        }
+        return;
+      }
+
+      if (key === "a" && canEditTranscript) {
+        const seg = reviewSegments.find((s) => s.id === activeSegmentId);
+        if (seg) {
+          updateTranscriptSegment(seg.id, { verificationStatus: "verified", verificationReasons: [] });
+          const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
+          const next = reviewSegments[idx + 1] || reviewSegments[0];
+          if (next && next.id !== seg.id) {
+            setActiveSegmentId(next.id);
+            playFromTimestamp(next.timestamp);
+          }
+        }
+        return;
+      }
+
+      if (key === "s" && canEditTranscript) {
+        const seg = reviewSegments.find((s) => s.id === activeSegmentId);
+        if (seg) {
+          updateTranscriptSegment(seg.id, {
+            verificationStatus: "review",
+            verificationReasons: seg.verificationReasons?.length ? seg.verificationReasons : ["oznaczone recznie do ponownego sprawdzenia"],
+          });
+          const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
+          const next = reviewSegments[idx + 1] || reviewSegments[0];
+          if (next) {
+            setActiveSegmentId(next.id);
+            playFromTimestamp(next.timestamp);
+          }
+        }
+        return;
+      }
+
+      if (key === " ") {
+        event.preventDefault();
+        const audio = audioRef.current;
+        if (audio) {
+          if (audio.paused) audio.play().catch(() => {});
+          else audio.pause();
+        }
+        return;
+      }
+
+      if (key === "p") {
+        const seg = reviewSegments.find((s) => s.id === activeSegmentId) || filteredSegments.find((s) => s.id === activeSegmentId);
+        if (seg) playFromTimestamp(seg.timestamp);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSegmentId, canEditTranscript, filteredSegments, reviewSegments, updateTranscriptSegment]);
+
+  function approveAllReviewSegments() {
+    if (!canEditTranscript || !reviewSegments.length) return;
+    reviewSegments.forEach((seg) => {
+      updateTranscriptSegment(seg.id, { verificationStatus: "verified", verificationReasons: [] });
+    });
+  }
 
   function toggleSegmentSelection(segmentId) {
     setSelectedSegmentIds((previous) =>
@@ -766,7 +861,35 @@ export default function TranscriptPanel({
               <div className="eyebrow">Review queue</div>
               <h3>Fragmenty wymagajace potwierdzenia</h3>
             </div>
+            <div className="review-queue-header-actions">
+              <span className="review-progress-counter">
+                {transcript.filter((s) => s.verificationStatus !== "review").length} / {transcript.length} zatwierdzonych
+              </span>
+              <button
+                type="button"
+                className={showKeyboardHelp ? "pill active" : "pill"}
+                onClick={() => setShowKeyboardHelp((p) => !p)}
+                title="Skróty klawiszowe"
+              >
+                ⌨ Skróty
+              </button>
+              {canEditTranscript && reviewSegments.length > 0 ? (
+                <button type="button" className="ghost-button small" onClick={approveAllReviewSegments}>
+                  Zatwierdź wszystkie ({reviewSegments.length})
+                </button>
+              ) : null}
+            </div>
           </div>
+          {showKeyboardHelp ? (
+            <div className="review-keyboard-help">
+              <span><kbd>]</kbd> / <kbd>→</kbd> następny</span>
+              <span><kbd>[</kbd> / <kbd>←</kbd> poprzedni</span>
+              <span><kbd>A</kbd> zatwierdź</span>
+              <span><kbd>S</kbd> zostaw w review</span>
+              <span><kbd>Space</kbd> play / pause</span>
+              <span><kbd>P</kbd> odtwórz od aktywnego</span>
+            </div>
+          ) : null}
 
           {reviewSegments.length ? (
             <div className="review-queue-grid">
@@ -775,8 +898,9 @@ export default function TranscriptPanel({
                   <button
                     type="button"
                     key={segment.id}
+                    ref={segment.id === activeReviewSegment?.id ? activeReviewItemRef : null}
                     className={segment.id === activeReviewSegment?.id ? "review-queue-item active" : "review-queue-item"}
-                    onClick={() => setActiveSegmentId(segment.id)}
+                    onClick={() => { setActiveSegmentId(segment.id); playFromTimestamp(segment.timestamp); }}
                   >
                     <strong>{labelSpeaker(displaySpeakerNames, segment.speakerId)}</strong>
                     <span>{formatDuration(segment.timestamp)}</span>

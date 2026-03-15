@@ -20,23 +20,8 @@ Postep:
 - taski maja teraz widoczny hub syncu z `connect / refresh / import / export`, etykieta live sync i ostatni sync dla Google Tasks.
 - profil pokazuje live sync Google Calendar, ostatni sync i reczne `Odswiez teraz`, ale nadal brakuje pelnej obslugi konfliktow oraz automatycznego wypychania wszystkich zmian lokalnych do Google.
 
-## 012. Konflikty synchronizacji Google i centrum rozwiazywania zmian
-Status: `in_progress`
-Priorytet: `P2`
-Cel: bezpiecznie obslugiwac przypadki, w ktorych dane lokalne i Google roznia sie od siebie.
-Akceptacja:
-- aplikacja wykrywa konflikt dla spotkan i zadan, gdy lokalna i zdalna wersja zostaly zmienione niezaleznie.
-- widac panel porownania `lokalne / Google / finalna wersja`.
-- uzytkownik moze wybrac: zachowaj lokalne, zachowaj Google lub polacz pola recznie.
-- po rozwiazaniu konfliktu widac status ostatniego syncu i wynik akcji.
-Postep:
-- UI konfliktu w TaskDetailsPanel jest gotowe: panel lokalny/Google/finalna wersja z trybem `local / google / merge`.
-- brakuje automatycznego wykrywania konfliktu po stronie googleSync.js i propagacji pola `googleSyncConflict` do stanu zadania.
-
----
-
 ## 014. Tryb review transkrypcji ze skrotami klawiaturowymi
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: przyspieszyc review transkrypcji przy dluzszych nagraniach.
 Akceptacja:
@@ -44,16 +29,12 @@ Akceptacja:
 - widok pokazuje licznik postepu review i aktywny fragment.
 - mozna hurtowo zatwierdzac albo odrzucac fragmenty po filtrze.
 - nawigacja dziala bez myszy w najwazniejszych scenariuszach.
-
-## 015. Komentarze, mentiony i presence w workspace
-Status: `todo`
-Priorytet: `P2`
-Cel: lepiej wspierac wspolprace zespolu przy spotkaniach i zadaniach.
-Akceptacja:
-- mozna dodawac komentarze do spotkan, taskow i nagran.
-- mention `@osoba` tworzy powiadomienie i link do konkretnej encji.
-- widac kto aktualnie edytuje brief, task albo transkrypt.
-- feed workspace pokazuje komentarze i mentiony jako osobne typy aktywnosci.
+Wynik:
+- wdrozone skroty: `]`/`→` nastepny, `[`/`←` poprzedni, `A` zatwierdz, `S` zostaw w review, `Space` play/pause, `P` odtworz od aktywnego.
+- licznik postepu "X/Y zatwierdzonych" w naglowku review queue.
+- przycisk "Zatwierdz wszystkie (N)" dla bulk approve.
+- panel pomocy klawiszowej z togglem "Skróty".
+- auto-scroll aktywnego elementu w liscie review.
 
 ## 016. Audit log i historia zmian z filtrowaniem
 Status: `todo`

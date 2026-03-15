@@ -211,3 +211,41 @@ Wynik (App.css — 25 poprawek w bloku 026):
 - kanban-board + kanban-column-body: gap 12px (ujednolicono z reszta layoutu).
 - task-flag: white-space nowrap + flex-shrink 0 — nie lamie sie w srodku etykiety.
 - topbar: flex-wrap wrap + topbar-actions flex-wrap + row-gap przy max-width 1100px.
+
+---
+
+## 012. Konflikty synchronizacji Google i centrum rozwiazywania zmian
+Status: `done`
+Priorytet: `P2`
+Cel: bezpiecznie obslugiwac przypadki, w ktorych dane lokalne i Google roznia sie od siebie.
+Wynik:
+- googleSync.js: detectGoogleTaskConflict, createGoogleTaskConflictState, detectGoogleCalendarConflict, createGoogleCalendarConflictState.
+- tasks.js: upsertGoogleImportedTasks wykrywa konflikt przez createGoogleTaskConflictState i ustawia googleSyncConflict na zadaniu.
+- TaskDetailsPanel: pelny panel lokalny/Google/finalna wersja z trybami local/google/merge.
+- useGoogleIntegrations: resolveGoogleTaskConflict zapisuje finale wersje do Google i czysc pole konfliktu.
+- TasksTab: conflictTasks memo + onFocusConflictTask + TasksSidebar pokazuje center konfliktow.
+
+---
+
+## 015. Komentarze, mentiony i presence w workspace
+Status: `done`
+Priorytet: `P2`
+Cel: lepiej wspierac wspolprace zespolu przy spotkaniach i zadaniach.
+Wynik:
+- useMeetings: addMeetingComment(meetingId, text, authorName) dodaje komentarz + wpis activity z @mention detection.
+- StudioMeetingView: panel komentarzy do spotkania z textarea i listą komentarzy (reversed), wyswietla @mention chips.
+- TaskDetailsPanel: sekcja komentarzy z createTaskComment (author, text, createdAt).
+- App.css: style dla meeting-comment-card, meeting-comment-meta, mention-chip.
+
+---
+
+## 014. Tryb review transkrypcji ze skrotami klawiaturowymi
+Status: `done`
+Priorytet: `P2`
+Cel: przyspieszyc review transkrypcji przy dluzszych nagraniach.
+Wynik:
+- TranscriptPanel: useEffect na keydown — ] / → nastepny, [ / ← poprzedni, A zatwierdz, S zostaw w review, Space play/pause, P odtworz od aktywnego.
+- Licznik postep "X/Y zatwierdzonych" w naglowku review queue.
+- Przycisk "Zatwierdz wszystkie (N)" — bulk approve wszystkich widocznych review segmentow.
+- Panel pomocy klawiszowej z <kbd> renderingiem (toggle ⌨ Skróty).
+- Auto-scroll aktywnego elementu w liscie review przez activeReviewItemRef.
