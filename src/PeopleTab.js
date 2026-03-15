@@ -49,17 +49,28 @@ export default function PeopleTab({ profiles, onOpenMeeting, externalSelectedPer
   return (
     <div className="people-layout">
       <aside className="people-sidebar">
-        <section className="tasks-brand-panel">
-          <div className="eyebrow">People</div>
-          <h2>Relacje, potrzeby i ownership</h2>
-          <p>Lista osob budowana z uczestnikow spotkan, rozmowcow i ownerow zadan. To jeden punkt odniesienia dla spotkan i follow-upow.</p>
-        </section>
-
         <section className="tasks-list-panel">
-          <label className="people-search-field">
-            <span>Szukaj osoby</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="np. Anna" />
-          </label>
+          <div className="people-search-wrap">
+            <span className="people-search-icon" aria-hidden="true">⌕</span>
+            <input
+              className="people-search-input"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Szukaj po imieniu…"
+              autoFocus={false}
+            />
+            {query && (
+              <button
+                type="button"
+                className="people-search-clear"
+                onClick={() => setQuery("")}
+                aria-label="Wyczyść wyszukiwanie"
+              >
+                ×
+              </button>
+            )}
+          </div>
 
           <div className="people-list">
             {visibleProfiles.length ? (

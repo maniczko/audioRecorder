@@ -152,12 +152,28 @@ export default function CalendarTab({
   const [dragEntryKey, setDragEntryKey] = useState("");
   const [calendarMessage, setCalendarMessage] = useState("");
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
+  const [tagFilter, setTagFilter] = useState("");
+  const allMeetingTags = useMemo(() => {
+    const s = new Set();
+    userMeetings.forEach((m) => (m.tags || []).forEach((t) => s.add(t)));
+    return [...s].sort();
+  }, [userMeetings]);
 
   const monthMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
   const miniMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
   const weekDays = useMemo(() => buildWeekDays(selectedDate), [selectedDate]);
   const allEntries = useMemo(() => buildCalendarEntries(userMeetings, googleCalendarEvents, calendarTasks, calendarMeta), [calendarMeta, calendarTasks, googleCalendarEvents, userMeetings]);
-  const visibleEntries = useMemo(() => allEntries.filter((entry) => filters[entry.type] !== false), [allEntries, filters]);
+  const visibleEntries = useMemo(
+    () => allEntries.filter((entry) => {
+      if (filters[entry.type] === false) return false;
+      if (tagFilter && entry.type !== "google") {
+        const entryTags = entry.source?.tags || [];
+        if (!entryTags.includes(tagFilter)) return false;
+      }
+      return true;
+    }),
+    [allEntries, filters, tagFilter]
+  );
   const selectedDayEntries = useMemo(() => entriesForDay(visibleEntries, selectedDate), [selectedDate, visibleEntries]);
   const conflictMap = useMemo(() => buildConflictMap(visibleEntries), [visibleEntries]);
   const reminders = useMemo(() => buildUpcomingReminders(visibleEntries), [visibleEntries]);
@@ -407,18 +423,45 @@ export default function CalendarTab({
             {googleCalendarEvents.length ? <button type="button" className="ghost-button" onClick={disconnectGoogleCalendar}>Odlacz</button> : null}
           </div>
           {googleCalendarMessage ? <div className="inline-alert info">{googleCalendarMessage}</div> : null}
+
+          {allMeetingTags.length > 0 && (
+            <div className="calendar-tag-filters">
+              <div className="calendar-tag-filter-label">Tagi spotkań</div>
+              <div className="calendar-tag-filter-list">
+                <button
+                  type="button"
+                  className={!tagFilter ? "calendar-tag-chip active" : "calendar-tag-chip"}
+                  onClick={() => setTagFilter("")}
+                >
+                  Wszystkie
+                </button>
+                {allMeetingTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={tagFilter === tag ? "calendar-tag-chip active" : "calendar-tag-chip"}
+                    onClick={() => setTagFilter(tagFilter === tag ? "" : tag)}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
-        <section className="panel">
-          <div className="agenda-list">
-            {reminders.slice(0, 5).map((reminder) => (
-              <button key={reminder.id} type="button" className="agenda-card">
-                <strong>{reminder.title}</strong>
-                <span>{reminderLabel(reminder.minutes)} przed wydarzeniem</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {reminders.length > 0 ? (
+          <section className="panel">
+            <div className="agenda-list">
+              {reminders.slice(0, 5).map((reminder) => (
+                <button key={reminder.id} type="button" className="agenda-card">
+                  <strong>{reminder.title}</strong>
+                  <span>{reminderLabel(reminder.minutes)} przed wydarzeniem</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="panel">
           <div className="agenda-list">

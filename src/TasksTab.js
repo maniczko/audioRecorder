@@ -69,14 +69,6 @@ export default function TasksTab({
   const [dragTaskId, setDragTaskId] = useState("");
   const [dropColumnId, setDropColumnId] = useState("");
   const [message, setMessage] = useState("");
-  const [shellStatus, setShellStatus] = useState(() => ({
-    isOnline: typeof navigator === "undefined" ? true : navigator.onLine,
-    isStandalone:
-      typeof window !== "undefined" &&
-      Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone),
-    serviceWorkerSupported: typeof navigator !== "undefined" && "serviceWorker" in navigator,
-    serviceWorkerReady: typeof navigator !== "undefined" && Boolean(navigator.serviceWorker?.controller),
-  }));
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
   const dragTaskIdRef = useRef("");
@@ -96,78 +88,6 @@ export default function TasksTab({
     }
   }, [boardColumns, quickDraft.status]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    function updateConnectionStatus() {
-      setShellStatus((previous) => ({
-        ...previous,
-        isOnline: navigator.onLine,
-      }));
-    }
-
-    function updateDisplayMode() {
-      setShellStatus((previous) => ({
-        ...previous,
-        isStandalone: Boolean(
-          window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone
-        ),
-      }));
-    }
-
-    updateConnectionStatus();
-    updateDisplayMode();
-
-    const mediaQuery = window.matchMedia ? window.matchMedia("(display-mode: standalone)") : null;
-    const handleDisplayModeChange = () => updateDisplayMode();
-    window.addEventListener("online", updateConnectionStatus);
-    window.addEventListener("offline", updateConnectionStatus);
-
-    if (mediaQuery?.addEventListener) {
-      mediaQuery.addEventListener("change", handleDisplayModeChange);
-    } else if (mediaQuery?.addListener) {
-      mediaQuery.addListener(handleDisplayModeChange);
-    }
-
-    let active = true;
-    if ("serviceWorker" in navigator) {
-      setShellStatus((previous) => ({
-        ...previous,
-        serviceWorkerSupported: true,
-        serviceWorkerReady: previous.serviceWorkerReady || Boolean(navigator.serviceWorker.controller),
-      }));
-
-      navigator.serviceWorker.ready
-        .then(() => {
-          if (active) {
-            setShellStatus((previous) => ({
-              ...previous,
-              serviceWorkerReady: true,
-            }));
-          }
-        })
-        .catch(() => {});
-    } else {
-      setShellStatus((previous) => ({
-        ...previous,
-        serviceWorkerSupported: false,
-        serviceWorkerReady: false,
-      }));
-    }
-
-    return () => {
-      active = false;
-      window.removeEventListener("online", updateConnectionStatus);
-      window.removeEventListener("offline", updateConnectionStatus);
-      if (mediaQuery?.removeEventListener) {
-        mediaQuery.removeEventListener("change", handleDisplayModeChange);
-      } else if (mediaQuery?.removeListener) {
-        mediaQuery.removeListener(handleDisplayModeChange);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (selectedListId.startsWith("column:")) {
@@ -691,9 +611,6 @@ export default function TasksTab({
         sidebarLists={sidebarLists}
         selectedListId={selectedListId}
         setSelectedListId={setSelectedListId}
-        workspaceName={workspaceName}
-        workspaceInviteCode={workspaceInviteCode}
-        stats={stats}
         visibleStats={visibleStats}
         showColumnManager={showColumnManager}
         setShowColumnManager={setShowColumnManager}
@@ -703,7 +620,6 @@ export default function TasksTab({
         columnDraft={columnDraft}
         setColumnDraft={setColumnDraft}
         submitColumn={submitColumn}
-        currentUserName={currentUserName}
         quickAddInputRef={quickAddInputRef}
         searchInputRef={searchInputRef}
         selectedTaskIds={selectedTaskIds}
@@ -714,7 +630,6 @@ export default function TasksTab({
         taskNotifications={taskNotifications}
         selectedTasks={selectedTasks}
         selectedTaskSla={selectedTaskSla}
-        shellStatus={shellStatus}
         conflictTasks={conflictTasks}
         onFocusConflictTask={(taskId) => {
           setSelectedTaskId(taskId);

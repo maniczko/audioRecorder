@@ -416,10 +416,6 @@ export default function MainApp() {
         </div>
 
         <div className="topbar-actions">
-          <div className="status-chip">
-            {recorder.speechRecognitionSupported ? "Live transcript ready" : "Remote transcript required"}
-          </div>
-
           <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
           <NotificationCenter
             open={notificationCenterOpen}
@@ -440,7 +436,7 @@ export default function MainApp() {
           <button
             type="button"
             className={recorder.isRecording ? "topbar-record-btn recording" : "topbar-record-btn"}
-            onClick={() => recorder.startRecording({ adHoc: true })}
+            onClick={() => { recorder.startRecording({ adHoc: true }); setActiveTab("studio"); }}
             disabled={recorder.isRecording || !workspace.currentWorkspacePermissions?.canRecordAudio}
             title="Nagranie ad hoc"
           >
@@ -474,9 +470,6 @@ export default function MainApp() {
             </div>
             <button type="button" className="settings-button" aria-label="Otworz ustawienia" onClick={() => setActiveTab("profile")}>
               {"\u2699"}
-            </button>
-            <button type="button" className="ghost-button" onClick={logout}>
-              Wyloguj
             </button>
           </div>
         </div>
@@ -580,6 +573,7 @@ export default function MainApp() {
           setPasswordDraft={auth.setPasswordDraft}
           updatePassword={auth.updatePassword}
           securityMessage={auth.securityMessage}
+          onLogout={logout}
           googleTasksEnabled={google.googleEnabled}
           googleTasksStatus={google.googleTasksStatus}
           googleTasksMessage={google.googleTasksMessage}
@@ -649,6 +643,7 @@ export default function MainApp() {
           onCreateTask={meetings.createTaskFromComposer}
           peopleProfiles={meetings.peopleProfiles}
           setSelectedMeetingId={meetings.setSelectedMeetingId}
+          isDetachedMeetingDraft={meetings.isDetachedMeetingDraft}
           addMeetingComment={meetings.addMeetingComment}
           currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
         />

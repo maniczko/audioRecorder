@@ -9,20 +9,10 @@ function StatMiniCard({ label, value, tone = "neutral" }) {
   );
 }
 
-function cacheLabel(shellStatus) {
-  if (!shellStatus.serviceWorkerSupported) {
-    return "Brak wsparcia";
-  }
-  return shellStatus.serviceWorkerReady ? "Aktywny" : "Startuje";
-}
-
 export default function TasksSidebar({
   sidebarLists,
   selectedListId,
   setSelectedListId,
-  workspaceName,
-  workspaceInviteCode,
-  stats,
   visibleStats,
   showColumnManager,
   setShowColumnManager,
@@ -32,14 +22,12 @@ export default function TasksSidebar({
   columnDraft,
   setColumnDraft,
   submitColumn,
-  currentUserName,
   quickAddInputRef,
   searchInputRef,
   selectedTaskCount = 0,
   clearTaskSelection,
   selectedTasks = [],
   selectedTaskSla,
-  shellStatus = {},
   taskNotifications = [],
   conflictTasks = [],
   onFocusConflictTask,
@@ -48,39 +36,24 @@ export default function TasksSidebar({
 
   return (
     <aside className="todo-sidebar">
-      <div className="todo-sidebar-top">
-        <section className="todo-sidebar-hero">
-          <div className="eyebrow">Task cockpit</div>
-          <h2>{workspaceName || "Workspace"}</h2>
-          <p>Plan dnia, szybkie follow-upy i przeglad taskow w jednym miejscu.</p>
-          <div className="todo-sidebar-meta">
-            {currentUserName ? <span className="todo-sidebar-chip">Ty: {currentUserName}</span> : null}
-            {workspaceInviteCode ? <span className="todo-sidebar-chip">Kod: {workspaceInviteCode}</span> : null}
-            <span className="todo-sidebar-chip">Widok 3-panelowy</span>
-          </div>
-          <div className="todo-sidebar-actions">
-            <button
-              type="button"
-              className="todo-command-button primary"
-              onClick={() => quickAddInputRef?.current?.focus()}
-            >
-              Nowe zadanie
-            </button>
-            <button
-              type="button"
-              className="todo-command-button"
-              onClick={() => searchInputRef?.current?.focus()}
-            >
-              Szukaj
-            </button>
-            {selectedTaskCount ? (
-              <button type="button" className="todo-command-button" onClick={clearTaskSelection}>
-                Odznacz {selectedTaskCount}
-              </button>
-            ) : null}
-          </div>
-        </section>
+      <div className="todo-sidebar-actions-bar">
+        <button
+          type="button"
+          className="todo-command-button primary"
+          onClick={() => quickAddInputRef?.current?.focus()}
+        >
+          + Nowe zadanie
+        </button>
+        <button
+          type="button"
+          className="todo-command-button"
+          onClick={() => searchInputRef?.current?.focus()}
+        >
+          Szukaj
+        </button>
+      </div>
 
+      <div className="todo-sidebar-top">
         <div className="todo-sidebar-scroll">
           <div className="todo-nav-panel">
             <div className="todo-sidebar-group">
@@ -167,20 +140,6 @@ export default function TasksSidebar({
           </div>
         ) : null}
 
-        <div className="todo-progress-card">
-          <div className="todo-card-head">
-            <div>
-              <span className="todo-card-eyebrow">Postep</span>
-              <strong>{stats.completed} zakonczonych</strong>
-            </div>
-            <span className="todo-status-pill success">{stats.progress}%</span>
-          </div>
-          <div className="todo-progress-track">
-            <span style={{ width: `${stats.progress}%` }} />
-          </div>
-          <small>{stats.progress}% wszystkich zadan jest zamkniete.</small>
-        </div>
-
         <div className="todo-stats-mini-grid">
           <StatMiniCard label="Otwarte" value={visibleStats.open} />
           <StatMiniCard label="Na dzisiaj" value={visibleStats.dueToday} tone="info" />
@@ -235,29 +194,6 @@ export default function TasksSidebar({
             </div>
           </div>
         ) : null}
-
-        <div className="todo-device-card">
-          <div className="todo-card-head">
-            <div>
-              <span className="todo-card-eyebrow">Mobilnie i offline</span>
-              <strong>Gotowosc PWA</strong>
-            </div>
-            <span className={`todo-status-pill ${shellStatus.isOnline ? "success" : "danger"}`}>
-              {shellStatus.isOnline ? "Online" : "Offline"}
-            </span>
-          </div>
-          <div className="todo-sync-grid">
-            <div className="todo-sync-stat">
-              <span>Tryb</span>
-              <strong>{shellStatus.isStandalone ? "Aplikacja" : "Przegladarka"}</strong>
-            </div>
-            <div className="todo-sync-stat">
-              <span>Cache offline</span>
-              <strong>{cacheLabel(shellStatus)}</strong>
-            </div>
-          </div>
-          <div className="todo-helper">Widok i akcje sa zoptymalizowane pod desktop, mobile i prace w biegu.</div>
-        </div>
 
         <div className="todo-column-card">
           <div className="todo-card-head">

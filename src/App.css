@@ -6320,3 +6320,235 @@ select:focus {
   color: rgba(116, 208, 191, 0.9);
   border: 1px solid rgba(116, 208, 191, 0.22);
 }
+
+/* ═══════════════════════════════════════════════════════
+   UI FIXES — batch 3
+   ═══════════════════════════════════════════════════════ */
+
+/* Notification center: always above content */
+.notification-anchor {
+  position: relative;
+  z-index: 1000;
+}
+
+.notification-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 9999;
+  background: rgba(7, 17, 27, 0.97);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.notification-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notification-panel-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Universal button hover (all interactive buttons) */
+.primary-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.tab-pill:not(.active):hover,
+.todo-command-button:not(:disabled):hover,
+.todo-side-link:not(.active):hover,
+.calendar-filter-chip:not(.active):hover,
+.note-card:not(.active):hover,
+.meeting-card:not(.active):hover,
+.recording-card:not(.active):hover,
+.agenda-card:not(:disabled):hover,
+.person-row:not(.active):hover,
+.calendar-tag-chip:not(.active):hover,
+.brief-tab:not(.active):hover,
+.topbar-record-btn:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+/* Brief form tabs */
+.brief-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.brief-tab {
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.brief-tab.active {
+  background: rgba(116, 208, 191, 0.15);
+  border-color: rgba(116, 208, 191, 0.4);
+  color: rgb(116, 208, 191);
+  font-weight: 600;
+}
+
+.brief-autosave {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.brief-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.brief-row label:last-child input {
+  width: 80px;
+}
+
+.brief-form-section {
+  animation: fade-in 0.18s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.brief-actions {
+  padding-top: 4px;
+}
+
+/* Tasks sidebar: compact action bar */
+.todo-sidebar-actions-bar {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.todo-sidebar-actions-bar .todo-command-button {
+  flex: 1;
+}
+
+/* People: search UX */
+.people-search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.people-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.05rem;
+  pointer-events: none;
+}
+
+.people-search-input {
+  width: 100%;
+  padding: 10px 36px 10px 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s;
+}
+
+.people-search-input:focus {
+  border-color: rgba(116, 208, 191, 0.45);
+}
+
+.people-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Calendar tag filters */
+.calendar-tag-filters {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.calendar-tag-filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.calendar-tag-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.calendar-tag-chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.calendar-tag-chip.active {
+  background: rgba(116, 208, 191, 0.18);
+  border-color: rgba(116, 208, 191, 0.45);
+  color: rgb(116, 208, 191);
+  font-weight: 600;
+}
+
+/* Topbar: no overflow of notification panel behind panels */
+.topbar {
+  position: relative;
+  z-index: 100;
+  overflow: visible !important;
+}

@@ -3,7 +3,6 @@ import StudioSidebar from "./studio/StudioSidebar";
 
 export default function StudioTab(props) {
   const {
-    currentWorkspaceMembers,
     currentWorkspacePermissions,
     meetingDraft,
     setMeetingDraft,
@@ -12,19 +11,13 @@ export default function StudioTab(props) {
     saveMeeting,
     startNewMeetingDraft,
     workspaceMessage,
-    workspaceActivity,
-    userMeetings,
-    selectedMeetingId,
-    selectMeeting,
     selectedMeeting,
-    setSelectedMeetingId,
-    setSelectedRecordingId,
+    isDetachedMeetingDraft,
   } = props;
 
   return (
     <div className="workspace-layout">
       <StudioSidebar
-        currentWorkspaceMembers={currentWorkspaceMembers}
         currentWorkspacePermissions={currentWorkspacePermissions}
         meetingDraft={meetingDraft}
         setMeetingDraft={setMeetingDraft}
@@ -33,13 +26,8 @@ export default function StudioTab(props) {
         saveMeeting={saveMeeting}
         startNewMeetingDraft={startNewMeetingDraft}
         workspaceMessage={workspaceMessage}
-        workspaceActivity={workspaceActivity}
-        userMeetings={userMeetings}
-        selectedMeetingId={selectedMeetingId}
-        selectMeeting={selectMeeting}
         selectedMeeting={selectedMeeting}
-        setSelectedMeetingId={setSelectedMeetingId}
-        setSelectedRecordingId={setSelectedRecordingId}
+        isDetachedMeetingDraft={isDetachedMeetingDraft}
       />
 
       <main className="workspace-main">

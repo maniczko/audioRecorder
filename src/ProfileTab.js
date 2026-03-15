@@ -46,6 +46,7 @@ export default function ProfileTab({
   onExportGoogleTasks,
   onRefreshGoogleTasks,
   workspaceRole,
+  onLogout,
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
 
@@ -441,6 +442,50 @@ export default function ProfileTab({
           )}
 
           {securityMessage ? <div className="inline-alert success">{securityMessage}</div> : null}
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Session</div>
+              <h2>Konto i sesja</h2>
+            </div>
+          </div>
+          <div className="integration-card">
+            <div className="integration-row">
+              <div>
+                <strong>Wyloguj się</strong>
+                <p>Zakończ sesję i wróć do ekranu logowania.</p>
+              </div>
+              <button type="button" className="ghost-button" onClick={onLogout}>
+                Wyloguj
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">PWA</div>
+              <h2>Mobilnie i offline</h2>
+            </div>
+            <span className={typeof navigator !== "undefined" && navigator.onLine ? "status-chip success" : "status-chip danger"}>
+              {typeof navigator !== "undefined" && navigator.onLine ? "Online" : "Offline"}
+            </span>
+          </div>
+          <div className="integration-card">
+            <div className="integration-row">
+              <div>
+                <strong>Tryb działania</strong>
+                <p>{typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone) ? "Aplikacja (PWA)" : "Przeglądarka"}</p>
+              </div>
+              <div>
+                <strong>Cache offline</strong>
+                <p>{typeof navigator !== "undefined" && "serviceWorker" in navigator ? (navigator.serviceWorker?.controller ? "Aktywny" : "Startuje") : "Brak wsparcia"}</p>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>
