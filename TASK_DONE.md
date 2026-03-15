@@ -188,3 +188,26 @@ Wynik:
 - Kazda sugestia ma przyciski: Zatwierdz (tworzy task z sourceType: "ai-suggestion"), Edytuj (inline form), Odrzuc.
 - Panel jest ukryty jezeli REACT_APP_ANTHROPIC_API_KEY nie jest ustawiony.
 - Sugestie oznaczone wizualnie badgem "AI" i kolorem priorytetu.
+
+---
+
+## 026. UI/UX ergonomia — spojnosc, alignment i interaktywnosc
+Status: `done`
+Priorytet: `P1`
+Cel: zapewnic perfekcyjna ergonomie interfejsu bez nachodzenia, z rowno wyrowanymi przyciskami i spójnymi stanami.
+Wynik (App.css — 25 poprawek w bloku 026):
+- button-row: dodano align-items center + flex-wrap wrap + row-gap 8px — przyciski nigdy nie nachodza na siebie.
+- topbar-actions + status-cluster: align-items center — wszystkie chipsety i przyciski wyrownane w pionie.
+- .small modifier: ujednolicono primary/secondary/ghost/danger w jednej regule (8px 12px, 0.84rem).
+- :disabled state: opacity 0.42, cursor not-allowed, transform none, pointer-events none dla wszystkich buttonow.
+- :focus-visible: jednolity outline 2px rgba(158,242,219,0.7) + box-shadow dla wszystkich buttonow i todo buttons.
+- transcript-bulk-actions + transcript-advanced-filters: align-items center zamiast flex-end — select + button na jednej osi.
+- transcript-bulk-toolbar: row-gap 12px przy zawijaniu.
+- panel-header: min-height 44px dla spojnosci.
+- ai-suggestion-meta-row: owner input flex:1, date flex:0 0 150px, select flex:0 0 120px — brak overflow w flex row.
+- .todo-detail-card sticky: z-index 10 — nie przykrywany przez inne panele.
+- review-queue-list: min-height 80px.
+- segment-card textarea: min-height 52px.
+- kanban-board + kanban-column-body: gap 12px (ujednolicono z reszta layoutu).
+- task-flag: white-space nowrap + flex-shrink 0 — nie lamie sie w srodku etykiety.
+- topbar: flex-wrap wrap + topbar-actions flex-wrap + row-gap przy max-width 1100px.

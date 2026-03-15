@@ -5,6 +5,8 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+---
+
 ## 010. Pelny live sync z Google Calendar i Google Tasks
 Status: `in_progress`
 Priorytet: `P3`

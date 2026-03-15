@@ -5364,3 +5364,197 @@ select:focus {
   resize: vertical;
   font-family: inherit;
 }
+
+/* ==========================================
+   026 — UX/Ergonomics global fixes
+   ========================================== */
+
+/* 1. button-row: centering and wrapping */
+.button-row {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* 2. topbar-actions: vertical centering */
+.topbar-actions {
+  align-items: center;
+}
+
+/* 3. status-cluster: vertical centering */
+.status-cluster {
+  align-items: center;
+}
+
+/* 4. Small modifier for all button types */
+.primary-button.small,
+.secondary-button.small,
+.ghost-button.small,
+.danger-button.small {
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+/* 5. Disabled state */
+.primary-button:disabled,
+.secondary-button:disabled,
+.ghost-button:disabled,
+.danger-button:disabled,
+.pill:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none !important;
+  pointer-events: none;
+}
+
+/* 6. Focus-visible for keyboard navigation */
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.danger-button:focus-visible,
+.pill:focus-visible,
+.tab-pill:focus-visible,
+.settings-button:focus-visible {
+  outline: 2px solid rgba(158, 242, 219, 0.7);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(117, 214, 196, 0.12);
+}
+
+/* 7. Transcript toolbar: center mixed elements */
+.transcript-advanced-filters,
+.transcript-bulk-actions {
+  align-items: center;
+}
+
+/* 8. Transcript bulk toolbar: row gap when wrapping */
+.transcript-bulk-toolbar {
+  row-gap: 12px;
+}
+
+/* 9. Panel-header: consistent min-height */
+.panel-header {
+  min-height: 44px;
+}
+
+/* 10. AI suggestion meta row: proper flex sizing */
+.ai-suggestion-meta-row {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ai-suggestion-meta-row .ai-suggestion-input {
+  width: auto;
+  flex: 1 1 80px;
+  min-width: 80px;
+}
+.ai-suggestion-meta-row select {
+  width: auto;
+  flex: 0 0 120px;
+  min-width: 80px;
+}
+.ai-suggestion-meta-row input[type="date"] {
+  width: auto;
+  flex: 0 0 150px;
+  min-width: 120px;
+}
+
+/* 11. Z-index for sticky todo detail card */
+.tasks-layout.ms-todo .todo-detail-card {
+  z-index: 10;
+}
+
+/* 12. Review queue list: min-height */
+.review-queue-list {
+  min-height: 80px;
+}
+
+/* 13. Segment card textarea: min-height */
+.segment-card textarea {
+  min-height: 52px;
+}
+
+/* 14. Todo buttons: focus-visible */
+.todo-command-button:focus-visible,
+.todo-icon-button:focus-visible,
+.todo-view-button:focus-visible,
+.todo-filter-item:focus-visible {
+  outline: 2px solid rgba(158, 242, 219, 0.6);
+  outline-offset: 2px;
+}
+
+/* 15. Todo command button: disabled state */
+.todo-command-button:disabled,
+.todo-icon-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 16. Waveform toolbar: consistent alignment */
+.waveform-toolbar {
+  min-height: 36px;
+}
+
+/* 17. Waveform markers list: visual separation */
+.waveform-marker-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 4px;
+}
+.waveform-markers-list .waveform-marker-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* 18. AI suggestions list: full width cards */
+.ai-suggestions-list {
+  padding-top: 4px;
+}
+
+/* 19. Panel-header with status-cluster on right: ensure wrap */
+.panel-header > .status-cluster {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* 20. Topbar: wrap on mid-width screens */
+@media (max-width: 1100px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .topbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-end;
+    row-gap: 8px;
+  }
+}
+
+/* 21. hero-panel button-row: right-align on large screens */
+.hero-panel .button-row {
+  flex-wrap: wrap;
+}
+
+/* 22. Transcript panel: gap between sections */
+.transcript-panel > * + * {
+  margin-top: 0;
+}
+
+/* 23. Kanban board: consistent gap */
+.kanban-board {
+  gap: 12px;
+}
+.kanban-column-body {
+  gap: 12px;
+}
+
+/* 24. Task flag: consistent vertical alignment */
+.task-flag {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 25. Inline-alert: consistent vertical padding */
+.inline-alert {
+  line-height: 1.5;
+}
