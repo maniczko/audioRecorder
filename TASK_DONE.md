@@ -252,6 +252,19 @@ Wynik:
 
 ---
 
+## 027. React Error Boundaries i graceful degradation
+Status: `done`
+Priorytet: `P1`
+Cel: zapobiec crashowi calej aplikacji przy nieobsluzonym wyjatku w jednym komponencie.
+Wynik:
+- src/lib/ErrorBoundary.js — klasowy komponent z getDerivedStateFromError + componentDidCatch.
+- console.error z labelem taba przy kazdym bledzie.
+- fallback: czytelny komunikat + przycisk "Odswierz widok"; stacktrace widoczny tylko w dev.
+- MainApp.js: <ErrorBoundary key={activeTab} label="..."> wrapuje caly blok tabow — key resetuje boundary przy przelaczaniu zakladek, label identyfikuje widok w logu.
+- style .error-boundary-fallback / .error-boundary-stack dodane do App.css.
+
+---
+
 ## 030. Nawigacja i lista spotkan w Studio
 Status: `done`
 Priorytet: `P1`

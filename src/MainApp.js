@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthScreen from "./AuthScreen";
+import ErrorBoundary from "./lib/ErrorBoundary";
 import CalendarTab from "./CalendarTab";
 import CommandPalette from "./CommandPalette";
 import NotesTab from "./NotesTab";
@@ -537,6 +538,14 @@ export default function MainApp() {
         </div>
       </header>
 
+      <ErrorBoundary key={activeTab} label={
+        activeTab === "calendar" ? "Kalendarz"
+        : activeTab === "tasks" ? "Zadania"
+        : activeTab === "notes" ? "Notatki"
+        : activeTab === "people" ? "Osoby"
+        : activeTab === "profile" ? "Profil"
+        : "Studio"
+      }>
       {activeTab === "calendar" ? (
         <CalendarTab
           activeMonth={calendarMonth}
@@ -741,6 +750,7 @@ export default function MainApp() {
           currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
         />
       )}
+      </ErrorBoundary>
 
       <CommandPalette
         open={commandPaletteOpen}

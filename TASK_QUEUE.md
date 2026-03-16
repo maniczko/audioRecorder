@@ -9,22 +9,6 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
-## 027. React Error Boundaries i graceful degradation
-Status: `todo`
-Priorytet: `P1`
-Cel: zapobiec crashowi calej aplikacji przy nieobsluzonym wyjatku w jednym komponencie.
-Akceptacja:
-- kazdy glowny widok (Studio, Calendar, Tasks, Notes, People, Profile) ma osobny ErrorBoundary.
-- po errore widac czytelny komunikat z przyciskiem "Odswierz widok" zamiast bialego ekranu.
-- blad jest logowany (console.error lub sentry jesli dostepny).
-- strona glowna nie crashuje jesli jeden tab rzuci wyjatek.
-Techniczne wskazowki:
-- nowy plik `src/lib/ErrorBoundary.js` — klasowy komponent z componentDidCatch.
-- owinac kazdy tab w MainApp.js w dedykowany ErrorBoundary.
-- pokazywac fallback z nazwa widoku i stacktrace w trybie dev.
-
----
-
 ## 028. Hardening bezpieczenstwa backendu
 Status: `todo`
 Priorytet: `P1`
