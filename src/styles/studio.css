@@ -1920,84 +1920,109 @@
 }
 .ff-search-input::placeholder { color: var(--text-muted); }
 
-/* Segments list */
+/* ── Segments list ─────────────────────────────────────────────────────────── */
 .ff-segments-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: 0;
 }
 
+/* One segment block */
 .ff-segment {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.05));
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid transparent; /* no visible divider — breathing room only */
   cursor: default;
-  transition: background 0.1s;
+  transition: background 0.12s;
 }
 .ff-segment:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(0, 0, 0, 0.018);
 }
 .ff-segment.active {
-  background: rgba(124,58,237,0.06);
+  background: rgba(79, 70, 229, 0.05);
+  border-left: 3px solid #4f46e5;
+  padding-left: 17px; /* compensate border so text doesn't shift */
 }
 
+/* Header row: [avatar] [Speaker N] [▾] · [00:00] */
 .ff-seg-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 7px;
+  margin-bottom: 7px;
+  line-height: 1;
 }
 
+/* Circular avatar — color set via inline style from getSpeakerColor() */
 .ff-speaker-avatar {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-  letter-spacing: 0;
+  user-select: none;
+  /* subtle inner ring for depth, matches Fireflies avatar style */
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.25) inset;
 }
 
+/* "Speaker 1" label */
 .ff-speaker-name {
-  font-size: 0.82rem;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--text, #111827);
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
+/* ▾ dropdown chevron */
 .ff-speaker-chevron {
-  color: var(--text-muted);
+  color: #9ca3af;
   flex-shrink: 0;
+  margin-left: -3px; /* tuck tightly after name */
 }
 
+/* · separator dot */
 .ff-seg-dot {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  opacity: 0.5;
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1;
   margin: 0 1px;
+  user-select: none;
 }
 
+/* 00:00 timestamp — indigo/blue to match Fireflies */
 .ff-seg-timestamp {
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.8rem;
-  color: #7c3aed;
-  cursor: pointer;
+  font-size: 13px;
   font-weight: 500;
-  transition: color 0.1s;
+  color: #4f46e5;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.1s, text-decoration 0.1s;
+  line-height: 1;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: transparent;
 }
-.ff-seg-timestamp:hover { color: #a78bfa; text-decoration: underline; }
+.ff-seg-timestamp:hover {
+  color: #4338ca;
+  text-decoration-color: #4338ca;
+}
 
+/* Transcript text — indented to align with speaker name (after 30px avatar + 7px gap) */
 .ff-seg-text {
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: var(--text);
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--text, #374151);
   margin: 0;
-  padding-left: 32px;
+  padding-left: 37px; /* 30px avatar + 7px gap */
+  word-break: break-word;
 }
 
 .ff-segments-empty {
@@ -2163,10 +2188,20 @@
   border-bottom-color: #e5e7eb;
 }
 [data-theme="light"] .ff-segment {
-  border-bottom-color: #f3f4f6;
+  border-bottom-color: transparent;
+}
+[data-theme="light"] .ff-segment:hover {
+  background: #f9fafb;
 }
 [data-theme="light"] .ff-segment.active {
-  background: rgba(124,58,237,0.04);
+  background: rgba(79,70,229,0.04);
+  border-left-color: #4f46e5;
+}
+[data-theme="light"] .ff-speaker-name {
+  color: #111827;
+}
+[data-theme="light"] .ff-seg-text {
+  color: #374151;
 }
 [data-theme="light"] .ff-player-bar {
   border-top-color: #e5e7eb;
