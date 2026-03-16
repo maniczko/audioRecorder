@@ -12,6 +12,7 @@ const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
 const TRANSCRIPT_CORRECTION = process.env.VOICELOG_TRANSCRIPT_CORRECTION === "true";
+const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -327,7 +328,7 @@ async function preprocessAudio(filePath) {
   const tmpPath = `${filePath}.prep.wav`;
   try {
     execSync(
-      `ffmpeg -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1 "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1 "${tmpPath}"`,
       { stdio: "pipe", timeout: 120000 }
     );
     return tmpPath;
@@ -410,7 +411,7 @@ async function transcribeRecording(asset, options = {}) {
           .join("+");
         const { execSync } = require("node:child_process");
         execSync(
-          `ffmpeg -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
+          `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
           { stdio: "pipe", timeout: 30000 }
         );
         const matchedName = await matchSpeakerToProfile(clipPath, voiceProfiles);

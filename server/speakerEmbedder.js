@@ -8,6 +8,7 @@ const path = require("node:path");
 const os = require("node:os");
 
 const SIMILARITY_THRESHOLD = 0.82;
+const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
 
 let pipelineCache = null;
 
@@ -45,7 +46,7 @@ function decodeAudioToFloat32(inputPath) {
   const tmpPath = path.join(os.tmpdir(), `spkemb_${Date.now()}.raw`);
   try {
     execSync(
-      `ffmpeg -y -i "${inputPath}" -ar 16000 -ac 1 -f f32le "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${inputPath}" -ar 16000 -ac 1 -f f32le "${tmpPath}"`,
       { stdio: "pipe", timeout: 30000 }
     );
     const buf = fs.readFileSync(tmpPath);
