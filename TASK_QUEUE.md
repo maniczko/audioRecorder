@@ -9,23 +9,6 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
-## 028. Hardening bezpieczenstwa backendu
-Status: `todo`
-Priorytet: `P1`
-Cel: usunac krytyczne luki: plaintext-equivalent hashing, brak rate-limitingu, zbyt szerokie CORS.
-Zakres:
-- hasla hashowane po stronie serwera z bcrypt (min 10 rounds) zamiast SHA-256 bez soli.
-- rate limiting dla /auth/* — max 10 prob na IP w ciagu 60s, odpowiedz 429 po przekroczeniu.
-- CORS zawezony do konkretnych origin (env: VOICELOG_ALLOWED_ORIGINS).
-- naglowek Content-Security-Policy dla zasobow serwera.
-- recovery code nie powinien byc zwracany w API response po stronie klienta — tylko boolean "wysylam email".
-Techniczne wskazowki:
-- npm install bcrypt (lub bcryptjs dla pure-JS) po stronie server/.
-- prosty middleware counter dla rate limit w server/index.js (Map z resetem co 60s).
-- CORS_ORIGINS z env z fallbackiem do localhost w development.
-
----
-
 ## PRIORYTET P2 — wazne dla jakosci i completeness
 
 ---

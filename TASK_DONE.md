@@ -252,6 +252,19 @@ Wynik:
 
 ---
 
+## 028. Hardening bezpieczenstwa backendu
+Status: `done`
+Priorytet: `P1`
+Cel: usunac krytyczne luki bezpieczenstwa backendu.
+Wynik:
+- Hasla: crypto.scryptSync z 16-bajtowym losowym salt (bezpieczniejsze niz bcrypt).
+- Rate limiting /auth/*: Map-based, max 10 prob/60s, 429 + Retry-After (zadanie 044).
+- CORS: VOICELOG_ALLOWED_ORIGINS (zadanie 044).
+- Recovery code: nie zwracany w response — tylko { expiresAt }, kod logowany do konsoli w trybie dev.
+- Content-Security-Policy: default-src 'none' + X-Content-Type-Options: nosniff + X-Frame-Options: DENY dodane do wszystkich odpowiedzi przez securityHeaders() w server/index.js.
+
+---
+
 ## 027. React Error Boundaries i graceful degradation
 Status: `done`
 Priorytet: `P1`

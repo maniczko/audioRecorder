@@ -74,9 +74,20 @@ function checkRateLimit(ip, route) {
   }
 }
 
+/* ── Security headers ──────────────────────────────────── */
+
+function securityHeaders() {
+  return {
+    "Content-Security-Policy": "default-src 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+  };
+}
+
 function sendJson(response, statusCode, payload, requestOrigin) {
   response.writeHead(statusCode, {
     ...corsHeaders(requestOrigin),
+    ...securityHeaders(),
     "Content-Type": "application/json; charset=utf-8",
   });
   response.end(JSON.stringify(payload));
@@ -85,13 +96,14 @@ function sendJson(response, statusCode, payload, requestOrigin) {
 function sendText(response, statusCode, body, requestOrigin) {
   response.writeHead(statusCode, {
     ...corsHeaders(requestOrigin),
+    ...securityHeaders(),
     "Content-Type": "text/plain; charset=utf-8",
   });
   response.end(body);
 }
 
 function sendNoContent(response, requestOrigin) {
-  response.writeHead(204, corsHeaders(requestOrigin));
+  response.writeHead(204, { ...corsHeaders(requestOrigin), ...securityHeaders() });
   response.end();
 }
 
