@@ -7,413 +7,127 @@ Zadania zakonczone → TASK_DONE.md
 
 ## PRIORYTET P1 — krytyczne dla bezpieczenstwa i uzytecznosci
 
-Wszystkie P1 zrealizowane — patrz TASK_DONE.md.
-
 ---
 
-## PRIORYTET P2 — wazne dla jakosci i completeness
-
----
-
-## 046. [AUDIO] Exponential backoff i auto-retry w kolejce nagrań
+## 071. [SECURITY] Proxy wywołań Anthropic API przez backend
 Status: `todo`
-Priorytet: `P2`
-Cel: aktualnie błąd sieciowy = item utknięty w `failed` bez auto-ponowienia; user musi kliknąć ręcznie.
+Priorytet: `P1`
+Cel: REACT_APP_ANTHROPIC_API_KEY jest częścią bundla przeglądarki — każdy odwiedzający może go odczytać w DevTools i nadużyć klucza. Wszystkie wywołania Claude API muszą przechodzić przez serwer.
 Akceptacja:
-- po błędzie item czeka 1s, 4s, 16s (3 próby) przed oznaczeniem jako trwały błąd.
-- przy braku internetu (`navigator.onLine === false`) item czeka do powrotu sieci.
-- po 3 nieudanych próbach: status `failed_permanent`, wyraźny komunikat + przycisk "Ponów ręcznie".
-- licznik prób widoczny przy każdym itemie w kolejce.
+- brak żadnych wywołań `anthropic` / `fetch` do `api.anthropic.com` bezpośrednio z kodu React.
+- nowe endpointy serwera: `POST /ai/analyze`, `POST /ai/suggest-tasks`, `POST /ai/search`, `POST /ai/person-profile`.
+- klucz API tylko po stronie serwera (env `ANTHROPIC_API_KEY`); `REACT_APP_ANTHROPIC_API_KEY` usunięty z `.env` i kodu.
+- istniejące UI (AiTaskSuggestionsPanel, analyzeMeeting) działa identycznie — tylko transport zmieniony.
+- rate limit na endpointach AI: 20 req/min per IP.
 Techniczne wskazówki:
-- dodać `retryCount`, `backoffUntil`, `lastErrorMessage` do `RecordingQueueItem` w `recordingQueue.js`.
-- w `useRecorder.js`: przed `processQueueItem` sprawdzić `item.backoffUntil > Date.now()`.
-- listener `window.addEventListener("online", ...)` wznawia processing.
+- `server/aiProxy.js` — express router z endpointami; wywołuje Anthropic SDK.
+- `src/lib/aiClient.js` — zamień bezpośrednie wywołania SDK na `fetch('/ai/...')`.
+- przenieść `src/lib/analysis.js`, `aiTaskSuggestions.js`, `aiSearch.js` do wywołań przez proxy.
 
 ---
 
-## 047. [AUDIO] Obsługa błędów odtwarzania audio w UnifiedPlayer
+## PRIORYTET P2 — jakość rozpoznawania audio (najwyższy priorytet)
+
+---
+
+## 058. [AUDIO] Whisper prompt z danymi spotkania (context-aware)
 Status: `todo`
 Priorytet: `P2`
-Cel: `play().catch(() => {})` połyka błędy — user klika ▶ i nic się nie dzieje bez żadnego feedbacku.
+Cel: Whisper źle transkrybuje imiona uczestników, nazwy projektów i branżowy żargon. `initial_prompt` nastraja model na konkretne spotkanie bez dodatkowego kosztu API.
 Akceptacja:
-- błąd odtwarzania pokazuje inline komunikat (np. "Nie można odtworzyć — plik może być uszkodzony").
-- po błędzie ▶ zmienia się na ikonę ⚠ z tooltipem.
-- błąd `NotAllowedError` (brak interakcji user) obsługiwany osobno: "Kliknij aby odblokować audio".
+- do każdego requestu transkrypcji przekazywane pole `prompt` zawiera: tytuł spotkania, listę uczestników, tagi workspace, słowa kluczowe.
+- dokładność nazw własnych widocznie lepsza (weryfikowalne porównaniem przed/po).
+- brak danych spotkania → globalny prompt `WHISPER_PROMPT` jak dotąd (nie puste pole).
+- prompt max 224 tokeny (ograniczenie Whisper).
 Techniczne wskazówki:
-- `src/studio/UnifiedPlayer.js`: `a.play().catch(err => setPlayError(err.message))`.
-- lokalny stan `playError` w UnifiedPlayer, czyszczony przy zmianie src.
+- `server/audioPipeline.js`: `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` → string ≤224 tokenów.
+- format: `"Spotkanie: [tytuł]. Uczestnicy: [imiona oddzielone przecinkami]. Tematy: [tagi]. Słowa kluczowe: [vocabulary]."`.
+- `transcribeRecording(filePath, contentType, fields)` — `fields.meetingTitle`, `fields.participants`, `fields.tags` przekazywane z `ensureTranscriptionJob`.
+- `server/index.js` przy `POST /transcribe`: odczytać dane spotkania z bazy/state i dołączyć do `fields`.
 
 ---
 
-## 049. [AUDIO] VAD — automatyczne zatrzymanie przy długiej ciszy
+## 072. [SPEAKER] Pyannote.audio — zaawansowana diaryzacja serwera
 Status: `todo`
 Priorytet: `P2`
-Cel: użytkownik zapomina zatrzymać nagranie → kilkugodzinne pliki, przepełnienie storage, zły UX.
+Cel: model GPT-4o diarization jest dobry, ale pyannote.audio (neural pipeline z HuggingFace) daje lepsze wyniki dla trudnych nagrań — szum tła, nakładające się głosy, krótkie wypowiedzi. Działa w trybie offline bez kosztów API.
 Akceptacja:
-- jeśli cisza > 3 minuty (konfigurowalnie w profilu: 1/3/5/off) — nagranie zatrzymuje się automatycznie.
-- 30s przed zatrzymaniem: widoczne odliczanie w UnifiedPlayer "Zatrzymanie za 30s — kliknij aby kontynuować".
-- użytkownik może kliknąć "Kontynuuj" aby resetować licznik.
+- jeśli `HF_TOKEN` ustawiony i `pyannote` dostępne → używa pyannote.audio jako pierwszorzędnego diaryzera.
+- wynik pyannote mapowany na istniejący format `diarized_json` (speakerId A/B/C..., timestamps).
+- fallback → GPT-4o diarize jak dotąd gdy pyannote niedostępne.
+- diaryzacja pyannote działa dla pliku 60 min w < 3 min (GPU) lub < 15 min (CPU).
+- toggle `VOICELOG_DIARIZER=pyannote|openai` w `.env`.
 Techniczne wskazówki:
-- w `useRecorder.js`: monitorować `signatureTimelineRef` — jeśli ostatnie 180 wpisów mają amplitude < 5 → trigger.
-- alternatywnie: śledzić `AnalyserNode` max amplitude w oknie 3min.
-- countdown state eksponowany do UnifiedPlayer jako prop.
-
----
-
-## 050. [AUDIO] Chunked upload dla dużych plików (>10MB)
-Status: `todo`
-Priorytet: `P2`
-Cel: przy słabym WiFi upload jednego dużego pliku audio często się przerywa i wymaga ponowienia od zera.
-Akceptacja:
-- pliki > 10MB dzielone na chunki 2MB i wysyłane sekwencyjnie.
-- postęp uploadu widoczny w UnifiedPlayer (pasek procentowy).
-- przerwany upload może być wznowiony — serwer przechowuje już wysłane chunki przez 24h.
-- pliki < 10MB działają jak dotąd (jeden request).
-Techniczne wskazówki:
-- `src/services/mediaService.js`: `persistRecordingAudio()` → jeśli `blob.size > 10MB`, podzielić na `Blob.slice()` chunks.
-- serwer: `PUT /media/recordings/:id/audio/chunk?index=N&total=M` → składa chunks w jeden plik.
-- po zakończeniu chunków: `POST /media/recordings/:id/audio/finalize`.
-
----
-
-## 051. [AUDIO] Speaker ID — multi-sample enrollment i per-profile threshold
-Status: `todo`
-Priorytet: `P2`
-Cel: jeden sample głosu (~15s) to za mało — wielokrotne próbki dramatycznie zwiększają dokładność.
-Akceptacja:
-- użytkownik może nagrać do 5 próbek głosu per osoba (każda 15–30s).
-- embedding przechowywany jako average z wszystkich próbek.
-- per-profil slider threshold (0.70–0.95, default 0.82) w UI listy profili.
-- w transkrypcji: przy auto-labelu widoczne "Marek (94%)" z confidence score.
-Techniczne wskazówki:
-- `voice_profiles` table: dodać kolumnę `sample_count INT DEFAULT 1`.
-- `POST /voice-profiles` z tym samym `X-Speaker-Name` → uśrednia embedding z istniejącym.
-- `server/speakerEmbedder.js`: eksportować `averageEmbeddings(embeddings[])`.
-
----
-
-
----
-
-## 010. Pelny live sync z Google Calendar i Google Tasks
-Status: `in_progress`
-Priorytet: `P2`
-Cel: domknac integracje z Google — brakuje automatycznego wypychania lokalnych zmian.
-Akceptacja:
-- edycja lub usuniecie taska lokalnie automatycznie aktualizuje odpowiadajacy Google Task.
-- utworzenie spotkania z briefem automatycznie tworzy event w Google Calendar (jesli polaczony).
-- zmiany z Google odswiezane sa bez recznego klikania (dziala juz via timer 45s).
-- widac status "zsynchronizowano X sekund temu" przy kazdej integracji.
-Postep:
-- automatyczne odswiezanie z Google dziala (45s timer).
-- import/export manualny dziala.
-- brakuje: auto-push lokalnych zmian zadania do Google Tasks, auto-create eventu przy saveMeeting.
-Techniczne wskazowki:
-- w useGoogleIntegrations: po resolveGoogleTaskConflict i po updateTask gdy googleTaskId istnieje — wywolac updateGoogleTask.
-- w useMeetings: po saveMeeting — jezeli googleCalendarTokenRef.current i spotkanie ma googleEventId → syncCalendarEntryToGoogle.
-
----
-
-
-
----
-
-.
-
----
-
-## 020. Dostepnosc i keyboard-only flows
-Status: `todo`
-Priorytet: `P2`
-Cel: poprawic dostepnosc aplikacji i wygode pracy bez myszy.
-Akceptacja:
-- glowne widoki maja sensowne role ARIA, focus order i widoczne focus state (outline).
-- da sie obsluzyc kluczowe flow klawiatura: nagranie, review transkrypcji, taski, command palette.
-- formularze i panele nie maja krytycznych problemow z czytnikami ekranu (VoiceOver/NVDA smoke test).
-- przyciski maja aria-label gdy nie maja tekstu (ikony, kolorowe swatche).
-- co najmniej podstawowy axe-core accessibility smoke test w CI.
-Techniczne wskazowki:
-- npm install --save-dev @axe-core/react lub axe-playwright dla smoke testu.
-- uzupelnic aria-label na: waveform SVG, cover-swatche, topbar record button, timeline segments.
-
----
-
-## 023. AI — inteligentny asystent priorytetu i terminu
-Status: `todo`
-Priorytet: `P2`
-Cel: pomoc uzytkownikowi lepiej planowac dzien przez AI ktory sugeruje kolejnosc i termin dla otwartych zadan.
-Zakres:
-- przycisk `Zaplanuj z AI` w widoku `Moj dzien` lub toolbarze zadan.
-- Claude analizuje liste otwartych zadan i zwraca: rekomendowana kolejnosc na dzisiaj (max 5), uzasadnienie dla kazdego, flagi ryzyka (overdue, blokujace inne).
-- wynik pokazywany jako karty `Plan na dzis` w sidebarze lub osobnym panelu.
-- uzytkownik moze zaakceptowac sugestie (zadania trafiaja do `My Day`) lub zignorowac.
-Akceptacja:
-- wywolanie AI trwa < 5 s dla listy 50 zadan.
-- wynik zawiera max 5 zadan na dzien z krotkim uzasadnieniem.
-- zaakceptowanie planu oznacza zadania jako `myDay = true`.
-- jezeli nie ma API key, przycisk jest ukryty lub wyszarzony.
-Techniczne wskazowki:
-- nowy plik `src/lib/aiDayPlanner.js` z funkcja `planMyDay(tasks, currentDate)`.
-- prompt zawiera aktualna date i wstepne sortowanie po SLA przed wywolaniem LLM.
-- cachowac wynik w `sessionStorage` przez 15 minut.
-
----
-
-## 024. AI — automatyczny coaching po spotkaniu (meeting debrief)
-Status: `todo`
-Priorytet: `P2`
-Cel: po zakonczeniu spotkania AI generuje krotki debrief: streszczenie, decyzje, ryzyka, follow-upy.
-Zakres:
-- sekcja `Debrief AI` w panelu spotkania, dostepna po analizie transkrypcji.
-- Claude generuje: streszczenie 3-5 zdan, lista decyzji (max 5), ryzyk (max 3), sugestii follow-up.
-- format renderowany jako listy w UI.
-- uzytkownik moze skopiowac debrief do schowka lub wyeksportowac do PDF.
-- debrief persystuje w danych spotkania (pole `aiDebrief`).
-Akceptacja:
-- debrief dostepny jednym kliknieciem po analizie.
-- zawiera sekcje: streszczenie, decyzje, ryzyka, follow-upy.
-- eksport PDF lub kopia do schowka dziala.
-- debrief persystuje w meeting.aiDebrief.
-Techniczne wskazowki:
-- rozbudowac `src/lib/analysis.js` o funkcje `generateMeetingDebrief(meeting, transcript)`.
-- prompt po polsku, wynik zapisywac przez istniejacy mechanizm updateMeeting.
-
----
-
-
-
----
-
-## 032. Lepsza obsluga bledow pipeline nagrywania
-Status: `todo`
-Priorytet: `P2`
-Cel: uzytkownicy nie wiedza co robic gdy nagranie utknie w stanie failed lub processing.
-Akceptacja:
-- dla kazdego failed item w kolejce widac czytelny komunikat bledu (nie "Error processing").
-- przycisk "Ponow" wyswietla sie przy kazdym failed item z informacja ile razy probowano.
-- jesli brak internetu widac "Oczekuje na polaczenie — ponowi automatycznie".
-- max 3 retry automatyczne z exponential backoff (1s, 4s, 16s).
-- po 3 niepowodzeniach item nie znika — zostaje z "Blad trwaly, sprawdz polaczenie lub serwer".
-Techniczne wskazowki:
-- dodac retryCount, lastError, backoffUntil do RecordingQueueItem.
-- w useRecorder: sprawdzac backoffUntil przed processowaniem kolejnego itemu.
-- rozszerzyc komunikaty w recording.js.
-
----
-
-## 033. Optymalizacja wydajnosci — code splitting i memoizacja
-Status: `todo`
-Priorytet: `P2`
-Cel: skrocic czas pierwszego ladowania i poprawic responsywnosc przy duzych datasetach.
-Zakres:
-- code splitting dla ciezkich komponentow (TaskKanbanView, TranscriptPanel, KpiDashboard, NotesTab) via React.lazy + Suspense.
-- React.memo dla TaskListView, NoteCard, TranscriptSegment — komponenty rerenderujace sie zbyt czesto.
-- useMemo dla sortVisibleTasks, buildWorkspaceActivityFeed, groupTasks przy duzych listach.
-- bundle analyse: npm run build -- --stats + webpack-bundle-analyzer.
-Akceptacja:
-- czas FCP na dev server < 1.5s po code splitting.
-- brak widocznych "lag spikes" przy scrollowaniu listy 100+ taskow.
-- build chunk dla lazy views < 50kB gzip kazdego.
-Techniczne wskazowki:
-- React.lazy(() => import("./tasks/TaskKanbanView")) w TasksTab.js.
-- Suspense fallback: prosty spinner lub szkielet.
-- sprawdzic czy aktualny useMemo w taskViewUtils.js ma stabilne referencje deps.
-
----
-
-
----
-
-## 035. Delta sync zamiast pelnego PUT stanu workspace
-Status: `todo`
-Priorytet: `P2`
-Cel: aktualny stateService.syncWorkspaceState wysyla caly state za kazdym razem — roznie przy 50+ spotkaniach.
-Akceptacja:
-- server przyjmuje PATCH /state/workspaces/{id} z deltatem (lista zmienionych encji).
-- klient slucha tylko tych pol ktore faktycznie sie zmienily (dirty tracking).
-- full sync pozostaje jako fallback (GET /state/bootstrap).
-- payload synca przy edycji jednego taska < 5kB zamiast potencjalnie 500kB.
-Techniczne wskazowki:
-- dirty flag w useMeetings: gdy zmieni sie konkretne meeting/task → dodaj do dirtySet.
-- PATCH endpoint przyjmuje { meetings?: [...], tasks?: [...], taskState?: {...} }.
-- server: merge patch z istniejacym state (JSON merge, nie replace).
-
----
-
-## 036. Backup i restore danych workspace (JSON export/import)
-Status: `todo`
-Priorytet: `P2`
-Cel: uzytkownik moze stracic dane przy czyszczeniu localStorage lub zmianie urzadzenia.
-Akceptacja:
-- w Profile / Settings przycisk "Eksportuj dane workspace" pobiera plik JSON ze wszystkimi spotkaniami, zadaniami i nagraniami (metadane, bez audio blob).
-- przycisk "Importuj dane" laduje plik JSON i merduje z biezacym stanem (nie nadpisuje).
-- import waliduje schemat przed zastosowaniem i pokazuje preview: ile spotkan, taskow zostanie dodanych.
-- audio blobs sa pomijane przy eksporcie (za duze) — eksportuje sie URL-e lub opis.
-Techniczne wskazowki:
-- exportWorkspaceJson(meetings, tasks, taskBoards) → downloadTextFile("backup.json", ...).
-- importWorkspaceJson(jsonString, currentMeetings, currentTasks) → merge z deduplikacja po id.
-- walidacja: sprawdzic ze meetings[] i tasks[] sa tablicami z polem id.
-
----
-
-## 039. Zarzadzanie pamiecia audio — limity IndexedDB
-Status: `todo`
-Priorytet: `P2`
-Cel: aplikacja moze wypelnic quota storage przegladarki bez zadnego ostrzezenia.
-Akceptacja:
-- przy starcie aplikacji sprawdzana jest dostepna i uzyta przestrzen IndexedDB (navigator.storage.estimate).
-- jezeli uzyte > 80% quota: widac ostrzezenie z informacja ile miejsca pozostalo.
-- w Profile / Settings widac liste nagran z rozmiarami i przyciskiem "Usun audio z pamieci lokalnej" per nagranie.
-- usuniecie audio lokalnie nie usuwa transkrypcji ani metadanych spotkania.
-Techniczne wskazowki:
-- navigator.storage?.estimate() przy starcie w useRecorder lub useWorkspace.
-- nowa funkcja audioStore.deleteRecordingBlob(recordingId) i audioStore.listStoredSizes().
-- widok listy nagran z rozmiarami w ProfileTab.js.
-
----
-
-## PRIORYTET P3 — usprawnienia i nice-to-have
-
----
-
-## 018. Outlook / Microsoft To Do / Microsoft Calendar
-Status: `todo`
-Priorytet: `P3`
-Cel: rozszerzyc integracje poza ekosystem Google.
-Akceptacja:
-- mozna polaczyc konto Microsoft (MSAL OAuth2).
-- zadania synchronizuja sie z Microsoft To Do podobnie jak z Google Tasks.
-- spotkania moga byc synchronizowane z Outlook Calendar.
-- UI pokazuje status polaczenia i ostatni sync per provider.
-Techniczne wskazowki:
-- @azure/msal-browser jako alternatywa dla GSI.
-- MS Graph API dla To Do: https://graph.microsoft.com/v1.0/me/todo/lists.
-- analogiczna architektura jak googleSync.js → msSync.js.
-
----
-
-
-
----
-
-## 025. AI — semantyczne wyszukiwanie zadan i spotkan
-Status: `todo`
-Priorytet: `P3`
-Cel: umozliwic wyszukiwanie naturalnym jezykiem zamiast slow kluczowych.
-Zakres:
-- rozbudowac command palette (Ctrl+K) o semantyczne wyszukiwanie przez LLM.
-- zapytanie przesylane do Claude z kontekstem: lista spotkan (tytul + streszczenie) + lista zadan (tytul + opis).
-- Claude zwraca ranking najbardziej pasujacych elementow.
-- wyniki oznaczone `AI Match` odrozniaja sie od pelnotekstowych.
-- jezeli brak API key, AI match wylaczony, standardowe wyszukiwanie dziala.
-Akceptacja:
-- wyniki semantyczne w < 3 s dla max 100 elementow.
-- AI Match wizualnie odroznialne od standardowych wynikow.
-- brak API key — brak bledow w konsoli, funkcja ukryta.
-Techniczne wskazowki:
-- nowy plik `src/lib/aiSearch.js` z funkcja `semanticSearch(query, meetings, tasks)`.
-- przekazywac tylko tytuly i streszczenia (nie pelne transkrypty).
-- cache wynikow w Map z kluczem `query` przez sesje.
-
----
-
-
-
----
-
-## 040. Email digest i powiadomienia poza przegladarka
-Status: `todo`
-Priorytet: `P3`
-Cel: Browser Notifications wymagaja otwartej karty — usefulness poza sesja jest zerowa.
-Akceptacja:
-- uzytkownik moze wlaczyc "Dzienny digest" w Profile — email przychodzi raz dziennie (7:00 lokalnego czasu).
-- digest zawiera: zadania zalegajace (overdue), zadania na dzisiaj, nadchodzace spotkania.
-- email jest plain-text lub prosty HTML (bez obrazkow).
-- nie wymaga wlaczonego klienta — dziala przez endpoint serwera + cron.
-Techniczne wskazowki:
-- serwer: endpoint GET /digest/daily wywolywalny przez cron (lub manualnie do testow).
-- nodemailer + SMTP (env: VOICELOG_SMTP_HOST/USER/PASS).
-- user.notifyDailyDigest juz istnieje w profilu — podlaczenie pod mailer.
-
----
-
-## 041. Podzial App.css na moduly CSS
-Status: `todo`
-Priorytet: `P3`
-Cel: App.css przekroczyl 3500 linii i jest trudny w utrzymaniu — brak izolacji stylów, konflikty nazw.
-Zakres:
-- podzielic App.css na moduly per funkcjonalnosc: layout.css, studio.css, tasks.css, calendar.css, notes.css, people.css, profile.css, animations.css, variables.css.
-- zmienne CSS pozostaja w :root w variables.css importowanym przez index.css.
-- zadne istniejace style nie moga sie psuć — zmiana czysto strukturalna.
-Akceptacja:
-- kazdy plik < 500 linii.
-- build przechodzi bez ostrzezen.
-- brak regresji wizualnych (smoke test na glownych widokach).
-
----
-
-## 057. [AUDIO] Upgrade worklet 056 do rzeczywistego modelu RNNoise (WASM)
-Status: `todo`
-Priorytet: `P3`
-Cel: spektralna subtrakcja (task 056) nie radzi sobie z niestacjonarnym szumem (głosy w tle, ruch uliczny). RNNoise WASM (sieć neuronowa Mozilla) daje ~15 dB lepszą redukcję w praktycznych warunkach.
-Akceptacja:
-- worklet ładuje WASM binarny RNNoise z public/.
-- przetwarzanie ramek 480 próbek przez rnnoise_process_frame().
-- VAD probability z RNNoise eksponowane do UI (opcjonalnie).
-- brak WASM → fallback do spektralnej subtrakcji z 056.
-Techniczne wskazówki:
-- znaleźć build WASM rnnoise BEZ Emscripten env imports (np. rnnoise.wasm skompilowany z wasi lub standalone).
-- alternatywnie: załadować rnnoise-wasm.js (Emscripten) w głównym wątku, przekazać WebAssembly.Module do worklet przez port.postMessage({ type: "module", wasmModule }, [wasmModule]).
-- worklet: WebAssembly.instantiate(data.wasmModule, { env: minimalEmscriptenEnv }).
-- frame size: 480 próbek; buforować w worklet i przetwarzać synchronicznie.
-
----
-
-## 058. [AUDIO] initial_prompt Whisper z danymi spotkania
-Status: `todo`
-Priorytet: `P2`
-Cel: Whisper niepoprawnie transkrybuje imiona uczestników, nazwy projektów i branżowy żargon. initial_prompt "nastraja" model bez dodatkowego kosztu.
-Akceptacja:
-- do każdego requestu transkrypcji przekazywane jest pole prompt z: tytułem spotkania, listą uczestników, tagami i słowami kluczowymi workspace.
-- dokładność nazw własnych widocznie lepsza (mierzalnie przez porównanie przed/po).
-- brak danych spotkania → prompt pomijany (nie puste pole).
-Techniczne wskazówki:
-- `server/audioPipeline.js` transcribeRecording(): `fields.prompt = buildWhisperPrompt(options)`.
-- `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` → string max 224 tokeny.
-- przekazać dane spotkania przez `ensureTranscriptionJob` → options.
-- prompt: "Spotkanie: [tytuł]. Uczestnicy: [imiona]. Tematy: [tagi]. [vocabulary]".
-
----
-
-## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcją
-Status: `todo`
-Priorytet: `P2`
-Cel: Whisper jest wytrenowany na 16 kHz mono PCM — WebM/Opus dekodowany wewnętrznie może gubić detale. Ekspilcytna konwersja eliminuje ten czynnik.
-Akceptacja:
-- przed wysłaniem do OpenAI API plik konwertowany ffmpeg do 16 kHz mono WAV.
-- oryginał zachowany; konwertowany plik tymczasowy usuwany po transkrypcji.
-- dla pliku WAV 16 kHz który już spełnia warunki — konwersja pomijana.
-- czas konwersji < 3s dla 60-minutowego nagrania.
-Techniczne wskazówki:
-- `server/audioPipeline.js` przed requestAudioTranscription(): jeśli contentType != audio/wav → execSync ffmpeg -ar 16000 -ac 1 -acodec pcm_s16le.
-- plik tymczasowy w tym samym katalogu co oryginał: `${filePath}.conv.wav`.
-- finally: unlinkSync(tmpPath).
+- `server/diarizePyannote.py` — prosty skrypt: `pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=HF_TOKEN)`, wyjście JSON.
+- `server/audioPipeline.js`: `diarizeWithPyannote(filePath)` → `execSync("python server/diarizePyannote.py ...")` → parse JSON.
+- `server/requirements.txt`: `pyannote.audio>=3.1`, `torch`, `torchaudio`.
+- instalacja: `pip install -r server/requirements.txt`.
 
 ---
 
 ## 061. [AUDIO] VAD (SileroVAD) — wycinanie ciszy przed uploadem
 Status: `todo`
 Priorytet: `P2`
-Cel: długie pauzy w nagraniu wydłużają czas transkrypcji, zwiększają koszt API i powodują halucynacje Whispera. SileroVAD wycina ciszę przed wysyłką.
+Cel: długie pauzy wydłużają czas transkrypcji, zwiększają koszt API i powodują halucynacje Whisper. SileroVAD wycina ciszę z uploadu (zachowuje lokalne audio bez zmian).
 Akceptacja:
 - po zatrzymaniu nagrania, przed uploadem: detekcja segmentów aktywności mowy.
-- fragmenty ciszy > 2s usuwane z uploadu (zachowane w lokalnym pliku).
-- w UI informacja ile % audio zostało wycięte ("Wycięto 3m 20s ciszy").
-- fallback: jeśli VAD niedostępny, upload jak dotąd.
+- fragmenty ciszy > 2s usuwane z uploadu (lokalny plik niezmieniony).
+- w UI informacja ile % audio wycięte ("Wycięto 3m 20s ciszy").
+- fallback: jeśli VAD niedostępny → upload jak dotąd.
 Techniczne wskazówki:
-- `@ricky0123/vad-web` (SileroVAD ONNX, ~200 kB gzip) — działa w głównym wątku przeglądarki.
-- po onstop: await vadFilter(blob) → przefiltrowany blob.
-- nowy plik `src/audio/vadFilter.js`.
+- `@ricky0123/vad-web` (SileroVAD ONNX, ~200 kB gzip) — działa w głównym wątku.
+- nowy plik `src/audio/vadFilter.js`: `async function filterSilence(blob) → Blob`.
+- wywoływany w `useRecorder.js` po zatrzymaniu nagrania, przed `persistRecordingAudio`.
+
+---
+
+## 057. [AUDIO] Upgrade RNNoise worklet do rzeczywistego modelu WASM
+Status: `todo`
+Priorytet: `P2`
+Cel: obecna spektralna subtrakcja (task 056) nie radzi sobie z niestacjonarnym szumem (głosy w tle, ruch uliczny). RNNoise WASM (Mozilla, sieć neuronowa) daje ~15 dB lepszą redukcję.
+Akceptacja:
+- worklet ładuje WASM binarny RNNoise z `public/`.
+- przetwarzanie ramek 480 próbek przez `rnnoise_process_frame()`.
+- brak WASM → fallback do obecnej spektralnej subtrakcji.
+- VAD probability z RNNoise eksponowane opcjonalnie do UI (wskaźnik aktywności głosu).
+Techniczne wskazówki:
+- znaleźć build WASM rnnoise bez Emscripten env imports (standalone WASI lub rnnoise-wasm.js).
+- alternatywnie: ładować `rnnoise-wasm.js` w głównym wątku, przekazać `WebAssembly.Module` do worklet przez `port.postMessage({ type: "module", wasmModule }, [wasmModule])`.
+- worklet: `WebAssembly.instantiate(data.wasmModule, { env: minimalEmscriptenEnv })`.
+- rozmiar ramki 480 próbek; buforować w worklet, przetwarzać synchronicznie.
+
+---
+
+## 073. [AUDIO] Streaming transkrypcja w czasie rzeczywistym
+Status: `todo`
+Priorytet: `P2`
+Cel: użytkownik widzi transkrypcję na żywo podczas nagrywania (live captions) — nie musi czekać na koniec. Poprawia UX i pozwala na szybszą weryfikację.
+Akceptacja:
+- podczas nagrywania w TranscriptPanel widać live captions odświeżane co ~3s.
+- po zatrzymaniu: finalna transkrypcja zastępuje live captions.
+- live captions są tymczasowe — nie zapisywane do bazy dopóki nagranie nie zakończone.
+- toggle "Napisy na żywo" w UnifiedPlayer (domyślnie wyłączone — wymaga serwera).
+Techniczne wskazówki:
+- `server/index.js`: SSE endpoint `GET /transcribe/live/:sessionId` — serwer zbiera chunki audio przez WebSocket lub multipart, wysyła delta segmentów.
+- klient: `src/hooks/useLiveTranscript.js` — EventSource + `audioPipeline.js` chunki co 3s.
+- OpenAI Whisper nie obsługuje streaming natywnie — zamiast tego: wysyłać każde 3s audio oddzielnie, kumulować wynik po stronie klienta.
+- alternatywnie: `openai.audio.transcriptions.create` z `stream: true` gdy dostępne w API.
+
+---
+
+## 074. [AUDIO] Adaptacyjna normalizacja głośności per mówca
+Status: `todo`
+Priorytet: `P2`
+Cel: gdy jeden mówca jest znacznie głośniejszy od drugiego, Whisper częściej myli głośniejszego — normalizacja per speaker wyrównuje szanse i poprawia rozpoznawanie.
+Akceptacja:
+- po diaryzacji (segmenty + speakerId): FFmpeg normalizuje każdy segment osobno do -16 LUFS.
+- znormalizowane segmenty sklejane w jeden plik przed finalną transkrypcją.
+- efekt: lepsza dokładność dla cichych mówców (mierzalne przez `verificationScore`).
+- wyłączalne przez `VOICELOG_PER_SPEAKER_NORM=false`.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: po `diarize()` → dla każdego speakerId: `ffmpeg -ss [start] -t [dur] -af loudnorm=I=-16 [out_N.wav]`.
+- złożenie: `ffmpeg -i "concat:seg1.wav|seg2.wav|..." -c copy combined_norm.wav`.
+- tylko jeśli `speakerCount > 1` — dla jednego mówcy globalny `loudnorm` wystarczy.
 
 ---
 
@@ -421,18 +135,34 @@ Techniczne wskazówki:
 
 ---
 
+## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
+Status: `todo`
+Priorytet: `P2`
+Cel: jeden sample głosu (~15s) to za mało — wielokrotne próbki dramatycznie zwiększają dokładność rozpoznawania.
+Akceptacja:
+- użytkownik może nagrać do 5 próbek głosu per osoba (każda 15–30s).
+- embedding przechowywany jako average ze wszystkich próbek.
+- per-profil slider threshold (0.70–0.95, default 0.82) w UI listy profili.
+- przy auto-labelu widoczne "Marek (94%)" z confidence score.
+Techniczne wskazówki:
+- `voice_profiles` table: dodać kolumnę `sample_count INT DEFAULT 1`.
+- `POST /voice-profiles` z tym samym `X-Speaker-Name` → uśrednia embedding z istniejącym.
+- `server/speakerEmbedder.js`: eksportować `averageEmbeddings(embeddings[])`.
+
+---
+
 ## 067. [SPEAKER] Statystyki mówców — czas wypowiedzi i liczba tur
 Status: `todo`
 Priorytet: `P2`
-Cel: brak danych o tym ile każda osoba mówiła — przydatne w ocenie dynamiki spotkania (dominacja jednej osoby, brak głosu kogoś ważnego).
+Cel: brak danych o tym ile każda osoba mówiła — przydatne w ocenie dynamiki spotkania.
 Akceptacja:
 - w TranscriptPanel: sekcja "Statystyki mówców" (domyślnie zwinięta).
-- na liście: imię, łączny czas wypowiedzi, procent łącznego czasu, liczba tur, avg. długość tury.
+- na liście: imię, łączny czas wypowiedzi, % łącznego czasu, liczba tur, avg. długość tury.
 - wizualny stacked bar (poziomy) kolorowany per speaker.
 - klik na imię → filtruje transkrypt do tego mówcy.
 Techniczne wskazówki:
-- `buildSpeakerStats(transcript, totalDuration, displaySpeakerNames)` → tablica `{speakerId, name, totalSec, pct, turns, avgTurnSec}`.
-- tury = grupy kolejnych segmentów tego samego speakera (jeśli przerwa > 1s między nimi).
+- `buildSpeakerStats(transcript, totalDuration, displaySpeakerNames)` → `[{speakerId, name, totalSec, pct, turns, avgTurnSec}]`.
+- tury = grupy kolejnych segmentów tego samego speakera z przerwą > 1s.
 - stacked bar: `<div style={{ width: pct+'%', background: getSpeakerColor(speakerId) }}/>`.
 - komponent `SpeakerStatsPanel` wewnątrz `TranscriptPanel`.
 
@@ -441,47 +171,295 @@ Techniczne wskazówki:
 ## 068. [SPEAKER] Quick-enroll mówcy ze segmentu transkrypcji
 Status: `todo`
 Priorytet: `P2`
-Cel: dodawanie głosu do profilu wymaga przejścia do zakładki Profil i ręcznego nagrywania — można to uprościć wyciągając clip bezpośrednio z nagrania.
+Cel: dodawanie głosu do profilu wymaga przejścia do zakładki Profil i ręcznego nagrywania — można uprościć przez wyciągnięcie clipu z nagrania.
 Akceptacja:
-- przy każdej nazwie mówcy w transkrypcji (label + opcja menu): "📎 Dodaj do profilu głosu".
-- po kliknięciu i podaniu/potwierdzeniu imienia: serwer extrahuje ffmpeg clip dla wszystkich segmentów tego mówcy i tworzy/aktualizuje profil głosu.
+- przy każdej nazwie mówcy w transkrypcji: "📎 Dodaj do profilu głosu".
+- po kliknięciu i podaniu imienia: serwer extrahuje ffmpeg clip dla segmentów tego mówcy i tworzy/aktualizuje profil.
 - feedback: "Profil głosu dla Marka zaktualizowany (12.4s audio)."
 - działa tylko w trybie remote (pliki na serwerze).
 Techniczne wskazówki:
 - nowy endpoint `POST /voice-profiles/from-recording` z body `{ recordingId, speakerId, speakerName }`.
-- serwer: pobierz segmenty dla speakerId z asset transcription_json → extrahuj ffmpeg `aselect` → computeEmbedding → saveVoiceProfile.
-- client: `src/studio/TranscriptPanel.js` — przycisk przy `<SpeakerLabel>` z wywołaniem do mediaService.
-
----
-
-## 069. [SPEAKER] Korekta mówcy jako aktualizacja profilu głosu (feedback loop)
-Status: `todo`
-Priorytet: `P3`
-Cel: gdy user ręcznie zmienia "Speaker 1" na "Marek", ta wiedza ginie — nie wpływa na przyszłe nagrania. Opcjonalne zapisanie korekty do profilu tworzy samodoskonalący się system.
-Akceptacja:
-- po zmianie nazwy mówcy (renameSpeaker lub bulk assign): opcjonalny dialog "Czy dodać audio tego mówcy do profilu głosu?".
-- jeśli tak: wyciągnięcie clipów + aktualizacja profilu (jak w 068).
-- jeśli profil dla tego imienia nie istnieje — pytanie "Czy chcesz utworzyć nowy profil?".
-- toggle w ustawieniach workspace: "Automatycznie ucz się mówców" (domyślnie off).
-Techniczne wskazówki:
-- w `assignSpeakerToTranscriptSegments()` / `renameSpeaker()` w useMeetings: emitować event który TranscriptPanel może obsłużyć.
-- modal potwierdzenia: `SpeakerEnrollConfirmModal`.
-- wywołanie `POST /voice-profiles/from-recording` jak w 068.
+- serwer: pobierz segmenty dla speakerId z asset `transcription_json` → extrahuj ffmpeg `aselect` → `computeEmbedding` → `saveVoiceProfile`.
+- client: `src/studio/TranscriptPanel.js` — przycisk przy `<SpeakerLabel>` z wywołaniem do `mediaService`.
 
 ---
 
 ## 070. [SPEAKER] Pewność identyfikacji mówcy per segment
 Status: `todo`
 Priorytet: `P3`
-Cel: użytkownik nie wie które przypisania speakera są pewne a które wątpliwe — bez confidence score trudno zdecydować co weryfikować ręcznie.
+Cel: użytkownik nie wie które przypisania speakera są pewne a które wątpliwe.
 Akceptacja:
-- przy każdym segmencie transkrypcji: mały badge z procentem pewności identyfikacji (nie verificationScore — dedykowany speaker confidence).
+- przy każdym segmencie transkrypcji: mały badge z procentem pewności identyfikacji.
 - kolor: zielony ≥85%, żółty 70–84%, czerwony <70%.
-- hover → tooltip: "Identyfikacja: 91% (WavLM cosine)".
+- hover → tooltip: "Identyfikacja: 91% (cosine similarity)".
 - filtr "Niepewne przypisania (<70%)" w toolbar transkryptu.
 Techniczne wskazówki:
-- `server/audioPipeline.js`: w `transcribeRecording()` przy matchSpeakerToProfile zapisać `speakerConfidence` per speakerId.
-- diarization result: nowe pole `speakerConfidences: { [speakerId]: number }`.
+- `server/audioPipeline.js`: przy `matchSpeakerToProfile` zapisać `speakerConfidence` per speakerId.
 - segment: nowe pole `speakerConfidence` propagowane z diarization.
 - `TranscriptPanel.js`: render `<span className="speaker-confidence-badge">` przy nazwie speakera.
 
+---
+
+## 069. [SPEAKER] Korekta mówcy jako aktualizacja profilu (feedback loop)
+Status: `todo`
+Priorytet: `P3`
+Cel: gdy user ręcznie zmienia "Speaker 1" na "Marek", ta wiedza ginie — feedback loop tworzy samodoskonalący się system.
+Akceptacja:
+- po zmianie nazwy mówcy: opcjonalny dialog "Czy dodać audio tego mówcy do profilu głosu?".
+- jeśli tak: wyciągnięcie clipów + aktualizacja profilu (jak w 068).
+- toggle w ustawieniach: "Automatycznie ucz się mówców" (domyślnie off).
+Techniczne wskazówki:
+- w `renameSpeaker()` w `useMeetings`: emitować event który `TranscriptPanel` może obsłużyć.
+- modal potwierdzenia: `SpeakerEnrollConfirmModal`.
+- wywołanie `POST /voice-profiles/from-recording` jak w 068.
+
+---
+
+## PRIORYTET P2 — niezawodność i ergonomia
+
+---
+
+## 046. [AUDIO] Exponential backoff i auto-retry w kolejce nagrań
+Status: `todo`
+Priorytet: `P2`
+Cel: błąd sieciowy = item utknięty w `failed` bez auto-ponowienia; user musi kliknąć ręcznie.
+Akceptacja:
+- po błędzie item czeka 1s, 4s, 16s (3 próby) przed oznaczeniem jako trwały błąd.
+- przy braku internetu (`navigator.onLine === false`) item czeka do powrotu sieci.
+- po 3 nieudanych próbach: status `failed_permanent`, wyraźny komunikat + przycisk "Ponów ręcznie".
+- licznik prób widoczny przy każdym itemie w kolejce.
+Techniczne wskazówki:
+- dodać `retryCount`, `backoffUntil`, `lastErrorMessage` do `RecordingQueueItem` w `recordingQueue.js`.
+- w `useRecorder.js`: przed `processQueueItem` sprawdzić `item.backoffUntil > Date.now()`.
+- `window.addEventListener("online", ...)` wznawia processing.
+
+---
+
+## 047. [AUDIO] Obsługa błędów odtwarzania audio w UnifiedPlayer
+Status: `todo`
+Priorytet: `P2`
+Cel: `play().catch(() => {})` połyka błędy — user klika ▶ i nic się nie dzieje bez feedbacku.
+Akceptacja:
+- błąd odtwarzania pokazuje inline komunikat ("Nie można odtworzyć — plik może być uszkodzony").
+- po błędzie ▶ zmienia się na ikonę ⚠ z tooltipem.
+- błąd `NotAllowedError` obsługiwany osobno: "Kliknij aby odblokować audio".
+Techniczne wskazówki:
+- `src/studio/UnifiedPlayer.js`: `a.play().catch(err => setPlayError(err.message))`.
+- lokalny stan `playError`, czyszczony przy zmianie `src`.
+
+---
+
+## 049. [AUDIO] VAD — automatyczne zatrzymanie przy długiej ciszy
+Status: `todo`
+Priorytet: `P2`
+Cel: użytkownik zapomina zatrzymać nagranie → kilkugodzinne pliki, przepełnienie storage.
+Akceptacja:
+- jeśli cisza > 3 minuty (konfigurowalnie: 1/3/5/off) — nagranie zatrzymuje się automatycznie.
+- 30s przed zatrzymaniem: widoczne odliczanie "Zatrzymanie za 30s — kliknij aby kontynuować".
+- "Kontynuuj" resetuje licznik.
+Techniczne wskazówki:
+- w `useRecorder.js`: monitorować `AnalyserNode` max amplitude w oknie 3 min → trigger.
+- countdown state eksponowany do `UnifiedPlayer` jako prop.
+
+---
+
+## 050. [AUDIO] Chunked upload dla dużych plików (>10MB)
+Status: `todo`
+Priorytet: `P2`
+Cel: przy słabym WiFi upload dużego pliku często się przerywa i wymaga ponowienia od zera.
+Akceptacja:
+- pliki > 10MB dzielone na chunki 2MB wysyłane sekwencyjnie.
+- postęp uploadu widoczny w UnifiedPlayer (pasek procentowy).
+- przerwany upload może być wznowiony — serwer przechowuje chunki przez 24h.
+Techniczne wskazówki:
+- `src/services/mediaService.js`: `persistRecordingAudio()` → jeśli `blob.size > 10MB`, podzielić na `Blob.slice()` chunks.
+- serwer: `PUT /media/recordings/:id/audio/chunk?index=N&total=M` → składa w jeden plik.
+- po zakończeniu: `POST /media/recordings/:id/audio/finalize`.
+
+---
+
+## 023. AI — inteligentny asystent priorytetu i terminu
+Status: `todo`
+Priorytet: `P2`
+Cel: pomoc użytkownikowi lepiej planować dzień przez AI sugerujący kolejność otwartych zadań.
+Akceptacja:
+- przycisk "Zaplanuj z AI" w widoku "Mój dzień".
+- Claude analizuje listę otwartych zadań i zwraca: rekomendowana kolejność na dziś (max 5), uzasadnienie, flagi ryzyka.
+- zaakceptowanie planu oznacza zadania `myDay = true`.
+Techniczne wskazówki:
+- `src/lib/aiDayPlanner.js`: `planMyDay(tasks, currentDate)` → proxy przez `/ai/analyze`.
+- prompt z aktualną datą + wstępne sortowanie po SLA przed wywołaniem LLM.
+- cache w `sessionStorage` przez 15 minut.
+
+---
+
+## 024. AI — automatyczny coaching po spotkaniu (meeting debrief)
+Status: `todo`
+Priorytet: `P2`
+Cel: AI generuje krótki debrief po spotkaniu: streszczenie, decyzje, ryzyka, follow-upy.
+Akceptacja:
+- sekcja "Debrief AI" w panelu spotkania po analizie transkrypcji.
+- zawiera: streszczenie 3-5 zdań, decyzje (max 5), ryzyka (max 3), sugestie follow-up.
+- eksport PDF lub kopia do schowka.
+- debrief persystuje w `meeting.aiDebrief`.
+Techniczne wskazówki:
+- `src/lib/analysis.js`: `generateMeetingDebrief(meeting, transcript)` → proxy przez `/ai/analyze`.
+- prompt po polsku, wynik przez `updateMeeting`.
+
+---
+
+## 039. Zarządzanie pamięcią audio — limity IndexedDB
+Status: `todo`
+Priorytet: `P2`
+Cel: aplikacja może wypełnić quota storage przeglądarki bez żadnego ostrzeżenia.
+Akceptacja:
+- przy starcie sprawdzana dostępna i użyta przestrzeń IndexedDB.
+- użyte > 80% quota: widoczne ostrzeżenie z informacją ile miejsca pozostało.
+- w Profile/Settings lista nagrań z rozmiarami i przycisk "Usuń audio z pamięci lokalnej" per nagranie.
+Techniczne wskazówki:
+- `navigator.storage?.estimate()` przy starcie w `useRecorder`.
+- `audioStore.deleteRecordingBlob(recordingId)` i `audioStore.listStoredSizes()`.
+- widok w `ProfileTab.js`.
+
+---
+
+## 035. Delta sync zamiast pełnego PUT stanu workspace
+Status: `todo`
+Priorytet: `P2`
+Cel: `stateService.syncWorkspaceState` wysyła cały state za każdym razem — wolne przy 50+ spotkaniach.
+Akceptacja:
+- server przyjmuje `PATCH /state/workspaces/{id}` z deltatem.
+- payload synca przy edycji jednego taska < 5kB zamiast 500kB.
+- full sync pozostaje jako fallback (GET /state/bootstrap).
+Techniczne wskazówki:
+- dirty flag w `useMeetings`: gdy zmieni się konkretne meeting/task → dodaj do `dirtySet`.
+- PATCH przyjmuje `{ meetings?: [...], tasks?: [...] }`.
+- server: merge patch z istniejącym state.
+
+---
+
+## 036. Backup i restore danych workspace (JSON export/import)
+Status: `todo`
+Priorytet: `P2`
+Cel: użytkownik może stracić dane przy czyszczeniu localStorage lub zmianie urządzenia.
+Akceptacja:
+- w Profile/Settings przycisk "Eksportuj dane workspace" pobiera JSON ze wszystkimi spotkaniami i zadaniami (metadane, bez audio blob).
+- "Importuj dane" ładuje JSON i merguje z bieżącym stanem.
+- import waliduje schemat i pokazuje preview (ile spotkań, tasków zostanie dodanych).
+Techniczne wskazówki:
+- `exportWorkspaceJson(meetings, tasks, taskBoards)` → `downloadTextFile("backup.json", ...)`.
+- `importWorkspaceJson(jsonString, currentMeetings, currentTasks)` → merge z deduplikacją po `id`.
+
+---
+
+## 010. Pełny live sync z Google Calendar i Google Tasks
+Status: `in_progress`
+Priorytet: `P2`
+Cel: zamknąć integrację z Google — brakuje automatycznego wypychania lokalnych zmian.
+Akceptacja:
+- edycja taska lokalnie automatycznie aktualizuje odpowiadający Google Task.
+- utworzenie spotkania z briefem automatycznie tworzy event w Google Calendar.
+- widać status "zsynchronizowano X sekund temu".
+Postęp:
+- automatyczne odświeżanie z Google działa (45s timer).
+- import/export manualny działa.
+- brakuje: auto-push lokalnych zmian taska, auto-create eventu przy saveMeeting.
+Techniczne wskazówki:
+- w `useGoogleIntegrations`: po `resolveGoogleTaskConflict` i po `updateTask` gdy `googleTaskId` istnieje → wywołać `updateGoogleTask`.
+- w `useMeetings`: po `saveMeeting` → jeśli `googleCalendarTokenRef.current` i spotkanie ma `googleEventId` → `syncCalendarEntryToGoogle`.
+
+---
+
+## 020. Dostępność i keyboard-only flows
+Status: `todo`
+Priorytet: `P2`
+Cel: poprawić dostępność aplikacji i wygodę pracy bez myszy.
+Akceptacja:
+- główne widoki mają sensowne role ARIA, focus order i widoczne focus state.
+- da się obsługiwać kluczowe flow klawiaturą: nagranie, review transkrypcji, taski, command palette.
+- przyciski mają `aria-label` gdy nie mają tekstu (ikony, color swatche).
+- podstawowy axe-core smoke test w CI.
+Techniczne wskazówki:
+- `npm install --save-dev @axe-core/react`.
+- uzupełnić `aria-label` na: waveform SVG, cover-swatche, topbar record button, timeline segments.
+
+---
+
+## PRIORYTET P3 — usprawnienia i nice-to-have
+
+---
+
+## 033. Optymalizacja wydajności — code splitting i memoizacja
+Status: `todo`
+Priorytet: `P3`
+Cel: skrócić czas pierwszego ładowania i poprawić responsywność przy dużych datasetach.
+Zakres:
+- `React.lazy` + `Suspense` dla: `TaskKanbanView`, `TranscriptPanel`, `KpiDashboard`, `NotesTab`.
+- `React.memo` dla: `TaskListView`, `NoteCard`, `TranscriptSegment`.
+- `useMemo` dla: `sortVisibleTasks`, `buildWorkspaceActivityFeed`, `groupTasks`.
+Akceptacja:
+- czas FCP na dev server < 1.5s po code splitting.
+- brak widocznych "lag spikes" przy scrollowaniu listy 100+ tasków.
+Techniczne wskazówki:
+- `React.lazy(() => import("./tasks/TaskKanbanView"))` w `TasksTab.js`.
+- sprawdzić czy `useMemo` w `taskViewUtils.js` ma stabilne deps.
+
+---
+
+## 025. AI — semantyczne wyszukiwanie zadań i spotkań
+Status: `todo`
+Priorytet: `P3`
+Cel: wyszukiwanie naturalnym językiem zamiast słów kluczowych.
+Akceptacja:
+- command palette (Ctrl+K) obsługuje semantyczne zapytania przez proxy `/ai/search`.
+- wyniki oznaczone "AI Match" odróżniają się od pełnotekstowych.
+- brak API key → AI match ukryty, standardowe wyszukiwanie działa.
+Techniczne wskazówki:
+- `src/lib/aiSearch.js`: `semanticSearch(query, meetings, tasks)` → proxy przez `/ai/search`.
+- przekazywać tylko tytuły i streszczenia (nie pełne transkrypty).
+- cache wyników w Map przez sesję.
+
+---
+
+## 041. Podział App.css na moduły CSS
+Status: `todo`
+Priorytet: `P3`
+Cel: App.css przekroczył 3500 linii i jest trudny w utrzymaniu.
+Zakres:
+- podzielić na: `layout.css`, `studio.css`, `tasks.css`, `calendar.css`, `notes.css`, `people.css`, `profile.css`, `animations.css`, `variables.css`.
+- zmienne CSS pozostają w `:root` w `variables.css` importowanym przez `index.css`.
+- zmiana czysto strukturalna — żadne style nie mogą się psuć.
+Akceptacja:
+- każdy plik < 500 linii.
+- build przechodzi bez ostrzeżeń.
+
+---
+
+## 040. Email digest i powiadomienia poza przeglądarką
+Status: `todo`
+Priorytet: `P3`
+Cel: Browser Notifications wymagają otwartej karty — usefulness poza sesją zerowa.
+Akceptacja:
+- "Dzienny digest" w Profile — email raz dziennie o 7:00 lokalnego czasu.
+- zawiera: zadania zaległe, zadania na dziś, nadchodzące spotkania.
+- serwer: endpoint `GET /digest/daily` wywoływalny przez cron.
+Techniczne wskazówki:
+- `nodemailer` + SMTP (env: `VOICELOG_SMTP_HOST/USER/PASS`).
+- `user.notifyDailyDigest` już istnieje w profilu — podłączyć pod mailer.
+
+---
+
+## 018. Outlook / Microsoft To Do / Microsoft Calendar
+Status: `todo`
+Priorytet: `P3`
+Cel: rozszerzyć integracje poza ekosystem Google.
+Akceptacja:
+- można połączyć konto Microsoft (MSAL OAuth2).
+- zadania synchronizują się z Microsoft To Do.
+- spotkania z Outlook Calendar.
+Techniczne wskazówki:
+- `@azure/msal-browser` jako alternatywa dla GSI.
+- MS Graph API dla To Do: `https://graph.microsoft.com/v1.0/me/todo/lists`.
+- analogiczna architektura jak `googleSync.js` → `msSync.js`.
+
+---

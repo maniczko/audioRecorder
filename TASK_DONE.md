@@ -570,3 +570,11 @@ Wynik:
 - Włączane przez `VOICELOG_TRANSCRIPT_CORRECTION=true`.
 
 ---
+
+## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcją
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- Zrealizowane w ramach zadania 060: `preprocessAudio()` w `server/audioPipeline.js` wykonuje `ffmpeg -ar 16000 -ac 1 -acodec pcm_s16le` do pliku tymczasowego przed transkrypcją; plik tymczasowy usuwany w `finally`.
+
+---
