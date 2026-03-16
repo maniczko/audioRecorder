@@ -281,7 +281,8 @@ export default function StudioMeetingView({
         canRecord={currentWorkspacePermissions?.canRecordAudio}
       />
 
-      <section className="hero-panel">
+      <div className="main-grid">
+      <section className="panel hero-panel">
         <div>
           <div className="eyebrow">Active meeting</div>
           <h2>{selectedMeeting.title}</h2>
@@ -339,8 +340,6 @@ export default function StudioMeetingView({
         </div>
       </section>
 
-
-      <div className="main-grid">
         <section className="panel">
           <div className="panel-header compact">
             <div>
