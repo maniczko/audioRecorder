@@ -467,3 +467,75 @@ Wynik:
 - analyzePersonPsychProfile w useMeetings.js: fuzzy matching speakerow, zapis przez updatePersonNotes.
 - PeopleTab: DiscRadarChart (czysty SVG), PsychProfilePanel z pelnym profilem.
 - personNotes jako warstwa overrides dla needs/outputs/psychProfile.
+
+---
+
+## 043. [AUDIO] Sanityzacja timestampów ffmpeg — command injection
+Status: `done`
+Priorytet: `P1`
+Wynik:
+- każdy timestamp parsowany przez `Number()` + `isFinite()` przed wstawieniem do filtra ffmpeg w `buildSpeakerClip`; nieprawidłowe segmenty pomijane z ostrzeżeniem.
+
+---
+
+## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym błędzie
+Status: `done`
+Priorytet: `P1`
+Wynik:
+- cały blok `processQueueItem` opakowany w `try/finally`; `queueProcessingRef.current = false` gwarantowane niezależnie od rodzaju błędu.
+
+---
+
+## 045. [AUDIO] Walidacja rozmiaru blob przed zapisem do IndexedDB
+Status: `done`
+Priorytet: `P1`
+Wynik:
+- `checkStorageQuota(blobSize)` w `audioStore.js` używa `navigator.storage.estimate()`; blob > 100 MB odrzucany, dostępne < 10 MB pokazuje ostrzeżenie z opcją anulowania.
+
+---
+
+## 048. [AUDIO] Noise cancellation i gain control przy nagrywaniu
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `getUserMedia` otwierany z `{ echoCancellation, noiseSuppression, autoGainControl }`; toggle "Filtrowanie szumów" w profilu (domyślnie włączone); gain meter z `AnalyserNode` w RecorderPanel odświeżany co 100 ms.
+
+---
+
+## 053. [AUDIO] Normalizacja głośności nagrań (loudness normalization)
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `POST /media/recordings/:id/normalize` przetwarza plik przez `ffmpeg -af loudnorm=I=-16:TP=-1.5:LRA=11`; znormalizowana wersja zapisana jako osobny asset (`normalizedAudioPath`); przycisk "Normalizuj głośność" w TranscriptPanel.
+
+---
+
+## 056. [AUDIO] RNNoise AudioWorklet — spektralne tłumienie szumów
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `public/rnnoise-worklet.js` — Cooley-Tukey FFT 512 pt, estymator minimum-statistics, filtr Wienera, WOLA hop=128; `src/audio/noiseReducerNode.js` z graceful fallback; pipeline: source → noiseReducer → analyser + MediaStreamDestination; bypass toggle via `port.postMessage`.
+
+---
+
+## 063. [SPEAKER] Spójna paleta kolorów mówców w całej aplikacji
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `src/lib/speakerColors.js` eksportuje `getSpeakerColor(speakerId)` (paleta 8 kolorów, deterministyczna) i `getSpeakerColorDim`; używane przez WaveformPanel, TimelineRuler, TranscriptPanel, SpeakerStatsPanel.
+
+---
+
+## 064. [SPEAKER] Pasek mówców pod waveformem (speaker timeline bar)
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- SVG pasek 12 px pod waveformem z kolorowymi prostokątami per segment; hover tooltip "Imię — 0:42–1:18"; klik seekuje audio; aktywny segment wyróżniony białym obrysem; dynamiczna legenda mówców pod paskiem.
+
+---
+
+## 065. [SPEAKER] Kolor mówcy na słupkach waveformu
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `barColors[]` w WaveformPanel mapuje każdy słupek SVG do koloru mówcy aktywnego w danym czasie via `segmentAtTime(transcript, t)`; brak pokrycia → kolor domyślny `var(--accent)`; słupki za playheadem dimowane (opacity 0.4).

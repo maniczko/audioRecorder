@@ -7,46 +7,7 @@ Zadania zakonczone → TASK_DONE.md
 
 ## PRIORYTET P1 — krytyczne dla bezpieczenstwa i uzytecznosci
 
----
-
-## 043. [AUDIO] Sanityzacja timestampów ffmpeg — command injection
-Status: `done`
-Priorytet: `P1`
-Cel: timestampy segmentów wklejane bezpośrednio do filtra ffmpeg bez walidacji — potencjalne RCE.
-Akceptacja:
-- przed wstawieniem do polecenia każdy timestamp jest parsowany jako `Number()` i sprawdzany `isFinite()`.
-- jeśli timestamp nieprawidłowy — segment pomijany, logowane ostrzeżenie.
-- test jednostkowy: złośliwy timestamp `"0;rm -rf /"` nie wykonuje dodatkowego polecenia.
-Techniczne wskazówki:
-- w `server/audioPipeline.js` funkcja `buildSpeakerClip`: `const t = Number(s.timestamp); if (!isFinite(t)) continue;`.
-- to samo dla `s.endTimestamp`.
-
----
-
-## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym błędzie
-Status: `done`
-Priorytet: `P1`
-Cel: jeśli `processQueueItem()` rzuca synchronicznie — flaga `queueProcessingRef.current` zostaje `true` na zawsze, kolejka zamrożona.
-Akceptacja:
-- flaga zawsze wraca do `false` niezależnie od rodzaju błędu.
-- po błędzie kolejka wznawia processing przy następnym renderze.
-- test: symulacja sync throw → po 1s kolejka znów przetwarza.
-Techniczne wskazówki:
-- `useRecorder.js` linia ~218: owinąć cały blok w `try { ... } finally { queueProcessingRef.current = false; }` zamiast polegać wyłącznie na `Promise.finally`.
-
----
-
-## 045. [AUDIO] Walidacja rozmiaru blob przed zapisem do IndexedDB
-Status: `done`
-Priorytet: `P1`
-Cel: brak sprawdzenia rozmiaru → cicha awaria gdy IndexedDB quota przekroczona, nagranie utracone.
-Akceptacja:
-- przed `saveAudioBlob()` sprawdzana jest `navigator.storage.estimate()`.
-- jeśli dostępne < 10MB: użytkownik widzi ostrzeżenie i może anulować zapis.
-- jeśli blob > 100MB: odrzucany z czytelnym komunikatem.
-Techniczne wskazówki:
-- `src/lib/audioStore.js`: dodać `checkStorageQuota(blobSize)` wywołaną przed `saveAudioBlob`.
-- fallback jeśli `navigator.storage` niedostępny: pomiń sprawdzenie, zapisz normalnie.
+Wszystkie P1 zrealizowane — patrz TASK_DONE.md.
 
 ---
 
@@ -81,21 +42,6 @@ Akceptacja:
 Techniczne wskazówki:
 - `src/studio/UnifiedPlayer.js`: `a.play().catch(err => setPlayError(err.message))`.
 - lokalny stan `playError` w UnifiedPlayer, czyszczony przy zmianie src.
-
----
-
-## 048. [AUDIO] Noise cancellation i gain control przy nagrywaniu
-Status: `done`
-Priorytet: `P2`
-Cel: nagrania w głośnych środowiskach mają zaszumioną transkrypcję — WebRTC oferuje darmowe filtrowanie.
-Akceptacja:
-- mikrofon otwierany z `{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }`.
-- w ustawieniach profilu toggle "Filtrowanie szumów" (domyślnie włączone).
-- w UnifiedPlayer/RecorderPanel widoczny wskaźnik poziomu wejścia (gain meter) przed i w trakcie nagrania.
-Techniczne wskazówki:
-- `useRecorder.js` linia ~501: zmienić `getUserMedia({ audio: true })` na obiekt z constraintami.
-- gain meter: `AnalyserNode.getByteFrequencyData()` → mean amplitude → CSS width bar, update co 100ms.
-- preferencja zapisana w `profile.noiseSuppression` (bool, default true).
 
 ---
 
@@ -159,52 +105,6 @@ Techniczne wskazówki:
 - `POST /media/recordings/:id/export` z body `{ segments: [{start, end}] }`.
 - `ffmpeg -i input -af "aselect=..." -acodec pcm_s16le output.wav`.
 - response: `Content-Disposition: attachment; filename="fragment.wav"`.
-
----
-
-## 053. [AUDIO] Normalizacja głośności nagrań (loudness normalization)
-Status: `done`
-Priorytet: `P2`
-Cel: niektóre nagrania są zbyt ciche lub za głośne — trudne do odsłuchania bez ręcznej regulacji.
-Akceptacja:
-- opcja "Normalizuj głośność" przy każdym nagraniu w TranscriptPanel.
-- serwer przetwarza plik przez `ffmpeg -af loudnorm` i zwraca znormalizowany URL.
-- oryginał zachowany, znormalizowana wersja jako osobny asset.
-- operacja < 10s dla nagrania 30-minutowego.
-Techniczne wskazówki:
-- `POST /media/recordings/:id/normalize`.
-- ffmpeg: `-af loudnorm=I=-16:TP=-1.5:LRA=11`.
-- nowe pole `normalizedAudioPath` w `media_assets`.
-
----
-
-## 054. [AUDIO] Wykrywanie języka i multi-język per segment
-Status: `todo`
-Priorytet: `P3`
-Cel: spotkania prowadzone częściowo po polsku, częściowo po angielsku transkrybowane są niepoprawnie.
-Akceptacja:
-- Whisper wywołany z `language: auto` zamiast hardcoded `pl`.
-- w ustawieniach profilu: "Język nagrań" = Auto / PL / EN / DE / inne.
-- per-segment language tag widoczny w TranscriptPanel (małe flagi lub kod języka).
-- wpływ na dokładność: transkrypcja angielskich fragmentów o >15% lepsza.
-Techniczne wskazówki:
-- `server/audioPipeline.js`: `language: options.language || AUDIO_LANGUAGE` — już istnieje, wystarczy env `VOICELOG_AUDIO_LANGUAGE=auto`.
-- verbose_json odpowiedź zawiera `language` per segment — zachować jako `segment.language`.
-
----
-
-## 055. [AUDIO] Custom vocabulary — nazwy firm i branżowy żargon
-Status: `todo`
-Priorytet: `P3`
-Cel: Whisper niepoprawnie transkrybuje nazwy własne, skróty branżowe, produkty firmy.
-Akceptacja:
-- w ustawieniach workspace pole tekstowe "Słownik" (max 500 słów, jedno per linia).
-- słownik przekazywany do Whisper jako `prompt` (initial prompt injection).
-- aktualizacja słownika działa natychmiast dla nowych nagrań (nie wymaga restartu).
-Techniczne wskazówki:
-- pole `vocabulary_json` w tabeli `workspaces` lub w `workspace_state`.
-- `server/audioPipeline.js`: `prompt: options.vocabulary?.slice(0, 500).join(", ")` w polach formularza.
-- UI: textarea w ProfileTab → workspace settings section.
 
 ---
 
@@ -551,23 +451,6 @@ Techniczne wskazowki:
 
 ---
 
-## 056. [AUDIO] RNNoise AudioWorklet — spektralne tłumienie szumów
-Status: `done`
-Priorytet: `P2`
-Cel: WebRTC noiseSuppression radzi sobie tylko ze stacjonarnym szumem; głębsze tłumienie wymaga DSP w AudioWorklet.
-Akceptacja:
-- mikrofon → AudioWorklet (spektralna subtrakcja) → MediaStreamDestination → MediaRecorder.
-- wizualizacja (AnalyserNode) podłączona do przetworzonego sygnału.
-- fallback do surowego strumienia gdy AudioWorklet niedostępny (Firefox prywatny, starszy Safari).
-- bypass toggle via port.postMessage.
-Implementacja:
-- `public/rnnoise-worklet.js` — Cooley-Tukey FFT 512pt, estymator minimum-statistics, filtr Wienera, WOLA hop=128.
-- `src/audio/noiseReducerNode.js` — helper createNoiseReducerNode() z graceful fallback.
-- `src/hooks/useRecorder.js` — source → noiseReducer → analyser + destination (MediaStreamDestination).
-Uwaga: obecna implementacja to spektralna subtrakcja (nie model ML). Upgrade do prawdziwego RNNoise WASM opisany w 057.
-
----
-
 ## 057. [AUDIO] Upgrade worklet 056 do rzeczywistego modelu RNNoise (WASM)
 Status: `todo`
 Priorytet: `P3`
@@ -670,58 +553,6 @@ Techniczne wskazówki:
 
 ---
 
-## 063. [SPEAKER] Spójna paleta kolorów mówców w całej aplikacji
-Status: `done`
-Priorytet: `P2`
-Cel: każdy komponent (waveform, timeline, transkrypt, statystyki) używa własnych kolorów dla speakerId — brak spójności wizualnej utrudnia śledzenie rozmówców.
-Akceptacja:
-- jeden plik `src/lib/speakerColors.js` eksportuje `getSpeakerColor(speakerId)` → CSS color string.
-- paleta min. 8 kolorów o dobrym kontraście na ciemnym tle.
-- speakerId 0 zawsze ten sam kolor, 1 zawsze inny itd. — deterministyczne, nie losowe.
-- funkcja dostępna i używana przez: WaveformPanel, TimelineRuler, TranscriptPanel, SpeakerStatsPanel.
-Techniczne wskazówki:
-- `const SPEAKER_PALETTE = ["#75d6c4", "#818cf8", "#fb923c", "#f472b6", "#a3e635", "#38bdf8", "#e879f9", "#fbbf24"]`.
-- `export function getSpeakerColor(speakerId) { return SPEAKER_PALETTE[Number(speakerId) % SPEAKER_PALETTE.length]; }`.
-- opcjonalnie: eksportuj też `getSpeakerColorDim(speakerId)` (60% opacity) do tła segmentów.
-
----
-
-## 064. [SPEAKER] Pasek mówców pod waveformem (speaker timeline bar)
-Status: `done`
-Priorytet: `P2`
-Cel: po waveformie nie widać kto mówił kiedy — trzeba przewijać transkrypt. Kolorowy pasek czasu pod waveformem daje natychmiastowy przegląd rozmowy.
-Akceptacja:
-- pod waveformem SVG renderowany pasek SVG wysokości 12px.
-- każdy segment transkrypcji = kolorowy prostokąt `getSpeakerColor(speakerId)` w proporcjonalnej pozycji czasu.
-- hover nad segmentem → tooltip: "Marek — 0:42–1:18".
-- klik w pasek → seek audio do tej pozycji (jak klik w waveform).
-- aktywny segment (playhead) wyróżniony obrysem (stroke: white 1px).
-- legenda mówców (kolor + imię) pod paskiem, generowana dynamicznie.
-Techniczne wskazówki:
-- `WaveformPanel` dostaje nowy prop `transcript` (tablica segmentów).
-- pasek renderowany jako osobny `<svg>` tej samej szerokości co waveform.
-- `x = (segment.timestamp / totalDuration) * SVG_W`, `width = ((segment.endTimestamp - segment.timestamp) / totalDuration) * SVG_W`.
-- legenda: `{...new Map(transcript.map(s => [s.speakerId, speakerName(s.speakerId)]))}`.
-
----
-
-## 065. [SPEAKER] Kolor mówcy na słupkach waveformu
-Status: `done`
-Priorytet: `P2`
-Cel: waveform jest jednokolorowy (accent) — kolorowanie per mówca daje dodatkową warstwę informacji o strukturze rozmowy bez otwierania transkryptu.
-Akceptacja:
-- każdy słupek waveformu SVG kolorowany wg mówcy aktywnego w tym czasie.
-- czas słupka = `(barIndex / WAVEFORM_NUM_BARS) * totalDuration` → find segment.
-- kiedy brak transkryptu lub żaden segment nie pokrywa czasu — kolor domyślny (accent).
-- kiedy playback aktywny — słupki za playheadem lekko dimowane (opacity 0.4).
-Techniczne wskazówki:
-- w `WaveformPanel`, computed array `barColors: string[]` length=WAVEFORM_NUM_BARS.
-- `barColors[i] = getSpeakerColor(segmentAtTime(transcript, (i/WAVEFORM_NUM_BARS)*totalDuration)?.speakerId ?? -1)`.
-- `segmentAtTime(transcript, t)` → `transcript.find(s => s.timestamp <= t && s.endTimestamp > t)`.
-- render: `fill={barColors[index] || "var(--accent)"}`.
-
----
-
 ## 067. [SPEAKER] Statystyki mówców — czas wypowiedzi i liczba tur
 Status: `todo`
 Priorytet: `P2`
@@ -785,5 +616,4 @@ Techniczne wskazówki:
 - diarization result: nowe pole `speakerConfidences: { [speakerId]: number }`.
 - segment: nowe pole `speakerConfidence` propagowane z diarization.
 - `TranscriptPanel.js`: render `<span className="speaker-confidence-badge">` przy nazwie speakera.
-
 
