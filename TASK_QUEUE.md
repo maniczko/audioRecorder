@@ -248,7 +248,7 @@ Zrodlo: audyt kodu 2026-03-16, pozycje H5, H10.
 ---
 
 ## 047. Naprawa stale closure conflictCount w useGoogleIntegrations
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: poprawic wyswietlanie liczby konfliktow po imporcie zadan z Google Tasks.
 Problem: `conflictCount` jest inkrementowany wewnatrz asynchronicznego callbacku `setManualTasks`, a nastepnie czytany synchronicznie — zawsze wynosi 0 (linia ~279 useGoogleIntegrations.js).

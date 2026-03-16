@@ -2,6 +2,7 @@ import {
   buildTaskReorderUpdate,
   createManualTask,
   nextRecurringDueDate,
+  upsertGoogleImportedTasks,
 } from "./tasks";
 
 const columns = [
@@ -58,5 +59,69 @@ describe("tasks helpers", () => {
     expect(nextRecurringDueDate("2026-03-14T09:00:00.000Z", { frequency: "weekly", interval: 1 })).toBe(
       "2026-03-21T09:00:00.000Z"
     );
+  });
+
+  test("upsertGoogleImportedTasks returns merged array and conflictCount=0 when no conflicts", () => {
+    const userId = "user_1";
+    const incoming = [
+      {
+        id: "gtask_1",
+        googleTaskId: "gtask_1",
+        googleTaskListId: "list_1",
+        userId,
+        sourceType: "google",
+        title: "Zaimportowane zadanie",
+        status: "todo",
+        completed: false,
+        googleUpdatedAt: "2026-03-10T08:00:00.000Z",
+        googleSyncStatus: "synced",
+        googleSyncConflict: null,
+      },
+    ];
+
+    const { merged, conflictCount } = upsertGoogleImportedTasks([], incoming, userId);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].title).toBe("Zaimportowane zadanie");
+    expect(conflictCount).toBe(0);
+  });
+
+  test("upsertGoogleImportedTasks returns conflictCount>0 when local and remote diverge", () => {
+    const userId = "user_1";
+    const now = new Date().toISOString();
+    const localTask = {
+      id: "task_local",
+      googleTaskId: "gtask_1",
+      googleTaskListId: "list_1",
+      userId,
+      sourceType: "google",
+      title: "Lokalna wersja",
+      status: "todo",
+      completed: false,
+      googleUpdatedAt: "2026-03-01T08:00:00.000Z",
+      googleLocalUpdatedAt: now, // edited locally after last sync
+      googleSyncedAt: "2026-03-01T08:00:00.000Z",
+      googleSyncStatus: "synced",
+      googleSyncConflict: null,
+    };
+
+    const remoteTask = {
+      googleTaskId: "gtask_1",
+      googleTaskListId: "list_1",
+      userId,
+      sourceType: "google",
+      title: "Zdalna wersja",
+      status: "todo",
+      completed: false,
+      googleUpdatedAt: "2026-03-15T08:00:00.000Z", // remote also changed after last sync
+      googleSyncStatus: "synced",
+      googleSyncConflict: null,
+    };
+
+    const { merged, conflictCount } = upsertGoogleImportedTasks([localTask], [remoteTask], userId);
+
+    expect(merged).toHaveLength(1);
+    expect(conflictCount).toBe(1);
+    expect(merged[0].googleSyncStatus).toBe("conflict");
   });
 });

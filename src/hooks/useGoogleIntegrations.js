@@ -22,6 +22,7 @@ export default function useGoogleIntegrations({
   calendarMonth,
   taskColumns,
   meetingTasks,
+  manualTasks,
   setManualTasks,
   onGoogleProfile,
   onGoogleError,
@@ -39,6 +40,11 @@ export default function useGoogleIntegrations({
   const googleButtonRef = useRef(null);
   const googleCalendarTokenRef = useRef("");
   const googleTasksTokenRef = useRef("");
+  const manualTasksRef = useRef(manualTasks);
+
+  useEffect(() => {
+    manualTasksRef.current = manualTasks;
+  }, [manualTasks]);
   const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
   const openTaskColumnId = taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || "todo";
   const doneTaskColumnId = taskColumns.find((column) => column.isDone)?.id || taskColumns[taskColumns.length - 1]?.id || "done";
@@ -276,12 +282,8 @@ export default function useGoogleIntegrations({
       const importedTasks = (payload.items || []).map((task) =>
         createTaskFromGoogle(currentUser.id, task, selectedList, taskColumns, currentUser, currentWorkspaceId)
       );
-      let conflictCount = 0;
-      setManualTasks((previous) => {
-        const merged = upsertGoogleImportedTasks(previous, importedTasks, currentUser.id);
-        conflictCount = merged.filter((task) => task.googleSyncStatus === "conflict").length;
-        return merged;
-      });
+      const { merged, conflictCount } = upsertGoogleImportedTasks(manualTasksRef.current, importedTasks, currentUser.id);
+      setManualTasks(merged);
       setGoogleTasksLastSyncedAt(new Date().toISOString());
       setGoogleTasksStatus("connected");
       setGoogleTasksMessage(

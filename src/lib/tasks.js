@@ -1053,7 +1053,8 @@ export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) 
     });
   });
 
-  return merged;
+  const conflictCount = merged.filter((task) => task.googleSyncStatus === "conflict").length;
+  return { merged, conflictCount };
 }
 
 export function extractMeetingTasks(meeting, columns) {

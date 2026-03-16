@@ -98,6 +98,7 @@ export default function MainApp() {
     calendarMonth,
     taskColumns: meetings.taskColumns,
     meetingTasks: meetings.meetingTasks,
+    manualTasks: meetings.manualTasks,
     setManualTasks: meetings.setManualTasks,
     onGoogleProfile: auth.handleGoogleProfile,
     onGoogleError: auth.setGoogleAuthMessage,
