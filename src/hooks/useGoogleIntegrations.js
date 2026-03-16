@@ -132,13 +132,33 @@ export default function useGoogleIntegrations({
       return undefined;
     }
 
-    const timer = window.setInterval(() => {
+    function doRefresh() {
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
       loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth).catch((error) => {
         console.error("Google Calendar live refresh failed.", error);
       });
-    }, 45000);
+    }
 
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(doRefresh, 45000);
+
+    function handleVisibilityChange() {
+      if (typeof document !== "undefined" && !document.hidden) {
+        doRefresh();
+      }
+    }
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      window.clearInterval(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [calendarMonth, loadGoogleMonthEvents]);
 
   useEffect(
@@ -438,6 +458,9 @@ export default function useGoogleIntegrations({
     }
 
     const syncTasksFromGoogle = () => {
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
       importGoogleTasksFromList().catch((error) => {
         console.error("Google Tasks live refresh failed.", error);
       });

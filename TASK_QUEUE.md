@@ -302,7 +302,7 @@ Zrodlo: audyt logiki 2026-03-16, pozycja M15.
 ---
 
 ## 051. Polling Google Calendar — visibility API i backoff
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: nie odpytywac Google API gdy uzytkownik nie patrzy na aplikacje (karta w tle).
 Problem: `setInterval` co 45s w useGoogleIntegrations.js odpytuje Google Calendar niezaleznie od stanu karty przegladarki.
