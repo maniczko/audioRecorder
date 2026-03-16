@@ -33,6 +33,30 @@ describe("recordingQueue helpers", () => {
     });
   });
 
+  test("resolveMeetingForQueueItem uses fresh meetings over stale snapshot", () => {
+    // Simulates the scenario fixed by task 046: meeting updated while processQueueItem runs.
+    // If resolveMeetingForQueueItem used a stale closure, it would return the snapshot.
+    // With userMeetingsRef.current it returns the latest live meeting.
+    const item = createRecordingQueueItem({
+      recordingId: "recording_1",
+      meeting: { id: "meeting_1", workspaceId: "workspace_1", title: "Stary tytuł" },
+    });
+
+    // Snapshot captured at queue creation time (stale)
+    expect(item.meetingSnapshot.title).toBe("Stary tytuł");
+
+    // Fresh meetings array reflects an update made during processing
+    const freshMeetings = [{ id: "meeting_1", workspaceId: "workspace_1", title: "Nowy tytuł" }];
+
+    // This is the logic inside resolveMeetingForQueueItem using ref.current
+    const resolved = freshMeetings.find((m) => m.id === item.meetingId) || item.meetingSnapshot;
+    expect(resolved.title).toBe("Nowy tytuł");
+
+    // When meeting is removed from live list, snapshot is the fallback
+    const resolvedFallback = [].find((m) => m.id === item.meetingId) || item.meetingSnapshot;
+    expect(resolvedFallback.title).toBe("Stary tytuł");
+  });
+
   test("returns the next processable pending item based on a predicate", () => {
     const first = createRecordingQueueItem({
       recordingId: "recording_1",

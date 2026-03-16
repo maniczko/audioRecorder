@@ -76,8 +76,13 @@ export default function useRecorder({
   const isRecordingRef = useRef(false);
   const audioUrlsRef = useRef({});
   const queueProcessingRef = useRef(false);
+  const userMeetingsRef = useRef(userMeetings);
   const normalizedQueue = useMemo(() => recordingQueue, [recordingQueue]);
   const queueSummary = useMemo(() => buildRecordingQueueSummary(normalizedQueue), [normalizedQueue]);
+
+  useEffect(() => {
+    userMeetingsRef.current = userMeetings;
+  }, [userMeetings]);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -268,7 +273,7 @@ export default function useRecorder({
   }
 
   function resolveMeetingForQueueItem(item) {
-    return userMeetings.find((meeting) => meeting.id === item.meetingId) || item.meetingSnapshot || null;
+    return userMeetingsRef.current.find((meeting) => meeting.id === item.meetingId) || item.meetingSnapshot || null;
   }
 
   async function buildRecordingFromQueueItem(item, transcription) {

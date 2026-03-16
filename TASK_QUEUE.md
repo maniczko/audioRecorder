@@ -232,7 +232,7 @@ Zrodlo: audyt kodu 2026-03-16, pozycje H3, M5, M6.
 ---
 
 ## 046. Naprawa stale closure w processQueueItem (useRecorder)
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: zapobiec przetwarzaniu nagran ze starymi danymi spotkan po ich aktualizacji w trakcie przetwarzania.
 Problem: `processQueueItem` zamkniety nad `userMeetings` z momentu uruchomienia efektu; spotkania zaktualizowane w trakcie przetwarzania sa ignorowane przez procesor kolejki (stale closure, linia ~270 useRecorder.js).
