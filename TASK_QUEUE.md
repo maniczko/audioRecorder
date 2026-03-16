@@ -418,22 +418,6 @@ Techniczne wskazówki:
 
 ---
 
-## 060. [AUDIO] ffmpeg pre-processing — denoise + filtrowanie przed Whisperem
-Status: `done`
-Priorytet: `P2`
-Cel: nagrania w głośnych środowiskach (otwarte biuro, kawiarnia) dają błędne transkrypcje mimo WebRTC NS. Przepuszczenie przez ffmpeg ffttdn + highpass przed transkrypcją poprawia ASR bez dodatkowego kosztu API.
-Akceptacja:
-- przed transkrypcją (serwer): `ffmpeg -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000"`.
-- opcja włączona domyślnie; można wyłączyć flagą env VOICELOG_AUDIO_PREPROCESS=false.
-- czas pre-processingu < 5s dla 60-minutowego nagrania.
-- nie modyfikuje oryginalnego pliku — workuje na tymczasowej kopii.
-Techniczne wskazówki:
-- `server/audioPipeline.js`: nowa funkcja preprocessAudio(inputPath) → tmpPath.
-- łączyć z konwersją 16 kHz (059) w jednym wywołaniu ffmpeg: `-af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1`.
-- cleanup w finally.
-
----
-
 ## 061. [AUDIO] VAD (SileroVAD) — wycinanie ciszy przed uploadem
 Status: `todo`
 Priorytet: `P2`

@@ -539,3 +539,15 @@ Status: `done`
 Priorytet: `P2`
 Wynik:
 - `barColors[]` w WaveformPanel mapuje każdy słupek SVG do koloru mówcy aktywnego w danym czasie via `segmentAtTime(transcript, t)`; brak pokrycia → kolor domyślny `var(--accent)`; słupki za playheadem dimowane (opacity 0.4).
+
+---
+
+## 060. [AUDIO] ffmpeg pre-processing — denoise + filtrowanie przed Whisperem
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `preprocessAudio()` w `server/audioPipeline.js`: ffmpeg `afftdn=nf=-25,highpass=f=80,lowpass=f=8000` + konwersja 16kHz mono WAV przed transkrypcją.
+- Oba pasy (diarization + verification) używają przetworzonego pliku; cleanup w `finally`.
+- Wyłączalne przez `VOICELOG_AUDIO_PREPROCESS=false`; fallback do oryginału przy błędzie ffmpeg.
+
+---
