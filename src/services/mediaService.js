@@ -84,12 +84,18 @@ function createRemoteMediaService() {
       return response.blob();
     },
     async startTranscriptionJob({ recordingId, blob, meeting }) {
+      const participants = (meeting?.attendees || [])
+        .map((a) => (typeof a === "string" ? a : (a.name || a.email || "")))
+        .filter(Boolean);
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: "POST",
         body: {
           meetingId: meeting?.id || "",
           workspaceId: meeting?.workspaceId || "",
           contentType: blob?.type || "audio/webm",
+          meetingTitle: meeting?.title || "",
+          participants,
+          tags: Array.isArray(meeting?.tags) ? meeting.tags : [],
         },
       });
 
@@ -120,6 +126,14 @@ function createRemoteMediaService() {
     },
     async normalizeRecordingAudio(recordingId) {
       await apiRequest(`/media/recordings/${recordingId}/normalize`, { method: "POST" });
+    },
+    async transcribeLiveChunk(blob) {
+      const response = await apiRequest("/transcribe/live", {
+        method: "POST",
+        body: blob,
+        headers: { "Content-Type": blob?.type || "audio/webm" },
+      });
+      return typeof response === "object" ? (response?.text || "") : "";
     },
   };
 }

@@ -30,22 +30,6 @@ Techniczne wskazówki:
 
 ---
 
-## 058. [AUDIO] Whisper prompt z danymi spotkania (context-aware)
-Status: `todo`
-Priorytet: `P2`
-Cel: Whisper źle transkrybuje imiona uczestników, nazwy projektów i branżowy żargon. `initial_prompt` nastraja model na konkretne spotkanie bez dodatkowego kosztu API.
-Akceptacja:
-- do każdego requestu transkrypcji przekazywane pole `prompt` zawiera: tytuł spotkania, listę uczestników, tagi workspace, słowa kluczowe.
-- dokładność nazw własnych widocznie lepsza (weryfikowalne porównaniem przed/po).
-- brak danych spotkania → globalny prompt `WHISPER_PROMPT` jak dotąd (nie puste pole).
-- prompt max 224 tokeny (ograniczenie Whisper).
-Techniczne wskazówki:
-- `server/audioPipeline.js`: `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` → string ≤224 tokenów.
-- format: `"Spotkanie: [tytuł]. Uczestnicy: [imiona oddzielone przecinkami]. Tematy: [tagi]. Słowa kluczowe: [vocabulary]."`.
-- `transcribeRecording(filePath, contentType, fields)` — `fields.meetingTitle`, `fields.participants`, `fields.tags` przekazywane z `ensureTranscriptionJob`.
-- `server/index.js` przy `POST /transcribe`: odczytać dane spotkania z bazy/state i dołączyć do `fields`.
-
----
 
 ## 072. [SPEAKER] Pyannote.audio — zaawansowana diaryzacja serwera
 Status: `todo`
@@ -98,22 +82,6 @@ Techniczne wskazówki:
 
 ---
 
-## 073. [AUDIO] Streaming transkrypcja w czasie rzeczywistym
-Status: `todo`
-Priorytet: `P2`
-Cel: użytkownik widzi transkrypcję na żywo podczas nagrywania (live captions) — nie musi czekać na koniec. Poprawia UX i pozwala na szybszą weryfikację.
-Akceptacja:
-- podczas nagrywania w TranscriptPanel widać live captions odświeżane co ~3s.
-- po zatrzymaniu: finalna transkrypcja zastępuje live captions.
-- live captions są tymczasowe — nie zapisywane do bazy dopóki nagranie nie zakończone.
-- toggle "Napisy na żywo" w UnifiedPlayer (domyślnie wyłączone — wymaga serwera).
-Techniczne wskazówki:
-- `server/index.js`: SSE endpoint `GET /transcribe/live/:sessionId` — serwer zbiera chunki audio przez WebSocket lub multipart, wysyła delta segmentów.
-- klient: `src/hooks/useLiveTranscript.js` — EventSource + `audioPipeline.js` chunki co 3s.
-- OpenAI Whisper nie obsługuje streaming natywnie — zamiast tego: wysyłać każde 3s audio oddzielnie, kumulować wynik po stronie klienta.
-- alternatywnie: `openai.audio.transcriptions.create` z `stream: true` gdy dostępne w API.
-
----
 
 ## 074. [AUDIO] Adaptacyjna normalizacja głośności per mówca
 Status: `todo`

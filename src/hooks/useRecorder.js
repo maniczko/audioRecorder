@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyzeMeeting } from "../lib/analysis";
 import { getAudioBlob, saveAudioBlob } from "../lib/audioStore";
 import { summarizeSpectrum } from "../lib/diarization";
@@ -18,6 +18,7 @@ import { createId, STORAGE_KEYS } from "../lib/storage";
 import { createMediaService } from "../services/mediaService";
 import { createNoiseReducerNode } from "../audio/noiseReducerNode";
 import useStoredState from "./useStoredState";
+import useLiveTranscript from "./useLiveTranscript";
 
 function revokeAudioUrl(url) {
   if (url && typeof URL !== "undefined" && URL.revokeObjectURL) {
@@ -79,8 +80,30 @@ export default function useRecorder({
   const audioUrlsRef = useRef({});
   const queueProcessingRef = useRef(false);
   const userMeetingsRef = useRef(userMeetings);
+  const mimeTypeRef = useRef("audio/webm");
+  const [liveTranscriptEnabled, setLiveTranscriptEnabled] = useState(false);
   const normalizedQueue = useMemo(() => recordingQueue, [recordingQueue]);
   const queueSummary = useMemo(() => buildRecordingQueueSummary(normalizedQueue), [normalizedQueue]);
+
+  // Stable callback ref for live transcription so the interval doesn't restart on every render
+  const transcribeLive = useCallback(
+    (blob) => mediaService.transcribeLiveChunk?.(blob) ?? Promise.resolve(""),
+    [mediaService]
+  );
+
+  const serverCaption = useLiveTranscript({
+    chunksRef,
+    isRecording,
+    enabled: mediaService.mode === "remote" && liveTranscriptEnabled,
+    transcribeLive,
+    mimeType: mimeTypeRef.current,
+  });
+
+  useEffect(() => {
+    if (mediaService.mode === "remote" && liveTranscriptEnabled && serverCaption) {
+      setLiveText(serverCaption);
+    }
+  }, [serverCaption, mediaService.mode, liveTranscriptEnabled]);
 
   useEffect(() => {
     userMeetingsRef.current = userMeetings;
@@ -549,6 +572,7 @@ export default function useRecorder({
       analyserRef.current = analyser;
 
       const recorder = new MediaRecorder(recordStream);
+      mimeTypeRef.current = recorder.mimeType || "audio/webm";
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -741,6 +765,8 @@ export default function useRecorder({
     selectedMeetingQueue,
     activeQueueItem,
     speechRecognitionSupported: mediaService.supportsLiveTranscription(),
+    liveTranscriptEnabled,
+    setLiveTranscriptEnabled: mediaService.mode === "remote" ? setLiveTranscriptEnabled : null,
     startRecording,
     stopRecording,
     retryRecordingQueueItem,

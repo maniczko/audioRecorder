@@ -158,6 +158,8 @@ export default function StudioMeetingView({
   recordPermission,
   speechRecognitionSupported,
   liveText,
+  liveTranscriptEnabled,
+  setLiveTranscriptEnabled,
   recordingMessage,
   selectedRecording,
   displaySpeakerNames,
@@ -901,6 +903,19 @@ export default function StudioMeetingView({
                   ))}
                 </div>
                 <span className="ff-player-time">{formatDuration(elapsed)}</span>
+                {liveText ? (
+                  <span className="ff-live-caption" title="Napisy na żywo">{liveText.slice(-90)}</span>
+                ) : null}
+                {setLiveTranscriptEnabled ? (
+                  <button
+                    type="button"
+                    className={`ff-cc-btn${liveTranscriptEnabled ? " active" : ""}`}
+                    onClick={() => setLiveTranscriptEnabled((p) => !p)}
+                    title={liveTranscriptEnabled ? "Wyłącz napisy Whisper" : "Włącz napisy Whisper (wymaga serwera)"}
+                  >
+                    CC
+                  </button>
+                ) : null}
                 <span className="ff-rec-badge">REC</span>
               </>
             ) : isQueued ? (
@@ -992,6 +1007,8 @@ StudioMeetingView.propTypes = {
   recordPermission: PropTypes.string,
   speechRecognitionSupported: PropTypes.bool,
   liveText: PropTypes.string,
+  liveTranscriptEnabled: PropTypes.bool,
+  setLiveTranscriptEnabled: PropTypes.func,
   recordingMessage: PropTypes.string,
   selectedRecording: PropTypes.object,
   displaySpeakerNames: PropTypes.object,

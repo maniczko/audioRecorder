@@ -31,7 +31,7 @@ const {
   getWorkspaceVoiceProfiles,
   deleteVoiceProfile,
 } = require("./database");
-const { transcribeRecording, normalizeRecording } = require("./audioPipeline");
+const { transcribeRecording, normalizeRecording, transcribeLiveChunk } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
@@ -550,6 +550,27 @@ async function handleRequest(request, response) {
     }
     await normalizeRecording(asset.file_path);
     sendJson(response, 200, { ok: true }, origin);
+    return;
+  }
+
+  // POST /transcribe/live — accepts a small audio blob, returns Whisper text for live captioning
+  if (request.method === "POST" && pathname === "/transcribe/live") {
+    requireSession(request);
+    const contentType = request.headers["content-type"] || "audio/webm";
+    const buffer = await readBinaryBody(request);
+    if (!buffer || buffer.byteLength < 500) {
+      sendJson(response, 200, { text: "" }, origin);
+      return;
+    }
+    const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
+    const tmpPath = path.join(UPLOAD_DIR, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
+    try {
+      fs.writeFileSync(tmpPath, buffer);
+      const text = await transcribeLiveChunk(tmpPath, contentType);
+      sendJson(response, 200, { text }, origin);
+    } finally {
+      try { fs.unlinkSync(tmpPath); } catch (_) {}
+    }
     return;
   }
 

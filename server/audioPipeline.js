@@ -22,6 +22,28 @@ const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 // Override with VOICELOG_WHISPER_PROMPT env var if needed.
 const WHISPER_PROMPT = process.env.VOICELOG_WHISPER_PROMPT
   || "Transkrypcja spotkania biznesowego w języku polskim.";
+
+/**
+ * Builds a context-aware Whisper initial_prompt from meeting metadata.
+ * Falls back to the global WHISPER_PROMPT when no metadata is provided.
+ * Stays within Whisper's ~224-token prompt limit (~900 safe chars).
+ *
+ * @param {{ meetingTitle?: string, participants?: string[], tags?: string[], vocabulary?: string }} opts
+ */
+function buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary } = {}) {
+  const parts = [WHISPER_PROMPT];
+  if (meetingTitle) parts.push(`Spotkanie: ${String(meetingTitle).trim().slice(0, 80)}.`);
+  if (Array.isArray(participants) && participants.length) {
+    const names = participants.slice(0, 8).map((p) => String(p).trim()).filter(Boolean).join(", ");
+    if (names) parts.push(`Uczestnicy: ${names}.`);
+  }
+  if (Array.isArray(tags) && tags.length) {
+    const tagList = tags.slice(0, 6).map((t) => String(t).trim()).filter(Boolean).join(", ");
+    if (tagList) parts.push(`Tematy: ${tagList}.`);
+  }
+  if (vocabulary) parts.push(String(vocabulary).trim().slice(0, 200));
+  return parts.join(" ").slice(0, 900);
+}
 // Verification thresholds — tuned for Polish (lower than English defaults).
 // Polish has heavier inflection which produces systematically lower logprob.
 const VERIFY_CONFIDENCE_THRESHOLD = Number(process.env.VOICELOG_VERIFY_CONFIDENCE) || 0.52;
@@ -593,12 +615,19 @@ async function transcribeRecording(asset, options = {}) {
     console.log(`[audioPipeline] File size ${(fileSize / 1024 / 1024).toFixed(1)} MB > limit — will process in chunks.`);
   }
 
+  const contextPrompt = buildWhisperPrompt({
+    meetingTitle: options.meetingTitle,
+    participants: options.participants,
+    tags: options.tags,
+    vocabulary: options.vocabulary,
+  });
+
   const whisperFields = {
     model: VERIFICATION_MODEL,
     language: options.language || AUDIO_LANGUAGE,
     response_format: "verbose_json",
     timestamp_granularities: ["segment"],
-    prompt: options.whisperPrompt || WHISPER_PROMPT,
+    prompt: contextPrompt,
     temperature: 0,
   };
 
@@ -637,7 +666,7 @@ async function transcribeRecording(asset, options = {}) {
       model: DIARIZATION_MODEL,
       language: options.language || AUDIO_LANGUAGE,
       response_format: "diarized_json",
-      prompt: options.whisperPrompt || WHISPER_PROMPT,
+      prompt: contextPrompt,
       temperature: 0,
     };
 
@@ -792,6 +821,35 @@ async function correctTranscriptWithLLM(segments, options = {}) {
   }
 }
 
+/**
+ * Quickly transcribes a small audio chunk (no diarization, no preprocessing).
+ * Used for live captioning during recording — optimised for low latency.
+ *
+ * @param {string} filePath  Path to the audio file (temp, caller must clean up)
+ * @param {string} contentType  MIME type of the audio file
+ * @returns {Promise<string>}  Transcribed text or empty string on failure
+ */
+async function transcribeLiveChunk(filePath, contentType) {
+  if (!OPENAI_API_KEY) return "";
+  try {
+    const payload = await requestAudioTranscription({
+      filePath,
+      contentType: contentType || "audio/webm",
+      fields: {
+        model: VERIFICATION_MODEL,
+        language: AUDIO_LANGUAGE,
+        response_format: "json",
+        prompt: WHISPER_PROMPT,
+        temperature: 0,
+      },
+    });
+    return String(payload?.text || "").trim();
+  } catch (err) {
+    if (DEBUG) console.warn("[audioPipeline] Live chunk transcription failed:", err.message);
+    return "";
+  }
+}
+
 async function normalizeRecording(filePath) {
   const { execSync } = require("node:child_process");
   const tmpPath = `${filePath}.norm.tmp`;
@@ -810,4 +868,5 @@ async function normalizeRecording(filePath) {
 module.exports = {
   transcribeRecording,
   normalizeRecording,
+  transcribeLiveChunk,
 };

@@ -730,6 +730,8 @@ export default function MainApp() {
           recordPermission={recorder.recordPermission}
           speechRecognitionSupported={recorder.speechRecognitionSupported}
           liveText={recorder.liveText}
+          liveTranscriptEnabled={recorder.liveTranscriptEnabled}
+          setLiveTranscriptEnabled={recorder.setLiveTranscriptEnabled}
           recordingMessage={recorder.recordingMessage}
           selectedRecording={meetings.selectedRecording}
           displaySpeakerNames={displaySpeakerNames}

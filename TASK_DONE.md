@@ -571,6 +571,30 @@ Wynik:
 
 ---
 
+## 058. [AUDIO] Whisper prompt z danymi spotkania (context-aware)
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `server/audioPipeline.js`: `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` — buduje kontekstowy prompt Whisper do 900 znaków z danych spotkania; fallback do globalnego `WHISPER_PROMPT`.
+- Prompt używany w obu przebiegach: Whisper `verbose_json` + diarization model.
+- `src/services/mediaService.js` `startTranscriptionJob()`: wysyła `meetingTitle`, `participants` (z `meeting.attendees`), `tags` do serwera w ciele requstu transkrypcji.
+
+---
+
+## 073. [AUDIO] Streaming transkrypcja w czasie rzeczywistym (live Whisper captions)
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `server/audioPipeline.js`: `transcribeLiveChunk(filePath, contentType)` — szybka transkrypcja małego fragmentu audio bez diaryzacji; zwraca tekst.
+- `server/index.js`: `POST /transcribe/live` — przyjmuje audio blob, przepisuje do pliku tymczasowego, wywołuje `transcribeLiveChunk`, zwraca `{ text }`.
+- `src/services/mediaService.js`: `transcribeLiveChunk(blob)` w remote service — wysyła blob do serwera.
+- `src/hooks/useLiveTranscript.js` (nowy): hook zbiera ostatnie ~4 chunki MediaRecorder (~3.6s), co 3s wysyła do serwera, aktualizuje podpis.
+- `src/hooks/useRecorder.js`: integracja `useLiveTranscript`; nowe pola `liveTranscriptEnabled` i `setLiveTranscriptEnabled` (null w trybie lokalnym).
+- `src/studio/StudioMeetingView.js`: guzik CC w pasku odtwarzacza (widoczny tylko w remote mode); `liveText` renderowany jako `.ff-live-caption` podczas nagrywania.
+- `src/styles/studio.css`: style dla `.ff-live-caption` i `.ff-cc-btn` (z wariantem `.active`).
+
+---
+
 ## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcją
 Status: `done`
 Priorytet: `P2`
