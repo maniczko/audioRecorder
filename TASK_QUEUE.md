@@ -181,7 +181,7 @@ Zrodlo: zadanie uzytkownika 2026-03-16.
 ---
 
 ## 043. XSS — sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: zapobiec XSS przy renderowaniu notatek z edytora WYSIWYG.
 Problem: `note.context` renderowany przez `dangerouslySetInnerHTML` bez sanityzacji — jezeli AI lub sync dostarczy zloslwiwy HTML, wykona sie w przegladarce uzytkownika.
@@ -198,7 +198,7 @@ Zrodlo: audyt bezpieczenstwa 2026-03-16, pozycja C1.
 ---
 
 ## 044. CORS i rate limiting na backendzie
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: zamknac dwie luki krytyczne: nieograniczony dostep cross-origin oraz brak ochrony przed brute-force.
 Problem (C2): `Access-Control-Allow-Origin: *` pozwala kazdej domenie na requesty do API.
