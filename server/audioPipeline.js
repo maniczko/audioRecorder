@@ -10,6 +10,7 @@ const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "gpt-4o-tr
 const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "whisper-1";
 const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -319,10 +320,32 @@ function buildVerificationResult(diarizedSegments, verificationSegments) {
   };
 }
 
+async function preprocessAudio(filePath) {
+  if (!AUDIO_PREPROCESS) return null;
+  const { execSync } = require("node:child_process");
+  const tmpPath = `${filePath}.prep.wav`;
+  try {
+    execSync(
+      `ffmpeg -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1 "${tmpPath}"`,
+      { stdio: "pipe", timeout: 120000 }
+    );
+    return tmpPath;
+  } catch (err) {
+    console.warn("Audio pre-processing failed, using original file.", err.message);
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    return null;
+  }
+}
+
 async function transcribeRecording(asset, options = {}) {
+  const prepPath = await preprocessAudio(asset.file_path);
+  const transcribeFilePath = prepPath || asset.file_path;
+  const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
+
+  try {
   const diarizedPayload = await requestAudioTranscription({
-    filePath: asset.file_path,
-    contentType: asset.content_type,
+    filePath: transcribeFilePath,
+    contentType: transcribeContentType,
     fields: {
       model: DIARIZATION_MODEL,
       language: options.language || AUDIO_LANGUAGE,
@@ -339,8 +362,8 @@ async function transcribeRecording(asset, options = {}) {
 
   try {
     const verificationPayload = await requestAudioTranscription({
-      filePath: asset.file_path,
-      contentType: asset.content_type,
+      filePath: transcribeFilePath,
+      contentType: transcribeContentType,
       fields: {
         model: VERIFICATION_MODEL,
         language: options.language || AUDIO_LANGUAGE,
@@ -422,6 +445,9 @@ async function transcribeRecording(asset, options = {}) {
         .length,
     },
   };
+  } finally {
+    if (prepPath) { try { fs.unlinkSync(prepPath); } catch (_) {} }
+  }
 }
 
 async function normalizeRecording(filePath) {

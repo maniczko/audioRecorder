@@ -92,19 +92,6 @@ Techniczne wskazówki:
 
 ---
 
-## 052. [AUDIO] Eksport wybranych segmentów jako osobny plik audio
-Status: `todo`
-Priorytet: `P2`
-Cel: użytkownik chce wyciąć konkretny fragment rozmowy i udostępnić go bez całego nagrania.
-Akceptacja:
-- w TranscriptPanel zaznaczenie zakresu segmentów + przycisk "Eksportuj audio".
-- serwer wycina fragmenty ffmpeg i zwraca plik WAV/MP3.
-- eksport działa tylko w trybie remote (pliki na serwerze).
-- czas exportu < 5s dla 5-minutowego fragmentu.
-Techniczne wskazówki:
-- `POST /media/recordings/:id/export` z body `{ segments: [{start, end}] }`.
-- `ffmpeg -i input -af "aselect=..." -acodec pcm_s16le output.wav`.
-- response: `Content-Disposition: attachment; filename="fragment.wav"`.
 
 ---
 
@@ -127,33 +114,11 @@ Techniczne wskazowki:
 
 ---
 
-## 016. Audit log i historia zmian z filtrowaniem
-Status: `todo`
-Priorytet: `P2`
-Cel: dac pelna widocznosc zmian i odpowiedzialnosci w workspace.
-Akceptacja:
-- istnieje dedykowany widok historii zmian (osobna zakladka lub sekcja w Profile/Settings).
-- mozna filtrowac po uzytkowniku, typie encji (meeting/task/recording), zakresie dat i rodzaju akcji.
-- wpis pokazuje: kto, co, kiedy, na czym oraz roznice w kluczowych polach (przed/po).
-- klikniecie wpisu otwiera powiazane spotkanie lub task.
-Techniczne wskazowki:
-- dane juz sa: meeting.activity[], task.history[] — potrzebny dedykowany widok agregujacy.
-- filtrowanie po stronie klienta (useMemo) dla max 500 wpisow.
+
 
 ---
 
-## 017. Dashboard KPI per osoba i obciazenie zespolu
-Status: `todo`
-Priorytet: `P2`
-Cel: rozszerzyc analityke o widok per czlonek zespolu.
-Akceptacja:
-- widac liczbe taskow per osoba z podzialem na open / overdue / completed.
-- widac ile decyzji i follow-upow powstaje po spotkaniach dla kazdego czlonka.
-- dashboard pokazuje sygnaly przeciazenia: za duzo overdue, za duzo otwartych, za malo zamkniec.
-- dane mozna filtrowac po workspace i zakresie dat.
-Techniczne wskazowki:
-- rozszerzyc kpi.js o buildPersonKpiView(tasks, meetings, peopleList, rangeDays).
-- widok w KpiDashboard.js — dodac zakladke "Per osoba" obok istniejacego dashboardu workspace.
+.
 
 ---
 
@@ -215,17 +180,7 @@ Techniczne wskazowki:
 
 ---
 
-## 031. Tworzenie spotkania bezposrednio z widoku kalendarza
-Status: `todo`
-Priorytet: `P2`
-Cel: skrocic sciezke do tworzenia spotkania — aktualnie wymaga przejscia do Studio.
-Akceptacja:
-- klikniecie na slotach godzinowych kalendarza tygodniowego otwiera szybki formularz nowego spotkania (tytul, termin wstepnie wypelniony kliknieta godzina).
-- zapisanie formularza tworzy spotkanie i przekierowuje do Studio z otwartym briefem.
-- jesli Google Calendar polaczony — opcja "Tworzy rowniez event w Google".
-Techniczne wskazowki:
-- onClick na pustym slocie w CalendarTab.js → setMeetingDraftFromSlot(date, hour) → setActiveTab("studio").
-- wystarczy przekazac startNewMeetingDraft(prefill) z datą/godziną.
+
 
 ---
 
@@ -266,20 +221,6 @@ Techniczne wskazowki:
 
 ---
 
-## 034. Onboarding dla nowych uzytkownikow
-Status: `todo`
-Priorytet: `P2`
-Cel: pierwsze 5 minut w aplikacji jest dezorientujace — nowy user nie wie od czego zaczac.
-Akceptacja:
-- po pierwszej rejestracji widac ekran powitalny z 3 krokami: "Nagraj pierwsze spotkanie", "Dodaj zadanie", "Polacz Google".
-- kazdy krok ma przycisk akcji prowadzacy bezposrednio do odpowiedniego flow.
-- mozna pominac onboarding jednym klikniciem.
-- po ukonczeniu 3 krokow widac krotkie potwierdzenie.
-- onboarding nie pojawia sie po ponownym logowaniu.
-Techniczne wskazowki:
-- stan onboardingCompleted w profilu uzytkownika (updateUserProfile).
-- nowy komponent OnboardingBanner.js pokazywany nad tabow gdy !user.onboardingCompleted.
-- krok uznany za ukonczony gdy: pierwsze nagranie zapisane, pierwsze zadanie stworzone, Google polaczony.
 
 ---
 
@@ -351,19 +292,7 @@ Techniczne wskazowki:
 
 ---
 
-## 019. Integracja ze Slack / Teams po spotkaniu
-Status: `todo`
-Priorytet: `P3`
-Cel: szybciej przenosic wynik spotkania do narzedzi komunikacyjnych zespolu.
-Akceptacja:
-- mozna wyslac podsumowanie spotkania, decyzje i taski do wybranego kanalu Slack lub Teams.
-- mozna wybrac szablon wiadomosci i zakres informacji do publikacji.
-- taski i follow-upy maja klikalne linki do aplikacji.
-- po wysylce widac status publikacji i ewentualny blad.
-Techniczne wskazowki:
-- Slack Incoming Webhooks (nie OAuth) dla MVP — tylko URL webhooka w ustawieniach.
-- Teams: Incoming Webhook connector URL.
-- POST JSON payload z summary, decisions[], tasks[] → buildSlackPayload(meeting, analysis).
+
 
 ---
 
@@ -388,18 +317,7 @@ Techniczne wskazowki:
 
 ---
 
-## 038. Tryb jasny i przelacznik motywu
-Status: `todo`
-Priorytet: `P3`
-Cel: ciemny motyw jest jedynym dostepnym — niektore srodowiska (prezentacje, jasne biura) wymagaja jasnego.
-Akceptacja:
-- w Profile / Settings toggle "Motyw: Ciemny / Jasny".
-- wybor persystuje w localStorage i profilu uzytkownika.
-- jasny motyw spelnia minimalny kontrast WCAG AA dla glownych klas tekstu.
-Techniczne wskazowki:
-- CSS: :root[data-theme="light"] { --bg: #f6f9fb; --text: #111; ... }.
-- data-theme atrybut na <html> element.
-- w App.js lub MainApp.js: document.documentElement.setAttribute("data-theme", ...).
+
 
 ---
 
@@ -501,7 +419,7 @@ Techniczne wskazówki:
 ---
 
 ## 060. [AUDIO] ffmpeg pre-processing — denoise + filtrowanie przed Whisperem
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: nagrania w głośnych środowiskach (otwarte biuro, kawiarnia) dają błędne transkrypcje mimo WebRTC NS. Przepuszczenie przez ffmpeg ffttdn + highpass przed transkrypcją poprawia ASR bez dodatkowego kosztu API.
 Akceptacja:
