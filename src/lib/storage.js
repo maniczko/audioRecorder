@@ -76,8 +76,10 @@ export function downloadTextFile(filename, contents, mimeType = "text/plain;char
     return;
   }
 
+  const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
   const link = window.document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([contents], { type: mimeType }));
+  link.href = url;
   link.download = filename;
   link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }

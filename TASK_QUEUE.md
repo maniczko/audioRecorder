@@ -275,7 +275,7 @@ Zrodlo: audyt zalezonosci 2026-03-16, pozycje H8, M13.
 ---
 
 ## 049. URL.revokeObjectURL po eksporcie pliku
-Status: `todo`
+Status: `done`
 Priorytet: `P3`
 Cel: wyeliminowac wyciek pamieci przy eksporcie (TXT/PDF).
 Problem: `URL.createObjectURL` w `storage.js` linia ~79 nigdy nie jest revokowany — kazdy eksport zostawia w pamieci blob URL.
