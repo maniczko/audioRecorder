@@ -424,6 +424,22 @@ async function transcribeRecording(asset, options = {}) {
   };
 }
 
+async function normalizeRecording(filePath) {
+  const { execSync } = require("node:child_process");
+  const tmpPath = `${filePath}.norm.tmp`;
+  try {
+    execSync(
+      `ffmpeg -y -i "${filePath}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "${tmpPath}"`,
+      { stdio: "pipe", timeout: 120000 }
+    );
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    throw err;
+  }
+}
+
 module.exports = {
   transcribeRecording,
+  normalizeRecording,
 };

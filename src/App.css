@@ -8638,6 +8638,21 @@ select:focus {
   opacity: 0.85;
 }
 
+/* Gain meter */
+.uplayer-gain-meter {
+  flex-shrink: 0;
+  width: 60px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.uplayer-gain-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.08s ease, background 0.2s ease;
+}
+
 /* REC badge */
 .uplayer-rec-dot {
   flex-shrink: 0;

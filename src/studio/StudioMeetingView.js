@@ -187,6 +187,7 @@ export default function StudioMeetingView({
   meetingDraft,
   setMeetingDraft,
   saveMeeting,
+  normalizeRecording,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
@@ -484,6 +485,7 @@ export default function StudioMeetingView({
           addRecordingMarker={addRecordingMarker}
           deleteRecordingMarker={deleteRecordingMarker}
           canEditTranscript={currentWorkspacePermissions?.canEditWorkspace}
+          onNormalize={normalizeRecording}
         />
 
         <AiTaskSuggestionsPanel

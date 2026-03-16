@@ -13,6 +13,12 @@ export default function UnifiedPlayer({
 }) {
   const isQueued = ["queued","uploading","processing"].includes(analysisStatus) && !isRecording;
 
+  // Compute peak level (0–1) from visualBars for the gain meter
+  const peakLevel = isRecording && visualBars.length
+    ? Math.max(...visualBars) / 58  // bars range 6–58px
+    : 0;
+  const gainPct = Math.round(Math.min(1, peakLevel) * 100);
+
   // Which mode to show in the player track area:
   // "recording" > "playback" > "queue" > "idle"
   const mode = isRecording ? "recording"
@@ -82,6 +88,23 @@ export default function UnifiedPlayer({
                 {visualBars.map((h, i) => (
                   <span key={i} className="uplayer-bar" style={{ "--h": `${Math.max(3, h)}px` }} />
                 ))}
+              </div>
+              <div
+                className="uplayer-gain-meter"
+                title={`Poziom wejścia: ${gainPct}%`}
+                aria-label={`Poziom wejścia ${gainPct}%`}
+              >
+                <div
+                  className="uplayer-gain-fill"
+                  style={{
+                    width: `${gainPct}%`,
+                    background: gainPct > 85
+                      ? "var(--error, #f87171)"
+                      : gainPct > 65
+                      ? "var(--warning, #fbbf24)"
+                      : "var(--accent, #75d6c4)",
+                  }}
+                />
               </div>
               {liveText ? <span className="uplayer-live-text">{liveText.slice(-60)}</span> : null}
             </>

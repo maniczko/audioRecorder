@@ -284,6 +284,7 @@ export default function TranscriptPanel({
   addRecordingMarker,
   deleteRecordingMarker,
   canEditTranscript = true,
+  onNormalize,
 }) {
   const activeReviewItemRef = useRef(null);
   const [filterMode, setFilterMode] = useState("all");
@@ -294,6 +295,8 @@ export default function TranscriptPanel({
   const [bulkSpeakerId, setBulkSpeakerId] = useState("");
   const [splitCursor, setSplitCursor] = useState({ segmentId: "", start: 0 });
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isNormalizing, setIsNormalizing] = useState(false);
+  const [normalizeError, setNormalizeError] = useState("");
 
   const transcript = useMemo(
     () => (Array.isArray(displayRecording?.transcript) ? displayRecording.transcript : []),
@@ -627,7 +630,31 @@ export default function TranscriptPanel({
                 {selectedRecording.reviewSummary.needsReview} fragmentow do sprawdzenia
               </span>
             ) : null}
+            {onNormalize && selectedRecordingAudioUrl ? (
+              <button
+                type="button"
+                className="ghost-button"
+                style={{ fontSize: "0.72rem" }}
+                disabled={isNormalizing}
+                onClick={async () => {
+                  setIsNormalizing(true);
+                  setNormalizeError("");
+                  try {
+                    await onNormalize(selectedRecording.id);
+                  } catch (err) {
+                    setNormalizeError(err.message || "Błąd normalizacji.");
+                  } finally {
+                    setIsNormalizing(false);
+                  }
+                }}
+              >
+                {isNormalizing ? "Normalizuję…" : "Normalizuj głośność"}
+              </button>
+            ) : null}
           </div>
+        ) : null}
+        {normalizeError ? (
+          <div className="inline-alert error" style={{ margin: "4px 0 0" }}>{normalizeError}</div>
         ) : null}
       </div>
 

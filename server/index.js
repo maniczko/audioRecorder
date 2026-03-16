@@ -28,7 +28,7 @@ const {
   getWorkspaceVoiceProfiles,
   deleteVoiceProfile,
 } = require("./database");
-const { transcribeRecording } = require("./audioPipeline");
+const { transcribeRecording, normalizeRecording } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
@@ -520,6 +520,25 @@ async function handleRequest(request, response) {
     const session = requireSession(request);
     deleteVoiceProfile(deleteVpMatch[1], session.workspace_id);
     return sendNoContent(response, origin);
+  }
+
+  const mediaNormalizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/normalize$/);
+  if (mediaNormalizeMatch && request.method === "POST") {
+    const session = requireSession(request);
+    const recordingId = mediaNormalizeMatch[1];
+    const asset = getMediaAsset(recordingId);
+    if (!asset) {
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
+      return;
+    }
+    ensureWorkspaceAccess(session, asset.workspace_id);
+    if (!fs.existsSync(asset.file_path)) {
+      sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." }, origin);
+      return;
+    }
+    await normalizeRecording(asset.file_path);
+    sendJson(response, 200, { ok: true }, origin);
+    return;
   }
 
   sendText(response, 404, "Not found", origin);

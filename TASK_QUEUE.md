@@ -85,7 +85,7 @@ Techniczne wskazówki:
 ---
 
 ## 048. [AUDIO] Noise cancellation i gain control przy nagrywaniu
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: nagrania w głośnych środowiskach mają zaszumioną transkrypcję — WebRTC oferuje darmowe filtrowanie.
 Akceptacja:
@@ -163,7 +163,7 @@ Techniczne wskazówki:
 ---
 
 ## 053. [AUDIO] Normalizacja głośności nagrań (loudness normalization)
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: niektóre nagrania są zbyt ciche lub za głośne — trudne do odsłuchania bez ręcznej regulacji.
 Akceptacja:

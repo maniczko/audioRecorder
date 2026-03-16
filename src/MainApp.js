@@ -726,6 +726,7 @@ export default function MainApp() {
           stopRecording={recorder.stopRecording}
           startRecording={recorder.startRecording}
           retryRecordingQueueItem={recorder.retryRecordingQueueItem}
+          normalizeRecording={recorder.normalizeRecording}
           recordPermission={recorder.recordPermission}
           speechRecognitionSupported={recorder.speechRecognitionSupported}
           liveText={recorder.liveText}

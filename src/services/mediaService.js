@@ -47,6 +47,9 @@ function createLocalMediaService() {
     async getTranscriptionJobStatus() {
       return null;
     },
+    async normalizeRecordingAudio() {
+      throw new Error("Normalizacja głośności niedostępna w trybie lokalnym.");
+    },
   };
 }
 
@@ -114,6 +117,9 @@ function createRemoteMediaService() {
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };
+    },
+    async normalizeRecordingAudio(recordingId) {
+      await apiRequest(`/media/recordings/${recordingId}/normalize`, { method: "POST" });
     },
   };
 }

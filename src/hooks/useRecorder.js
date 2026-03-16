@@ -505,7 +505,13 @@ export default function useRecorder({
     setRecordingMeetingId(activeMeeting.id);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) {
         throw new Error("AudioContext unavailable");
@@ -654,6 +660,32 @@ export default function useRecorder({
     setRecordingMeetingId(null);
   }
 
+  async function normalizeRecording(recordingId) {
+    if (!recordingId || !mediaService.normalizeRecordingAudio) {
+      return;
+    }
+    await mediaService.normalizeRecordingAudio(recordingId);
+    // Re-hydrate audio so the player picks up the normalized file
+    const oldUrl = audioUrlsRef.current[recordingId];
+    if (oldUrl) {
+      revokeAudioUrl(oldUrl);
+      setAudioUrls((prev) => {
+        const next = { ...prev };
+        delete next[recordingId];
+        return next;
+      });
+    }
+    try {
+      const blob = await mediaService.getRecordingAudioBlob(recordingId);
+      if (blob && typeof URL !== "undefined" && URL.createObjectURL) {
+        const nextUrl = URL.createObjectURL(blob);
+        setAudioUrls((prev) => ({ ...prev, [recordingId]: nextUrl }));
+      }
+    } catch (error) {
+      console.error(`Audio re-hydration after normalize failed for ${recordingId}.`, error);
+    }
+  }
+
   function retryRecordingQueueItem(recordingId) {
     updateQueueItem(recordingId, {
       status: "queued",
@@ -690,6 +722,7 @@ export default function useRecorder({
     startRecording,
     stopRecording,
     retryRecordingQueueItem,
+    normalizeRecording,
     resetRecorderState,
   };
 }
