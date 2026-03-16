@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, externalSelectedPersonId, onPersonSelectionHandled }) {
+export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, onUpdatePersonNotes, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
   const [editingSummary, setEditingSummary] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
+  const [newNeedDraft, setNewNeedDraft] = useState("");
+  const [newOutputDraft, setNewOutputDraft] = useState("");
+  const [addingNeed, setAddingNeed] = useState(false);
+  const [addingOutput, setAddingOutput] = useState(false);
   const meetingsSectionRef = useRef(null);
   const tasksSectionRef = useRef(null);
 
@@ -203,15 +207,95 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
 
                 <div className="brief-columns">
                   <div>
-                    <h3>Potrzeby</h3>
-                    <ul className="clean-list">
-                      {selectedPerson.needs.length ? selectedPerson.needs.map((need) => <li key={need}>{need}</li>) : <li>Brak danych.</li>}
+                    <div className="brief-col-head">
+                      <h3>Potrzeby</h3>
+                      <button
+                        type="button"
+                        className="what-matters-add-btn"
+                        onClick={() => { setAddingNeed(true); setNewNeedDraft(""); }}
+                        title="Dodaj potrzebę"
+                      >+</button>
+                    </div>
+                    {addingNeed && (
+                      <form
+                        className="person-notes-add-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const val = newNeedDraft.trim();
+                          if (!val) return;
+                          onUpdatePersonNotes?.(selectedPerson.id, { needs: [...selectedPerson.needs, val] });
+                          setAddingNeed(false);
+                          setNewNeedDraft("");
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          value={newNeedDraft}
+                          onChange={(e) => setNewNeedDraft(e.target.value)}
+                          placeholder="np. Jasne priorytety"
+                        />
+                        <button type="submit" className="ghost-button">Dodaj</button>
+                        <button type="button" className="ghost-button" onClick={() => setAddingNeed(false)}>×</button>
+                      </form>
+                    )}
+                    <ul className="clean-list person-notes-list">
+                      {selectedPerson.needs.length ? selectedPerson.needs.map((need) => (
+                        <li key={need} className="person-notes-item">
+                          <span>{need}</span>
+                          <button
+                            type="button"
+                            className="person-notes-remove"
+                            onClick={() => onUpdatePersonNotes?.(selectedPerson.id, { needs: selectedPerson.needs.filter((n) => n !== need) })}
+                            title="Usuń"
+                          >×</button>
+                        </li>
+                      )) : <li className="soft-copy">Brak danych.</li>}
                     </ul>
                   </div>
                   <div>
-                    <h3>Outputy</h3>
-                    <ul className="clean-list">
-                      {selectedPerson.outputs.length ? selectedPerson.outputs.map((item) => <li key={item}>{item}</li>) : <li>Brak danych.</li>}
+                    <div className="brief-col-head">
+                      <h3>Outputy</h3>
+                      <button
+                        type="button"
+                        className="what-matters-add-btn"
+                        onClick={() => { setAddingOutput(true); setNewOutputDraft(""); }}
+                        title="Dodaj output"
+                      >+</button>
+                    </div>
+                    {addingOutput && (
+                      <form
+                        className="person-notes-add-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const val = newOutputDraft.trim();
+                          if (!val) return;
+                          onUpdatePersonNotes?.(selectedPerson.id, { outputs: [...selectedPerson.outputs, val] });
+                          setAddingOutput(false);
+                          setNewOutputDraft("");
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          value={newOutputDraft}
+                          onChange={(e) => setNewOutputDraft(e.target.value)}
+                          placeholder="np. Lista decyzji"
+                        />
+                        <button type="submit" className="ghost-button">Dodaj</button>
+                        <button type="button" className="ghost-button" onClick={() => setAddingOutput(false)}>×</button>
+                      </form>
+                    )}
+                    <ul className="clean-list person-notes-list">
+                      {selectedPerson.outputs.length ? selectedPerson.outputs.map((item) => (
+                        <li key={item} className="person-notes-item">
+                          <span>{item}</span>
+                          <button
+                            type="button"
+                            className="person-notes-remove"
+                            onClick={() => onUpdatePersonNotes?.(selectedPerson.id, { outputs: selectedPerson.outputs.filter((o) => o !== item) })}
+                            title="Usuń"
+                          >×</button>
+                        </li>
+                      )) : <li className="soft-copy">Brak danych.</li>}
                     </ul>
                   </div>
                 </div>

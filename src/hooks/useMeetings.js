@@ -103,6 +103,7 @@ export default function useMeetings({
   const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
   const [calendarMeta, setCalendarMeta] = useStoredState(STORAGE_KEYS.calendarMeta, {});
   const [storedMeetingDrafts, setStoredMeetingDrafts] = useStoredState(STORAGE_KEYS.meetingDrafts, {});
+  const [personNotes, setPersonNotes] = useStoredState(STORAGE_KEYS.personNotes, {});
   const [meetingDraft, setMeetingDraftState] = useState(createEmptyMeetingDraft());
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
@@ -150,7 +151,18 @@ export default function useMeetings({
   );
   const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks);
   const taskTags = buildTaskTags(meetingTasks, userMeetings);
-  const peopleProfiles = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
+  const peopleProfiles = useMemo(() => {
+    const base = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
+    return base.map((profile) => {
+      const overrides = personNotes[profile.id];
+      if (!overrides) return profile;
+      return {
+        ...profile,
+        needs: overrides.needs !== undefined ? overrides.needs : profile.needs,
+        outputs: overrides.outputs !== undefined ? overrides.outputs : profile.outputs,
+      };
+    });
+  }, [currentUser, currentWorkspaceMembers, meetingTasks, personNotes, userMeetings]);
   const taskNotifications = buildTaskNotifications(meetingTasks);
   const workspaceActivity = useMemo(
     () => buildWorkspaceActivityFeed(userMeetings, meetingTasks, currentWorkspaceMembers, users),
@@ -663,6 +675,13 @@ export default function useMeetings({
     setManualTasks((prev) =>
       prev.map((t) => ({ ...t, tags: (t.tags || []).filter((existing) => existing !== tag) }))
     );
+  }
+
+  function updatePersonNotes(personId, patches) {
+    setPersonNotes((prev) => ({
+      ...prev,
+      [personId]: { ...(prev[personId] || {}), ...patches },
+    }));
   }
 
   function createAdHocMeeting() {
@@ -1657,6 +1676,7 @@ export default function useMeetings({
     createManualNote,
     renameTag,
     deleteTag,
+    updatePersonNotes,
     clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,

@@ -5,7 +5,7 @@ import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
 
-function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft }) {
+function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, selectedRecordingId, setSelectedRecordingId }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef(null);
@@ -26,64 +26,113 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
     ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
     : sorted.slice(0, 10);
 
+  const recordings = selectedMeeting?.recordings || [];
+
   return (
-    <div className="studio-meeting-picker" ref={ref}>
-      <button
-        type="button"
-        className="studio-picker-trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="studio-picker-title">
-          {selectedMeeting ? selectedMeeting.title : "Wybierz spotkanie"}
-        </span>
-        <span className="studio-picker-chevron" aria-hidden="true">▾</span>
-      </button>
-
-      <button
-        type="button"
-        className="studio-picker-new"
-        onClick={startNewMeetingDraft}
-        title="Nowe spotkanie"
-      >
-        + Nowe
-      </button>
-
-      {open && (
-        <div className="studio-picker-dropdown" role="listbox">
-          <input
-            className="studio-picker-search"
-            type="search"
-            placeholder="Szukaj spotkania…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-          <div className="studio-picker-list">
-            {filtered.map((meeting) => (
-              <button
-                key={meeting.id}
-                type="button"
-                role="option"
-                aria-selected={selectedMeeting?.id === meeting.id}
-                className={`studio-picker-item${selectedMeeting?.id === meeting.id ? " active" : ""}`}
-                onClick={() => {
-                  selectMeeting(meeting);
-                  setOpen(false);
-                  setQuery("");
-                }}
-              >
-                <span className="studio-picker-item-title">{meeting.title}</span>
-                <span className="studio-picker-item-date">
-                  {formatDateTime(meeting.startsAt || meeting.createdAt)}
-                </span>
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="studio-picker-empty">Brak wyników</div>
-            )}
+    <div className="studio-picker-header" ref={ref}>
+      <div className="studio-picker-header-top">
+        <div className="studio-picker-header-info">
+          <div className="eyebrow">Studio</div>
+          <h2 className="studio-picker-header-title">
+            {selectedMeeting ? selectedMeeting.title : "Wybierz spotkanie"}
+          </h2>
+          {selectedMeeting && (
+            <div className="studio-picker-header-meta">
+              <span>{formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt)}</span>
+              <span>{selectedMeeting.durationMinutes} min</span>
+              <span>{recordings.length} nagran</span>
+            </div>
+          )}
+        </div>
+        <div className="studio-picker-header-actions">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+          >
+            Zmień ▾
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={startNewMeetingDraft}
+          >
+            + Nowe
+          </button>
+        </div>
+        {open && (
+          <div className="studio-picker-dropdown" role="listbox">
+            <input
+              className="studio-picker-search"
+              type="search"
+              placeholder="Szukaj spotkania…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+            />
+            <div className="studio-picker-list">
+              {filtered.map((meeting) => (
+                <button
+                  key={meeting.id}
+                  type="button"
+                  role="option"
+                  aria-selected={selectedMeeting?.id === meeting.id}
+                  className={`studio-picker-item${selectedMeeting?.id === meeting.id ? " active" : ""}`}
+                  onClick={() => {
+                    selectMeeting(meeting);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                >
+                  <span className="studio-picker-item-title">{meeting.title}</span>
+                  <span className="studio-picker-item-date">
+                    {formatDateTime(meeting.startsAt || meeting.createdAt)}
+                  </span>
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <div className="studio-picker-empty">Brak wyników</div>
+              )}
+            </div>
           </div>
+        )}
+      </div>
+
+      {recordings.length > 0 && (
+        <div className="studio-recordings-table-wrap">
+          <table className="studio-recordings-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Czas</th>
+                <th>Speakerzy</th>
+                <th>Segmenty</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recordings.map((rec) => (
+                <tr
+                  key={rec.id}
+                  className={rec.id === selectedRecordingId ? "active" : ""}
+                  onClick={() => setSelectedRecordingId(rec.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <td>{formatDateTime(rec.createdAt)}</td>
+                  <td>{formatDuration(rec.duration)}</td>
+                  <td>{rec.speakerCount || 0}</td>
+                  <td>{rec.transcript?.length || 0}</td>
+                  <td>
+                    <span className={`status-chip status-chip-sm ${rec.pipelineStatus || "done"}`}>
+                      {rec.pipelineStatus || "done"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -168,6 +217,8 @@ export default function StudioMeetingView({
       userMeetings={userMeetings}
       selectMeeting={selectMeeting}
       startNewMeetingDraft={startNewMeetingDraft}
+      selectedRecordingId={selectedRecordingId}
+      setSelectedRecordingId={setSelectedRecordingId}
     />
   );
 

@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   taskBoards: "voicelog.taskBoards.v1",
   calendarMeta: "voicelog.calendarMeta.v1",
   meetingDrafts: "voicelog.meetingDrafts.v1",
+  personNotes: "voicelog.personNotes.v1",
   notificationState: "voicelog.notificationState.v1",
   recordingQueue: "voicelog.recordingQueue.v1",
 };

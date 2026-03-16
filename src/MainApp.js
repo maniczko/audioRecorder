@@ -613,6 +613,7 @@ export default function MainApp() {
           onOpenMeeting={openMeetingFromCalendar}
           onOpenTask={openTaskFromCalendar}
           onCreateTask={createTaskForPerson}
+          onUpdatePersonNotes={meetings.updatePersonNotes}
           externalSelectedPersonId={pendingPersonId}
           onPersonSelectionHandled={() => setPendingPersonId("")}
         />
