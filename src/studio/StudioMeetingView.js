@@ -5,7 +5,7 @@ import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
-import TranscriptPanel from "./TranscriptPanel";
+
 
 function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, selectedRecordingId, setSelectedRecordingId }) {
   const [open, setOpen] = useState(false);
@@ -163,11 +163,6 @@ export default function StudioMeetingView({
   displaySpeakerNames,
   selectedRecordingAudioUrl,
   selectedRecordingAudioError,
-  updateTranscriptSegment,
-  assignSpeakerToTranscriptSegments,
-  mergeTranscriptSegments,
-  splitTranscriptSegment,
-  renameSpeaker,
   selectedRecordingId,
   setSelectedRecordingId,
   exportTranscript,
@@ -180,8 +175,6 @@ export default function StudioMeetingView({
   currentWorkspace,
   userMeetings,
   meetingTasks,
-  addRecordingMarker,
-  deleteRecordingMarker,
   onCreateTask,
   peopleProfiles,
   addMeetingComment,
@@ -189,14 +182,13 @@ export default function StudioMeetingView({
   meetingDraft,
   setMeetingDraft,
   saveMeeting,
-  normalizeRecording,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState("");
-  const [activeTab, setActiveTab] = useState("transcript");
+
   const [transcriptSearch, setTranscriptSearch] = useState("");
 
   const audioRef = useRef(null);
@@ -579,22 +571,6 @@ export default function StudioMeetingView({
           </div>
         </section>
 
-        <TranscriptPanel
-          displayRecording={displayRecording}
-          selectedRecording={selectedRecording}
-          displaySpeakerNames={displaySpeakerNames}
-          selectedRecordingAudioUrl={selectedRecordingAudioUrl}
-          selectedRecordingAudioError={selectedRecordingAudioError}
-          audioRef={audioRef}
-          updateTranscriptSegment={updateTranscriptSegment}
-          assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
-          mergeTranscriptSegments={mergeTranscriptSegments}
-          splitTranscriptSegment={splitTranscriptSegment}
-          addRecordingMarker={addRecordingMarker}
-          deleteRecordingMarker={deleteRecordingMarker}
-          canEditTranscript={currentWorkspacePermissions?.canEditWorkspace}
-          onNormalize={normalizeRecording}
-        />
 
         <AiTaskSuggestionsPanel
           selectedRecording={selectedRecording}
@@ -712,27 +688,6 @@ export default function StudioMeetingView({
             )}
 
 
-            {studioAnalysis.keyQuotes?.length > 0 && (
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Quotes</div>
-                    <h2>Kluczowe cytaty</h2>
-                  </div>
-                </div>
-                <div className="key-quotes-list">
-                  {studioAnalysis.keyQuotes.map((q, i) => (
-                    <article key={i} className="quote-card">
-                      <blockquote>„{q.quote}"</blockquote>
-                      <footer>
-                        <strong>{q.speaker}</strong>
-                        {q.why && <span>{q.why}</span>}
-                      </footer>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
 
             {(studioAnalysis.suggestedAgenda?.length > 0 || studioAnalysis.coachingTip || studioAnalysis.terminology?.length > 0 || studioAnalysis.contextLinks?.length > 0) && (
               <section className="panel">
@@ -786,26 +741,6 @@ export default function StudioMeetingView({
           </>
         )}
 
-        <section className="panel">
-          <div className="panel-header compact">
-            <div>
-              <div className="eyebrow">Speaker map</div>
-              <h2>Nazwij rozmowcow</h2>
-            </div>
-          </div>
-          <div className="speaker-editor-list">
-            {Object.entries(displaySpeakerNames).length ? (
-              Object.entries(displaySpeakerNames).map(([key, value]) => (
-                <label key={key} className="speaker-editor-row">
-                  <span>Speaker {Number(key) + 1}</span>
-                  <input value={value} onChange={(event) => renameSpeaker(key, event.target.value)} />
-                </label>
-              ))
-            ) : (
-              <div className="soft-copy">Mapa speakerow pojawi sie po pierwszym nagraniu.</div>
-            )}
-          </div>
-        </section>
 
 
         <section className="panel">
@@ -866,123 +801,65 @@ export default function StudioMeetingView({
         {/* ── RIGHT: transcript sidebar ── */}
         <aside className="studio-ff-sidebar">
 
-          {/* Tab bar */}
+          {/* Tab bar — Transcript only */}
           <div className="ff-tab-bar">
-            <button
-              type="button"
-              className={`ff-tab${activeTab === "transcript" ? " active" : ""}`}
-              onClick={() => setActiveTab("transcript")}
-            >
-              Transcript
-            </button>
-            <button
-              type="button"
-              className={`ff-tab${activeTab === "edit" ? " active" : ""}`}
-              onClick={() => setActiveTab("edit")}
-            >
-              Edytuj
-            </button>
-            <div className="ff-tab-gap" />
-            <button
-              type="button"
-              className="ff-tab-icon-btn"
-              title="Rozwiń"
-              onClick={() => setActiveTab(activeTab === "edit" ? "transcript" : "edit")}
-            >
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                <path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="ff-tab-icon-btn"
-              title="Edytuj transkrypt"
-              onClick={() => setActiveTab("edit")}
-            >
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                <path d="M2 9.5L9.5 2l1.5 1.5-7.5 7.5H2V9.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            <span className="ff-tab active">Transcript</span>
           </div>
 
-          {activeTab === "transcript" && (
-            <>
-              {/* Search */}
-              <div className="ff-search-bar">
-                <svg className="ff-search-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                  <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.4" />
-                  <line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-                <input
-                  className="ff-search-input"
-                  placeholder="Find or Replace"
-                  value={transcriptSearch}
-                  onChange={(e) => setTranscriptSearch(e.target.value)}
-                />
-              </div>
+          {/* Search */}
+          <div className="ff-search-bar">
+            <svg className="ff-search-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.4" />
+              <line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              className="ff-search-input"
+              placeholder="Szukaj..."
+              value={transcriptSearch}
+              onChange={(e) => setTranscriptSearch(e.target.value)}
+            />
+          </div>
 
-              {/* Segments list */}
-              <div className="ff-segments-list">
-                {filteredTranscript.length ? (
-                  filteredTranscript.map((seg) => {
-                    const isActive = activeSeg?.id === seg.id;
-                    const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
-                    const letter = (name || "S")[0].toUpperCase();
-                    const color = getSpeakerColor(seg.speakerId);
-                    return (
-                      <div
-                        key={seg.id}
-                        ref={isActive ? activeSegRef : null}
-                        className={`ff-segment${isActive ? " active" : ""}`}
+          {/* Segments list */}
+          <div className="ff-segments-list">
+            {filteredTranscript.length ? (
+              filteredTranscript.map((seg) => {
+                const isActive = activeSeg?.id === seg.id;
+                const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
+                const letter = (name || "S")[0].toUpperCase();
+                const color = getSpeakerColor(seg.speakerId);
+                return (
+                  <div
+                    key={seg.id}
+                    ref={isActive ? activeSegRef : null}
+                    className={`ff-segment${isActive ? " active" : ""}`}
+                  >
+                    <div className="ff-seg-header">
+                      <span className="ff-speaker-avatar" style={{ background: color }}>{letter}</span>
+                      <span className="ff-speaker-name">{name}</span>
+                      <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                        <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                      </svg>
+                      <span className="ff-seg-dot">·</span>
+                      <button
+                        type="button"
+                        className="ff-seg-timestamp"
+                        onClick={() => { if (audioRef.current) audioRef.current.currentTime = seg.timestamp; }}
                       >
-                        <div className="ff-seg-header">
-                          <span className="ff-speaker-avatar" style={{ background: color }}>{letter}</span>
-                          <span className="ff-speaker-name">{name}</span>
-                          <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                            <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                          </svg>
-                          <span className="ff-seg-dot">·</span>
-                          <button
-                            type="button"
-                            className="ff-seg-timestamp"
-                            onClick={() => { if (audioRef.current) audioRef.current.currentTime = seg.timestamp; }}
-                          >
-                            {formatDuration(Math.floor(seg.timestamp))}
-                          </button>
-                        </div>
-                        <p className="ff-seg-text">{seg.text}</p>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="ff-segments-empty">
-                    {transcript.length ? "Brak wyników wyszukiwania." : "Brak transkrypcji dla tego nagrania."}
+                        {formatDuration(Math.floor(seg.timestamp))}
+                      </button>
+                    </div>
+                    <p className="ff-seg-text">{seg.text}</p>
                   </div>
-                )}
+                );
+              })
+            ) : (
+              <div className="ff-segments-empty">
+                {transcript.length ? "Brak wyników wyszukiwania." : "Brak transkrypcji dla tego nagrania."}
               </div>
-            </>
-          )}
+            )}
+          </div>
 
-          {activeTab === "edit" && (
-            <div className="ff-edit-view">
-              <TranscriptPanel
-                displayRecording={displayRecording}
-                selectedRecording={selectedRecording}
-                displaySpeakerNames={displaySpeakerNames}
-                selectedRecordingAudioUrl={selectedRecordingAudioUrl}
-                selectedRecordingAudioError={selectedRecordingAudioError}
-                audioRef={audioRef}
-                updateTranscriptSegment={updateTranscriptSegment}
-                assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
-                mergeTranscriptSegments={mergeTranscriptSegments}
-                splitTranscriptSegment={splitTranscriptSegment}
-                addRecordingMarker={addRecordingMarker}
-                deleteRecordingMarker={deleteRecordingMarker}
-                canEditTranscript={currentWorkspacePermissions?.canEditWorkspace}
-                onNormalize={normalizeRecording}
-              />
-            </div>
-          )}
 
           {/* Player bar */}
           <div className="ff-player-bar">
@@ -1093,11 +970,6 @@ StudioMeetingView.propTypes = {
   displaySpeakerNames: PropTypes.object,
   selectedRecordingAudioUrl: PropTypes.string,
   selectedRecordingAudioError: PropTypes.string,
-  updateTranscriptSegment: PropTypes.func,
-  assignSpeakerToTranscriptSegments: PropTypes.func,
-  mergeTranscriptSegments: PropTypes.func,
-  splitTranscriptSegment: PropTypes.func,
-  renameSpeaker: PropTypes.func,
   selectedRecordingId: PropTypes.string,
   setSelectedRecordingId: PropTypes.func,
   exportTranscript: PropTypes.func,
@@ -1110,8 +982,6 @@ StudioMeetingView.propTypes = {
   currentWorkspace: PropTypes.object,
   userMeetings: PropTypes.array,
   meetingTasks: PropTypes.array,
-  addRecordingMarker: PropTypes.func,
-  deleteRecordingMarker: PropTypes.func,
   onCreateTask: PropTypes.func,
   peopleProfiles: PropTypes.array,
   addMeetingComment: PropTypes.func,
@@ -1119,7 +989,6 @@ StudioMeetingView.propTypes = {
   meetingDraft: PropTypes.object,
   setMeetingDraft: PropTypes.func,
   saveMeeting: PropTypes.func,
-  normalizeRecording: PropTypes.func,
 };
 
 function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting }) {
