@@ -139,18 +139,6 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   );
 }
 
-function tagStyle(tag) {
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h = Math.abs(hash) % 360;
-  return {
-    color: `hsl(${h},62%,62%)`,
-    background: `hsla(${h},62%,45%,0.13)`,
-    border: `1px solid hsla(${h},62%,55%,0.28)`,
-  };
-}
 
 export default function StudioMeetingView({
   selectedMeeting,

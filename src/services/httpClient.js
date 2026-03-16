@@ -54,15 +54,23 @@ export async function apiRequest(path, options = {}) {
   }
 
   const response = await fetch(buildUrl(path), requestInit);
-  const payload = parseAs === "raw" ? response : await parseResponse(response);
 
   if (!response.ok) {
-    const message =
-      (typeof payload === "object" && payload?.message) || (typeof payload === "string" && payload) || "Request failed.";
+    let message = `HTTP ${response.status}`;
+    try {
+      const errorBody = await parseResponse(response);
+      message =
+        (typeof errorBody === "object" && errorBody?.message) ||
+        (typeof errorBody === "string" && errorBody) ||
+        message;
+    } catch (_) {
+      // ignore parse errors
+    }
     const error = new Error(message);
     error.status = response.status;
     throw error;
   }
 
+  const payload = parseAs === "raw" ? response : await parseResponse(response);
   return payload;
 }
