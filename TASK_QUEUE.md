@@ -42,22 +42,6 @@ Techniczne wskazowki:
 
 ---
 
-## 030. Nawigacja i lista spotkan w Studio
-Status: `todo`
-Priorytet: `P1`
-Cel: uzytkownicy nie maja aktualnie mozliwosci przegladania spotkan bezposrednio w Studio — brak listy po usunieciu sidebara.
-Akceptacja:
-- w widoku Studio istnieje panel lub dropdown do szybkiego przelaczania miedzy spotkaniami.
-- widac tytul, date i status aktywnego spotkania w naglowku.
-- mozna wyszukac spotkanie po tytule (min. 10 ostatnich w menu).
-- przycisk "+ Nowe" pozostaje zawsze dostepny.
-- nawigacja do spotkania z zewnetrznego zrodla (Calendar, Notes, Cmd+K) nadal dziala.
-Techniczne wskazowki:
-- maly dropdown / popover z lista `userMeetings.slice(0, 10)` + pole wyszukiwania w naglowku StudioMeetingView.
-- istniejaca prop `selectedMeeting` + `selectMeeting` wystarczy do obslugi.
-
----
-
 ## PRIORYTET P2 — wazne dla jakosci i completeness
 
 ---

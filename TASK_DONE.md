@@ -252,6 +252,19 @@ Wynik:
 
 ---
 
+## 030. Nawigacja i lista spotkan w Studio
+Status: `done`
+Priorytet: `P1`
+Cel: uzytkownicy moga przegladac i przelaczac spotkania bezposrednio w Studio bez sidebara.
+Wynik:
+- MeetingPicker jako pelny naglowek Studio: tytul, data, czas trwania, liczba nagran.
+- Dropdown "Zmien ▾" z wyszukiwarka i lista 10 ostatnich spotkan.
+- Przycisk "+ Nowe" zawsze widoczny.
+- RecordingsLibrary na dole strony rowniez w pustym stanie bez wybranego spotkania.
+- Zrealizowane w ramach zadania 052 (redesign MeetingPicker + globalna biblioteka nagran).
+
+---
+
 ## 043. XSS — sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
 Status: `done`
 Priorytet: `P1`
