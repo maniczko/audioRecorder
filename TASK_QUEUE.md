@@ -9,7 +9,202 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## 043. [AUDIO] Sanityzacja timestampów ffmpeg — command injection
+Status: `todo`
+Priorytet: `P1`
+Cel: timestampy segmentów wklejane bezpośrednio do filtra ffmpeg bez walidacji — potencjalne RCE.
+Akceptacja:
+- przed wstawieniem do polecenia każdy timestamp jest parsowany jako `Number()` i sprawdzany `isFinite()`.
+- jeśli timestamp nieprawidłowy — segment pomijany, logowane ostrzeżenie.
+- test jednostkowy: złośliwy timestamp `"0;rm -rf /"` nie wykonuje dodatkowego polecenia.
+Techniczne wskazówki:
+- w `server/audioPipeline.js` funkcja `buildSpeakerClip`: `const t = Number(s.timestamp); if (!isFinite(t)) continue;`.
+- to samo dla `s.endTimestamp`.
+
+---
+
+## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym błędzie
+Status: `todo`
+Priorytet: `P1`
+Cel: jeśli `processQueueItem()` rzuca synchronicznie — flaga `queueProcessingRef.current` zostaje `true` na zawsze, kolejka zamrożona.
+Akceptacja:
+- flaga zawsze wraca do `false` niezależnie od rodzaju błędu.
+- po błędzie kolejka wznawia processing przy następnym renderze.
+- test: symulacja sync throw → po 1s kolejka znów przetwarza.
+Techniczne wskazówki:
+- `useRecorder.js` linia ~218: owinąć cały blok w `try { ... } finally { queueProcessingRef.current = false; }` zamiast polegać wyłącznie na `Promise.finally`.
+
+---
+
+## 045. [AUDIO] Walidacja rozmiaru blob przed zapisem do IndexedDB
+Status: `todo`
+Priorytet: `P1`
+Cel: brak sprawdzenia rozmiaru → cicha awaria gdy IndexedDB quota przekroczona, nagranie utracone.
+Akceptacja:
+- przed `saveAudioBlob()` sprawdzana jest `navigator.storage.estimate()`.
+- jeśli dostępne < 10MB: użytkownik widzi ostrzeżenie i może anulować zapis.
+- jeśli blob > 100MB: odrzucany z czytelnym komunikatem.
+Techniczne wskazówki:
+- `src/lib/audioStore.js`: dodać `checkStorageQuota(blobSize)` wywołaną przed `saveAudioBlob`.
+- fallback jeśli `navigator.storage` niedostępny: pomiń sprawdzenie, zapisz normalnie.
+
+---
+
 ## PRIORYTET P2 — wazne dla jakosci i completeness
+
+---
+
+## 046. [AUDIO] Exponential backoff i auto-retry w kolejce nagrań
+Status: `todo`
+Priorytet: `P2`
+Cel: aktualnie błąd sieciowy = item utknięty w `failed` bez auto-ponowienia; user musi kliknąć ręcznie.
+Akceptacja:
+- po błędzie item czeka 1s, 4s, 16s (3 próby) przed oznaczeniem jako trwały błąd.
+- przy braku internetu (`navigator.onLine === false`) item czeka do powrotu sieci.
+- po 3 nieudanych próbach: status `failed_permanent`, wyraźny komunikat + przycisk "Ponów ręcznie".
+- licznik prób widoczny przy każdym itemie w kolejce.
+Techniczne wskazówki:
+- dodać `retryCount`, `backoffUntil`, `lastErrorMessage` do `RecordingQueueItem` w `recordingQueue.js`.
+- w `useRecorder.js`: przed `processQueueItem` sprawdzić `item.backoffUntil > Date.now()`.
+- listener `window.addEventListener("online", ...)` wznawia processing.
+
+---
+
+## 047. [AUDIO] Obsługa błędów odtwarzania audio w UnifiedPlayer
+Status: `todo`
+Priorytet: `P2`
+Cel: `play().catch(() => {})` połyka błędy — user klika ▶ i nic się nie dzieje bez żadnego feedbacku.
+Akceptacja:
+- błąd odtwarzania pokazuje inline komunikat (np. "Nie można odtworzyć — plik może być uszkodzony").
+- po błędzie ▶ zmienia się na ikonę ⚠ z tooltipem.
+- błąd `NotAllowedError` (brak interakcji user) obsługiwany osobno: "Kliknij aby odblokować audio".
+Techniczne wskazówki:
+- `src/studio/UnifiedPlayer.js`: `a.play().catch(err => setPlayError(err.message))`.
+- lokalny stan `playError` w UnifiedPlayer, czyszczony przy zmianie src.
+
+---
+
+## 048. [AUDIO] Noise cancellation i gain control przy nagrywaniu
+Status: `todo`
+Priorytet: `P2`
+Cel: nagrania w głośnych środowiskach mają zaszumioną transkrypcję — WebRTC oferuje darmowe filtrowanie.
+Akceptacja:
+- mikrofon otwierany z `{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }`.
+- w ustawieniach profilu toggle "Filtrowanie szumów" (domyślnie włączone).
+- w UnifiedPlayer/RecorderPanel widoczny wskaźnik poziomu wejścia (gain meter) przed i w trakcie nagrania.
+Techniczne wskazówki:
+- `useRecorder.js` linia ~501: zmienić `getUserMedia({ audio: true })` na obiekt z constraintami.
+- gain meter: `AnalyserNode.getByteFrequencyData()` → mean amplitude → CSS width bar, update co 100ms.
+- preferencja zapisana w `profile.noiseSuppression` (bool, default true).
+
+---
+
+## 049. [AUDIO] VAD — automatyczne zatrzymanie przy długiej ciszy
+Status: `todo`
+Priorytet: `P2`
+Cel: użytkownik zapomina zatrzymać nagranie → kilkugodzinne pliki, przepełnienie storage, zły UX.
+Akceptacja:
+- jeśli cisza > 3 minuty (konfigurowalnie w profilu: 1/3/5/off) — nagranie zatrzymuje się automatycznie.
+- 30s przed zatrzymaniem: widoczne odliczanie w UnifiedPlayer "Zatrzymanie za 30s — kliknij aby kontynuować".
+- użytkownik może kliknąć "Kontynuuj" aby resetować licznik.
+Techniczne wskazówki:
+- w `useRecorder.js`: monitorować `signatureTimelineRef` — jeśli ostatnie 180 wpisów mają amplitude < 5 → trigger.
+- alternatywnie: śledzić `AnalyserNode` max amplitude w oknie 3min.
+- countdown state eksponowany do UnifiedPlayer jako prop.
+
+---
+
+## 050. [AUDIO] Chunked upload dla dużych plików (>10MB)
+Status: `todo`
+Priorytet: `P2`
+Cel: przy słabym WiFi upload jednego dużego pliku audio często się przerywa i wymaga ponowienia od zera.
+Akceptacja:
+- pliki > 10MB dzielone na chunki 2MB i wysyłane sekwencyjnie.
+- postęp uploadu widoczny w UnifiedPlayer (pasek procentowy).
+- przerwany upload może być wznowiony — serwer przechowuje już wysłane chunki przez 24h.
+- pliki < 10MB działają jak dotąd (jeden request).
+Techniczne wskazówki:
+- `src/services/mediaService.js`: `persistRecordingAudio()` → jeśli `blob.size > 10MB`, podzielić na `Blob.slice()` chunks.
+- serwer: `PUT /media/recordings/:id/audio/chunk?index=N&total=M` → składa chunks w jeden plik.
+- po zakończeniu chunków: `POST /media/recordings/:id/audio/finalize`.
+
+---
+
+## 051. [AUDIO] Speaker ID — multi-sample enrollment i per-profile threshold
+Status: `todo`
+Priorytet: `P2`
+Cel: jeden sample głosu (~15s) to za mało — wielokrotne próbki dramatycznie zwiększają dokładność.
+Akceptacja:
+- użytkownik może nagrać do 5 próbek głosu per osoba (każda 15–30s).
+- embedding przechowywany jako average z wszystkich próbek.
+- per-profil slider threshold (0.70–0.95, default 0.82) w UI listy profili.
+- w transkrypcji: przy auto-labelu widoczne "Marek (94%)" z confidence score.
+Techniczne wskazówki:
+- `voice_profiles` table: dodać kolumnę `sample_count INT DEFAULT 1`.
+- `POST /voice-profiles` z tym samym `X-Speaker-Name` → uśrednia embedding z istniejącym.
+- `server/speakerEmbedder.js`: eksportować `averageEmbeddings(embeddings[])`.
+
+---
+
+## 052. [AUDIO] Eksport wybranych segmentów jako osobny plik audio
+Status: `todo`
+Priorytet: `P2`
+Cel: użytkownik chce wyciąć konkretny fragment rozmowy i udostępnić go bez całego nagrania.
+Akceptacja:
+- w TranscriptPanel zaznaczenie zakresu segmentów + przycisk "Eksportuj audio".
+- serwer wycina fragmenty ffmpeg i zwraca plik WAV/MP3.
+- eksport działa tylko w trybie remote (pliki na serwerze).
+- czas exportu < 5s dla 5-minutowego fragmentu.
+Techniczne wskazówki:
+- `POST /media/recordings/:id/export` z body `{ segments: [{start, end}] }`.
+- `ffmpeg -i input -af "aselect=..." -acodec pcm_s16le output.wav`.
+- response: `Content-Disposition: attachment; filename="fragment.wav"`.
+
+---
+
+## 053. [AUDIO] Normalizacja głośności nagrań (loudness normalization)
+Status: `todo`
+Priorytet: `P2`
+Cel: niektóre nagrania są zbyt ciche lub za głośne — trudne do odsłuchania bez ręcznej regulacji.
+Akceptacja:
+- opcja "Normalizuj głośność" przy każdym nagraniu w TranscriptPanel.
+- serwer przetwarza plik przez `ffmpeg -af loudnorm` i zwraca znormalizowany URL.
+- oryginał zachowany, znormalizowana wersja jako osobny asset.
+- operacja < 10s dla nagrania 30-minutowego.
+Techniczne wskazówki:
+- `POST /media/recordings/:id/normalize`.
+- ffmpeg: `-af loudnorm=I=-16:TP=-1.5:LRA=11`.
+- nowe pole `normalizedAudioPath` w `media_assets`.
+
+---
+
+## 054. [AUDIO] Wykrywanie języka i multi-język per segment
+Status: `todo`
+Priorytet: `P3`
+Cel: spotkania prowadzone częściowo po polsku, częściowo po angielsku transkrybowane są niepoprawnie.
+Akceptacja:
+- Whisper wywołany z `language: auto` zamiast hardcoded `pl`.
+- w ustawieniach profilu: "Język nagrań" = Auto / PL / EN / DE / inne.
+- per-segment language tag widoczny w TranscriptPanel (małe flagi lub kod języka).
+- wpływ na dokładność: transkrypcja angielskich fragmentów o >15% lepsza.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: `language: options.language || AUDIO_LANGUAGE` — już istnieje, wystarczy env `VOICELOG_AUDIO_LANGUAGE=auto`.
+- verbose_json odpowiedź zawiera `language` per segment — zachować jako `segment.language`.
+
+---
+
+## 055. [AUDIO] Custom vocabulary — nazwy firm i branżowy żargon
+Status: `todo`
+Priorytet: `P3`
+Cel: Whisper niepoprawnie transkrybuje nazwy własne, skróty branżowe, produkty firmy.
+Akceptacja:
+- w ustawieniach workspace pole tekstowe "Słownik" (max 500 słów, jedno per linia).
+- słownik przekazywany do Whisper jako `prompt` (initial prompt injection).
+- aktualizacja słownika działa natychmiast dla nowych nagrań (nie wymaga restartu).
+Techniczne wskazówki:
+- pole `vocabulary_json` w tabeli `workspaces` lub w `workspace_state`.
+- `server/audioPipeline.js`: `prompt: options.vocabulary?.slice(0, 500).join(", ")` w polach formularza.
+- UI: textarea w ProfileTab → workspace settings section.
 
 ---
 
