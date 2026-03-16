@@ -1,6 +1,22 @@
 const DB_NAME = "voicelog-audio";
 const STORE_NAME = "recordings";
 const DB_VERSION = 1;
+const MAX_BLOB_BYTES = 500 * 1024 * 1024; // 500 MB hard cap
+const QUOTA_WARN_BYTES = 10 * 1024 * 1024; // warn if <10 MB free
+
+async function checkStorageQuota(blobSize) {
+  if (typeof navigator === "undefined" || !navigator.storage?.estimate) {
+    return; // API unavailable — skip check
+  }
+  const { usage, quota } = await navigator.storage.estimate();
+  const free = (quota || 0) - (usage || 0);
+  if (blobSize > MAX_BLOB_BYTES) {
+    throw new Error(`Plik audio (${Math.round(blobSize / 1024 / 1024)} MB) przekracza limit ${MAX_BLOB_BYTES / 1024 / 1024} MB.`);
+  }
+  if (free < QUOTA_WARN_BYTES) {
+    throw new Error(`Za mało miejsca w przeglądarce (zostało ${Math.round(free / 1024 / 1024)} MB). Zwolnij miejsce i spróbuj ponownie.`);
+  }
+}
 
 function hasIndexedDb() {
   return typeof indexedDB !== "undefined";
@@ -46,6 +62,8 @@ export async function saveAudioBlob(recordingId, blob) {
   if (!recordingId || !blob) {
     return;
   }
+
+  await checkStorageQuota(blob.size || 0);
 
   await withStore("readwrite", (store) => {
     store.put(blob, recordingId);

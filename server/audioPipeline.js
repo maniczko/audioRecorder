@@ -374,10 +374,15 @@ async function transcribeRecording(asset, options = {}) {
 
       const clipPath = path.join(path.dirname(asset.file_path), `spk_${asset.id}_${speakerId}_clip.wav`);
       try {
-        // Build ffmpeg filter to extract speaker segments
-        const selectFilter = segments
-          .slice(0, 8) // use up to 8 segments
-          .map((s) => `between(t,${s.timestamp.toFixed(2)},${s.endTimestamp.toFixed(2)})`)
+        // Build ffmpeg filter — sanitize timestamps to prevent command injection
+        const safeSegments = segments.slice(0, 8).filter((s) => {
+          const t = Number(s.timestamp);
+          const e = Number(s.endTimestamp);
+          return Number.isFinite(t) && Number.isFinite(e) && e > t && t >= 0;
+        });
+        if (!safeSegments.length) continue;
+        const selectFilter = safeSegments
+          .map((s) => `between(t,${Number(s.timestamp).toFixed(3)},${Number(s.endTimestamp).toFixed(3)})`)
           .join("+");
         const { execSync } = require("node:child_process");
         execSync(

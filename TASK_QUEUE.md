@@ -10,7 +10,7 @@ Zadania zakonczone → TASK_DONE.md
 ---
 
 ## 043. [AUDIO] Sanityzacja timestampów ffmpeg — command injection
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: timestampy segmentów wklejane bezpośrednio do filtra ffmpeg bez walidacji — potencjalne RCE.
 Akceptacja:
@@ -24,7 +24,7 @@ Techniczne wskazówki:
 ---
 
 ## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym błędzie
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: jeśli `processQueueItem()` rzuca synchronicznie — flaga `queueProcessingRef.current` zostaje `true` na zawsze, kolejka zamrożona.
 Akceptacja:
@@ -37,7 +37,7 @@ Techniczne wskazówki:
 ---
 
 ## 045. [AUDIO] Walidacja rozmiaru blob przed zapisem do IndexedDB
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: brak sprawdzenia rozmiaru → cicha awaria gdy IndexedDB quota przekroczona, nagranie utracone.
 Akceptacja:

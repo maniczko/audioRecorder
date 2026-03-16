@@ -215,9 +215,18 @@ export default function useRecorder({
     queueProcessingRef.current = true;
     setAnalysisStatus(nextItem.status === "uploading" ? "uploading" : nextItem.status === "processing" ? "processing" : "queued");
 
-    Promise.resolve(processQueueItem(nextItem)).finally(() => {
+    let syncThrew = false;
+    try {
+      const jobPromise = processQueueItem(nextItem);
+      Promise.resolve(jobPromise).finally(() => {
+        queueProcessingRef.current = false;
+      });
+    } catch (err) {
+      syncThrew = true;
       queueProcessingRef.current = false;
-    });
+      console.error("Queue processing sync error.", err);
+    }
+    if (syncThrew) return undefined;
 
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
