@@ -352,23 +352,6 @@ Akceptacja:
 
 ---
 
-## 042. PropTypes lub TypeScript — bezpieczenstwo typow
-Status: `todo`
-Priorytet: `P3`
-Cel: 14k+ linii pure JS bez typow to rosnace ryzyko regresji i trudnosci refaktoru.
-Zakres:
-- opcja A (szybsza): dodac PropTypes dla najwazniejszych komponentow (MainApp, TaskDetailsPanel, TranscriptPanel, StudioMeetingView).
-- opcja B (dlugoterminowa): migracja do TypeScript — zaczac od lib/ (auth.js, tasks.js, googleSync.js) i rozszerzac iteracyjnie.
-- nie konwertowac wszystkiego naraz — stopniowa migracja plik po pliku.
-Akceptacja:
-- opcja A: brak warn "missing required prop" dla kluczowych komponentow w konsoli dev.
-- opcja B: tsconfig.json z "allowJs: true" + strict: false na start, po 20 plikach podniesc do strict: true.
-Techniczne wskazowki:
-- opcja B: npm install --save-dev typescript @types/react @types/react-dom.
-- rename: auth.js → auth.ts, stopniowe dodawanie interface.
-
----
-
 ## 057. [AUDIO] Upgrade worklet 056 do rzeczywistego modelu RNNoise (WASM)
 Status: `todo`
 Priorytet: `P3`
@@ -431,23 +414,6 @@ Techniczne wskazówki:
 - `@ricky0123/vad-web` (SileroVAD ONNX, ~200 kB gzip) — działa w głównym wątku przeglądarki.
 - po onstop: await vadFilter(blob) → przefiltrowany blob.
 - nowy plik `src/audio/vadFilter.js`.
-
----
-
-## 062. [AUDIO] LLM post-processing transkrypcji
-Status: `todo`
-Priorytet: `P3`
-Cel: Whisper generuje błędy interpunkcji, wielkich liter i homofonów. Krótki pass przez GPT-4o-mini kosztuje grosze i znacząco podnosi czytelność.
-Akceptacja:
-- po zakończeniu transkrypcji opcjonalny pass przez LLM: korekta interpunkcji, wielkich liter, oczywistych homofonów.
-- zachowana oryginalna segmentacja i atrybuty speakerId/timestamp.
-- toggle "Korekta AI" w ustawieniach workspace (domyślnie wyłączony — koszt API).
-- cena szacunkowa pokazana w UI: "~$0.001 / 10 min nagrania".
-Techniczne wskazówki:
-- `server/audioPipeline.js`: po buildVerificationResult() opcjonalny `correctTranscriptWithLLM(segments, options)`.
-- prompt: "Popraw interpunkcję i pisownię w poniższych segmentach transkrypcji. Zachowaj dokładne słowa. Format JSON."
-- model: gpt-4o-mini, max_tokens: 2 * łączna_liczba_tokenów_wejścia.
-- env: `VOICELOG_TRANSCRIPT_CORRECTION=true`.
 
 ---
 

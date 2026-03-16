@@ -551,3 +551,22 @@ Wynik:
 - Wyłączalne przez `VOICELOG_AUDIO_PREPROCESS=false`; fallback do oryginału przy błędzie ffmpeg.
 
 ---
+
+## 042. PropTypes — bezpieczeństwo typów komponentów
+Status: `done`
+Priorytet: `P3`
+Wynik:
+- PropTypes dodane do: `StudioMeetingView`, `TranscriptPanel`, `UnifiedPlayer`, `TaskListView`.
+- Zainstalowano pakiet `prop-types`.
+
+---
+
+## 062. [AUDIO] LLM post-processing transkrypcji
+Status: `done`
+Priorytet: `P3`
+Wynik:
+- `correctTranscriptWithLLM()` w `server/audioPipeline.js` — GPT-4o-mini koryguje interpunkcję i pisownię segmentów.
+- Zachowuje speakerId/timestamps, fallback do oryginału przy błędzie.
+- Włączane przez `VOICELOG_TRANSCRIPT_CORRECTION=true`.
+
+---
