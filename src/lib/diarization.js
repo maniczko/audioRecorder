@@ -1,5 +1,32 @@
 import { clamp } from "./storage";
 
+// ── Diarization tuning constants ────────────────────────────────────────────
+// Maximum number of distinct speaker clusters the browser-side diarizer will create.
+// Increase if you expect meetings with more than 4 participants.
+const MAX_SPEAKER_CLUSTERS = 4;
+
+// Distance threshold above which a new cluster is created for a signature-bearing segment.
+// Lower = more sensitive to voice differences (more clusters). Higher = fewer clusters.
+const CLUSTER_CREATE_DISTANCE = 0.17;
+
+// Minimum gap (seconds) between segments before a new speaker cluster may be opened
+// when the spectral distance is above CLUSTER_CREATE_DISTANCE.
+const CLUSTER_GAP_THRESHOLD_SECONDS = 1.2;
+
+// Smoothing: single-segment speaker change is reverted if both neighbours are the same
+// speaker AND both gaps are below this threshold (seconds).
+const SMOOTH_GAP_THRESHOLD_SECONDS = 2.5;
+
+// Gap-based fallback: if a no-signature segment is more than this many seconds after
+// the previous segment, try the next speaker ID (capped at MAX_SPEAKER_CLUSTERS - 1).
+const GAP_NEW_SPEAKER_SECONDS = 2.5;
+
+// Verification score below which a segment is flagged for review (browser-side pipeline).
+const VERIFY_SCORE_THRESHOLD = 0.7;
+
+// Minimum acoustic energy below which a segment is penalised in quality scoring.
+const MIN_ENERGY_THRESHOLD = 0.035;
+
 function average(values) {
   if (!values.length) {
     return 0;
@@ -100,7 +127,7 @@ function smoothAssignments(segments) {
     if (previous.speakerId === next.speakerId && previous.speakerId !== segment.speakerId) {
       const gapToPrevious = segment.timestamp - previous.timestamp;
       const gapToNext = next.timestamp - segment.timestamp;
-      if (gapToPrevious < 2.5 && gapToNext < 2.5) {
+      if (gapToPrevious < SMOOTH_GAP_THRESHOLD_SECONDS && gapToNext < SMOOTH_GAP_THRESHOLD_SECONDS) {
         return { ...segment, speakerId: previous.speakerId };
       }
     }
@@ -153,7 +180,7 @@ function verifySegment(segment, previousSegment) {
     reasons.push("brak sygnatury akustycznej");
   }
 
-  if (segment.signature?.energy < 0.035) {
+  if (segment.signature?.energy < MIN_ENERGY_THRESHOLD) {
     score -= 0.12;
     reasons.push("niska energia dzwieku");
   }
@@ -167,7 +194,7 @@ function verifySegment(segment, previousSegment) {
   return {
     ...segment,
     verificationScore,
-    verificationStatus: verificationScore >= 0.7 ? "verified" : "review",
+    verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? "verified" : "review",
     verificationReasons: reasons,
   };
 }
@@ -187,7 +214,7 @@ export function diarizeSegments(segments) {
       clusters.push({ id: 0, centroid: signature, sampleCount: signature ? 1 : 0 });
     } else if (!signature) {
       const previousGap = previous ? segment.timestamp - previous.timestamp : 0;
-      clusterId = previousGap > 2.4 && clusters.length < 4 ? clusters.length : clusters[Math.max(0, clusters.length - 1)].id;
+      clusterId = previousGap > CLUSTER_GAP_THRESHOLD_SECONDS && clusters.length < MAX_SPEAKER_CLUSTERS ? clusters.length : clusters[Math.max(0, clusters.length - 1)].id;
       if (clusterId === clusters.length) {
         clusters.push({ id: clusterId, centroid: null, sampleCount: 0 });
       }
@@ -198,9 +225,9 @@ export function diarizeSegments(segments) {
       const best = ranked[0];
       const previousGap = previous ? segment.timestamp - previous.timestamp : 0;
       const shouldCreateCluster =
-        (!best || best.score > 0.17) &&
-        previousGap > 1.2 &&
-        clusters.length < 4;
+        (!best || best.score > CLUSTER_CREATE_DISTANCE) &&
+        previousGap > CLUSTER_GAP_THRESHOLD_SECONDS &&
+        clusters.length < MAX_SPEAKER_CLUSTERS;
 
       if (shouldCreateCluster) {
         clusterId = clusters.length;
@@ -248,7 +275,9 @@ export function diarizeSegments(segments) {
     const previous = collection[index - 1];
     return {
       ...segment,
-      speakerId: segment.timestamp - previous.timestamp > 2.5 ? Math.min(previous.speakerId + 1, 3) : previous.speakerId,
+      speakerId: segment.timestamp - previous.timestamp > GAP_NEW_SPEAKER_SECONDS
+        ? Math.min(previous.speakerId + 1, MAX_SPEAKER_CLUSTERS - 1)
+        : previous.speakerId,
     };
   });
 

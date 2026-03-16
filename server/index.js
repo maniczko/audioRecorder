@@ -63,6 +63,15 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const rateLimitMap = new Map();
 
+// Periodically remove expired rate-limit entries to prevent unbounded memory growth.
+// .unref() ensures the interval does not prevent clean process shutdown.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(key);
+  }
+}, 5 * 60 * 1000).unref();
+
 function checkRateLimit(ip, route) {
   const key = `${ip}:${route}`;
   const now = Date.now();

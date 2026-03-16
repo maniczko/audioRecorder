@@ -9,13 +9,25 @@ const OPENAI_BASE_URL = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://
 const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "gpt-4o-transcribe-diarize";
 const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "whisper-1";
 const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
+const CHUNK_DURATION_SECONDS = 1200; // 20-minute chunks for large-file splitting
+const CHUNK_OVERLAP_SECONDS = 10;    // 10-second tail overlap to avoid cutting mid-sentence
 const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
 const TRANSCRIPT_CORRECTION = process.env.VOICELOG_TRANSCRIPT_CORRECTION === "true";
 const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
 const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || "";
 const PYTHON_BINARY = process.env.PYTHON_BINARY || "python";
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
+// Whisper prompt primes the model toward Polish business vocabulary.
+// Override with VOICELOG_WHISPER_PROMPT env var if needed.
+const WHISPER_PROMPT = process.env.VOICELOG_WHISPER_PROMPT
+  || "Transkrypcja spotkania biznesowego w języku polskim.";
+// Verification thresholds — tuned for Polish (lower than English defaults).
+// Polish has heavier inflection which produces systematically lower logprob.
+const VERIFY_CONFIDENCE_THRESHOLD = Number(process.env.VOICELOG_VERIFY_CONFIDENCE) || 0.52;
+const VERIFY_SCORE_THRESHOLD = Number(process.env.VOICELOG_VERIFY_SCORE) || 0.65;
+// Enable verbose pipeline logging with VOICELOG_DEBUG=true
+const DEBUG = process.env.VOICELOG_DEBUG === "true";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -271,7 +283,7 @@ function evaluateAgainstVerificationPass(segment, verificationSegments) {
   const alignmentScore = textSimilarity(segment.text, comparisonText);
   const reasons = [];
 
-  if (whisperConfidence < 0.58) {
+  if (whisperConfidence < VERIFY_CONFIDENCE_THRESHOLD) {
     reasons.push("niska pewnosc ASR w przebiegu weryfikujacym");
   }
   if (alignmentScore < 0.45) {
@@ -318,7 +330,7 @@ function buildVerificationResult(diarizedSegments, verificationSegments) {
       ...segment,
       rawConfidence: verification.whisperConfidence,
       verificationScore,
-      verificationStatus: verificationScore >= 0.72 ? "verified" : "review",
+      verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? "verified" : "review",
       verificationReasons: [...new Set(reasons)],
       verificationEvidence: {
         alignmentScore: verification.alignmentScore,
@@ -431,19 +443,139 @@ function mergeWithPyannote(pyannoteSegments, whisperSegments) {
   };
 }
 
+/**
+ * Splits an audio file into fixed-duration chunks using FFmpeg's segment muxer.
+ * Returns [{filePath, offsetSeconds}] for each chunk, sorted by start time.
+ * All chunks are 16kHz mono WAV so they can be sent directly to the transcription API.
+ */
+async function splitAudioIntoChunks(filePath) {
+  const { execSync } = require("node:child_process");
+  const dir = path.dirname(filePath);
+  const base = `_chunk_${crypto.randomUUID().replace(/-/g, "")}_`;
+  const chunkPattern = path.join(dir, `${base}%03d.wav`);
+  execSync(
+    `"${FFMPEG_BINARY}" -y -i "${filePath}" -f segment -segment_time ${CHUNK_DURATION_SECONDS} -reset_timestamps 1 -ar 16000 -ac 1 "${chunkPattern}"`,
+    { stdio: "pipe", timeout: 300000 }
+  );
+  const chunks = fs.readdirSync(dir)
+    .filter((f) => f.startsWith(base) && f.endsWith(".wav"))
+    .sort()
+    .map((f, index) => ({
+      filePath: path.join(dir, f),
+      offsetSeconds: index * CHUNK_DURATION_SECONDS,
+    }));
+  return chunks;
+}
+
+/**
+ * Merges verbose_json payloads from multiple chunks into one,
+ * adjusting segment timestamps by chunkOffset.
+ */
+function mergeChunkedPayloads(payloads) {
+  const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
+    const segs = Array.isArray(payload?.segments) ? payload.segments : [];
+    return segs.map((s) => ({
+      ...s,
+      start: Number(s.start || 0) + offsetSeconds,
+      end: Number(s.end || 0) + offsetSeconds,
+    }));
+  });
+  const fullText = payloads.map(({ payload }) => payload?.text || "").join(" ").trim();
+  return { segments: allSegments, text: fullText };
+}
+
+/**
+ * Merges diarized_json payloads from multiple chunks into one,
+ * adjusting timestamps and offsetting speaker IDs to keep them globally unique.
+ */
+function mergeChunkedDiarizedPayloads(payloads) {
+  // Collect global speaker order across chunks to produce consistent IDs
+  const globalSpeakerOrder = new Map();
+  const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
+    const segs = (
+      Array.isArray(payload?.segments) ? payload.segments
+      : Array.isArray(payload?.transcript?.segments) ? payload.transcript.segments
+      : Array.isArray(payload?.utterances) ? payload.utterances
+      : Array.isArray(payload?.transcript?.utterances) ? payload.transcript.utterances
+      : []
+    );
+    return segs
+      .map((s) => {
+        const rawSpeaker = clean(
+          (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null)
+          || s.speaker_label || s.speaker_id || null
+        );
+        // Prefix chunk index to create chunk-scoped speaker key so "A" from chunk 0
+        // and "A" from chunk 1 may be different people if a new call started.
+        // For consecutive chunks of the same recording they are the same speaker.
+        // Use raw label without prefix so speaker IDs stay consistent across chunks.
+        const speakerKey = rawSpeaker || "unknown";
+        if (!globalSpeakerOrder.has(speakerKey)) {
+          globalSpeakerOrder.set(speakerKey, globalSpeakerOrder.size);
+        }
+        return {
+          ...s,
+          speaker: rawSpeaker,
+          start: Number(s.start ?? s.start_time ?? 0) + offsetSeconds,
+          end: Number(s.end ?? s.end_time ?? 0) + offsetSeconds,
+          text: clean(s.text || s.transcript || s.content),
+        };
+      })
+      .filter((s) => s.text);
+  });
+  return { segments: allSegments, utterances: allSegments, text: allSegments.map((s) => s.text).join(" ") };
+}
+
+/**
+ * Transcribes a large audio file by splitting it into chunks, transcribing
+ * each chunk separately, and merging results with correct timestamp offsets.
+ */
+async function transcribeInChunks(filePath, contentType, fields) {
+  const chunks = await splitAudioIntoChunks(filePath);
+  if (DEBUG) console.log(`[audioPipeline] Split into ${chunks.length} chunks.`);
+
+  const payloads = [];
+  try {
+    for (const chunk of chunks) {
+      const payload = await requestAudioTranscription({
+        filePath: chunk.filePath,
+        contentType: "audio/wav",
+        fields,
+      });
+      payloads.push({ payload, offsetSeconds: chunk.offsetSeconds });
+    }
+  } finally {
+    // Clean up chunk files regardless of success/failure
+    for (const chunk of chunks) {
+      try { fs.unlinkSync(chunk.filePath); } catch (_) {}
+    }
+  }
+  return payloads;
+}
+
 async function preprocessAudio(filePath) {
   if (!AUDIO_PREPROCESS) return null;
   const { execSync } = require("node:child_process");
   const tmpPath = `${filePath}.prep.wav`;
   try {
+    // Filter chain rationale:
+    //  afftdn=nf=-20:nr=0.85  — FFT denoiser; nr=0.85 reduces noise without smearing
+    //                            consonant transients (s/sz/cz) that matter for Polish.
+    //  highpass=f=80           — removes mic rumble / low-frequency handling noise.
+    //  lowpass=f=16000         — keeps full 0-16 kHz speech band (Whisper mel filterbank goes to 8 kHz
+    //                            but diarization model benefits from higher bandwidth).
+    //  dynaudnorm=p=0.9:m=100:s=5 — dynamic loudness normalisation; 100ms RMS window, 5s smoothing.
+    //                            Compensates for variable speaker distance without pumping artefacts.
+    //                            More robust than loudnorm (no two-pass required) for arbitrary-length files.
+    //  aresample=resampler=swr — forces high-quality SWR resampler for the 16 kHz conversion,
+    //                            avoiding lower-quality defaults on some FFmpeg builds.
     execSync(
-      // lowpass raised to 16kHz — 8kHz was destroying consonants (s, sh, f) and hurting diarization
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=16000" -ar 16000 -ac 1 "${tmpPath}"`,
-      { stdio: "pipe", timeout: 120000 }
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr" -ar 16000 -ac 1 "${tmpPath}"`,
+      { stdio: "pipe", timeout: 180000 }
     );
     return tmpPath;
   } catch (err) {
-    console.warn("Audio pre-processing failed, using original file.", err.message);
+    console.warn("[audioPipeline] Audio pre-processing failed, using original file.", err.message);
     try { fs.unlinkSync(tmpPath); } catch (_) {}
     return null;
   }
@@ -455,19 +587,34 @@ async function transcribeRecording(asset, options = {}) {
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
 
   try {
+  const fileSize = fs.statSync(transcribeFilePath).size;
+  const isLargeFile = fileSize > MAX_FILE_SIZE_BYTES;
+  if (isLargeFile) {
+    console.log(`[audioPipeline] File size ${(fileSize / 1024 / 1024).toFixed(1)} MB > limit — will process in chunks.`);
+  }
+
+  const whisperFields = {
+    model: VERIFICATION_MODEL,
+    language: options.language || AUDIO_LANGUAGE,
+    response_format: "verbose_json",
+    timestamp_granularities: ["segment"],
+    prompt: options.whisperPrompt || WHISPER_PROMPT,
+    temperature: 0,
+  };
+
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
   let whisperPayload = null;
   try {
-    whisperPayload = await requestAudioTranscription({
-      filePath: transcribeFilePath,
-      contentType: transcribeContentType,
-      fields: {
-        model: VERIFICATION_MODEL,
-        language: options.language || AUDIO_LANGUAGE,
-        response_format: "verbose_json",
-        timestamp_granularities: ["segment"],
-      },
-    });
+    if (isLargeFile) {
+      const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, whisperFields);
+      whisperPayload = mergeChunkedPayloads(chunkPayloads);
+    } else {
+      whisperPayload = await requestAudioTranscription({
+        filePath: transcribeFilePath,
+        contentType: transcribeContentType,
+        fields: whisperFields,
+      });
+    }
   } catch (error) {
     console.error("[audioPipeline] Whisper pass failed:", error.message);
   }
@@ -478,45 +625,54 @@ async function transcribeRecording(asset, options = {}) {
   if (HF_TOKEN) {
     const pyannoteSegments = runPyannoteDiarization(transcribeFilePath);
     if (pyannoteSegments && verificationSegments.length) {
-      console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
+      if (DEBUG) console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
       diarization = mergeWithPyannote(pyannoteSegments, verificationSegments);
     }
   }
 
   // ── Fall back to OpenAI diarization model ──
   if (!diarization) {
-    console.log("[audioPipeline] Using OpenAI diarization model (pyannote unavailable or HF_TOKEN not set).");
-    const diarizedPayload = await requestAudioTranscription({
-      filePath: transcribeFilePath,
-      contentType: transcribeContentType,
-      fields: {
-        model: DIARIZATION_MODEL,
-        language: options.language || AUDIO_LANGUAGE,
-        response_format: "diarized_json",
-        // chunking_strategy removed — "auto" resets speaker_N numbering per chunk,
-        // causing all speakers to be labeled speaker_0 in every chunk
-      },
-    });
+    if (DEBUG) console.log("[audioPipeline] Using OpenAI diarization model.");
+    const diarizeFields = {
+      model: DIARIZATION_MODEL,
+      language: options.language || AUDIO_LANGUAGE,
+      response_format: "diarized_json",
+      prompt: options.whisperPrompt || WHISPER_PROMPT,
+      temperature: 0,
+    };
 
-    // Debug: log raw API response structure
-    const rawKeys = Object.keys(diarizedPayload || {});
-    const rawSegs = diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [];
-    const rawSpeakers = new Set(
-      rawSegs
-        .map((s) => (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null) || s.speaker_label || s.speaker_id || null)
-        .filter(Boolean)
-    );
-    console.log(`[audioPipeline] Diarize raw response keys: ${rawKeys.join(", ")}`);
-    console.log(`[audioPipeline] Diarize segments: ${rawSegs.length}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
+    let diarizedPayload;
+    if (isLargeFile) {
+      const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, diarizeFields);
+      diarizedPayload = mergeChunkedDiarizedPayloads(chunkPayloads);
+    } else {
+      diarizedPayload = await requestAudioTranscription({
+        filePath: transcribeFilePath,
+        contentType: transcribeContentType,
+        fields: diarizeFields,
+      });
+    }
+
+    if (DEBUG) {
+      const rawSegs = diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [];
+      const rawSpeakers = new Set(
+        rawSegs
+          .map((s) => (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null) || s.speaker_label || s.speaker_id || null)
+          .filter(Boolean)
+      );
+      console.log(`[audioPipeline] Diarize raw keys: ${Object.keys(diarizedPayload || {}).join(", ")}`);
+      console.log(`[audioPipeline] Diarize segments: ${rawSegs.length}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
+    }
 
     diarization = normalizeDiarizedSegments(diarizedPayload);
 
-    // Debug: log per-speaker segment count after normalization
-    const normDist = diarization.segments.reduce((acc, s) => {
-      const key = `${s.speakerId}(${s.rawSpeakerLabel})`;
-      acc[key] = (acc[key] || 0) + 1; return acc;
-    }, {});
-    console.log(`[audioPipeline] After normalization: ${diarization.segments.length} segments, speakerNames: ${JSON.stringify(diarization.speakerNames)}, dist: ${JSON.stringify(normDist)}`);
+    if (DEBUG) {
+      const normDist = diarization.segments.reduce((acc, s) => {
+        const key = `${s.speakerId}(${s.rawSpeakerLabel})`;
+        acc[key] = (acc[key] || 0) + 1; return acc;
+      }, {});
+      console.log(`[audioPipeline] After normalization: ${diarization.segments.length} segs, names: ${JSON.stringify(diarization.speakerNames)}, dist: ${JSON.stringify(normDist)}`);
+    }
   }
 
   if (!diarization.segments.length) {
@@ -525,14 +681,15 @@ async function transcribeRecording(asset, options = {}) {
 
   const verificationResult = buildVerificationResult(diarization.segments, verificationSegments);
 
-  // Debug: log speaker distribution after verification
-  const spkDist = verificationResult.verifiedSegments.reduce((acc, s) => {
-    acc[s.speakerId] = (acc[s.speakerId] || 0) + 1; return acc;
-  }, {});
-  console.log(`[audioPipeline] After verification: ${verificationResult.verifiedSegments.length} segments, speakers: ${JSON.stringify(spkDist)}`);
-  verificationResult.verifiedSegments.forEach((s) => {
-    console.log(`  spkId=${s.speakerId} raw=${s.rawSpeakerLabel} | ${s.text?.slice(0, 50)}`);
-  });
+  if (DEBUG) {
+    const spkDist = verificationResult.verifiedSegments.reduce((acc, s) => {
+      acc[s.speakerId] = (acc[s.speakerId] || 0) + 1; return acc;
+    }, {});
+    console.log(`[audioPipeline] After verification: ${verificationResult.verifiedSegments.length} segs, speakers: ${JSON.stringify(spkDist)}`);
+    verificationResult.verifiedSegments.forEach((s) => {
+      console.log(`  spkId=${s.speakerId} raw=${s.rawSpeakerLabel} | ${s.text?.slice(0, 50)}`);
+    });
+  }
 
   // Speaker identification against enrolled voice profiles
   const identifiedNames = { ...diarization.speakerNames };

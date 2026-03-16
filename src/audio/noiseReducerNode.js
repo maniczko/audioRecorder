@@ -20,7 +20,10 @@ export async function ensureNoiseReducerWorklet(audioContext) {
   const url =
     (typeof process !== "undefined" ? process.env.PUBLIC_URL || "" : "") +
     "/rnnoise-worklet.js";
-  _loadPromise = audioContext.audioWorklet.addModule(url);
+  _loadPromise = audioContext.audioWorklet.addModule(url).catch((err) => {
+    _loadPromise = null; // allow retry on next call
+    throw err;
+  });
   return _loadPromise;
 }
 

@@ -511,6 +511,12 @@ export default function useRecorder({
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          // Mono avoids unnecessary stereo DSP chains on some OS drivers
+          // that can interfere with echo cancellation.
+          // 48 kHz is the native rate for most hardware and avoids resampling
+          // artefacts before MediaRecorder encoding.
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 48000 },
         },
       });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
