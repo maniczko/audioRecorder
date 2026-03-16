@@ -9,6 +9,89 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## 055. AI — psychologiczny profil osoby na podstawie nagran
+Status: `todo`
+Priorytet: `P2`
+Cel: na podstawie transkrypcji wszystkich spotkan z dana osoba zbudowac zrozumialy profil psychologiczny — jak z nia rozmawiac, co ja motywuje, jak podejmuje decyzje. Profil wzbogaca zakładke Osoba i jest uzupelniany automatycznie po kazdej analizie spotkania.
+
+### Modele psychologiczne do zastosowania
+
+Profil oparty na trzech komplementarnych modelach — kazdy wnosi cos innego:
+
+**1. DISC (komunikacja i zachowanie)**
+Cztery wymiary oceniane w skali 0–100:
+- `D` Dominance — potrzeba kontroli, bezposredniosc, nastawienie na wynik
+- `I` Influence — ekspresja, optymizm, zdolnosci perswazji
+- `S` Steadiness — cierpliwosc, lojalnosc, preferowanie stabilnosci
+- `C` Conscientiousness — dokladnosc, analitycznosc, przestrzeganie zasad
+Wynik: dominujacy styl (np. "DC — wymagajacy i analityczny") + krotki opis jak sie z ta osoba komunikowac.
+
+**2. Wartosci i motywatory (model Schwartz / Reiss)**
+Lista do 5 wartosci ze swiadectw wypowiedzi: "osiagniecia", "bezpieczenstwo", "autonomia", "relacje", "wladza", "wyzwanie intelektualne", "sprawiedliwosc", "innowacja", "stabilnosc", "uznanie".
+Dla kazdej wartosci: cytat z transkrypcji ktory ja uzasadnia.
+
+**3. Styl komunikacji i decyzji**
+- `communicationStyle`: "direct" | "diplomatic" | "analytical" | "expressive"
+- `decisionStyle`: "data-driven" | "intuitive" | "consensual" | "authoritative"
+- `conflictStyle`: "confrontational" | "avoidant" | "collaborative" | "compromising"
+- `listeningStyle`: "active" | "selective" | "task-focused"
+- `stressResponse`: krotki opis zachowania tej osoby pod presja (na podstawie momentow napiec w rozmowie)
+
+**Dodatkowe sygnaly:**
+- `redFlags` — max 2 wzorce ktore moga powodowac trudnosci we wspolpracy (np. "sklonnosc do przerywania", "unikanie commitowania sie")
+- `workingWithTips` — 3–4 konkretne wskazowki jak efektywnie wspolpracowac z ta osoba (np. "zawsze dawaj dane zanim poprosisz o decyzje", "nie zaskakuj zmianami na ostatnia chwile")
+- `communicationDos` / `communicationDonts` — po 2–3 punkty
+
+### Diagram — radar chart DISC + wartosci
+
+W zakładce Osoba, nowa sekcja "Profil psychologiczny" zawiera:
+
+1. **Radar chart (SVG, bez zewnetrznych bibliotek)** — 4 osie DISC, wypelniony wielokat pokazujacy profil; porownanie z poprzednim profilem (ghosted poprzednia wersja) gdy profil sie zaktualizuje.
+
+2. **Karta wartosci** — top 3 wartosci jako duze chipy z ikonkami i cytatem.
+
+3. **Style karty** — komunikacja / decyzje / konflikt jako trojka chip-badge z kolorowym kodem.
+
+4. **"Jak z nia rozmawiac" box** — highlight box z `workingWithTips` i `communicationDos/Donts`.
+
+5. **Red flags** — dyskretna sekcja (zwinieta domyslnie) z ostrzezeniami.
+
+### Zakres zmian w kodzie
+
+**src/lib/analysis.js**
+- Nowa funkcja `analyzePersonProfile({ personName, segments, meetings, speakerNames })` — osobne wywolanie AI po uzbieraniu minimum 2 spotkan z dana osoba (lub na zadanie uzytkownika).
+- Prompt: podaj transkrypcje wszystkich spotkan z ta osoba (segmenty gdzie `speakerId` odpowiada tej osobie) + kontekst spotkan; poproś o JSON z polami DISC, values, styles, tips.
+- Fallback lokalny: heurystyki z sygnałów jezykowych — czestotliwosc pytan (I wysoki), dlugosc wypowiedzi (D wysoki), uzywanie danych/liczb (C wysoki), wyrazanie emocji (S wysoki).
+
+**src/lib/people.js**
+- `buildPeopleProfiles` uzupelniony o pole `psychProfile` — ladowane z `personNotes[id].psychProfile` jesli istnieje.
+- Nowy helper `mergePsychProfile(existing, fresh)` — srednia wazona (waga rosnie z liczba spotkan).
+
+**src/hooks/useMeetings.js**
+- Nowa funkcja eksportowana `analyzePersonPsychProfile(personId)` — wywoluje `analyzePersonProfile` i zapisuje wynik przez `updatePersonNotes(personId, { psychProfile: result })`.
+
+**src/PeopleTab.js**
+- Nowa sekcja `PsychProfilePanel` w `people-grid`:
+  - Przycisk "Analizuj profil" (aktywny gdy >= 2 spotkania z osoba).
+  - Stan ladowania z animacja.
+  - Po zaladowaniu: RadarChart SVG + karty wartosci + style badges + tips box + red flags.
+- `RadarChart` — czysty SVG: obliczenia punktow wielokata z 4 wartosci DISC (0–100), osie z etykietami, fillOpacity 0.35.
+
+**src/App.css**
+- `.psych-profile-panel`, `.radar-chart-wrap`, `.disc-radar`, `.values-grid`, `.value-card`, `.style-badges`, `.working-tips-box`, `.comm-dos-donts`, `.red-flags-panel`
+
+### Akceptacja
+- Profil generuje sie na zadanie (przycisk), nie automatycznie — uzytkownik decyduje kiedy.
+- Minimum 2 spotkania z osoba zeby przycisk byl aktywny (za malo danych = profil byloby przeklamany).
+- Kazde pole psychProfileu ma jasny fallback gdy AI nie zwroci wartosci.
+- Radar chart renderuje sie bez bibliotek zewnetrznych — czysty SVG z obliczeniami geometrycznymi.
+- Profil zachowuje sie jak "zyjacy dokument" — przycisk "Odswierz profil" dostepny zawsze, nowy wynik jest srednia wazona z poprzednim.
+- Zaden wynik nie jest prezentowany jako "prawda absolutna" — etykieta "Na podstawie X spotkan, model probabilistyczny".
+
+Zrodlo: zadanie uzytkownika 2026-03-16.
+
+---
+
 ## 054. AI — rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
 Status: `todo`
 Priorytet: `P2`
