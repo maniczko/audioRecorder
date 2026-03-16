@@ -671,6 +671,8 @@ export default function MainApp() {
           workspaceRole={workspace.currentWorkspaceRole}
           theme={theme}
           onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          sessionToken={workspace.session?.token || ""}
+          apiBaseUrl={process.env.REACT_APP_API_BASE_URL || ""}
           allTags={(() => {
             const tagMap = new Map();
             (meetings.userMeetings || []).forEach((m) =>

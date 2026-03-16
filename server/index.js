@@ -1,6 +1,8 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const { URL } = require("node:url");
+const path = require("node:path");
+const crypto = require("node:crypto");
 const {
   getSession,
   getMembership,
@@ -21,8 +23,13 @@ const {
   queueTranscription,
   updateWorkspaceMemberRole,
   getHealth,
+  UPLOAD_DIR,
+  saveVoiceProfile,
+  getWorkspaceVoiceProfiles,
+  deleteVoiceProfile,
 } = require("./database");
 const { transcribeRecording } = require("./audioPipeline");
+const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
@@ -42,8 +49,8 @@ function corsHeaders(requestOrigin) {
   return {
     "Access-Control-Allow-Origin": origin,
     "Vary": "Origin",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id, X-Speaker-Name",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   };
 }
 
@@ -154,7 +161,10 @@ function ensureTranscriptionJob(recordingId, asset, options) {
   const jobPromise = Promise.resolve()
     .then(async () => {
       markTranscriptionProcessing(recordingId);
-      const result = await transcribeRecording(asset, options);
+      const result = await transcribeRecording(asset, {
+        ...options,
+        voiceProfiles: getWorkspaceVoiceProfiles(asset.workspace_id),
+      });
       saveTranscriptionResult(recordingId, {
         ...result,
         pipelineStatus: "completed",
@@ -191,6 +201,15 @@ function readJsonBody(request) {
 }
 
 function readBinaryBody(request) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    request.on("data", (chunk) => chunks.push(chunk));
+    request.on("end", () => resolve(Buffer.concat(chunks)));
+    request.on("error", reject);
+  });
+}
+
+function readRawBody(request) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     request.on("data", (chunk) => chunks.push(chunk));
@@ -448,6 +467,59 @@ async function handleRequest(request, response) {
     ensureWorkspaceAccess(session, asset.workspace_id);
     sendJson(response, 200, buildTranscriptionStatusPayload(asset), origin);
     return;
+  }
+
+  // GET /voice-profiles
+  if (request.method === "GET" && pathname === "/voice-profiles") {
+    const session = requireSession(request);
+    const profiles = getWorkspaceVoiceProfiles(session.workspace_id).map((p) => ({
+      id: p.id,
+      speakerName: p.speaker_name,
+      userId: p.user_id,
+      createdAt: p.created_at,
+    }));
+    return sendJson(response, 200, { profiles }, origin);
+  }
+
+  // POST /voice-profiles  — receive raw audio body
+  if (request.method === "POST" && pathname === "/voice-profiles") {
+    const session = requireSession(request);
+    const speakerName = request.headers["x-speaker-name"] || "";
+    if (!speakerName.trim()) {
+      return sendJson(response, 400, { message: "Brakuje naglowka X-Speaker-Name." }, origin);
+    }
+    const contentType = request.headers["content-type"] || "audio/webm";
+    const buffer = await readRawBody(request);
+    if (!buffer || buffer.byteLength < 1000) {
+      return sendJson(response, 400, { message: "Plik audio jest za krotki lub pusty." }, origin);
+    }
+    const profileId = `vp_${crypto.randomUUID().replace(/-/g, "")}`;
+    const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
+    const audioPath = path.join(UPLOAD_DIR, `${profileId}${ext}`);
+    fs.writeFileSync(audioPath, buffer);
+    const embedding = await computeEmbedding(audioPath);
+    const profile = saveVoiceProfile({
+      id: profileId,
+      userId: session.user_id,
+      workspaceId: session.workspace_id,
+      speakerName: speakerName.trim(),
+      audioPath,
+      embedding: embedding || [],
+    });
+    return sendJson(response, 201, {
+      id: profile.id,
+      speakerName: profile.speaker_name,
+      hasEmbedding: (embedding || []).length > 0,
+      createdAt: profile.created_at,
+    }, origin);
+  }
+
+  // DELETE /voice-profiles/:id
+  const deleteVpMatch = pathname.match(/^\/voice-profiles\/([a-z0-9_]+)$/);
+  if (request.method === "DELETE" && deleteVpMatch) {
+    const session = requireSession(request);
+    deleteVoiceProfile(deleteVpMatch[1], session.workspace_id);
+    return sendNoContent(response, origin);
   }
 
   sendText(response, 404, "Not found", origin);

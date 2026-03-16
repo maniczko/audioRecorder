@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { File } = require("node:buffer");
 const crypto = require("node:crypto");
+const { matchSpeakerToProfile } = require("./speakerEmbedder");
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || "";
 const OPENAI_BASE_URL = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
@@ -353,18 +354,60 @@ async function transcribeRecording(asset, options = {}) {
   }
 
   const verificationResult = buildVerificationResult(diarization.segments, verificationSegments);
+
+  // Speaker identification against enrolled voice profiles
+  const identifiedNames = { ...diarization.speakerNames };
+  const voiceProfiles = options.voiceProfiles || [];
+  if (voiceProfiles.length && diarization.speakerCount > 0) {
+    // For each unique speaker, find the time range of their segments and match
+    const speakerSegmentMap = new Map();
+    for (const seg of diarization.segments) {
+      const sid = String(seg.speakerId);
+      if (!speakerSegmentMap.has(sid)) speakerSegmentMap.set(sid, []);
+      speakerSegmentMap.get(sid).push(seg);
+    }
+
+    for (const [speakerId, segments] of speakerSegmentMap.entries()) {
+      // Extract audio clip for this speaker (first 20s of their segments) using ffmpeg
+      const totalSpeakerTime = segments.reduce((sum, s) => sum + (s.endTimestamp - s.timestamp), 0);
+      if (totalSpeakerTime < 2) continue; // not enough audio to identify
+
+      const clipPath = path.join(path.dirname(asset.file_path), `spk_${asset.id}_${speakerId}_clip.wav`);
+      try {
+        // Build ffmpeg filter to extract speaker segments
+        const selectFilter = segments
+          .slice(0, 8) // use up to 8 segments
+          .map((s) => `between(t,${s.timestamp.toFixed(2)},${s.endTimestamp.toFixed(2)})`)
+          .join("+");
+        const { execSync } = require("node:child_process");
+        execSync(
+          `ffmpeg -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
+          { stdio: "pipe", timeout: 30000 }
+        );
+        const matchedName = await matchSpeakerToProfile(clipPath, voiceProfiles);
+        if (matchedName) {
+          identifiedNames[speakerId] = matchedName;
+        }
+      } catch (err) {
+        console.warn(`[audioPipeline] Speaker clip extraction failed for speaker ${speakerId}:`, err.message);
+      } finally {
+        try { require("node:fs").unlinkSync(clipPath); } catch (_) {}
+      }
+    }
+  }
+
   return {
     providerId: "openai-audio-pipeline",
     providerLabel: "OpenAI STT + diarization",
     pipelineStatus: "completed",
     diarization: {
-      speakerNames: diarization.speakerNames,
+      speakerNames: identifiedNames,
       speakerCount: diarization.speakerCount,
       confidence: verificationResult.confidence,
       text: diarization.text,
     },
     segments: verificationResult.verifiedSegments,
-    speakerNames: diarization.speakerNames,
+    speakerNames: identifiedNames,
     speakerCount: diarization.speakerCount,
     confidence: verificationResult.confidence,
     reviewSummary: {

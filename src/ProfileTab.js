@@ -1,5 +1,146 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
+
+function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
+  const [profiles, setProfiles] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [speakerName, setSpeakerName] = useState("");
+  const [status, setStatus] = useState("");
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (!sessionToken || !apiBaseUrl) return;
+    fetch(`${apiBaseUrl}/voice-profiles`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setProfiles(data.profiles || []))
+      .catch(() => {});
+  }, [sessionToken, apiBaseUrl]);
+
+  async function startRecording() {
+    if (!speakerName.trim()) { setStatus("Podaj imię osoby przed nagraniem."); return; }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+    if (!stream) { setStatus("Brak dostępu do mikrofonu."); return; }
+    chunksRef.current = [];
+    const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      clearInterval(timerRef.current);
+      setIsRecording(false);
+      setElapsed(0);
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+      setStatus("Przetwarzanie…");
+      try {
+        const res = await fetch(`${apiBaseUrl}/voice-profiles`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            "Content-Type": blob.type,
+            "X-Speaker-Name": speakerName.trim(),
+          },
+          body: blob,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Błąd serwera.");
+        setProfiles((prev) => [data, ...prev]);
+        setSpeakerName("");
+        setStatus(data.hasEmbedding ? "Profil głosowy zapisany i gotowy." : "Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.");
+      } catch (err) {
+        setStatus(`Błąd: ${err.message}`);
+      }
+    };
+    recorder.start(500);
+    mediaRecorderRef.current = recorder;
+    setIsRecording(true);
+    setElapsed(0);
+    const start = Date.now();
+    timerRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 300);
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+  }
+
+  async function deleteProfile(id) {
+    await fetch(`${apiBaseUrl}/voice-profiles/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    setProfiles((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function formatElapsed(s) {
+    return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  }
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">AI</div>
+          <h2>Profile głosowe</h2>
+        </div>
+        <span className="status-chip">{profiles.length}</span>
+      </div>
+      <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "12px" }}>
+        Nagraj 15–30 sekund głosu każdej osoby. AI automatycznie rozpozna je w przyszłych transkrypcjach.
+      </p>
+      <div className="stack-form" style={{ marginBottom: "16px" }}>
+        <label>
+          <span>Imię osoby</span>
+          <input
+            value={speakerName}
+            onChange={(e) => setSpeakerName(e.target.value)}
+            placeholder="np. Marek"
+            disabled={isRecording}
+          />
+        </label>
+        <div className="button-row">
+          {isRecording ? (
+            <>
+              <button type="button" className="danger-button" onClick={stopRecording}>
+                ■ Stop ({formatElapsed(elapsed)})
+              </button>
+              <span style={{ fontSize: "0.82rem", color: "var(--accent)" }}>Nagrywa…</span>
+            </>
+          ) : (
+            <button type="button" className="primary-button" onClick={startRecording} disabled={!speakerName.trim()}>
+              ● Nagraj głos
+            </button>
+          )}
+        </div>
+        {status ? <div className={`inline-alert ${status.startsWith("Błąd") ? "error" : "info"}`}>{status}</div> : null}
+      </div>
+
+      {profiles.length > 0 && (
+        <ul className="voice-profile-list">
+          {profiles.map((p) => (
+            <li key={p.id} className="voice-profile-item">
+              <span className="voice-profile-avatar">{p.speakerName.slice(0, 2).toUpperCase()}</span>
+              <div className="voice-profile-info">
+                <strong>{p.speakerName}</strong>
+                <span>{new Date(p.createdAt).toLocaleDateString("pl-PL")}</span>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                style={{ fontSize: "0.78rem" }}
+                onClick={() => deleteProfile(p.id)}
+              >
+                Usuń
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
   const [editingTag, setEditingTag] = useState(null);
@@ -138,6 +279,8 @@ export default function ProfileTab({
   allTags = [],
   onRenameTag,
   onDeleteTag,
+  sessionToken,
+  apiBaseUrl,
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
 
@@ -560,6 +703,8 @@ export default function ProfileTab({
           onRenameTag={onRenameTag}
           onDeleteTag={onDeleteTag}
         />
+
+        <VoiceProfilesSection sessionToken={sessionToken} apiBaseUrl={apiBaseUrl} />
 
         <section className="panel">
           <div className="panel-header compact">

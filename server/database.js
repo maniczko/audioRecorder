@@ -91,6 +91,18 @@ database.exec(`
     FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS voice_profiles (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL,
+    speaker_name TEXT NOT NULL,
+    audio_path TEXT NOT NULL,
+    embedding_json TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+  );
 `);
 
 function nowIso() {
@@ -997,6 +1009,31 @@ function updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
   return getMembership(workspaceId, targetUserId);
 }
 
+function saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }) {
+  const timestamp = nowIso();
+  database
+    .prepare(
+      `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp);
+  return database.prepare("SELECT * FROM voice_profiles WHERE id = ?").get(id);
+}
+
+function getWorkspaceVoiceProfiles(workspaceId) {
+  return database
+    .prepare("SELECT * FROM voice_profiles WHERE workspace_id = ? ORDER BY created_at DESC")
+    .all(workspaceId);
+}
+
+function deleteVoiceProfile(id, workspaceId) {
+  const row = database.prepare("SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?").get(id, workspaceId);
+  if (row && row.audio_path) {
+    try { require("node:fs").unlinkSync(row.audio_path); } catch (_) {}
+  }
+  database.prepare("DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?").run(id, workspaceId);
+}
+
 function getHealth() {
   return {
     ok: true,
@@ -1032,4 +1069,7 @@ module.exports = {
   queueTranscription,
   updateWorkspaceMemberRole,
   getHealth,
+  saveVoiceProfile,
+  getWorkspaceVoiceProfiles,
+  deleteVoiceProfile,
 };
