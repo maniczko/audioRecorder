@@ -140,17 +140,22 @@ export default function useMeetings({
     selectedMeeting?.recordings.find((recording) => recording.id === selectedRecordingId) ||
     selectedMeeting?.recordings[0] ||
     null;
-  const taskColumns = buildTaskColumns(taskBoards, currentWorkspaceId);
-  const meetingTasks = buildTasksFromMeetings(
-    userMeetings,
-    manualTasks,
-    taskState,
-    currentUser,
-    taskColumns,
-    currentWorkspaceId
+  const taskColumns = useMemo(
+    () => buildTaskColumns(taskBoards, currentWorkspaceId),
+    [taskBoards, currentWorkspaceId]
   );
-  const taskPeople = buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks);
-  const taskTags = buildTaskTags(meetingTasks, userMeetings);
+  const meetingTasks = useMemo(
+    () => buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser, taskColumns, currentWorkspaceId),
+    [currentUser, currentWorkspaceId, manualTasks, taskColumns, taskState, userMeetings]
+  );
+  const taskPeople = useMemo(
+    () => buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks),
+    [currentUser, currentWorkspaceMembers, meetingTasks, userMeetings]
+  );
+  const taskTags = useMemo(
+    () => buildTaskTags(meetingTasks, userMeetings),
+    [meetingTasks, userMeetings]
+  );
   const peopleProfiles = useMemo(() => {
     const base = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
     return base.map((profile) => {
@@ -163,7 +168,7 @@ export default function useMeetings({
       };
     });
   }, [currentUser, currentWorkspaceMembers, meetingTasks, personNotes, userMeetings]);
-  const taskNotifications = buildTaskNotifications(meetingTasks);
+  const taskNotifications = useMemo(() => buildTaskNotifications(meetingTasks), [meetingTasks]);
   const workspaceActivity = useMemo(
     () => buildWorkspaceActivityFeed(userMeetings, meetingTasks, currentWorkspaceMembers, users),
     [currentWorkspaceMembers, meetingTasks, userMeetings, users]

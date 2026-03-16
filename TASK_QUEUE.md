@@ -69,7 +69,7 @@ Zrodlo: audyt bezpieczenstwa 2026-03-16, pozycje C2, H1, H2.
 ---
 
 ## 045. Memoizacja buildTasksFromMeetings i pochodnych
-Status: `todo`
+Status: `done`
 Priorytet: `P1`
 Cel: wyeliminowac najdrozsze obliczenia przy kazdym renderze hooka useMeetings.
 Problem: `buildTasksFromMeetings`, `buildTaskPeople`, `buildTaskNotifications`, `buildPeopleProfiles` (linie 143–154 useMeetings.js) wywolywane bez `useMemo` — przy kazdej zmianie jakiegokolwiek state w hooku iteruja cale kolekcje spotkan i zadan.
