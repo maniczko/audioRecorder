@@ -11,6 +11,7 @@ const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "whisper-1
 const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
+const TRANSCRIPT_CORRECTION = process.env.VOICELOG_TRANSCRIPT_CORRECTION === "true";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -434,7 +435,7 @@ async function transcribeRecording(asset, options = {}) {
       confidence: verificationResult.confidence,
       text: diarization.text,
     },
-    segments: verificationResult.verifiedSegments,
+    segments: await correctTranscriptWithLLM(verificationResult.verifiedSegments, options),
     speakerNames: identifiedNames,
     speakerCount: diarization.speakerCount,
     confidence: verificationResult.confidence,
@@ -447,6 +448,35 @@ async function transcribeRecording(asset, options = {}) {
   };
   } finally {
     if (prepPath) { try { fs.unlinkSync(prepPath); } catch (_) {} }
+  }
+}
+
+async function correctTranscriptWithLLM(segments, options = {}) {
+  if (!TRANSCRIPT_CORRECTION && !options.transcriptCorrection) return segments;
+  if (!OPENAI_API_KEY) return segments;
+  const payload = segments.map((s) => ({ id: s.id, text: s.text }));
+  const inputLen = payload.reduce((sum, s) => sum + (s.text?.length || 0), 0);
+  try {
+    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: Math.min(4000, inputLen * 2 + 200),
+        messages: [{
+          role: "user",
+          content: `Popraw interpunkcję i pisownię w poniższych segmentach transkrypcji. Zachowaj dokładne słowa i znaczenie. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
+        }],
+      }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const json = await response.json();
+    const corrected = JSON.parse(json.choices[0].message.content);
+    const map = new Map(corrected.map((s) => [s.id, s.text]));
+    return segments.map((s) => ({ ...s, text: map.has(s.id) ? map.get(s.id) : s.text }));
+  } catch (err) {
+    console.warn("[audioPipeline] LLM correction failed, using original segments.", err.message);
+    return segments;
   }
 }
 
