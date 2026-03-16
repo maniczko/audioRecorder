@@ -311,6 +311,8 @@ export default function StudioMeetingView({
         isPlaying={isPlaying}
         playbackRate={playbackRate}
         setPlaybackRate={setPlaybackRate}
+        transcript={displayRecording?.transcript}
+        displaySpeakerNames={displaySpeakerNames}
       />
 
       <div className="main-grid">

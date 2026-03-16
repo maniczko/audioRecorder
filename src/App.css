@@ -8608,6 +8608,34 @@ select:focus {
   min-width: 38px;
 }
 
+/* Active speaker chip */
+.uplayer-speaker-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px 1px 5px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #0a0a14;
+  background: var(--chip-color, #75d6c4);
+  transition: background 0.25s ease, opacity 0.25s ease;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.uplayer-speaker-chip::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.35);
+  flex-shrink: 0;
+}
+
 /* Scrubber */
 .uplayer-scrubber {
   flex: 1;

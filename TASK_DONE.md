@@ -4,6 +4,18 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 066. [SPEAKER] Aktywny mówca w UnifiedPlayer podczas odtwarzania
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `src/studio/UnifiedPlayer.js` — nowe props `transcript` + `displaySpeakerNames`; `activeSeg` = segment gdzie `timestamp <= currentTime < endTimestamp`.
+- Chip `.uplayer-speaker-chip` z `--chip-color: getSpeakerColor(speakerId)` renderowany między czasem a scrubberem w trybie playback; ukryty gdy żaden segment nie pokrywa pozycji.
+- CSS: transition background 0.25s + kółko-indicator przed nazwą mówcy.
+- `src/studio/StudioMeetingView.js` przekazuje `transcript={displayRecording?.transcript}` i `displaySpeakerNames`.
+- `src/lib/speakerColors.js` + `src/lib/recording.js` (labelSpeaker) importowane w UnifiedPlayer.
+
+---
+
 ## 029. Testy E2E — krytyczne flows
 Status: `done`
 Priorytet: `P2`

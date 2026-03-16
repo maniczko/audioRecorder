@@ -722,23 +722,6 @@ Techniczne wskazówki:
 
 ---
 
-## 066. [SPEAKER] Aktywny mówca w UnifiedPlayer podczas odtwarzania
-Status: `todo`
-Priorytet: `P2`
-Cel: podczas odtwarzania nie wiadomo kto aktualnie mówi bez patrzenia na transkrypt — mały chip z imieniem mówcy w playerze pozwala śledzić rozmowę bez przewijania.
-Akceptacja:
-- w UnifiedPlayer, tryb playback: między przyciskiem play a scrubberem widoczny chip "● Marek" (kolor + imię aktywnego mówcy).
-- chip aktualizuje się w czasie rzeczywistym przy zmianie currentTime.
-- jeśli żaden segment nie pokrywa aktualnego czasu → chip ukryty.
-- animacja fade przy zmianie mówcy (transition 0.2s).
-Techniczne wskazówki:
-- `UnifiedPlayer` dostaje nowy prop `transcript` (tablica segmentów) + `displaySpeakerNames`.
-- `const activeSpeaker = useMemo(() => transcript?.find(s => s.timestamp <= currentTime && s.endTimestamp > currentTime), [transcript, currentTime])`.
-- chip: `<span style={{ background: getSpeakerColor(activeSpeaker.speakerId), opacity: ... }}>`.
-- `StudioMeetingView` przekazuje `transcript={displayRecording?.transcript}`.
-
----
-
 ## 067. [SPEAKER] Statystyki mówców — czas wypowiedzi i liczba tur
 Status: `todo`
 Priorytet: `P2`

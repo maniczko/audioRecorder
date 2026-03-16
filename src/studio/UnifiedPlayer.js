@@ -1,4 +1,6 @@
 import { formatDuration } from "../lib/storage";
+import { getSpeakerColor } from "../lib/speakerColors";
+import { labelSpeaker } from "../lib/recording";
 
 export default function UnifiedPlayer({
   // recording
@@ -10,6 +12,8 @@ export default function UnifiedPlayer({
   // playback
   audioRef, selectedRecordingAudioUrl, selectedRecordingAudioError,
   currentTime, audioDuration, isPlaying, playbackRate, setPlaybackRate,
+  // speaker
+  transcript, displaySpeakerNames,
 }) {
   const isQueued = ["queued","uploading","processing"].includes(analysisStatus) && !isRecording;
 
@@ -18,6 +22,11 @@ export default function UnifiedPlayer({
     ? Math.max(...visualBars) / 58  // bars range 6–58px
     : 0;
   const gainPct = Math.round(Math.min(1, peakLevel) * 100);
+
+  // Active speaker based on currentTime
+  const activeSeg = Array.isArray(transcript) && currentTime > 0
+    ? transcript.find((s) => s.timestamp <= currentTime && s.endTimestamp > currentTime)
+    : null;
 
   // Which mode to show in the player track area:
   // "recording" > "playback" > "queue" > "idle"
@@ -111,6 +120,14 @@ export default function UnifiedPlayer({
           ) : mode === "playback" ? (
             <>
               <span className="uplayer-time-cur">{formatDuration(currentTime)}</span>
+              {activeSeg ? (
+                <span
+                  className="uplayer-speaker-chip"
+                  style={{ "--chip-color": getSpeakerColor(activeSeg.speakerId) }}
+                >
+                  {labelSpeaker(displaySpeakerNames, activeSeg.speakerId)}
+                </span>
+              ) : null}
               <input
                 type="range"
                 className="uplayer-scrubber"
