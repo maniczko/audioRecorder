@@ -182,6 +182,7 @@ export default function StudioMeetingView({
   meetingDraft,
   setMeetingDraft,
   saveMeeting,
+  renameSpeaker,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
@@ -190,6 +191,8 @@ export default function StudioMeetingView({
   const [concernDraft, setConcernDraft] = useState("");
 
   const [transcriptSearch, setTranscriptSearch] = useState("");
+  const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const audioRef = useRef(null);
   const activeSegRef = useRef(null);
@@ -836,10 +839,34 @@ export default function StudioMeetingView({
                   >
                     <div className="ff-seg-header">
                       <span className="ff-speaker-avatar" style={{ background: color }}>{letter}</span>
-                      <span className="ff-speaker-name">{name}</span>
-                      <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                        <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                      </svg>
+                      {renamingSpeakerId === String(seg.speakerId) ? (
+                        <input
+                          className="ff-speaker-rename-input"
+                          autoFocus
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onBlur={() => {
+                            if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
+                            setRenamingSpeakerId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.target.blur();
+                            if (e.key === "Escape") { setRenamingSpeakerId(null); }
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="ff-speaker-name-btn"
+                          title="Kliknij, aby zmienić nazwę głosu"
+                          onClick={() => { setRenamingSpeakerId(String(seg.speakerId)); setRenameValue(name); }}
+                        >
+                          <span className="ff-speaker-name">{name}</span>
+                          <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                            <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      )}
                       <span className="ff-seg-dot">·</span>
                       <button
                         type="button"
@@ -989,6 +1016,7 @@ StudioMeetingView.propTypes = {
   meetingDraft: PropTypes.object,
   setMeetingDraft: PropTypes.func,
   saveMeeting: PropTypes.func,
+  renameSpeaker: PropTypes.func,
 };
 
 function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting }) {
