@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
-import RecorderPanel from "./RecorderPanel";
+import UnifiedPlayer from "./UnifiedPlayer";
 import TranscriptPanel from "./TranscriptPanel";
 
 function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, selectedRecordingId, setSelectedRecordingId }) {
@@ -194,6 +194,35 @@ export default function StudioMeetingView({
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState("");
 
+  const audioRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+    function onTimeUpdate() { setCurrentTime(audio.currentTime || 0); }
+    function onDuration() { setAudioDuration(isFinite(audio.duration) ? audio.duration : 0); }
+    function onPlayPause() { setIsPlaying(!audio.paused); }
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("durationchange", onDuration);
+    audio.addEventListener("loadedmetadata", onDuration);
+    audio.addEventListener("play", onPlayPause);
+    audio.addEventListener("pause", onPlayPause);
+    audio.addEventListener("ended", onPlayPause);
+    if (isFinite(audio.duration) && audio.duration > 0) setAudioDuration(audio.duration);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("durationchange", onDuration);
+      audio.removeEventListener("loadedmetadata", onDuration);
+      audio.removeEventListener("play", onPlayPause);
+      audio.removeEventListener("pause", onPlayPause);
+      audio.removeEventListener("ended", onPlayPause);
+    };
+  }, [selectedRecordingAudioUrl]);
+
   function handleAddComment() {
     if (!commentDraft.trim() || !addMeetingComment) return;
     addMeetingComment(selectedMeeting.id, commentDraft.trim(), currentUserName || "Ty");
@@ -252,8 +281,13 @@ export default function StudioMeetingView({
 
   return (
     <>
+      {selectedRecordingAudioUrl ? (
+        <audio ref={audioRef} src={selectedRecordingAudioUrl} preload="metadata" style={{ display: "none" }}>
+          <track kind="captions" />
+        </audio>
+      ) : null}
       {picker}
-      <RecorderPanel
+      <UnifiedPlayer
         isRecording={isRecording}
         analysisStatus={analysisStatus}
         activeQueueItem={activeQueueItem}
@@ -268,6 +302,14 @@ export default function StudioMeetingView({
         liveText={liveText}
         recordingMessage={recordingMessage}
         canRecord={currentWorkspacePermissions?.canRecordAudio}
+        audioRef={audioRef}
+        selectedRecordingAudioUrl={selectedRecordingAudioUrl}
+        selectedRecordingAudioError={selectedRecordingAudioError}
+        currentTime={currentTime}
+        audioDuration={audioDuration}
+        isPlaying={isPlaying}
+        playbackRate={playbackRate}
+        setPlaybackRate={setPlaybackRate}
       />
 
       <div className="main-grid">
@@ -434,6 +476,7 @@ export default function StudioMeetingView({
           displaySpeakerNames={displaySpeakerNames}
           selectedRecordingAudioUrl={selectedRecordingAudioUrl}
           selectedRecordingAudioError={selectedRecordingAudioError}
+          audioRef={audioRef}
           updateTranscriptSegment={updateTranscriptSegment}
           assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
           mergeTranscriptSegments={mergeTranscriptSegments}
