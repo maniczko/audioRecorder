@@ -530,6 +530,174 @@ export default function StudioMeetingView({
           )}
         </section>
 
+        {studioAnalysis && (
+          <>
+            {(studioAnalysis.openQuestions?.length > 0 || studioAnalysis.risks?.length > 0 || studioAnalysis.blockers?.length > 0) && (
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Risk radar</div>
+                    <h2>Ryzyka i blokery</h2>
+                  </div>
+                </div>
+                <div className="analysis-columns">
+                  {studioAnalysis.risks?.length > 0 && (
+                    <div className="analysis-block">
+                      <h3>Ryzyka</h3>
+                      <ul className="clean-list">
+                        {studioAnalysis.risks.map((r, i) => (
+                          <li key={i} className="risk-item">
+                            <span className={`risk-severity risk-${r.severity || "medium"}`}>{r.severity || "medium"}</span>
+                            {r.risk}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {studioAnalysis.blockers?.length > 0 && (
+                    <div className="analysis-block">
+                      <h3>Blokery</h3>
+                      <ul className="clean-list">
+                        {studioAnalysis.blockers.map((b, i) => <li key={i}>{b}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {studioAnalysis.openQuestions?.length > 0 && (
+                  <div className="analysis-block">
+                    <h3>Otwarte pytania</h3>
+                    <ul className="clean-list open-questions-list">
+                      {studioAnalysis.openQuestions.map((q, i) => (
+                        <li key={i} className="open-question-item">
+                          <span className="open-question-text">{q.question}</span>
+                          {q.askedBy && <span className="open-question-by">{q.askedBy}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {studioAnalysis.participantInsights?.length > 0 && (
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Dynamics</div>
+                    <h2>Dynamika rozmowy</h2>
+                  </div>
+                  {studioAnalysis.energyLevel && (
+                    <span className={`status-chip energy-${studioAnalysis.energyLevel}`}>
+                      energia: {studioAnalysis.energyLevel}
+                    </span>
+                  )}
+                </div>
+                <div className="participant-insights-list">
+                  {studioAnalysis.participantInsights.map((p, i) => (
+                    <div key={i} className="participant-insight-row">
+                      <div className="participant-insight-name">{p.speaker}</div>
+                      <div className="participant-talk-wrap">
+                        <div className="participant-talk-bar" style={{ width: `${Math.round((p.talkRatio || 0) * 100)}%` }} />
+                        <span className="participant-talk-pct">{Math.round((p.talkRatio || 0) * 100)}%</span>
+                      </div>
+                      <span className={`participant-stance stance-${p.stance || "neutral"}`}>{p.stance || "neutral"}</span>
+                      {p.mainTopic && <span className="participant-topic">{p.mainTopic}</span>}
+                    </div>
+                  ))}
+                </div>
+                {studioAnalysis.tensions?.length > 0 && (
+                  <div className="analysis-block" style={{ marginTop: 14 }}>
+                    <h3>Napięcia</h3>
+                    <ul className="clean-list">
+                      {studioAnalysis.tensions.map((t, i) => (
+                        <li key={i} className="tension-item">
+                          <strong>{t.topic}</strong>
+                          {t.between?.length > 0 && <span className="tension-between"> — {t.between.join(" vs ")}</span>}
+                          <span className={`tension-resolved ${t.resolved ? "yes" : "no"}`}>
+                            {t.resolved ? "rozwiązane" : "otwarte"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {studioAnalysis.keyQuotes?.length > 0 && (
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Quotes</div>
+                    <h2>Kluczowe cytaty</h2>
+                  </div>
+                </div>
+                <div className="key-quotes-list">
+                  {studioAnalysis.keyQuotes.map((q, i) => (
+                    <article key={i} className="quote-card">
+                      <blockquote>„{q.quote}"</blockquote>
+                      <footer>
+                        <strong>{q.speaker}</strong>
+                        {q.why && <span>{q.why}</span>}
+                      </footer>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(studioAnalysis.suggestedAgenda?.length > 0 || studioAnalysis.coachingTip || studioAnalysis.terminology?.length > 0 || studioAnalysis.contextLinks?.length > 0) && (
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Next steps</div>
+                    <h2>Następne spotkanie</h2>
+                  </div>
+                  {studioAnalysis.meetingType && studioAnalysis.meetingType !== "other" && (
+                    <span className="status-chip">{studioAnalysis.meetingType}</span>
+                  )}
+                </div>
+                {studioAnalysis.suggestedAgenda?.length > 0 && (
+                  <div className="analysis-block">
+                    <h3>Proponowana agenda</h3>
+                    <ol className="clean-list suggested-agenda-list">
+                      {studioAnalysis.suggestedAgenda.map((item, i) => <li key={i}>{item}</li>)}
+                    </ol>
+                  </div>
+                )}
+                {studioAnalysis.coachingTip && (
+                  <div className="coaching-tip-box">
+                    <span className="coaching-tip-icon">💡</span>
+                    <p>{studioAnalysis.coachingTip}</p>
+                  </div>
+                )}
+                {(studioAnalysis.terminology?.length > 0 || studioAnalysis.contextLinks?.length > 0) && (
+                  <div className="analysis-columns">
+                    {studioAnalysis.terminology?.length > 0 && (
+                      <div className="analysis-block">
+                        <h3>Terminologia</h3>
+                        <div className="chip-list">
+                          {studioAnalysis.terminology.map((t) => (
+                            <span key={t} className="task-tag-chip neutral">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {studioAnalysis.contextLinks?.length > 0 && (
+                      <div className="analysis-block">
+                        <h3>Nawiązania</h3>
+                        <ul className="clean-list">
+                          {studioAnalysis.contextLinks.map((c, i) => <li key={i}>{c}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+          </>
+        )}
+
         <section className="panel">
           <div className="panel-header compact">
             <div>

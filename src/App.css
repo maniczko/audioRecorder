@@ -2208,6 +2208,128 @@ select:focus {
   font-size: 0.84rem;
 }
 
+/* ── Rich analysis panels (task 054) ─────────────────── */
+
+/* Risk items */
+.risk-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding: 3px 0;
+}
+.risk-severity {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.risk-high   { background: rgba(241,125,114,0.15); color: rgba(241,125,114,0.95); }
+.risk-medium { background: rgba(255,200,80,0.12);  color: rgba(255,200,80,0.9); }
+.risk-low    { background: rgba(116,208,191,0.1);  color: rgba(116,208,191,0.85); }
+
+/* Open questions */
+.open-questions-list { display: flex; flex-direction: column; gap: 6px; }
+.open-question-item  { display: flex; flex-direction: column; gap: 2px; }
+.open-question-text  { font-size: 0.85rem; color: var(--text); }
+.open-question-by    { font-size: 0.74rem; color: var(--muted); }
+
+/* Participant insights */
+.participant-insights-list { display: flex; flex-direction: column; gap: 10px; }
+.participant-insight-row {
+  display: grid;
+  grid-template-columns: 140px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+.participant-insight-name { font-size: 0.84rem; font-weight: 500; color: var(--text); }
+.participant-talk-wrap    { display: flex; align-items: center; gap: 6px; }
+.participant-talk-bar {
+  height: 6px;
+  background: rgba(116,208,191,0.6);
+  border-radius: 3px;
+  min-width: 4px;
+  max-width: 160px;
+  transition: width 0.4s ease;
+}
+.participant-talk-pct { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.participant-stance   { font-size: 0.74rem; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--muted); }
+.stance-proactive { background: rgba(116,208,191,0.1); color: rgba(116,208,191,0.85); }
+.stance-reactive  { background: rgba(255,200,80,0.1);  color: rgba(255,200,80,0.85); }
+.participant-topic { font-size: 0.74rem; color: var(--muted); font-style: italic; }
+
+/* Tensions */
+.tension-item { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; padding: 3px 0; }
+.tension-between { color: var(--muted); }
+.tension-resolved { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; }
+.tension-resolved.yes { background: rgba(116,208,191,0.1); color: rgba(116,208,191,0.85); }
+.tension-resolved.no  { background: rgba(241,125,114,0.1); color: rgba(241,125,114,0.85); }
+
+/* Key quotes */
+.key-quotes-list { display: flex; flex-direction: column; gap: 12px; }
+.quote-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-left: 3px solid rgba(116,208,191,0.5);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+}
+.quote-card blockquote {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text);
+  font-style: italic;
+}
+.quote-card footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.76rem;
+}
+.quote-card footer strong { color: rgba(116,208,191,0.85); }
+.quote-card footer span   { color: var(--muted); }
+
+/* Suggested agenda */
+.suggested-agenda-list { counter-reset: agenda; }
+.suggested-agenda-list li {
+  counter-increment: agenda;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  display: flex;
+  gap: 8px;
+}
+.suggested-agenda-list li::before {
+  content: counter(agenda) ".";
+  color: var(--muted);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  min-width: 18px;
+}
+
+/* Coaching tip */
+.coaching-tip-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255,200,80,0.07);
+  border: 1px solid rgba(255,200,80,0.2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.coaching-tip-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.coaching-tip-box p { font-size: 0.84rem; line-height: 1.5; margin: 0; }
+
+/* Energy level chips */
+.energy-high   { background: rgba(116,208,191,0.12) !important; color: rgba(116,208,191,0.9) !important; }
+.energy-medium { background: rgba(255,200,80,0.1)  !important; color: rgba(255,200,80,0.85) !important; }
+.energy-low    { background: rgba(255,255,255,0.06) !important; color: var(--muted) !important; }
+
 /* ── Studio picker header (redesigned) ───────────────── */
 
 .studio-picker-header {

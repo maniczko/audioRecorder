@@ -64,6 +64,74 @@ function normalizeTask(task, index, speakerNames) {
   };
 }
 
+const STOPWORDS = new Set(["jest","są","nie","się","jak","ale","czy","tak","też","już","do","po","na","od","ze","to","ten","tam","tu","co","my","ty","go","jej","jego","ich","dla","pan","pani","tego","przez","przy","czy","oraz","więc","który","która","które","tego","tej","temu","które","kiedy","gdzie","mamy","musi","może","tylko","sobie","tego","tego"]);
+
+function buildFallbackRichFields({ transcript, speakerNames }) {
+  const stopwords = STOPWORDS;
+  const wordFreq = {};
+  transcript.forEach((seg) => {
+    String(seg.text || "").toLowerCase().split(/\s+/).forEach((w) => {
+      const c = w.replace(/[^a-ząćęłńóśźż]/g, "");
+      if (c.length >= 5 && !stopwords.has(c)) wordFreq[c] = (wordFreq[c] || 0) + 1;
+    });
+  });
+  const suggestedTags = Object.entries(wordFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([w]) => w);
+
+  const openQuestions = dedupeList(
+    transcript.filter((s) => s.text.includes("?")).map((s) => {
+      const speaker = speakerNames?.[String(s.speakerId)] || `Speaker ${s.speakerId + 1}`;
+      return JSON.stringify({ question: s.text.trim(), askedBy: speaker });
+    })
+  )
+    .slice(0, 5)
+    .map((j) => { try { return JSON.parse(j); } catch { return null; } })
+    .filter(Boolean);
+
+  const risks = dedupeList(
+    transcript
+      .filter((s) => /ryzyko|problem|obawa|trudne|zagrożen|blokuje|nie uda|martwi|niepewn/i.test(s.text))
+      .map((s) => s.text)
+  )
+    .slice(0, 4)
+    .map((risk) => ({ risk, severity: "medium" }));
+
+  const blockers = dedupeList(
+    transcript
+      .filter((s) => /blokuje|czekamy|zależy od|nie możemy bez|brakuje|nie mamy/i.test(s.text))
+      .map((s) => s.text)
+  ).slice(0, 3);
+
+  const totalSegs = transcript.length || 1;
+  const speakerCounts = {};
+  transcript.forEach((seg) => {
+    const id = String(seg.speakerId);
+    if (!speakerCounts[id]) speakerCounts[id] = { count: 0, q: 0 };
+    speakerCounts[id].count++;
+    if (seg.text.includes("?")) speakerCounts[id].q++;
+  });
+  const participantInsights = Object.entries(speakerCounts).map(([id, d]) => ({
+    speaker: speakerNames?.[id] || `Speaker ${Number(id) + 1}`,
+    mainTopic: "",
+    stance: d.q > d.count * 0.3 ? "reactive" : "proactive",
+    talkRatio: Math.round((d.count / totalSegs) * 100) / 100,
+  }));
+
+  const keyQuotes = transcript
+    .filter((s) => s.text.length > 45)
+    .sort((a, b) => b.text.length - a.text.length)
+    .slice(0, 2)
+    .map((s) => ({
+      quote: s.text,
+      speaker: speakerNames?.[String(s.speakerId)] || `Speaker ${s.speakerId + 1}`,
+      why: "Znacząca wypowiedź.",
+    }));
+
+  return { suggestedTags, openQuestions, risks, blockers, participantInsights, keyQuotes, tensions: [], terminology: [], contextLinks: [], suggestedAgenda: [], coachingTip: "", meetingType: "other", energyLevel: "medium" };
+}
+
 function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }) {
   const transcript = safeArray(segments);
   const importantPhrases = transcript
@@ -106,6 +174,8 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     };
   });
 
+  const rich = buildFallbackRichFields({ transcript, speakerNames });
+
   return {
     mode: API_KEY ? "fallback-after-api-error" : "local-fallback",
     speakerLabels: speakerNames,
@@ -120,6 +190,7 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
       )
     ).slice(0, 4),
     answersToNeeds,
+    ...rich,
   };
 }
 
@@ -256,20 +327,20 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
 
   const prompt = [
     "You are a meticulous Polish meeting analyst.",
-    "Return valid JSON only.",
+    "Return valid JSON only — no prose outside the JSON object.",
     "Your job:",
-    "1. Rename the speakers into useful business roles when possible.",
+    "1. Rename speakers into business roles when possible.",
     "2. Summarize the meeting in Polish.",
-    "3. Extract decisions, action items, follow ups.",
-    "4. Answer the user's explicit meeting needs.",
+    "3. Extract decisions, action items, tasks, follow-ups, answers to needs.",
+    "4. Classify the meeting and extract rich intelligence fields.",
     "",
     `Meeting title: ${meeting.title}`,
-    `Meeting context: ${meeting.context || "No extra context provided."}`,
-    `Meeting needs: ${safeArray(meeting.needs).join(" | ") || "No needs specified."}`,
-    `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "No desired outputs specified."}`,
+    `Context: ${meeting.context || "None."}`,
+    `Needs: ${safeArray(meeting.needs).join(" | ") || "None."}`,
+    `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "None."}`,
     "",
-    "Return JSON in this shape:",
-    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Client"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":["..."]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}]}',
+    "Return JSON in this exact shape (all Polish text fields in Polish):",
+    '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Klient"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["budzet","roadmap"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Host","mainTopic":"...","stance":"proactive","talkRatio":0.6}],"tensions":[{"topic":"...","between":["A","B"],"resolved":false}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}],"terminology":["CRO","sprint velocity"],"contextLinks":["Q1 review"],"suggestedAgenda":["..."],"coachingTip":"..."}',
     "",
     transcriptText(segments, speakerNames),
   ].join("\n");
@@ -285,7 +356,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1400,
+        max_tokens: 2400,
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -297,6 +368,8 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     const payload = await response.json();
     const content = payload.content?.[0]?.text || "";
     const parsed = parseAiResponse(content);
+
+    const richFallback = buildFallbackRichFields({ transcript: segments, speakerNames });
 
     return {
       mode: "anthropic",
@@ -310,6 +383,19 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
         .filter(Boolean),
       followUps: dedupeList(parsed.followUps).slice(0, 5),
       answersToNeeds: safeArray(parsed.answersToNeeds).length ? parsed.answersToNeeds : fallback.answersToNeeds,
+      suggestedTags: dedupeList(parsed.suggestedTags).slice(0, 6).map((t) => String(t).toLowerCase().trim()),
+      meetingType: parsed.meetingType || "other",
+      energyLevel: parsed.energyLevel || "medium",
+      openQuestions: safeArray(parsed.openQuestions).slice(0, 5),
+      risks: safeArray(parsed.risks).slice(0, 4),
+      blockers: dedupeList(parsed.blockers).slice(0, 3),
+      participantInsights: safeArray(parsed.participantInsights).length ? parsed.participantInsights : richFallback.participantInsights,
+      tensions: safeArray(parsed.tensions).slice(0, 3),
+      keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
+      terminology: dedupeList(parsed.terminology).slice(0, 6),
+      contextLinks: dedupeList(parsed.contextLinks).slice(0, 4),
+      suggestedAgenda: dedupeList(parsed.suggestedAgenda).slice(0, 5),
+      coachingTip: parsed.coachingTip || "",
     };
   } catch (error) {
     console.error("AI meeting analysis failed, falling back to local summary.", error);

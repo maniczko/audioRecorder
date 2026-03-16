@@ -93,7 +93,7 @@ Zrodlo: zadanie uzytkownika 2026-03-16.
 ---
 
 ## 054. AI — rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: wyciagnac z transkrypcji maksimum uzytecznych informacji biznesowych — nie tylko summary i action items, ale pelny obraz tego co sie wydarzylo, kto co powiedzial i co powinno sie zdarzyc dalej.
 

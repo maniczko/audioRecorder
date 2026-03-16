@@ -811,25 +811,34 @@ export default function useMeetings({
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
+    const aiTags = (recording.analysis?.suggestedTags || [])
+      .map((t) => String(t).toLowerCase().trim())
+      .filter(Boolean);
+
     setMeetings((previous) =>
-      previous.map((meeting) =>
-        meeting.id === recordingMeetingId
-          ? {
-              ...attachRecording(meeting, recording),
-              activity: [
-                ...(meeting.activity || []),
-                {
-                  id: createId("meeting_activity"),
-                  type: "recording",
-                  actorId: currentUser?.id || "",
-                  actorName: currentUser?.name || currentUser?.email || "Ty",
-                  message: "Dodano nowe nagranie do spotkania.",
-                  createdAt: new Date().toISOString(),
-                },
-              ],
-            }
-          : meeting
-      )
+      previous.map((meeting) => {
+        if (meeting.id !== recordingMeetingId) return meeting;
+        const base = attachRecording(meeting, recording);
+        const existingTags = new Set((meeting.tags || []).map((t) => String(t).toLowerCase()));
+        const mergedTags = aiTags.length
+          ? [...(meeting.tags || []), ...aiTags.filter((t) => !existingTags.has(t))]
+          : meeting.tags || [];
+        return {
+          ...base,
+          tags: mergedTags,
+          activity: [
+            ...(meeting.activity || []),
+            {
+              id: createId("meeting_activity"),
+              type: "recording",
+              actorId: currentUser?.id || "",
+              actorName: currentUser?.name || currentUser?.email || "Ty",
+              message: "Dodano nowe nagranie do spotkania.",
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        };
+      })
     );
     setSelectedMeetingId(recordingMeetingId);
     setSelectedRecordingId(recording.id);
