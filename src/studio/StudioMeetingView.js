@@ -172,6 +172,7 @@ export default function StudioMeetingView({
   selectedRecording,
   displaySpeakerNames,
   selectedRecordingAudioUrl,
+  selectedRecordingAudioError,
   updateTranscriptSegment,
   assignSpeakerToTranscriptSegments,
   mergeTranscriptSegments,
@@ -444,6 +445,7 @@ export default function StudioMeetingView({
           selectedRecording={selectedRecording}
           displaySpeakerNames={displaySpeakerNames}
           selectedRecordingAudioUrl={selectedRecordingAudioUrl}
+          selectedRecordingAudioError={selectedRecordingAudioError}
           updateTranscriptSegment={updateTranscriptSegment}
           assignSpeakerToTranscriptSegments={assignSpeakerToTranscriptSegments}
           mergeTranscriptSegments={mergeTranscriptSegments}

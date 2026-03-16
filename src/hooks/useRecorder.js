@@ -58,6 +58,7 @@ export default function useRecorder({
   const [analysisStatus, setAnalysisStatus] = useState("idle");
   const [recordingMessage, setRecordingMessage] = useState("");
   const [audioUrls, setAudioUrls] = useState({});
+  const [audioHydrationErrors, setAudioHydrationErrors] = useState({});
   const [recordingMeetingId, setRecordingMeetingId] = useState(null);
   const [recordingQueue, setRecordingQueue] = useStoredState(STORAGE_KEYS.recordingQueue, []);
 
@@ -163,6 +164,7 @@ export default function useRecorder({
           });
         } catch (error) {
           console.error(`Audio hydration failed for ${recordingId}.`, error);
+          setAudioHydrationErrors((prev) => ({ ...prev, [recordingId]: error.message || "Błąd ładowania audio" }));
         }
       }
 
@@ -672,6 +674,7 @@ export default function useRecorder({
     analysisStatus,
     recordingMessage,
     audioUrls,
+    audioHydrationErrors,
     recordingQueue: normalizedQueue,
     queueSummary,
     selectedMeetingQueue,

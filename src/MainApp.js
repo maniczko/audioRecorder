@@ -120,6 +120,9 @@ export default function MainApp() {
   const selectedRecordingAudioUrl = meetings.selectedRecording
     ? recorder.audioUrls[meetings.selectedRecording.id]
     : "";
+  const selectedRecordingAudioError = meetings.selectedRecording
+    ? recorder.audioHydrationErrors[meetings.selectedRecording.id]
+    : "";
   const calendarTasks = useMemo(
     () => meetings.meetingTasks.filter((task) => Boolean(task.dueDate)),
     [meetings.meetingTasks]
@@ -728,6 +731,7 @@ export default function MainApp() {
           selectedRecording={meetings.selectedRecording}
           displaySpeakerNames={displaySpeakerNames}
           selectedRecordingAudioUrl={selectedRecordingAudioUrl}
+          selectedRecordingAudioError={selectedRecordingAudioError}
           updateTranscriptSegment={meetings.updateTranscriptSegment}
           assignSpeakerToTranscriptSegments={meetings.assignSpeakerToTranscriptSegments}
           mergeTranscriptSegments={meetings.mergeTranscriptSegments}

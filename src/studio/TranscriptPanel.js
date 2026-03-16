@@ -275,6 +275,7 @@ export default function TranscriptPanel({
   selectedRecording,
   displaySpeakerNames,
   selectedRecordingAudioUrl,
+  selectedRecordingAudioError,
   updateTranscriptSegment,
   assignSpeakerToTranscriptSegments,
   mergeTranscriptSegments,
@@ -723,7 +724,11 @@ export default function TranscriptPanel({
           </div>
         </>
       ) : selectedRecording ? (
-        <div className="soft-copy">Audio nie zostalo jeszcze zhydratowane do odsluchu w tej sesji.</div>
+        <div className="inline-alert error" style={{ margin: "8px 0" }}>
+          {selectedRecordingAudioError
+            ? `Błąd ładowania audio: ${selectedRecordingAudioError}`
+            : "Audio nie zostało jeszcze załadowane. Upewnij się że serwer działa i odśwież stronę."}
+        </div>
       ) : null}
 
       {selectedRecording ? (
