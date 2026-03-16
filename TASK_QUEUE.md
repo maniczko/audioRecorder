@@ -9,6 +9,143 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## 043. XSS — sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
+Status: `todo`
+Priorytet: `P1`
+Cel: zapobiec XSS przy renderowaniu notatek z edytora WYSIWYG.
+Problem: `note.context` renderowany przez `dangerouslySetInnerHTML` bez sanityzacji — jezeli AI lub sync dostarczy zloslwiwy HTML, wykona sie w przegladarce uzytkownika.
+Akceptacja:
+- przed przekazaniem do `dangerouslySetInnerHTML` kazda wartosc przechodzi przez DOMPurify.sanitize().
+- dozwolone tagi: b, i, u, em, strong, ul, ol, li, p, br — wszystkie inne sa stripowane.
+- dodany test jednostkowy sprawdzajacy ze script-tag jest usuwany.
+Techniczne wskazowki:
+- npm install dompurify (+ @types/dompurify opcjonalnie).
+- w NotesTab.js: `import DOMPurify from "dompurify"` → `__html: DOMPurify.sanitize(note.context, { ALLOWED_TAGS: [...] })`.
+- to samo zabezpieczenie nalezy zastosowac we wszystkich przyszlych miejscach z dangerouslySetInnerHTML.
+Zrodlo: audyt bezpieczenstwa 2026-03-16, pozycja C1.
+
+---
+
+## 044. CORS i rate limiting na backendzie
+Status: `todo`
+Priorytet: `P1`
+Cel: zamknac dwie luki krytyczne: nieograniczony dostep cross-origin oraz brak ochrony przed brute-force.
+Problem (C2): `Access-Control-Allow-Origin: *` pozwala kazdej domenie na requesty do API.
+Problem (H2): `/auth/login`, `/auth/register`, `/auth/password/reset/confirm` nie maja zadnego rate limitingu — mozliwy brute-force 6-cyfrowego kodu odzyskiwania (1M kombinacji).
+Akceptacja:
+- CORS dozwolony tylko dla origin z env `VOICELOG_ALLOWED_ORIGINS` (domyslnie `http://localhost:3000`).
+- endpointy `/auth/*` blokuja IP po 10 nieudanych probach w ciagu 60 s (odpowiedz 429 z `Retry-After`).
+- recovery code nie jest zwracany w response body — tylko `{ success: true }` + w trybie dev logowany do konsoli serwera.
+Techniczne wskazowki:
+- prosty Map-based rate limiter w server/index.js (klucz: `${ip}:${endpoint}`, reset co 60s).
+- CORS_ORIGINS split po przecinku z env.
+- usunac `recoveryCode` z response w `server/database.js` linia ~570.
+Zrodlo: audyt bezpieczenstwa 2026-03-16, pozycje C2, H1, H2.
+
+---
+
+## 045. Memoizacja buildTasksFromMeetings i pochodnych
+Status: `todo`
+Priorytet: `P1`
+Cel: wyeliminowac najdrozsze obliczenia przy kazdym renderze hooka useMeetings.
+Problem: `buildTasksFromMeetings`, `buildTaskPeople`, `buildTaskNotifications`, `buildPeopleProfiles` (linie 143–154 useMeetings.js) wywolywane bez `useMemo` — przy kazdej zmianie jakiegokolwiek state w hooku iteruja cale kolekcje spotkan i zadan.
+Akceptacja:
+- wszystkie cztery obliczenia sa opakowan w `useMemo` z prawidlowymi tablicami zaleznosci.
+- brak regresji w testech i UI.
+- `normalizeColumns` wywolywana max raz na operacje (refactor helper do lazy singleton lub cache per board).
+Techniczne wskazowki:
+- `useMemo(() => buildTasksFromMeetings(...), [userMeetings, manualTasks, ...deps])` w useMeetings.js.
+- rozwazyc extract do osobnego hooka `useTaskDerived(userMeetings, manualTasks)` dla czystosci.
+Zrodlo: audyt kodu 2026-03-16, pozycje H3, M5, M6.
+
+---
+
+## 046. Naprawa stale closure w processQueueItem (useRecorder)
+Status: `todo`
+Priorytet: `P1`
+Cel: zapobiec przetwarzaniu nagran ze starymi danymi spotkan po ich aktualizacji w trakcie przetwarzania.
+Problem: `processQueueItem` zamkniety nad `userMeetings` z momentu uruchomienia efektu; spotkania zaktualizowane w trakcie przetwarzania sa ignorowane przez procesor kolejki (stale closure, linia ~270 useRecorder.js).
+Akceptacja:
+- `userMeetings` przekazywane przez ref (np. `userMeetingsRef.current`) zamiast przez domkniecie.
+- `queueProcessingRef` resetowany do `false` w `.finally()` rowniez przy synchronicznym rzuceniu wyjatku.
+- dodany test jednostkowy dla scenariusza "spotkanie zmienione w trakcie przetwarzania".
+Techniczne wskazowki:
+- `const userMeetingsRef = useRef(userMeetings); useEffect(() => { userMeetingsRef.current = userMeetings; }, [userMeetings]);`
+- w `processQueueItem` czytac `userMeetingsRef.current` zamiast zamknietego `userMeetings`.
+Zrodlo: audyt kodu 2026-03-16, pozycje H5, H10.
+
+---
+
+## 047. Naprawa stale closure conflictCount w useGoogleIntegrations
+Status: `todo`
+Priorytet: `P2`
+Cel: poprawic wyswietlanie liczby konfliktow po imporcie zadan z Google Tasks.
+Problem: `conflictCount` jest inkrementowany wewnatrz asynchronicznego callbacku `setManualTasks`, a nastepnie czytany synchronicznie — zawsze wynosi 0 (linia ~279 useGoogleIntegrations.js).
+Akceptacja:
+- wiadomosc o konfliktach wyswietla sie poprawnie gdy sa konflikty po imporcie.
+- test jednostkowy pokrywa scenariusz z i bez konfliktow.
+Techniczne wskazowki:
+- obliczyc `conflictCount` z wartosci zwracanej przez `upsertGoogleImportedTasks` przed wywolaniem `setManualTasks`.
+- `const { merged, conflictCount } = upsertGoogleImportedTasks(...)` → `setManualTasks(...)` → uzywac `conflictCount`.
+Zrodlo: audyt kodu 2026-03-16, pozycja H9.
+
+---
+
+## 048. Node.js >= 22.5 — dokumentacja wymagan srodowiska
+Status: `todo`
+Priorytet: `P2`
+Cel: zapobiec bledom instalacji na starszych wersjach Node (server/database.js uzywa `node:sqlite` wymagajacego Node 22.5+).
+Akceptacja:
+- `package.json` zawiera `"engines": { "node": ">=22.5" }`.
+- plik `.env.example` dokumentuje wszystkie 9 zmiennych srodowiskowych: `REACT_APP_GOOGLE_CLIENT_ID`, `REACT_APP_DATA_PROVIDER`, `REACT_APP_MEDIA_PROVIDER`, `REACT_APP_API_BASE_URL`, `VOICELOG_API_PORT`, `VOICELOG_API_HOST`, `VOICELOG_DB_PATH`, `VOICELOG_UPLOAD_DIR`, `VOICELOG_SESSION_TTL_HOURS`.
+- README (lub komentarz w package.json) informuje o wymogu Node 22.5+.
+Zrodlo: audyt zalezonosci 2026-03-16, pozycje H8, M13.
+
+---
+
+## 049. URL.revokeObjectURL po eksporcie pliku
+Status: `todo`
+Priorytet: `P3`
+Cel: wyeliminowac wyciek pamieci przy eksporcie (TXT/PDF).
+Problem: `URL.createObjectURL` w `storage.js` linia ~79 nigdy nie jest revokowany — kazdy eksport zostawia w pamieci blob URL.
+Akceptacja:
+- po `link.click()` wywolywane jest `URL.revokeObjectURL(url)` (w setTimeout 100ms aby dac czas przegladarce na pobranie).
+Techniczne wskazowki:
+- `setTimeout(() => URL.revokeObjectURL(url), 100)` po `link.click()`.
+Zrodlo: audyt kodu 2026-03-16, pozycja L1.
+
+---
+
+## 050. Naprawa endsAt dla task-eventow w googleSync.js
+Status: `todo`
+Priorytet: `P2`
+Cel: eventy zadan w Google Calendar maja zerowy czas trwania (startsAt === endsAt).
+Problem: `buildCalendarSyncSnapshot` dla `type === "task"` ustawia oba pola na ta sama wartosc (linia ~93 googleSync.js).
+Akceptacja:
+- task-eventy maja `endsAt` ustawione na `startsAt + 1h` (lub koniec dnia gdy brak godziny).
+- istniejace testy googleSync przechodzi.
+Techniczne wskazowki:
+- `endsAt: new Date(new Date(source.dueDate).getTime() + 3600000).toISOString()`.
+Zrodlo: audyt logiki 2026-03-16, pozycja M15.
+
+---
+
+## 051. Polling Google Calendar — visibility API i backoff
+Status: `todo`
+Priorytet: `P2`
+Cel: nie odpytywac Google API gdy uzytkownik nie patrzy na aplikacje (karta w tle).
+Problem: `setInterval` co 45s w useGoogleIntegrations.js odpytuje Google Calendar niezaleznie od stanu karty przegladarki.
+Akceptacja:
+- polling nie wykonuje sie gdy `document.visibilityState !== "visible"`.
+- po powrocie do karty (visibilitychange event) odswiezenie wykonuje sie natychmiast.
+- brak bledow w konsoli gdy token wygaznie podczas nieaktywnosci.
+Techniczne wskazowki:
+- `document.addEventListener("visibilitychange", ...)` zamiast lub dodatkowo do `setInterval`.
+- wewnatrz intervalu: `if (document.hidden) return;`.
+Zrodlo: audyt wydajnosci 2026-03-16, pozycja M1.
+
+---
+
 ## 027. React Error Boundaries i graceful degradation
 Status: `todo`
 Priorytet: `P1`
