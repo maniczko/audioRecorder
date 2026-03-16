@@ -408,11 +408,9 @@ export default function useRecorder({
       removeQueueItem(item.recordingId);
       setAnalysisStatus("done");
       setRecordingMessage(
-        recording.transcript.length
-          ? recording.transcript.some((segment) => segment.verificationStatus === "review")
-            ? "Nagranie przeszlo przez kolejke i czeka czesciowo na review."
-            : "Nagranie zostalo wyslane, przetworzone i dodane do spotkania."
-          : "Audio zapisane, ale transkrypcja jest jeszcze pusta."
+        recording.transcript.some((segment) => segment.verificationStatus === "review")
+          ? "Nagranie czeka czesciowo na review."
+          : ""
       );
       return true;
     } catch (error) {
