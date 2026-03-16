@@ -645,6 +645,26 @@ export default function useMeetings({
     setWorkspaceMessage("Notatka zapisana.");
   }
 
+  function renameTag(oldTag, newTag) {
+    const normalized = newTag.trim().toLowerCase();
+    if (!normalized || normalized === oldTag) return;
+    setMeetings((prev) =>
+      prev.map((m) => ({ ...m, tags: (m.tags || []).map((t) => (t === oldTag ? normalized : t)) }))
+    );
+    setManualTasks((prev) =>
+      prev.map((t) => ({ ...t, tags: (t.tags || []).map((tag) => (tag === oldTag ? normalized : tag)) }))
+    );
+  }
+
+  function deleteTag(tag) {
+    setMeetings((prev) =>
+      prev.map((m) => ({ ...m, tags: (m.tags || []).filter((t) => t !== tag) }))
+    );
+    setManualTasks((prev) =>
+      prev.map((t) => ({ ...t, tags: (t.tags || []).filter((existing) => existing !== tag) }))
+    );
+  }
+
   function createAdHocMeeting() {
     if (!currentUser || !currentWorkspaceId) {
       return null;
@@ -1635,6 +1655,8 @@ export default function useMeetings({
     selectMeeting,
     startNewMeetingDraft,
     createManualNote,
+    renameTag,
+    deleteTag,
     clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,

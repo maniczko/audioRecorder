@@ -1,4 +1,90 @@
+import { useState } from "react";
 import { formatDateTime } from "./lib/storage";
+
+function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
+  const [editingTag, setEditingTag] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
+  function startEdit(tag) {
+    setEditingTag(tag);
+    setEditValue(tag);
+  }
+
+  function commitEdit(tag) {
+    if (editValue.trim() && editValue.trim() !== tag) {
+      onRenameTag(tag, editValue.trim().toLowerCase());
+    }
+    setEditingTag(null);
+    setEditValue("");
+  }
+
+  function handleKeyDown(e, tag) {
+    if (e.key === "Enter") commitEdit(tag);
+    if (e.key === "Escape") { setEditingTag(null); setEditValue(""); }
+  }
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Workspace</div>
+          <h2>Zarządzanie tagami</h2>
+        </div>
+        <span className="status-chip">{allTags.length}</span>
+      </div>
+
+      {allTags.length === 0 ? (
+        <div className="integration-card">
+          <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+            Brak tagów w workspace. Dodaj tagi do zadań lub spotkań.
+          </p>
+        </div>
+      ) : (
+        <div className="tag-manager-list">
+          {allTags.map(({ tag, taskCount, meetingCount }) => (
+            <div key={tag} className="tag-manager-row">
+              {editingTag === tag ? (
+                <input
+                  className="tag-manager-edit-input"
+                  value={editValue}
+                  autoFocus
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={() => commitEdit(tag)}
+                  onKeyDown={(e) => handleKeyDown(e, tag)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="tag-manager-name"
+                  onClick={() => startEdit(tag)}
+                  title="Kliknij, aby zmienić nazwę"
+                >
+                  #{tag}
+                </button>
+              )}
+              <div className="tag-manager-counts">
+                {taskCount > 0 && (
+                  <span className="tag-count-chip tasks">{taskCount} {taskCount === 1 ? "zadanie" : "zadań"}</span>
+                )}
+                {meetingCount > 0 && (
+                  <span className="tag-count-chip meetings">{meetingCount} {meetingCount === 1 ? "spotkanie" : "spotkań"}</span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="tag-manager-delete"
+                title={`Usuń tag #${tag}`}
+                onClick={() => onDeleteTag(tag)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function integrationStatusLabel(status, connectedCount) {
   if (connectedCount) {
@@ -49,6 +135,9 @@ export default function ProfileTab({
   onLogout,
   theme,
   onToggleTheme,
+  allTags = [],
+  onRenameTag,
+  onDeleteTag,
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
 
@@ -465,6 +554,12 @@ export default function ProfileTab({
             </div>
           </div>
         </section>
+
+        <TagManagerSection
+          allTags={allTags}
+          onRenameTag={onRenameTag}
+          onDeleteTag={onDeleteTag}
+        />
 
         <section className="panel">
           <div className="panel-header compact">

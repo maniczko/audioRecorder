@@ -650,6 +650,26 @@ export default function MainApp() {
           workspaceRole={workspace.currentWorkspaceRole}
           theme={theme}
           onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          allTags={(() => {
+            const tagMap = new Map();
+            (meetings.userMeetings || []).forEach((m) =>
+              (m.tags || []).forEach((t) => {
+                const e = tagMap.get(t) || { tag: t, taskCount: 0, meetingCount: 0 };
+                e.meetingCount += 1;
+                tagMap.set(t, e);
+              })
+            );
+            (meetings.meetingTasks || []).forEach((task) =>
+              (task.tags || []).forEach((t) => {
+                const e = tagMap.get(t) || { tag: t, taskCount: 0, meetingCount: 0 };
+                e.taskCount += 1;
+                tagMap.set(t, e);
+              })
+            );
+            return [...tagMap.values()].sort((a, b) => a.tag.localeCompare(b.tag));
+          })()}
+          onRenameTag={meetings.renameTag}
+          onDeleteTag={meetings.deleteTag}
         />
       ) : (
         <StudioTab

@@ -2077,6 +2077,224 @@ select:focus {
   align-items: center;
 }
 
+/* ── Studio meeting picker ────────────────────────────── */
+
+.studio-meeting-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.studio-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  max-width: 440px;
+  overflow: hidden;
+  transition: background 0.15s;
+}
+.studio-picker-trigger:hover { background: rgba(255, 255, 255, 0.1); }
+
+.studio-picker-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left;
+}
+
+.studio-picker-chevron {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.studio-picker-new {
+  background: none;
+  border: 1px solid rgba(116, 208, 191, 0.3);
+  border-radius: 8px;
+  color: rgba(116, 208, 191, 0.85);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.studio-picker-new:hover {
+  background: rgba(116, 208, 191, 0.08);
+  border-color: rgba(116, 208, 191, 0.6);
+}
+
+.studio-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 20px;
+  width: 380px;
+  background: rgba(8, 22, 36, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.studio-picker-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.86rem;
+  outline: none;
+}
+.studio-picker-search::placeholder { color: var(--muted); }
+
+.studio-picker-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.studio-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.studio-picker-item:hover { background: rgba(255, 255, 255, 0.06); }
+.studio-picker-item.active { background: rgba(116, 208, 191, 0.1); }
+.studio-picker-item:last-child { border-bottom: none; }
+
+.studio-picker-item-title {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-picker-item-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.studio-picker-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* ── Tag manager (ProfileTab) ─────────────────────────── */
+
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tag-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.tag-manager-row:last-child { border-bottom: none; }
+
+.tag-manager-name {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(116, 208, 191, 0.85);
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(116, 208, 191, 0.2);
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.tag-manager-name:hover {
+  background: rgba(116, 208, 191, 0.08);
+  border-color: rgba(116, 208, 191, 0.4);
+}
+
+.tag-manager-edit-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(116, 208, 191, 0.5);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.84rem;
+  padding: 3px 8px;
+  outline: none;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.tag-manager-counts {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.tag-count-chip {
+  font-size: 0.73rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.tag-count-chip.tasks {
+  background: rgba(91, 143, 249, 0.12);
+  color: rgba(91, 143, 249, 0.85);
+}
+.tag-count-chip.meetings {
+  background: rgba(116, 208, 191, 0.1);
+  color: rgba(116, 208, 191, 0.8);
+}
+
+.tag-manager-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: color 0.12s, background 0.12s;
+}
+.tag-manager-delete:hover {
+  color: rgba(255, 100, 100, 0.9);
+  background: rgba(255, 100, 100, 0.1);
+}
+
 .profile-layout,
 .profile-grid,
 .profile-hero,

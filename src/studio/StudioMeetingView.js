@@ -1,9 +1,94 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
 import RecorderPanel from "./RecorderPanel";
 import TranscriptPanel from "./TranscriptPanel";
+
+function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+
+  const sorted = [...userMeetings].sort(
+    (a, b) => new Date(b.startsAt || b.createdAt) - new Date(a.startsAt || a.createdAt)
+  );
+  const filtered = query.trim()
+    ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
+    : sorted.slice(0, 10);
+
+  return (
+    <div className="studio-meeting-picker" ref={ref}>
+      <button
+        type="button"
+        className="studio-picker-trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="studio-picker-title">
+          {selectedMeeting ? selectedMeeting.title : "Wybierz spotkanie"}
+        </span>
+        <span className="studio-picker-chevron" aria-hidden="true">▾</span>
+      </button>
+
+      <button
+        type="button"
+        className="studio-picker-new"
+        onClick={startNewMeetingDraft}
+        title="Nowe spotkanie"
+      >
+        + Nowe
+      </button>
+
+      {open && (
+        <div className="studio-picker-dropdown" role="listbox">
+          <input
+            className="studio-picker-search"
+            type="search"
+            placeholder="Szukaj spotkania…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+          <div className="studio-picker-list">
+            {filtered.map((meeting) => (
+              <button
+                key={meeting.id}
+                type="button"
+                role="option"
+                aria-selected={selectedMeeting?.id === meeting.id}
+                className={`studio-picker-item${selectedMeeting?.id === meeting.id ? " active" : ""}`}
+                onClick={() => {
+                  selectMeeting(meeting);
+                  setOpen(false);
+                  setQuery("");
+                }}
+              >
+                <span className="studio-picker-item-title">{meeting.title}</span>
+                <span className="studio-picker-item-date">
+                  {formatDateTime(meeting.startsAt || meeting.createdAt)}
+                </span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div className="studio-picker-empty">Brak wyników</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function tagStyle(tag) {
   let hash = 0;
@@ -49,6 +134,7 @@ export default function StudioMeetingView({
   exportMeetingNotes,
   exportMeetingPdfFile,
   startNewMeetingDraft,
+  selectMeeting,
   currentWorkspacePermissions,
   currentWorkspaceRole,
   currentWorkspace,
@@ -76,38 +162,51 @@ export default function StudioMeetingView({
     setCommentDraft("");
   }
 
+  const picker = (
+    <MeetingPicker
+      selectedMeeting={selectedMeeting}
+      userMeetings={userMeetings}
+      selectMeeting={selectMeeting}
+      startNewMeetingDraft={startNewMeetingDraft}
+    />
+  );
+
   if (!selectedMeeting) {
     return (
-      <section className="hero-panel empty-workspace">
-        <div className="empty-workspace-inner">
-          <div className="eyebrow">Studio</div>
-          <h2>Wybierz lub utwórz spotkanie</h2>
-          <p>Zacznij od briefu albo uruchom nagranie ad hoc — spotkanie zostanie utworzone automatycznie.</p>
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => startRecording({ adHoc: true })}
-              disabled={!currentWorkspacePermissions?.canRecordAudio}
-            >
-              ⬤ Nagraj ad hoc
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={startNewMeetingDraft}
-              disabled={!currentWorkspacePermissions?.canEditWorkspace}
-            >
-              Przygotuj brief
-            </button>
+      <>
+        {picker}
+        <section className="hero-panel empty-workspace">
+          <div className="empty-workspace-inner">
+            <div className="eyebrow">Studio</div>
+            <h2>Wybierz lub utwórz spotkanie</h2>
+            <p>Zacznij od briefu albo uruchom nagranie ad hoc — spotkanie zostanie utworzone automatycznie.</p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => startRecording({ adHoc: true })}
+                disabled={!currentWorkspacePermissions?.canRecordAudio}
+              >
+                ⬤ Nagraj ad hoc
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={startNewMeetingDraft}
+                disabled={!currentWorkspacePermissions?.canEditWorkspace}
+              >
+                Przygotuj brief
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
   return (
     <>
+      {picker}
       <RecorderPanel
         isRecording={isRecording}
         analysisStatus={analysisStatus}
