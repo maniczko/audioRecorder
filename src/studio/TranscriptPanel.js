@@ -348,7 +348,7 @@ export default function TranscriptPanel({
   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]);
   const [bulkSpeakerId, setBulkSpeakerId] = useState("");
   const [splitCursor, setSplitCursor] = useState({ segmentId: "", start: 0 });
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+
   const [isNormalizing, setIsNormalizing] = useState(false);
   const [normalizeError, setNormalizeError] = useState("");
 
@@ -433,8 +433,7 @@ export default function TranscriptPanel({
     filteredSegments[0] ||
     reviewSegments[0] ||
     null;
-  const activeReviewSegment =
-    reviewSegments.find((segment) => segment.id === activeSegmentId) || reviewSegments[0] || null;
+
   const selectedCount = selectedSegmentIds.length;
   const canMergeSelection = areSelectionsContiguous(transcript, selectedSegmentIds);
 
@@ -577,13 +576,6 @@ export default function TranscriptPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSegmentId, canEditTranscript, filteredSegments, reviewSegments, updateTranscriptSegment]);
-
-  function approveAllReviewSegments() {
-    if (!canEditTranscript || !reviewSegments.length) return;
-    reviewSegments.forEach((seg) => {
-      updateTranscriptSegment(seg.id, { verificationStatus: "verified", verificationReasons: [] });
-    });
-  }
 
   function toggleSegmentSelection(segmentId) {
     setSelectedSegmentIds((previous) =>
