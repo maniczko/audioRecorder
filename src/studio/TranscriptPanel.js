@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
-import { getSpeakerColor, getSpeakerColorDim } from "../lib/speakerColors";
+import { getSpeakerColor } from "../lib/speakerColors";
 
 const WAVEFORM_SVG_W = 1000;
 const WAVEFORM_SVG_H = 80;
