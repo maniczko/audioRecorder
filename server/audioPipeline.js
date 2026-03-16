@@ -168,7 +168,11 @@ function normalizeDiarizedSegments(payload) {
     ? payload.segments
     : Array.isArray(payload?.transcript?.segments)
       ? payload.transcript.segments
-      : [];
+      : Array.isArray(payload?.utterances)
+        ? payload.utterances
+        : Array.isArray(payload?.transcript?.utterances)
+          ? payload.transcript.utterances
+          : [];
   const speakerOrder = new Map();
   const speakerNames = {};
 
@@ -355,6 +359,20 @@ async function transcribeRecording(asset, options = {}) {
       chunking_strategy: "auto",
     },
   });
+
+  // Debug: log raw API response structure to diagnose speaker diarization issues
+  const rawKeys = Object.keys(diarizedPayload || {});
+  const rawSegCount = (diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || []).length;
+  const rawSpeakers = new Set(
+    (diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [])
+      .map(s => s.speaker || s.speaker_label || s.speaker_id || null)
+      .filter(Boolean)
+  );
+  console.log(`[audioPipeline] Diarize raw response keys: ${rawKeys.join(", ")}`);
+  console.log(`[audioPipeline] Diarize segments count: ${rawSegCount}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
+  if (diarizedPayload?.utterances?.length) {
+    console.log(`[audioPipeline] NOTE: response uses 'utterances' field (not 'segments') — needs parser update`);
+  }
 
   const diarization = normalizeDiarizedSegments(diarizedPayload);
   if (!diarization.segments.length) {
