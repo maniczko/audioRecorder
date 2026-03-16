@@ -10,7 +10,7 @@ Zadania zakonczone → TASK_DONE.md
 ---
 
 ## 055. AI — psychologiczny profil osoby na podstawie nagran
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: na podstawie transkrypcji wszystkich spotkan z dana osoba zbudowac zrozumialy profil psychologiczny — jak z nia rozmawiac, co ja motywuje, jak podejmuje decyzje. Profil wzbogaca zakładke Osoba i jest uzupelniany automatycznie po kazdej analizie spotkania.
 

@@ -7800,6 +7800,292 @@ select:focus {
   padding: 5px 10px;
   white-space: nowrap;
 }
+
+/* ── Psychological profile panel ──────────────────────── */
+
+.psych-profile-panel { grid-column: 1 / -1; }
+
+.psych-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+
+@keyframes psych-loading-slide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.psych-loading-bar {
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(116,208,191,0.8) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: psych-loading-slide 1.4s ease-in-out infinite;
+}
+
+.psych-profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* DISC section */
+.psych-disc-section {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.disc-radar {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+}
+
+.psych-disc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.psych-disc-style {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.psych-disc-description {
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.psych-disc-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.psych-disc-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.psych-disc-label {
+  width: 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.psych-disc-d { color: #f17d72; }
+.psych-disc-i { color: #ffd166; }
+.psych-disc-s { color: #74d0bf; }
+.psych-disc-c { color: #7b9eeb; }
+
+.psych-disc-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.psych-disc-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.psych-disc-fill-d { background: #f17d72; }
+.psych-disc-fill-i { background: #ffd166; }
+.psych-disc-fill-s { background: #74d0bf; }
+.psych-disc-fill-c { background: #7b9eeb; }
+
+.psych-disc-value {
+  font-size: 0.74rem;
+  color: var(--muted);
+  width: 26px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Sections */
+.psych-section { display: flex; flex-direction: column; gap: 10px; }
+
+.psych-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Values */
+.psych-values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.psych-value-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.psych-value-icon { font-size: 1.1rem; }
+
+.psych-value-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.psych-value-quote {
+  font-size: 0.73rem;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Style badges */
+.psych-style-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.psych-style-badge {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  padding: 7px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.psych-style-badge-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.psych-style-badge-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Stress */
+.psych-stress-text {
+  font-size: 0.84rem;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Tips */
+.psych-tips-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.psych-tips-col-head {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.psych-do { background: rgba(116,208,191,0.12); color: rgba(116,208,191,0.9); }
+.psych-dont { background: rgba(241,125,114,0.12); color: rgba(241,125,114,0.9); }
+
+.psych-tip-list { font-size: 0.83rem; }
+.psych-tip-list li { padding: 2px 0; }
+
+.psych-tips-main { padding: 0; margin: 4px 0 0; list-style: none; }
+.psych-tip-item {
+  font-size: 0.84rem;
+  color: var(--text);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.psych-tip-item:last-child { border-bottom: none; }
+
+/* Coaching */
+.psych-coaching-box {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(255,200,80,0.07);
+  border: 1px solid rgba(255,200,80,0.2);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.psych-coaching-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+.psych-coaching-box p {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 0;
+  color: var(--text);
+}
+
+/* Red flags */
+.psych-redflags-section { display: flex; flex-direction: column; gap: 8px; }
+
+.psych-redflags-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  transition: color 0.15s;
+}
+.psych-redflags-toggle:hover { color: rgba(241,125,114,0.9); }
+
+.psych-redflags-list {
+  font-size: 0.83rem;
+  color: rgba(241,125,114,0.85);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.psych-redflags-list li { padding: 3px 0; }
+.psych-redflags-list li::before { content: "⚠ "; opacity: 0.7; }
+
+/* Footer */
+.psych-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 4px;
+}
+
+.psych-footer span {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
 .todo-side-icon {
   font-size: 0.85rem;
   width: 1.25rem;

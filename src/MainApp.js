@@ -620,6 +620,7 @@ export default function MainApp() {
           onCreateTask={createTaskForPerson}
           onCreateMeeting={createMeetingForPerson}
           onUpdatePersonNotes={meetings.updatePersonNotes}
+          onAnalyzePersonProfile={meetings.analyzePersonPsychProfile}
           externalSelectedPersonId={pendingPersonId}
           onPersonSelectionHandled={() => setPendingPersonId("")}
         />

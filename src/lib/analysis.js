@@ -123,6 +123,121 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
   };
 }
 
+function buildFallbackPsychProfile({ personName, allSegments }) {
+  const texts = allSegments.map((s) => String(s.text || ""));
+  const joined = texts.join(" ").toLowerCase();
+  const total = allSegments.length || 1;
+
+  const assertive = (joined.match(/musimy|zdecydowal|powinniśmy|trzeba|zrobimy|decyduj/g) || []).length;
+  const questions = texts.filter((t) => t.includes("?")).length;
+  const emotion = (joined.match(/czuj|rozum|wspol|razem|relacj|zaufan|ważne dla|zależy mi/g) || []).length;
+  const dataW = (joined.match(/dane|liczby|procent|wyniki|statystyk|analiz|raport|badani/g) || []).length;
+  const longSent = texts.filter((t) => t.split(" ").length > 14).length;
+
+  const D = Math.min(95, Math.round(35 + assertive * 7 + (total > 10 ? 5 : 0)));
+  const I = Math.min(95, Math.round(30 + questions * 3 + emotion * 4));
+  const S = Math.min(95, Math.round(45 + emotion * 5));
+  const C = Math.min(95, Math.round(35 + dataW * 6 + longSent * 2));
+
+  return {
+    mode: "local-fallback",
+    disc: { D, I, S, C },
+    discStyle: "Profil heurystyczny",
+    discDescription:
+      "Profil wygenerowany lokalnie na podstawie sygnałów językowych. Skonfiguruj REACT_APP_ANTHROPIC_API_KEY, aby uzyskać głębszą analizę.",
+    values: [],
+    communicationStyle: C > 60 ? "analytical" : I > 60 ? "expressive" : S > 60 ? "diplomatic" : "direct",
+    decisionStyle: C > 60 ? "data-driven" : D > 60 ? "authoritative" : S > 60 ? "consensual" : "intuitive",
+    conflictStyle: S > 60 ? "collaborative" : D > 60 ? "confrontational" : "compromising",
+    listeningStyle: S > 60 ? "active" : C > 60 ? "selective" : "task-focused",
+    stressResponse: "Za mało danych do oceny zachowania pod presją.",
+    workingWithTips: ["Skonfiguruj Anthropic API Key, aby uzyskać spersonalizowane wskazówki."],
+    communicationDos: [],
+    communicationDonts: [],
+    redFlags: [],
+    coachingNote: "",
+    meetingsAnalyzed: 0,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export async function analyzePersonProfile({ personName, meetings, allSegments }) {
+  const fallback = buildFallbackPsychProfile({ personName, allSegments });
+
+  if (!API_KEY || allSegments.length < 5) {
+    return { ...fallback, meetingsAnalyzed: meetings.length };
+  }
+
+  const lines = allSegments
+    .slice(0, 100)
+    .map((s) => `[${s.meetingTitle || "Spotkanie"}] ${s.text}`)
+    .join("\n");
+
+  const prompt = [
+    `You are an expert business psychologist. Analyze the communication patterns of "${personName}".`,
+    `Base your analysis ONLY on their actual statements below from ${meetings.length} meeting(s).`,
+    `Respond in Polish for all text fields. Return valid JSON only — no prose outside the JSON.`,
+    ``,
+    `Statements by ${personName}:`,
+    lines,
+    ``,
+    `Return exactly this JSON shape (all fields required):`,
+    `{"disc":{"D":65,"I":45,"S":70,"C":55},"discStyle":"SC — stabilny i sumienny","discDescription":"2-zdaniowy opis dominującego stylu.","values":[{"value":"bezpieczeństwo","icon":"🛡️","quote":"cytat z wypowiedzi"}],"communicationStyle":"analytical","decisionStyle":"data-driven","conflictStyle":"collaborative","listeningStyle":"active","stressResponse":"Jak reaguje pod presją.","workingWithTips":["Wskazówka 1","Wskazówka 2","Wskazówka 3"],"communicationDos":["Co robić"],"communicationDonts":["Czego unikać"],"redFlags":["Ewentualny wzorzec"],"coachingNote":"Jedna obserwacja."}`,
+  ].join("\n");
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1800,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Anthropic request failed: ${response.status}`);
+
+    const payload = await response.json();
+    const parsed = parseAiResponse(payload.content?.[0]?.text || "");
+
+    const clamp100 = (v) => Math.min(100, Math.max(0, Number(v) || 50));
+
+    return {
+      mode: "anthropic",
+      disc: {
+        D: clamp100(parsed.disc?.D),
+        I: clamp100(parsed.disc?.I),
+        S: clamp100(parsed.disc?.S),
+        C: clamp100(parsed.disc?.C),
+      },
+      discStyle: parsed.discStyle || "",
+      discDescription: parsed.discDescription || "",
+      values: safeArray(parsed.values).slice(0, 5),
+      communicationStyle: parsed.communicationStyle || "direct",
+      decisionStyle: parsed.decisionStyle || "intuitive",
+      conflictStyle: parsed.conflictStyle || "collaborative",
+      listeningStyle: parsed.listeningStyle || "active",
+      stressResponse: parsed.stressResponse || "",
+      workingWithTips: dedupeList(parsed.workingWithTips).slice(0, 4),
+      communicationDos: dedupeList(parsed.communicationDos).slice(0, 3),
+      communicationDonts: dedupeList(parsed.communicationDonts).slice(0, 3),
+      redFlags: dedupeList(parsed.redFlags).slice(0, 2),
+      coachingNote: parsed.coachingNote || "",
+      meetingsAnalyzed: meetings.length,
+      generatedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Person profile analysis failed, falling back to local.", error);
+    return { ...fallback, mode: "fallback-after-api-error", meetingsAnalyzed: meetings.length };
+  }
+}
+
 function parseAiResponse(rawText) {
   const match = String(rawText || "").match(/\{[\s\S]*\}/);
   if (!match) {

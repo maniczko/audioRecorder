@@ -10,6 +10,7 @@ import {
   upsertMeeting,
 } from "../lib/meeting";
 import { buildWorkspaceActivityFeed } from "../lib/activityFeed";
+import { analyzePersonProfile } from "../lib/analysis";
 import { buildPeopleProfiles } from "../lib/people";
 import { createId, STORAGE_KEYS } from "../lib/storage";
 import {
@@ -688,6 +689,37 @@ export default function useMeetings({
       ...prev,
       [personId]: { ...(prev[personId] || {}), ...patches },
     }));
+  }
+
+  async function analyzePersonPsychProfile(personId) {
+    const profile = peopleProfiles.find((p) => p.id === personId);
+    if (!profile) return;
+
+    const allSegments = [];
+    for (const meeting of profile.meetings) {
+      for (const rec of meeting.recordings || []) {
+        const names = { ...(rec.speakerNames || {}), ...(rec.analysis?.speakerLabels || {}) };
+        const targetLower = profile.name.toLowerCase();
+        const entry = Object.entries(names).find(([, n]) => {
+          const nl = String(n || "").toLowerCase();
+          return nl === targetLower || nl.includes(targetLower) || targetLower.includes(nl) ||
+            (targetLower.split(" ")[0].length > 2 && nl.split(" ")[0] === targetLower.split(" ")[0]);
+        });
+        if (!entry) continue;
+        const speakerId = Number(entry[0]);
+        (rec.transcript || [])
+          .filter((s) => s.speakerId === speakerId)
+          .forEach((s) => allSegments.push({ ...s, meetingTitle: meeting.title }));
+      }
+    }
+
+    const result = await analyzePersonProfile({
+      personName: profile.name,
+      meetings: profile.meetings,
+      allSegments,
+    });
+    updatePersonNotes(personId, { psychProfile: result });
+    return result;
   }
 
   function createAdHocMeeting() {
@@ -1683,6 +1715,7 @@ export default function useMeetings({
     renameTag,
     deleteTag,
     updatePersonNotes,
+    analyzePersonPsychProfile,
     clearMeetingDraft,
     createAdHocMeeting,
     saveMeeting,

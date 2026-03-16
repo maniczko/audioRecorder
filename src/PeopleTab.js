@@ -1,7 +1,209 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, onCreateMeeting, onUpdatePersonNotes, externalSelectedPersonId, onPersonSelectionHandled }) {
+const DISC_COLORS = { D: "#f17d72", I: "#ffd166", S: "#74d0bf", C: "#7b9eeb" };
+
+const STYLE_LABELS = {
+  communicationStyle: { direct: "Bezpośredni", diplomatic: "Dyplomatyczny", analytical: "Analityczny", expressive: "Ekspresywny" },
+  decisionStyle: { "data-driven": "Oparty na danych", intuitive: "Intuicyjny", consensual: "Konsensusowy", authoritative: "Autorytatywny" },
+  conflictStyle: { confrontational: "Konfrontacyjny", avoidant: "Unikający", collaborative: "Współpracujący", compromising: "Kompromisowy" },
+  listeningStyle: { active: "Aktywny słuchacz", selective: "Selektywny", "task-focused": "Zadaniowy" },
+};
+
+function DiscRadarChart({ disc }) {
+  const cx = 100, cy = 100, maxR = 70;
+  const { D = 50, I = 50, S = 50, C = 50 } = disc || {};
+
+  function pt(val, dir) {
+    const r = (Math.min(100, Math.max(0, val)) / 100) * maxR;
+    if (dir === "N") return [cx, cy - r];
+    if (dir === "E") return [cx + r, cy];
+    if (dir === "S") return [cx, cy + r];
+    return [cx - r, cy];
+  }
+
+  const pts = [pt(D, "N"), pt(I, "E"), pt(S, "S"), pt(C, "W")];
+  const poly = pts.map((p) => p.join(",")).join(" ");
+  const rings = [25, 50, 75, 100];
+
+  return (
+    <svg viewBox="0 0 200 200" className="disc-radar" aria-label="Radar DISC">
+      {rings.map((v) => {
+        const r = (v / 100) * maxR;
+        return (
+          <polygon
+            key={v}
+            points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+            fill="none"
+            stroke="rgba(255,255,255,0.07)"
+            strokeWidth="1"
+          />
+        );
+      })}
+      <line x1={cx} y1={cy - maxR} x2={cx} y2={cy + maxR} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={cx - maxR} y1={cy} x2={cx + maxR} y2={cy} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <polygon points={poly} fill="rgba(116,208,191,0.18)" stroke="rgba(116,208,191,0.75)" strokeWidth="2" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="4" fill={[DISC_COLORS.D, DISC_COLORS.I, DISC_COLORS.S, DISC_COLORS.C][i]} />
+      ))}
+      <text x={cx} y={cy - maxR - 11} textAnchor="middle" fill={DISC_COLORS.D} fontSize="13" fontWeight="700">D</text>
+      <text x={cx + maxR + 13} y={cy + 5} textAnchor="start" fill={DISC_COLORS.I} fontSize="13" fontWeight="700">I</text>
+      <text x={cx} y={cy + maxR + 19} textAnchor="middle" fill={DISC_COLORS.S} fontSize="13" fontWeight="700">S</text>
+      <text x={cx - maxR - 13} y={cy + 5} textAnchor="end" fill={DISC_COLORS.C} fontSize="13" fontWeight="700">C</text>
+      <text x={cx + 5} y={cy - maxR + 14} fill="rgba(255,255,255,0.55)" fontSize="10">{D}</text>
+      <text x={cx + maxR - 6} y={cy - 5} textAnchor="end" fill="rgba(255,255,255,0.55)" fontSize="10">{I}</text>
+      <text x={cx + 5} y={cy + maxR - 4} fill="rgba(255,255,255,0.55)" fontSize="10">{S}</text>
+      <text x={cx - maxR + 6} y={cy - 5} fill="rgba(255,255,255,0.55)" fontSize="10">{C}</text>
+    </svg>
+  );
+}
+
+function PsychProfilePanel({ person, onAnalyze, analyzing }) {
+  const [showRedFlags, setShowRedFlags] = useState(false);
+  const p = person.psychProfile;
+  const canAnalyze = person.meetings.length >= 1;
+
+  if (!p) {
+    return (
+      <div className="psych-empty-state">
+        <p className="soft-copy">
+          {canAnalyze
+            ? `${person.meetings.length} spotkanie${person.meetings.length > 1 ? "ń" : ""} z tą osobą — gotowe do analizy.`
+            : "Potrzeba co najmniej 1 spotkania, aby wygenerować profil."}
+        </p>
+        <button type="button" className="secondary-button" onClick={onAnalyze} disabled={!canAnalyze || analyzing}>
+          {analyzing ? "Analizuję…" : "Generuj profil"}
+        </button>
+        {analyzing && <div className="psych-loading-bar" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="psych-profile-content">
+      <div className="psych-disc-section">
+        <DiscRadarChart disc={p.disc} />
+        <div className="psych-disc-info">
+          <div className="psych-disc-style">{p.discStyle}</div>
+          {p.discDescription && <p className="psych-disc-description">{p.discDescription}</p>}
+          <div className="psych-disc-bars">
+            {["D", "I", "S", "C"].map((key) => (
+              <div key={key} className="psych-disc-bar-row">
+                <span className={`psych-disc-label psych-disc-${key.toLowerCase()}`}>{key}</span>
+                <div className="psych-disc-bar-track">
+                  <div
+                    className={`psych-disc-bar-fill psych-disc-fill-${key.toLowerCase()}`}
+                    style={{ width: `${p.disc?.[key] || 0}%` }}
+                  />
+                </div>
+                <span className="psych-disc-value">{p.disc?.[key] || 0}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {p.values?.length > 0 && (
+        <div className="psych-section">
+          <div className="psych-section-label">Wartości</div>
+          <div className="psych-values-grid">
+            {p.values.map((v, i) => (
+              <div key={i} className="psych-value-card">
+                {v.icon && <span className="psych-value-icon">{v.icon}</span>}
+                <span className="psych-value-name">{v.value}</span>
+                {v.quote && <span className="psych-value-quote">„{v.quote}"</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="psych-section">
+        <div className="psych-section-label">Style</div>
+        <div className="psych-style-badges">
+          {[["Komunikacja", "communicationStyle"], ["Decyzje", "decisionStyle"], ["Konflikt", "conflictStyle"], ["Słuchanie", "listeningStyle"]].map(
+            ([label, key]) =>
+              p[key] ? (
+                <div key={key} className="psych-style-badge">
+                  <span className="psych-style-badge-label">{label}</span>
+                  <span className="psych-style-badge-value">{STYLE_LABELS[key]?.[p[key]] || p[key]}</span>
+                </div>
+              ) : null
+          )}
+        </div>
+      </div>
+
+      {p.stressResponse && (
+        <div className="psych-section">
+          <div className="psych-section-label">Pod presją</div>
+          <p className="psych-stress-text">{p.stressResponse}</p>
+        </div>
+      )}
+
+      {(p.communicationDos?.length > 0 || p.communicationDonts?.length > 0 || p.workingWithTips?.length > 0) && (
+        <div className="psych-section">
+          <div className="psych-section-label">Jak z nią pracować</div>
+          {(p.communicationDos?.length > 0 || p.communicationDonts?.length > 0) && (
+            <div className="psych-tips-columns">
+              {p.communicationDos?.length > 0 && (
+                <div>
+                  <div className="psych-tips-col-head psych-do">Do ✓</div>
+                  <ul className="clean-list psych-tip-list">
+                    {p.communicationDos.map((tip, i) => <li key={i}>{tip}</li>)}
+                  </ul>
+                </div>
+              )}
+              {p.communicationDonts?.length > 0 && (
+                <div>
+                  <div className="psych-tips-col-head psych-dont">Don't ✗</div>
+                  <ul className="clean-list psych-tip-list">
+                    {p.communicationDonts.map((tip, i) => <li key={i}>{tip}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          {p.workingWithTips?.length > 0 && (
+            <ul className="clean-list psych-tips-main">
+              {p.workingWithTips.map((tip, i) => (
+                <li key={i} className="psych-tip-item">→ {tip}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {p.coachingNote && (
+        <div className="psych-coaching-box">
+          <span className="psych-coaching-icon">💡</span>
+          <p>{p.coachingNote}</p>
+        </div>
+      )}
+
+      {p.redFlags?.length > 0 && (
+        <div className="psych-redflags-section">
+          <button type="button" className="psych-redflags-toggle" onClick={() => setShowRedFlags((v) => !v)}>
+            ⚠ Red flags ({p.redFlags.length}) {showRedFlags ? "▲" : "▼"}
+          </button>
+          {showRedFlags && (
+            <ul className="clean-list psych-redflags-list">
+              {p.redFlags.map((flag, i) => <li key={i}>{flag}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <div className="psych-footer">
+        <span>Na podstawie {p.meetingsAnalyzed || person.meetings.length} spotkań · model probabilistyczny</span>
+        <button type="button" className="ghost-button" style={{ fontSize: "0.75rem" }} onClick={onAnalyze} disabled={analyzing}>
+          {analyzing ? "Aktualizuję…" : "Odśwież"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, onCreateMeeting, onUpdatePersonNotes, onAnalyzePersonProfile, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
   const [editingSummary, setEditingSummary] = useState(false);
@@ -10,8 +212,13 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
   const [newOutputDraft, setNewOutputDraft] = useState("");
   const [addingNeed, setAddingNeed] = useState(false);
   const [addingOutput, setAddingOutput] = useState(false);
+  const [analyzingPsych, setAnalyzingPsych] = useState(false);
   const meetingsSectionRef = useRef(null);
   const tasksSectionRef = useRef(null);
+
+  useEffect(() => {
+    setAnalyzingPsych(false);
+  }, [selectedPersonId]);
 
   const visibleProfiles = useMemo(() => {
     const term = String(query || "").trim().toLowerCase();
@@ -53,6 +260,16 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
   }, [externalSelectedPersonId, onPersonSelectionHandled, profiles]);
 
   const selectedPerson = visibleProfiles.find((profile) => profile.id === selectedPersonId) || visibleProfiles[0] || null;
+
+  async function handleAnalyzePsych() {
+    if (!selectedPerson || !onAnalyzePersonProfile) return;
+    setAnalyzingPsych(true);
+    try {
+      await onAnalyzePersonProfile(selectedPerson.id);
+    } finally {
+      setAnalyzingPsych(false);
+    }
+  }
 
   return (
     <div className="people-layout">
@@ -205,6 +422,20 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                     <span className="soft-copy">Potrzeba wiecej spotkan, aby lepiej scharakteryzowac te osobe.</span>
                   )}
                 </div>
+              </section>
+
+              <section className="panel psych-profile-panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Psychology</div>
+                    <h2>Profil psychologiczny</h2>
+                  </div>
+                </div>
+                <PsychProfilePanel
+                  person={selectedPerson}
+                  onAnalyze={handleAnalyzePsych}
+                  analyzing={analyzingPsych}
+                />
               </section>
 
               <section className="panel">
