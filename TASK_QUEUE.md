@@ -548,3 +548,119 @@ Akceptacja:
 Techniczne wskazowki:
 - opcja B: npm install --save-dev typescript @types/react @types/react-dom.
 - rename: auth.js → auth.ts, stopniowe dodawanie interface.
+
+---
+
+## 056. [AUDIO] RNNoise AudioWorklet — spektralne tłumienie szumów
+Status: `done`
+Priorytet: `P2`
+Cel: WebRTC noiseSuppression radzi sobie tylko ze stacjonarnym szumem; głębsze tłumienie wymaga DSP w AudioWorklet.
+Akceptacja:
+- mikrofon → AudioWorklet (spektralna subtrakcja) → MediaStreamDestination → MediaRecorder.
+- wizualizacja (AnalyserNode) podłączona do przetworzonego sygnału.
+- fallback do surowego strumienia gdy AudioWorklet niedostępny (Firefox prywatny, starszy Safari).
+- bypass toggle via port.postMessage.
+Implementacja:
+- `public/rnnoise-worklet.js` — Cooley-Tukey FFT 512pt, estymator minimum-statistics, filtr Wienera, WOLA hop=128.
+- `src/audio/noiseReducerNode.js` — helper createNoiseReducerNode() z graceful fallback.
+- `src/hooks/useRecorder.js` — source → noiseReducer → analyser + destination (MediaStreamDestination).
+Uwaga: obecna implementacja to spektralna subtrakcja (nie model ML). Upgrade do prawdziwego RNNoise WASM opisany w 057.
+
+---
+
+## 057. [AUDIO] Upgrade worklet 056 do rzeczywistego modelu RNNoise (WASM)
+Status: `todo`
+Priorytet: `P3`
+Cel: spektralna subtrakcja (task 056) nie radzi sobie z niestacjonarnym szumem (głosy w tle, ruch uliczny). RNNoise WASM (sieć neuronowa Mozilla) daje ~15 dB lepszą redukcję w praktycznych warunkach.
+Akceptacja:
+- worklet ładuje WASM binarny RNNoise z public/.
+- przetwarzanie ramek 480 próbek przez rnnoise_process_frame().
+- VAD probability z RNNoise eksponowane do UI (opcjonalnie).
+- brak WASM → fallback do spektralnej subtrakcji z 056.
+Techniczne wskazówki:
+- znaleźć build WASM rnnoise BEZ Emscripten env imports (np. rnnoise.wasm skompilowany z wasi lub standalone).
+- alternatywnie: załadować rnnoise-wasm.js (Emscripten) w głównym wątku, przekazać WebAssembly.Module do worklet przez port.postMessage({ type: "module", wasmModule }, [wasmModule]).
+- worklet: WebAssembly.instantiate(data.wasmModule, { env: minimalEmscriptenEnv }).
+- frame size: 480 próbek; buforować w worklet i przetwarzać synchronicznie.
+
+---
+
+## 058. [AUDIO] initial_prompt Whisper z danymi spotkania
+Status: `todo`
+Priorytet: `P2`
+Cel: Whisper niepoprawnie transkrybuje imiona uczestników, nazwy projektów i branżowy żargon. initial_prompt "nastraja" model bez dodatkowego kosztu.
+Akceptacja:
+- do każdego requestu transkrypcji przekazywane jest pole prompt z: tytułem spotkania, listą uczestników, tagami i słowami kluczowymi workspace.
+- dokładność nazw własnych widocznie lepsza (mierzalnie przez porównanie przed/po).
+- brak danych spotkania → prompt pomijany (nie puste pole).
+Techniczne wskazówki:
+- `server/audioPipeline.js` transcribeRecording(): `fields.prompt = buildWhisperPrompt(options)`.
+- `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` → string max 224 tokeny.
+- przekazać dane spotkania przez `ensureTranscriptionJob` → options.
+- prompt: "Spotkanie: [tytuł]. Uczestnicy: [imiona]. Tematy: [tagi]. [vocabulary]".
+
+---
+
+## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcją
+Status: `todo`
+Priorytet: `P2`
+Cel: Whisper jest wytrenowany na 16 kHz mono PCM — WebM/Opus dekodowany wewnętrznie może gubić detale. Ekspilcytna konwersja eliminuje ten czynnik.
+Akceptacja:
+- przed wysłaniem do OpenAI API plik konwertowany ffmpeg do 16 kHz mono WAV.
+- oryginał zachowany; konwertowany plik tymczasowy usuwany po transkrypcji.
+- dla pliku WAV 16 kHz który już spełnia warunki — konwersja pomijana.
+- czas konwersji < 3s dla 60-minutowego nagrania.
+Techniczne wskazówki:
+- `server/audioPipeline.js` przed requestAudioTranscription(): jeśli contentType != audio/wav → execSync ffmpeg -ar 16000 -ac 1 -acodec pcm_s16le.
+- plik tymczasowy w tym samym katalogu co oryginał: `${filePath}.conv.wav`.
+- finally: unlinkSync(tmpPath).
+
+---
+
+## 060. [AUDIO] ffmpeg pre-processing — denoise + filtrowanie przed Whisperem
+Status: `todo`
+Priorytet: `P2`
+Cel: nagrania w głośnych środowiskach (otwarte biuro, kawiarnia) dają błędne transkrypcje mimo WebRTC NS. Przepuszczenie przez ffmpeg ffttdn + highpass przed transkrypcją poprawia ASR bez dodatkowego kosztu API.
+Akceptacja:
+- przed transkrypcją (serwer): `ffmpeg -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000"`.
+- opcja włączona domyślnie; można wyłączyć flagą env VOICELOG_AUDIO_PREPROCESS=false.
+- czas pre-processingu < 5s dla 60-minutowego nagrania.
+- nie modyfikuje oryginalnego pliku — workuje na tymczasowej kopii.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: nowa funkcja preprocessAudio(inputPath) → tmpPath.
+- łączyć z konwersją 16 kHz (059) w jednym wywołaniu ffmpeg: `-af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1`.
+- cleanup w finally.
+
+---
+
+## 061. [AUDIO] VAD (SileroVAD) — wycinanie ciszy przed uploadem
+Status: `todo`
+Priorytet: `P2`
+Cel: długie pauzy w nagraniu wydłużają czas transkrypcji, zwiększają koszt API i powodują halucynacje Whispera. SileroVAD wycina ciszę przed wysyłką.
+Akceptacja:
+- po zatrzymaniu nagrania, przed uploadem: detekcja segmentów aktywności mowy.
+- fragmenty ciszy > 2s usuwane z uploadu (zachowane w lokalnym pliku).
+- w UI informacja ile % audio zostało wycięte ("Wycięto 3m 20s ciszy").
+- fallback: jeśli VAD niedostępny, upload jak dotąd.
+Techniczne wskazówki:
+- `@ricky0123/vad-web` (SileroVAD ONNX, ~200 kB gzip) — działa w głównym wątku przeglądarki.
+- po onstop: await vadFilter(blob) → przefiltrowany blob.
+- nowy plik `src/audio/vadFilter.js`.
+
+---
+
+## 062. [AUDIO] LLM post-processing transkrypcji
+Status: `todo`
+Priorytet: `P3`
+Cel: Whisper generuje błędy interpunkcji, wielkich liter i homofonów. Krótki pass przez GPT-4o-mini kosztuje grosze i znacząco podnosi czytelność.
+Akceptacja:
+- po zakończeniu transkrypcji opcjonalny pass przez LLM: korekta interpunkcji, wielkich liter, oczywistych homofonów.
+- zachowana oryginalna segmentacja i atrybuty speakerId/timestamp.
+- toggle "Korekta AI" w ustawieniach workspace (domyślnie wyłączony — koszt API).
+- cena szacunkowa pokazana w UI: "~$0.001 / 10 min nagrania".
+Techniczne wskazówki:
+- `server/audioPipeline.js`: po buildVerificationResult() opcjonalny `correctTranscriptWithLLM(segments, options)`.
+- prompt: "Popraw interpunkcję i pisownię w poniższych segmentach transkrypcji. Zachowaj dokładne słowa. Format JSON."
+- model: gpt-4o-mini, max_tokens: 2 * łączna_liczba_tokenów_wejścia.
+- env: `VOICELOG_TRANSCRIPT_CORRECTION=true`.
+

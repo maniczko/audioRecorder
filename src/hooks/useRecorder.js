@@ -16,6 +16,7 @@ import {
 } from "../lib/recordingQueue";
 import { createId, STORAGE_KEYS } from "../lib/storage";
 import { createMediaService } from "../services/mediaService";
+import { createNoiseReducerNode } from "../audio/noiseReducerNode";
 import useStoredState from "./useStoredState";
 
 function revokeAudioUrl(url) {
@@ -518,15 +519,30 @@ export default function useRecorder({
       }
 
       const audioContext = new AudioContextClass();
+      const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
-      audioContext.createMediaStreamSource(stream).connect(analyser);
+
+      // Try to insert spectral-subtraction noise reducer between source and recorder.
+      // Falls back gracefully to raw stream if AudioWorklet is unavailable.
+      const noiseReducer = await createNoiseReducerNode(audioContext);
+      let recordStream = stream;
+
+      if (noiseReducer) {
+        const destination = audioContext.createMediaStreamDestination();
+        source.connect(noiseReducer);
+        noiseReducer.connect(analyser);
+        noiseReducer.connect(destination);
+        recordStream = destination.stream;
+      } else {
+        source.connect(analyser);
+      }
 
       streamRef.current = stream;
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
 
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(recordStream);
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
