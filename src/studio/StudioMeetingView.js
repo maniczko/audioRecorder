@@ -711,50 +711,6 @@ export default function StudioMeetingView({
               </section>
             )}
 
-            {studioAnalysis.participantInsights?.length > 0 && (
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Dynamics</div>
-                    <h2>Dynamika rozmowy</h2>
-                  </div>
-                  {studioAnalysis.energyLevel && (
-                    <span className={`status-chip energy-${studioAnalysis.energyLevel}`}>
-                      energia: {studioAnalysis.energyLevel}
-                    </span>
-                  )}
-                </div>
-                <div className="participant-insights-list">
-                  {studioAnalysis.participantInsights.map((p, i) => (
-                    <div key={i} className="participant-insight-row">
-                      <div className="participant-insight-name">{p.speaker}</div>
-                      <div className="participant-talk-wrap">
-                        <div className="participant-talk-bar" style={{ width: `${Math.round((p.talkRatio || 0) * 100)}%` }} />
-                        <span className="participant-talk-pct">{Math.round((p.talkRatio || 0) * 100)}%</span>
-                      </div>
-                      <span className={`participant-stance stance-${p.stance || "neutral"}`}>{p.stance || "neutral"}</span>
-                      {p.mainTopic && <span className="participant-topic">{p.mainTopic}</span>}
-                    </div>
-                  ))}
-                </div>
-                {studioAnalysis.tensions?.length > 0 && (
-                  <div className="analysis-block" style={{ marginTop: 14 }}>
-                    <h3>Napięcia</h3>
-                    <ul className="clean-list">
-                      {studioAnalysis.tensions.map((t, i) => (
-                        <li key={i} className="tension-item">
-                          <strong>{t.topic}</strong>
-                          {t.between?.length > 0 && <span className="tension-between"> — {t.between.join(" vs ")}</span>}
-                          <span className={`tension-resolved ${t.resolved ? "yes" : "no"}`}>
-                            {t.resolved ? "rozwiązane" : "otwarte"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            )}
 
             {studioAnalysis.keyQuotes?.length > 0 && (
               <section className="panel">
@@ -851,72 +807,6 @@ export default function StudioMeetingView({
           </div>
         </section>
 
-        <section className="panel recordings-panel">
-          <div className="panel-header compact">
-            <div>
-              <div className="eyebrow">Recordings</div>
-              <h2>Historia spotkania</h2>
-            </div>
-            <div className="status-chip">{selectedMeeting.recordings.length} zapisow</div>
-          </div>
-          <div className="recordings-list">
-            {selectedMeetingQueue.length ? (
-              selectedMeetingQueue.map((item) => (
-                <article key={item.recordingId} className={`recording-card pending ${item.status}`}>
-                  <div className="recording-card-top">
-                    <strong>{item.meetingTitle}</strong>
-                    <span>{item.status}</span>
-                  </div>
-                  <p>
-                    Status kolejki: {item.status}
-                    {item.errorMessage ? ` | ${item.errorMessage}` : ""}
-                  </p>
-                  <div className="meeting-card-meta">
-                    <span>Proba {Math.max(1, item.attempts || 0)}</span>
-                    <span>{formatDuration(item.duration || 0)}</span>
-                  </div>
-                  {item.status === "failed" ? (
-                    <div className="button-row">
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => retryRecordingQueueItem(item.recordingId)}
-                      >
-                        Ponow upload
-                      </button>
-                    </div>
-                  ) : null}
-                </article>
-              ))
-            ) : null}
-            {selectedMeeting.recordings.length ? (
-              selectedMeeting.recordings.map((recording) => (
-                <button
-                  type="button"
-                  key={recording.id}
-                  className={recording.id === selectedRecordingId ? "recording-card active" : "recording-card"}
-                  onClick={() => setSelectedRecordingId(recording.id)}
-                >
-                  <div className="recording-card-top">
-                    <strong>{formatDateTime(recording.createdAt)}</strong>
-                    <span>{formatDuration(recording.duration)}</span>
-                  </div>
-                  <p>{recording.analysis?.summary || "Nagranie bez summary."}</p>
-                  <div className="meeting-card-meta">
-                    <span>{recording.speakerCount || 0} speakerow</span>
-                    <span>{recording.transcript.length} segmentow</span>
-                    <span>{recording.pipelineStatus || "done"}</span>
-                  </div>
-                </button>
-              ))
-            ) : !selectedMeetingQueue.length ? (
-              <div className="empty-panel">
-                <strong>Brak nagran</strong>
-                <span>Pierwsze nagranie pojawi sie tutaj.</span>
-              </div>
-            ) : null}
-          </div>
-        </section>
 
         <section className="panel">
           <div className="panel-header compact">

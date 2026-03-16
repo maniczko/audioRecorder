@@ -13,6 +13,9 @@ const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
 const TRANSCRIPT_CORRECTION = process.env.VOICELOG_TRANSCRIPT_CORRECTION === "true";
 const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
+const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || "";
+const PYTHON_BINARY = process.env.PYTHON_BINARY || "python";
+const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -183,8 +186,13 @@ function normalizeDiarizedSegments(payload) {
         return null;
       }
 
+      // NOTE: segment.speaker can be numeric 0 which is falsy — must use explicit null check
       const rawSpeakerLabel = clean(
-        segment.speaker || segment.speaker_label || segment.speakerId || segment.speaker_id || `speaker_${index}`
+        (segment.speaker !== undefined && segment.speaker !== null ? String(segment.speaker) : null)
+        || (segment.speaker_label !== undefined && segment.speaker_label !== null ? String(segment.speaker_label) : null)
+        || (segment.speakerId !== undefined && segment.speakerId !== null ? String(segment.speakerId) : null)
+        || (segment.speaker_id !== undefined && segment.speaker_id !== null ? String(segment.speaker_id) : null)
+        || `speaker_${index}`
       );
 
       if (!speakerOrder.has(rawSpeakerLabel)) {
@@ -326,13 +334,111 @@ function buildVerificationResult(diarizedSegments, verificationSegments) {
   };
 }
 
+/**
+ * Runs pyannote.audio speaker diarization via Python subprocess.
+ * Returns [{speaker, start, end}] or null if unavailable/failed.
+ */
+function runPyannoteDiarization(audioPath) {
+  if (!HF_TOKEN) return null;
+  if (!fs.existsSync(DIARIZE_SCRIPT)) {
+    console.warn("[audioPipeline] diarize.py not found, skipping pyannote.");
+    return null;
+  }
+  const { spawnSync } = require("node:child_process");
+  console.log("[audioPipeline] Running pyannote diarization (may download ~1GB model on first run)...");
+  const result = spawnSync(PYTHON_BINARY, [DIARIZE_SCRIPT, audioPath, HF_TOKEN], {
+    timeout: 600000, // 10 minutes — first run downloads the model
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
+
+  if (result.error) {
+    console.warn("[audioPipeline] pyannote spawn error:", result.error.message);
+    return null;
+  }
+  if (result.status !== 0) {
+    console.warn("[audioPipeline] pyannote exited with status", result.status, result.stderr?.slice(0, 400));
+    return null;
+  }
+  try {
+    const parsed = JSON.parse((result.stdout || "").trim());
+    if (parsed?.error) {
+      console.warn("[audioPipeline] pyannote returned error:", parsed.error);
+      return null;
+    }
+    if (!Array.isArray(parsed) || !parsed.length) return null;
+    const speakers = [...new Set(parsed.map((s) => s.speaker))];
+    console.log(`[audioPipeline] pyannote: ${parsed.length} segments, ${speakers.length} speakers: ${speakers.join(", ")}`);
+    return parsed;
+  } catch (e) {
+    console.warn("[audioPipeline] pyannote JSON parse failed:", e.message, result.stdout?.slice(0, 200));
+    return null;
+  }
+}
+
+/**
+ * Merges pyannote speaker assignments [{speaker, start, end}] with Whisper text segments.
+ * For each Whisper segment, assigns the pyannote speaker with the greatest time overlap.
+ */
+function mergeWithPyannote(pyannoteSegments, whisperSegments) {
+  const speakerOrder = new Map();
+  const speakerNames = {};
+
+  const segments = whisperSegments
+    .map((wseg) => {
+      const wStart = Number(wseg.start ?? 0);
+      const wEnd = Number(wseg.end ?? wStart);
+      const text = clean(wseg.text || wseg.transcript || "");
+      if (!text) return null;
+
+      let bestSpeaker = null;
+      let bestOverlap = 0;
+      for (const pseg of pyannoteSegments) {
+        const overlap = Math.max(0, Math.min(wEnd, pseg.end) - Math.max(wStart, pseg.start));
+        if (overlap > bestOverlap) {
+          bestOverlap = overlap;
+          bestSpeaker = pseg.speaker;
+        }
+      }
+      const rawSpeakerLabel = bestSpeaker || "speaker_unknown";
+
+      if (!speakerOrder.has(rawSpeakerLabel)) {
+        const nextId = speakerOrder.size;
+        speakerOrder.set(rawSpeakerLabel, nextId);
+        speakerNames[String(nextId)] = normalizeSpeakerLabel(rawSpeakerLabel, nextId);
+      }
+
+      const speakerId = speakerOrder.get(rawSpeakerLabel);
+      const estimatedDuration = Math.max(1.5, tokenize(text).length * 0.42);
+      const endTimestamp = wEnd > wStart ? wEnd : wStart + estimatedDuration;
+
+      return {
+        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+        text,
+        timestamp: wStart,
+        endTimestamp,
+        speakerId,
+        rawSpeakerLabel,
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    segments,
+    speakerNames,
+    speakerCount: Object.keys(speakerNames).length,
+    text: segments.map((s) => s.text).join(" "),
+  };
+}
+
 async function preprocessAudio(filePath) {
   if (!AUDIO_PREPROCESS) return null;
   const { execSync } = require("node:child_process");
   const tmpPath = `${filePath}.prep.wav`;
   try {
     execSync(
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=8000" -ar 16000 -ac 1 "${tmpPath}"`,
+      // lowpass raised to 16kHz — 8kHz was destroying consonants (s, sh, f) and hurting diarization
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-25,highpass=f=80,lowpass=f=16000" -ar 16000 -ac 1 "${tmpPath}"`,
       { stdio: "pipe", timeout: 120000 }
     );
     return tmpPath;
@@ -349,39 +455,10 @@ async function transcribeRecording(asset, options = {}) {
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
 
   try {
-  const diarizedPayload = await requestAudioTranscription({
-    filePath: transcribeFilePath,
-    contentType: transcribeContentType,
-    fields: {
-      model: DIARIZATION_MODEL,
-      language: options.language || AUDIO_LANGUAGE,
-      response_format: "diarized_json",
-      chunking_strategy: "auto",
-    },
-  });
-
-  // Debug: log raw API response structure to diagnose speaker diarization issues
-  const rawKeys = Object.keys(diarizedPayload || {});
-  const rawSegCount = (diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || []).length;
-  const rawSpeakers = new Set(
-    (diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [])
-      .map(s => s.speaker || s.speaker_label || s.speaker_id || null)
-      .filter(Boolean)
-  );
-  console.log(`[audioPipeline] Diarize raw response keys: ${rawKeys.join(", ")}`);
-  console.log(`[audioPipeline] Diarize segments count: ${rawSegCount}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
-  if (diarizedPayload?.utterances?.length) {
-    console.log(`[audioPipeline] NOTE: response uses 'utterances' field (not 'segments') — needs parser update`);
-  }
-
-  const diarization = normalizeDiarizedSegments(diarizedPayload);
-  if (!diarization.segments.length) {
-    throw new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.");
-  }
-  let verificationSegments = [];
-
+  // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
+  let whisperPayload = null;
   try {
-    const verificationPayload = await requestAudioTranscription({
+    whisperPayload = await requestAudioTranscription({
       filePath: transcribeFilePath,
       contentType: transcribeContentType,
       fields: {
@@ -391,9 +468,52 @@ async function transcribeRecording(asset, options = {}) {
         timestamp_granularities: ["segment"],
       },
     });
-    verificationSegments = normalizeVerificationSegments(verificationPayload);
   } catch (error) {
-    console.error("Verification pass failed, falling back to diarized segments only.", error);
+    console.error("[audioPipeline] Whisper pass failed:", error.message);
+  }
+  const verificationSegments = normalizeVerificationSegments(whisperPayload || {});
+
+  // ── Try pyannote diarization (best quality, requires HF_TOKEN) ──
+  let diarization = null;
+  if (HF_TOKEN) {
+    const pyannoteSegments = runPyannoteDiarization(transcribeFilePath);
+    if (pyannoteSegments && verificationSegments.length) {
+      console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
+      diarization = mergeWithPyannote(pyannoteSegments, verificationSegments);
+    }
+  }
+
+  // ── Fall back to OpenAI diarization model ──
+  if (!diarization) {
+    console.log("[audioPipeline] Using OpenAI diarization model (pyannote unavailable or HF_TOKEN not set).");
+    const diarizedPayload = await requestAudioTranscription({
+      filePath: transcribeFilePath,
+      contentType: transcribeContentType,
+      fields: {
+        model: DIARIZATION_MODEL,
+        language: options.language || AUDIO_LANGUAGE,
+        response_format: "diarized_json",
+        // chunking_strategy removed — "auto" resets speaker_N numbering per chunk,
+        // causing all speakers to be labeled speaker_0 in every chunk
+      },
+    });
+
+    // Debug: log raw API response structure
+    const rawKeys = Object.keys(diarizedPayload || {});
+    const rawSegs = diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [];
+    const rawSpeakers = new Set(
+      rawSegs
+        .map((s) => (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null) || s.speaker_label || s.speaker_id || null)
+        .filter(Boolean)
+    );
+    console.log(`[audioPipeline] Diarize raw response keys: ${rawKeys.join(", ")}`);
+    console.log(`[audioPipeline] Diarize segments: ${rawSegs.length}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
+
+    diarization = normalizeDiarizedSegments(diarizedPayload);
+  }
+
+  if (!diarization.segments.length) {
+    throw new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.");
   }
 
   const verificationResult = buildVerificationResult(diarization.segments, verificationSegments);
@@ -504,7 +624,7 @@ async function normalizeRecording(filePath) {
   const tmpPath = `${filePath}.norm.tmp`;
   try {
     execSync(
-      `ffmpeg -y -i "${filePath}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "${tmpPath}"`,
       { stdio: "pipe", timeout: 120000 }
     );
     fs.renameSync(tmpPath, filePath);
