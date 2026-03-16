@@ -510,6 +510,13 @@ async function transcribeRecording(asset, options = {}) {
     console.log(`[audioPipeline] Diarize segments: ${rawSegs.length}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
 
     diarization = normalizeDiarizedSegments(diarizedPayload);
+
+    // Debug: log per-speaker segment count after normalization
+    const normDist = diarization.segments.reduce((acc, s) => {
+      const key = `${s.speakerId}(${s.rawSpeakerLabel})`;
+      acc[key] = (acc[key] || 0) + 1; return acc;
+    }, {});
+    console.log(`[audioPipeline] After normalization: ${diarization.segments.length} segments, speakerNames: ${JSON.stringify(diarization.speakerNames)}, dist: ${JSON.stringify(normDist)}`);
   }
 
   if (!diarization.segments.length) {
@@ -517,6 +524,15 @@ async function transcribeRecording(asset, options = {}) {
   }
 
   const verificationResult = buildVerificationResult(diarization.segments, verificationSegments);
+
+  // Debug: log speaker distribution after verification
+  const spkDist = verificationResult.verifiedSegments.reduce((acc, s) => {
+    acc[s.speakerId] = (acc[s.speakerId] || 0) + 1; return acc;
+  }, {});
+  console.log(`[audioPipeline] After verification: ${verificationResult.verifiedSegments.length} segments, speakers: ${JSON.stringify(spkDist)}`);
+  verificationResult.verifiedSegments.forEach((s) => {
+    console.log(`  spkId=${s.speakerId} raw=${s.rawSpeakerLabel} | ${s.text?.slice(0, 50)}`);
+  });
 
   // Speaker identification against enrolled voice profiles
   const identifiedNames = { ...diarization.speakerNames };
