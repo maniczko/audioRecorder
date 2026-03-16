@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
+import { getSpeakerColor, getSpeakerColorDim } from "../lib/speakerColors";
 
 const WAVEFORM_SVG_W = 1000;
 const WAVEFORM_SVG_H = 80;
@@ -14,6 +15,7 @@ function WaveformPanel({
   addRecordingMarker,
   deleteRecordingMarker,
   canEdit,
+  transcript,
 }) {
   const [waveformBars, setWaveformBars] = useState([]);
   const [isDecoding, setIsDecoding] = useState(false);
@@ -158,6 +160,11 @@ function WaveformPanel({
           {waveformBars.map((bar, index) => {
             const barH = Math.max(2, bar * (WAVEFORM_SVG_H - 8));
             const y = (WAVEFORM_SVG_H - barH) / 2;
+            const barTime = totalDuration > 0 ? (index / WAVEFORM_NUM_BARS) * totalDuration : -1;
+            const seg = barTime >= 0 && Array.isArray(transcript)
+              ? transcript.find((s) => s.timestamp <= barTime && s.endTimestamp > barTime)
+              : null;
+            const barColor = seg ? getSpeakerColor(seg.speakerId) : "var(--accent, #6366f1)";
             return (
               <rect
                 key={index}
@@ -165,7 +172,7 @@ function WaveformPanel({
                 y={y}
                 width={Math.max(1, barWidth - 1)}
                 height={barH}
-                fill="var(--accent, #6366f1)"
+                fill={barColor}
                 opacity="0.8"
                 rx="1"
               />
@@ -194,6 +201,51 @@ function WaveformPanel({
             : null}
         </svg>
       </div>
+
+      {/* Speaker timeline bar */}
+      {Array.isArray(transcript) && transcript.length > 0 && totalDuration > 0 ? (
+        <div className="speaker-timeline-wrap">
+          <svg
+            className="speaker-timeline-svg"
+            viewBox={`0 0 ${WAVEFORM_SVG_W} 12`}
+            width="100%"
+            height={12}
+            preserveAspectRatio="none"
+            onClick={handleWaveformClick}
+            role="presentation"
+            aria-label="Pasek mówców"
+          >
+            {transcript.map((seg) => {
+              const x = (seg.timestamp / totalDuration) * WAVEFORM_SVG_W;
+              const w = Math.max(1, ((seg.endTimestamp - seg.timestamp) / totalDuration) * WAVEFORM_SVG_W);
+              return (
+                <rect
+                  key={seg.id}
+                  x={x}
+                  y={0}
+                  width={w}
+                  height={12}
+                  fill={getSpeakerColor(seg.speakerId)}
+                  opacity={0.9}
+                >
+                  <title>{`${labelSpeaker(displaySpeakerNames, seg.speakerId)} — ${formatDuration(seg.timestamp)}–${formatDuration(seg.endTimestamp)}`}</title>
+                </rect>
+              );
+            })}
+          </svg>
+          <div className="speaker-legend">
+            {[...new Map(transcript.map((s) => [String(s.speakerId), s])).values()].map((s) => (
+              <span key={s.speakerId} className="speaker-legend-chip">
+                <span
+                  className="speaker-legend-dot"
+                  style={{ background: getSpeakerColor(s.speakerId) }}
+                />
+                {labelSpeaker(displaySpeakerNames, s.speakerId)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {markers.length > 0 ? (
         <div className="waveform-markers-list">
@@ -669,6 +721,7 @@ export default function TranscriptPanel({
               addRecordingMarker={addRecordingMarker}
               deleteRecordingMarker={deleteRecordingMarker}
               canEdit={canEditTranscript}
+              transcript={transcript}
             />
 
             <div className="transcript-timeline-header">
@@ -704,6 +757,7 @@ export default function TranscriptPanel({
                   style={{
                     left: segment.left,
                     width: segment.width,
+                    background: getSpeakerColor(segment.speakerId),
                   }}
                   onClick={() => activateSegment(segment)}
                   aria-label={`Segment ${labelSpeaker(displaySpeakerNames, segment.speakerId)} ${formatDuration(segment.timestamp)}`}
@@ -922,7 +976,9 @@ export default function TranscriptPanel({
                     className={segment.id === activeReviewSegment?.id ? "review-queue-item active" : "review-queue-item"}
                     onClick={() => { setActiveSegmentId(segment.id); playFromTimestamp(segment.timestamp); }}
                   >
-                    <strong>{labelSpeaker(displaySpeakerNames, segment.speakerId)}</strong>
+                    <strong style={{ color: getSpeakerColor(segment.speakerId) }}>
+                      {labelSpeaker(displaySpeakerNames, segment.speakerId)}
+                    </strong>
                     <span>{formatDuration(segment.timestamp)}</span>
                     <p>{segment.text}</p>
                   </button>
@@ -933,7 +989,9 @@ export default function TranscriptPanel({
                 {activeReviewSegment ? (
                   <article className="review-detail-card">
                     <div className="segment-meta">
-                      <strong>{labelSpeaker(displaySpeakerNames, activeReviewSegment.speakerId)}</strong>
+                      <strong style={{ color: getSpeakerColor(activeReviewSegment.speakerId) }}>
+                      {labelSpeaker(displaySpeakerNames, activeReviewSegment.speakerId)}
+                    </strong>
                       <span>{formatDuration(activeReviewSegment.timestamp)}</span>
                       <span className="task-flag review">
                         {Math.round((activeReviewSegment.verificationScore || 0) * 100)}% confidence
@@ -1028,7 +1086,12 @@ export default function TranscriptPanel({
                     <span>Zaznacz</span>
                   </label>
                   <div className="segment-meta">
-                    <strong>{labelSpeaker(displaySpeakerNames, segment.speakerId)}</strong>
+                    <strong
+                      className="segment-speaker-label"
+                      style={{ color: getSpeakerColor(segment.speakerId) }}
+                    >
+                      {labelSpeaker(displaySpeakerNames, segment.speakerId)}
+                    </strong>
                     <button
                       type="button"
                       className="segment-timestamp-btn"

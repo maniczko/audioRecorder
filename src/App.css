@@ -6300,6 +6300,41 @@ select:focus {
   outline-offset: -2px;
 }
 
+/* Speaker timeline bar + legend */
+.speaker-timeline-wrap {
+  padding: 0 0 4px;
+}
+.speaker-timeline-svg {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.speaker-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 5px 2px 2px;
+}
+.speaker-legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #a1a1aa);
+}
+.speaker-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.segment-speaker-label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 .waveform-markers-list {
   padding: 8px 12px;
   display: flex;

@@ -671,7 +671,7 @@ Techniczne wskazówki:
 ---
 
 ## 063. [SPEAKER] Spójna paleta kolorów mówców w całej aplikacji
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: każdy komponent (waveform, timeline, transkrypt, statystyki) używa własnych kolorów dla speakerId — brak spójności wizualnej utrudnia śledzenie rozmówców.
 Akceptacja:
@@ -687,7 +687,7 @@ Techniczne wskazówki:
 ---
 
 ## 064. [SPEAKER] Pasek mówców pod waveformem (speaker timeline bar)
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: po waveformie nie widać kto mówił kiedy — trzeba przewijać transkrypt. Kolorowy pasek czasu pod waveformem daje natychmiastowy przegląd rozmowy.
 Akceptacja:
@@ -706,7 +706,7 @@ Techniczne wskazówki:
 ---
 
 ## 065. [SPEAKER] Kolor mówcy na słupkach waveformu
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: waveform jest jednokolorowy (accent) — kolorowanie per mówca daje dodatkową warstwę informacji o strukturze rozmowy bez otwierania transkryptu.
 Akceptacja:
