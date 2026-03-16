@@ -664,3 +664,143 @@ Techniczne wskazówki:
 - model: gpt-4o-mini, max_tokens: 2 * łączna_liczba_tokenów_wejścia.
 - env: `VOICELOG_TRANSCRIPT_CORRECTION=true`.
 
+---
+
+## PRIORYTET P2 — rozpoznawanie i wizualizacja mówców
+
+---
+
+## 063. [SPEAKER] Spójna paleta kolorów mówców w całej aplikacji
+Status: `todo`
+Priorytet: `P2`
+Cel: każdy komponent (waveform, timeline, transkrypt, statystyki) używa własnych kolorów dla speakerId — brak spójności wizualnej utrudnia śledzenie rozmówców.
+Akceptacja:
+- jeden plik `src/lib/speakerColors.js` eksportuje `getSpeakerColor(speakerId)` → CSS color string.
+- paleta min. 8 kolorów o dobrym kontraście na ciemnym tle.
+- speakerId 0 zawsze ten sam kolor, 1 zawsze inny itd. — deterministyczne, nie losowe.
+- funkcja dostępna i używana przez: WaveformPanel, TimelineRuler, TranscriptPanel, SpeakerStatsPanel.
+Techniczne wskazówki:
+- `const SPEAKER_PALETTE = ["#75d6c4", "#818cf8", "#fb923c", "#f472b6", "#a3e635", "#38bdf8", "#e879f9", "#fbbf24"]`.
+- `export function getSpeakerColor(speakerId) { return SPEAKER_PALETTE[Number(speakerId) % SPEAKER_PALETTE.length]; }`.
+- opcjonalnie: eksportuj też `getSpeakerColorDim(speakerId)` (60% opacity) do tła segmentów.
+
+---
+
+## 064. [SPEAKER] Pasek mówców pod waveformem (speaker timeline bar)
+Status: `todo`
+Priorytet: `P2`
+Cel: po waveformie nie widać kto mówił kiedy — trzeba przewijać transkrypt. Kolorowy pasek czasu pod waveformem daje natychmiastowy przegląd rozmowy.
+Akceptacja:
+- pod waveformem SVG renderowany pasek SVG wysokości 12px.
+- każdy segment transkrypcji = kolorowy prostokąt `getSpeakerColor(speakerId)` w proporcjonalnej pozycji czasu.
+- hover nad segmentem → tooltip: "Marek — 0:42–1:18".
+- klik w pasek → seek audio do tej pozycji (jak klik w waveform).
+- aktywny segment (playhead) wyróżniony obrysem (stroke: white 1px).
+- legenda mówców (kolor + imię) pod paskiem, generowana dynamicznie.
+Techniczne wskazówki:
+- `WaveformPanel` dostaje nowy prop `transcript` (tablica segmentów).
+- pasek renderowany jako osobny `<svg>` tej samej szerokości co waveform.
+- `x = (segment.timestamp / totalDuration) * SVG_W`, `width = ((segment.endTimestamp - segment.timestamp) / totalDuration) * SVG_W`.
+- legenda: `{...new Map(transcript.map(s => [s.speakerId, speakerName(s.speakerId)]))}`.
+
+---
+
+## 065. [SPEAKER] Kolor mówcy na słupkach waveformu
+Status: `todo`
+Priorytet: `P2`
+Cel: waveform jest jednokolorowy (accent) — kolorowanie per mówca daje dodatkową warstwę informacji o strukturze rozmowy bez otwierania transkryptu.
+Akceptacja:
+- każdy słupek waveformu SVG kolorowany wg mówcy aktywnego w tym czasie.
+- czas słupka = `(barIndex / WAVEFORM_NUM_BARS) * totalDuration` → find segment.
+- kiedy brak transkryptu lub żaden segment nie pokrywa czasu — kolor domyślny (accent).
+- kiedy playback aktywny — słupki za playheadem lekko dimowane (opacity 0.4).
+Techniczne wskazówki:
+- w `WaveformPanel`, computed array `barColors: string[]` length=WAVEFORM_NUM_BARS.
+- `barColors[i] = getSpeakerColor(segmentAtTime(transcript, (i/WAVEFORM_NUM_BARS)*totalDuration)?.speakerId ?? -1)`.
+- `segmentAtTime(transcript, t)` → `transcript.find(s => s.timestamp <= t && s.endTimestamp > t)`.
+- render: `fill={barColors[index] || "var(--accent)"}`.
+
+---
+
+## 066. [SPEAKER] Aktywny mówca w UnifiedPlayer podczas odtwarzania
+Status: `todo`
+Priorytet: `P2`
+Cel: podczas odtwarzania nie wiadomo kto aktualnie mówi bez patrzenia na transkrypt — mały chip z imieniem mówcy w playerze pozwala śledzić rozmowę bez przewijania.
+Akceptacja:
+- w UnifiedPlayer, tryb playback: między przyciskiem play a scrubberem widoczny chip "● Marek" (kolor + imię aktywnego mówcy).
+- chip aktualizuje się w czasie rzeczywistym przy zmianie currentTime.
+- jeśli żaden segment nie pokrywa aktualnego czasu → chip ukryty.
+- animacja fade przy zmianie mówcy (transition 0.2s).
+Techniczne wskazówki:
+- `UnifiedPlayer` dostaje nowy prop `transcript` (tablica segmentów) + `displaySpeakerNames`.
+- `const activeSpeaker = useMemo(() => transcript?.find(s => s.timestamp <= currentTime && s.endTimestamp > currentTime), [transcript, currentTime])`.
+- chip: `<span style={{ background: getSpeakerColor(activeSpeaker.speakerId), opacity: ... }}>`.
+- `StudioMeetingView` przekazuje `transcript={displayRecording?.transcript}`.
+
+---
+
+## 067. [SPEAKER] Statystyki mówców — czas wypowiedzi i liczba tur
+Status: `todo`
+Priorytet: `P2`
+Cel: brak danych o tym ile każda osoba mówiła — przydatne w ocenie dynamiki spotkania (dominacja jednej osoby, brak głosu kogoś ważnego).
+Akceptacja:
+- w TranscriptPanel: sekcja "Statystyki mówców" (domyślnie zwinięta).
+- na liście: imię, łączny czas wypowiedzi, procent łącznego czasu, liczba tur, avg. długość tury.
+- wizualny stacked bar (poziomy) kolorowany per speaker.
+- klik na imię → filtruje transkrypt do tego mówcy.
+Techniczne wskazówki:
+- `buildSpeakerStats(transcript, totalDuration, displaySpeakerNames)` → tablica `{speakerId, name, totalSec, pct, turns, avgTurnSec}`.
+- tury = grupy kolejnych segmentów tego samego speakera (jeśli przerwa > 1s między nimi).
+- stacked bar: `<div style={{ width: pct+'%', background: getSpeakerColor(speakerId) }}/>`.
+- komponent `SpeakerStatsPanel` wewnątrz `TranscriptPanel`.
+
+---
+
+## 068. [SPEAKER] Quick-enroll mówcy ze segmentu transkrypcji
+Status: `todo`
+Priorytet: `P2`
+Cel: dodawanie głosu do profilu wymaga przejścia do zakładki Profil i ręcznego nagrywania — można to uprościć wyciągając clip bezpośrednio z nagrania.
+Akceptacja:
+- przy każdej nazwie mówcy w transkrypcji (label + opcja menu): "📎 Dodaj do profilu głosu".
+- po kliknięciu i podaniu/potwierdzeniu imienia: serwer extrahuje ffmpeg clip dla wszystkich segmentów tego mówcy i tworzy/aktualizuje profil głosu.
+- feedback: "Profil głosu dla Marka zaktualizowany (12.4s audio)."
+- działa tylko w trybie remote (pliki na serwerze).
+Techniczne wskazówki:
+- nowy endpoint `POST /voice-profiles/from-recording` z body `{ recordingId, speakerId, speakerName }`.
+- serwer: pobierz segmenty dla speakerId z asset transcription_json → extrahuj ffmpeg `aselect` → computeEmbedding → saveVoiceProfile.
+- client: `src/studio/TranscriptPanel.js` — przycisk przy `<SpeakerLabel>` z wywołaniem do mediaService.
+
+---
+
+## 069. [SPEAKER] Korekta mówcy jako aktualizacja profilu głosu (feedback loop)
+Status: `todo`
+Priorytet: `P3`
+Cel: gdy user ręcznie zmienia "Speaker 1" na "Marek", ta wiedza ginie — nie wpływa na przyszłe nagrania. Opcjonalne zapisanie korekty do profilu tworzy samodoskonalący się system.
+Akceptacja:
+- po zmianie nazwy mówcy (renameSpeaker lub bulk assign): opcjonalny dialog "Czy dodać audio tego mówcy do profilu głosu?".
+- jeśli tak: wyciągnięcie clipów + aktualizacja profilu (jak w 068).
+- jeśli profil dla tego imienia nie istnieje — pytanie "Czy chcesz utworzyć nowy profil?".
+- toggle w ustawieniach workspace: "Automatycznie ucz się mówców" (domyślnie off).
+Techniczne wskazówki:
+- w `assignSpeakerToTranscriptSegments()` / `renameSpeaker()` w useMeetings: emitować event który TranscriptPanel może obsłużyć.
+- modal potwierdzenia: `SpeakerEnrollConfirmModal`.
+- wywołanie `POST /voice-profiles/from-recording` jak w 068.
+
+---
+
+## 070. [SPEAKER] Pewność identyfikacji mówcy per segment
+Status: `todo`
+Priorytet: `P3`
+Cel: użytkownik nie wie które przypisania speakera są pewne a które wątpliwe — bez confidence score trudno zdecydować co weryfikować ręcznie.
+Akceptacja:
+- przy każdym segmencie transkrypcji: mały badge z procentem pewności identyfikacji (nie verificationScore — dedykowany speaker confidence).
+- kolor: zielony ≥85%, żółty 70–84%, czerwony <70%.
+- hover → tooltip: "Identyfikacja: 91% (WavLM cosine)".
+- filtr "Niepewne przypisania (<70%)" w toolbar transkryptu.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: w `transcribeRecording()` przy matchSpeakerToProfile zapisać `speakerConfidence` per speakerId.
+- diarization result: nowe pole `speakerConfidences: { [speakerId]: number }`.
+- segment: nowe pole `speakerConfidence` propagowane z diarization.
+- `TranscriptPanel.js`: render `<span className="speaker-confidence-badge">` przy nazwie speakera.
+
+
