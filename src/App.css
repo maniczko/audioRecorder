@@ -796,48 +796,71 @@ select:focus {
   transform: scale(1.06);
 }
 
-.audio-progress-wrap {
+.audio-scrubber {
   flex: 1;
-  padding: 8px 0;
-}
-
-.audio-progress-bar {
-  position: relative;
+  -webkit-appearance: none;
+  appearance: none;
   height: 6px;
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   cursor: pointer;
+  outline: none;
+  /* filled part via background gradient set inline by JS — fallback above */
 }
 
-.audio-progress-fill {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent, #75d6c4), var(--accent-strong, #9ef2db));
+.audio-scrubber::-webkit-slider-runnable-track {
+  height: 6px;
   border-radius: 999px;
-  transition: width 0.1s linear;
-  pointer-events: none;
 }
 
-.audio-progress-thumb {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
+.audio-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
   width: 14px;
   height: 14px;
-  background: var(--accent-strong, #9ef2db);
   border-radius: 50%;
-  pointer-events: none;
+  background: var(--accent-strong, #9ef2db);
   box-shadow: 0 0 6px rgba(158, 242, 219, 0.5);
+  margin-top: -4px;
+  cursor: grab;
 }
 
-.audio-time-display {
+.audio-scrubber::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.audio-scrubber::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent, #75d6c4), var(--accent-strong, #9ef2db));
+}
+
+.audio-scrubber::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-strong, #9ef2db);
+  box-shadow: 0 0 6px rgba(158, 242, 219, 0.5);
+  cursor: grab;
+}
+
+.audio-time-current {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  min-width: 42px;
+  text-align: right;
+}
+
+.audio-time-total {
   flex-shrink: 0;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-  min-width: 90px;
-  text-align: right;
+  min-width: 42px;
 }
 
 .audio-speed-btn {

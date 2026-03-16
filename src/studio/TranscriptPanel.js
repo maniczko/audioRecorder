@@ -289,6 +289,7 @@ export default function TranscriptPanel({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [filterMode, setFilterMode] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
@@ -409,23 +410,31 @@ export default function TranscriptPanel({
     if (!audio) return undefined;
 
     function onTimeUpdate() { setCurrentTime(audio.currentTime || 0); }
-    function onDuration() { setAudioDuration(audio.duration || 0); }
+    function onDuration() { setAudioDuration(isFinite(audio.duration) ? audio.duration : 0); }
     function onPlayPause() { setIsPlaying(!audio.paused); }
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("durationchange", onDuration);
+    audio.addEventListener("loadedmetadata", onDuration);
     audio.addEventListener("play", onPlayPause);
     audio.addEventListener("pause", onPlayPause);
     audio.addEventListener("ended", onPlayPause);
+
+    // Sync immediately in case audio is already loaded
+    if (isFinite(audio.duration) && audio.duration > 0) {
+      setAudioDuration(audio.duration);
+    }
+    setIsPlaying(!audio.paused);
+
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("durationchange", onDuration);
+      audio.removeEventListener("loadedmetadata", onDuration);
       audio.removeEventListener("play", onPlayPause);
       audio.removeEventListener("pause", onPlayPause);
       audio.removeEventListener("ended", onPlayPause);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedRecordingAudioUrl]); // re-run when URL changes so ref is populated
 
   useEffect(() => {
     if (!filteredSegments.length) {
@@ -659,7 +668,7 @@ export default function TranscriptPanel({
 
       {selectedRecordingAudioUrl ? (
         <>
-          <audio ref={audioRef} src={selectedRecordingAudioUrl} style={{ display: "none" }}>
+          <audio ref={audioRef} src={selectedRecordingAudioUrl} preload="metadata" style={{ display: "none" }}>
             <track kind="captions" />
           </audio>
           <div className="custom-audio-player">
@@ -674,39 +683,31 @@ export default function TranscriptPanel({
               }}
               aria-label={isPlaying ? "Pauza" : "Odtwórz"}
             >
-              {isPlaying ? "⏸" : "▶"}
+              {isPlaying
+                ? <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg>
+                : <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5l10 5.5-10 5.5z"/></svg>
+              }
             </button>
-            <div className="audio-progress-wrap">
-              <div
-                className="audio-progress-bar"
-                role="slider"
-                aria-label="Pozycja odtwarzania"
-                aria-valuemin={0}
-                aria-valuemax={audioDuration || 1}
-                aria-valuenow={currentTime}
-                onClick={(event) => {
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-                  const audio = audioRef.current;
-                  if (audio && audioDuration) {
-                    audio.currentTime = ratio * audioDuration;
-                    audio.play().catch(() => {});
-                  }
-                }}
-              >
-                <div
-                  className="audio-progress-fill"
-                  style={{ width: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }}
-                />
-                <div
-                  className="audio-progress-thumb"
-                  style={{ left: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }}
-                />
-              </div>
-            </div>
-            <span className="audio-time-display">
-              {formatDuration(currentTime)} / {formatDuration(audioDuration)}
-            </span>
+            <span className="audio-time-current">{formatDuration(currentTime)}</span>
+            <input
+              type="range"
+              className="audio-scrubber"
+              min={0}
+              max={audioDuration || 1}
+              step={0.05}
+              value={currentTime}
+              style={{
+                background: audioDuration > 0
+                  ? `linear-gradient(to right, var(--accent,#75d6c4) ${(currentTime / audioDuration) * 100}%, rgba(255,255,255,0.12) ${(currentTime / audioDuration) * 100}%)`
+                  : undefined,
+              }}
+              onChange={(e) => {
+                const audio = audioRef.current;
+                if (audio) audio.currentTime = Number(e.target.value);
+              }}
+              aria-label="Pozycja odtwarzania"
+            />
+            <span className="audio-time-total">{formatDuration(audioDuration)}</span>
             <button
               type="button"
               className="audio-speed-btn"
@@ -714,12 +715,14 @@ export default function TranscriptPanel({
                 const audio = audioRef.current;
                 if (!audio) return;
                 const rates = [1, 1.25, 1.5, 1.75, 2];
-                const idx = rates.indexOf(audio.playbackRate);
-                audio.playbackRate = rates[(idx + 1) % rates.length];
+                const nextIdx = rates.indexOf(audio.playbackRate);
+                const next = rates[(nextIdx + 1) % rates.length];
+                audio.playbackRate = next;
+                setPlaybackRate(next);
               }}
               title="Zmień prędkość"
             >
-              ×{audioRef.current?.playbackRate || 1}
+              ×{playbackRate}
             </button>
           </div>
         </>
