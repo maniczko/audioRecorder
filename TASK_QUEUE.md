@@ -9,6 +9,70 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## 054. AI — rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
+Status: `todo`
+Priorytet: `P2`
+Cel: wyciagnac z transkrypcji maksimum uzytecznych informacji biznesowych — nie tylko summary i action items, ale pelny obraz tego co sie wydarzylo, kto co powiedzial i co powinno sie zdarzyc dalej.
+
+### Nowe pola do wyciagniecia przez AI (rozszerzenie prompta analysis.js)
+
+**Kontekst i klasyfikacja:**
+- `suggestedTags` — lista 3–6 krotkich tagow opisujacych glowne tematy rozmowy (np. "budzet", "roadmap", "onboarding"). Automatycznie doklejane do `meeting.tags[]` po analizie jesli nie ma konfliktu.
+- `meetingType` — typ spotkania: "standup" | "planning" | "review" | "1on1" | "negotiation" | "kickoff" | "retrospective" | "other"
+- `energyLevel` — ocena zaangazowania rozmowcow: "high" | "medium" | "low" — na podstawie dlugosci wypowiedzi, liczby pytan, przerw
+
+**Decyzje i ryzyko:**
+- `openQuestions` — lista pytan ktore padly ale nie uzyskaly odpowiedzi (max 5); format: `[{ question: "...", askedBy: "Speaker X" }]`
+- `risks` — ryzyka i obawy wymienione wprost lub implicite (max 4); format: `[{ risk: "...", severity: "high|medium|low" }]`
+- `blockers` — rzeczy ktore blokuja postep — wymienione jako problemy bez rozwiazania (max 3)
+
+**Relacje i dynamika:**
+- `participantInsights` — dla kazdego speakera: dominujacy temat, stosunek pytan do stwierdzen, ogolna postawa; format: `[{ speaker: "...", mainTopic: "...", stance: "proactive|reactive|neutral", talkRatio: 0.0–1.0 }]`
+- `tensions` — momenty niezgodnosci lub napiec (max 3); format: `[{ topic: "...", between: ["A","B"], resolved: true|false }]`
+
+**Wiedza i kontekst:**
+- `keyQuotes` — 2–4 najbardziej znaczace cytaty; format: `[{ quote: "...", speaker: "...", why: "dlaczego wazne" }]`
+- `terminology` — pojecia branzowe / akronimy uzyte po raz pierwszy lub warte zanotowania (max 6); `["CRO", "sprint velocity", ...]`
+- `contextLinks` — nawiazania do poprzednich spotkan, projektow, dokumentow (max 4); `["poprzedni sprint", "Q1 review", ...]`
+
+**Nastepne kroki:**
+- `suggestedAgenda` — proponowane punkty do omowienia na nastepnym spotkaniu (max 5), wynikajace z otwartych pytan i blockersow
+- `coachingTip` — jedna krotka wskazowka jak poprawic efektywnosc nastepnego spotkania (na podstawie energii, otwartych pytan, proporcji mowy)
+
+### Zakres zmian w kodzie
+
+**src/lib/analysis.js**
+- Rozszerzyc prompt o nowe pola z przykladami JSON dla kazdego.
+- Dodac do `parseAiResponse` normalizacje nowych pol (fallbacki gdy AI nie zwroci danego pola).
+- `buildFallbackAnalysis` — heurystyczne wypelnienie: `suggestedTags` z czestych slow kluczowych transkrypcji, `openQuestions` z segmentow zawierajacych "?", `risks` z fraz "ryzyko/problem/obawa", `talkRatio` z liczby segmentow per speaker.
+- Limit max_tokens podniesc z 1400 do 2400 (wiecej danych = dluzszy JSON).
+
+**src/hooks/useRecorder.js (linia ~305)**
+- Po uzyskaniu `analysis` z `analyzeMeeting`: jesli `analysis.suggestedTags?.length`, dolacz je do `meeting.tags` przez `setMeetings` (dedup, lowercase).
+
+**src/studio/StudioMeetingView.js**
+- Sekcja "Analiza spotkania" — rozszerzyc o nowe panele:
+  - "Otwarte pytania" (lista z askedBy)
+  - "Ryzyka" (lista z severity chip)
+  - "Kluczowe cytaty" (quote cards)
+  - "Dynamika rozmowy" (participantInsights jako mini-tabela z talkRatio bar)
+  - "Nastepne spotkanie — proponowana agenda" (lista)
+  - "Coaching tip" (highlight box)
+- Istniejace panele (summary, decisions, actionItems, answersToNeeds) zostaja.
+
+**src/App.css**
+- Style dla nowych paneli: `.quote-card`, `.risk-item`, `.talk-ratio-bar`, `.coaching-tip-box`, `.participant-insight-row`
+
+### Akceptacja
+- Wszystkie nowe pola sa opcjonalne — jesli AI nie zwroci danego pola, UI nie renderuje tej sekcji (brak pustych paneli).
+- Fallback lokalny wypelnia chociaz `suggestedTags` i `openQuestions`.
+- `suggestedTags` sa doklejane do spotkania tylko raz — przy pierwszej analizie; nie nadpisuja tagów dodanych recznie.
+- Brak regresji w istniejacych testach i buildzie.
+
+Zrodlo: zadanie uzytkownika 2026-03-16.
+
+---
+
 ## 052. Studio — globalna biblioteka nagran
 Status: `done`
 Priorytet: `P2`
