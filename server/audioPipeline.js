@@ -7,7 +7,10 @@ const { matchSpeakerToProfile } = require("./speakerEmbedder");
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || "";
 const OPENAI_BASE_URL = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
 const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "gpt-4o-transcribe-diarize";
-const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "whisper-1";
+// gpt-4o-transcribe is significantly more accurate than whisper-1 for Polish,
+// especially for proper nouns, jargon, and mixed-language utterances.
+// Falls back to whisper-1 if VOICELOG_AUDIO_VERIFY_MODEL is set to that.
+const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "gpt-4o-transcribe";
 const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
 const CHUNK_DURATION_SECONDS = 1200; // 20-minute chunks for large-file splitting
@@ -103,6 +106,75 @@ function hasRepeatedPhrase(text) {
   }
 
   return new Set(tokens).size <= Math.ceil(tokens.length / 2.4);
+}
+
+// Common Whisper hallucinations produced on silence, music, or room noise.
+// Whisper is often overconfident on these — they bypass logprob filtering.
+const HALLUCINATION_PATTERNS = [
+  // English filler phrases Whisper produces on silence for non-English audio
+  /^(thank you\.?|thanks for watching\.?|thanks for watching!|please like and subscribe\.?|see you next time\.?|don't forget to like and subscribe\.?)$/i,
+  /^(goodbye\.?|bye\.?|bye bye\.?|good bye\.?|see you\.?|ciao\.?)$/i,
+  /^(okay\.?|ok\.?|alright\.?|all right\.?)$/i,
+  /^(yes\.?|no\.?|sure\.?|right\.?|correct\.?)$/i,
+  // Polish hallucinations
+  /^(dziękuję\.?|dziękuję ci\.?|dziękuję za obejrzenie\.?|do widzenia\.?|na razie\.?|hej\.?)$/i,
+  /^(tak\.?|nie\.?|dobrze\.?|okej\.?|okej\.?)$/i,
+  // Music / non-speech markers
+  /\[music\]|\[applause\]|\[laughter\]|\[noise\]|\[silence\]|\[inaudible\]/i,
+  /^♪|♪$/,
+  // Only punctuation / ellipsis
+  /^[.…,;!?]+$/,
+  // Very common Whisper repetition artifact on silence
+  /^(mm+|hmm+|uhh+|ahh+|ehh+)\.?$/i,
+];
+
+/**
+ * Returns true when the text matches a known Whisper hallucination pattern.
+ * Used to remove confident-but-fabricated segments from the final output.
+ */
+function isHallucination(text) {
+  const t = clean(text);
+  if (!t || t.length < 2) return true;
+  return HALLUCINATION_PATTERNS.some((pattern) => pattern.test(t));
+}
+
+/**
+ * Merges consecutive segments that are too short to stand alone (< minDuration s)
+ * with their same-speaker neighbour. Short segments are usually sentence fragments
+ * produced when Whisper splits on very brief pauses — merging them produces
+ * more natural, readable transcript blocks.
+ *
+ * @param {object[]} segments  — already verified segments with speakerId
+ * @param {number}   minDuration  — min seconds a segment must cover (default 1.2)
+ */
+function mergeShortSegments(segments, minDuration = 1.2) {
+  if (segments.length < 2) return segments;
+  const result = [];
+  let pending = null;
+
+  for (const seg of segments) {
+    const duration = (seg.endTimestamp || seg.timestamp) - seg.timestamp;
+    if (!pending) {
+      pending = { ...seg };
+      continue;
+    }
+    // Merge if: current segment is short AND same speaker as pending
+    if (duration < minDuration && seg.speakerId === pending.speakerId) {
+      pending = {
+        ...pending,
+        text: `${pending.text} ${seg.text}`.trim(),
+        endTimestamp: seg.endTimestamp,
+        // Keep the lower verification score to preserve review flags
+        verificationScore: Math.min(pending.verificationScore ?? 1, seg.verificationScore ?? 1),
+        verificationStatus: [pending.verificationStatus, seg.verificationStatus].includes("review") ? "review" : "verified",
+      };
+    } else {
+      result.push(pending);
+      pending = { ...seg };
+    }
+  }
+  if (pending) result.push(pending);
+  return result;
 }
 
 function estimateQualityScore(text) {
@@ -776,7 +848,16 @@ async function transcribeRecording(asset, options = {}) {
       confidence: verificationResult.confidence,
       text: diarization.text,
     },
-    segments: await correctTranscriptWithLLM(verificationResult.verifiedSegments, options),
+    // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
+    segments: await (async () => {
+      const withoutHallucinations = verificationResult.verifiedSegments
+        .filter((seg) => !isHallucination(seg.text));
+      if (DEBUG && withoutHallucinations.length < verificationResult.verifiedSegments.length) {
+        console.log(`[audioPipeline] Hallucination filter removed ${verificationResult.verifiedSegments.length - withoutHallucinations.length} segment(s).`);
+      }
+      const merged = mergeShortSegments(withoutHallucinations);
+      return correctTranscriptWithLLM(merged, options);
+    })(),
     speakerNames: identifiedNames,
     speakerCount: diarization.speakerCount,
     confidence: verificationResult.confidence,

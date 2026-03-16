@@ -571,8 +571,23 @@ export default function useRecorder({
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
 
-      const recorder = new MediaRecorder(recordStream);
-      mimeTypeRef.current = recorder.mimeType || "audio/webm";
+      // Select the highest-quality MIME type supported by this browser.
+      // Opus in WebM is preferred — it preserves speech quality at 128 kbps
+      // without the artefacts that come from lower-bitrate defaults.
+      const preferredTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ];
+      const bestMimeType = (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported)
+        ? preferredTypes.find((t) => MediaRecorder.isTypeSupported(t)) || ""
+        : "";
+      const recorder = new MediaRecorder(recordStream, {
+        ...(bestMimeType ? { mimeType: bestMimeType } : {}),
+        audioBitsPerSecond: 128000,
+      });
+      mimeTypeRef.current = recorder.mimeType || bestMimeType || "audio/webm";
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {

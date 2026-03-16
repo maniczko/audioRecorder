@@ -30,6 +30,57 @@ Techniczne wskazówki:
 
 ---
 
+## 075. [AUDIO] Groq — whisper-large-v3 zamiast whisper-1/gpt-4o-transcribe
+Status: `todo`
+Priorytet: `P2`
+Cel: Groq oferuje `whisper-large-v3` (model 3× lepszy od whisper-1 dla polskiego) z opóźnieniem ~0.3s dla pliku 60 min — 216× realtime. Koszt ~$0.111/h vs ~$0.6/h OpenAI. To najszybszy, najtańszy i najdokładniejszy model Whisper dostępny przez API.
+Akceptacja:
+- konfigurowalny dostawca: `VOICELOG_STT_PROVIDER=groq` lub `openai` (default: openai).
+- przy Groq: model `whisper-large-v3`, endpoint `https://api.groq.com/openai/v1`.
+- czas transkrypcji 60 min nagrania < 10s.
+- dokładność polskich nazw własnych wyraźnie lepsza niż whisper-1.
+- fallback do OpenAI gdy Groq niedostępne lub brak `GROQ_API_KEY`.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: `GROQ_API_KEY = process.env.GROQ_API_KEY || ""`.
+- gdy `GROQ_API_KEY`: `OPENAI_BASE_URL = "https://api.groq.com/openai/v1"`, `VERIFICATION_MODEL = "whisper-large-v3"`.
+- Groq API jest OpenAI-compatible — `requestAudioTranscription` działa bez zmian.
+- `response_format: "verbose_json"` działa w Groq; `diarized_json` niedostępne → użyj pyannote.
+- limit pliku Groq: 25 MB (taki sam jak OpenAI) — chunking bez zmian.
+
+---
+
+## 076. [AUDIO] Word-level timestamps + precyzyjna diaryzacja per-słowo
+Status: `todo`
+Priorytet: `P2`
+Cel: Whisper może zwracać timestamps per-słowo (`timestamp_granularities: ["word","segment"]`). Przy łączeniu z pyannote każde słowo trafia do właściwego mówcy (zamiast całego segmentu). Poprawia dokładność przy przeplotach i krótkich wypowiedziach.
+Akceptacja:
+- każde słowo w segmencie ma `word`, `start`, `end` fields.
+- przy pyannote: `mergeWithPyannote` działa na poziomie słów (nie segmentów) → mniej błędnych przypisań.
+- segmenty w wynikowej transkrypcji dzielone na granicy zmiany mówcy wewnątrz Whisper-segmentu.
+- fallback do obecnego zachowania gdy brak word timestamps.
+Techniczne wskazówki:
+- `whisperFields.timestamp_granularities: ["word", "segment"]`.
+- `mergeWithPyannote`: dla każdego słowa (`wseg.words[i]`) znajdź pyannote speakera → grupuj w segmenty po zmianie speakera.
+- nowa funkcja `splitSegmentsByWordSpeaker(whisperSegments, pyannoteSegments)`.
+
+---
+
+## 077. [AUDIO] Server-side VAD — ffmpeg silence removal przed transkrypcją
+Status: `todo`
+Priorytet: `P2`
+Cel: Whisper halucynuje ("Thank you.", tekst po angielsku, powtarzające się frazy) na ciszy. Usunięcie ciszy ffmpeg po stronie serwera eliminuje te halucynacje bez potrzeby instalacji bibliotek klienckich.
+Akceptacja:
+- po `preprocessAudio()`: ffmpeg `silenceremove` filtruje fragmenty < -35 dB i > 0.5s.
+- czas trwania audio przed/po logowany gdy `VOICELOG_DEBUG=true`.
+- opcja wyłączenia: `VOICELOG_SILENCE_REMOVE=false`.
+- nie usuwa ciszy poniżej 0.5s (krótkie pauzy są ważne dla naturalnej mowy).
+Techniczne wskazówki:
+- dodać do filter chain w `preprocessAudio()`: `silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-35dB`.
+- Uwaga: `silenceremove` nie resetuje timestamps — downstream pipeline dostaje plik bez ciszy, ale timestamps w Whisper wyjściu dotyczą przetworzonego pliku.
+- Dlatego ten filtr jest bezpieczny TYLKO gdy nie używamy pyannote (który potrzebuje oryginalnych timestamps). Włączyć tylko dla Whisper-only pipeline.
+
+---
+
 
 ## 072. [SPEAKER] Pyannote.audio — zaawansowana diaryzacja serwera
 Status: `todo`
@@ -119,52 +170,14 @@ Techniczne wskazówki:
 
 ---
 
-## 067. [SPEAKER] Statystyki mówców — czas wypowiedzi i liczba tur
-Status: `todo`
-Priorytet: `P2`
-Cel: brak danych o tym ile każda osoba mówiła — przydatne w ocenie dynamiki spotkania.
-Akceptacja:
-- w TranscriptPanel: sekcja "Statystyki mówców" (domyślnie zwinięta).
-- na liście: imię, łączny czas wypowiedzi, % łącznego czasu, liczba tur, avg. długość tury.
-- wizualny stacked bar (poziomy) kolorowany per speaker.
-- klik na imię → filtruje transkrypt do tego mówcy.
-Techniczne wskazówki:
-- `buildSpeakerStats(transcript, totalDuration, displaySpeakerNames)` → `[{speakerId, name, totalSec, pct, turns, avgTurnSec}]`.
-- tury = grupy kolejnych segmentów tego samego speakera z przerwą > 1s.
-- stacked bar: `<div style={{ width: pct+'%', background: getSpeakerColor(speakerId) }}/>`.
-- komponent `SpeakerStatsPanel` wewnątrz `TranscriptPanel`.
+
 
 ---
 
-## 068. [SPEAKER] Quick-enroll mówcy ze segmentu transkrypcji
-Status: `todo`
-Priorytet: `P2`
-Cel: dodawanie głosu do profilu wymaga przejścia do zakładki Profil i ręcznego nagrywania — można uprościć przez wyciągnięcie clipu z nagrania.
-Akceptacja:
-- przy każdej nazwie mówcy w transkrypcji: "📎 Dodaj do profilu głosu".
-- po kliknięciu i podaniu imienia: serwer extrahuje ffmpeg clip dla segmentów tego mówcy i tworzy/aktualizuje profil.
-- feedback: "Profil głosu dla Marka zaktualizowany (12.4s audio)."
-- działa tylko w trybie remote (pliki na serwerze).
-Techniczne wskazówki:
-- nowy endpoint `POST /voice-profiles/from-recording` z body `{ recordingId, speakerId, speakerName }`.
-- serwer: pobierz segmenty dla speakerId z asset `transcription_json` → extrahuj ffmpeg `aselect` → `computeEmbedding` → `saveVoiceProfile`.
-- client: `src/studio/TranscriptPanel.js` — przycisk przy `<SpeakerLabel>` z wywołaniem do `mediaService`.
 
 ---
 
-## 070. [SPEAKER] Pewność identyfikacji mówcy per segment
-Status: `todo`
-Priorytet: `P3`
-Cel: użytkownik nie wie które przypisania speakera są pewne a które wątpliwe.
-Akceptacja:
-- przy każdym segmencie transkrypcji: mały badge z procentem pewności identyfikacji.
-- kolor: zielony ≥85%, żółty 70–84%, czerwony <70%.
-- hover → tooltip: "Identyfikacja: 91% (cosine similarity)".
-- filtr "Niepewne przypisania (<70%)" w toolbar transkryptu.
-Techniczne wskazówki:
-- `server/audioPipeline.js`: przy `matchSpeakerToProfile` zapisać `speakerConfidence` per speakerId.
-- segment: nowe pole `speakerConfidence` propagowane z diarization.
-- `TranscriptPanel.js`: render `<span className="speaker-confidence-badge">` przy nazwie speakera.
+#
 
 ---
 
@@ -246,18 +259,6 @@ Techniczne wskazówki:
 
 ---
 
-## 023. AI — inteligentny asystent priorytetu i terminu
-Status: `todo`
-Priorytet: `P2`
-Cel: pomoc użytkownikowi lepiej planować dzień przez AI sugerujący kolejność otwartych zadań.
-Akceptacja:
-- przycisk "Zaplanuj z AI" w widoku "Mój dzień".
-- Claude analizuje listę otwartych zadań i zwraca: rekomendowana kolejność na dziś (max 5), uzasadnienie, flagi ryzyka.
-- zaakceptowanie planu oznacza zadania `myDay = true`.
-Techniczne wskazówki:
-- `src/lib/aiDayPlanner.js`: `planMyDay(tasks, currentDate)` → proxy przez `/ai/analyze`.
-- prompt z aktualną datą + wstępne sortowanie po SLA przed wywołaniem LLM.
-- cache w `sessionStorage` przez 15 minut.
 
 ---
 
