@@ -4,6 +4,34 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 029. Testy E2E — krytyczne flows
+Status: `done`
+Priorytet: `P2`
+Wynik:
+- `playwright.config.js` — konfiguracja Playwright z webServer (port 3000), chromium, CI retries.
+- `tests/e2e/helpers/seed.js` — helper `seedLoggedInUser / seedMeeting / seedTask` do seedowania localStorage przed testem.
+- `tests/e2e/auth.spec.js` — rejestracja nowego konta (happy), duplikat emaila (error), logowanie (happy), złe hasło (error).
+- `tests/e2e/meeting.spec.js` — tworzenie spotkania (happy), pusty tytuł → przycisk disabled (error), reset formularza.
+- `tests/e2e/tasks.spec.js` — szybkie dodanie zadania (happy), pusty tytuł (error), edycja, usuwanie, mock Google Tasks.
+- `tests/e2e/command-palette.spec.js` — Ctrl+K (happy), filtrowanie, nawigacja, Escape (error), backdrop, brak wyników.
+- `package.json` — `@playwright/test ^1.48` w devDependencies, skrypty `test:e2e` i `test:e2e:ui`.
+Uruchamianie: `npx playwright install` raz, potem `npm run test:e2e` (wymaga działającego dev-server lub go uruchamia automatycznie).
+
+---
+
+## 037. Ekran zarządzania tagami
+Status: `done`
+Priorytet: `P3`
+Wynik:
+- Zaimplementowane w `ProfileTab.js` jako `TagManagerSection` — lista wszystkich tagów workspace z licznikami (zadania + spotkania).
+- Kliknięcie nazwy tagu wchodzi w tryb inline-edit, Enter/blur zatwierdza zmianę.
+- Przycisk × usuwa tag ze wszystkich spotkań i zadań.
+- `renameTag` / `deleteTag` w `useMeetings.js` — propagacja do `meetings[]` i `manualTasks[]`.
+- `allTags` obliczane w `MainApp.js` z `userMeetings` + `meetingTasks`, przekazywane do `ProfileTab`.
+- Style `.tag-manager-*` w `App.css`.
+
+---
+
 ## 001. Globalne wyszukiwanie i command palette
 Status: `done`
 Priorytet: `P1`

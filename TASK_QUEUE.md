@@ -120,27 +120,6 @@ Techniczne wskazowki:
 
 ---
 
-## 029. Testy E2E — krytyczne flows
-Status: `todo`
-Priorytet: `P2`
-Cel: zabezpieczyc przed regresja najwazniejsze scenariusze uzytkownika.
-Zakres:
-- flow rejestracji i logowania (email + Google mock).
-- tworzenie spotkania + nagrywanie ad hoc + zapis.
-- tworzenie zadania, zmiana statusu, usuwanie.
-- import zadan z Google Tasks (mock API).
-- command palette — nawigacja do zakladki, wynik spotkania.
-Akceptacja:
-- testy uruchamiaja sie w CI (GitHub Actions lub lokalnie npx playwright test).
-- kazdy flow ma happy path + jeden blad (np. bledne haslo przy logowaniu).
-- testy nie uzalezniaja sie od prawdziwego Google API — mock przez MSW lub fixtures.
-Techniczne wskazowki:
-- Playwright jest preferowany (npx playwright install).
-- konfiguracja w playwright.config.js, testy w tests/e2e/.
-- startuje dev server przed testami (webServer w playwright.config).
-
----
-
 ## 031. Tworzenie spotkania bezposrednio z widoku kalendarza
 Status: `todo`
 Priorytet: `P2`
@@ -311,21 +290,6 @@ Techniczne wskazowki:
 - nowy plik `src/lib/aiSearch.js` z funkcja `semanticSearch(query, meetings, tasks)`.
 - przekazywac tylko tytuly i streszczenia (nie pelne transkrypty).
 - cache wynikow w Map z kluczem `query` przez sesje.
-
----
-
-## 037. Ekran zarzadzania tagami
-Status: `todo`
-Priorytet: `P3`
-Cel: tagi rosna niekontrolowanie — brak widoku all-tags i mozliwosci zmiany nazwy lub usuwania.
-Akceptacja:
-- w zakladce Tasks lub Profile istnieje widok "Tagi" z lista wszystkich tagow w workspace.
-- mozna zmienic nazwe tagu (zmienia we wszystkich taskach i spotkaniach).
-- mozna usunac tag (usuwa z wszystkich encji).
-- widac ile taskow i spotkan uzywa kazdego tagu.
-Techniczne wskazowki:
-- renameTag(tasks, meetings, oldTag, newTag) — map/replace po calej kolekcji.
-- brak osobnego storage — tagi sa czesc meeting.tags i task.tags.
 
 ---
 
