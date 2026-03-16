@@ -1,3 +1,6 @@
+// Load .env from project root before any other requires
+require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") });
+
 const http = require("node:http");
 const fs = require("node:fs");
 const { URL } = require("node:url");
