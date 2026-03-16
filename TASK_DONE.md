@@ -249,3 +249,142 @@ Wynik:
 - Przycisk "Zatwierdz wszystkie (N)" — bulk approve wszystkich widocznych review segmentow.
 - Panel pomocy klawiszowej z <kbd> renderingiem (toggle ⌨ Skróty).
 - Auto-scroll aktywnego elementu w liscie review przez activeReviewItemRef.
+
+---
+
+## 043. XSS — sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
+Status: `done`
+Priorytet: `P1`
+Cel: zapobiec XSS przy renderowaniu notatek z edytora WYSIWYG.
+Wynik:
+- DOMPurify.sanitize() przed kazda wartoscia dangerouslySetInnerHTML.
+- dozwolone tagi: b, i, u, em, strong, ul, ol, li, p, br.
+- test jednostkowy sprawdza usuniecie script-taga.
+
+---
+
+## 044. CORS i rate limiting na backendzie
+Status: `done`
+Priorytet: `P1`
+Cel: zamknac dwie luki krytyczne: nieograniczony dostep cross-origin oraz brak ochrony przed brute-force.
+Wynik:
+- CORS zawezony do VOICELOG_ALLOWED_ORIGINS (domyslnie http://localhost:3000).
+- Map-based rate limiter: max 10 prob na IP/60s dla /auth/*, odpowiedz 429 z Retry-After.
+- recoveryCode usuniete z response body API.
+
+---
+
+## 045. Memoizacja buildTasksFromMeetings i pochodnych
+Status: `done`
+Priorytet: `P1`
+Cel: wyeliminowac najdrozsze obliczenia przy kazdym renderze hooka useMeetings.
+Wynik:
+- buildTasksFromMeetings, buildTaskPeople, buildTaskNotifications, buildPeopleProfiles opakowan w useMemo z prawidlowymi tablicami zaleznosci w useMeetings.js.
+
+---
+
+## 046. Naprawa stale closure w processQueueItem (useRecorder)
+Status: `done`
+Priorytet: `P1`
+Cel: zapobiec przetwarzaniu nagran ze starymi danymi spotkan po ich aktualizacji w trakcie przetwarzania.
+Wynik:
+- userMeetingsRef (useRef) synced via useEffect; resolveMeetingForQueueItem czyta userMeetingsRef.current.
+- test jednostkowy pokrywa scenariusz "spotkanie zmienione w trakcie przetwarzania".
+
+---
+
+## 047. Naprawa stale closure conflictCount w useGoogleIntegrations
+Status: `done`
+Priorytet: `P2`
+Cel: poprawic wyswietlanie liczby konfliktow po imporcie zadan z Google Tasks.
+Wynik:
+- upsertGoogleImportedTasks zwraca { merged, conflictCount }.
+- manualTasksRef w useGoogleIntegrations; conflictCount obliczany synchronicznie przed setManualTasks.
+- testy jednostkowe: scenariusz z i bez konfliktow.
+
+---
+
+## 048. Node.js >= 22.5 — dokumentacja wymagan srodowiska
+Status: `done`
+Priorytet: `P2`
+Cel: zapobiec bledom instalacji na starszych wersjach Node.
+Wynik:
+- package.json: "engines": { "node": ">=22.5" }.
+- .env.example dokumentuje wszystkie wymagane zmienne srodowiskowe.
+
+---
+
+## 049. URL.revokeObjectURL po eksporcie pliku
+Status: `done`
+Priorytet: `P3`
+Cel: wyeliminowac wyciek pamieci przy eksporcie (TXT/PDF).
+Wynik:
+- setTimeout(() => URL.revokeObjectURL(url), 100) po link.click() w downloadTextFile (storage.js).
+
+---
+
+## 050. Naprawa endsAt dla task-eventow w googleSync.js
+Status: `done`
+Priorytet: `P2`
+Cel: eventy zadan w Google Calendar maja zerowy czas trwania (startsAt === endsAt).
+Wynik:
+- buildCalendarSyncSnapshot dla type=task ustawia endsAt = startsAt + 1h gdy brak jawnego endsAt.
+- durationMinutes domyslnie 60 dla eventow typu task.
+- testy pokrywaja oba scenariusze (z i bez jawnego endsAt).
+
+---
+
+## 051. Polling Google Calendar — visibility API i backoff
+Status: `done`
+Priorytet: `P2`
+Cel: nie odpytywac Google API gdy uzytkownik nie patrzy na aplikacje (karta w tle).
+Wynik:
+- interval kalendarzowy sprawdza document.hidden przed fetchem.
+- visibilitychange handler wykonuje odswiezenie natychmiast po powrocie do karty.
+- interval Google Tasks rowniez ma guard document.hidden.
+
+---
+
+## 052. Studio — globalna biblioteka nagran
+Status: `done`
+Priorytet: `P2`
+Cel: uzytkownik moze przeglądac wszystkie nagrania ze wszystkich spotkan w jednym miejscu.
+Wynik:
+- komponent RecordingsLibrary na dole strony Studio (takze w pustym stanie).
+- tabela: Spotkanie, Data, Czas, Speakerzy, Segmenty, Status.
+- klikniecie wiersza = wybranie spotkania i nagrania.
+
+---
+
+## 053. Zakładka Osoba — tworzenie spotkania z profilu
+Status: `done`
+Priorytet: `P2`
+Cel: uzytkownik moze zaplanowac nowe spotkanie bezposrednio z widoku osoby.
+Wynik:
+- przycisk "+ spotkanie" w naglowku profilu osoby.
+- startNewMeetingDraft rozszerzony o prefill.attendees; otwiera Studio z nowym draftem.
+
+---
+
+## 054. AI — rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
+Status: `done`
+Priorytet: `P2`
+Cel: wyciagnac z transkrypcji maksimum uzytecznych informacji biznesowych.
+Wynik:
+- analyzeMeeting rozszerzony o 13 nowych pol: suggestedTags, meetingType, energyLevel, openQuestions, risks, blockers, participantInsights, tensions, keyQuotes, terminology, contextLinks, suggestedAgenda, coachingTip.
+- buildFallbackRichFields: heurystyczne wypelnienie bez API.
+- suggestedTags doklejane do meeting.tags po analizie (dedup, lowercase).
+- StudioMeetingView: panele Ryzyka, Dynamika rozmowy, Kluczowe cytaty, Nastepne spotkanie.
+
+---
+
+## 055. AI — psychologiczny profil osoby na podstawie nagran
+Status: `done`
+Priorytet: `P2`
+Cel: na podstawie transkrypcji wszystkich spotkan z dana osoba zbudowac zrozumialy profil psychologiczny.
+Wynik:
+- analyzePersonProfile w analysis.js: DISC (0-100), wartosci z cytatami, style komunikacji/decyzji/konfliktu, workingWithTips, dos/donts, redFlags, coachingNote.
+- buildFallbackPsychProfile: heurystyki jezygowe dla DISC.
+- analyzePersonPsychProfile w useMeetings.js: fuzzy matching speakerow, zapis przez updatePersonNotes.
+- PeopleTab: DiscRadarChart (czysty SVG), PsychProfilePanel z pelnym profilem.
+- personNotes jako warstwa overrides dla needs/outputs/psychProfile.
