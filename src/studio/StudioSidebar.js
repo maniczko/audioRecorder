@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { formatDateTime, formatDuration } from "../lib/storage";
 
 export default function StudioSidebar({
   currentWorkspacePermissions,
@@ -13,6 +14,10 @@ export default function StudioSidebar({
   selectedMeeting,
   peopleOptions = [],
   tagOptions = [],
+  userMeetings = [],
+  selectMeeting,
+  selectedRecordingId,
+  setSelectedRecordingId,
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
   const [activeSection, setActiveSection] = useState("basic");
@@ -324,6 +329,82 @@ export default function StudioSidebar({
         </div>
 
       </section>
+
+      <RecordingsSidebarPanel
+        userMeetings={userMeetings}
+        selectedMeeting={selectedMeeting}
+        selectedRecordingId={selectedRecordingId}
+        selectMeeting={selectMeeting}
+        setSelectedRecordingId={setSelectedRecordingId}
+      />
     </aside>
+  );
+}
+
+function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordingId, selectMeeting, setSelectedRecordingId }) {
+  const [search, setSearch] = useState("");
+
+  const allRecordings = userMeetings
+    .flatMap((m) => (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title })))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filtered = search.trim()
+    ? allRecordings.filter(
+        (r) =>
+          r.meetingTitle.toLowerCase().includes(search.toLowerCase()) ||
+          formatDateTime(r.createdAt).includes(search)
+      )
+    : allRecordings;
+
+  if (!allRecordings.length) return null;
+
+  return (
+    <section className="panel sidebar-recordings-panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Archiwum</div>
+          <h2>Nagrania</h2>
+        </div>
+        <span className="status-chip">{allRecordings.length}</span>
+      </div>
+      {allRecordings.length > 5 && (
+        <input
+          className="sidebar-recordings-search"
+          type="search"
+          placeholder="Szukaj nagrania…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      )}
+      <ul className="sidebar-recordings-list">
+        {filtered.map((rec) => {
+          const isActive = rec.id === selectedRecordingId;
+          const isMeetingActive = rec.meetingId === selectedMeeting?.id;
+          return (
+            <li
+              key={rec.id}
+              className={`sidebar-recording-item${isActive ? " active" : ""}${isMeetingActive ? " meeting-active" : ""}`}
+              onClick={() => {
+                const meeting = userMeetings.find((m) => m.id === rec.meetingId);
+                if (meeting && selectMeeting) selectMeeting(meeting);
+                if (setSelectedRecordingId) setSelectedRecordingId(rec.id);
+              }}
+            >
+              <div className="sidebar-recording-title">{rec.meetingTitle}</div>
+              <div className="sidebar-recording-meta">
+                <span>{formatDateTime(rec.createdAt)}</span>
+                <span>{formatDuration(rec.duration)}</span>
+                <span className={`status-chip status-chip-sm ${rec.pipelineStatus || "done"}`}>
+                  {rec.pipelineStatus || "done"}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+        {filtered.length === 0 && (
+          <li className="sidebar-recording-empty">Brak wyników</li>
+        )}
+      </ul>
+    </section>
   );
 }

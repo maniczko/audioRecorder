@@ -839,12 +839,6 @@ export default function StudioMeetingView({
         </section>
       </div>
 
-      <RecordingsLibrary
-        userMeetings={userMeetings}
-        selectedRecordingId={selectedRecordingId}
-        setSelectedRecordingId={setSelectedRecordingId}
-        selectMeeting={selectMeeting}
-      />
     </>
   );
 }

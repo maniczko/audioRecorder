@@ -35,6 +35,10 @@ export default function StudioTab(props) {
         isDetachedMeetingDraft={isDetachedMeetingDraft}
         peopleOptions={peopleOptions}
         tagOptions={tagOptions}
+        userMeetings={userMeetings}
+        selectMeeting={props.selectMeeting}
+        selectedRecordingId={props.selectedRecordingId}
+        setSelectedRecordingId={props.setSelectedRecordingId}
       />
 
       <main className="workspace-main">
