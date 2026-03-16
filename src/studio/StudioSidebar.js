@@ -288,12 +288,12 @@ export default function StudioSidebar({
         ) : (
           <div className="stack-form brief-form-section">
             <label>
-              <span>Moje potrzeby</span>
+              <span>Potrzeby rozmówców</span>
               <textarea
                 rows="3"
                 value={meetingDraft.needs}
                 onChange={(event) => setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))}
-                placeholder={"np. Decyzje budzetowe\nRyzyka wdrozenia"}
+                placeholder={"np. Potrzebuję wybudować dom\nChcę refinansować kredyt"}
                 disabled={!canEditWorkspace}
               />
             </label>

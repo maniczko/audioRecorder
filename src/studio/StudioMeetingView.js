@@ -344,19 +344,9 @@ export default function StudioMeetingView({
         <section className="panel">
           <div className="panel-header compact">
             <div>
-              <div className="eyebrow">Kontekst spotkania</div>
               <h2>Potrzeby i obawy</h2>
             </div>
           </div>
-          {selectedMeeting.tags?.length ? (
-            <div className="chip-list">
-              {selectedMeeting.tags.map((tag) => (
-                <span className="task-tag-chip" key={tag} style={tagStyle(tag)}>
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
           <div className="brief-columns two-col">
             <div className="brief-col">
               <div className="brief-col-head">
@@ -389,7 +379,7 @@ export default function StudioMeetingView({
                     autoFocus
                     value={needDraft}
                     onChange={(e) => setNeedDraft(e.target.value)}
-                    placeholder="np. Decyzje budzetowe"
+                    placeholder="np. Potrzebuję wybudować dom"
                   />
                   <button type="submit" className="ghost-button">Dodaj</button>
                 </form>
@@ -434,7 +424,7 @@ export default function StudioMeetingView({
                     autoFocus
                     value={concernDraft}
                     onChange={(e) => setConcernDraft(e.target.value)}
-                    placeholder="np. Ryzyko budzetu"
+                    placeholder="np. Mam ograniczony budżet"
                   />
                   <button type="submit" className="ghost-button">Dodaj</button>
                 </form>
