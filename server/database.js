@@ -571,10 +571,11 @@ function requestPasswordReset(draft = {}) {
     )
     .run(hashRecoveryCode(recoveryCode), expiresAt, nowIso(), row.id);
 
-  return {
-    recoveryCode,
-    expiresAt,
-  };
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[DEV] Password reset code for ${email}: ${recoveryCode} (expires ${expiresAt})`);
+  }
+
+  return { expiresAt };
 }
 
 function resetPasswordWithCode(draft = {}) {

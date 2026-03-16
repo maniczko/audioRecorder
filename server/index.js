@@ -28,32 +28,70 @@ const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
 const transcriptionJobs = new Map();
 
-function corsHeaders() {
+/* ── CORS ──────────────────────────────────────────────── */
+
+const ALLOWED_ORIGINS = (process.env.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function corsHeaders(requestOrigin) {
+  const origin = ALLOWED_ORIGINS.includes(requestOrigin)
+    ? requestOrigin
+    : ALLOWED_ORIGINS[0];
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin,
+    "Vary": "Origin",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id",
     "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
   };
 }
 
-function sendJson(response, statusCode, payload) {
+/* ── Rate limiting ─────────────────────────────────────── */
+
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const rateLimitMap = new Map();
+
+function checkRateLimit(ip, route) {
+  const key = `${ip}:${route}`;
+  const now = Date.now();
+  let entry = rateLimitMap.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+    rateLimitMap.set(key, entry);
+  }
+
+  entry.count += 1;
+
+  if (entry.count > RATE_LIMIT_MAX) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    const error = new Error("Zbyt wiele prob. Sprobuj ponownie za chwile.");
+    error.statusCode = 429;
+    error.retryAfter = retryAfter;
+    throw error;
+  }
+}
+
+function sendJson(response, statusCode, payload, requestOrigin) {
   response.writeHead(statusCode, {
-    ...corsHeaders(),
+    ...corsHeaders(requestOrigin),
     "Content-Type": "application/json; charset=utf-8",
   });
   response.end(JSON.stringify(payload));
 }
 
-function sendText(response, statusCode, body) {
+function sendText(response, statusCode, body, requestOrigin) {
   response.writeHead(statusCode, {
-    ...corsHeaders(),
+    ...corsHeaders(requestOrigin),
     "Content-Type": "text/plain; charset=utf-8",
   });
   response.end(body);
 }
 
-function sendNoContent(response) {
-  response.writeHead(204, corsHeaders());
+function sendNoContent(response, requestOrigin) {
+  response.writeHead(204, corsHeaders(requestOrigin));
   response.end();
 }
 
@@ -188,8 +226,13 @@ function ensureWorkspaceAccess(session, workspaceId) {
 }
 
 async function handleRequest(request, response) {
+  const origin = String(request.headers.origin || "");
+  const clientIp = String(
+    request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown"
+  ).split(",")[0].trim();
+
   if (request.method === "OPTIONS") {
-    sendNoContent(response);
+    sendNoContent(response, origin);
     return;
   }
 
@@ -197,32 +240,37 @@ async function handleRequest(request, response) {
   const pathname = requestUrl.pathname;
 
   if (request.method === "GET" && pathname === "/health") {
-    sendJson(response, 200, getHealth());
+    sendJson(response, 200, getHealth(), origin);
     return;
   }
 
   if (request.method === "POST" && pathname === "/auth/register") {
-    sendJson(response, 201, registerUser(await readJsonBody(request)));
+    checkRateLimit(clientIp, "auth");
+    sendJson(response, 201, registerUser(await readJsonBody(request)), origin);
     return;
   }
 
   if (request.method === "POST" && pathname === "/auth/login") {
-    sendJson(response, 200, loginUser(await readJsonBody(request)));
+    checkRateLimit(clientIp, "auth");
+    sendJson(response, 200, loginUser(await readJsonBody(request)), origin);
     return;
   }
 
   if (request.method === "POST" && pathname === "/auth/password/reset/request") {
-    sendJson(response, 200, requestPasswordReset(await readJsonBody(request)));
+    checkRateLimit(clientIp, "auth");
+    sendJson(response, 200, requestPasswordReset(await readJsonBody(request)), origin);
     return;
   }
 
   if (request.method === "POST" && pathname === "/auth/password/reset/confirm") {
-    sendJson(response, 200, resetPasswordWithCode(await readJsonBody(request)));
+    checkRateLimit(clientIp, "auth");
+    sendJson(response, 200, resetPasswordWithCode(await readJsonBody(request)), origin);
     return;
   }
 
   if (request.method === "POST" && pathname === "/auth/google") {
-    sendJson(response, 200, upsertGoogleUser(await readJsonBody(request)));
+    checkRateLimit(clientIp, "auth");
+    sendJson(response, 200, upsertGoogleUser(await readJsonBody(request)), origin);
     return;
   }
 
@@ -230,7 +278,7 @@ async function handleRequest(request, response) {
     const session = requireSession(request);
     const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
     ensureWorkspaceAccess(session, workspaceId);
-    sendJson(response, 200, buildSessionPayload(session.user_id, workspaceId));
+    sendJson(response, 200, buildSessionPayload(session.user_id, workspaceId), origin);
     return;
   }
 
@@ -239,7 +287,7 @@ async function handleRequest(request, response) {
     const session = requireSession(request);
     const userId = profileMatch[1];
     if (session.user_id !== userId) {
-      sendJson(response, 403, { message: "Mozesz edytowac tylko swoj profil." });
+      sendJson(response, 403, { message: "Mozesz edytowac tylko swoj profil." }, origin);
       return;
     }
 
@@ -248,7 +296,7 @@ async function handleRequest(request, response) {
     sendJson(response, 200, {
       user,
       users: buildSessionPayload(session.user_id, workspaceId).users,
-    });
+    }, origin);
     return;
   }
 
@@ -257,11 +305,11 @@ async function handleRequest(request, response) {
     const session = requireSession(request);
     const userId = passwordMatch[1];
     if (session.user_id !== userId) {
-      sendJson(response, 403, { message: "Mozesz zmienic tylko swoje haslo." });
+      sendJson(response, 403, { message: "Mozesz zmienic tylko swoje haslo." }, origin);
       return;
     }
 
-    sendJson(response, 200, changeUserPassword(userId, await readJsonBody(request)));
+    sendJson(response, 200, changeUserPassword(userId, await readJsonBody(request)), origin);
     return;
   }
 
@@ -269,7 +317,7 @@ async function handleRequest(request, response) {
     const session = requireSession(request);
     const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
     ensureWorkspaceAccess(session, workspaceId);
-    sendJson(response, 200, buildSessionPayload(session.user_id, workspaceId));
+    sendJson(response, 200, buildSessionPayload(session.user_id, workspaceId), origin);
     return;
   }
 
@@ -281,7 +329,7 @@ async function handleRequest(request, response) {
     sendJson(response, 200, {
       workspaceId,
       state: saveWorkspaceState(workspaceId, await readJsonBody(request)),
-    });
+    }, origin);
     return;
   }
 
@@ -292,14 +340,15 @@ async function handleRequest(request, response) {
     const targetUserId = workspaceRoleMatch[2];
     const membership = ensureWorkspaceAccess(session, workspaceId);
     if (!["owner", "admin"].includes(membership.member_role)) {
-      sendJson(response, 403, { message: "Tylko owner lub admin moze zmieniac role." });
+      sendJson(response, 403, { message: "Tylko owner lub admin moze zmieniac role." }, origin);
       return;
     }
 
     sendJson(
       response,
       200,
-      updateWorkspaceMemberRole(workspaceId, targetUserId, (await readJsonBody(request)).memberRole)
+      updateWorkspaceMemberRole(workspaceId, targetUserId, (await readJsonBody(request)).memberRole),
+      origin
     );
     return;
   }
@@ -311,7 +360,7 @@ async function handleRequest(request, response) {
     const workspaceId = String(request.headers["x-workspace-id"] || "");
     const meetingId = String(request.headers["x-meeting-id"] || "");
     if (!workspaceId) {
-      sendJson(response, 400, { message: "Brakuje X-Workspace-Id." });
+      sendJson(response, 400, { message: "Brakuje X-Workspace-Id." }, origin);
       return;
     }
 
@@ -329,7 +378,7 @@ async function handleRequest(request, response) {
       id: asset.id,
       workspaceId: asset.workspace_id,
       sizeBytes: asset.size_bytes,
-    });
+    }, origin);
     return;
   }
 
@@ -338,18 +387,18 @@ async function handleRequest(request, response) {
     const recordingId = mediaAudioMatch[1];
     const asset = getMediaAsset(recordingId);
     if (!asset) {
-      sendJson(response, 404, { message: "Nie znaleziono nagrania." });
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
       return;
     }
 
     ensureWorkspaceAccess(session, asset.workspace_id);
     if (!fs.existsSync(asset.file_path)) {
-      sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." });
+      sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." }, origin);
       return;
     }
 
     response.writeHead(200, {
-      ...corsHeaders(),
+      ...corsHeaders(origin),
       "Content-Type": asset.content_type,
       "Content-Length": String(fs.statSync(asset.file_path).size),
     });
@@ -364,14 +413,14 @@ async function handleRequest(request, response) {
     const body = await readJsonBody(request);
     const asset = getMediaAsset(recordingId);
     if (!asset) {
-      sendJson(response, 404, { message: "Nie znaleziono nagrania." });
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
       return;
     }
 
     ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
     queueTranscription(recordingId, body);
     ensureTranscriptionJob(recordingId, asset, body);
-    sendJson(response, 202, buildTranscriptionStatusPayload(getMediaAsset(recordingId)));
+    sendJson(response, 202, buildTranscriptionStatusPayload(getMediaAsset(recordingId)), origin);
     return;
   }
 
@@ -380,23 +429,28 @@ async function handleRequest(request, response) {
     const recordingId = mediaTranscribeMatch[1];
     const asset = getMediaAsset(recordingId);
     if (!asset) {
-      sendJson(response, 404, { message: "Nie znaleziono nagrania." });
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
       return;
     }
 
     ensureWorkspaceAccess(session, asset.workspace_id);
-    sendJson(response, 200, buildTranscriptionStatusPayload(asset));
+    sendJson(response, 200, buildTranscriptionStatusPayload(asset), origin);
     return;
   }
 
-  sendText(response, 404, "Not found");
+  sendText(response, 404, "Not found", origin);
 }
 
 const server = http.createServer((request, response) => {
+  const origin = String(request.headers.origin || "");
   handleRequest(request, response).catch((error) => {
-    sendJson(response, error.statusCode || 500, {
+    const statusCode = error.statusCode || 500;
+    if (statusCode === 429 && error.retryAfter) {
+      response.setHeader("Retry-After", String(error.retryAfter));
+    }
+    sendJson(response, statusCode, {
       message: error.message || "Unexpected server error.",
-    });
+    }, origin);
   });
 });
 

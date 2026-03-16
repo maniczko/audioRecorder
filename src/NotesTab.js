@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { formatDateTime } from "./lib/storage";
+
+const ALLOWED_HTML = {
+  ALLOWED_TAGS: ["b", "i", "u", "em", "strong", "ul", "ol", "li", "p", "br"],
+  ALLOWED_ATTR: [],
+};
+
+function sanitizeHtml(html) {
+  return DOMPurify.sanitize(html || "", ALLOWED_HTML);
+}
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -300,7 +310,7 @@ function NoteDetail({ note, onOpenMeeting }) {
             {contextIsHtml ? (
               <div
                 className="notes-section-text notes-html-content"
-                dangerouslySetInnerHTML={{ __html: note.context }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.context) }}
               />
             ) : (
               <p className="notes-section-text">{note.context}</p>
