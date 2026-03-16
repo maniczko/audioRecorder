@@ -16,6 +16,7 @@ function WaveformPanel({
   deleteRecordingMarker,
   canEdit,
   transcript,
+  displaySpeakerNames,
 }) {
   const [waveformBars, setWaveformBars] = useState([]);
   const [isDecoding, setIsDecoding] = useState(false);
@@ -722,6 +723,7 @@ export default function TranscriptPanel({
               deleteRecordingMarker={deleteRecordingMarker}
               canEdit={canEditTranscript}
               transcript={transcript}
+              displaySpeakerNames={displaySpeakerNames}
             />
 
             <div className="transcript-timeline-header">
