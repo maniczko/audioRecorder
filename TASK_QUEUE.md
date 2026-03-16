@@ -288,7 +288,7 @@ Zrodlo: audyt kodu 2026-03-16, pozycja L1.
 ---
 
 ## 050. Naprawa endsAt dla task-eventow w googleSync.js
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: eventy zadan w Google Calendar maja zerowy czas trwania (startsAt === endsAt).
 Problem: `buildCalendarSyncSnapshot` dla `type === "task"` ustawia oba pola na ta sama wartosc (linia ~93 googleSync.js).

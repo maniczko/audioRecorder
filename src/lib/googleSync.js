@@ -90,11 +90,17 @@ export function createGoogleTaskConflictState(existingTask, importedTask) {
 export function buildCalendarSyncSnapshot(source, options = {}) {
   const type = options.type || source?.type || "meeting";
   if (type === "task") {
+    const taskStartsAt = toIsoOrEmpty(source?.startsAt || source?.dueDate);
+    const taskEndsAt = source?.endsAt
+      ? toIsoOrEmpty(source.endsAt)
+      : taskStartsAt
+        ? new Date(new Date(taskStartsAt).getTime() + 3600000).toISOString()
+        : "";
     return {
       title: cleanText(source?.title),
-      startsAt: toIsoOrEmpty(source?.startsAt || source?.dueDate),
-      endsAt: toIsoOrEmpty(source?.endsAt || source?.dueDate),
-      durationMinutes: Number(source?.durationMinutes) || 15,
+      startsAt: taskStartsAt,
+      endsAt: taskEndsAt,
+      durationMinutes: Number(source?.durationMinutes) || 60,
       location: "",
     };
   }

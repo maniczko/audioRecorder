@@ -83,4 +83,25 @@ describe("googleSync helpers", () => {
     expect(conflict).not.toBeNull();
     expect(areCalendarSyncSnapshotsEqual(conflict.localSnapshot, conflict.remoteSnapshot)).toBe(false);
   });
+
+  test("task-event snapshot has endsAt = startsAt + 1h when endsAt not provided", () => {
+    const snapshot = buildCalendarSyncSnapshot(
+      { title: "Zrob raport", dueDate: "2026-03-15T10:00:00.000Z" },
+      { type: "task" }
+    );
+
+    expect(snapshot.startsAt).toBe("2026-03-15T10:00:00.000Z");
+    expect(snapshot.endsAt).toBe("2026-03-15T11:00:00.000Z");
+    expect(snapshot.durationMinutes).toBe(60);
+    expect(snapshot.startsAt).not.toBe(snapshot.endsAt);
+  });
+
+  test("task-event snapshot respects explicit endsAt when provided", () => {
+    const snapshot = buildCalendarSyncSnapshot(
+      { title: "Zrob raport", dueDate: "2026-03-15T10:00:00.000Z", endsAt: "2026-03-15T10:30:00.000Z" },
+      { type: "task" }
+    );
+
+    expect(snapshot.endsAt).toBe("2026-03-15T10:30:00.000Z");
+  });
 });
