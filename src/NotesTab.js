@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
 /* ── helpers ─────────────────────────────────────────── */
@@ -89,6 +89,87 @@ function groupNotes(notes, by) {
   return entries;
 }
 
+/* ── WysiwygEditor ────────────────────────────────────── */
+
+function WysiwygEditor({ onChange, placeholder }) {
+  const ref = useRef(null);
+
+  function exec(command) {
+    ref.current?.focus();
+    document.execCommand(command, false, null);
+    onChange(ref.current?.innerHTML || "");
+  }
+
+  useEffect(() => {
+    if (ref.current) ref.current.innerHTML = "";
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="wysiwyg-wrap">
+      <div className="wysiwyg-toolbar">
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Pogrubienie"
+          onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+        >
+          <strong>B</strong>
+        </button>
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Kursywa"
+          onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+        >
+          <em>I</em>
+        </button>
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Podkreślenie"
+          onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
+        >
+          <u>U</u>
+        </button>
+        <span className="wysiwyg-sep" />
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Lista punktowana"
+          onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}
+        >
+          •
+        </button>
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Lista numerowana"
+          onMouseDown={(e) => { e.preventDefault(); exec("insertOrderedList"); }}
+        >
+          1.
+        </button>
+        <span className="wysiwyg-sep" />
+        <button
+          type="button"
+          className="wysiwyg-btn"
+          title="Wyczyść formatowanie"
+          onMouseDown={(e) => { e.preventDefault(); exec("removeFormat"); }}
+        >
+          Tx
+        </button>
+      </div>
+      <div
+        ref={ref}
+        className="wysiwyg-body"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={() => onChange(ref.current?.innerHTML || "")}
+        data-placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
 /* ── NoteCard ─────────────────────────────────────────── */
 
 function NoteCard({ note, isActive, onSelect }) {
@@ -126,7 +207,7 @@ function NoteCard({ note, isActive, onSelect }) {
       {note.summary ? (
         <p className="note-card-preview">{note.summary}</p>
       ) : note.context ? (
-        <p className="note-card-preview note-card-context">{note.context}</p>
+        <p className="note-card-preview note-card-context">{note.context.replace(/<[^>]*>/g, " ").slice(0, 120)}</p>
       ) : (
         <p className="note-card-preview empty">Brak podsumowania — nagraj spotkanie.</p>
       )}
@@ -173,6 +254,8 @@ function NoteDetail({ note, onOpenMeeting }) {
     );
   }
 
+  const contextIsHtml = /<[a-z][\s\S]*>/i.test(note.context);
+
   return (
     <aside className="notes-detail-panel">
       <div className="notes-detail-header">
@@ -214,7 +297,14 @@ function NoteDetail({ note, onOpenMeeting }) {
               <span className="notes-section-dot context" />
               Kontekst spotkania
             </div>
-            <p className="notes-section-text">{note.context}</p>
+            {contextIsHtml ? (
+              <div
+                className="notes-section-text notes-html-content"
+                dangerouslySetInnerHTML={{ __html: note.context }}
+              />
+            ) : (
+              <p className="notes-section-text">{note.context}</p>
+            )}
           </div>
         )}
 
@@ -330,6 +420,94 @@ function NoteDetail({ note, onOpenMeeting }) {
   );
 }
 
+/* ── NewNotePanel ─────────────────────────────────────── */
+
+function NewNotePanel({ onSave, onCancel, allTags }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+
+  function handleTagKeyDown(e) {
+    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+      e.preventDefault();
+      const newTag = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
+      if (!tags.includes(newTag)) setTags((prev) => [...prev, newTag]);
+      setTagInput("");
+    }
+    if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  }
+
+  function handleSave() {
+    if (!title.trim()) return;
+    onSave({ title: title.trim(), context: body, tags });
+  }
+
+  return (
+    <aside className="notes-detail-panel">
+      <div className="notes-detail-header notes-new-panel-header">
+        <div className="notes-detail-hero">
+          <div className="eyebrow">Nowa notatka ręczna</div>
+          <input
+            className="notes-new-title-input"
+            type="text"
+            placeholder="Tytuł notatki…"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            autoFocus
+          />
+          <div className="notes-tag-chips-input">
+            {tags.map((tag) => (
+              <span key={tag} className="note-tag-chip" style={tagStyle(tag)}>
+                #{tag}
+                <button
+                  type="button"
+                  className="tag-chip-remove"
+                  onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              className="notes-tag-text-input"
+              type="text"
+              placeholder={tags.length === 0 ? "Tagi… (Enter aby dodać)" : ""}
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              list="notes-new-tag-suggestions"
+            />
+            <datalist id="notes-new-tag-suggestions">
+              {allTags.filter((t) => !tags.includes(t)).map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        <div className="notes-new-panel-actions">
+          <button
+            type="button"
+            className="primary-button small"
+            disabled={!title.trim()}
+            onClick={handleSave}
+          >
+            Zapisz notatkę
+          </button>
+          <button type="button" className="ghost-button small" onClick={onCancel}>
+            Anuluj
+          </button>
+        </div>
+      </div>
+      <div className="notes-detail-body notes-new-panel-body">
+        <WysiwygEditor onChange={setBody} placeholder="Treść notatki…" />
+      </div>
+    </aside>
+  );
+}
+
 /* ── NotesTab ─────────────────────────────────────────── */
 
 export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNote }) {
@@ -338,8 +516,6 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   const [groupBy, setGroupBy] = useState("date");
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [showNewNote, setShowNewNote] = useState(false);
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteBody, setNewNoteBody] = useState("");
 
   const allNotes = useMemo(
     () =>
@@ -363,7 +539,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
       const hay = [
         note.title,
         note.summary,
-        note.context,
+        note.context.replace(/<[^>]*>/g, " "),
         ...note.decisions,
         ...note.actionItems,
         ...note.followUps,
@@ -388,13 +564,10 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
-  function saveNewNote() {
-    if (!newNoteTitle.trim()) return;
+  function saveNewNote({ title, context, tags }) {
     if (typeof onCreateNote === "function") {
-      onCreateNote({ title: newNoteTitle.trim(), context: newNoteBody.trim() });
+      onCreateNote({ title, context, tags });
     }
-    setNewNoteTitle("");
-    setNewNoteBody("");
     setShowNewNote(false);
   }
 
@@ -407,40 +580,12 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         <div className="notes-sidebar-actions">
           <button
             type="button"
-            className="primary-button small"
+            className={showNewNote ? "secondary-button small" : "primary-button small"}
             onClick={() => setShowNewNote((v) => !v)}
           >
-            {showNewNote ? "Anuluj" : "+ Nowa notatka"}
+            {showNewNote ? "← Anuluj" : "+ Nowa notatka"}
           </button>
         </div>
-
-        {showNewNote && (
-          <div className="notes-new-note-form">
-            <input
-              className="notes-new-note-title"
-              type="text"
-              placeholder="Tytuł notatki…"
-              value={newNoteTitle}
-              onChange={(e) => setNewNoteTitle(e.target.value)}
-              autoFocus
-            />
-            <textarea
-              className="notes-new-note-body"
-              rows={4}
-              placeholder="Treść notatki…"
-              value={newNoteBody}
-              onChange={(e) => setNewNoteBody(e.target.value)}
-            />
-            <button
-              type="button"
-              className="primary-button small"
-              onClick={saveNewNote}
-              disabled={!newNoteTitle.trim()}
-            >
-              Zapisz notatkę
-            </button>
-          </div>
-        )}
 
         <div className="notes-search-wrap">
           <span className="notes-search-icon" aria-hidden="true">⌕</span>
@@ -554,8 +699,16 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         )}
       </main>
 
-      {/* ─ Detail panel ─────────────────────────────────── */}
-      <NoteDetail note={selectedNote} onOpenMeeting={onOpenMeeting} />
+      {/* ─ Detail / New note panel ───────────────────────── */}
+      {showNewNote ? (
+        <NewNotePanel
+          onSave={saveNewNote}
+          onCancel={() => setShowNewNote(false)}
+          allTags={allTags}
+        />
+      ) : (
+        <NoteDetail note={selectedNote} onOpenMeeting={onOpenMeeting} />
+      )}
     </div>
   );
 }

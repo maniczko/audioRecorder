@@ -618,9 +618,10 @@ export default function useMeetings({
     }
   }
 
-  function createManualNote({ title, context }) {
+  function createManualNote({ title, context, tags }) {
     if (!currentUser || !currentWorkspaceId || !title) return;
     const now = new Date();
+    const noteTags = Array.isArray(tags) && tags.length > 0 ? tags.join("\n") : "notatka";
     const note = createMeeting(
       currentUser.id,
       {
@@ -629,7 +630,7 @@ export default function useMeetings({
         startsAt: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
         durationMinutes: 0,
         attendees: "",
-        tags: "notatka",
+        tags: noteTags,
         needs: "",
         desiredOutputs: "",
         location: "",

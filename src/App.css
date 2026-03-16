@@ -559,7 +559,18 @@ select:focus {
 
 .hero-panel {
   display: grid;
-  gap: 16px;
+  gap: 12px;
+  padding: 16px 22px;
+}
+
+.hero-panel h2 {
+  font-size: 1.35rem;
+  margin: 4px 0 0;
+}
+
+.hero-panel p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .metric-card {
@@ -4268,6 +4279,10 @@ select:focus {
   letter-spacing: 0.12em;
 }
 
+.tasks-layout.ms-todo .todo-toolbar-panel {
+  min-height: 120px;
+}
+
 .tasks-layout.ms-todo .todo-toolbar-panel,
 .tasks-layout.ms-todo .todo-create-card {
   display: grid;
@@ -6148,37 +6163,148 @@ select:focus {
   margin-bottom: 12px;
 }
 
-.notes-new-note-form {
+/* ── New note panel (right detail area) ─────────────── */
+
+.notes-new-title-input {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 6px 0 12px;
+  outline: none;
+}
+.notes-new-title-input::placeholder { color: var(--muted); }
+.notes-new-title-input:focus { border-bottom-color: rgba(116, 208, 191, 0.6); }
+
+.notes-tag-chips-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 32px;
+}
+
+.notes-tag-text-input {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.82rem;
+  padding: 2px 0;
+}
+.notes-tag-text-input::placeholder { color: var(--muted); }
+
+.note-tag-chip .tag-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 0 0 4px;
+  font-size: 1em;
+  line-height: 1;
+}
+.note-tag-chip .tag-chip-remove:hover { opacity: 1; }
+
+.notes-new-panel-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.notes-new-panel-body {
+  padding-top: 0 !important;
+}
+
+/* ── WYSIWYG editor ─────────────────────────────────── */
+
+.wysiwyg-wrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  margin-bottom: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  flex: 1;
 }
 
-.notes-new-note-title {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
+.wysiwyg-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+
+.wysiwyg-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.wysiwyg-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.wysiwyg-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 4px;
+}
+
+.wysiwyg-body {
+  flex: 1;
+  min-height: 260px;
+  padding: 14px 16px;
   color: var(--text);
   font-size: 0.9rem;
-  width: 100%;
+  line-height: 1.7;
+  outline: none;
+  overflow-y: auto;
 }
+.wysiwyg-body:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+.wysiwyg-body ul,
+.wysiwyg-body ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+.wysiwyg-body li { margin: 3px 0; }
 
-.notes-new-note-body {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  font-size: 0.85rem;
-  width: 100%;
-  resize: vertical;
+/* ── Rendered HTML content in note detail ────────────── */
+
+.notes-html-content ul,
+.notes-html-content ol {
+  padding-left: 20px;
+  margin: 6px 0;
 }
+.notes-html-content li { margin: 3px 0; }
+.notes-html-content p { margin: 0 0 8px; }
+.notes-html-content strong { font-weight: 700; }
+.notes-html-content em { font-style: italic; }
+.notes-html-content u { text-decoration: underline; }
 
 .notes-search-wrap {
   position: relative;
