@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
@@ -868,6 +869,56 @@ export default function StudioMeetingView({
     </>
   );
 }
+
+StudioMeetingView.propTypes = {
+  selectedMeeting: PropTypes.object,
+  displayRecording: PropTypes.object,
+  studioAnalysis: PropTypes.object,
+  isRecording: PropTypes.bool,
+  analysisStatus: PropTypes.string,
+  activeQueueItem: PropTypes.object,
+  selectedMeetingQueue: PropTypes.array,
+  elapsed: PropTypes.number,
+  visualBars: PropTypes.array,
+  stopRecording: PropTypes.func,
+  startRecording: PropTypes.func,
+  retryRecordingQueueItem: PropTypes.func,
+  recordPermission: PropTypes.string,
+  speechRecognitionSupported: PropTypes.bool,
+  liveText: PropTypes.string,
+  recordingMessage: PropTypes.string,
+  selectedRecording: PropTypes.object,
+  displaySpeakerNames: PropTypes.object,
+  selectedRecordingAudioUrl: PropTypes.string,
+  selectedRecordingAudioError: PropTypes.string,
+  updateTranscriptSegment: PropTypes.func,
+  assignSpeakerToTranscriptSegments: PropTypes.func,
+  mergeTranscriptSegments: PropTypes.func,
+  splitTranscriptSegment: PropTypes.func,
+  renameSpeaker: PropTypes.func,
+  selectedRecordingId: PropTypes.string,
+  setSelectedRecordingId: PropTypes.func,
+  exportTranscript: PropTypes.func,
+  exportMeetingNotes: PropTypes.func,
+  exportMeetingPdfFile: PropTypes.func,
+  startNewMeetingDraft: PropTypes.func,
+  selectMeeting: PropTypes.func,
+  currentWorkspacePermissions: PropTypes.object,
+  currentWorkspaceRole: PropTypes.string,
+  currentWorkspace: PropTypes.object,
+  userMeetings: PropTypes.array,
+  meetingTasks: PropTypes.array,
+  addRecordingMarker: PropTypes.func,
+  deleteRecordingMarker: PropTypes.func,
+  onCreateTask: PropTypes.func,
+  peopleProfiles: PropTypes.array,
+  addMeetingComment: PropTypes.func,
+  currentUserName: PropTypes.string,
+  meetingDraft: PropTypes.object,
+  setMeetingDraft: PropTypes.func,
+  saveMeeting: PropTypes.func,
+  normalizeRecording: PropTypes.func,
+};
 
 function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting }) {
   const allRecordings = userMeetings.flatMap((m) =>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
@@ -1182,3 +1183,20 @@ export default function TranscriptPanel({
     </section>
   );
 }
+
+TranscriptPanel.propTypes = {
+  displayRecording: PropTypes.object,
+  selectedRecording: PropTypes.object,
+  displaySpeakerNames: PropTypes.object,
+  selectedRecordingAudioUrl: PropTypes.string,
+  selectedRecordingAudioError: PropTypes.string,
+  audioRef: PropTypes.object,
+  updateTranscriptSegment: PropTypes.func,
+  assignSpeakerToTranscriptSegments: PropTypes.func,
+  mergeTranscriptSegments: PropTypes.func,
+  splitTranscriptSegment: PropTypes.func,
+  addRecordingMarker: PropTypes.func,
+  deleteRecordingMarker: PropTypes.func,
+  canEditTranscript: PropTypes.bool,
+  onNormalize: PropTypes.func,
+};

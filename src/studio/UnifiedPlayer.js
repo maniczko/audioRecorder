@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
@@ -215,3 +216,30 @@ export default function UnifiedPlayer({
     </section>
   );
 }
+
+UnifiedPlayer.propTypes = {
+  isRecording: PropTypes.bool,
+  analysisStatus: PropTypes.string,
+  activeQueueItem: PropTypes.object,
+  selectedMeetingQueue: PropTypes.array,
+  elapsed: PropTypes.number,
+  visualBars: PropTypes.array,
+  stopRecording: PropTypes.func,
+  startRecording: PropTypes.func,
+  retryRecordingQueueItem: PropTypes.func,
+  recordPermission: PropTypes.string,
+  speechRecognitionSupported: PropTypes.bool,
+  liveText: PropTypes.string,
+  recordingMessage: PropTypes.string,
+  canRecord: PropTypes.bool,
+  audioRef: PropTypes.object,
+  selectedRecordingAudioUrl: PropTypes.string,
+  selectedRecordingAudioError: PropTypes.string,
+  currentTime: PropTypes.number,
+  audioDuration: PropTypes.number,
+  isPlaying: PropTypes.bool,
+  playbackRate: PropTypes.number,
+  setPlaybackRate: PropTypes.func,
+  transcript: PropTypes.array,
+  displaySpeakerNames: PropTypes.object,
+};

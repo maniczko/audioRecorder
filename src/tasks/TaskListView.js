@@ -1,9 +1,9 @@
+import PropTypes from "prop-types";
 import {
   canDrop,
   dueTone,
   formatListDueDate,
   handleCardKeyDown,
-  toInputDateTime,
   writeDragTask,
 } from "./taskViewUtils";
 import { getTaskAssigneeSummary, getTaskSlaState } from "../lib/tasks";
@@ -104,7 +104,7 @@ export default function TaskListView({
                     <div
                       role="button"
                       tabIndex={0}
-                      className={isActive ? "todo-table-row active editable" : "todo-table-row"}
+                      className={isActive ? "todo-table-row active" : "todo-table-row"}
                       data-selected={isSelected}
                       draggable
                       onDragStart={(event) => {
@@ -140,98 +140,50 @@ export default function TaskListView({
                       </div>
 
                       <span className="todo-title-cell">
-                        {isActive ? (
-                          <input
-                            data-task-title-input={task.id}
-                            value={task.title}
-                            onFocus={() => setSelectedTaskId(task.id)}
-                            onChange={(event) => onUpdateTask(task.id, { title: event.target.value })}
-                          />
-                        ) : (
-                          <>
-                            <strong>{task.title}</strong>
-                            <small>
-                              {assigneeSummary}
-                              {hasMoreAssignees ? " | zespolowe" : ""}
-                              {task.myDay ? " | My Day" : ""}
-                              {task.reminderAt ? " | przypomnienie" : ""}
-                            </small>
-                          </>
-                        )}
+                        <strong>{task.title}</strong>
+                        <small>
+                          {assigneeSummary}
+                          {hasMoreAssignees ? " | zespolowe" : ""}
+                          {task.myDay ? " | My Day" : ""}
+                          {task.reminderAt ? " | przypomnienie" : ""}
+                        </small>
                       </span>
 
-
                       <span className={dueTone(task.dueDate) === "danger" ? "todo-date danger" : "todo-date"}>
-                        {isActive ? (
-                          <input
-                            type="datetime-local"
-                            value={toInputDateTime(task.dueDate)}
-                            onFocus={() => setSelectedTaskId(task.id)}
-                            onChange={(event) => onUpdateTask(task.id, { dueDate: event.target.value })}
-                          />
-                        ) : (
-                          <span className={`todo-sla-pill ${slaState.tone}`}>
-                            {formatListDueDate(task.dueDate) || "Brak terminu"} {task.dueDate ? `- ${slaState.label}` : ""}
-                          </span>
-                        )}
+                        <span className={`todo-sla-pill ${slaState.tone}`}>
+                          {formatListDueDate(task.dueDate) || "Brak terminu"} {task.dueDate ? `- ${slaState.label}` : ""}
+                        </span>
                       </span>
 
                       <span className="todo-status-cell">
-                        {isActive ? (
-                          <select
-                            value={task.status}
-                            onFocus={() => setSelectedTaskId(task.id)}
-                            onChange={(event) => onMoveTaskToColumn(task.id, event.target.value)}
-                          >
-                            {boardColumns.map((column) => (
-                              <option key={column.id} value={column.id}>
-                                {column.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="todo-status-badge">{statusLabel(task, boardColumns)}</span>
-                        )}
+                        <span className="todo-status-badge">{statusLabel(task, boardColumns)}</span>
                       </span>
 
                       <span className="todo-priority-cell">
-                        {isActive ? (
-                          <select
-                            value={task.priority}
-                            onFocus={() => setSelectedTaskId(task.id)}
-                            onChange={(event) => onUpdateTask(task.id, { priority: event.target.value })}
+                        <div className="todo-inline-actions">
+                          <button
+                            type="button"
+                            className={task.myDay ? "todo-star active" : "todo-star"}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onUpdateTask(task.id, { myDay: !task.myDay });
+                            }}
+                            title="Dodaj do My Day"
                           >
-                            <option value="low">Niski</option>
-                            <option value="medium">Sredni</option>
-                            <option value="high">Wysoki</option>
-                            <option value="urgent">Krytyczny</option>
-                          </select>
-                        ) : (
-                          <div className="todo-inline-actions">
-                            <button
-                              type="button"
-                              className={task.myDay ? "todo-star active" : "todo-star"}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onUpdateTask(task.id, { myDay: !task.myDay });
-                              }}
-                              title="Dodaj do My Day"
-                            >
-                              {"+"}
-                            </button>
-                            <button
-                              type="button"
-                              className={task.important ? "todo-star active" : "todo-star"}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onUpdateTask(task.id, { important: !task.important });
-                              }}
-                              title="Oznacz jako wazne"
-                            >
-                              {"\u2605"}
-                            </button>
-                          </div>
-                        )}
+                            {"+"}
+                          </button>
+                          <button
+                            type="button"
+                            className={task.important ? "todo-star active" : "todo-star"}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onUpdateTask(task.id, { important: !task.important });
+                            }}
+                            title="Oznacz jako wazne"
+                          >
+                            {"\u2605"}
+                          </button>
+                        </div>
                       </span>
                     </div>
 
@@ -258,3 +210,23 @@ export default function TaskListView({
     </div>
   );
 }
+
+TaskListView.propTypes = {
+  groupedTasks: PropTypes.array,
+  allTasks: PropTypes.array,
+  groupBy: PropTypes.string,
+  sortBy: PropTypes.string,
+  setSortBy: PropTypes.func,
+  selectedTask: PropTypes.object,
+  selectedTaskIds: PropTypes.array,
+  toggleTaskSelection: PropTypes.func,
+  setSelectedTaskId: PropTypes.func,
+  onUpdateTask: PropTypes.func,
+  onMoveTaskToColumn: PropTypes.func,
+  peopleOptions: PropTypes.array,
+  taskGroups: PropTypes.array,
+  boardColumns: PropTypes.array,
+  handleGroupDrop: PropTypes.func,
+  handleTaskDrop: PropTypes.func,
+  setDragTaskId: PropTypes.func,
+};
