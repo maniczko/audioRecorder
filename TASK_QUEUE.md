@@ -263,7 +263,7 @@ Zrodlo: audyt kodu 2026-03-16, pozycja H9.
 ---
 
 ## 048. Node.js >= 22.5 — dokumentacja wymagan srodowiska
-Status: `todo`
+Status: `done`
 Priorytet: `P2`
 Cel: zapobiec bledom instalacji na starszych wersjach Node (server/database.js uzywa `node:sqlite` wymagajacego Node 22.5+).
 Akceptacja:
