@@ -295,6 +295,11 @@ export default function MainApp() {
     setActiveTab("tasks");
   }
 
+  function createMeetingForPerson(personName) {
+    meetings.startNewMeetingDraft({ attendees: personName });
+    setActiveTab("studio");
+  }
+
   function openPersonFromPalette(personId) {
     setPendingPersonId(personId);
     setActiveTab("people");
@@ -613,6 +618,7 @@ export default function MainApp() {
           onOpenMeeting={openMeetingFromCalendar}
           onOpenTask={openTaskFromCalendar}
           onCreateTask={createTaskForPerson}
+          onCreateMeeting={createMeetingForPerson}
           onUpdatePersonNotes={meetings.updatePersonNotes}
           externalSelectedPersonId={pendingPersonId}
           onPersonSelectionHandled={() => setPendingPersonId("")}

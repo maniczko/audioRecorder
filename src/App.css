@@ -2318,6 +2318,15 @@ select:focus {
 .status-chip-sm.pending { background: rgba(255, 200, 80, 0.12); color: rgba(255, 200, 80, 0.9); }
 .status-chip-sm.failed { background: rgba(241, 125, 114, 0.12); color: rgba(241, 125, 114, 0.9); }
 
+.recordings-library { margin: 0 0 24px; }
+.recordings-library-meeting {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 /* ── Tag manager (ProfileTab) ─────────────────────────── */
 
 .tag-manager-list {

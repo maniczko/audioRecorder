@@ -9,6 +9,30 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## 052. Studio — globalna biblioteka nagran
+Status: `done`
+Priorytet: `P2`
+Cel: uzytkownik moze przeglądac wszystkie nagrania ze wszystkich spotkan w jednym miejscu.
+Zakres:
+- komponent RecordingsLibrary na dole strony Studio (takze w pustym stanie bez wybranego spotkania).
+- tabela: Spotkanie, Data, Czas, Speakerzy, Segmenty, Status.
+- klikniecie wiersza = wybranie spotkania i nagrania.
+Zrodlo: zadanie uzytkownika 2026-03-16.
+
+---
+
+## 053. Zakładka Osoba — tworzenie spotkania z profilu
+Status: `done`
+Priorytet: `P2`
+Cel: uzytkownik moze zaplanowac nowe spotkanie bezposrednio z widoku osoby.
+Zakres:
+- przycisk "+ spotkanie" w naglowku profilu osoby (sekcja profile-hero-side).
+- klikniecie otwiera Studio z nowym draftem spotkania z osoba wstepnie dodana jako uczestnik.
+- startNewMeetingDraft rozszerzony o prefill.attendees.
+Zrodlo: zadanie uzytkownika 2026-03-16.
+
+---
+
 ## 043. XSS — sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
 Status: `todo`
 Priorytet: `P1`

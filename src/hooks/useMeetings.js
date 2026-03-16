@@ -579,6 +579,7 @@ export default function useMeetings({
         ...freshDraft,
         ...(prefill.title ? { title: prefill.title } : {}),
         ...(prefill.context ? { context: prefill.context } : {}),
+        ...(prefill.attendees ? { attendees: prefill.attendees } : {}),
       };
       if (prefill.startsAt) {
         const d = new Date(prefill.startsAt);

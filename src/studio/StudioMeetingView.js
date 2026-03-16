@@ -251,6 +251,12 @@ export default function StudioMeetingView({
             </div>
           </div>
         </section>
+        <RecordingsLibrary
+          userMeetings={userMeetings}
+          selectedRecordingId={selectedRecordingId}
+          setSelectedRecordingId={setSelectedRecordingId}
+          selectMeeting={selectMeeting}
+        />
       </>
     );
   }
@@ -664,6 +670,72 @@ export default function StudioMeetingView({
           </div>
         </section>
       </div>
+
+      <RecordingsLibrary
+        userMeetings={userMeetings}
+        selectedRecordingId={selectedRecordingId}
+        setSelectedRecordingId={setSelectedRecordingId}
+        selectMeeting={selectMeeting}
+      />
     </>
+  );
+}
+
+function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting }) {
+  const allRecordings = userMeetings.flatMap((m) =>
+    (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title }))
+  ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (!allRecordings.length) return null;
+
+  return (
+    <section className="panel recordings-library">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Library</div>
+          <h2>Wszystkie nagrania</h2>
+        </div>
+        <div className="status-chip">{allRecordings.length}</div>
+      </div>
+      <div className="studio-recordings-table-wrap">
+        <table className="studio-recordings-table">
+          <thead>
+            <tr>
+              <th>Spotkanie</th>
+              <th>Data</th>
+              <th>Czas</th>
+              <th>Speakerzy</th>
+              <th>Segmenty</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allRecordings.map((rec) => (
+              <tr
+                key={rec.id}
+                className={rec.id === selectedRecordingId ? "active" : ""}
+                onClick={() => {
+                  const meeting = userMeetings.find((m) => m.id === rec.meetingId);
+                  if (meeting) selectMeeting(meeting);
+                  setSelectedRecordingId(rec.id);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <td className="recordings-library-meeting">{rec.meetingTitle}</td>
+                <td>{formatDateTime(rec.createdAt)}</td>
+                <td>{formatDuration(rec.duration)}</td>
+                <td>{rec.speakerCount || 0}</td>
+                <td>{rec.transcript?.length || 0}</td>
+                <td>
+                  <span className={`status-chip status-chip-sm ${rec.pipelineStatus || "done"}`}>
+                    {rec.pipelineStatus || "done"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 
-export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, onUpdatePersonNotes, externalSelectedPersonId, onPersonSelectionHandled }) {
+export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreateTask, onCreateMeeting, onUpdatePersonNotes, externalSelectedPersonId, onPersonSelectionHandled }) {
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [query, setQuery] = useState("");
   const [editingSummary, setEditingSummary] = useState(false);
@@ -143,6 +143,16 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                     <span>Nastepne spotkanie</span>
                     <strong>Brak</strong>
                   </div>
+                )}
+                {typeof onCreateMeeting === "function" && (
+                  <button
+                    type="button"
+                    className="people-add-task-btn"
+                    onClick={() => onCreateMeeting(selectedPerson.name)}
+                    title="Zaplanuj spotkanie z tą osobą"
+                  >
+                    + spotkanie
+                  </button>
                 )}
               </div>
             </section>
