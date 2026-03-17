@@ -763,9 +763,9 @@ export default function StudioMeetingView({
           <span className="ff-live-block-dot" />
           <p className="ff-live-block-text">{liveText}</p>
         </div>
-      ) : isRecording && !speechRecognitionSupported ? (
+      ) : isRecording && !speechRecognitionSupported && !liveTranscriptEnabled ? (
         <div className="ff-status-banner ff-status-warn">
-          Transkrypcja live niedostępna w tej przeglądarce. Nagrana mowa zostanie przetworzona lokalnie po zatrzymaniu.
+          Transkrypcja live niedostępna — włącz CC, aby uzyskać podpisy na żywo przez Whisper.
         </div>
       ) : null}
 

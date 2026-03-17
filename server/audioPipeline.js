@@ -875,19 +875,31 @@ async function transcribeRecording(asset, options = {}) {
 
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
   let whisperPayload = null;
-  try {
-    if (isLargeFile) {
-      const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, whisperFields);
-      whisperPayload = mergeChunkedPayloads(chunkPayloads);
-    } else {
-      whisperPayload = await requestAudioTranscription({
-        filePath: transcribeFilePath,
-        contentType: transcribeContentType,
-        fields: whisperFields,
-      });
+  const modelsToTry = VERIFICATION_MODEL !== "whisper-1"
+    ? [VERIFICATION_MODEL, "whisper-1"]
+    : ["whisper-1"];
+
+  for (const model of modelsToTry) {
+    const fields = { ...whisperFields, model };
+    try {
+      if (isLargeFile) {
+        const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields);
+        whisperPayload = mergeChunkedPayloads(chunkPayloads);
+      } else {
+        whisperPayload = await requestAudioTranscription({
+          filePath: transcribeFilePath,
+          contentType: transcribeContentType,
+          fields,
+        });
+      }
+      if (DEBUG) console.log(`[audioPipeline] Transcription succeeded with model: ${model}`);
+      break; // success — stop trying fallbacks
+    } catch (error) {
+      console.error(`[audioPipeline] Transcription failed with model ${model}:`, error.message);
+      if (model === modelsToTry[modelsToTry.length - 1]) {
+        console.error("[audioPipeline] All transcription models exhausted.");
+      }
     }
-  } catch (error) {
-    console.error("[audioPipeline] Whisper pass failed:", error.message);
   }
   const verificationSegments = normalizeVerificationSegments(whisperPayload || {});
 

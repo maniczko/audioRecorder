@@ -81,7 +81,8 @@ export default function useRecorder({
   const queueProcessingRef = useRef(false);
   const userMeetingsRef = useRef(userMeetings);
   const mimeTypeRef = useRef("audio/webm");
-  const [liveTranscriptEnabled, setLiveTranscriptEnabled] = useState(false);
+  // In remote mode there is no browser Speech Recognition — auto-enable server-side Whisper CC.
+  const [liveTranscriptEnabled, setLiveTranscriptEnabled] = useState(mediaService.mode === "remote");
   const normalizedQueue = useMemo(() => recordingQueue, [recordingQueue]);
   const queueSummary = useMemo(() => buildRecordingQueueSummary(normalizedQueue), [normalizedQueue]);
 

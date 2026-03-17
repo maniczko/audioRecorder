@@ -2,6 +2,16 @@ const API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY;
 const MODEL = process.env.REACT_APP_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+// Import lazily to avoid circular deps — apiRequest reads from localStorage for the session token
+let _apiRequest = null;
+async function getApiRequest() {
+  if (!_apiRequest) {
+    const mod = await import("../services/httpClient");
+    _apiRequest = mod.apiRequest;
+  }
+  return _apiRequest;
+}
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -320,14 +330,11 @@ function parseAiResponse(rawText) {
 }
 
 async function analyzeMeetingViaServer({ meeting, segments, speakerNames }) {
-  const res = await fetch(`${API_BASE_URL}/media/analyze`, {
+  const apiRequest = await getApiRequest();
+  return apiRequest("/media/analyze", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ meeting, segments, speakerNames }),
+    body: { meeting, segments, speakerNames },
   });
-  if (!res.ok) throw new Error(`Server analyze failed: ${res.status}`);
-  return res.json();
 }
 
 export async function analyzeMeeting({ meeting, segments, speakerNames, diarization }) {
