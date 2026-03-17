@@ -14,7 +14,7 @@ import { useGoogleCtx } from "./GoogleContext";
 const UIContext = createContext(null);
 
 export function UIProvider({ children }) {
-  const { workspace, auth } = useWorkspaceCtx();
+  const { workspace } = useWorkspaceCtx();
   const { meetings } = useMeetingsCtx();
   const recorder = useRecorderCtx();
   const google = useGoogleCtx();
