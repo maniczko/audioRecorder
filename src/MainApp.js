@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import "./styles/reset.css";
+import "./styles/variables.css";
+import "./styles/layout.css";
+import "./styles/animations.css";
+import "./styles/studio.css";
 import AuthScreen from "./AuthScreen";
 import ErrorBoundary from "./lib/ErrorBoundary";
 import CalendarTab from "./CalendarTab";
