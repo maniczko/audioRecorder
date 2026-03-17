@@ -24,7 +24,7 @@ export default function StudioTab(props) {
   const tagOptions = [...new Set(userMeetings.flatMap((m) => m.tags || []).filter(Boolean))];
 
   return (
-    <div className="workspace-layout">
+    <div className={briefOpen ? "workspace-layout" : ""}>
       {briefOpen && (
         <StudioSidebar
           currentWorkspacePermissions={currentWorkspacePermissions}
@@ -47,7 +47,7 @@ export default function StudioTab(props) {
         />
       )}
 
-      <main className="workspace-main">
+      <main className={briefOpen ? "workspace-main" : ""} style={{ width: '100%' }}>
         <StudioMeetingView {...props} briefOpen={briefOpen} setBriefOpen={setBriefOpen} />
       </main>
     </div>
