@@ -12,7 +12,6 @@ import {
   buildTaskTags,
   buildTaskNotifications,
 } from "../lib/tasks";
-import { buildPeopleProfiles } from "../lib/people";
 import { buildWorkspaceActivityFeed } from "../lib/activityFeed";
 import {
   areCalendarSyncSnapshotsEqual,
@@ -44,7 +43,6 @@ export default function useMeetings({
   });
 
   const {
-    meetings,
     setMeetings,
     manualTasks,
     setManualTasks,
@@ -54,7 +52,6 @@ export default function useMeetings({
     setTaskBoards,
     calendarMeta,
     setCalendarMeta,
-    workspaceMessage,
     setWorkspaceMessage,
     userMeetings,
   } = workspaceData;

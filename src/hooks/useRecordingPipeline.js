@@ -43,19 +43,19 @@ export default function useRecordingPipeline({
   const normalizedQueue = useMemo(() => recordingQueue, [recordingQueue]);
   const queueSummary = useMemo(() => buildRecordingQueueSummary(normalizedQueue), [normalizedQueue]);
 
-  function updateQueueItem(recordingId, updates) {
+  const updateQueueItem = useCallback((recordingId, updates) => {
     setRecordingQueue((prev) => updateRecordingQueueItem(prev, recordingId, updates));
-  }
+  }, [setRecordingQueue]);
 
-  function removeQueueItem(recordingId) {
+  const removeQueueItem = useCallback((recordingId) => {
     setRecordingQueue((prev) => removeRecordingQueueItem(prev, recordingId));
-  }
+  }, [setRecordingQueue]);
 
-  function resolveMeetingForQueueItem(item) {
+  const resolveMeetingForQueueItem = useCallback((item) => {
     return userMeetingsRef.current.find((m) => m.id === item.meetingId) || item.meetingSnapshot || null;
-  }
+  }, [userMeetingsRef]);
 
-  async function pollRemoteTranscription(recordingId) {
+  const pollRemoteTranscription = useCallback(async (recordingId) => {
     let attempts = 0;
     while (attempts < 120) {
       attempts += 1;
@@ -67,9 +67,9 @@ export default function useRecordingPipeline({
       await sleep(1500);
     }
     throw new Error("Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.");
-  }
+  }, [mediaService, updateQueueItem]);
 
-  async function buildRecordingFromQueueItem(item, transcription) {
+  const buildRecordingFromQueueItem = useCallback(async (item, transcription) => {
     const target = resolveMeetingForQueueItem(item);
     if (!target?.id) throw new Error("Nie znaleziono spotkania dla nagrania w kolejce.");
 
@@ -108,9 +108,9 @@ export default function useRecordingPipeline({
       storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
       analysis,
     };
-  }
+  }, [mediaService.mode, resolveMeetingForQueueItem, setCurrentSegments]);
 
-  async function processQueueItem(item) {
+  const processQueueItem = useCallback(async (item) => {
     const target = resolveMeetingForQueueItem(item);
     if (!target?.id) return false;
 
@@ -148,7 +148,7 @@ export default function useRecordingPipeline({
       setRecordingMessage(error.message ? `Błąd w kolejce: ${error.message}` : "Błąd w kolejce. Sprobuj ponownie.");
       return true;
     }
-  }
+  }, [attachCompletedRecording, buildRecordingFromQueueItem, mediaService, pollRemoteTranscription, removeQueueItem, resolveMeetingForQueueItem, updateQueueItem]);
 
   useEffect(() => {
     const nextItem = getNextProcessableRecordingQueueItem(normalizedQueue, (item) => Boolean(resolveMeetingForQueueItem(item)?.id));
@@ -165,7 +165,7 @@ export default function useRecordingPipeline({
     queueProcessingRef.current = true;
     setAnalysisStatus(nextItem.status === "uploading" ? "uploading" : nextItem.status === "processing" ? "processing" : "queued");
     processQueueItem(nextItem).finally(() => { queueProcessingRef.current = false; });
-  }, [normalizedQueue]);
+  }, [normalizedQueue, processQueueItem, resolveMeetingForQueueItem, updateQueueItem]);
 
   function retryRecordingQueueItem(recordingId) {
     updateQueueItem(recordingId, { status: "queued", uploaded: false, errorMessage: "" });
