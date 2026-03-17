@@ -578,16 +578,19 @@ export default function StudioMeetingView({
         <div className="ff-ph-left">
           <h1 className="ff-ph-title">
             {isRecording
-              ? (meetingDraft?.title?.trim() || "Nowe nagranie")
-              : (selectedMeeting.title || "Nowe nagranie")}
+              ? (meetingDraft?.title?.trim() || "Ad hoc")
+              : (selectedMeeting.title || "Ad hoc")}
           </h1>
-          {displayRecording && (
-            <p className="ff-ph-meta">
-              {formatDateTime(displayRecording.recordedAt)}
-              {displayRecording.duration > 0 ? ` · ${formatDuration(Math.floor(displayRecording.duration))}` : ""}
-              {uniqueSpeakers.length > 0 ? ` · ${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : ""}
-            </p>
-          )}
+          <p className="ff-ph-meta">
+            {displayRecording
+              ? [
+                  formatDateTime(displayRecording.recordedAt),
+                  displayRecording.duration > 0 ? formatDuration(Math.floor(displayRecording.duration)) : null,
+                  uniqueSpeakers.length > 0 ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : null,
+                ].filter(Boolean).join(" · ")
+              : formatDateTime(selectedMeeting.createdAt || selectedMeeting.startsAt || new Date().toISOString())
+            }
+          </p>
         </div>
         <div className="ff-ph-right">
           {displayRecording && (
@@ -650,47 +653,30 @@ export default function StudioMeetingView({
             </div>
           ) : (
             <div className="ff-rec-idle-hero">
-              <button
-                type="button"
-                className="ff-rec-idle-mic"
-                onClick={() => startRecording()}
-                disabled={!currentWorkspacePermissions?.canRecordAudio}
-              >
-                <svg width="28" height="28" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                  <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                  <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                  <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-              <div className="ff-rec-form">
-                <div className="ff-rec-form-row">
-                  <input
-                    className="ff-rec-title-input"
-                    type="text"
-                    placeholder="Tytuł nagrania"
-                    value={meetingDraft?.title ?? selectedMeeting.title ?? ""}
-                    onChange={(e) => setMeetingDraft((d) => ({ ...d, title: e.target.value }))}
-                    onBlur={() => meetingDraft && saveMeeting(meetingDraft)}
-                  />
-                  <button type="button" className="ff-rec-lang-btn" title="Język">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-                      <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
-                      <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
-                    </svg>
-                    PL
-                  </button>
-                </div>
+              <div className="ff-rec-action-row">
                 <button
                   type="button"
-                  className="ff-rec-start-btn"
+                  className="ff-rec-start-btn-main"
                   onClick={() => startRecording()}
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
                 >
-                  <svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true">
-                    <circle cx="5" cy="5" r="4.5" />
+                  <svg width="16" height="16" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                   Rozpocznij nagrywanie
+                </button>
+                <button type="button" className="ff-rec-lang-select" title="Język nagrania">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
+                    <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                  PL
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -819,7 +805,7 @@ export default function StudioMeetingView({
 
           {/* Sidebar header */}
           <div className="ff-sidebar-header">
-            <span className="ff-sidebar-title">Transcript</span>
+            <span className="ff-sidebar-title">Transkrypcja</span>
             {transcript.length > 0 && remoteApiEnabled() && (
               <button
                 type="button"
@@ -841,7 +827,7 @@ export default function StudioMeetingView({
             </svg>
             <input
               className="ff-search-input"
-              placeholder="Find or Replace"
+              placeholder="Szukaj w transkrypcji..."
               value={transcriptSearch}
               onChange={(e) => setTranscriptSearch(e.target.value)}
             />
@@ -927,7 +913,24 @@ export default function StudioMeetingView({
               })
             ) : (
               <div className="ff-segments-empty">
-                {transcript.length ? "Brak wyników wyszukiwania." : "Brak transkrypcji dla tego nagrania."}
+                {transcript.length ? (
+                  <>
+                    <svg className="ff-empty-icon" width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                      <circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.2" />
+                      <path d="M12 18h12M15 13h6M15 23h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <p>Brak wyników wyszukiwania.</p>
+                  </>
+                ) : (
+                  <>
+                    <svg className="ff-empty-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                      <rect x="8" y="4" width="24" height="32" rx="4" stroke="currentColor" strokeWidth="1.3" />
+                      <path d="M14 13h12M14 19h12M14 25h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                      <path d="M8 28c3-3 6-1 8-4s3-5 4-5 2 3 4 5 5 1 8 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".45" />
+                    </svg>
+                    <p>Brak transkrypcji<br />dla tego nagrania.</p>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -1035,27 +1038,7 @@ export default function StudioMeetingView({
                   </svg>
                 </a>
               </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="ff-player-record-btn"
-                  onClick={() => startRecording()}
-                  disabled={!currentWorkspacePermissions?.canRecordAudio}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="4.5" /></svg>
-                  Nagraj
-                </button>
-                <button
-                  type="button"
-                  className="ff-player-adhoc-btn"
-                  onClick={() => startRecording({ adHoc: true })}
-                  disabled={!currentWorkspacePermissions?.canRecordAudio}
-                >
-                  Ad hoc
-                </button>
-              </>
-            )}
+            ) : null}
           </div>
         </aside>{/* /studio-ff-sidebar */}
 
