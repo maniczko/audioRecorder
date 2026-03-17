@@ -138,7 +138,7 @@ export default function UnifiedPlayer({
                 value={currentTime}
                 style={{
                   background: audioDuration > 0
-                    ? `linear-gradient(to right, var(--accent,#75d6c4) ${fillPct}%, rgba(255,255,255,0.12) ${fillPct}%)`
+                    ? `linear-gradient(to right, #6366f1 0%, #8b5cf6 ${fillPct}%, rgba(255,255,255,0.08) ${fillPct}%)`
                     : undefined,
                 }}
                 onChange={(e) => {

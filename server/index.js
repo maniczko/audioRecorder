@@ -46,9 +46,13 @@ const ALLOWED_ORIGINS = (process.env.VOICELOG_ALLOWED_ORIGINS || "http://localho
   .filter(Boolean);
 
 function corsHeaders(requestOrigin) {
-  const origin = ALLOWED_ORIGINS.includes(requestOrigin)
+  // Allow any localhost/127.0.0.1 origin for development convenience
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(String(requestOrigin || ""));
+  const origin = isLocalhost
     ? requestOrigin
-    : ALLOWED_ORIGINS[0];
+    : ALLOWED_ORIGINS.includes(requestOrigin)
+      ? requestOrigin
+      : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": origin,
     "Vary": "Origin",
