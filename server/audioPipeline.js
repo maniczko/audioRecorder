@@ -931,6 +931,106 @@ async function transcribeLiveChunk(filePath, contentType) {
   }
 }
 
+/**
+ * Extracts a speaker's audio clip and asks GPT-4o audio-preview for
+ * detailed Polish coaching on tone, tempo, pronunciation, and filler words.
+ *
+ * @param {{ id: string, file_path: string }} asset
+ * @param {string} speakerId
+ * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
+ * @returns {Promise<string>}  Polish coaching text (~200–300 words)
+ */
+async function generateVoiceCoaching(asset, speakerId, segments) {
+  if (!OPENAI_API_KEY) throw new Error("Brak klucza OpenAI API.");
+
+  const spkSegs = segments.filter(
+    (s) => String(s.speakerId ?? s.speaker ?? "") === String(speakerId)
+  );
+  if (!spkSegs.length) throw new Error("Brak segmentów dla tego mówcy.");
+
+  // Pick up to 15 segments that have valid numeric timestamps, to build a ≤60 s clip
+  const validSegs = spkSegs
+    .filter((s) => {
+      const t = Number(s.timestamp ?? s.start ?? NaN);
+      const e = Number(s.endTimestamp ?? s.end ?? NaN);
+      return Number.isFinite(t) && Number.isFinite(e) && e > t && t >= 0;
+    })
+    .slice(0, 15);
+
+  if (!validSegs.length) throw new Error("Brak segmentów z poprawnymi znacznikami czasu.");
+
+  const clipPath = path.join(
+    path.dirname(asset.file_path),
+    `coaching_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_clip.wav`
+  );
+  try {
+    const { execSync } = require("node:child_process");
+    // Build aselect filter from validated timestamps only (no shell injection risk)
+    const selectFilter = validSegs
+      .map(
+        (s) =>
+          `between(t,${Number(s.timestamp ?? s.start).toFixed(3)},${Number(s.endTimestamp ?? s.end).toFixed(3)})`
+      )
+      .join("+");
+
+    execSync(
+      `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
+      { stdio: "pipe", timeout: 30000 }
+    );
+
+    const audioBase64 = fs.readFileSync(clipPath).toString("base64");
+
+    const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-audio-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_audio",
+                input_audio: { data: audioBase64, format: "wav" },
+              },
+              {
+                type: "text",
+                text: [
+                  "Przeanalizuj mowę tej osoby dokładnie — bazując wyłącznie na dźwięku, nie na tekście.",
+                  "Oceń poniższe aspekty i daj konkretne, praktyczne wskazówki do poprawy:",
+                  "1. Ton głosu i emocje (pewność siebie, energia, monotonia, zaangażowanie).",
+                  "2. Tempo mówienia i rytm (za szybko, za wolno, dobre zmiany tempa).",
+                  "3. Wymowa polskich głosek (sz/cz/rz, miękkie spółgłoski, akcent wyrazowy).",
+                  "4. Pauzy — czy naturalne i budują napięcie, czy wynikają z niepewności.",
+                  "5. Wypełniacze głosowe (ee, yyy, yyy, znaczy) — częstotliwość i jak je redukować.",
+                  "6. Dykcja i wyrazistość — czy słowa są wyraźne i zrozumiałe.",
+                  "Odpowiedź po polsku, ok. 200–300 słów. Zacznij bezpośrednio od oceny.",
+                ].join(" "),
+              },
+            ],
+          },
+        ],
+        max_tokens: 700,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`OpenAI API ${res.status}: ${errText.slice(0, 120)}`);
+    }
+
+    const json = await res.json();
+    const coaching = String(json.choices?.[0]?.message?.content || "").trim();
+    if (!coaching) throw new Error("Pusta odpowiedź z modelu audio.");
+    return coaching;
+  } finally {
+    try { fs.unlinkSync(clipPath); } catch (_) {}
+  }
+}
+
 async function normalizeRecording(filePath) {
   const { execSync } = require("node:child_process");
   const tmpPath = `${filePath}.norm.tmp`;
@@ -950,4 +1050,5 @@ module.exports = {
   transcribeRecording,
   normalizeRecording,
   transcribeLiveChunk,
+  generateVoiceCoaching,
 };

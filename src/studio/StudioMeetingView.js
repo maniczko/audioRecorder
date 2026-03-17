@@ -4,6 +4,9 @@ import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
+import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
+import { apiRequest } from "../services/httpClient";
+import { remoteApiEnabled } from "../services/config";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
 
 
@@ -142,6 +145,106 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
 }
 
 
+/**
+ * Per-speaker voice stats + GPT-4o audio coaching panel.
+ * Shows text-based metrics immediately; coaching fetched on demand.
+ */
+function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
+  const stats = useMemo(
+    () => analyzeSpeakingStyle(transcript, displaySpeakerNames),
+    [transcript, displaySpeakerNames]
+  );
+  const [coaching, setCoaching] = useState({});
+  const [loading, setLoading] = useState({});
+  const [coachingError, setCoachingError] = useState({});
+
+  async function fetchCoaching(speakerId) {
+    if (!recordingId || loading[speakerId]) return;
+    setLoading((p) => ({ ...p, [speakerId]: true }));
+    setCoachingError((p) => ({ ...p, [speakerId]: "" }));
+    try {
+      const speakerSegs = transcript.filter(
+        (s) => String(s.speakerId ?? "") === String(speakerId)
+      );
+      const res = await apiRequest(`/media/recordings/${recordingId}/voice-coaching`, {
+        method: "POST",
+        body: { speakerId, segments: speakerSegs },
+      });
+      setCoaching((p) => ({ ...p, [speakerId]: res?.coaching || "" }));
+    } catch (err) {
+      setCoachingError((p) => ({ ...p, [speakerId]: err.message || "Błąd analizy głosu." }));
+    } finally {
+      setLoading((p) => ({ ...p, [speakerId]: false }));
+    }
+  }
+
+  if (!stats.length) return null;
+
+  return (
+    <div className="ff-voice-stats-list">
+      {stats.map((stat) => (
+        <div key={stat.speakerId} className="ff-voice-stat-card">
+          <div className="ff-voice-stat-header">
+            <span
+              className="ff-speaker-avatar"
+              style={{ background: getSpeakerColor(stat.speakerId) }}
+            >
+              {(stat.speakerName || "S")[0].toUpperCase()}
+            </span>
+            <strong className="ff-voice-stat-name">{stat.speakerName}</strong>
+          </div>
+          <div className="ff-voice-stat-metrics">
+            <span className="ff-voice-metric">
+              <strong>{stat.wpm || "—"}</strong>
+              <small>słów/min</small>
+            </span>
+            <span className="ff-voice-metric">
+              <strong>{formatDuration(stat.speakingSeconds)}</strong>
+              <small>czas mówienia</small>
+            </span>
+            <span className="ff-voice-metric">
+              <strong>{stat.turnCount}</strong>
+              <small>wypowiedzi</small>
+            </span>
+            {stat.fillerCount > 0 && (
+              <span className="ff-voice-metric warn">
+                <strong>{stat.fillerRate}%</strong>
+                <small>wypełniacze</small>
+              </span>
+            )}
+          </div>
+          {coaching[stat.speakerId] ? (
+            <div className="ff-voice-coaching-text">{coaching[stat.speakerId]}</div>
+          ) : null}
+          {coachingError[stat.speakerId] ? (
+            <div className="ff-voice-coaching-error">{coachingError[stat.speakerId]}</div>
+          ) : null}
+          {recordingId && remoteApiEnabled() ? (
+            <button
+              type="button"
+              className="ff-voice-coaching-btn"
+              onClick={() => fetchCoaching(stat.speakerId)}
+              disabled={loading[stat.speakerId]}
+            >
+              {loading[stat.speakerId]
+                ? "Analizuję głos…"
+                : coaching[stat.speakerId]
+                  ? "Odśwież analizę głosu"
+                  : "Analiza głosu AI"}
+            </button>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+VoiceSpeakerStats.propTypes = {
+  transcript: PropTypes.array,
+  displaySpeakerNames: PropTypes.object,
+  recordingId: PropTypes.string,
+};
+
 export default function StudioMeetingView({
   selectedMeeting,
   displayRecording,
@@ -195,6 +298,7 @@ export default function StudioMeetingView({
   const [transcriptSearch, setTranscriptSearch] = useState("");
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
+  const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
 
   const audioRef = useRef(null);
   const activeSegRef = useRef(null);
@@ -889,6 +993,36 @@ export default function StudioMeetingView({
             )}
           </div>
 
+          {/* Voice analytics panel — collapsible, shown only when transcript is available */}
+          {transcript.length > 0 ? (
+            <div className="ff-voice-analytics">
+              <button
+                type="button"
+                className="ff-voice-analytics-toggle"
+                onClick={() => setVoiceStatsOpen((p) => !p)}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <rect x="1" y="4" width="2" height="7" rx="1" fill="currentColor" />
+                  <rect x="5" y="2" width="2" height="9" rx="1" fill="currentColor" />
+                  <rect x="9" y="5" width="2" height="6" rx="1" fill="currentColor" />
+                </svg>
+                Voice analytics
+                <svg
+                  className={voiceStatsOpen ? "ff-chevron open" : "ff-chevron"}
+                  width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
+                >
+                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              </button>
+              {voiceStatsOpen ? (
+                <VoiceSpeakerStats
+                  transcript={transcript}
+                  displaySpeakerNames={displaySpeakerNames}
+                  recordingId={selectedRecording?.id}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Player bar */}
           <div className="ff-player-bar">

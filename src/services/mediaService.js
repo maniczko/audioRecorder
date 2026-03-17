@@ -135,6 +135,13 @@ function createRemoteMediaService() {
       });
       return typeof response === "object" ? (response?.text || "") : "";
     },
+    async getVoiceCoaching(recordingId, speakerId, segments) {
+      const response = await apiRequest(`/media/recordings/${recordingId}/voice-coaching`, {
+        method: "POST",
+        body: { speakerId, segments },
+      });
+      return typeof response === "object" ? (response?.coaching || "") : "";
+    },
   };
 }
 

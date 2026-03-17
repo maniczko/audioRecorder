@@ -2285,6 +2285,143 @@
   background: #f3f4f6;
 }
 
+/* ── Voice analytics panel ───────────────────────────────── */
+.ff-voice-analytics {
+  border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+  flex-shrink: 0;
+}
+
+.ff-voice-analytics-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--muted, rgba(255,255,255,0.55));
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.ff-voice-analytics-toggle:hover {
+  color: var(--text, #fff);
+}
+
+.ff-voice-analytics-toggle .ff-chevron {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.ff-voice-analytics-toggle .ff-chevron.open {
+  transform: rotate(180deg);
+}
+
+.ff-voice-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 0 6px;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+.ff-voice-stat-card {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+}
+
+.ff-voice-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ff-voice-stat-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ff-voice-stat-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ff-voice-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.ff-voice-metric strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ff-voice-metric small {
+  font-size: 0.6rem;
+  color: var(--muted, rgba(255,255,255,0.5));
+  text-align: center;
+  line-height: 1.3;
+}
+
+.ff-voice-metric.warn strong {
+  color: #f5a623;
+}
+
+.ff-voice-coaching-text {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text, #fff);
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+.ff-voice-coaching-error {
+  font-size: 0.72rem;
+  color: #e05252;
+  margin-bottom: 6px;
+}
+
+.ff-voice-coaching-btn {
+  width: 100%;
+  padding: 5px 0;
+  background: none;
+  border: 1px solid var(--accent, #75d6c4);
+  border-radius: 5px;
+  color: var(--accent, #75d6c4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ff-voice-coaching-btn:hover:not(:disabled) {
+  background: var(--accent, #75d6c4);
+  color: #000;
+}
+
+.ff-voice-coaching-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* Responsive: stack below 900px */
 @media (max-width: 900px) {
   .studio-ff-layout {
@@ -2301,3 +2438,4 @@
     max-height: 400px;
   }
 }
+

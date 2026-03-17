@@ -31,7 +31,7 @@ const {
   getWorkspaceVoiceProfiles,
   deleteVoiceProfile,
 } = require("./database");
-const { transcribeRecording, normalizeRecording, transcribeLiveChunk } = require("./audioPipeline");
+const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
@@ -550,6 +550,33 @@ async function handleRequest(request, response) {
     }
     await normalizeRecording(asset.file_path);
     sendJson(response, 200, { ok: true }, origin);
+    return;
+  }
+
+  // POST /media/recordings/:id/voice-coaching — GPT-4o audio-preview coaching for a single speaker
+  const mediaVoiceCoachingMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/voice-coaching$/);
+  if (mediaVoiceCoachingMatch && request.method === "POST") {
+    const session = requireSession(request);
+    const recordingId = mediaVoiceCoachingMatch[1];
+    const body = await readJsonBody(request);
+    const asset = getMediaAsset(recordingId);
+    if (!asset) {
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
+      return;
+    }
+    ensureWorkspaceAccess(session, asset.workspace_id);
+    if (!fs.existsSync(asset.file_path)) {
+      sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." }, origin);
+      return;
+    }
+    const speakerId = String(body?.speakerId || "");
+    if (!speakerId) {
+      sendJson(response, 400, { message: "Brakuje speakerId." }, origin);
+      return;
+    }
+    const segments = Array.isArray(body?.segments) ? body.segments : [];
+    const coaching = await generateVoiceCoaching(asset, speakerId, segments);
+    sendJson(response, 200, { coaching }, origin);
     return;
   }
 

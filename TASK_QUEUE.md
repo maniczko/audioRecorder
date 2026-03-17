@@ -196,6 +196,60 @@ Techniczne wskazówki:
 
 ---
 
+## PRIORYTET P2 — analiza głosu i coaching
+
+---
+
+## 078. [VOICE] GPT-4o audio-preview — coaching tonu głosu i wymowy
+Status: `done`
+Priorytet: `P2`
+Cel: Analiza jakości mówienia bazując na rzeczywistym dźwięku głosu — ton, tempo, wymowa polskich głosek, dykcja, pauzy, wypełniacze. Dostarcza konkretnych wskazówek w języku polskim jak poprawić każdy aspekt.
+Akceptacja:
+- przycisk "Analiza głosu AI" przy każdym mówcy w panelu Voice Analytics (sidebar transcript).
+- GPT-4o audio-preview słyszy rzeczywiste audio i odpowiada po polsku (~200-300 słów).
+- ocenia: ton/emocje, tempo, wymowę, pauzy, wypełniacze, dykcję.
+- wyniki widoczne w sidebar bez przeładowania strony.
+- graceful error jeśli brak OpenAI API key lub plik audio niedostępny.
+Techniczne wskazówki:
+- `server/audioPipeline.js`: `generateVoiceCoaching(asset, speakerId, segments)` — FFmpeg extractuje audio speakera (do 60s), wysyła base64 do `gpt-4o-audio-preview`.
+- `POST /media/recordings/:id/voice-coaching` endpoint w `server/index.js`.
+- `VoiceSpeakerStats` component w `StudioMeetingView.js` — pokazuje metryki + "Analiza głosu AI" button.
+- tylko w remote mode (`remoteApiEnabled()`).
+
+---
+
+## 079. [VOICE] Metryki mówienia z transkrypcji (WPM, wypełniacze, tury)
+Status: `done`
+Priorytet: `P2`
+Cel: Bez API — natychmiastowe metryki stylu mówienia z istniejącej transkrypcji per mówca.
+Akceptacja:
+- słowa/minutę (WPM) per mówca widoczne w sidebar.
+- czas mówienia (mm:ss) per mówca.
+- liczba tur (wypowiedzi) i średnia długość tury.
+- procent słów-wypełniaczy (ee, yyy, znaczy, jakby...) z ostrzeżeniem gdy > 5%.
+Techniczne wskazówki:
+- `src/lib/speakerAnalysis.js`: `analyzeSpeakingStyle(transcript, displaySpeakerNames)`.
+- FILLER_WORDS_PL set: ee, eee, yyy, yyyy, znaczy, jakby, właśnie, tego, wiesz, hmm.
+- wywoływane w `VoiceSpeakerStats` useMemo.
+
+---
+
+## 080. [VOICE] Acoustic features per speaker — librosa/parselmouth (roadmap)
+Status: `todo`
+Priorytet: `P3`
+Cel: Głębsza analiza akustyczna: F0/pitch (jitter, shimmer), HNR (harmonics-to-noise), formants — wymaga Python server-side. Uzupełnia GPT-4o coaching o obiektywne dane.
+Akceptacja:
+- `POST /media/recordings/:id/acoustic-features` zwraca per-speaker: mean F0, F0 range, jitter %, shimmer %, HNR dB.
+- wyniki widoczne w VoiceSpeakerStats obok metryk WPM.
+- opcjonalne: Montreal Forced Aligner dla per-fonem scoring polskich głosek.
+Techniczne wskazówki:
+- `server/acousticFeatures.py`: librosa (F0, RMS), parselmouth/Praat (jitter, shimmer, HNR, formants).
+- `server/requirements.txt`: `librosa>=0.10`, `praat-parselmouth>=0.4`.
+- FFmpeg extractuje speaker clip → Python analizuje → wynik JSON.
+- MFA dla Polish: wymaga modelu `polish-mfa` z modeldb.
+
+---
+
 ## PRIORYTET P2 — niezawodność i ergonomia
 
 ---
