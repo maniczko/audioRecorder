@@ -650,6 +650,7 @@ export default function useRecorder({
         signatureTimelineRef,
         onSegmentsChange: setCurrentSegments,
         onInterimChange: setLiveText,
+        onError: (msg) => setRecordingMessage(msg),
       });
 
       if (controller) {

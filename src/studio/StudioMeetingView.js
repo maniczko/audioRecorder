@@ -757,11 +757,22 @@ export default function StudioMeetingView({
         </div>
       )}
 
-      {/* Live caption */}
+      {/* Live caption — shown when Speech Recognition returns interim text */}
       {isRecording && liveText ? (
         <div className="ff-live-block">
           <span className="ff-live-block-dot" />
           <p className="ff-live-block-text">{liveText}</p>
+        </div>
+      ) : isRecording && !speechRecognitionSupported ? (
+        <div className="ff-status-banner ff-status-warn">
+          Transkrypcja live niedostępna w tej przeglądarce. Nagrana mowa zostanie przetworzona lokalnie po zatrzymaniu.
+        </div>
+      ) : null}
+
+      {/* Recording / processing status message */}
+      {recordingMessage ? (
+        <div className={`ff-status-banner${analysisStatus === "error" ? " ff-status-error" : ""}`}>
+          {recordingMessage}
         </div>
       ) : null}
 

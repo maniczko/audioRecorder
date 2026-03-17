@@ -1981,6 +1981,31 @@
 }
 
 /* Live caption block (below recording hero) */
+/* Status banner (info / warn / error) */
+.ff-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  margin-top: 4px;
+}
+.ff-status-banner.ff-status-warn {
+  background: rgba(243,186,47,0.08);
+  border-color: rgba(243,186,47,0.25);
+  color: #f3ca72;
+}
+.ff-status-banner.ff-status-error {
+  background: rgba(241,125,114,0.08);
+  border-color: rgba(241,125,114,0.25);
+  color: #f17d72;
+}
+
 .ff-live-block {
   display: flex;
   align-items: flex-start;

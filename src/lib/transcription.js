@@ -14,6 +14,7 @@ export function createBrowserTranscriptionController({
   signatureTimelineRef,
   onSegmentsChange,
   onInterimChange,
+  onError,
 }) {
   const SpeechRecognitionClass = getSpeechRecognitionClass();
   if (!SpeechRecognitionClass) {
@@ -24,6 +25,24 @@ export function createBrowserTranscriptionController({
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = lang;
+
+  recognition.onerror = (event) => {
+    // "no-speech" is benign (silence), everything else is a real error
+    if (event.error !== "no-speech") {
+      console.error("Speech recognition error:", event.error);
+      if (typeof onError === "function") {
+        const messages = {
+          "network": "Transkrypcja live niedostępna — sprawdź połączenie z internetem.",
+          "not-allowed": "Mikrofon zablokowany — sprawdź uprawnienia przeglądarki.",
+          "service-not-allowed": "Usługa rozpoznawania mowy niedostępna w tej przeglądarce.",
+          "language-not-supported": "Język pl-PL nie jest obsługiwany przez tę przeglądarkę.",
+          "aborted": null,
+        };
+        const msg = messages[event.error];
+        if (msg) onError(msg);
+      }
+    }
+  };
 
   recognition.onresult = (event) => {
     let interim = "";
@@ -70,6 +89,7 @@ export function createBrowserTranscriptionController({
     clearHandlers() {
       recognition.onresult = null;
       recognition.onend = null;
+      recognition.onerror = null;
     },
   };
 }
