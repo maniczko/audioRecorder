@@ -717,41 +717,44 @@ async function diarizeFromTranscript(segments) {
     return `${m}:${String(sec).padStart(2, "0")}`;
   };
 
-  // Include gap info so the model has timing context for speaker changes
+  // Compute actual silence gap between end of previous segment and start of current
   const lines = chunk
     .map((seg, i) => {
       const prev = chunk[i - 1];
-      const gap = prev != null ? Number((seg.start ?? 0) - (prev.start ?? 0)).toFixed(1) : null;
-      const gapStr = gap !== null ? ` (gap ${gap}s)` : "";
+      const silenceGap = prev != null
+        ? Math.max(0, Number((seg.start ?? 0) - (prev.end ?? prev.start ?? 0))).toFixed(1)
+        : null;
+      const gapStr = silenceGap !== null ? ` [cisza ${silenceGap}s]` : "";
       return `[${i}]${gapStr} ${fmt(seg.start ?? 0)}: "${(seg.text || "").replace(/"/g, "'").slice(0, 240)}"`;
     })
     .join("\n");
 
-  const systemPrompt = [
-    "Jesteś ekspertem od rozpoznawania mówców w transkryptach nagrań wieloosobowych.",
-    "Działasz w trybie AGRESYWNEGO rozdzielania mówców — wykrywasz każdą zmianę osoby mówiącej.",
-  ].join(" ");
+  const systemPrompt =
+    "You are a speaker diarization engine. Your ONLY job is to assign a speaker label (A, B, C…) " +
+    "to each segment of a transcript from a multi-speaker recording. " +
+    "You MUST produce output for every segment — no skipping. " +
+    "Return ONLY valid JSON, no explanation.";
 
   const userPrompt = [
-    "Transkrypt pochodzi z nagrania spotkania przez jeden mikrofon.",
-    "Przypisz KAŻDEMU segmentowi literę mówcy (A, B, C…).",
+    "Nagranie rozmowy między WIELOMA osobami (co najmniej 2). To NIE jest monolog.",
+    "Każda zmiana osoby mówiącej musi być oznaczona inną literą (A, B, C…).",
     "",
-    "ZASADY ZMIANY MÓWCY (zastosuj wszystkie):",
-    "• Przerwa ≥ 2s między segmentami → bardzo prawdopodobna zmiana mówcy",
-    "• Przerwa ≥ 5s → prawie na pewno zmiana mówcy",
-    "• Odpowiedź na pytanie lub reakcja na słowa rozmówcy → zmiana mówcy",
-    "• Zmiana osoby gramatycznej (np. 'ty' → 'ja', 'my' → 'wy')",
-    "• Zmiana tematu lub wyraźna zmiana tonu wypowiedzi",
-    "• Krótka replik (≤10 słów) po długiej wypowiedzi → często zmiana mówcy",
+    "SILNE SYGNAŁY ZMIANY MÓWCY:",
+    "• [cisza ≥ 0.5s] przed segmentem → prawie zawsze zmiana mówcy",
+    "• [cisza ≥ 2s] → na pewno zmiana mówcy — ZAWSZE przypisz inną literę",
+    "• Krótka odpowiedź ('tak', 'mhm', 'dobra', 'jasne', ≤5 słów) po dłuższej wypowiedzi → inna osoba",
+    "• Pytanie → odpowiedź → inna osoba dla odpowiedzi",
+    "• 'Ja…' po długim segmencie innej treści → zmiana",
     "",
-    "WAŻNE: Jeśli masz jakiekolwiek wątpliwości — ZAKŁADAJ zmianę mówcy.",
-    "Tylko wyraźny monolog (jeden głos przez cały czas, bez odpowiedzi) → użyj samego A.",
+    "NIGDY nie przypisuj wszystkim segmentom tej samej litery jeśli są przerwy.",
+    "Minimum 2 różnych mówców musi być użytych, chyba że transkrypt jest krótszy niż 3 segmenty.",
     "",
-    "Transkrypt:",
+    "Transkrypt ([numer] [cisza przed] czas: \"tekst\"):",
     lines,
     "",
-    'Odpowiedź TYLKO w formacie JSON: {"segments": [{"i": 0, "s": "A"}, {"i": 1, "s": "B"}, ...]}',
-    'Każdy segment musi mieć "i" (numer) i "s" (litera mówcy). Brak pomijanych segmentów.',
+    `Przypisz mówców dla ${chunk.length} segmentów.`,
+    'Format: {"segments": [{"i": 0, "s": "A"}, {"i": 1, "s": "B"}, ...]}',
+    "Każdy indeks od 0 do " + (chunk.length - 1) + " musi być obecny.",
   ].join("\n");
 
   try {
@@ -768,7 +771,7 @@ async function diarizeFromTranscript(segments) {
           { role: "user", content: userPrompt },
         ],
         max_tokens: Math.min(4096, chunk.length * 14 + 60),
-        temperature: 0,
+        temperature: 0.2,
         response_format: { type: "json_object" },
       }),
     });
