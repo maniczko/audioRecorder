@@ -721,7 +721,7 @@ async function handleRequest(request, response) {
     return;
   }
 
-  if (method === "POST" && pathname === "/media/analyze") {
+  if (request.method === "POST" && pathname === "/media/analyze") {
     checkRateLimit(clientIp, "analyze");
     requireSession(request);
     const body = await readJsonBody(request);
