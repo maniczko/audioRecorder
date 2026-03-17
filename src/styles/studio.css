@@ -1610,70 +1610,188 @@
   gap: 18px;
 }
 
-/* ── Meeting header (Fireflies style) ── */
-.ff-meeting-header {
-  margin-bottom: 20px;
-}
-
-.ff-capture-area {
-  background: var(--surface, rgba(255,255,255,0.04));
-  border: 1px solid var(--border, rgba(255,255,255,0.08));
-  border-radius: 12px;
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
-  overflow: hidden;
-}
-
-.ff-capture-placeholder {
+/* ── New recording header ── */
+.ff-rec-header {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: var(--text-muted);
-  padding: 24px;
-  text-align: center;
+  margin-bottom: 20px;
 }
 
-.ff-capture-placeholder p {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  max-width: 260px;
-}
-
-.ff-enable-btn {
-  margin-top: 4px;
-  background: #7c3aed;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.ff-enable-btn:hover:not(:disabled) { background: #6d28d9; }
-.ff-enable-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.ff-capture-recording {
+/* ── Idle state (not recording) ── */
+.ff-rec-idle {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 24px;
+  padding: 32px 24px 24px;
 }
 
-.ff-capture-bars {
+.ff-rec-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text, #111827);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Circular mic button */
+.ff-rec-mic-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, rgba(0,0,0,0.12));
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.ff-rec-mic-btn:hover:not(:disabled) {
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+.ff-rec-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Title input row */
+.ff-rec-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.ff-rec-title-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text, #111827);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ff-rec-title-input:focus { border-color: #7c3aed; }
+.ff-rec-title-input::placeholder { color: var(--text-muted, #9ca3af); }
+
+.ff-rec-lang-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #d1d5db);
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Large idle timer */
+.ff-rec-timer-idle {
+  font-family: "Space Grotesk", "Inter", monospace;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text, #111827);
+  line-height: 1;
+}
+
+.ff-rec-lang-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ff-rec-lang-label::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Ccircle cx='8' cy='8' r='6.5' stroke='%239ca3af' stroke-width='1.4'/%3E%3Cpath d='M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5' stroke='%239ca3af' stroke-width='1.4'/%3E%3Cline x1='1.5' y1='8' x2='14.5' y2='8' stroke='%239ca3af' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat center/contain;
+}
+
+/* Big start button */
+.ff-rec-start-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 24px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+.ff-rec-start-btn:hover:not(:disabled) { background: #6d28d9; }
+.ff-rec-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Active recording state ── */
+.ff-rec-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 28px 24px 20px;
+}
+
+.ff-rec-mic-pulse {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+}
+
+.ff-rec-bars {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 60px;
+  height: 50px;
 }
 
+.ff-rec-timer-large {
+  font-family: "Space Grotesk", "Inter", monospace;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text, #111827);
+  line-height: 1;
+}
+
+.ff-rec-dot-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+}
+
+/* ── Shared: capture bar ── */
 .ff-capture-bar {
   width: 4px;
   background: var(--accent, #75d6c4);
@@ -1682,12 +1800,22 @@
   transition: height 0.08s;
 }
 
-.ff-capture-rec-label {
+/* ── Dodaj dane button ── */
+.ff-dodaj-dane-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: none;
+  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border-radius: 6px;
+  color: var(--text-secondary, #6b7280);
   font-size: 0.8rem;
-  font-weight: 600;
-  color: #f87171;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
+.ff-dodaj-dane-btn:hover { border-color: #7c3aed; color: #7c3aed; }
 
 /* Meeting info under capture area */
 .ff-meeting-info {

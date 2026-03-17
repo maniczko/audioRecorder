@@ -378,6 +378,7 @@ export default function StudioMeetingView({
   renameSpeaker,
   updateTranscriptSegment,
 }) {
+  const [briefOpen, setBriefOpen] = useState(false);
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
   const [addConcernOpen, setAddConcernOpen] = useState(false);
@@ -466,7 +467,6 @@ export default function StudioMeetingView({
     return String(max + 1);
   }, [uniqueSpeakers]);
 
-  const initials = (currentUserName || "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
   function togglePlay() {
     const a = audioRef.current;
@@ -577,60 +577,88 @@ export default function StudioMeetingView({
         {/* ── LEFT: main content ── */}
         <div className="studio-ff-main">
 
-          {/* Fireflies-style meeting header */}
-          <div className="ff-meeting-header">
-            <div className="ff-capture-area">
-              {isRecording ? (
-                <div className="ff-capture-recording">
-                  <div className="ff-capture-bars">
-                    {visualBars.map((h, i) => (
-                      <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.55)) + "px" }} />
-                    ))}
-                  </div>
-                  <span className="ff-capture-rec-label">● NAGRYWANIE — {formatDuration(elapsed)}</span>
-                </div>
-              ) : (
-                <div className="ff-capture-placeholder">
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
-                    <rect x="3" y="10" width="28" height="24" rx="4" stroke="currentColor" strokeWidth="2" fill="none" />
-                    <path d="M31 17l10-5v20l-10-5V17z" stroke="currentColor" strokeWidth="2" fill="none" />
+          {/* Recording header */}
+          <div className="ff-rec-header">
+            {isRecording ? (
+              /* ── Active recording state ── */
+              <div className="ff-rec-active">
+                <div className="ff-rec-mic-pulse">
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                  <p>Capture your meetings video with VoiceLog.</p>
-                  <button
-                    type="button"
-                    className="ff-enable-btn"
-                    onClick={() => startRecording()}
-                    disabled={!currentWorkspacePermissions?.canRecordAudio}
-                  >
-                    Nagraj spotkanie
+                </div>
+                <div className="ff-rec-bars">
+                  {visualBars.map((h, i) => (
+                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.55)) + "px" }} />
+                  ))}
+                </div>
+                <div className="ff-rec-timer-large">{formatDuration(elapsed)}</div>
+                <span className="ff-rec-dot-label">● Nagrywanie</span>
+              </div>
+            ) : (
+              /* ── Idle / new recording state ── */
+              <div className="ff-rec-idle">
+                <h2 className="ff-rec-title">Nowe nagranie</h2>
+
+                <button
+                  type="button"
+                  className="ff-rec-mic-btn"
+                  onClick={() => startRecording()}
+                  disabled={!currentWorkspacePermissions?.canRecordAudio}
+                  title="Rozpocznij nagrywanie"
+                >
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+
+                <div className="ff-rec-title-row">
+                  <input
+                    className="ff-rec-title-input"
+                    type="text"
+                    placeholder="Tytuł nagrania"
+                    value={meetingDraft?.title ?? selectedMeeting.title ?? ""}
+                    onChange={(e) => {
+                      const newDraft = { ...meetingDraft, title: e.target.value };
+                      setMeetingDraft(() => newDraft);
+                    }}
+                    onBlur={() => meetingDraft && saveMeeting(meetingDraft)}
+                  />
+                  <button type="button" className="ff-rec-lang-btn" title="Język">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
+                      <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
+                    </svg>
                   </button>
                 </div>
-              )}
-            </div>
 
-            <div className="ff-meeting-info">
-              <h2 className="ff-meeting-date">{formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt)}</h2>
-              <div className="ff-meeting-meta-row">
-                <span className="ff-user-chip">
-                  <span className="ff-user-avatar">{initials}</span>
-                  <span className="ff-user-name">{currentUserName || "Użytkownik"}</span>
-                </span>
-                <span className="ff-meta-dot">·</span>
-                <span className="ff-meta-text">{formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt)}</span>
-                <span className="ff-meta-dot">·</span>
-                <svg className="ff-meta-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-label="Mikrofon">
-                  <rect x="4" y="1" width="5" height="7" rx="2.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
-                  <path d="M2 6.5a4.5 4.5 0 009 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none" />
-                  <line x1="6.5" y1="11" x2="6.5" y2="13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-                <span className="ff-meta-dot">·</span>
-                <span className="ff-meta-text">Polish</span>
-              </div>
-              <div className="ff-action-bar">
-                <button type="button" className="ff-action-btn ff-action-primary">
-                  ✦ General Summary
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" /></svg>
+                <div className="ff-rec-timer-idle">00:00:00</div>
+                <div className="ff-rec-lang-label">Polski</div>
+
+                <button
+                  type="button"
+                  className="ff-rec-start-btn"
+                  onClick={() => startRecording()}
+                  disabled={!currentWorkspacePermissions?.canRecordAudio}
+                >
+                  <svg width="16" height="16" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  Rozpocznij nagrywanie
                 </button>
+              </div>
+            )}
+
+            {/* Export actions (shown when transcript is available) */}
+            {displayRecording && (
+              <div className="ff-action-bar">
                 <button
                   type="button"
                   className="ff-action-btn"
@@ -643,7 +671,7 @@ export default function StudioMeetingView({
                   type="button"
                   className="ff-action-btn"
                   onClick={exportTranscript}
-                  disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}
+                  disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
                 >
                   ⊟ Transkrypt
                 </button>
@@ -656,7 +684,19 @@ export default function StudioMeetingView({
                   + PDF
                 </button>
               </div>
-            </div>
+            )}
+
+            {/* Dodaj dane — toggle meeting brief */}
+            <button
+              type="button"
+              className="ff-dodaj-dane-btn"
+              onClick={() => setBriefOpen((v) => !v)}
+            >
+              {briefOpen ? "Ukryj dane" : "Dodaj dane"}
+              <svg className={briefOpen ? "ff-chevron open" : "ff-chevron"} width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
 
           {/* Summary bullets from analysis */}
@@ -682,7 +722,8 @@ export default function StudioMeetingView({
           {/* ── Content panels (single-column stack) ── */}
           <div className="ff-panels">
 
-
+        {briefOpen && (
+        <>
         <section className="panel">
           <div className="panel-header compact">
             <div>
@@ -790,6 +831,8 @@ export default function StudioMeetingView({
           onCreateTask={onCreateTask}
           canEdit={currentWorkspacePermissions?.canEditWorkspace}
         />
+        </>
+        )}
 
 
           </div>{/* /ff-panels */}
@@ -811,7 +854,7 @@ export default function StudioMeetingView({
             </svg>
             <input
               className="ff-search-input"
-              placeholder="Szukaj..."
+              placeholder="Find or Replace"
               value={transcriptSearch}
               onChange={(e) => setTranscriptSearch(e.target.value)}
             />
