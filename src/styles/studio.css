@@ -2285,6 +2285,102 @@
   background: #f3f4f6;
 }
 
+/* ── Speaker picker dropdown ─────────────────────────────── */
+.ff-speaker-picker-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ff-speaker-name-btn.open .ff-speaker-chevron {
+  transform: rotate(180deg);
+}
+
+.ff-speaker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  min-width: 180px;
+  background: var(--surface, #1c1c24);
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+[data-theme="light"] .ff-speaker-dropdown {
+  background: #fff;
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.ff-speaker-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 14px;
+  background: none;
+  border: none;
+  color: var(--text, #fff);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ff-speaker-dropdown-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+[data-theme="light"] .ff-speaker-dropdown-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.ff-speaker-dropdown-item.current {
+  font-weight: 600;
+  cursor: default;
+}
+
+.ff-speaker-dropdown-item.rename {
+  color: var(--muted, rgba(255,255,255,0.55));
+  font-size: 0.78rem;
+}
+
+.ff-spk-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ff-spk-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ff-spk-check {
+  color: var(--accent, #75d6c4);
+  flex-shrink: 0;
+}
+
+.ff-spk-arrow {
+  color: var(--muted, rgba(255,255,255,0.4));
+  flex-shrink: 0;
+}
+
+.ff-speaker-dropdown-divider {
+  height: 1px;
+  background: var(--border, rgba(255,255,255,0.08));
+  margin: 4px 0;
+}
+
 /* ── Voice analytics panel ───────────────────────────────── */
 .ff-voice-analytics {
   border-top: 1px solid var(--border, rgba(255,255,255,0.08));

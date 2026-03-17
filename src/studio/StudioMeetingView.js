@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
@@ -146,6 +146,95 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
 
 
 /**
+ * Fireflies-style speaker picker dropdown for a single transcript segment.
+ * Shows all existing speakers (checkmark on current), option to rename,
+ * and option to add a new speaker slot.
+ */
+function SpeakerDropdown({ seg, currentSpeakerId, speakers, nextSpeakerId, displaySpeakerNames, onReassign, onRename, onClose }) {
+  const ref = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [onClose]);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div className="ff-speaker-dropdown" ref={ref} role="menu">
+      {speakers.map((sp) => {
+        const isCurrent = sp.id === currentSpeakerId;
+        return (
+          <button
+            key={sp.id}
+            type="button"
+            role="menuitem"
+            className={`ff-speaker-dropdown-item${isCurrent ? " current" : ""}`}
+            onClick={() => { if (!isCurrent) onReassign(sp.id); }}
+          >
+            <span
+              className="ff-spk-dot"
+              style={{ background: getSpeakerColor(sp.id) }}
+            />
+            <span className="ff-spk-label">{sp.name}</span>
+            {isCurrent ? (
+              <svg className="ff-spk-check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg className="ff-spk-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                <path d="M3 5h4M5 3l2 2-2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </button>
+        );
+      })}
+      <div className="ff-speaker-dropdown-divider" />
+      <button
+        type="button"
+        role="menuitem"
+        className="ff-speaker-dropdown-item"
+        onClick={() => onReassign(nextSpeakerId)}
+      >
+        <span className="ff-spk-dot" style={{ background: getSpeakerColor(nextSpeakerId) }} />
+        <span className="ff-spk-label">+ Nowy mówca</span>
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="ff-speaker-dropdown-item rename"
+        onClick={() => onRename(currentSpeakerId)}
+      >
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <path d="M1 8.5l1.5-1.5 5-5 1.5 1.5-5 5L1 10l.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+        </svg>
+        <span className="ff-spk-label">Zmień nazwę</span>
+      </button>
+    </div>
+  );
+}
+
+SpeakerDropdown.propTypes = {
+  seg: PropTypes.object,
+  currentSpeakerId: PropTypes.string,
+  speakers: PropTypes.array,
+  nextSpeakerId: PropTypes.string,
+  displaySpeakerNames: PropTypes.object,
+  onReassign: PropTypes.func,
+  onRename: PropTypes.func,
+  onClose: PropTypes.func,
+};
+
+/**
  * Per-speaker voice stats + GPT-4o audio coaching panel.
  * Shows text-based metrics immediately; coaching fetched on demand.
  */
@@ -288,6 +377,7 @@ export default function StudioMeetingView({
   setMeetingDraft,
   saveMeeting,
   renameSpeaker,
+  updateTranscriptSegment,
 }) {
   const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
@@ -296,6 +386,9 @@ export default function StudioMeetingView({
   const [concernDraft, setConcernDraft] = useState("");
 
   const [transcriptSearch, setTranscriptSearch] = useState("");
+  // Speaker picker dropdown — tracks which segment's dropdown is open
+  const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState(null);
+  // Rename flow (triggered from within the dropdown)
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
@@ -325,6 +418,33 @@ export default function StudioMeetingView({
     if (!q) return transcript;
     return transcript.filter((s) => s.text?.toLowerCase().includes(q));
   }, [transcript, transcriptSearch]);
+
+  // All unique speaker IDs in the current recording's transcript
+  const uniqueSpeakers = useMemo(() => {
+    const seen = new Map();
+    for (const seg of transcript) {
+      const sid = String(seg.speakerId ?? "");
+      if (sid && !seen.has(sid)) seen.set(sid, labelSpeaker(displaySpeakerNames, sid));
+    }
+    return [...seen.entries()].map(([id, name]) => ({ id, name }));
+  }, [transcript, displaySpeakerNames]);
+
+  // Reassign a single segment to a different speaker
+  const reassignSegmentSpeaker = useCallback((segId, newSpeakerId) => {
+    if (typeof updateTranscriptSegment === "function") {
+      updateTranscriptSegment(segId, { speakerId: newSpeakerId });
+    }
+    setSpeakerDropdownSegId(null);
+  }, [updateTranscriptSegment]);
+
+  // Next unused speaker ID for "Add speaker" action
+  const nextSpeakerId = useMemo(() => {
+    const nums = uniqueSpeakers
+      .map((s) => parseInt(String(s.id).replace(/\D/g, ""), 10))
+      .filter(Number.isFinite);
+    const max = nums.length ? Math.max(...nums) : 0;
+    return String(max + 1);
+  }, [uniqueSpeakers]);
 
   const initials = (currentUserName || "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
@@ -945,34 +1065,53 @@ export default function StudioMeetingView({
                   >
                     <div className="ff-seg-header">
                       <span className="ff-speaker-avatar" style={{ background: color }}>{letter}</span>
-                      {renamingSpeakerId === String(seg.speakerId) ? (
-                        <input
-                          className="ff-speaker-rename-input"
-                          autoFocus
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onBlur={() => {
-                            if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
-                            setRenamingSpeakerId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.target.blur();
-                            if (e.key === "Escape") { setRenamingSpeakerId(null); }
-                          }}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          className="ff-speaker-name-btn"
-                          title="Kliknij, aby zmienić nazwę głosu"
-                          onClick={() => { setRenamingSpeakerId(String(seg.speakerId)); setRenameValue(name); }}
-                        >
-                          <span className="ff-speaker-name">{name}</span>
-                          <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                            <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                      )}
+                      <div className="ff-speaker-picker-wrap">
+                        {renamingSpeakerId === String(seg.speakerId) ? (
+                          <input
+                            className="ff-speaker-rename-input"
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onBlur={() => {
+                              if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
+                              setRenamingSpeakerId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.target.blur();
+                              if (e.key === "Escape") { setRenamingSpeakerId(null); }
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className={`ff-speaker-name-btn${speakerDropdownSegId === seg.id ? " open" : ""}`}
+                              onClick={() => setSpeakerDropdownSegId(speakerDropdownSegId === seg.id ? null : seg.id)}
+                            >
+                              <span className="ff-speaker-name">{name}</span>
+                              <svg className="ff-speaker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                              </svg>
+                            </button>
+                            {speakerDropdownSegId === seg.id ? (
+                              <SpeakerDropdown
+                                seg={seg}
+                                currentSpeakerId={String(seg.speakerId ?? "")}
+                                speakers={uniqueSpeakers}
+                                nextSpeakerId={nextSpeakerId}
+                                displaySpeakerNames={displaySpeakerNames}
+                                onReassign={(newId) => reassignSegmentSpeaker(seg.id, newId)}
+                                onRename={(sid) => {
+                                  setSpeakerDropdownSegId(null);
+                                  setRenamingSpeakerId(String(sid));
+                                  setRenameValue(labelSpeaker(displaySpeakerNames, sid));
+                                }}
+                                onClose={() => setSpeakerDropdownSegId(null)}
+                              />
+                            ) : null}
+                          </>
+                        )}
+                      </div>
                       <span className="ff-seg-dot">·</span>
                       <button
                         type="button"
@@ -1168,6 +1307,7 @@ StudioMeetingView.propTypes = {
   setMeetingDraft: PropTypes.func,
   saveMeeting: PropTypes.func,
   renameSpeaker: PropTypes.func,
+  updateTranscriptSegment: PropTypes.func,
 };
 
 function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting }) {
