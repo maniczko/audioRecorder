@@ -573,149 +573,163 @@ export default function StudioMeetingView({
         </audio>
       ) : null}
 
-      {/* ── Full-width page header ── */}
-      <div className="ff-page-header">
-        <div className="ff-ph-left">
-          <h1 className="ff-ph-title">
-            {isRecording
-              ? (meetingDraft?.title?.trim() || "Ad hoc")
-              : (selectedMeeting.title || "Ad hoc")}
-          </h1>
-          <p className="ff-ph-meta">
-            {displayRecording
-              ? [
-                  formatDateTime(displayRecording.recordedAt || displayRecording.createdAt || displayRecording.startsAt),
-                  displayRecording.duration > 0 ? formatDuration(Math.floor(displayRecording.duration)) : null,
-                  uniqueSpeakers.length > 0 ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : null,
-                ].filter(Boolean).join(" · ")
-              : formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt || new Date().toISOString())
-            }
-          </p>
-        </div>
-        <div className="ff-ph-right">
-          {displayRecording && (
-            <>
-              <button type="button" className="ff-ph-btn" onClick={exportMeetingNotes} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Notatki
-              </button>
-              <button type="button" className="ff-ph-btn" onClick={exportTranscript} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
-                  <line x1="4" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <line x1="4" y1="7.5" x2="10" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <line x1="4" y1="10" x2="7" y2="10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-                Transkrypt
-              </button>
-              <button type="button" className="ff-ph-btn" onClick={exportMeetingPdfFile} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                PDF
-              </button>
-              <span className="ff-ph-sep" />
-            </>
-          )}
-          <button
-            type="button"
-            className={`ff-ph-btn ff-ph-brief-btn${briefOpen ? " active" : ""}`}
-            onClick={() => setBriefOpen((v) => !v)}
-          >
-            {briefOpen ? "− Brief" : "+ Brief"}
-          </button>
-        </div>
+      {/* ═══════════════════════════════════════════
+           HEADER — title + subtitle
+          ═══════════════════════════════════════════ */}
+      <div className="ff-header">
+        <h1 className="ff-header-title">
+          {isRecording
+            ? (meetingDraft?.title?.trim() || "Ad hoc")
+            : (selectedMeeting.title || "Ad hoc")}
+        </h1>
+        <p className="ff-header-sub">
+          {displayRecording
+            ? [
+                formatDateTime(displayRecording.recordedAt || displayRecording.createdAt || displayRecording.startsAt),
+                displayRecording.duration > 0 ? formatDuration(Math.floor(displayRecording.duration)) : null,
+                uniqueSpeakers.length > 0 ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : null,
+              ].filter(Boolean).join(" · ")
+            : formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt || new Date().toISOString())
+          }
+        </p>
       </div>
 
-      {/* ── Single-column view ── */}
-      <div className="ff-studio-view">
+      {/* ═══════════════════════════════════════════
+           TOOLBAR — Grupa 1: Eksport/Brief | Separator | Grupa 2: Nagrywanie
+          ═══════════════════════════════════════════ */}
+      <div className="ff-toolbar">
 
-        {/* ── Recording section ── */}
-        <div className="ff-rec-section">
+        {/* ── Grupa 1: Zakładki/Eksport (zawsze widoczne) ── */}
+        <button type="button" className="ff-tb-btn" onClick={exportMeetingNotes}
+          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Notatki
+        </button>
+        <button type="button" className="ff-tb-btn" onClick={exportTranscript}
+          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
+            <line x1="4" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            <line x1="4" y1="7.5" x2="10" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            <line x1="4" y1="10" x2="7" y2="10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          Transkrypt
+        </button>
+        <button type="button" className="ff-tb-btn" onClick={exportMeetingPdfFile}
+          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
+          PDF
+        </button>
+        <button
+          type="button"
+          className={`ff-tb-btn${briefOpen ? " active" : ""}`}
+          onClick={() => setBriefOpen((v) => !v)}
+        >
+          {briefOpen ? "− Brief" : "+ Brief"}
+        </button>
+
+        {/* ── Separator ── */}
+        <span className="ff-tb-sep" />
+
+        {/* ── Grupa 2: Akcje nagrywania ── */}
+        {isRecording ? (
+          <>
+            <button type="button" className="ff-tb-stop" onClick={stopRecording}>
+              <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+              Stop
+            </button>
+            {setLiveTranscriptEnabled ? (
+              <button
+                type="button"
+                className={`ff-tb-cc${liveTranscriptEnabled ? " active" : ""}`}
+                onClick={() => setLiveTranscriptEnabled((p) => !p)}
+                title={liveTranscriptEnabled ? "Wyłącz Whisper CC" : "Włącz Whisper CC"}
+              >CC</button>
+            ) : null}
+            <span className="ff-tb-rec-badge">● REC</span>
+          </>
+        ) : isQueued ? (
+          <span className="ff-tb-queued">{queueLabel}</span>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="ff-tb-record"
+              onClick={() => startRecording()}
+              disabled={!currentWorkspacePermissions?.canRecordAudio}
+            >
+              <svg width="13" height="13" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Rozpocznij nagrywanie
+            </button>
+            <button type="button" className="ff-tb-lang" title="Język nagrania">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
+                <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+              PL
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════
+           RECORDING ACTIVE HERO — only when recording
+          ═══════════════════════════════════════════ */}
+      {isRecording && (
+        <div className="ff-rec-active-hero">
+          <div className="ff-rec-vis-row">
+            <div className="ff-rec-pulse-ring">
+              <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="ff-rec-wave-inline">
+              {visualBars.map((h, i) => (
+                <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.45)) + "px" }} />
+              ))}
+            </div>
+          </div>
+          <div className="ff-rec-timer-xl">{formatDuration(elapsed)}</div>
+          <p className="ff-rec-status-label">● Nagrywanie</p>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════
+           PLAYER BAR — ONE instance only
+          ═══════════════════════════════════════════ */}
+      {(isRecording || selectedRecordingAudioUrl || isQueued) && (
+        <div className="ff-player-bar">
           {isRecording ? (
-            <div className="ff-rec-active-hero">
-              <div className="ff-rec-vis-row">
-                <div className="ff-rec-pulse-ring">
-                  <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <div className="ff-rec-wave-inline">
-                  {visualBars.map((h, i) => (
-                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.45)) + "px" }} />
-                  ))}
-                </div>
+            <>
+              <div className="ff-rec-mini-bars">
+                {visualBars.slice(-14).map((h, i) => (
+                  <span key={i} className="ff-rec-mini-bar" style={{ height: Math.max(2, Math.round(h / 4)) + "px" }} />
+                ))}
               </div>
-              <div className="ff-rec-timer-xl">{formatDuration(elapsed)}</div>
-              <p className="ff-rec-status-label">● Nagrywanie</p>
-            </div>
+              <span className="ff-player-time">{formatDuration(elapsed)}</span>
+            </>
           ) : isQueued ? (
-            <div className="ff-rec-queued-hero">
-              <span className="ff-rec-status-label">{queueLabel}</span>
-            </div>
+            <span className="ff-player-queue">{queueLabel}</span>
           ) : (
-            <div className="ff-rec-idle-hero">
-              <div className="ff-rec-action-row">
-                <button
-                  type="button"
-                  className="ff-rec-start-btn-main"
-                  onClick={() => startRecording()}
-                  disabled={!currentWorkspacePermissions?.canRecordAudio}
-                >
-                  <svg width="15" height="15" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Rozpocznij nagrywanie
-                </button>
-                <button type="button" className="ff-rec-lang-select" title="Język nagrania">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
-                    <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
-                  PL
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                    <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Player bar (recording / playback) ── */}
-          <div className="ff-player-bar">
-            {isRecording ? (
-              <>
-                <button type="button" className="ff-stop-btn" onClick={stopRecording} title="Stop nagrywania">
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
-                </button>
-                <div className="ff-rec-mini-bars">
-                  {visualBars.slice(-14).map((h, i) => (
-                    <span key={i} className="ff-rec-mini-bar" style={{ height: Math.max(2, Math.round(h / 4)) + "px" }} />
-                  ))}
-                </div>
-                <span className="ff-player-time">{formatDuration(elapsed)}</span>
-                {setLiveTranscriptEnabled ? (
-                  <button
-                    type="button"
-                    className={`ff-cc-btn${liveTranscriptEnabled ? " active" : ""}`}
-                    onClick={() => setLiveTranscriptEnabled((p) => !p)}
-                    title={liveTranscriptEnabled ? "Wyłącz napisy Whisper" : "Włącz napisy Whisper"}
-                  >CC</button>
-                ) : null}
-                <span className="ff-rec-badge">REC</span>
-              </>
-            ) : selectedRecordingAudioUrl ? (
-              <>
-                <span className="ff-player-time">
-                  {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration))}
-                </span>
+            <>
+              <span className="ff-player-time">
+                {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration))}
+              </span>
+              <div className="ff-player-controls">
                 <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }} title="-15s">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
                   </svg>
@@ -727,31 +741,32 @@ export default function StudioMeetingView({
                   }
                 </button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15); }} title="+15s">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
                   </svg>
                 </button>
                 <a className="ff-player-ctrl" href={selectedRecordingAudioUrl} download title="Pobierz">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
                 </a>
-              </>
-            ) : null}
-          </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-          {/* ── Live caption ── */}
-          {isRecording && liveText ? (
-            <div className="ff-live-block">
-              <span className="ff-live-block-dot" />
-              <p className="ff-live-block-text">{liveText}</p>
-            </div>
-          ) : null}
-        </div>{/* /ff-rec-section */}
+      {/* Live caption */}
+      {isRecording && liveText ? (
+        <div className="ff-live-block">
+          <span className="ff-live-block-dot" />
+          <p className="ff-live-block-text">{liveText}</p>
+        </div>
+      ) : null}
 
-        {/* ── Brief panels ── */}
-        <div className="ff-panels">
+      {/* ── Brief panels ── */}
+      <div className="ff-panels">
 
         {briefOpen && (
         <><section className="panel">
@@ -872,7 +887,7 @@ export default function StudioMeetingView({
 
           {/* Section header */}
           <div className="ff-ts-header">
-            <span className="ff-ts-title">Transkrypcja</span>
+            <h2 className="ff-ts-title">Transkrypcja</h2>
             {transcript.length > 0 && remoteApiEnabled() && (
               <button
                 type="button"
@@ -1033,83 +1048,7 @@ export default function StudioMeetingView({
             </div>
           ) : null}
 
-          {/* Player bar */}
-          <div className="ff-player-bar">
-            {isRecording ? (
-              <>
-                <button type="button" className="ff-stop-btn" onClick={stopRecording} title="Stop">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
-                </button>
-                <div className="ff-rec-mini-bars">
-                  {visualBars.slice(-14).map((h, i) => (
-                    <span key={i} className="ff-rec-mini-bar" style={{ height: Math.max(2, Math.round(h / 4)) + "px" }} />
-                  ))}
-                </div>
-                <span className="ff-player-time">{formatDuration(elapsed)}</span>
-                {liveText ? (
-                  <span className="ff-live-caption" title="Napisy na żywo">{liveText.slice(-90)}</span>
-                ) : null}
-                {setLiveTranscriptEnabled ? (
-                  <button
-                    type="button"
-                    className={`ff-cc-btn${liveTranscriptEnabled ? " active" : ""}`}
-                    onClick={() => setLiveTranscriptEnabled((p) => !p)}
-                    title={liveTranscriptEnabled ? "Wyłącz napisy Whisper" : "Włącz napisy Whisper (wymaga serwera)"}
-                  >
-                    CC
-                  </button>
-                ) : null}
-                <span className="ff-rec-badge">REC</span>
-              </>
-            ) : isQueued ? (
-              <span className="ff-player-queue">{queueLabel}</span>
-            ) : selectedRecordingAudioUrl ? (
-              <>
-                <span className="ff-player-time">
-                  {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration))}
-                </span>
-                <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>
-                  {playbackRate}×
-                </button>
-                <button
-                  type="button"
-                  className="ff-player-ctrl"
-                  onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }}
-                  title="-15s"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
-                  </svg>
-                </button>
-                <button type="button" className="ff-player-play" onClick={togglePlay} aria-label={isPlaying ? "Pauza" : "Odtwórz"}>
-                  {isPlaying
-                    ? <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="4" height="12" rx="1" /><rect x="9" y="2" width="4" height="12" rx="1" /></svg>
-                    : <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2l10 6-10 6z" /></svg>
-                  }
-                </button>
-                <button
-                  type="button"
-                  className="ff-player-ctrl"
-                  onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15); }}
-                  title="+15s"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
-                  </svg>
-                </button>
-                <a className="ff-player-ctrl" href={selectedRecordingAudioUrl} download title="Pobierz">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                </a>
-              </>
-            ) : null}
-          </div>
         </div>{/* /ff-transcript-section */}
-
-      </div>{/* /ff-studio-view */}
     </>
   );
 }
