@@ -6,7 +6,10 @@ const { matchSpeakerToProfile } = require("./speakerEmbedder");
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || "";
 const OPENAI_BASE_URL = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
-const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "gpt-4o-transcribe-diarize";
+// DIARIZATION_MODEL is kept for reference only — OpenAI does not expose a public
+// speaker-diarization model via the transcriptions API. Diarization is handled by
+// pyannote (when HF_TOKEN is set) or GPT-4o-mini transcript analysis (see diarizeFromTranscript).
+const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "whisper-1";
 // gpt-4o-transcribe is significantly more accurate than whisper-1 for Polish,
 // especially for proper nouns, jargon, and mixed-language utterances.
 // Falls back to whisper-1 if VOICELOG_AUDIO_VERIFY_MODEL is set to that.
@@ -675,6 +678,139 @@ async function preprocessAudio(filePath) {
   }
 }
 
+/**
+ * GPT-4o-mini based speaker diarization derived from transcript text.
+ *
+ * Uses conversational patterns (question/answer, topic shifts, different phrasing
+ * styles, explicit pronoun switches) to identify distinct speakers.  Works best
+ * for meetings and dialogs; a true monologue will correctly return 1 speaker.
+ * Processes up to 180 segments per call to stay well within token limits.
+ *
+ * @param {Array<{text: string, start: number, end: number}>} segments  verbose_json segments
+ * @returns {Promise<object|null>}  diarization result ({segments, speakerNames, speakerCount, text})
+ */
+async function diarizeFromTranscript(segments) {
+  if (!OPENAI_API_KEY || !segments.length) return null;
+
+  const CHUNK_SIZE = 180;
+  const chunk = segments.slice(0, CHUNK_SIZE);
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const lines = chunk
+    .map((seg, i) => `[${i}] ${fmt(seg.start ?? 0)}: "${(seg.text || "").replace(/"/g, "'").slice(0, 240)}"`)
+    .join("\n");
+
+  const systemPrompt =
+    "Jesteś ekspertem od analizy nagrań spotkań. Identyfikujesz mówców na podstawie struktury rozmowy.";
+
+  const userPrompt = [
+    "Poniżej transkrypt nagrania. Przypisz każdemu segmentowi mówcę (A, B, C…).",
+    "Zmiana mówcy następuje gdy: ktoś odpowiada na pytanie, zmienia się styl mówienia, pojawia się nowa osoba.",
+    "Jeśli to monolog jednej osoby — użyj tylko 'A'.",
+    "",
+    "Transkrypt:",
+    lines,
+    "",
+    'Odpowiedź TYLKO w formacie JSON: {"segments": [{"i": 0, "s": "A"}, {"i": 1, "s": "B"}, ...]}',
+    'Każdy segment musi mieć "i" (numer) i "s" (litera mówcy). Brak pomijanych segmentów.',
+  ].join("\n");
+
+  try {
+    const resp = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: Math.min(4096, chunk.length * 14 + 60),
+        temperature: 0,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!resp.ok) throw new Error(`OpenAI chat completions HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    const content = json.choices?.[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    const assignments = Array.isArray(parsed?.segments) ? parsed.segments : [];
+
+    if (!assignments.length) {
+      if (DEBUG) console.warn("[audioPipeline] Transcript diarization: GPT returned empty assignments.");
+      return null;
+    }
+
+    // Build index→speaker map; segments beyond CHUNK_SIZE inherit last known speaker
+    const indexToSpeaker = new Map(
+      assignments.map((a) => [Number(a.i), String(a.s || "A").toUpperCase().slice(0, 1)])
+    );
+    const lastKnown = indexToSpeaker.get(chunk.length - 1) || "A";
+
+    const speakerOrder = new Map();
+    const speakerNames = {};
+
+    const resultSegments = segments
+      .map((wseg, i) => {
+        const text = clean(wseg.text || "");
+        if (!text) return null;
+
+        const rawLabel = indexToSpeaker.has(i) ? indexToSpeaker.get(i) : lastKnown;
+
+        if (!speakerOrder.has(rawLabel)) {
+          const nextId = speakerOrder.size;
+          speakerOrder.set(rawLabel, nextId);
+          speakerNames[String(nextId)] = `Speaker ${nextId + 1}`;
+        }
+
+        const speakerId = speakerOrder.get(rawLabel);
+        const start = Number(wseg.start ?? 0);
+        const end = Number(wseg.end ?? start);
+        const estimatedDuration = Math.max(1.5, tokenize(text).length * 0.42);
+        const endTimestamp = end > start ? end : start + estimatedDuration;
+
+        return {
+          id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+          text,
+          timestamp: start,
+          endTimestamp,
+          speakerId,
+          rawSpeakerLabel: rawLabel,
+        };
+      })
+      .filter(Boolean);
+
+    if (DEBUG) {
+      const dist = resultSegments.reduce((acc, s) => {
+        const k = `${s.speakerId}(${s.rawSpeakerLabel})`;
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      console.log(`[audioPipeline] Transcript-diarize result: ${resultSegments.length} segs, dist: ${JSON.stringify(dist)}`);
+    }
+
+    return {
+      segments: resultSegments,
+      speakerNames,
+      speakerCount: Object.keys(speakerNames).length,
+      text: resultSegments.map((s) => s.text).join(" "),
+    };
+  } catch (err) {
+    if (DEBUG) console.warn("[audioPipeline] diarizeFromTranscript failed:", err.message);
+    return null;
+  }
+}
+
 async function transcribeRecording(asset, options = {}) {
   const prepPath = await preprocessAudio(asset.file_path);
   const transcribeFilePath = prepPath || asset.file_path;
@@ -731,49 +867,26 @@ async function transcribeRecording(asset, options = {}) {
     }
   }
 
-  // ── Fall back to OpenAI diarization model ──
+  // ── Fall back to GPT-4o-mini transcript-based diarization ──
+  // NOTE: "gpt-4o-transcribe-diarize" and "diarized_json" do not exist in OpenAI public API.
+  // Instead, we use GPT-4o-mini to infer speaker changes from conversation text + timing.
   if (!diarization) {
-    if (DEBUG) console.log("[audioPipeline] Using OpenAI diarization model.");
-    const diarizeFields = {
-      model: DIARIZATION_MODEL,
-      language: options.language || AUDIO_LANGUAGE,
-      response_format: "diarized_json",
-      prompt: contextPrompt,
-      temperature: 0,
-    };
-
-    let diarizedPayload;
-    if (isLargeFile) {
-      const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, diarizeFields);
-      diarizedPayload = mergeChunkedDiarizedPayloads(chunkPayloads);
-    } else {
-      diarizedPayload = await requestAudioTranscription({
-        filePath: transcribeFilePath,
-        contentType: transcribeContentType,
-        fields: diarizeFields,
-      });
+    if (DEBUG) console.log("[audioPipeline] Pyannote unavailable — using GPT-4o-mini transcript diarization.");
+    try {
+      diarization = await diarizeFromTranscript(verificationSegments);
+      if (DEBUG && diarization) {
+        console.log(`[audioPipeline] Transcript diarization: ${diarization.segments.length} segs, ${diarization.speakerCount} speaker(s): ${JSON.stringify(diarization.speakerNames)}`);
+      }
+    } catch (err) {
+      console.warn("[audioPipeline] Transcript diarization error:", err.message);
+      diarization = null;
     }
+  }
 
-    if (DEBUG) {
-      const rawSegs = diarizedPayload?.segments || diarizedPayload?.transcript?.segments || diarizedPayload?.utterances || [];
-      const rawSpeakers = new Set(
-        rawSegs
-          .map((s) => (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null) || s.speaker_label || s.speaker_id || null)
-          .filter(Boolean)
-      );
-      console.log(`[audioPipeline] Diarize raw keys: ${Object.keys(diarizedPayload || {}).join(", ")}`);
-      console.log(`[audioPipeline] Diarize segments: ${rawSegs.length}, unique speakers: ${rawSpeakers.size} (${[...rawSpeakers].join(", ")})`);
-    }
-
-    diarization = normalizeDiarizedSegments(diarizedPayload);
-
-    if (DEBUG) {
-      const normDist = diarization.segments.reduce((acc, s) => {
-        const key = `${s.speakerId}(${s.rawSpeakerLabel})`;
-        acc[key] = (acc[key] || 0) + 1; return acc;
-      }, {});
-      console.log(`[audioPipeline] After normalization: ${diarization.segments.length} segs, names: ${JSON.stringify(diarization.speakerNames)}, dist: ${JSON.stringify(normDist)}`);
-    }
+  // ── Final fallback: normalize whisper verbose_json as single-speaker ──
+  if (!diarization || !diarization.segments.length) {
+    if (DEBUG) console.log("[audioPipeline] Using whisper segments as single-speaker fallback.");
+    diarization = normalizeDiarizedSegments(whisperPayload || {});
   }
 
   if (!diarization.segments.length) {
