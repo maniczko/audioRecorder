@@ -392,6 +392,8 @@ export default function StudioMeetingView({
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
+  const [rediarizing, setRediarizing] = useState(false);
+  const [rediarizeMsg, setRediarizeMsg] = useState(null);
 
   const audioRef = useRef(null);
   const activeSegRef = useRef(null);
@@ -436,6 +438,26 @@ export default function StudioMeetingView({
     }
     setSpeakerDropdownSegId(null);
   }, [updateTranscriptSegment]);
+
+  // Re-run GPT-4o-mini speaker detection on stored transcript
+  const handleRediarize = useCallback(async () => {
+    if (!selectedRecording?.id || !remoteApiEnabled()) return;
+    setRediarizing(true);
+    setRediarizeMsg(null);
+    try {
+      const result = await apiRequest(`/media/recordings/${selectedRecording.id}/rediarize`, { method: "POST" });
+      if (result?.segments && typeof updateTranscriptSegment === "function") {
+        for (const seg of result.segments) {
+          if (seg.id) updateTranscriptSegment(seg.id, { speakerId: seg.speakerId, rawSpeakerLabel: seg.rawSpeakerLabel });
+        }
+        setRediarizeMsg(`Wykryto ${result.speakerCount} mówcę/mówców.`);
+      }
+    } catch (err) {
+      setRediarizeMsg(`Błąd: ${err.message}`);
+    } finally {
+      setRediarizing(false);
+    }
+  }, [selectedRecording?.id, updateTranscriptSegment]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
@@ -1048,6 +1070,22 @@ export default function StudioMeetingView({
               onChange={(e) => setTranscriptSearch(e.target.value)}
             />
           </div>
+
+          {/* Re-diarize button — re-run speaker detection on existing transcript */}
+          {transcript.length > 0 && remoteApiEnabled() ? (
+            <div className="ff-rediarize-bar">
+              <button
+                type="button"
+                className="ff-rediarize-btn"
+                onClick={handleRediarize}
+                disabled={rediarizing}
+                title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
+              >
+                {rediarizing ? "Wykrywanie…" : "Wykryj mówców"}
+              </button>
+              {rediarizeMsg ? <span className="ff-rediarize-msg">{rediarizeMsg}</span> : null}
+            </div>
+          ) : null}
 
           {/* Segments list */}
           <div className="ff-segments-list">

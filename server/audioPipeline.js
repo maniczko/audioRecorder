@@ -1164,4 +1164,5 @@ module.exports = {
   normalizeRecording,
   transcribeLiveChunk,
   generateVoiceCoaching,
+  diarizeFromTranscript,
 };

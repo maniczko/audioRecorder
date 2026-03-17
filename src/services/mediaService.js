@@ -142,6 +142,9 @@ function createRemoteMediaService() {
       });
       return typeof response === "object" ? (response?.coaching || "") : "";
     },
+    async rediarize(recordingId) {
+      return apiRequest(`/media/recordings/${recordingId}/rediarize`, { method: "POST" });
+    },
   };
 }
 

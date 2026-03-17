@@ -31,7 +31,7 @@ const {
   getWorkspaceVoiceProfiles,
   deleteVoiceProfile,
 } = require("./database");
-const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching } = require("./audioPipeline");
+const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching, diarizeFromTranscript } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
@@ -577,6 +577,65 @@ async function handleRequest(request, response) {
     const segments = Array.isArray(body?.segments) ? body.segments : [];
     const coaching = await generateVoiceCoaching(asset, speakerId, segments);
     sendJson(response, 200, { coaching }, origin);
+    return;
+  }
+
+  // POST /media/recordings/:id/rediarize — re-run GPT-4o-mini speaker detection on existing transcript
+  const mediaRediarizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/rediarize$/);
+  if (mediaRediarizeMatch && request.method === "POST") {
+    const session = requireSession(request);
+    const recordingId = mediaRediarizeMatch[1];
+    const asset = getMediaAsset(recordingId);
+    if (!asset) {
+      sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin);
+      return;
+    }
+    ensureWorkspaceAccess(session, asset.workspace_id);
+
+    // Parse stored transcript segments
+    let storedSegments = [];
+    try { storedSegments = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
+
+    if (!storedSegments.length) {
+      sendJson(response, 400, { message: "Brak transkrypcji — najpierw transkrybuj nagranie." }, origin);
+      return;
+    }
+
+    // Map to {text, start, end} for diarizeFromTranscript
+    const whisperLike = storedSegments.map((s) => ({
+      text: s.text || "",
+      start: Number(s.timestamp || 0),
+      end: Number(s.endTimestamp || s.timestamp || 0),
+    })).filter((s) => s.text);
+
+    const diarization = await diarizeFromTranscript(whisperLike);
+    if (!diarization || !diarization.segments.length) {
+      sendJson(response, 422, { message: "Diaryzacja nie zwróciła wyników." }, origin);
+      return;
+    }
+
+    // Save updated segments and diarization
+    const updatedSegments = diarization.segments.map((seg, idx) => ({
+      ...(storedSegments[idx] || {}),
+      id: storedSegments[idx]?.id || seg.id,
+      text: seg.text,
+      timestamp: seg.timestamp,
+      endTimestamp: seg.endTimestamp,
+      speakerId: seg.speakerId,
+      rawSpeakerLabel: seg.rawSpeakerLabel,
+    }));
+
+    saveTranscriptionResult(recordingId, {
+      segments: updatedSegments,
+      diarization,
+      pipelineStatus: "completed",
+    });
+
+    sendJson(response, 200, {
+      speakerCount: diarization.speakerCount,
+      speakerNames: diarization.speakerNames,
+      segments: updatedSegments,
+    }, origin);
     return;
   }
 

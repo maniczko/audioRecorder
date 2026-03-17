@@ -2495,6 +2495,36 @@
   margin-bottom: 6px;
 }
 
+.ff-rediarize-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 6px;
+}
+
+.ff-rediarize-btn {
+  padding: 3px 10px;
+  background: none;
+  border: 1px solid var(--accent, #75d6c4);
+  border-radius: 5px;
+  color: var(--accent, #75d6c4);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+.ff-rediarize-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ff-rediarize-msg {
+  font-size: 0.68rem;
+  color: var(--text-secondary, #8e9bb5);
+}
+
 .ff-voice-coaching-btn {
   width: 100%;
   padding: 5px 0;
