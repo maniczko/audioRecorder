@@ -44,14 +44,18 @@ const ALLOWED_ORIGINS = (process.env.VOICELOG_ALLOWED_ORIGINS || "http://localho
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+// If VOICELOG_ALLOWED_ORIGINS contains "*", allow any origin (echo back)
+const ALLOW_ANY_ORIGIN = ALLOWED_ORIGINS.includes("*");
 
 function corsHeaders(requestOrigin) {
+  const src = String(requestOrigin || "");
   // Allow any localhost/127.0.0.1 origin for development convenience
-  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(String(requestOrigin || ""));
-  const origin = isLocalhost
-    ? requestOrigin
-    : ALLOWED_ORIGINS.includes(requestOrigin)
-      ? requestOrigin
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(src);
+  // Allow any vercel.app subdomain (handles dynamic per-deployment preview URLs)
+  const isVercel = /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(src);
+  const origin =
+    isLocalhost || isVercel || ALLOW_ANY_ORIGIN || ALLOWED_ORIGINS.includes(src)
+      ? src
       : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": origin,
