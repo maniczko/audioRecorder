@@ -10,19 +10,21 @@ const os = require("node:os");
 const SIMILARITY_THRESHOLD = 0.82;
 const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
 
-let pipelineCache = null;
+let modelCache = null;
+let processorCache = null;
 
-async function getEmbeddingPipeline() {
-  if (pipelineCache) return pipelineCache;
+async function getEmbeddingModels() {
+  if (modelCache && processorCache) return { model: modelCache, processor: processorCache };
   try {
-    const { pipeline, env } = await import("@xenova/transformers");
+    const { AutoModel, AutoProcessor, env } = await import("@xenova/transformers");
     env.allowLocalModels = false; // force download from HuggingFace
-    pipelineCache = await pipeline("feature-extraction", "Xenova/wavlm-base-plus-sv", {
+    modelCache = await AutoModel.from_pretrained("Xenova/wavlm-base-plus-sv", {
       quantized: true,
     });
-    return pipelineCache;
+    processorCache = await AutoProcessor.from_pretrained("Xenova/wavlm-base-plus-sv");
+    return { model: modelCache, processor: processorCache };
   } catch (err) {
-    console.error("[speakerEmbedder] Failed to load WavLM pipeline:", err.message);
+    console.error("[speakerEmbedder] Failed to load WavLM models:", err.message);
     return null;
   }
 }
@@ -61,23 +63,28 @@ function decodeAudioToFloat32(inputPath) {
 }
 
 /**
- * Compute a 768-dim embedding for an audio file.
+ * Compute a 512-dim embedding for an audio file.
  * Returns null on failure.
  */
 async function computeEmbedding(audioFilePath) {
-  const pipe = await getEmbeddingPipeline();
-  if (!pipe) return null;
+  const models = await getEmbeddingModels();
+  if (!models) return null;
 
   const pcm = decodeAudioToFloat32(audioFilePath);
   if (!pcm || pcm.length < 160) return null; // too short
 
   try {
-    const output = await pipe(pcm, {
-      sampling_rate: 16000,
-      pooling: "mean",
-      normalize: true,
-    });
-    return Array.from(output.data);
+    const inputs = await models.processor(pcm, 16000);
+    const output = await models.model(inputs);
+    
+    // Normalize the 512-dim embedding vector (L2 norm)
+    const arr = Array.from(output.embeddings.data);
+    let sqSum = 0;
+    for (let i = 0; i < arr.length; i++) {
+        sqSum += arr[i] * arr[i];
+    }
+    const norm = Math.sqrt(sqSum) || 1e-8;
+    return arr.map(v => v / norm);
   } catch (err) {
     console.error("[speakerEmbedder] Embedding computation failed:", err.message);
     return null;
