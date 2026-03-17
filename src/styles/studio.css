@@ -1610,187 +1610,212 @@
   gap: 18px;
 }
 
-/* ── Recording header wrapper ── */
-.ff-rec-header {
+/* ══════════════════════════════════════════════
+   NEW RECORDING CARD  (nr-*)
+   ══════════════════════════════════════════════ */
+
+/* Card container */
+.nr-card {
+  border: 1px solid var(--border, rgba(255,255,255,0.1));
+  border-radius: 14px;
+  padding: 32px 24px 28px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
 }
 
-/* ── Idle recording card ── */
-.ff-rec-idle {
+.nr-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text, #111827);
+  margin: 0;
+}
+
+/* Idle inner container */
+.nr-idle {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 36px 24px 28px;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 14px;
-}
-
-.ff-rec-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text, #111827);
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-/* Circular mic button */
-.ff-rec-mic-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border, #d1d5db);
-  background: transparent;
-  color: var(--text-secondary, #6b7280);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-  flex-shrink: 0;
-}
-.ff-rec-mic-btn:hover:not(:disabled) { border-color: #7c3aed; color: #7c3aed; }
-.ff-rec-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* Title input + globe button inline */
-.ff-rec-title-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
   width: 100%;
-  max-width: 320px;
 }
 
-.ff-rec-title-input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--border, #d1d5db);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text, #111827);
-  font-size: 0.88rem;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.ff-rec-title-input:focus { border-color: #7c3aed; }
-.ff-rec-title-input::placeholder { color: var(--text-muted, #9ca3af); }
-
-.ff-rec-lang-btn {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 7px;
-  border: 1px solid var(--border, #d1d5db);
-  background: transparent;
-  color: var(--text-secondary, #6b7280);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-/* Large idle timer */
-.ff-rec-timer-idle {
-  font-family: "Space Grotesk", "Inter", monospace;
-  font-size: clamp(2.2rem, 7vw, 3.4rem);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--text, #111827);
-  line-height: 1;
-}
-
-/* Language label row */
-.ff-rec-lang-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.82rem;
-  color: var(--text-secondary, #6b7280);
-  cursor: pointer;
-}
-
-/* Big start button */
-.ff-rec-start-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  max-width: 320px;
-  padding: 13px 24px;
-  background: #7c3aed;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.ff-rec-start-btn:hover:not(:disabled) { background: #6d28d9; }
-.ff-rec-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* ── Active recording card ── */
-.ff-rec-active {
+/* Active recording inner container */
+.nr-recording {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 32px 24px 24px;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 14px;
+  width: 100%;
 }
 
-.ff-rec-mic-pulse {
+/* Circular mic button */
+.nr-mic-btn {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(239, 68, 68, 0.1);
+  border: 1.5px solid var(--border, rgba(255,255,255,0.15));
+  background: transparent;
+  color: var(--text-secondary, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.nr-mic-btn:hover:not(:disabled) { border-color: #7c3aed; color: #7c3aed; }
+.nr-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Pulsing red mic (active) */
+.nr-mic-pulse {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: rec-pulse 1.4s ease-in-out infinite;
 }
-
 @keyframes rec-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
-  50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+  50%       { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
 }
 
-.ff-rec-bars {
+/* Title input */
+.nr-title-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text, #f3f4f6);
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.nr-title-input:focus { border-color: #7c3aed; }
+.nr-title-input::placeholder { color: var(--text-muted, #6b7280); }
+
+/* Globe language button */
+.nr-lang-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  background: transparent;
+  color: var(--text-secondary, #9ca3af);
   display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 48px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.ff-rec-timer-large {
+/* Large timer */
+.nr-timer {
   font-family: "Space Grotesk", "Inter", monospace;
-  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-size: clamp(2rem, 7vw, 3.2rem);
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: var(--text, #111827);
+  color: var(--text, #f3f4f6);
   line-height: 1;
 }
 
-.ff-rec-dot-label {
+/* Language label */
+.nr-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #9ca3af);
+  cursor: default;
+}
+
+/* Start recording button */
+.nr-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+  padding: 12px 20px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nr-start-btn:hover:not(:disabled) { background: #6d28d9; }
+.nr-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Recording active label */
+.nr-rec-label {
   font-size: 0.75rem;
   font-weight: 700;
   color: #ef4444;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
+
+/* ── Actions bar below card ── */
+.nr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.nr-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  background: none;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 6px;
+  color: var(--text-secondary, #9ca3af);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.nr-action-btn:hover:not(:disabled) { border-color: #7c3aed; color: #7c3aed; }
+.nr-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.nr-actions-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border, rgba(255,255,255,0.12));
+}
+
+.nr-brief-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  background: none;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 6px;
+  color: var(--text-secondary, #9ca3af);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.nr-brief-btn:hover { border-color: #7c3aed; color: #7c3aed; }
 
 /* ── Shared capture bar ── */
 .ff-capture-bar {
@@ -1801,24 +1826,30 @@
   transition: height 0.08s;
 }
 
-/* ── Dodaj dane toggle button ── */
-.ff-dodaj-dane-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  align-self: flex-start;
-  padding: 5px 11px;
-  background: none;
-  border: 1px solid var(--border, #d1d5db);
-  border-radius: 6px;
-  color: var(--text-secondary, #6b7280);
-  font-size: 0.78rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+/* Light mode overrides */
+[data-theme="light"] .nr-card,
+.light-mode .nr-card {
+  border-color: #e5e7eb;
+  background: #fff;
 }
-.ff-dodaj-dane-btn:hover { border-color: #7c3aed; color: #7c3aed; }
+[data-theme="light"] .nr-timer,
+.light-mode .nr-timer { color: #111827; }
+[data-theme="light"] .nr-title-input,
+.light-mode .nr-title-input {
+  border-color: #d1d5db;
+  color: #111827;
+}
+[data-theme="light"] .nr-action-btn,
+.light-mode .nr-action-btn,
+[data-theme="light"] .nr-brief-btn,
+.light-mode .nr-brief-btn {
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+[data-theme="light"] .nr-mic-btn,
+.light-mode .nr-mic-btn,
+[data-theme="light"] .nr-lang-btn,
+.light-mode .nr-lang-btn { border-color: #d1d5db; color: #6b7280; }
 
 /* Meeting info under capture area */
 .ff-meeting-info {

@@ -575,37 +575,35 @@ export default function StudioMeetingView({
         {/* ── LEFT: main content ── */}
         <div className="studio-ff-main">
 
-          {/* Recording header */}
-          <div className="ff-rec-header">
+          {/* ── Recording card ── */}
+          <div className="nr-card">
+            <h1 className="nr-heading">Nowe nagranie</h1>
+
             {isRecording ? (
-              /* ── Active recording state ── */
-              <div className="ff-rec-active">
-                <div className="ff-rec-mic-pulse">
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+              <div className="nr-recording">
+                <div className="nr-mic-pulse">
+                  <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                <div className="ff-rec-bars">
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44 }}>
                   {visualBars.map((h, i) => (
-                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.55)) + "px" }} />
+                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.5)) + "px" }} />
                   ))}
                 </div>
-                <div className="ff-rec-timer-large">{formatDuration(elapsed)}</div>
-                <span className="ff-rec-dot-label">● Nagrywanie</span>
+                <div className="nr-timer">{formatDuration(elapsed)}</div>
+                <span className="nr-rec-label">● Nagrywanie</span>
               </div>
             ) : (
-              /* ── Idle / new recording state ── */
-              <div className="ff-rec-idle">
-                <p className="ff-rec-title">Nowe nagranie</p>
-
+              <div className="nr-idle">
+                {/* Mic icon button */}
                 <button
                   type="button"
-                  className="ff-rec-mic-btn"
+                  className="nr-mic-btn"
                   onClick={() => startRecording()}
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
-                  title="Rozpocznij nagrywanie"
                 >
                   <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
@@ -614,19 +612,17 @@ export default function StudioMeetingView({
                   </svg>
                 </button>
 
-                <div className="ff-rec-title-row">
+                {/* Title + language inline */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", maxWidth: 320 }}>
                   <input
-                    className="ff-rec-title-input"
+                    className="nr-title-input"
                     type="text"
                     placeholder="Tytuł nagrania"
                     value={meetingDraft?.title ?? selectedMeeting.title ?? ""}
-                    onChange={(e) => {
-                      const newDraft = { ...meetingDraft, title: e.target.value };
-                      setMeetingDraft(() => newDraft);
-                    }}
+                    onChange={(e) => setMeetingDraft((d) => ({ ...d, title: e.target.value }))}
                     onBlur={() => meetingDraft && saveMeeting(meetingDraft)}
                   />
-                  <button type="button" className="ff-rec-lang-btn" title="Język">
+                  <button type="button" className="nr-lang-btn" title="Język">
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
@@ -635,27 +631,30 @@ export default function StudioMeetingView({
                   </button>
                 </div>
 
-                <div className="ff-rec-timer-idle">00:00:00</div>
+                {/* Timer */}
+                <div className="nr-timer">00:00:00</div>
 
-                <div className="ff-rec-lang-row">
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                {/* Language */}
+                <div className="nr-lang-row">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
                     <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
                     <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
                   </svg>
                   Polski
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
                     <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
                 </div>
 
+                {/* Start button */}
                 <button
                   type="button"
-                  className="ff-rec-start-btn"
+                  className="nr-start-btn"
                   onClick={() => startRecording()}
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
                 >
-                  <svg width="14" height="14" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -664,76 +663,37 @@ export default function StudioMeetingView({
                 </button>
               </div>
             )}
+          </div>
 
-            {/* Export actions (shown when transcript is available) */}
+          {/* ── Action bar ── */}
+          <div className="nr-actions">
             {displayRecording && (
-              <div className="ff-action-bar">
-                <button
-                  type="button"
-                  className="ff-action-btn"
-                  onClick={exportMeetingNotes}
-                  disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
-                >
+              <>
+                <button type="button" className="nr-action-btn" onClick={exportMeetingNotes} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
                   ↗ Notatki TXT
                 </button>
-                <button
-                  type="button"
-                  className="ff-action-btn"
-                  onClick={exportTranscript}
-                  disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
-                >
+                <button type="button" className="nr-action-btn" onClick={exportTranscript} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
                   ⊟ Transkrypt
                 </button>
-                <button
-                  type="button"
-                  className="ff-action-btn"
-                  onClick={exportMeetingPdfFile}
-                  disabled={!currentWorkspacePermissions?.canExportWorkspaceData}
-                >
+                <button type="button" className="nr-action-btn" onClick={exportMeetingPdfFile} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
                   + PDF
                 </button>
-              </div>
+                <span className="nr-actions-sep" />
+              </>
             )}
-
-            {/* Dodaj dane — toggle meeting brief */}
-            <button
-              type="button"
-              className="ff-dodaj-dane-btn"
-              onClick={() => setBriefOpen((v) => !v)}
-            >
-              {briefOpen ? "Ukryj dane" : "Dodaj dane"}
-              <svg className={briefOpen ? "ff-chevron open" : "ff-chevron"} width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <button type="button" className="nr-brief-btn" onClick={() => setBriefOpen((v) => !v)}>
+              {briefOpen ? "Ukryj brief" : "Dodaj brief"}
+              <svg className={briefOpen ? "ff-chevron open" : "ff-chevron"} width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
                 <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
             </button>
           </div>
 
-          {/* Summary bullets from analysis */}
-          {studioAnalysis && (
-            <div className="ff-summary-section panel">
-              {studioAnalysis.summary && <p className="ff-summary-text">{studioAnalysis.summary}</p>}
-              {studioAnalysis.decisions?.length > 0 && (
-                <ul className="ff-summary-bullets">
-                  {studioAnalysis.decisions.map((d, i) => (
-                    <li key={i}>
-                      <strong>
-                        {d.split(":")[0]}
-                        {d.includes(":") ? ":" : ""}
-                      </strong>
-                      {d.includes(":") ? d.slice(d.indexOf(":") + 1) : ""}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
           {/* ── Content panels (single-column stack) ── */}
           <div className="ff-panels">
 
         {briefOpen && (
-        <>
-        <section className="panel">
+        <><section className="panel">
           <div className="panel-header compact">
             <div>
               <h2>Potrzeby i obawy</h2>
