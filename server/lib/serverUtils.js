@@ -35,7 +35,7 @@ function corsHeaders(requestOrigin, allowedOrigins = "http://localhost:3000") {
   const allowAny = allowed.includes("*");
   const src = String(requestOrigin || "");
   const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(src);
-  const isVercel = /^https:\/\/[a-z0-9.-]+\.vercel\.app$/.test(src);
+  const isVercel = /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(src);
   
   const origin = isLocalhost || isVercel || allowAny || allowed.includes(src) ? src : allowed[0];
   

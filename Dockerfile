@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:22.12-bookworm-slim
 
 # FFmpeg for audio processing pipeline
 RUN apt-get update && \

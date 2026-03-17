@@ -74,6 +74,8 @@ function createApp({ authService, workspaceService, transcriptionService, config
       ? String(request.headers["x-forwarded-for"] || socketIp).split(",")[0].trim()
       : socketIp;
 
+    console.log(`[HTTP] ${request.method} ${request.url} from ${origin || "no-origin"} (${clientIp})`);
+
     if (request.method === "OPTIONS") {
       sendNoContent(response, origin, ALLOWED_ORIGINS);
       return;
