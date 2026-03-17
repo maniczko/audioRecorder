@@ -572,125 +572,131 @@ export default function StudioMeetingView({
           <track kind="captions" />
         </audio>
       ) : null}
+
+      {/* ── Full-width page header ── */}
+      <div className="ff-page-header">
+        <div className="ff-ph-left">
+          <h1 className="ff-ph-title">
+            {isRecording
+              ? (meetingDraft?.title?.trim() || "Nowe nagranie")
+              : (selectedMeeting.title || "Nowe nagranie")}
+          </h1>
+          {displayRecording && (
+            <p className="ff-ph-meta">
+              {formatDateTime(displayRecording.recordedAt)}
+              {displayRecording.duration > 0 ? ` · ${formatDuration(Math.floor(displayRecording.duration))}` : ""}
+              {uniqueSpeakers.length > 0 ? ` · ${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : ""}
+            </p>
+          )}
+        </div>
+        <div className="ff-ph-right">
+          {displayRecording && (
+            <>
+              <button type="button" className="ff-ph-btn" onClick={exportMeetingNotes} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Notatki
+              </button>
+              <button type="button" className="ff-ph-btn" onClick={exportTranscript} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                  <line x1="4" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <line x1="4" y1="7.5" x2="10" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <line x1="4" y1="10" x2="7" y2="10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                Transkrypt
+              </button>
+              <button type="button" className="ff-ph-btn" onClick={exportMeetingPdfFile} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
+                PDF
+              </button>
+              <span className="ff-ph-sep" />
+            </>
+          )}
+          <button
+            type="button"
+            className={`ff-ph-btn ff-ph-brief-btn${briefOpen ? " active" : ""}`}
+            onClick={() => setBriefOpen((v) => !v)}
+          >
+            {briefOpen ? "− Brief" : "+ Brief"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Two-column body ── */}
       <div className="studio-ff-layout">
         {/* ── LEFT: main content ── */}
         <div className="studio-ff-main">
 
-          {/* ── Recording card ── */}
-          <div className="nr-card">
-            <h1 className="nr-heading">Nowe nagranie</h1>
-
-            {isRecording ? (
-              <div className="nr-recording">
-                <div className="nr-mic-pulse">
+          {/* ── Recording hero ── */}
+          {isRecording ? (
+            <div className="ff-rec-active-hero">
+              <div className="ff-rec-vis-row">
+                <div className="ff-rec-pulse-ring">
                   <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44 }}>
+                <div className="ff-rec-wave-inline">
                   {visualBars.map((h, i) => (
-                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.5)) + "px" }} />
+                    <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.45)) + "px" }} />
                   ))}
                 </div>
-                <div className="nr-timer">{formatDuration(elapsed)}</div>
-                <span className="nr-rec-label">● Nagrywanie</span>
               </div>
-            ) : (
-              <div className="nr-idle">
-                {/* Mic icon button */}
-                <button
-                  type="button"
-                  className="nr-mic-btn"
-                  onClick={() => startRecording()}
-                  disabled={!currentWorkspacePermissions?.canRecordAudio}
-                >
-                  <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </button>
-
-                {/* Title + language inline */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", maxWidth: 320 }}>
+              <div className="ff-rec-timer-xl">{formatDuration(elapsed)}</div>
+              <p className="ff-rec-status-label">● Nagrywanie</p>
+            </div>
+          ) : (
+            <div className="ff-rec-idle-hero">
+              <button
+                type="button"
+                className="ff-rec-idle-mic"
+                onClick={() => startRecording()}
+                disabled={!currentWorkspacePermissions?.canRecordAudio}
+              >
+                <svg width="28" height="28" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                  <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className="ff-rec-form">
+                <div className="ff-rec-form-row">
                   <input
-                    className="nr-title-input"
+                    className="ff-rec-title-input"
                     type="text"
                     placeholder="Tytuł nagrania"
                     value={meetingDraft?.title ?? selectedMeeting.title ?? ""}
                     onChange={(e) => setMeetingDraft((d) => ({ ...d, title: e.target.value }))}
                     onBlur={() => meetingDraft && saveMeeting(meetingDraft)}
                   />
-                  <button type="button" className="nr-lang-btn" title="Język">
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <button type="button" className="ff-rec-lang-btn" title="Język">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
                       <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
                     </svg>
+                    PL
                   </button>
                 </div>
-
-                {/* Timer */}
-                <div className="nr-timer">00:00:00</div>
-
-                {/* Language */}
-                <div className="nr-lang-row">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
-                    <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
-                  Polski
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                    <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                </div>
-
-                {/* Start button */}
                 <button
                   type="button"
-                  className="nr-start-btn"
+                  className="ff-rec-start-btn"
                   onClick={() => startRecording()}
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
                 >
-                  <svg width="13" height="13" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true">
+                    <circle cx="5" cy="5" r="4.5" />
                   </svg>
                   Rozpocznij nagrywanie
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* ── Action bar ── */}
-          <div className="nr-actions">
-            {displayRecording && (
-              <>
-                <button type="button" className="nr-action-btn" onClick={exportMeetingNotes} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                  ↗ Notatki TXT
-                </button>
-                <button type="button" className="nr-action-btn" onClick={exportTranscript} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                  ⊟ Transkrypt
-                </button>
-                <button type="button" className="nr-action-btn" onClick={exportMeetingPdfFile} disabled={!currentWorkspacePermissions?.canExportWorkspaceData}>
-                  + PDF
-                </button>
-                <span className="nr-actions-sep" />
-              </>
-            )}
-            <button type="button" className="nr-brief-btn" onClick={() => setBriefOpen((v) => !v)}>
-              {briefOpen ? "Ukryj brief" : "Dodaj brief"}
-              <svg className={briefOpen ? "ff-chevron open" : "ff-chevron"} width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-
-          {/* ── Content panels (single-column stack) ── */}
+          {/* ── Content panels ── */}
           <div className="ff-panels">
 
         {briefOpen && (
@@ -811,9 +817,20 @@ export default function StudioMeetingView({
         {/* ── RIGHT: transcript sidebar ── */}
         <aside className="studio-ff-sidebar">
 
-          {/* Tab bar — Transcript only */}
-          <div className="ff-tab-bar">
-            <span className="ff-tab active">Transcript</span>
+          {/* Sidebar header */}
+          <div className="ff-sidebar-header">
+            <span className="ff-sidebar-title">Transcript</span>
+            {transcript.length > 0 && remoteApiEnabled() && (
+              <button
+                type="button"
+                className="ff-sidebar-action-btn"
+                onClick={handleRediarize}
+                disabled={rediarizing}
+                title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
+              >
+                {rediarizing ? "…" : "Wykryj mówców"}
+              </button>
+            )}
           </div>
 
           {/* Search */}
@@ -830,21 +847,7 @@ export default function StudioMeetingView({
             />
           </div>
 
-          {/* Re-diarize button — re-run speaker detection on existing transcript */}
-          {transcript.length > 0 && remoteApiEnabled() ? (
-            <div className="ff-rediarize-bar">
-              <button
-                type="button"
-                className="ff-rediarize-btn"
-                onClick={handleRediarize}
-                disabled={rediarizing}
-                title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
-              >
-                {rediarizing ? "Wykrywanie…" : "Wykryj mówców"}
-              </button>
-              {rediarizeMsg ? <span className="ff-rediarize-msg">{rediarizeMsg}</span> : null}
-            </div>
-          ) : null}
+          {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
 
           {/* Segments list */}
           <div className="ff-segments-list">
