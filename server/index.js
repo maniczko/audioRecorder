@@ -24,13 +24,14 @@ const speakerEmbedder = require("./speakerEmbedder");
 const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
 
-// 1. Initialize Database
+console.log("1. Starting initialization...");
 const db = initDatabase();
+console.log("2. Database initialized at:", db.dbPath);
 
-// 2. Initialize Services
 const authService = new AuthService(db);
 const workspaceService = new WorkspaceService(db);
 const transcriptionService = new TranscriptionService(db, audioPipeline, speakerEmbedder);
+console.log("3. Services initialized.");
 
 // 3. Create App Handler
 const handler = createApp({
@@ -48,6 +49,10 @@ const handler = createApp({
 const server = http.createServer(handler);
 
 if (require.main === module) {
+  console.log(`4. Attempting to listen on ${HOST}:${PORT}...`);
+  server.on("error", (err) => {
+    console.error("SERVER ERROR:", err);
+  });
   server.listen(PORT, HOST, () => {
     console.log(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
   });
