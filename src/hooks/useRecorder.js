@@ -92,10 +92,12 @@ export default function useRecorder({
     [mediaService]
   );
 
+  // Server-side Whisper CC is a fallback for browsers without SpeechRecognition.
+  // When browser SpeechRecognition is available, it provides faster live captions.
   const serverCaption = useLiveTranscript({
     chunksRef,
     isRecording,
-    enabled: mediaService.mode === "remote" && liveTranscriptEnabled,
+    enabled: mediaService.mode === "remote" && liveTranscriptEnabled && !mediaService.supportsLiveTranscription(),
     transcribeLive,
     mimeType: mimeTypeRef.current,
   });

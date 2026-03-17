@@ -57,10 +57,13 @@ function createRemoteMediaService() {
   return {
     mode: "remote",
     supportsLiveTranscription() {
-      return false;
+      // Browser SpeechRecognition works independently of where audio is stored
+      return Boolean(getSpeechRecognitionClass());
     },
-    createLiveController() {
-      return null;
+    createLiveController(options) {
+      // Use browser SpeechRecognition for immediate live captioning;
+      // the server does high-quality Whisper transcription post-recording.
+      return createBrowserTranscriptionController(options);
     },
     async persistRecordingAudio(recordingId, blob, options = {}) {
       await apiRequest(`/media/recordings/${recordingId}/audio`, {
