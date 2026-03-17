@@ -377,8 +377,9 @@ export default function StudioMeetingView({
   saveMeeting,
   renameSpeaker,
   updateTranscriptSegment,
+  briefOpen,
+  setBriefOpen,
 }) {
-  const [briefOpen, setBriefOpen] = useState(false);
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
   const [addConcernOpen, setAddConcernOpen] = useState(false);
