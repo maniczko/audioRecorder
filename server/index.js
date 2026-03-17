@@ -80,7 +80,10 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-function checkRateLimit(ip, route) {
+// Live transcription polls every ~3 s — allow up to 60 requests/min per IP.
+const RATE_LIMIT_LIVE_MAX = 60;
+
+function checkRateLimit(ip, route, max = RATE_LIMIT_MAX) {
   const key = `${ip}:${route}`;
   const now = Date.now();
   let entry = rateLimitMap.get(key);
@@ -92,7 +95,7 @@ function checkRateLimit(ip, route) {
 
   entry.count += 1;
 
-  if (entry.count > RATE_LIMIT_MAX) {
+  if (entry.count > max) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
     const error = new Error("Zbyt wiele prob. Sprobuj ponownie za chwile.");
     error.statusCode = 429;
@@ -705,7 +708,7 @@ async function handleRequest(request, response) {
 
   // POST /transcribe/live — accepts a small audio blob, returns Whisper text for live captioning
   if (request.method === "POST" && pathname === "/transcribe/live") {
-    checkRateLimit(clientIp, "live-transcribe");
+    checkRateLimit(clientIp, "live-transcribe", RATE_LIMIT_LIVE_MAX);
     requireSession(request);
     const contentType = request.headers["content-type"] || "audio/webm";
     const buffer = await readBinaryBody(request);

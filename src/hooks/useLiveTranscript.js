@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-// ~4 × 900ms timeslice chunks ≈ 3.6 s of audio per request
-const CHUNK_WINDOW = 4;
-const POLL_INTERVAL_MS = 3000;
+// ~6 × 900ms timeslice chunks ≈ 5.4 s of audio per request
+const CHUNK_WINDOW = 6;
+const POLL_INTERVAL_MS = 5000;
 
 /**
  * Periodically sends the last ~3 s of recorded MediaRecorder chunks to the
