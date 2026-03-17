@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEFAULT_BARS, recordingErrorMessage } from "../lib/recording";
 import { summarizeSpectrum } from "../lib/diarization";
 import { createNoiseReducerNode } from "../audio/noiseReducerNode";
-import { createId } from "../lib/storage";
+
 
 export default function useAudioHardware({
   mediaService,
