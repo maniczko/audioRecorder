@@ -11,8 +11,9 @@ WORKDIR /app
 COPY server/package.json server/package-lock.json* ./
 RUN npm install --omit=dev 2>/dev/null || npm install
 
-# Copy server code
 COPY server/ ./server/
+RUN mkdir -p .cache && \
+    XENOVA_TRANSFORMERS_CACHE=.cache node server/scripts/download_models.js
 
 # Ensure data directories exist (Railway volume overrides this path)
 RUN mkdir -p /data/uploads
@@ -23,6 +24,7 @@ ENV VOICELOG_API_PORT=4000
 ENV FFMPEG_BINARY=ffmpeg
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ENV XENOVA_TRANSFORMERS_CACHE=/app/.cache
 
 EXPOSE 4000
 
