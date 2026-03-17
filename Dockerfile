@@ -26,4 +26,4 @@ ENV VOICELOG_UPLOAD_DIR=/data/uploads
 
 EXPOSE 4000
 
-CMD ["node", "server/index.js"]
+CMD ["node", "--experimental-sqlite", "server/index.js"]

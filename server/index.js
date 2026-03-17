@@ -1,5 +1,12 @@
 // Load .env from project root before any other requires
 try { require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") }); } catch (_) {}
+process.on("uncaughtException", (err) => {
+  console.error("FATAL UNCAUGHT EXCEPTION:", err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("FATAL UNHANDLED REJECTION:", reason);
+});
 
 const http = require("node:http");
 const { initDatabase } = require("./database");
