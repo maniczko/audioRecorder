@@ -232,22 +232,18 @@ function workspaceIdsForUser(userId) {
 }
 
 function buildWorkspaceFromRow(row, currentUserId = "") {
-  const memberIds = database
-    .prepare("SELECT user_id FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC")
-    .all(row.id)
-    .map((item) => item.user_id);
-  const memberRoles = database
+  // Single query: get all membership rows for this workspace, then derive memberIds,
+  // memberRoles and current-user membership — avoids 3 separate round-trips.
+  const members = database
     .prepare("SELECT user_id, member_role FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC")
-    .all(row.id)
-    .reduce((result, item) => {
-      result[item.user_id] = item.member_role;
-      return result;
-    }, {});
-  const membership = currentUserId
-    ? database
-        .prepare("SELECT member_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?")
-        .get(row.id, currentUserId)
-    : null;
+    .all(row.id);
+
+  const memberIds = members.map((item) => item.user_id);
+  const memberRoles = members.reduce((result, item) => {
+    result[item.user_id] = item.member_role;
+    return result;
+  }, {});
+  const currentMember = currentUserId ? members.find((item) => item.user_id === currentUserId) : null;
 
   return {
     id: row.id,
@@ -256,7 +252,7 @@ function buildWorkspaceFromRow(row, currentUserId = "") {
     inviteCode: row.invite_code,
     memberIds,
     memberRoles,
-    memberRole: membership?.member_role || "",
+    memberRole: currentMember?.member_role || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -562,17 +558,18 @@ function loginUser(draft = {}) {
 
 function requestPasswordReset(draft = {}) {
   const email = normalizeEmail(draft.email);
-  const row = database.prepare("SELECT * FROM users WHERE email = ?").get(email);
-  if (!row) {
-    throw new Error("Nie znaleziono konta z takim adresem.");
-  }
+  // Use a fixed future timestamp to avoid leaking whether the account exists via timing.
+  const genericExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-  if (!row.password_hash) {
-    throw new Error("To konto korzysta z logowania Google. Reset hasla wykonaj w Google.");
+  const row = database.prepare("SELECT * FROM users WHERE email = ?").get(email);
+  // Return the same generic response regardless of whether the account exists or uses Google.
+  // This prevents email enumeration attacks.
+  if (!row || !row.password_hash) {
+    return { expiresAt: genericExpiresAt };
   }
 
   const recoveryCode = String(Math.floor(100000 + Math.random() * 900000));
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const expiresAt = genericExpiresAt;
   database
     .prepare(
       `
@@ -834,13 +831,22 @@ function changeUserPassword(userId, draft = {}) {
 }
 
 function upsertMediaAsset({ recordingId, workspaceId, meetingId = "", contentType, buffer, createdByUserId }) {
+  // Sanitize recordingId before using it as a filename — prevent path traversal.
+  const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+  if (!safeRecordingId) {
+    throw new Error("Nieprawidłowy identyfikator nagrania.");
+  }
   const extension = {
     "audio/webm": ".webm",
     "audio/mpeg": ".mp3",
     "audio/mp4": ".m4a",
     "audio/wav": ".wav",
   }[String(contentType || "").toLowerCase()] || ".bin";
-  const filePath = path.join(UPLOAD_DIR, `${recordingId}${extension}`);
+  const filePath = path.resolve(UPLOAD_DIR, `${safeRecordingId}${extension}`);
+  // Double-check the resolved path stays within UPLOAD_DIR (defence-in-depth).
+  if (!filePath.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
+    throw new Error("Nieprawidłowa ścieżka pliku nagrania.");
+  }
   fs.writeFileSync(filePath, buffer);
 
   const existing = database.prepare("SELECT id FROM media_assets WHERE id = ?").get(recordingId);
@@ -1035,10 +1041,9 @@ function deleteVoiceProfile(id, workspaceId) {
 }
 
 function getHealth() {
+  // Do not expose server-side filesystem paths in the health response.
   return {
     ok: true,
-    dbPath: DB_PATH,
-    uploadDir: UPLOAD_DIR,
   };
 }
 

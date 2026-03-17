@@ -192,10 +192,25 @@ function ensureTranscriptionJob(recordingId, asset, options) {
   transcriptionJobs.set(recordingId, jobPromise);
 }
 
+// 1 MB limit for JSON bodies; large workspace state payloads should still
+// fit comfortably within this limit.
+const MAX_JSON_BODY_BYTES = 1 * 1024 * 1024;
+
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    request.on("data", (chunk) => chunks.push(chunk));
+    let received = 0;
+    request.on("data", (chunk) => {
+      received += chunk.byteLength;
+      if (received > MAX_JSON_BODY_BYTES) {
+        const error = new Error("Ładunek JSON przekracza maksymalny rozmiar.");
+        error.statusCode = 413;
+        reject(error);
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     request.on("end", () => {
       if (!chunks.length) {
         resolve({});
@@ -212,19 +227,44 @@ function readJsonBody(request) {
   });
 }
 
-function readBinaryBody(request) {
+// 100 MB hard cap for audio uploads; prevents OOM from malicious oversized bodies.
+const MAX_BINARY_BODY_BYTES = 100 * 1024 * 1024;
+
+function readBinaryBody(request, maxBytes = MAX_BINARY_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    request.on("data", (chunk) => chunks.push(chunk));
+    let received = 0;
+    request.on("data", (chunk) => {
+      received += chunk.byteLength;
+      if (received > maxBytes) {
+        const error = new Error("Przesłany plik przekracza maksymalny rozmiar.");
+        error.statusCode = 413;
+        reject(error);
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     request.on("end", () => resolve(Buffer.concat(chunks)));
     request.on("error", reject);
   });
 }
 
-function readRawBody(request) {
+function readRawBody(request, maxBytes = MAX_BINARY_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    request.on("data", (chunk) => chunks.push(chunk));
+    let received = 0;
+    request.on("data", (chunk) => {
+      received += chunk.byteLength;
+      if (received > maxBytes) {
+        const error = new Error("Przesłany plik przekracza maksymalny rozmiar.");
+        error.statusCode = 413;
+        reject(error);
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     request.on("end", () => resolve(Buffer.concat(chunks)));
     request.on("error", reject);
   });
@@ -270,9 +310,14 @@ function ensureWorkspaceAccess(session, workspaceId) {
 
 async function handleRequest(request, response) {
   const origin = String(request.headers.origin || "");
-  const clientIp = String(
-    request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown"
-  ).split(",")[0].trim();
+  // Use socket IP directly when binding to localhost (default).
+  // Only trust X-Forwarded-For when the server is configured to run behind a proxy
+  // (VOICELOG_TRUST_PROXY=true).  Trusting it unconditionally allows attackers to
+  // spoof their IP and bypass rate limiting.
+  const socketIp = String(request.socket?.remoteAddress || "unknown");
+  const clientIp = process.env.VOICELOG_TRUST_PROXY === "true"
+    ? String(request.headers["x-forwarded-for"] || socketIp).split(",")[0].trim()
+    : socketIp;
 
   if (request.method === "OPTIONS") {
     sendNoContent(response, origin);
@@ -440,10 +485,20 @@ async function handleRequest(request, response) {
       return;
     }
 
+    // Sanitize content_type stored in DB before reflecting it as a response header.
+    const ALLOWED_AUDIO_TYPES = new Set([
+      "audio/webm", "audio/mpeg", "audio/mp4", "audio/wav",
+      "audio/ogg", "audio/flac", "application/octet-stream",
+    ]);
+    const safeContentType = ALLOWED_AUDIO_TYPES.has(String(asset.content_type || "").toLowerCase())
+      ? asset.content_type
+      : "application/octet-stream";
     response.writeHead(200, {
       ...corsHeaders(origin),
-      "Content-Type": asset.content_type,
+      ...securityHeaders(),
+      "Content-Type": safeContentType,
       "Content-Length": String(fs.statSync(asset.file_path).size),
+      "Content-Disposition": "attachment",
     });
     fs.createReadStream(asset.file_path).pipe(response);
     return;
@@ -495,8 +550,9 @@ async function handleRequest(request, response) {
 
   // POST /voice-profiles  — receive raw audio body
   if (request.method === "POST" && pathname === "/voice-profiles") {
+    checkRateLimit(clientIp, "voice-profiles");
     const session = requireSession(request);
-    const speakerName = request.headers["x-speaker-name"] || "";
+    const speakerName = String(request.headers["x-speaker-name"] || "").slice(0, 120);
     if (!speakerName.trim()) {
       return sendJson(response, 400, { message: "Brakuje naglowka X-Speaker-Name." }, origin);
     }
@@ -641,6 +697,7 @@ async function handleRequest(request, response) {
 
   // POST /transcribe/live — accepts a small audio blob, returns Whisper text for live captioning
   if (request.method === "POST" && pathname === "/transcribe/live") {
+    checkRateLimit(clientIp, "live-transcribe");
     requireSession(request);
     const contentType = request.headers["content-type"] || "audio/webm";
     const buffer = await readBinaryBody(request);

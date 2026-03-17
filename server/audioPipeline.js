@@ -5,7 +5,23 @@ const crypto = require("node:crypto");
 const { matchSpeakerToProfile } = require("./speakerEmbedder");
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || "";
-const OPENAI_BASE_URL = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
+// Validate OPENAI_BASE_URL to prevent accidental SSRF via misconfigured env.
+// Must be https:// or http://localhost / 127.0.0.1 (for local proxies / testing).
+const _rawOpenAiBase = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
+(function validateOpenAiBase(url) {
+  try {
+    const parsed = new URL(url);
+    const isHttps = parsed.protocol === "https:";
+    const isLocalHttp = parsed.protocol === "http:" && (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
+    if (!isHttps && !isLocalHttp) {
+      console.warn(`[audioPipeline] VOICELOG_OPENAI_BASE_URL "${url}" is not https — using default.`);
+      return;
+    }
+  } catch (_) {
+    console.warn(`[audioPipeline] VOICELOG_OPENAI_BASE_URL is not a valid URL — using default.`);
+  }
+})(_rawOpenAiBase);
+const OPENAI_BASE_URL = _rawOpenAiBase;
 // DIARIZATION_MODEL is kept for reference only — OpenAI does not expose a public
 // speaker-diarization model via the transcriptions API. Diarization is handled by
 // pyannote (when HF_TOKEN is set) or GPT-4o-mini transcript analysis (see diarizeFromTranscript).
