@@ -9,7 +9,7 @@ process.on("unhandledRejection", (reason) => {
 });
 
 const http = require("node:http");
-const { initDatabase } = require("./database");
+const { getDatabase } = require("./database");
 const { createApp } = require("./app");
 
 // Services
@@ -25,12 +25,12 @@ const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
 
 console.log("1. Starting initialization...");
-const db = initDatabase();
+const db = getDatabase();
 console.log("2. Database initialized at:", db.dbPath);
 
 const authService = new AuthService(db);
 const workspaceService = new WorkspaceService(db);
-const transcriptionService = new TranscriptionService(db, audioPipeline, speakerEmbedder);
+const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
 console.log("3. Services initialized.");
 
 // 3. Create App Handler
