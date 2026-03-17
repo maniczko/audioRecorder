@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import { buildGoogleCalendarUrl, downloadMeetingIcs } from "../lib/calendar";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
@@ -379,7 +378,6 @@ export default function StudioMeetingView({
   renameSpeaker,
   updateTranscriptSegment,
 }) {
-  const [commentDraft, setCommentDraft] = useState("");
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
   const [addConcernOpen, setAddConcernOpen] = useState(false);
@@ -515,11 +513,6 @@ export default function StudioMeetingView({
     };
   }, [selectedRecordingAudioUrl]);
 
-  function handleAddComment() {
-    if (!commentDraft.trim() || !addMeetingComment) return;
-    addMeetingComment(selectedMeeting.id, commentDraft.trim(), currentUserName || "Ty");
-    setCommentDraft("");
-  }
 
   const picker = (
     <MeetingPicker
