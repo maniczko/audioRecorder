@@ -34,7 +34,7 @@ const {
 const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching, diarizeFromTranscript, analyzeMeetingWithOpenAI } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
-const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
+const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
 const transcriptionJobs = new Map();
 
