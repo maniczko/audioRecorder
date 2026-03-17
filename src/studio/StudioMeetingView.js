@@ -571,8 +571,6 @@ export default function StudioMeetingView({
           <track kind="captions" />
         </audio>
       ) : null}
-      {picker}
-
       <div className="studio-ff-layout">
         {/* ── LEFT: main content ── */}
         <div className="studio-ff-main">
@@ -600,7 +598,7 @@ export default function StudioMeetingView({
             ) : (
               /* ── Idle / new recording state ── */
               <div className="ff-rec-idle">
-                <h2 className="ff-rec-title">Nowe nagranie</h2>
+                <p className="ff-rec-title">Nowe nagranie</p>
 
                 <button
                   type="button"
@@ -609,7 +607,7 @@ export default function StudioMeetingView({
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
                   title="Rozpocznij nagrywanie"
                 >
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -629,7 +627,7 @@ export default function StudioMeetingView({
                     onBlur={() => meetingDraft && saveMeeting(meetingDraft)}
                   />
                   <button type="button" className="ff-rec-lang-btn" title="Język">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
                       <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
@@ -638,7 +636,18 @@ export default function StudioMeetingView({
                 </div>
 
                 <div className="ff-rec-timer-idle">00:00:00</div>
-                <div className="ff-rec-lang-label">Polski</div>
+
+                <div className="ff-rec-lang-row">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
+                    <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                  Polski
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                </div>
 
                 <button
                   type="button"
@@ -646,7 +655,7 @@ export default function StudioMeetingView({
                   onClick={() => startRecording()}
                   disabled={!currentWorkspacePermissions?.canRecordAudio}
                 >
-                  <svg width="16" height="16" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
