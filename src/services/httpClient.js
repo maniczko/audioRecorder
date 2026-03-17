@@ -1,6 +1,12 @@
 import { API_BASE_URL, remoteApiEnabled } from "./config";
 import { STORAGE_KEYS } from "../lib/storage";
 
+const unauthorizedHandlers = new Set();
+export function onUnauthorized(handler) {
+  unauthorizedHandlers.add(handler);
+  return () => unauthorizedHandlers.delete(handler);
+}
+
 function buildUrl(path) {
   const safePath = String(path || "").startsWith("/") ? path : `/${String(path || "")}`;
   if (!remoteApiEnabled()) {
@@ -56,6 +62,9 @@ export async function apiRequest(path, options = {}) {
   const response = await fetch(buildUrl(path), requestInit);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      unauthorizedHandlers.forEach((h) => h());
+    }
     let message = `HTTP ${response.status}`;
     try {
       const errorBody = await parseResponse(response);

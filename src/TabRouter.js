@@ -6,6 +6,7 @@ import PeopleTab from "./PeopleTab";
 import ProfileTab from "./ProfileTab";
 import StudioTab from "./StudioTab";
 import TasksTab from "./TasksTab";
+import RecordingsTab from "./RecordingsTab";
 import { useWorkspaceCtx } from "./context/WorkspaceContext";
 import { useMeetingsCtx } from "./context/MeetingsContext";
 import { useGoogleCtx } from "./context/GoogleContext";
@@ -176,6 +177,16 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         allTags={allTags}
         onRenameTag={meetings.renameTag}
         onDeleteTag={meetings.deleteTag}
+      />
+    ) : ui.activeTab === "recordings" ? (
+      <RecordingsTab
+        userMeetings={meetings.userMeetings}
+        selectedMeeting={meetings.selectedMeeting}
+        selectMeeting={meetings.selectMeeting}
+        startNewMeetingDraft={meetings.startNewMeetingDraft}
+        selectedRecordingId={meetings.selectedRecordingId}
+        setSelectedRecordingId={meetings.setSelectedRecordingId}
+        setActiveTab={ui.setActiveTab}
       />
     ) : (
       <StudioTab

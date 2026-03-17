@@ -5,6 +5,7 @@ import { resolveWorkspaceForUser, workspaceMembers } from "../lib/workspace";
 import { getWorkspacePermissions } from "../lib/permissions";
 import { createStateService } from "../services/stateService";
 import { createWorkspaceService } from "../services/workspaceService";
+import { onUnauthorized } from "../services/httpClient";
 
 export default function useWorkspace() {
   const [users, setUsers] = useStoredState(STORAGE_KEYS.users, []);
@@ -32,6 +33,13 @@ export default function useWorkspace() {
       currentUser ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id)) : [],
     [currentUser, workspaces]
   );
+
+  useEffect(() => {
+    return onUnauthorized(() => {
+      console.warn("Session expired. Logging out.");
+      setSession(null);
+    });
+  }, [setSession]);
 
   useEffect(() => {
     if (!currentUser || !currentWorkspaceId || session?.workspaceId === currentWorkspaceId) {
