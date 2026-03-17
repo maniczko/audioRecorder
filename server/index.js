@@ -15,7 +15,7 @@ const audioPipeline = require("./audioPipeline");
 const speakerEmbedder = require("./speakerEmbedder");
 
 const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
-const HOST = process.env.VOICELOG_API_HOST || "127.0.0.1";
+const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
 
 // 1. Initialize Database
 const db = initDatabase();
