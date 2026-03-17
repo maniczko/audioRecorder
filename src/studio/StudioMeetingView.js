@@ -689,39 +689,6 @@ export default function StudioMeetingView({
           {/* ── Content panels (single-column stack) ── */}
           <div className="ff-panels">
 
-      <section className="panel hero-panel">
-        <div>
-          <div className="eyebrow">Active meeting</div>
-          <h2>{selectedMeeting.title}</h2>
-          <p>{selectedMeeting.context || "Dodaj kontekst, aby analiza lepiej rozumiala rozmowe."}</p>
-        </div>
-        <div className="hero-meta">
-          <div className="metric-card">
-            <span>Start</span>
-            <strong>{formatDateTime(selectedMeeting.startsAt)}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Czas</span>
-            <strong>{selectedMeeting.durationMinutes} min</strong>
-          </div>
-          <div className="metric-card">
-            <span>Diarization</span>
-            <strong>{selectedMeeting.speakerCount || 0} rozmówców</strong>
-          </div>
-        </div>
-        <div className="button-row">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => window.open(buildGoogleCalendarUrl(selectedMeeting), "_blank", "noopener,noreferrer")}
-          >
-            Google Calendar
-          </button>
-          <button type="button" className="secondary-button" onClick={() => downloadMeetingIcs(selectedMeeting)}>
-            ICS
-          </button>
-        </div>
-      </section>
 
         <section className="panel">
           <div className="panel-header compact">
@@ -891,52 +858,6 @@ export default function StudioMeetingView({
 
         {studioAnalysis && (
           <>
-            {(studioAnalysis.openQuestions?.length > 0 || studioAnalysis.risks?.length > 0 || studioAnalysis.blockers?.length > 0) && (
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Risk radar</div>
-                    <h2>Ryzyka i blokery</h2>
-                  </div>
-                </div>
-                <div className="analysis-columns">
-                  {studioAnalysis.risks?.length > 0 && (
-                    <div className="analysis-block">
-                      <h3>Ryzyka</h3>
-                      <ul className="clean-list">
-                        {studioAnalysis.risks.map((r, i) => (
-                          <li key={i} className="risk-item">
-                            <span className={`risk-severity risk-${r.severity || "medium"}`}>{r.severity || "medium"}</span>
-                            {r.risk}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {studioAnalysis.blockers?.length > 0 && (
-                    <div className="analysis-block">
-                      <h3>Blokery</h3>
-                      <ul className="clean-list">
-                        {studioAnalysis.blockers.map((b, i) => <li key={i}>{b}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                {studioAnalysis.openQuestions?.length > 0 && (
-                  <div className="analysis-block">
-                    <h3>Otwarte pytania</h3>
-                    <ul className="clean-list open-questions-list">
-                      {studioAnalysis.openQuestions.map((q, i) => (
-                        <li key={i} className="open-question-item">
-                          <span className="open-question-text">{q.question}</span>
-                          {q.askedBy && <span className="open-question-by">{q.askedBy}</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            )}
 
 
 

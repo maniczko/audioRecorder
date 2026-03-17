@@ -1929,44 +1929,45 @@
 
 /* One segment block */
 .ff-segment {
-  padding: 14px 20px 16px;
-  border-bottom: 1px solid transparent; /* no visible divider — breathing room only */
+  padding: 14px 20px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   cursor: default;
   transition: background 0.12s;
 }
+.ff-segment:last-child {
+  border-bottom: none;
+}
 .ff-segment:hover {
-  background: rgba(0, 0, 0, 0.018);
+  background: rgba(0, 0, 0, 0.022);
 }
 .ff-segment.active {
   background: rgba(79, 70, 229, 0.05);
   border-left: 3px solid #4f46e5;
-  padding-left: 17px; /* compensate border so text doesn't shift */
+  padding-left: 17px;
 }
 
 /* Header row: [avatar] [Speaker N] [▾] · [00:00] */
 .ff-seg-header {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 7px;
+  gap: 6px;
+  margin-bottom: 6px;
   line-height: 1;
 }
 
-/* Circular avatar — color set via inline style from getSpeakerColor() */
+/* Rounded-square avatar — color set via inline style from getSpeakerColor() */
 .ff-speaker-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
   user-select: none;
-  /* subtle inner ring for depth, matches Fireflies avatar style */
-  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.25) inset;
 }
 
 /* "Speaker 1" label */
@@ -2045,13 +2046,13 @@
   text-decoration-color: #4338ca;
 }
 
-/* Transcript text — indented to align with speaker name (after 30px avatar + 7px gap) */
+/* Transcript text — indented to align with speaker name (after 24px avatar + 6px gap) */
 .ff-seg-text {
   font-size: 14px;
-  line-height: 1.62;
+  line-height: 1.65;
   color: var(--text, #374151);
   margin: 0;
-  padding-left: 37px; /* 30px avatar + 7px gap */
+  padding-left: 30px; /* 24px avatar + 6px gap */
   word-break: break-word;
 }
 
@@ -2255,7 +2256,7 @@
   border-bottom-color: #e5e7eb;
 }
 [data-theme="light"] .ff-segment {
-  border-bottom-color: transparent;
+  border-bottom-color: #e5e7eb;
 }
 [data-theme="light"] .ff-segment:hover {
   background: #f9fafb;
