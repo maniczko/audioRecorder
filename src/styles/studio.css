@@ -3111,54 +3111,172 @@
 
 /* ── Fireflies-style Transcript Layout ── */
 
+.ff-transcript-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background: var(--bg-surface, #fff);
+  border-radius: 12px;
+}
+
+.ff-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-surface, #fff);
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+[data-theme="dark"] .ff-transcript-wrapper,
+[data-theme="dark"] .ff-sticky-header {
+  background: var(--bg-surface, #12121f);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.ff-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 0;
+}
+
+[data-theme="dark"] .ff-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.ff-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s;
+}
+
+.ff-tab:hover {
+  color: var(--text);
+}
+
+.ff-tab.active {
+  color: #8b5cf6;
+}
+
+.ff-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #8b5cf6;
+  border-radius: 2px 2px 0 0;
+}
+
+.ff-tab.askfred {
+  color: #a78bfa;
+}
+
+.ff-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.ff-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+[data-theme="dark"] .ff-search-bar {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ff-search-bar input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.ff-search-bar input::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .ff-search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .transcript-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 10px 0;
+  gap: 24px;
+  padding: 24px 20px;
+  overflow-y: auto;
 }
 
 .fireflies-segment {
   display: flex;
   gap: 16px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
   position: relative;
+  transition: background 0.2s ease;
+  border-radius: 8px;
+  padding: 4px;
+  margin: -4px;
 }
 
 .fireflies-segment:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .fireflies-segment:hover {
   background: rgba(255, 255, 255, 0.02);
 }
 
 .fireflies-segment.active {
-  background: rgba(116, 208, 191, 0.05);
-  border-color: rgba(116, 208, 191, 0.15);
+  background: rgba(139, 92, 246, 0.05);
 }
 
 .fireflies-segment.needs-review {
   background: rgba(243, 202, 114, 0.05);
-  border-color: rgba(243, 202, 114, 0.15);
 }
 
 .fireflies-segment.active.needs-review {
   background: rgba(243, 202, 114, 0.1);
-  border-color: rgba(243, 202, 114, 0.3);
 }
 
 .fireflies-avatar {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #12121f;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #fff;
+  margin-top: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .fireflies-content {
@@ -3166,34 +3284,100 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .fireflies-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  height: 24px;
 }
 
 .fireflies-speaker {
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.fireflies-chevron {
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.fireflies-chevron:hover {
+  opacity: 1;
+}
+
+.fireflies-dot {
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .fireflies-time {
   background: none;
   border: none;
-  color: var(--muted);
-  font-size: 0.8rem;
+  color: #3b82f6;
+  font-size: 0.875rem;
   cursor: pointer;
   padding: 0;
   font-variant-numeric: tabular-nums;
+  transition: color 0.15s;
 }
 
 .fireflies-time:hover {
-  color: var(--text);
   text-decoration: underline;
+  color: #2563eb;
+}
+
+[data-theme="dark"] .fireflies-time:hover {
+  color: #60a5fa;
+}
+
+.fireflies-text-area {
+  position: relative;
+}
+
+.fireflies-textarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 0.95rem;
+  line-height: 1.625;
+  resize: none;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  min-height: 24px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .fireflies-textarea {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.fireflies-textarea:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .fireflies-textarea:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fireflies-textarea:focus {
+  background: rgba(0, 0, 0, 0.03);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="dark"] .fireflies-textarea:focus {
+  background: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
 }
 
 .fireflies-select {
@@ -3209,44 +3393,11 @@
   opacity: 1;
 }
 
-.fireflies-text-area {
-  position: relative;
-}
-
-.fireflies-textarea {
-  width: 100%;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  resize: none;
-  padding: 6px 8px;
-  margin: -6px -8px;
-  border-radius: 8px;
-  font-family: inherit;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: 24px;
-  overflow: hidden;
-}
-
-.fireflies-textarea:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.fireflies-textarea:focus {
-  background: rgba(12, 12, 18, 0.8);
-  border-color: var(--accent);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(116, 208, 191, 0.15);
-}
-
 .fireflies-actions {
   display: flex;
   gap: 8px;
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(2px);
   transition: opacity 0.2s ease, transform 0.2s ease;
   margin-top: 4px;
 }

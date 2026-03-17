@@ -924,6 +924,29 @@ export default function TranscriptPanel({
       ) : null}
 
 
+      <div className="ff-transcript-wrapper">
+        <div className="ff-sticky-header">
+          <div className="ff-tabs">
+            <button className="ff-tab active" type="button">Transcript</button>
+            <button className="ff-tab askfred" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm-3-9a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 9 11Zm6 0a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 15 11Zm-3 5.5a4.48 4.48 0 0 1-3.64-1.92l1.64-1.16A2.47 2.47 0 0 0 12 14.5a2.47 2.47 0 0 0 2-1.08l1.64 1.16A4.48 4.48 0 0 1 12 16.5Z" /></svg>
+              AskFred
+            </button>
+            <div className="ff-header-actions">
+              <button type="button" className="icon-button" aria-label="Wyszukaj">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </button>
+              <button type="button" className="icon-button" aria-label="Edytuj">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </button>
+            </div>
+          </div>
+          <div className="ff-search-bar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Find or Replace" />
+          </div>
+        </div>
+
       <div className="transcript-list">
         {filteredSegments.length ? (
           filteredSegments.map((segment) => {
@@ -937,14 +960,16 @@ export default function TranscriptPanel({
                 onClick={() => !isActive && activateSegment(segment)}
               >
                 <div className="fireflies-avatar" style={{ background: getSpeakerColor(segment.speakerId) }}>
-                  {labelSpeaker(displaySpeakerNames, segment.speakerId).substring(0, 2).toUpperCase()}
+                  {labelSpeaker(displaySpeakerNames, segment.speakerId).substring(0, 1).toUpperCase()}
                 </div>
                 
                 <div className="fireflies-content">
                   <div className="fireflies-header">
-                    <strong className="fireflies-speaker" style={{ color: getSpeakerColor(segment.speakerId) }}>
+                    <strong className="fireflies-speaker">
                       {labelSpeaker(displaySpeakerNames, segment.speakerId)}
                     </strong>
+                    <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                    <span className="fireflies-dot">·</span>
                     <button
                       type="button"
                       className="fireflies-time"
@@ -1048,6 +1073,7 @@ export default function TranscriptPanel({
             <span>Uruchom nagrywanie, aby przypiac pierwsza rozmowe.</span>
           </div>
         )}
+      </div>
       </div>
     </section>
   );
