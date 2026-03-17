@@ -1928,7 +1928,8 @@
   flex-direction: column;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid #e5e7eb;
+  position: relative;
 }
 
 .ff-ts-header {
@@ -1940,11 +1941,11 @@
 }
 
 .ff-ts-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
   margin: 0;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 
@@ -2363,21 +2364,21 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--border, rgba(255,255,255,0.1));
+  padding: 5px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  color: var(--text-muted, #9ca3af);
-  font-size: 0.73rem;
+  color: #374151;
+  font-size: 0.78rem;
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.12s, color 0.12s;
+  transition: border-color 0.12s, background 0.12s;
 }
 .ff-sidebar-action-btn:hover:not(:disabled) {
-  border-color: rgba(124,58,237,0.5);
-  color: #a78bfa;
+  border-color: #d1d5db;
+  background: #e5e7eb;
 }
 .ff-sidebar-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -2390,20 +2391,21 @@
   align-items: center;
   gap: 9px;
   padding: 10px 14px;
-  border: 1px solid rgba(255,255,255,0.09);
+  border: 1px solid #e5e7eb;
   border-radius: 999px;
-  background: rgba(255,255,255,0.04);
+  background: #f9fafb;
   margin-bottom: 10px;
   flex-shrink: 0;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 .ff-search-bar:focus-within {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(255,255,255,0.06);
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
 }
 
 .ff-search-icon {
-  color: var(--text-muted);
+  color: #9ca3af;
   flex-shrink: 0;
 }
 
@@ -2413,22 +2415,23 @@
   border: none;
   outline: none;
   font-size: 0.84rem;
-  color: var(--text);
+  color: #1f2937;
   padding: 2px 0;
 }
-.ff-search-input::placeholder { color: var(--text-muted); }
+.ff-search-input::placeholder { color: #9ca3af; }
 
 /* ── Segments list ─────────────────────────────────────────────────────────── */
 .ff-segments-list {
   overflow-y: auto;
   padding: 0;
-  max-height: 600px;
+  max-height: none;
+  padding-bottom: 56px; /* room for floating sync button */
 }
 
 /* One segment block */
 .ff-segment {
-  padding: 14px 20px 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 16px 20px 18px;
+  border-bottom: 1px solid #e5e7eb;
   cursor: default;
   transition: background 0.12s;
 }
@@ -2436,10 +2439,10 @@
   border-bottom: none;
 }
 .ff-segment:hover {
-  background: rgba(0, 0, 0, 0.022);
+  background: #f9fafb;
 }
 .ff-segment.active {
-  background: rgba(79, 70, 229, 0.05);
+  background: rgba(79, 70, 229, 0.04);
   border-left: 3px solid #4f46e5;
   padding-left: 17px;
 }
@@ -2448,16 +2451,16 @@
 .ff-seg-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin-bottom: 8px;
   line-height: 1;
 }
 
-/* Rounded-square avatar — color set via inline style from getSpeakerColor() */
+/* Rounded-square avatar — Fireflies style */
 .ff-speaker-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2470,9 +2473,9 @@
 
 /* "Speaker 1" label */
 .ff-speaker-name {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text, #111827);
+  color: #1f2937;
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
@@ -2481,30 +2484,31 @@
 .ff-speaker-chevron {
   color: #9ca3af;
   flex-shrink: 0;
-  margin-left: -3px; /* tuck tightly after name */
+  margin-left: -2px;
 }
 
 /* clickable name+chevron button for renaming */
 .ff-speaker-name-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 2px;
   background: none;
-  border: none;
-  padding: 0;
+  border: 1px solid transparent;
+  padding: 2px 4px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: border-color 0.12s, background 0.12s;
 }
-.ff-speaker-name-btn:hover .ff-speaker-name {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.ff-speaker-name-btn:hover {
+  border-color: #e5e7eb;
+  background: #f9fafb;
 }
 
 /* inline rename input */
 .ff-speaker-rename-input {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text, #111827);
+  color: #1f2937;
   letter-spacing: -0.01em;
   border: none;
   border-bottom: 1.5px solid #4f46e5;
@@ -2517,41 +2521,72 @@
 /* · separator dot */
 .ff-seg-dot {
   color: #9ca3af;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
   margin: 0 1px;
   user-select: none;
 }
 
-/* 00:00 timestamp — indigo/blue to match Fireflies */
+/* 00:00 timestamp — blue underlined like Fireflies */
 .ff-seg-timestamp {
   background: none;
   border: none;
   padding: 0;
   font-size: 13px;
   font-weight: 500;
-  color: #4f46e5;
+  color: #3b82f6;
   cursor: pointer;
   font-family: inherit;
-  transition: color 0.1s, text-decoration 0.1s;
+  transition: color 0.1s;
   line-height: 1;
   text-decoration: underline;
   text-underline-offset: 2px;
-  text-decoration-color: transparent;
+  text-decoration-color: #93c5fd;
 }
 .ff-seg-timestamp:hover {
-  color: #4338ca;
-  text-decoration-color: #4338ca;
+  color: #2563eb;
+  text-decoration-color: #2563eb;
 }
 
-/* Transcript text — indented to align with speaker name (after 24px avatar + 6px gap) */
+/* Transcript text — indented to align with speaker name (after 22px avatar + 8px gap) */
 .ff-seg-text {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--text, #374151);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #374151;
   margin: 0;
-  padding-left: 30px; /* 24px avatar + 6px gap */
+  padding-left: 30px; /* 22px avatar + 8px gap */
   word-break: break-word;
+}
+
+/* Floating "Sync with audio" button */
+.ff-sync-fab {
+  position: sticky;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.03);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  font-family: inherit;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ff-sync-fab:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.05);
+}
+.ff-sync-fab svg {
+  flex-shrink: 0;
 }
 
 .ff-segments-empty {
@@ -2564,13 +2599,13 @@
   text-align: center;
 }
 .ff-segments-empty p {
-  color: var(--text-muted, #6b7280);
+  color: #6b7280;
   font-size: 0.85rem;
   line-height: 1.6;
   margin: 0;
 }
 .ff-empty-icon {
-  color: rgba(255,255,255,0.14);
+  color: rgba(0,0,0,0.12);
   flex-shrink: 0;
 }
 
@@ -2779,22 +2814,12 @@
 .light-mode .ff-tab-bar {
   border-bottom-color: #e5e7eb;
 }
-[data-theme="light"] .ff-segment {
-  border-bottom-color: #e5e7eb;
-}
-[data-theme="light"] .ff-segment:hover {
-  background: #f9fafb;
-}
-[data-theme="light"] .ff-segment.active {
-  background: rgba(79,70,229,0.04);
-  border-left-color: #4f46e5;
-}
-[data-theme="light"] .ff-speaker-name {
-  color: #111827;
-}
-[data-theme="light"] .ff-seg-text {
-  color: #374151;
-}
+/* Light-mode segment overrides (now default; kept for backward compat) */
+[data-theme="light"] .ff-segment { border-bottom-color: #e5e7eb; }
+[data-theme="light"] .ff-segment:hover { background: #f9fafb; }
+[data-theme="light"] .ff-segment.active { background: rgba(79,70,229,0.04); }
+[data-theme="light"] .ff-speaker-name { color: #1f2937; }
+[data-theme="light"] .ff-seg-text { color: #374151; }
 [data-theme="light"] .ff-player-bar {
   border-top-color: #e5e7eb;
 }
@@ -2827,19 +2852,13 @@
   top: calc(100% + 4px);
   left: 0;
   z-index: 200;
-  min-width: 180px;
-  background: var(--surface, #1c1c24);
-  border: 1px solid var(--border, rgba(255,255,255,0.12));
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  min-width: 190px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
   overflow: hidden;
   padding: 4px 0;
-}
-
-[data-theme="light"] .ff-speaker-dropdown {
-  background: #fff;
-  border-color: rgba(0,0,0,0.12);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .ff-speaker-dropdown-item {
@@ -2847,22 +2866,19 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 14px;
+  padding: 8px 14px;
   background: none;
   border: none;
-  color: var(--text, #fff);
-  font-size: 0.82rem;
+  color: #374151;
+  font-size: 0.84rem;
   text-align: left;
   cursor: pointer;
   transition: background 0.1s;
+  font-family: inherit;
 }
 
 .ff-speaker-dropdown-item:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-[data-theme="light"] .ff-speaker-dropdown-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: #f3f4f6;
 }
 
 .ff-speaker-dropdown-item.current {
@@ -2871,8 +2887,8 @@
 }
 
 .ff-speaker-dropdown-item.rename {
-  color: var(--muted, rgba(255,255,255,0.55));
-  font-size: 0.78rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
 }
 
 .ff-spk-dot {
@@ -2891,24 +2907,24 @@
 }
 
 .ff-spk-check {
-  color: var(--accent, #75d6c4);
+  color: #6b7280;
   flex-shrink: 0;
 }
 
 .ff-spk-arrow {
-  color: var(--muted, rgba(255,255,255,0.4));
+  color: #9ca3af;
   flex-shrink: 0;
 }
 
 .ff-speaker-dropdown-divider {
   height: 1px;
-  background: var(--border, rgba(255,255,255,0.08));
+  background: #e5e7eb;
   margin: 4px 0;
 }
 
 /* ── Voice analytics panel ───────────────────────────────── */
 .ff-voice-analytics {
-  border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-top: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
 
@@ -2920,18 +2936,19 @@
   padding: 8px 14px;
   background: none;
   border: none;
-  color: var(--muted, rgba(255,255,255,0.55));
+  color: #6b7280;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
   text-align: left;
+  font-family: inherit;
   transition: color 0.15s;
 }
 
 .ff-voice-analytics-toggle:hover {
-  color: var(--text, #fff);
+  color: #374151;
 }
 
 .ff-voice-analytics-toggle .ff-chevron {
@@ -3046,8 +3063,10 @@
 }
 
 .ff-rediarize-msg {
-  font-size: 0.68rem;
-  color: var(--text-secondary, #8e9bb5);
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 0 4px;
+  margin-bottom: 4px;
 }
 
 .ff-voice-coaching-btn {

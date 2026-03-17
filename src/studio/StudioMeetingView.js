@@ -920,7 +920,7 @@ export default function StudioMeetingView({
             </svg>
             <input
               className="ff-search-input"
-              placeholder="Szukaj w transkrypcji..."
+              placeholder="Find or Replace"
               value={transcriptSearch}
               onChange={(e) => setTranscriptSearch(e.target.value)}
             />
@@ -1027,6 +1027,24 @@ export default function StudioMeetingView({
               </div>
             )}
           </div>
+
+          {/* Floating "Sync with audio" button */}
+          {transcript.length > 0 && selectedRecordingAudioUrl && !isRecording ? (
+            <button
+              type="button"
+              className="ff-sync-fab"
+              onClick={() => {
+                if (audioRef.current && activeSeg) {
+                  audioRef.current.currentTime = activeSeg.timestamp;
+                }
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M6 9V3M3 6l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Sync with audio
+            </button>
+          ) : null}
 
           {/* Voice analytics panel — collapsible, shown only when transcript is available */}
           {transcript.length > 0 ? (
