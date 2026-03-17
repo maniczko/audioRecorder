@@ -92,31 +92,51 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
     if (request.method === "POST" && pathname === "/auth/register") {
       checkRateLimit(clientIp, "auth");
-      sendJson(response, 201, authService.registerUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      try {
+        sendJson(response, 201, authService.registerUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
+      }
       return;
     }
 
     if (request.method === "POST" && pathname === "/auth/login") {
       checkRateLimit(clientIp, "auth");
-      sendJson(response, 200, authService.loginUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      try {
+        sendJson(response, 200, authService.loginUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      } catch (err) {
+        sendJson(response, err.statusCode || 401, { message: err.message }, origin, ALLOWED_ORIGINS);
+      }
       return;
     }
 
     if (request.method === "POST" && pathname === "/auth/password/reset/request") {
       checkRateLimit(clientIp, "auth");
-      sendJson(response, 200, authService.requestPasswordReset(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      try {
+        sendJson(response, 200, authService.requestPasswordReset(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
+      }
       return;
     }
 
     if (request.method === "POST" && pathname === "/auth/password/reset/confirm") {
       checkRateLimit(clientIp, "auth");
-      sendJson(response, 200, authService.resetPasswordWithCode(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      try {
+        sendJson(response, 200, authService.resetPasswordWithCode(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
+      }
       return;
     }
 
     if (request.method === "POST" && pathname === "/auth/google") {
       checkRateLimit(clientIp, "auth");
-      sendJson(response, 200, authService.upsertGoogleUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      try {
+        sendJson(response, 200, authService.upsertGoogleUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
+      }
       return;
     }
 
