@@ -1,0 +1,13 @@
+node_modules
+build
+src
+public
+.env
+.env.*
+.git
+.claude
+*.md
+tests
+e2e
+playwright*
+.vscode

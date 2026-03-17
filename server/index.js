@@ -1,5 +1,5 @@
-// Load .env from project root before any other requires
-require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") });
+// Load .env from project root before any other requires (skip gracefully in Docker/Railway)
+try { require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") }); } catch (_) {}
 
 const http = require("node:http");
 const fs = require("node:fs");
@@ -740,6 +740,10 @@ async function handleRequest(request, response) {
 
 const server = http.createServer((request, response) => {
   const origin = String(request.headers.origin || "");
+  if (process.env.VOICELOG_DEBUG === "true") {
+    const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+    console.log(`[${new Date().toISOString()}] ${request.method} ${url.pathname} origin=${origin}`);
+  }
   handleRequest(request, response).catch((error) => {
     const statusCode = error.statusCode || 500;
     if (statusCode === 429 && error.retryAfter) {

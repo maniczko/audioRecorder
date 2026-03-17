@@ -3,12 +3,13 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { DatabaseSync } = require("node:sqlite");
 
-const DATA_DIR = path.resolve(process.cwd(), "server", "data");
-const DB_PATH = path.resolve(process.cwd(), process.env.VOICELOG_DB_PATH || path.join(DATA_DIR, "voicelog.sqlite"));
-const UPLOAD_DIR = path.resolve(
-  process.cwd(),
-  process.env.VOICELOG_UPLOAD_DIR || path.join(DATA_DIR, "uploads")
-);
+const DATA_DIR = path.resolve(__dirname, "data");
+const DB_PATH = process.env.VOICELOG_DB_PATH
+  ? path.resolve(process.env.VOICELOG_DB_PATH)
+  : path.join(DATA_DIR, "voicelog.sqlite");
+const UPLOAD_DIR = process.env.VOICELOG_UPLOAD_DIR
+  ? path.resolve(process.env.VOICELOG_UPLOAD_DIR)
+  : path.join(DATA_DIR, "uploads");
 const SESSION_TTL_HOURS = Math.max(1, Number(process.env.VOICELOG_SESSION_TTL_HOURS) || 24 * 30);
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
