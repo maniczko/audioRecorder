@@ -717,17 +717,35 @@ async function diarizeFromTranscript(segments) {
     return `${m}:${String(sec).padStart(2, "0")}`;
   };
 
+  // Include gap info so the model has timing context for speaker changes
   const lines = chunk
-    .map((seg, i) => `[${i}] ${fmt(seg.start ?? 0)}: "${(seg.text || "").replace(/"/g, "'").slice(0, 240)}"`)
+    .map((seg, i) => {
+      const prev = chunk[i - 1];
+      const gap = prev != null ? Number((seg.start ?? 0) - (prev.start ?? 0)).toFixed(1) : null;
+      const gapStr = gap !== null ? ` (gap ${gap}s)` : "";
+      return `[${i}]${gapStr} ${fmt(seg.start ?? 0)}: "${(seg.text || "").replace(/"/g, "'").slice(0, 240)}"`;
+    })
     .join("\n");
 
-  const systemPrompt =
-    "Jesteś ekspertem od analizy nagrań spotkań. Identyfikujesz mówców na podstawie struktury rozmowy.";
+  const systemPrompt = [
+    "Jesteś ekspertem od rozpoznawania mówców w transkryptach nagrań wieloosobowych.",
+    "Działasz w trybie AGRESYWNEGO rozdzielania mówców — wykrywasz każdą zmianę osoby mówiącej.",
+  ].join(" ");
 
   const userPrompt = [
-    "Poniżej transkrypt nagrania. Przypisz każdemu segmentowi mówcę (A, B, C…).",
-    "Zmiana mówcy następuje gdy: ktoś odpowiada na pytanie, zmienia się styl mówienia, pojawia się nowa osoba.",
-    "Jeśli to monolog jednej osoby — użyj tylko 'A'.",
+    "Transkrypt pochodzi z nagrania spotkania przez jeden mikrofon.",
+    "Przypisz KAŻDEMU segmentowi literę mówcy (A, B, C…).",
+    "",
+    "ZASADY ZMIANY MÓWCY (zastosuj wszystkie):",
+    "• Przerwa ≥ 2s między segmentami → bardzo prawdopodobna zmiana mówcy",
+    "• Przerwa ≥ 5s → prawie na pewno zmiana mówcy",
+    "• Odpowiedź na pytanie lub reakcja na słowa rozmówcy → zmiana mówcy",
+    "• Zmiana osoby gramatycznej (np. 'ty' → 'ja', 'my' → 'wy')",
+    "• Zmiana tematu lub wyraźna zmiana tonu wypowiedzi",
+    "• Krótka replik (≤10 słów) po długiej wypowiedzi → często zmiana mówcy",
+    "",
+    "WAŻNE: Jeśli masz jakiekolwiek wątpliwości — ZAKŁADAJ zmianę mówcy.",
+    "Tylko wyraźny monolog (jeden głos przez cały czas, bez odpowiedzi) → użyj samego A.",
     "",
     "Transkrypt:",
     lines,
@@ -1175,10 +1193,72 @@ async function normalizeRecording(filePath) {
   }
 }
 
+/**
+ * Analyze a meeting transcript using GPT-4o-mini and return structured JSON.
+ * Returns null if OPENAI_API_KEY is not set or an error occurs.
+ */
+async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }) {
+  if (!OPENAI_API_KEY || !segments.length) return null;
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const transcriptText = segments.map((seg) => {
+    const speaker = speakerNames?.[String(seg.speakerId)] || `Speaker ${(seg.speakerId || 0) + 1}`;
+    return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
+  }).join("\n");
+
+  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Klient"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Host","mainTopic":"...","stance":"proactive","talkRatio":0.6}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}]}';
+
+  const prompt = [
+    "Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.",
+    "Return valid JSON only — no prose outside the JSON object.",
+    "",
+    `Tytuł spotkania: ${meeting?.title || "Nieznany"}`,
+    `Kontekst: ${meeting?.context || "Brak"}`,
+    `Potrzeby: ${Array.isArray(meeting?.needs) ? meeting.needs.join(" | ") : (meeting?.needs || "Brak")}`,
+    "",
+    "Zwróć JSON w tym formacie (wszystkie pola w języku polskim):",
+    schema,
+    "",
+    "Transkrypt:",
+    transcriptText,
+  ].join("\n");
+
+  try {
+    const resp = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 2400,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
+    const json = await resp.json();
+    const content = json.choices?.[0]?.message?.content || "{}";
+    return JSON.parse(content);
+  } catch (err) {
+    console.warn("[audioPipeline] analyzeMeetingWithOpenAI failed:", err.message);
+    return null;
+  }
+}
+
 module.exports = {
   transcribeRecording,
   normalizeRecording,
   transcribeLiveChunk,
   generateVoiceCoaching,
   diarizeFromTranscript,
+  analyzeMeetingWithOpenAI,
 };

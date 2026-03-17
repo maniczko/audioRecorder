@@ -31,7 +31,7 @@ const {
   getWorkspaceVoiceProfiles,
   deleteVoiceProfile,
 } = require("./database");
-const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching, diarizeFromTranscript } = require("./audioPipeline");
+const { transcribeRecording, normalizeRecording, transcribeLiveChunk, generateVoiceCoaching, diarizeFromTranscript, analyzeMeetingWithOpenAI } = require("./audioPipeline");
 const { computeEmbedding } = require("./speakerEmbedder");
 
 const PORT = Number(process.env.VOICELOG_API_PORT) || 4000;
@@ -714,6 +714,20 @@ async function handleRequest(request, response) {
     } finally {
       try { fs.unlinkSync(tmpPath); } catch (_) {}
     }
+    return;
+  }
+
+  if (method === "POST" && pathname === "/media/analyze") {
+    checkRateLimit(clientIp, "analyze");
+    requireSession(request);
+    const body = await readJsonBody(request);
+    const { meeting, segments, speakerNames } = body || {};
+    if (!segments || !Array.isArray(segments) || segments.length === 0) {
+      sendJson(response, 400, { message: "segments array required" }, origin);
+      return;
+    }
+    const result = await analyzeMeetingWithOpenAI({ meeting: meeting || {}, segments, speakerNames: speakerNames || {} });
+    sendJson(response, 200, result || { mode: "no-key" }, origin);
     return;
   }
 

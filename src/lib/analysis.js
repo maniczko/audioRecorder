@@ -1,5 +1,6 @@
 const API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY;
 const MODEL = process.env.REACT_APP_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -318,10 +319,35 @@ function parseAiResponse(rawText) {
   return JSON.parse(match[0]);
 }
 
+async function analyzeMeetingViaServer({ meeting, segments, speakerNames }) {
+  const res = await fetch(`${API_BASE_URL}/media/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ meeting, segments, speakerNames }),
+  });
+  if (!res.ok) throw new Error(`Server analyze failed: ${res.status}`);
+  return res.json();
+}
+
 export async function analyzeMeeting({ meeting, segments, speakerNames, diarization }) {
   const fallback = buildFallbackAnalysis({ meeting, segments, speakerNames, diarization });
 
-  if (!API_KEY || !segments.length) {
+  if (!segments.length) {
+    return fallback;
+  }
+
+  if (API_BASE_URL) {
+    try {
+      const result = await analyzeMeetingViaServer({ meeting, segments, speakerNames });
+      if (result && result.summary) return result;
+    } catch (error) {
+      console.error("Server meeting analysis failed, falling back.", error);
+    }
+    return fallback;
+  }
+
+  if (!API_KEY) {
     return fallback;
   }
 
