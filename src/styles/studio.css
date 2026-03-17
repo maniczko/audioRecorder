@@ -3109,3 +3109,150 @@
   }
 }
 
+/* ── Fireflies-style Transcript Layout ── */
+
+.transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.fireflies-segment {
+  display: flex;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.fireflies-segment:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.fireflies-segment.active {
+  background: rgba(116, 208, 191, 0.05);
+  border-color: rgba(116, 208, 191, 0.15);
+}
+
+.fireflies-segment.needs-review {
+  background: rgba(243, 202, 114, 0.05);
+  border-color: rgba(243, 202, 114, 0.15);
+}
+
+.fireflies-segment.active.needs-review {
+  background: rgba(243, 202, 114, 0.1);
+  border-color: rgba(243, 202, 114, 0.3);
+}
+
+.fireflies-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #12121f;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fireflies-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fireflies-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fireflies-speaker {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.fireflies-time {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fireflies-time:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.fireflies-select {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.fireflies-segment:hover .fireflies-select,
+.fireflies-segment.active .fireflies-select,
+.fireflies-select:has(input:checked) {
+  opacity: 1;
+}
+
+.fireflies-text-area {
+  position: relative;
+}
+
+.fireflies-textarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: none;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border-radius: 8px;
+  font-family: inherit;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 24px;
+  overflow: hidden;
+}
+
+.fireflies-textarea:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.fireflies-textarea:focus {
+  background: rgba(12, 12, 18, 0.8);
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(116, 208, 191, 0.15);
+}
+
+.fireflies-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  margin-top: 4px;
+}
+
+.fireflies-segment:hover .fireflies-actions,
+.fireflies-segment.active .fireflies-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
