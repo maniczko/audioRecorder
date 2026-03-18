@@ -33,7 +33,9 @@ class Database {
 
   async _query(sql, params = []) {
     if (this.type === "postgres") {
-      const res = await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      const res = await this.pool.query(pgSql, params);
       return res.rows;
     } else {
       return this.sqlite.prepare(sql).all(...params);
@@ -42,7 +44,9 @@ class Database {
 
   async _get(sql, params = []) {
     if (this.type === "postgres") {
-      const res = await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      const res = await this.pool.query(pgSql, params);
       return res.rows[0] || null;
     } else {
       return this.sqlite.prepare(sql).get(...params) || null;
@@ -51,7 +55,9 @@ class Database {
 
   async _execute(sql, params = []) {
     if (this.type === "postgres") {
-      await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      await this.pool.query(pgSql, params);
     } else {
       this.sqlite.prepare(sql).run(...params);
     }
