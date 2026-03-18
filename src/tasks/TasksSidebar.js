@@ -64,6 +64,24 @@ export default function TasksSidebar({
               ))}
             </div>
 
+            <div className="todo-workspace-group">
+              <div className="todo-workspace-title">
+                <strong>Grupy</strong>
+              </div>
+              {sidebarLists.customGroups.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={selectedListId === item.id ? "todo-side-link active workspace" : "todo-side-link workspace"}
+                  onClick={() => setSelectedListId(item.id)}
+                >
+                  <span className="todo-side-icon">📁</span>
+                  <span>{item.label}</span>
+                  <strong>{item.count}</strong>
+                </button>
+              ))}
+            </div>
+
           </div>
         </div>
       </div>

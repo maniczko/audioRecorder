@@ -33,7 +33,7 @@ export default function useWorkspaceData({
   const remoteSnapshotRef = useRef("");
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
-    stateService.mode === "remote" && Boolean(session?.token)
+    stateService?.mode === "remote" && Boolean(session?.token)
   );
 
   const applyRemoteWorkspaceState = useCallback(
@@ -96,7 +96,7 @@ export default function useWorkspaceData({
       session,
     });
 
-    if (!migration.changed) {
+    if (!migration?.changed) {
       return;
     }
 
@@ -110,7 +110,7 @@ export default function useWorkspaceData({
 
   // Bootstrap Effect
   useEffect(() => {
-    if (stateService.mode !== "remote") {
+    if (stateService?.mode !== "remote") {
       hydratedWorkspaceIdRef.current = currentWorkspaceId || "";
       setIsHydratingRemoteState(false);
       return undefined;
@@ -153,7 +153,7 @@ export default function useWorkspaceData({
 
   // Sync Effect (outbound)
   useEffect(() => {
-    if (stateService.mode !== "remote") {
+    if (stateService?.mode !== "remote") {
       return undefined;
     }
 
@@ -199,7 +199,7 @@ export default function useWorkspaceData({
 
   // Polling Effect (inbound)
   useEffect(() => {
-    if (stateService.mode !== "remote") {
+    if (stateService?.mode !== "remote") {
       return undefined;
     }
 

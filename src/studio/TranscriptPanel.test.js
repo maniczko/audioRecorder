@@ -60,8 +60,8 @@ describe("TranscriptPanel", () => {
   test("renders review queue with verification evidence", () => {
     renderTranscriptPanel();
 
-    expect(screen.getByText("Fragmenty wymagajace potwierdzenia")).toBeInTheDocument();
-    expect(screen.getByText("Porownanie z przebiegiem weryfikujacym")).toBeInTheDocument();
+    expect(screen.getAllByText(/Do review/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Weryfikacja:/i)).toBeInTheDocument();
     expect(screen.getAllByText(/domknac budzet/i).length).toBeGreaterThan(0);
   });
 

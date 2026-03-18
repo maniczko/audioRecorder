@@ -445,7 +445,7 @@ export default function StudioMeetingView({
         <h1 className="ff-header-title">
           {isRecording
             ? (meetingDraft?.title?.trim() || "Ad hoc")
-            : (selectedMeeting.title || "Ad hoc")}
+            : (selectedMeeting?.title || "Ad hoc")}
         </h1>
         <p className="ff-header-sub">
           {displayRecording
@@ -454,7 +454,7 @@ export default function StudioMeetingView({
                 displayRecording.duration > 0 ? formatDuration(Math.floor(displayRecording.duration)) : null,
                 uniqueSpeakers.length > 0 ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : null,
               ].filter(Boolean).join(" · ")
-            : formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt || new Date().toISOString())
+            : formatDateTime(selectedMeeting?.startsAt || selectedMeeting?.createdAt || new Date().toISOString())
           }
         </p>
       </div>

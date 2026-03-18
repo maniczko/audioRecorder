@@ -146,6 +146,7 @@ function KanbanCard({
         tabIndex={0}
         className={`todo-kanban-card${isActive ? " active" : ""}${task.completed ? " completed" : ""}`}
         data-selected={isSelected}
+        title="Przeciagnij zadanie"
         draggable
         onDragStart={(event) => {
           setSelectedTaskId(task.id);

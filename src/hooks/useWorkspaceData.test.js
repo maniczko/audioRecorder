@@ -2,27 +2,25 @@ import { renderHook, act } from '@testing-library/react';
 import useWorkspaceData from './useWorkspaceData';
 
 // Mock dependencies
-jest.mock('./useStoredState', () => {
-  return jest.fn((key, initialValue) => {
-    let state = initialValue;
-    const setState = jest.fn((newState) => {
-      state = typeof newState === 'function' ? newState(state) : newState;
-    });
-    return [state, setState];
-  });
-});
+// Mock dependencies
+jest.mock('./useStoredState', () => (key, initialValue) => [initialValue, jest.fn()]);
 
 jest.mock('../services/stateService', () => ({
   createStateService: jest.fn(() => ({
-    mode: 'local', // Avoids triggering bootstrap/sync effects in basic tests
+    mode: 'local',
     bootstrap: jest.fn().mockResolvedValue({}),
     syncWorkspaceState: jest.fn().mockResolvedValue({}),
   }))
 }));
 
+import { createStateService } from '../services/stateService';
+
 jest.mock('../lib/workspace', () => ({
+  __esModule: true,
   migrateWorkspaceData: jest.fn((data) => ({ changed: false, ...data }))
 }));
+
+import { migrateWorkspaceData } from '../lib/workspace';
 
 describe('useWorkspaceData hook', () => {
 

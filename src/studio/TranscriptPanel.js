@@ -219,7 +219,9 @@ function WaveformPanel({
           >
             {transcript.map((seg) => {
               const x = (seg.timestamp / totalDuration) * WAVEFORM_SVG_W;
-              const w = Math.max(1, ((seg.endTimestamp - seg.timestamp) / totalDuration) * WAVEFORM_SVG_W);
+              const w = totalDuration > 0 
+                ? Math.max(1, ((seg.endTimestamp - seg.timestamp) / totalDuration) * WAVEFORM_SVG_W)
+                : 1;
               return (
                 <rect
                   key={seg.id}

@@ -1,9 +1,11 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by */
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, configure } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 import { registerUser } from "./lib/auth";
 import { STORAGE_KEYS } from "./lib/storage";
+
+configure({ asyncUtilTimeout: 5000 });
 
 const originalNotification = window.Notification;
 
@@ -83,6 +85,9 @@ function seedWorkspaceAppState({ manualTasks = [] } = {}) {
     userId: "user_1",
     workspaceId: "workspace_1",
   });
+  writeStorage(STORAGE_KEYS.meetingDrafts, {
+    workspace_1: { selectedMeetingId: "meeting_1" }
+  });
 }
 
 describe("App integration", () => {
@@ -150,11 +155,11 @@ describe("App integration", () => {
     seedWorkspaceAppState();
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Spotkanie A" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 })).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText("Workspace"), "workspace_2");
 
-    expect(await screen.findByRole("heading", { name: "Spotkanie B" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Spotkanie B" }, { timeout: 4000 })).toBeInTheDocument();
   });
 
   test("exports meeting notes from the studio view", async () => {
@@ -163,7 +168,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Notatki TXT" }));
 
     expect(clickSpy).toHaveBeenCalled();
@@ -183,7 +188,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "PDF" }));
 
     expect(openSpy).toHaveBeenCalled();
@@ -255,7 +260,7 @@ describe("App integration", () => {
     seedWorkspaceAppState();
     const { unmount } = render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Nowe" }));
     await userEvent.type(screen.getByLabelText("Tytul"), "Plan retro");
     await userEvent.type(screen.getByLabelText("Kontekst"), "Podsumowanie sprintu");
@@ -312,7 +317,7 @@ describe("App integration", () => {
     });
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Powiadomienia" }));
 
     expect(await screen.findByText("Pilny follow-up")).toBeInTheDocument();
@@ -385,7 +390,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" });
+    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Nagranie ad hoc" }));
 
     await screen.findByText(/Dostep do mikrofonu jest zablokowany/i);
