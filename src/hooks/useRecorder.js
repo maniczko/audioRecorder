@@ -14,6 +14,7 @@ export default function useRecorder({
   userMeetings,
   createAdHocMeeting,
   attachCompletedRecording,
+  isHydratingRemoteState,
 }) {
   const mediaService = useMemo(() => createMediaService(), []);
   const [liveText, setLiveText] = useState("");
@@ -31,6 +32,7 @@ export default function useRecorder({
     userMeetingsRef,
     attachCompletedRecording,
     setCurrentSegments,
+    isHydratingRemoteState,
   });
 
   // 2. Audio Assets & Hydration

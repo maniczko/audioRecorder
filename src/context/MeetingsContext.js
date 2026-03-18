@@ -16,8 +16,8 @@ export function MeetingsProvider({ children }) {
     setSession: workspace.setSession,
     currentUser: workspace.currentUser,
     currentUserId: workspace.currentUserId,
-    currentWorkspaceId: workspace.currentWorkspaceId,
     currentWorkspaceMembers: workspace.currentWorkspaceMembers,
+    isHydratingRemoteState: workspace.isHydratingRemoteState,
   });
 
   return (

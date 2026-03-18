@@ -30,6 +30,7 @@ export default function useMeetings({
   currentUserId,
   currentWorkspaceId,
   currentWorkspaceMembers,
+  isHydratingRemoteState,
 }) {
   // 1. Core State & Sync
   const workspaceData = useWorkspaceData({

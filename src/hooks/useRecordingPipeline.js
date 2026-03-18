@@ -34,6 +34,7 @@ export default function useRecordingPipeline({
   userMeetingsRef,
   attachCompletedRecording,
   setCurrentSegments,
+  isHydratingRemoteState,
 }) {
   const [recordingQueue, setRecordingQueue] = useStoredState(STORAGE_KEYS.recordingQueue, []);
   const [analysisStatus, setAnalysisStatus] = useState("idle");
@@ -151,6 +152,8 @@ export default function useRecordingPipeline({
   }, [attachCompletedRecording, buildRecordingFromQueueItem, mediaService, pollRemoteTranscription, removeQueueItem, resolveMeetingForQueueItem, updateQueueItem]);
 
   useEffect(() => {
+    if (isHydratingRemoteState) return;
+
     const nextItem = getNextProcessableRecordingQueueItem(normalizedQueue, (item) => Boolean(resolveMeetingForQueueItem(item)?.id));
     if (!nextItem || queueProcessingRef.current) {
       const blocked = getNextPendingRecordingQueueItem(normalizedQueue);

@@ -57,7 +57,7 @@ export default function Topbar() {
       </div>
 
       <div className="topbar-actions">
-        <div className="status-chip">{google.googleEnabled ? "Google ready" : "Google env missing"}</div>
+        {google.googleEnabled ? <div className="status-chip">Google ready</div> : null}
         <NotificationCenter
           open={ui.notificationCenterOpen}
           unreadCount={ui.unreadNotificationCount}

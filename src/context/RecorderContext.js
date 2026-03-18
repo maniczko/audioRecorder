@@ -10,8 +10,8 @@ export function RecorderProvider({ children }) {
   const recorder = useRecorder({
     selectedMeeting: meetings.selectedMeeting,
     userMeetings: meetings.userMeetings,
-    createAdHocMeeting: meetings.createAdHocMeeting,
     attachCompletedRecording: meetings.attachCompletedRecording,
+    isHydratingRemoteState: meetings.isHydratingRemoteState,
   });
 
   return (
