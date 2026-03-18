@@ -254,6 +254,8 @@ export default function StudioMeetingView({
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState("");
 
+  const [studioAnalysisTab, setStudioAnalysisTab] = useState("needs"); // default to needs for now as it's the main one
+
   const [transcriptSearch, setTranscriptSearch] = useState("");
   // Speaker picker dropdown — tracks which segment's dropdown is open
   const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState(null);
@@ -456,6 +458,35 @@ export default function StudioMeetingView({
         </p>
       </div>
 
+      <div className="ff-intelligence-tabs" style={{ display: 'flex', gap: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', padding: '0 4px' }}>
+        {[
+          { id: 'summary', label: 'Podsumowanie spotkania' },
+          { id: 'needs', label: 'Potrzeby i obawy' },
+          { id: 'profile', label: 'Profil psychologiczny' },
+          { id: 'feedback', label: 'Twój feedback' }
+        ].map(t => (
+          <button
+            key={t.id}
+            type="button"
+            className={`ff-int-tab ${studioAnalysisTab === t.id ? 'active' : ''}`}
+            onClick={() => setStudioAnalysisTab(t.id)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '12px 0 10px',
+              fontSize: '0.88rem',
+              fontWeight: 500,
+              color: studioAnalysisTab === t.id ? '#75d6c4' : 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              borderBottom: studioAnalysisTab === t.id ? '2px solid #75d6c4' : '2px solid transparent',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* ═══════════════════════════════════════════
            TOOLBAR — Grupa 1: Eksport/Brief | Separator | Grupa 2: Nagrywanie
           ═══════════════════════════════════════════ */}
@@ -568,104 +599,135 @@ export default function StudioMeetingView({
 
       {/* ── Brief panels ── */}
       <div className="ff-panels">
-        <section className="panel">
-          <div className="panel-header compact">
-            <div>
-              <h2>Potrzeby i obawy</h2>
-            </div>
-          </div>
-          <div className="brief-columns two-col">
-            <div className="brief-col">
-              <div className="brief-col-head">
-                <span className="brief-col-label">Potrzeby</span>
-                <button
-                  type="button"
-                  className="what-matters-add-btn"
-                  onClick={() => setAddNeedOpen((v) => !v)}
-                  title="Dodaj potrzebę"
-                >
-                  +
-                </button>
+        {studioAnalysisTab === 'summary' && (
+          <section className="panel">
+            <div className="panel-header compact">
+              <div>
+                <h2>Podsumowanie spotkania</h2>
               </div>
-              {addNeedOpen && (
-                <form
-                  className="what-matters-add-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!needDraft.trim()) return;
-                    const current = (meetingDraft?.needs || "");
-                    const updated = current ? current.trim() + "\n" + needDraft.trim() : needDraft.trim();
-                    const newDraft = { ...meetingDraft, needs: updated };
-                    setMeetingDraft(() => newDraft);
-                    setNeedDraft("");
-                    setAddNeedOpen(false);
-                    saveMeeting(newDraft);
-                  }}
-                >
-                  <input
-                    autoFocus
-                    value={needDraft}
-                    onChange={(e) => setNeedDraft(e.target.value)}
-                    placeholder="np. Potrzebuję wybudować dom"
-                  />
-                  <button type="submit" className="ghost-button">Dodaj</button>
-                </form>
-              )}
-              <ul className="clean-list">
-                {selectedMeeting.needs.length ? (
-                  selectedMeeting.needs.map((item) => <li key={item}>{item}</li>)
-                ) : (
-                  <li className="soft-copy">Brak potrzeb.</li>
-                )}
-              </ul>
             </div>
+            <div className="panel-body">
+              <p className="soft-copy">Automatyczne podsumowanie AI pojawi się po zakończeniu analizy.</p>
+            </div>
+          </section>
+        )}
 
-            <div className="brief-col">
-              <div className="brief-col-head">
-                <span className="brief-col-label">Obawy</span>
-                <button
-                  type="button"
-                  className="what-matters-add-btn concern"
-                  onClick={() => setAddConcernOpen((v) => !v)}
-                  title="Dodaj obawę"
-                >
-                  +
-                </button>
+        {studioAnalysisTab === 'needs' && (
+          <section className="panel">
+            <div className="panel-header compact">
+              <div>
+                <h2>Potrzeby i obawy</h2>
               </div>
-              {addConcernOpen && (
-                <form
-                  className="what-matters-add-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!concernDraft.trim()) return;
-                    const current = (meetingDraft?.concerns || "");
-                    const updated = current ? current.trim() + "\n" + concernDraft.trim() : concernDraft.trim();
-                    const newDraft = { ...meetingDraft, concerns: updated };
-                    setMeetingDraft(() => newDraft);
-                    setConcernDraft("");
-                    setAddConcernOpen(false);
-                    saveMeeting(newDraft);
-                  }}
-                >
-                  <input
-                    autoFocus
-                    value={concernDraft}
-                    onChange={(e) => setConcernDraft(e.target.value)}
-                    placeholder="np. Mam ograniczony budżet"
-                  />
-                  <button type="submit" className="ghost-button">Dodaj</button>
-                </form>
-              )}
-              <ul className="clean-list">
-                {(selectedMeeting.concerns || []).length ? (
-                  (selectedMeeting.concerns || []).map((item) => <li key={item}>{item}</li>)
-                ) : (
-                  <li className="soft-copy">Brak obaw.</li>
-                )}
-              </ul>
             </div>
-          </div>
-        </section>
+            <div className="brief-columns two-col">
+              <div className="brief-col">
+                <div className="brief-col-head">
+                  <span className="brief-col-label">Potrzeby</span>
+                  <button
+                    type="button"
+                    className="what-matters-add-btn"
+                    onClick={() => setAddNeedOpen((v) => !v)}
+                    title="Dodaj potrzebę"
+                  >
+                    +
+                  </button>
+                </div>
+                {addNeedOpen && (
+                  <form
+                    className="what-matters-add-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!needDraft.trim()) return;
+                      const current = (meetingDraft?.needs || "");
+                      const updated = current ? current.trim() + "\n" + needDraft.trim() : needDraft.trim();
+                      const newDraft = { ...meetingDraft, needs: updated };
+                      setMeetingDraft(() => newDraft);
+                      setNeedDraft("");
+                      setAddNeedOpen(false);
+                      saveMeeting(newDraft);
+                    }}
+                  >
+                    <input autoFocus value={needDraft} onChange={(e) => setNeedDraft(e.target.value)} placeholder="np. Potrzebuję wybudować dom" />
+                    <button type="submit" className="ghost-button">Dodaj</button>
+                  </form>
+                )}
+                <ul className="clean-list">
+                  {(selectedMeeting.needs || []).length ? (
+                    selectedMeeting.needs.map((item) => <li key={item}>{item}</li>)
+                  ) : (
+                    <li className="soft-copy">Brak potrzeb.</li>
+                  )}
+                </ul>
+              </div>
+
+              <div className="brief-col">
+                <div className="brief-col-head">
+                  <span className="brief-col-label">Obawy</span>
+                  <button
+                    type="button"
+                    className="what-matters-add-btn concern"
+                    onClick={() => setAddConcernOpen((v) => !v)}
+                    title="Dodaj obawę"
+                  >
+                    +
+                  </button>
+                </div>
+                {addConcernOpen && (
+                  <form
+                    className="what-matters-add-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!concernDraft.trim()) return;
+                      const current = (meetingDraft?.concerns || "");
+                      const updated = current ? current.trim() + "\n" + concernDraft.trim() : concernDraft.trim();
+                      const newDraft = { ...meetingDraft, concerns: updated };
+                      setMeetingDraft(() => newDraft);
+                      setConcernDraft("");
+                      setAddConcernOpen(false);
+                      saveMeeting(newDraft);
+                    }}
+                  >
+                    <input autoFocus value={concernDraft} onChange={(e) => setConcernDraft(e.target.value)} placeholder="np. Mam ograniczony budżet" />
+                    <button type="submit" className="ghost-button">Dodaj</button>
+                  </form>
+                )}
+                <ul className="clean-list">
+                  {(selectedMeeting.concerns || []).length ? (
+                    (selectedMeeting.concerns || []).map((item) => <li key={item}>{item}</li>)
+                  ) : (
+                    <li className="soft-copy">Brak obaw.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {studioAnalysisTab === 'profile' && (
+          <section className="panel">
+            <div className="panel-header compact">
+              <div>
+                <h2>Profil psychologiczny</h2>
+              </div>
+            </div>
+            <div className="panel-body">
+              <p className="soft-copy">Analiza profilu psychologicznego uczestników pojawi się tutaj.</p>
+            </div>
+          </section>
+        )}
+
+        {studioAnalysisTab === 'feedback' && (
+          <section className="panel">
+            <div className="panel-header compact">
+              <div>
+                <h2>Twój feedback</h2>
+              </div>
+            </div>
+            <div className="panel-body">
+              <p className="soft-copy">Tutaj znajdziesz analizę zwrotną dotyczącą jakości spotkania.</p>
+            </div>
+          </section>
+        )}
 
         <AiTaskSuggestionsPanel
           selectedRecording={selectedRecording}
