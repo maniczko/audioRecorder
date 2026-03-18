@@ -220,6 +220,7 @@ export default function StudioMeetingView({
   liveTranscriptEnabled,
   setLiveTranscriptEnabled,
   recordingMessage,
+  setRecordingMessage,
   selectedRecording,
   displaySpeakerNames,
   selectedRecordingAudioUrl,
