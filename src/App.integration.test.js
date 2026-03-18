@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
@@ -387,8 +388,6 @@ describe("App integration", () => {
     await screen.findByRole("heading", { name: "Spotkanie A" });
     await userEvent.click(screen.getByRole("button", { name: "Nagranie ad hoc" }));
 
-    await waitFor(() =>
-      expect(screen.getByText(/Dostep do mikrofonu jest zablokowany/i)).toBeInTheDocument()
-    );
+    await screen.findByText(/Dostep do mikrofonu jest zablokowany/i);
   });
 });
