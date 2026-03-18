@@ -433,7 +433,7 @@ export default function StudioMeetingView({
         </audio>
       ) : null}
 
-      <div className="ff-studio-split-view" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', width: '100%', minHeight: 'calc(100vh - 200px)' }}>
+      <div className="ff-studio-split-view" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 0.8fr)', gap: '24px', width: '100%', minHeight: 'calc(100vh - 200px)' }}>
         {/* LEFT COLUMN: Actions, Briefs, Panels */}
         <div className="ff-studio-left-col" style={{ minWidth: 0, overflow: 'auto' }}>
 
@@ -855,10 +855,6 @@ export default function StudioMeetingView({
             <div className="ff-tabs" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '20px' }}>
                 <button className="ff-tab active" type="button">Transcript</button>
-                <button className="ff-tab askfred" type="button">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm-3-9a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 9 11Zm6 0a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 15 11Zm-3 5.5a4.48 4.48 0 0 1-3.64-1.92l1.64-1.16A2.47 2.47 0 0 0 12 14.5a2.47 2.47 0 0 0 2-1.08l1.64 1.16A4.48 4.48 0 0 1 12 16.5Z" /></svg>
-                  AskFred
-                </button>
               </div>
               
               {transcript.length > 0 && remoteApiEnabled() && (
@@ -1088,9 +1084,9 @@ export default function StudioMeetingView({
       )}
 
       {/* ═══════════════════════════════════════════
-           PLAYER BAR — ONE instance only — at bottom
+           PLAYER BAR — ALWAYS visible — at bottom
           ═══════════════════════════════════════════ */}
-      {(isRecording || selectedRecordingAudioUrl || isQueued) && (
+      {(isRecording || selectedRecordingAudioUrl || isQueued || analysisStatus === "error") && (
         <div className="ff-player-bar">
           {isRecording ? (
             <>
