@@ -13,14 +13,12 @@ jest.mock('../services/stateService', () => ({
   }))
 }));
 
-import { createStateService } from '../services/stateService';
 
 jest.mock('../lib/workspace', () => ({
   __esModule: true,
   migrateWorkspaceData: jest.fn((data) => ({ changed: false, ...data }))
 }));
 
-import { migrateWorkspaceData } from '../lib/workspace';
 
 describe('useWorkspaceData hook', () => {
 
