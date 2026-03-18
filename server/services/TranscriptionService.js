@@ -17,58 +17,58 @@ class TranscriptionService {
     return fallback;
   }
 
-  upsertMediaAsset(data) {
-    return this.db.upsertMediaAsset(data);
+  async upsertMediaAsset(data) {
+    return await this.db.upsertMediaAsset(data);
   }
 
-  getMediaAsset(recordingId) {
-    return this.db.getMediaAsset(recordingId);
+  async getMediaAsset(recordingId) {
+    return await this.db.getMediaAsset(recordingId);
   }
 
-  queueTranscription(recordingId, updates) {
-    return this.db.queueTranscription(recordingId, updates);
+  async queueTranscription(recordingId, updates) {
+    return await this.db.queueTranscription(recordingId, updates);
   }
 
-  markTranscriptionProcessing(recordingId) {
-    return this.db.markTranscriptionProcessing(recordingId);
+  async markTranscriptionProcessing(recordingId) {
+    return await this.db.markTranscriptionProcessing(recordingId);
   }
 
-  saveTranscriptionResult(recordingId, result) {
-    return this.db.saveTranscriptionResult(recordingId, result);
+  async saveTranscriptionResult(recordingId, result) {
+    return await this.db.saveTranscriptionResult(recordingId, result);
   }
 
-  markTranscriptionFailure(recordingId, errorMessage) {
-    return this.db.markTranscriptionFailure(recordingId, errorMessage);
+  async markTranscriptionFailure(recordingId, errorMessage) {
+    return await this.db.markTranscriptionFailure(recordingId, errorMessage);
   }
 
-  ensureTranscriptionJob(recordingId, asset, options) {
+  async ensureTranscriptionJob(recordingId, asset, options) {
     if (!recordingId || this.transcriptionJobs.has(recordingId)) {
       return;
     }
 
     const jobPromise = Promise.resolve()
       .then(async () => {
-        this.markTranscriptionProcessing(recordingId);
-        const wsState = this.db.getWorkspaceState(asset.workspace_id);
+        await this.markTranscriptionProcessing(recordingId);
+        const wsState = await this.db.getWorkspaceState(asset.workspace_id);
         const result = await this.pipeline.transcribeRecording(asset, {
           ...options,
           participants: [
             ...(options.participants || []),
-            ...this.workspaceService.getWorkspaceMemberNames(asset.workspace_id)
+            ...(await this.workspaceService.getWorkspaceMemberNames(asset.workspace_id))
           ],
           vocabulary: [
             ...(options.vocabulary ? [options.vocabulary] : []),
             ...(wsState.vocabulary || [])
           ].join(", "),
-          voiceProfiles: this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
+          voiceProfiles: await this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
         });
-        this.saveTranscriptionResult(recordingId, {
+        await this.saveTranscriptionResult(recordingId, {
           ...result,
           pipelineStatus: "completed",
         });
       })
-      .catch((error) => {
-        this.markTranscriptionFailure(recordingId, error.message);
+      .catch(async (error) => {
+        await this.markTranscriptionFailure(recordingId, error.message);
       })
       .finally(() => {
         this.transcriptionJobs.delete(recordingId);

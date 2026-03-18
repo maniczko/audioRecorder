@@ -190,3 +190,31 @@ Compiled successfully.
 ```
 
 `node --check` passed on all three server files.
+
+
+---
+
+## Test Coverage Audit & Recommendations
+
+**Rating:** 4 / 10
+
+### Current State of Tests:
+1. **Frontend E2E (Playwright):** 4 test suites cover basic user paths (`auth`, `command-palette`, `meeting`, `tasks`). This provides a good starting point for end-to-end regression.
+2. **Frontend Unit Tests (React/Jest):** Found ~14 test files covering primarily utility functions (`lib/*.test.js`) and a few isolated components. However, critical complex hooks (e.g., `useMeetings`, `useWorkspace`) and major UI views lack systematic component-level test coverage.
+3. **Backend Unit/Integration Tests (Node.js):** **Severely Under-tested.** 
+   - There is exactly **one** backend test file: `server/tests/auth.test.js`.
+   - Massive, mission-critical modules like `server/index.js` (688 lines), `server/database.js` (1076 lines), and `server/audioPipeline.js` (1150 lines) have effectively **zero test coverage**.
+   - Backend tests are not even configured in `package.json` (the `test` script only triggers React scripts).
+
+### Test Security & Robustness (Zabezpieczenie testów):
+- The existing tests appear to be primarily testing "happy paths".
+- There are no negative tests specifically written for the vulnerabilities recently fixed (e.g., testing the 100MB body limit, testing SQL injection/Path Traversal vectors, testing rate-limiting responses). Without these, regressions may quietly reopen security holes.
+- Lack of Continuous Integration (CI): There are no automated workflows configured to block merging if tests fail.
+
+### Action Queue / Tasks (Wymaga interwencji i wdrożenia):
+
+- [ ] **Task 1:** Dodać i skonfigurować środowisko testowe dla backendu (np. `Mocha` + `Chai` + `Supertest` lub `Jest` na Node) z osobnym skryptem npm: `"test:server": "jest ./server/tests"`.
+- [ ] **Task 2:** Napisać "security regression tests" dla endpointów poprawianych w raporcie bezpieczeństwa: celowo przesyłać ogromne payloady, preparowane pliki lub `X-Forwarded-For` header spoofing, upewniając się, że backend zwraca błąd.
+- [ ] **Task 3:** Zwiększyć pokrycie testowe krytycznej logiki backendowej: `server/audioPipeline.js` (przetwarzanie i wysyłka strumieni do modeli) oraz `server/database.js` (główne repozytorium danych transakcyjnych).
+- [ ] **Task 4:** Zwiększyć i ujednolicić pokrycie logiki stanu we frontenzie: napisać kompleksowe testy jednostkowe dla głównych hooków React (`src/hooks/useMeetings.js`, itd.).
+- [ ] **Task 5:** Skonfigurować zautomatyzowane sprawdzanie testów w procesie deweloperskim (Continuous Integration / np. GitHub Actions Workflow) uruchamiające lintery, testy E2E, Frontend i Backend przy każdym PR.

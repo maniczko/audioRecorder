@@ -24,38 +24,51 @@ const speakerEmbedder = require("./speakerEmbedder");
 const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
 
-console.log("1. Starting initialization...");
-const db = getDatabase();
-console.log("2. Database initialized at:", db.dbPath);
+async function start() {
+  console.log("1. Starting initialization...");
+  const db = getDatabase();
+  await db.init();
+  console.log("2. Database initialized at:", db.dbPath || "Remote Connection");
 
-const authService = new AuthService(db);
-const workspaceService = new WorkspaceService(db);
-const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
-console.log("3. Services initialized.");
+  const authService = new AuthService(db);
+  const workspaceService = new WorkspaceService(db);
+  const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
+  console.log("3. Services initialized.");
 
-// 3. Create App Handler
-const handler = createApp({
-  authService,
-  workspaceService,
-  transcriptionService,
-  config: {
-    allowedOrigins: process.env.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000",
-    trustProxy: process.env.VOICELOG_TRUST_PROXY === "true",
-    uploadDir: db.uploadDir,
+  // 3. Create App Handler
+  const handler = createApp({
+    authService,
+    workspaceService,
+    transcriptionService,
+    config: {
+      allowedOrigins: process.env.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000",
+      trustProxy: process.env.VOICELOG_TRUST_PROXY === "true",
+      uploadDir: db.uploadDir,
+    }
+  });
+
+  // 4. Start Server
+  const server = http.createServer(handler);
+
+  if (require.main === module) {
+    console.log(`4. Attempting to listen on ${HOST}:${PORT}...`);
+    server.on("error", (err) => {
+      console.error("SERVER ERROR:", err);
+    });
+    server.listen(PORT, HOST, () => {
+      console.log(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
+    });
   }
-});
 
-// 4. Start Server
-const server = http.createServer(handler);
-
-if (require.main === module) {
-  console.log(`4. Attempting to listen on ${HOST}:${PORT}...`);
-  server.on("error", (err) => {
-    console.error("SERVER ERROR:", err);
-  });
-  server.listen(PORT, HOST, () => {
-    console.log(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
-  });
+  // Export for testing
+  module.exports.server = server;
+  module.exports.db = db;
+  module.exports.authService = authService;
+  module.exports.workspaceService = workspaceService;
+  module.exports.transcriptionService = transcriptionService;
 }
 
-module.exports = { server, db, authService, workspaceService, transcriptionService };
+start().catch(err => {
+  console.error("FAILED TO START SERVER:", err);
+  process.exit(1);
+});

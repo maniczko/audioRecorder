@@ -15,14 +15,14 @@ const {
 function createApp({ authService, workspaceService, transcriptionService, config }) {
   const ALLOWED_ORIGINS = config.allowedOrigins || "http://localhost:3000";
 
-  function requireSession(request) {
+  async function requireSession(request) {
     const token = getBearerToken(request);
     if (!token) {
       const error = new Error("Brak tokenu autoryzacyjnego.");
       error.statusCode = 401;
       throw error;
     }
-    const session = authService.getSession(token);
+    const session = await authService.getSession(token);
     if (!session) {
       const error = new Error("Sesja wygasla lub jest nieprawidlowa.");
       error.statusCode = 401;
@@ -31,8 +31,8 @@ function createApp({ authService, workspaceService, transcriptionService, config
     return session;
   }
 
-  function ensureWorkspaceAccess(session, workspaceId) {
-    const membership = workspaceService.getMembership(workspaceId, session.user_id);
+  async function ensureWorkspaceAccess(session, workspaceId) {
+    const membership = await workspaceService.getMembership(workspaceId, session.user_id);
     if (!membership) {
       const error = new Error("Nie masz dostepu do tego workspace.");
       error.statusCode = 403;
@@ -92,7 +92,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "POST" && pathname === "/auth/register") {
       checkRateLimit(clientIp, "auth");
       try {
-        sendJson(response, 201, authService.registerUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+        sendJson(response, 201, await authService.registerUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       } catch (err) {
         sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
@@ -102,7 +102,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "POST" && pathname === "/auth/login") {
       checkRateLimit(clientIp, "auth");
       try {
-        sendJson(response, 200, authService.loginUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+        sendJson(response, 200, await authService.loginUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       } catch (err) {
         sendJson(response, err.statusCode || 401, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
@@ -112,7 +112,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "POST" && pathname === "/auth/password/reset/request") {
       checkRateLimit(clientIp, "auth");
       try {
-        sendJson(response, 200, authService.requestPasswordReset(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+        sendJson(response, 200, await authService.requestPasswordReset(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       } catch (err) {
         sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
@@ -122,7 +122,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "POST" && pathname === "/auth/password/reset/confirm") {
       checkRateLimit(clientIp, "auth");
       try {
-        sendJson(response, 200, authService.resetPasswordWithCode(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+        sendJson(response, 200, await authService.resetPasswordWithCode(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       } catch (err) {
         sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
@@ -132,7 +132,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "POST" && pathname === "/auth/google") {
       checkRateLimit(clientIp, "auth");
       try {
-        sendJson(response, 200, authService.upsertGoogleUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+        sendJson(response, 200, await authService.upsertGoogleUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       } catch (err) {
         sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
@@ -155,12 +155,12 @@ function createApp({ authService, workspaceService, transcriptionService, config
     }
 
     // --- Private Routes (Auth Gated) ---
-    const session = requireSession(request);
+    const session = await requireSession(request);
 
     if (request.method === "GET" && pathname === "/auth/session") {
       const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      ensureWorkspaceAccess(session, workspaceId);
-      sendJson(response, 200, authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
+      await ensureWorkspaceAccess(session, workspaceId);
+      sendJson(response, 200, await authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
       return;
     }
 
@@ -172,10 +172,10 @@ function createApp({ authService, workspaceService, transcriptionService, config
         return;
       }
       const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      const user = authService.updateUserProfile(userId, await readJsonBody(request));
+      const user = await authService.updateUserProfile(userId, await readJsonBody(request));
       sendJson(response, 200, {
         user,
-        users: authService.buildSessionPayload(session.user_id, workspaceId).users,
+        users: (await authService.buildSessionPayload(session.user_id, workspaceId)).users,
       }, origin, ALLOWED_ORIGINS);
       return;
     }
@@ -187,24 +187,24 @@ function createApp({ authService, workspaceService, transcriptionService, config
         sendJson(response, 403, { message: "Mozesz zmienic tylko swoje haslo." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      sendJson(response, 200, authService.changeUserPassword(userId, await readJsonBody(request)), origin, ALLOWED_ORIGINS);
+      sendJson(response, 200, await authService.changeUserPassword(userId, await readJsonBody(request)), origin, ALLOWED_ORIGINS);
       return;
     }
 
     if (request.method === "GET" && pathname === "/state/bootstrap") {
       const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      ensureWorkspaceAccess(session, workspaceId);
-      sendJson(response, 200, authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
+      await ensureWorkspaceAccess(session, workspaceId);
+      sendJson(response, 200, await authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
       return;
     }
 
     const workspaceStateMatch = pathname.match(/^\/state\/workspaces\/([^/]+)$/);
     if (request.method === "PUT" && workspaceStateMatch) {
       const workspaceId = workspaceStateMatch[1];
-      ensureWorkspaceAccess(session, workspaceId);
+      await ensureWorkspaceAccess(session, workspaceId);
       sendJson(response, 200, {
         workspaceId,
-        state: workspaceService.saveWorkspaceState(workspaceId, await readJsonBody(request)),
+        state: await workspaceService.saveWorkspaceState(workspaceId, await readJsonBody(request)),
       }, origin, ALLOWED_ORIGINS);
       return;
     }
@@ -213,12 +213,12 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (request.method === "PUT" && workspaceRoleMatch) {
       const workspaceId = workspaceRoleMatch[1];
       const targetUserId = workspaceRoleMatch[2];
-      const membership = ensureWorkspaceAccess(session, workspaceId);
+      const membership = await ensureWorkspaceAccess(session, workspaceId);
       if (!["owner", "admin"].includes(membership.member_role)) {
         sendJson(response, 403, { message: "Tylko owner lub admin moze zmieniac role." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      sendJson(response, 200, workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, (await readJsonBody(request)).memberRole), origin, ALLOWED_ORIGINS);
+      sendJson(response, 200, await workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, (await readJsonBody(request)).memberRole), origin, ALLOWED_ORIGINS);
       return;
     }
 
@@ -232,8 +232,8 @@ function createApp({ authService, workspaceService, transcriptionService, config
         sendJson(response, 400, { message: "Brakuje X-Workspace-Id." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      ensureWorkspaceAccess(session, workspaceId);
-      const asset = transcriptionService.upsertMediaAsset({
+      await ensureWorkspaceAccess(session, workspaceId);
+      const asset = await transcriptionService.upsertMediaAsset({
         recordingId, workspaceId, meetingId,
         contentType: request.headers["content-type"] || "application/octet-stream",
         buffer: await readBinaryBody(request),
@@ -245,12 +245,12 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
     if (mediaAudioMatch && request.method === "GET") {
       const recordingId = mediaAudioMatch[1];
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) {
         sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      ensureWorkspaceAccess(session, asset.workspace_id);
+      await ensureWorkspaceAccess(session, asset.workspace_id);
       if (!fs.existsSync(asset.file_path)) {
         sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." }, origin, ALLOWED_ORIGINS);
         return;
@@ -271,33 +271,33 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (mediaTranscribeMatch && request.method === "POST") {
       const recordingId = mediaTranscribeMatch[1];
       const body = await readJsonBody(request);
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) {
         sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
-      transcriptionService.queueTranscription(recordingId, body);
-      transcriptionService.ensureTranscriptionJob(recordingId, asset, body);
-      sendJson(response, 202, buildTranscriptionStatusPayload(transcriptionService.getMediaAsset(recordingId)), origin, ALLOWED_ORIGINS);
+      await ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
+      await transcriptionService.queueTranscription(recordingId, body);
+      await transcriptionService.ensureTranscriptionJob(recordingId, asset, body);
+      sendJson(response, 202, buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), origin, ALLOWED_ORIGINS);
       return;
     }
 
     if (mediaTranscribeMatch && request.method === "GET") {
       const recordingId = mediaTranscribeMatch[1];
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) {
         sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
         return;
       }
-      ensureWorkspaceAccess(session, asset.workspace_id);
+      await ensureWorkspaceAccess(session, asset.workspace_id);
       sendJson(response, 200, buildTranscriptionStatusPayload(asset), origin, ALLOWED_ORIGINS);
       return;
     }
 
     // --- Voice Profiles ---
     if (request.method === "GET" && pathname === "/voice-profiles") {
-      const profiles = workspaceService.getWorkspaceVoiceProfiles(session.workspace_id).map((p) => ({
+      const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p) => ({
         id: p.id, speakerName: p.speaker_name, userId: p.user_id, createdAt: p.created_at,
       }));
       sendJson(response, 200, { profiles }, origin, ALLOWED_ORIGINS);
@@ -318,7 +318,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       fs.writeFileSync(audioPath, buffer);
       
       const embedding = await transcriptionService.computeEmbedding(audioPath);
-      const profile = workspaceService.saveVoiceProfile({
+      const profile = await workspaceService.saveVoiceProfile({
         id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
         speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
       });
@@ -328,7 +328,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
     const deleteVpMatch = pathname.match(/^\/voice-profiles\/([a-z0-9_]+)$/);
     if (request.method === "DELETE" && deleteVpMatch) {
-      workspaceService.deleteVoiceProfile(deleteVpMatch[1], session.workspace_id);
+      await workspaceService.deleteVoiceProfile(deleteVpMatch[1], session.workspace_id);
       sendNoContent(response, origin, ALLOWED_ORIGINS);
       return;
     }
@@ -337,9 +337,9 @@ function createApp({ authService, workspaceService, transcriptionService, config
     const mediaNormalizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/normalize$/);
     if (mediaNormalizeMatch && request.method === "POST") {
       const recordingId = mediaNormalizeMatch[1];
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      ensureWorkspaceAccess(session, asset.workspace_id);
+      await ensureWorkspaceAccess(session, asset.workspace_id);
       await transcriptionService.normalizeRecording(asset.file_path, { signal });
       sendJson(response, 200, { ok: true }, origin, ALLOWED_ORIGINS);
       return;
@@ -349,9 +349,9 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (mediaVoiceCoachingMatch && request.method === "POST") {
       const recordingId = mediaVoiceCoachingMatch[1];
       const body = await readJsonBody(request);
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      ensureWorkspaceAccess(session, asset.workspace_id);
+      await ensureWorkspaceAccess(session, asset.workspace_id);
       const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || [], { signal });
       sendJson(response, 200, { coaching }, origin, ALLOWED_ORIGINS);
       return;
@@ -360,9 +360,9 @@ function createApp({ authService, workspaceService, transcriptionService, config
     const mediaRediarizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/rediarize$/);
     if (mediaRediarizeMatch && request.method === "POST") {
       const recordingId = mediaRediarizeMatch[1];
-      const asset = transcriptionService.getMediaAsset(recordingId);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      ensureWorkspaceAccess(session, asset.workspace_id);
+      await ensureWorkspaceAccess(session, asset.workspace_id);
 
       let stored = [];
       try { stored = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
@@ -373,7 +373,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       if (!diarization) return sendJson(response, 422, { message: "Diaryzacja nie powiodla sie." }, origin, ALLOWED_ORIGINS);
 
       const updated = diarization.segments.map((seg, idx) => ({ ...(stored[idx] || {}), id: stored[idx]?.id || seg.id, text: seg.text, timestamp: seg.timestamp, endTimestamp: seg.endTimestamp, speakerId: seg.speakerId, rawSpeakerLabel: seg.rawSpeakerLabel }));
-      transcriptionService.saveTranscriptionResult(recordingId, { segments: updated, diarization, pipelineStatus: "completed" });
+      await transcriptionService.saveTranscriptionResult(recordingId, { segments: updated, diarization, pipelineStatus: "completed" });
       sendJson(response, 200, { speakerCount: diarization.speakerCount, speakerNames: diarization.speakerNames, segments: updated }, origin, ALLOWED_ORIGINS);
       return;
     }

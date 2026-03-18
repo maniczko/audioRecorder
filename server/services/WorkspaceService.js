@@ -3,36 +3,37 @@ class WorkspaceService {
     this.db = db;
   }
 
-  getWorkspaceState(workspaceId) {
-    return this.db.getWorkspaceState(workspaceId);
+  async getWorkspaceState(workspaceId) {
+    return await this.db.getWorkspaceState(workspaceId);
   }
 
-  saveWorkspaceState(workspaceId, payload) {
-    return this.db.saveWorkspaceState(workspaceId, payload);
+  async saveWorkspaceState(workspaceId, payload) {
+    return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 
-  updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
-    return this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
+  async updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
+    return await this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
   }
 
-  getMembership(workspaceId, userId) {
-    return this.db.getMembership(workspaceId, userId);
+  async getMembership(workspaceId, userId) {
+    return await this.db.getMembership(workspaceId, userId);
   }
 
-  getWorkspaceVoiceProfiles(workspaceId) {
-    return this.db.getWorkspaceVoiceProfiles(workspaceId);
+  async getWorkspaceVoiceProfiles(workspaceId) {
+    return await this.db.getWorkspaceVoiceProfiles(workspaceId);
   }
 
-  getWorkspaceMemberNames(workspaceId) {
-    return this.db.workspaceMembers(workspaceId).map((u) => u.name);
+  async getWorkspaceMemberNames(workspaceId) {
+    const members = await this.db.workspaceMembers(workspaceId);
+    return members.map((u) => u.name);
   }
 
-  saveVoiceProfile(data) {
-    return this.db.saveVoiceProfile(data);
+  async saveVoiceProfile(data) {
+    return await this.db.saveVoiceProfile(data);
   }
 
-  deleteVoiceProfile(id, workspaceId) {
-    return this.db.deleteVoiceProfile(id, workspaceId);
+  async deleteVoiceProfile(id, workspaceId) {
+    return await this.db.deleteVoiceProfile(id, workspaceId);
   }
 }
 

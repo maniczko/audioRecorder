@@ -1,28 +1,64 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const { DatabaseSync } = require("node:sqlite");
+const { Pool } = require("pg");
 
 class Database {
-  constructor(dbPath, uploadDir, sessionTtlHours) {
-    this.dbPath = dbPath;
+  constructor(dbConfig = {}) {
+    const { type = "sqlite", dbPath = ":memory:", uploadDir = "./uploads", sessionTtlHours = 24 * 30, connectionString } = dbConfig;
+    this.type = connectionString ? "postgres" : type;
     this.uploadDir = uploadDir;
-    this.sessionTtlHours = sessionTtlHours || 24 * 30;
+    this.sessionTtlHours = sessionTtlHours;
 
-    if (dbPath !== ":memory:") {
-      fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    if (this.type === "postgres") {
+      this.pool = new Pool({ connectionString });
+      console.log("[DB] Using PostgreSQL (Supabase)");
+    } else {
+      const { DatabaseSync } = require("node:sqlite");
+      if (dbPath !== ":memory:") {
+        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+      }
+      this.sqlite = new DatabaseSync(dbPath);
+      this.sqlite.exec("PRAGMA journal_mode = WAL;");
+      this.sqlite.exec("PRAGMA foreign_keys = ON;");
+      console.log("[DB] Using local SQLite at:", dbPath);
     }
+
     fs.mkdirSync(uploadDir, { recursive: true });
-
-    this.db = new DatabaseSync(dbPath);
-    this.db.exec("PRAGMA journal_mode = WAL;");
-    this.db.exec("PRAGMA foreign_keys = ON;");
-
-    this._createSchema();
   }
 
-  _createSchema() {
-    this.db.exec(`
+  async init() {
+    await this._createSchema();
+  }
+
+  async _query(sql, params = []) {
+    if (this.type === "postgres") {
+      const res = await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+      return res.rows;
+    } else {
+      return this.sqlite.prepare(sql).all(...params);
+    }
+  }
+
+  async _get(sql, params = []) {
+    if (this.type === "postgres") {
+      const res = await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+      return res.rows[0] || null;
+    } else {
+      return this.sqlite.prepare(sql).get(...params) || null;
+    }
+  }
+
+  async _execute(sql, params = []) {
+    if (this.type === "postgres") {
+      await this.pool.query(sql.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    } else {
+      this.sqlite.prepare(sql).run(...params);
+    }
+  }
+
+  async _createSchema() {
+    const queries = `
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         email TEXT NOT NULL UNIQUE,
@@ -44,8 +80,7 @@ class Database {
         owner_user_id TEXT NOT NULL,
         invite_code TEXT NOT NULL UNIQUE,
         created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+        updated_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS workspace_members (
@@ -53,9 +88,7 @@ class Database {
         user_id TEXT NOT NULL,
         member_role TEXT NOT NULL DEFAULT 'member',
         joined_at TEXT NOT NULL,
-        PRIMARY KEY (workspace_id, user_id),
-        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        PRIMARY KEY (workspace_id, user_id)
       );
 
       CREATE TABLE IF NOT EXISTS workspace_state (
@@ -66,8 +99,7 @@ class Database {
         task_boards_json TEXT NOT NULL DEFAULT '{}',
         calendar_meta_json TEXT NOT NULL DEFAULT '{}',
         vocabulary_json TEXT NOT NULL DEFAULT '[]',
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+        updated_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS sessions (
@@ -75,9 +107,7 @@ class Database {
         user_id TEXT NOT NULL,
         workspace_id TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        expires_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+        expires_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS media_assets (
@@ -92,9 +122,7 @@ class Database {
         transcript_json TEXT NOT NULL DEFAULT '[]',
         diarization_json TEXT NOT NULL DEFAULT '{}',
         created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
-        FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+        updated_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS voice_profiles (
@@ -104,11 +132,13 @@ class Database {
         speaker_name TEXT NOT NULL,
         audio_path TEXT NOT NULL,
         embedding_json TEXT NOT NULL DEFAULT '[]',
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+        created_at TEXT NOT NULL
       );
-    `);
+    `.split(';').filter(q => q.trim());
+
+    for (const q of queries) {
+      await this._execute(q);
+    }
   }
 
   nowIso() {
@@ -238,70 +268,69 @@ class Database {
 
   // --- Public Methods ---
 
-  workspaceMembers(workspaceId) {
-    return this.db
-      .prepare(
-        `
-          SELECT users.*, workspace_members.member_role AS workspace_member_role
-          FROM workspace_members
-          JOIN users ON users.id = workspace_members.user_id
-          WHERE workspace_members.workspace_id = ?
-          ORDER BY users.name COLLATE NOCASE ASC
-        `
-      )
-      .all(workspaceId)
-      .map((row) => this._buildUserFromRow(row));
+  async workspaceMembers(workspaceId) {
+    const rows = await this._query(
+      `
+        SELECT users.*, workspace_members.member_role AS workspace_member_role
+        FROM workspace_members
+        JOIN users ON users.id = workspace_members.user_id
+        WHERE workspace_members.workspace_id = ?
+        ORDER BY users.name COLLATE NOCASE ASC
+      `,
+      [workspaceId]
+    );
+    return rows.map((row) => this._buildUserFromRow(row));
   }
 
-  workspaceIdsForUser(userId) {
-    return this.db
-      .prepare("SELECT workspace_id FROM workspace_members WHERE user_id = ? ORDER BY joined_at ASC")
-      .all(userId)
-      .map((row) => row.workspace_id);
+  async workspaceIdsForUser(userId) {
+    const rows = await this._query("SELECT workspace_id FROM workspace_members WHERE user_id = ? ORDER BY joined_at ASC", [userId]);
+    return rows.map((row) => row.workspace_id);
   }
 
-  accessibleWorkspaces(userId) {
-    return this.db
-      .prepare(
-        `
-          SELECT workspaces.*
-          FROM workspace_members
-          JOIN workspaces ON workspaces.id = workspace_members.workspace_id
-          WHERE workspace_members.user_id = ?
-          ORDER BY workspaces.updated_at DESC
-        `
-      )
-      .all(userId)
-      .map((row) => this._buildWorkspaceFromRow(row, userId));
+  async accessibleWorkspaces(userId) {
+    const rows = await this._query(
+      `
+        SELECT workspaces.*
+        FROM workspace_members
+        JOIN workspaces ON workspaces.id = workspace_members.workspace_id
+        WHERE workspace_members.user_id = ?
+        ORDER BY workspaces.updated_at DESC
+      `,
+      [userId]
+    );
+    const results = [];
+    for (const row of rows) {
+      results.push(await this._buildWorkspaceFromRow(row, userId));
+    }
+    return results;
   }
 
-  ensureWorkspaceState(workspaceId) {
-    const existing = this.db.prepare("SELECT workspace_id FROM workspace_state WHERE workspace_id = ?").get(workspaceId);
+  async ensureWorkspaceState(workspaceId) {
+    const existing = await this._get("SELECT workspace_id FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
     if (existing) return;
 
     const timestamp = this.nowIso();
-    this.db
-      .prepare(
-        `
-          INSERT INTO workspace_state (
-            workspace_id,
-            meetings_json,
-            manual_tasks_json,
-            task_state_json,
-            task_boards_json,
-            calendar_meta_json,
-            vocabulary_json,
-            updated_at
-          )
-          VALUES (?, '[]', '[]', '{}', '{}', '{}', '[]', ?)
-        `
-      )
-      .run(workspaceId, timestamp);
+    await this._execute(
+      `
+        INSERT INTO workspace_state (
+          workspace_id,
+          meetings_json,
+          manual_tasks_json,
+          task_state_json,
+          task_boards_json,
+          calendar_meta_json,
+          vocabulary_json,
+          updated_at
+        )
+        VALUES (?, '[]', '[]', '{}', '{}', '{}', '[]', ?)
+      `,
+      [workspaceId, timestamp]
+    );
   }
 
-  getWorkspaceState(workspaceId) {
-    this.ensureWorkspaceState(workspaceId);
-    const row = this.db.prepare("SELECT * FROM workspace_state WHERE workspace_id = ?").get(workspaceId);
+  async getWorkspaceState(workspaceId) {
+    await this.ensureWorkspaceState(workspaceId);
+    const row = await this._get("SELECT * FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
     return {
       meetings: this._safeJsonParse(row.meetings_json, []),
       manualTasks: this._safeJsonParse(row.manual_tasks_json, []),
@@ -313,24 +342,22 @@ class Database {
     };
   }
 
-  saveWorkspaceState(workspaceId, payload = {}) {
-    this.ensureWorkspaceState(workspaceId);
+  async saveWorkspaceState(workspaceId, payload = {}) {
+    await this.ensureWorkspaceState(workspaceId);
     const timestamp = this.nowIso();
-    this.db
-      .prepare(
-        `
-          UPDATE workspace_state
-          SET meetings_json = ?,
-              manual_tasks_json = ?,
-              task_state_json = ?,
-              task_boards_json = ?,
-              calendar_meta_json = ?,
-              vocabulary_json = ?,
-              updated_at = ?
-          WHERE workspace_id = ?
-        `
-      )
-      .run(
+    await this._execute(
+      `
+        UPDATE workspace_state
+        SET meetings_json = ?,
+            manual_tasks_json = ?,
+            task_state_json = ?,
+            task_boards_json = ?,
+            calendar_meta_json = ?,
+            vocabulary_json = ?,
+            updated_at = ?
+        WHERE workspace_id = ?
+      `,
+      [
         JSON.stringify(Array.isArray(payload.meetings) ? payload.meetings : []),
         JSON.stringify(Array.isArray(payload.manualTasks) ? payload.manualTasks : []),
         JSON.stringify(payload.taskState && typeof payload.taskState === "object" ? payload.taskState : {}),
@@ -339,50 +366,48 @@ class Database {
         JSON.stringify(Array.isArray(payload.vocabulary) ? payload.vocabulary : []),
         timestamp,
         workspaceId
-      );
+      ]
+    );
 
-    this.db.prepare("UPDATE workspaces SET updated_at = ? WHERE id = ?").run(timestamp, workspaceId);
+    await this._execute("UPDATE workspaces SET updated_at = ? WHERE id = ?", [timestamp, workspaceId]);
     return this.getWorkspaceState(workspaceId);
   }
 
-  createSession(userId, workspaceId) {
+  async createSession(userId, workspaceId) {
     const timestamp = this.nowIso();
     const expiresAt = new Date(Date.now() + this.sessionTtlHours * 60 * 60 * 1000).toISOString();
     const token = crypto.randomBytes(48).toString("hex");
 
-    this.db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(timestamp);
-    this.db
-      .prepare(
-        `
-          INSERT INTO sessions (token, user_id, workspace_id, created_at, expires_at)
-          VALUES (?, ?, ?, ?, ?)
-        `
-      )
-      .run(token, userId, workspaceId, timestamp, expiresAt);
+    await this._execute("DELETE FROM sessions WHERE expires_at <= ?", [timestamp]);
+    await this._execute(
+      `
+        INSERT INTO sessions (token, user_id, workspace_id, created_at, expires_at)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      [token, userId, workspaceId, timestamp, expiresAt]
+    );
 
     return { token, expiresAt };
   }
 
-  getSession(token) {
-    const row = this.db.prepare("SELECT * FROM sessions WHERE token = ?").get(token);
+  async getSession(token) {
+    const row = await this._get("SELECT * FROM sessions WHERE token = ?", [token]);
     if (!row) return null;
 
     if (new Date(row.expires_at).getTime() <= Date.now()) {
-      this.db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+      await this._execute("DELETE FROM sessions WHERE token = ?", [token]);
       return null;
     }
 
     return row;
   }
 
-  getMembership(workspaceId, userId) {
-    return this.db
-      .prepare("SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?")
-      .get(workspaceId, userId);
+  async getMembership(workspaceId, userId) {
+    return this._get("SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?", [workspaceId, userId]);
   }
 
-  selectWorkspaceForUser(userId, preferredWorkspaceId = "") {
-    const workspaceIds = this.workspaceIdsForUser(userId);
+  async selectWorkspaceForUser(userId, preferredWorkspaceId = "") {
+    const workspaceIds = await this.workspaceIdsForUser(userId);
     if (!workspaceIds.length) return "";
     if (preferredWorkspaceId && workspaceIds.includes(preferredWorkspaceId)) {
       return preferredWorkspaceId;
@@ -390,23 +415,23 @@ class Database {
     return workspaceIds[0];
   }
 
-  buildSessionPayload(userId, workspaceId) {
-    const userRow = this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
-    const nextWorkspaceId = this.selectWorkspaceForUser(userId, workspaceId);
+  async buildSessionPayload(userId, workspaceId) {
+    const userRow = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
+    const nextWorkspaceId = await this.selectWorkspaceForUser(userId, workspaceId);
     if (!userRow || !nextWorkspaceId) {
       throw new Error("Unable to build session payload.");
     }
 
     return {
       user: this._buildUserFromRow(userRow),
-      users: this.workspaceMembers(nextWorkspaceId),
-      workspaces: this.accessibleWorkspaces(userId),
+      users: await this.workspaceMembers(nextWorkspaceId),
+      workspaces: await this.accessibleWorkspaces(userId),
       workspaceId: nextWorkspaceId,
-      state: this.getWorkspaceState(nextWorkspaceId),
+      state: await this.getWorkspaceState(nextWorkspaceId),
     };
   }
 
-  registerUser(draft = {}) {
+  async registerUser(draft = {}) {
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
     const name = this._clean(draft.name);
@@ -417,7 +442,7 @@ class Database {
     if (!email || !password || !name) throw new Error("Uzupelnij imie, email i haslo.");
     if (password.length < 6) throw new Error("Haslo musi miec przynajmniej 6 znakow.");
 
-    const existingUser = this.db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+    const existingUser = await this._get("SELECT id FROM users WHERE email = ?", [email]);
     if (existingUser) throw new Error("Konto z takim adresem juz istnieje.");
 
     const timestamp = this.nowIso();
@@ -425,84 +450,75 @@ class Database {
     let workspaceId = "";
     let memberRole = "member";
 
-    this.db.exec("BEGIN");
+    await this._execute("BEGIN");
     try {
-      this.db
-        .prepare(
-          `
-            INSERT INTO users (
-              id, email, password_hash, name, provider, google_sub, google_email,
-              recovery_code_hash, recovery_code_expires_at, profile_json, created_at, updated_at
-            )
-            VALUES (?, ?, ?, ?, 'local', '', ?, '', '', ?, ?, ?)
-          `
-        )
-        .run(
+      await this._execute(
+        `
+          INSERT INTO users (
+            id, email, password_hash, name, provider, google_sub, google_email,
+            recovery_code_hash, recovery_code_expires_at, profile_json, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, 'local', '', ?, '', '', ?, ?, ?)
+        `,
+        [
           userId, email, this._hashPassword(password), name, email,
           JSON.stringify(this._pickProfileDraft(draft, email)),
           timestamp, timestamp
-        );
+        ]
+      );
 
       if (workspaceMode === "join") {
-        const workspace = this.db.prepare("SELECT * FROM workspaces WHERE invite_code = ?").get(inviteCode);
+        const workspace = await this._get("SELECT * FROM workspaces WHERE invite_code = ?", [inviteCode]);
         if (!workspace) throw new Error("Nie znaleziono workspace o takim kodzie.");
 
         workspaceId = workspace.id;
-        this.db
-          .prepare("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'member', ?)")
-          .run(workspaceId, userId, timestamp);
+        await this._execute("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'member', ?)", [workspaceId, userId, timestamp]);
       } else {
         workspaceId = this._generateId("workspace");
         memberRole = "owner";
-        this.db
-          .prepare("INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
-          .run(workspaceId, requestedWorkspaceName || `${name} workspace`, userId, this._generateInviteCode(), timestamp, timestamp);
-        this.db
-          .prepare("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)")
-          .run(workspaceId, userId, timestamp);
-        this.ensureWorkspaceState(workspaceId);
+        await this._execute("INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", [workspaceId, requestedWorkspaceName || `${name} workspace`, userId, this._generateInviteCode(), timestamp, timestamp]);
+        await this._execute("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)", [workspaceId, userId, timestamp]);
+        await this.ensureWorkspaceState(workspaceId);
       }
 
-      if (workspaceMode === "join") this.ensureWorkspaceState(workspaceId);
-      this.db.exec("COMMIT");
+      if (workspaceMode === "join") await this.ensureWorkspaceState(workspaceId);
+      await this._execute("COMMIT");
     } catch (error) {
-      this.db.exec("ROLLBACK");
+      await this._execute("ROLLBACK");
       throw error;
     }
 
-    const session = this.createSession(userId, workspaceId);
-    const payload = this.buildSessionPayload(userId, workspaceId);
-    payload.user.workspaceMemberRole = memberRole || this.getMembership(workspaceId, userId)?.member_role || "member";
+    const session = await this.createSession(userId, workspaceId);
+    const payload = await this.buildSessionPayload(userId, workspaceId);
+    payload.user.workspaceMemberRole = memberRole || (await this.getMembership(workspaceId, userId))?.member_role || "member";
     return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
-  loginUser(draft = {}) {
+  async loginUser(draft = {}) {
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
-    const row = this.db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
 
     if (!row || !row.password_hash || !this._verifyPassword(password, row.password_hash)) {
       throw new Error("Niepoprawny email lub haslo.");
     }
 
-    const workspaceId = this.selectWorkspaceForUser(row.id, this._clean(draft.workspaceId));
+    const workspaceId = await this.selectWorkspaceForUser(row.id, this._clean(draft.workspaceId));
     if (!workspaceId) throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
 
-    const session = this.createSession(row.id, workspaceId);
-    return { ...this.buildSessionPayload(row.id, workspaceId), token: session.token, expiresAt: session.expiresAt };
+    const session = await this.createSession(row.id, workspaceId);
+    return { ...(await this.buildSessionPayload(row.id, workspaceId)), token: session.token, expiresAt: session.expiresAt };
   }
 
-  requestPasswordReset(draft = {}) {
+  async requestPasswordReset(draft = {}) {
     const email = this._normalizeEmail(draft.email);
     const genericExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const row = this.db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
     if (!row || !row.password_hash) return { expiresAt: genericExpiresAt };
 
     const recoveryCode = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = genericExpiresAt;
-    this.db
-      .prepare("UPDATE users SET recovery_code_hash = ?, recovery_code_expires_at = ?, updated_at = ? WHERE id = ?")
-      .run(this._hashRecoveryCode(recoveryCode), expiresAt, this.nowIso(), row.id);
+    await this._execute("UPDATE users SET recovery_code_hash = ?, recovery_code_expires_at = ?, updated_at = ? WHERE id = ?", [this._hashRecoveryCode(recoveryCode), expiresAt, this.nowIso(), row.id]);
 
     if (process.env.NODE_ENV !== "production") {
       console.log(`[DEV] Password reset code for ${email}: ${recoveryCode} (expires ${expiresAt})`);
@@ -510,12 +526,12 @@ class Database {
     return { expiresAt };
   }
 
-  resetPasswordWithCode(draft = {}) {
+  async resetPasswordWithCode(draft = {}) {
     const email = this._normalizeEmail(draft.email);
     const code = this._clean(draft.code);
     const newPassword = String(draft.newPassword || "");
     const confirmPassword = String(draft.confirmPassword || "");
-    const row = this.db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
 
     if (!row) throw new Error("Nie znaleziono konta z takim adresem.");
     if (!code || !newPassword || !confirmPassword) throw new Error("Uzupelnij email, kod i oba pola hasla.");
@@ -525,79 +541,67 @@ class Database {
     if (new Date(row.recovery_code_expires_at).getTime() <= Date.now()) throw new Error("Kod resetu wygasl. Wygeneruj nowy.");
     if (this._hashRecoveryCode(code) !== row.recovery_code_hash) throw new Error("Kod resetu jest niepoprawny.");
 
-    this.db
-      .prepare("UPDATE users SET password_hash = ?, recovery_code_hash = '', recovery_code_expires_at = '', updated_at = ? WHERE id = ?")
-      .run(this._hashPassword(newPassword), this.nowIso(), row.id);
+    await this._execute("UPDATE users SET password_hash = ?, recovery_code_hash = '', recovery_code_expires_at = '', updated_at = ? WHERE id = ?", [this._hashPassword(newPassword), this.nowIso(), row.id]);
     return { success: true };
   }
 
-  upsertGoogleUser(profile = {}) {
+  async upsertGoogleUser(profile = {}) {
     const email = this._normalizeEmail(profile.email);
     if (!email) throw new Error("Brakuje adresu email z Google.");
 
     const timestamp = this.nowIso();
-    let row = this.db.prepare("SELECT * FROM users WHERE email = ? OR google_sub = ?").get(email, this._clean(profile.sub));
+    let row = await this._get("SELECT * FROM users WHERE email = ? OR google_sub = ?", [email, this._clean(profile.sub)]);
     let workspaceId = "";
 
-    this.db.exec("BEGIN");
+    await this._execute("BEGIN");
     try {
       if (row) {
         const currentProfile = this._safeJsonParse(row.profile_json, {});
         const nextProfile = { ...currentProfile, avatarUrl: this._clean(profile.picture) || currentProfile.avatarUrl || "", googleEmail: email };
-        this.db
-          .prepare("UPDATE users SET email = ?, name = ?, provider = 'google', google_sub = ?, google_email = ?, profile_json = ?, updated_at = ? WHERE id = ?")
-          .run(email, this._clean(profile.name) || row.name, this._clean(profile.sub), email, JSON.stringify(nextProfile), timestamp, row.id);
-        workspaceId = this.selectWorkspaceForUser(row.id);
+        await this._execute("UPDATE users SET email = ?, name = ?, provider = 'google', google_sub = ?, google_email = ?, profile_json = ?, updated_at = ? WHERE id = ?", [email, this._clean(profile.name) || row.name, this._clean(profile.sub), email, JSON.stringify(nextProfile), timestamp, row.id]);
+        workspaceId = await this.selectWorkspaceForUser(row.id);
       } else {
         const userId = this._generateId("user");
         workspaceId = this._generateId("workspace");
-        this.db
-          .prepare(`
-            INSERT INTO users (
-              id, email, password_hash, name, provider, google_sub, google_email,
-              recovery_code_hash, recovery_code_expires_at, profile_json, created_at, updated_at
-            )
-            VALUES (?, ?, NULL, ?, 'google', ?, ?, '', '', ?, ?, ?)`)
-          .run(userId, email, this._clean(profile.name) || this._clean(profile.given_name) || "Google user", this._clean(profile.sub), email,
-            JSON.stringify(this._pickProfileDraft({ avatarUrl: this._clean(profile.picture), googleEmail: email }, email)),
-            timestamp, timestamp);
-        this.db
-          .prepare("INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
-          .run(workspaceId, `${this._clean(profile.given_name) || this._clean(profile.name) || "Google"} workspace`, userId, this._generateInviteCode(), timestamp, timestamp);
-        this.db
-          .prepare("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)")
-          .run(workspaceId, userId, timestamp);
-        this.ensureWorkspaceState(workspaceId);
-        row = this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+        await this._execute(`
+          INSERT INTO users (
+            id, email, password_hash, name, provider, google_sub, google_email,
+            recovery_code_hash, recovery_code_expires_at, profile_json, created_at, updated_at
+          )
+          VALUES (?, ?, NULL, ?, 'google', ?, ?, '', '', ?, ?, ?)`, [userId, email, this._clean(profile.name) || this._clean(profile.given_name) || "Google user", this._clean(profile.sub), email,
+          JSON.stringify(this._pickProfileDraft({ avatarUrl: this._clean(profile.picture), googleEmail: email }, email)),
+          timestamp, timestamp]);
+        await this._execute("INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", [workspaceId, `${this._clean(profile.given_name) || this._clean(profile.name) || "Google"} workspace`, userId, this._generateInviteCode(), timestamp, timestamp]);
+        await this._execute("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)", [workspaceId, userId, timestamp]);
+        await this.ensureWorkspaceState(workspaceId);
+        row = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
       }
-      this.db.exec("COMMIT");
+      await this._execute("COMMIT");
     } catch (error) {
-      this.db.exec("ROLLBACK");
+      await this._execute("ROLLBACK");
       throw error;
     }
 
-    const userId = row?.id || this.db.prepare("SELECT id FROM users WHERE email = ?").get(email)?.id;
-    const session = this.createSession(userId, workspaceId || this.selectWorkspaceForUser(userId));
-    return { ...this.buildSessionPayload(userId, workspaceId), token: session.token, expiresAt: session.expiresAt };
+    const userId = row?.id || (await this._get("SELECT id FROM users WHERE email = ?", [email]))?.id;
+    const session = await this.createSession(userId, workspaceId || (await this.selectWorkspaceForUser(userId)));
+    return { ...(await this.buildSessionPayload(userId, workspaceId)), token: session.token, expiresAt: session.expiresAt };
   }
 
-  updateUserProfile(userId, updates = {}) {
-    const row = this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  async updateUserProfile(userId, updates = {}) {
+    const row = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
     if (!row) throw new Error("Nie znaleziono konta.");
 
     const currentProfile = this._safeJsonParse(row.profile_json, {});
     const nextProfile = { ...currentProfile, ...this._pickProfileDraft({ ...currentProfile, ...updates }, row.email) };
     const nextName = this._clean(updates.name) || row.name;
 
-    this.db
-      .prepare("UPDATE users SET name = ?, google_email = ?, profile_json = ?, updated_at = ? WHERE id = ?")
-      .run(nextName, nextProfile.googleEmail || row.google_email || row.email, JSON.stringify(nextProfile), this.nowIso(), userId);
+    await this._execute("UPDATE users SET name = ?, google_email = ?, profile_json = ?, updated_at = ? WHERE id = ?", [nextName, nextProfile.googleEmail || row.google_email || row.email, JSON.stringify(nextProfile), this.nowIso(), userId]);
 
-    return this._buildUserFromRow(this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId));
+    return this._buildUserFromRow(await this._get("SELECT * FROM users WHERE id = ?", [userId]));
   }
 
-  changeUserPassword(userId, draft = {}) {
-    const row = this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  async changeUserPassword(userId, draft = {}) {
+    const row = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
     if (!row) throw new Error("Nie znaleziono konta.");
     if (!row.password_hash) throw new Error("Haslem tego konta zarzadza Google.");
 
@@ -610,13 +614,11 @@ class Database {
     if (newPassword !== confirmPassword) throw new Error("Nowe hasla nie sa identyczne.");
     if (!this._verifyPassword(currentPassword, row.password_hash)) throw new Error("Aktualne haslo jest niepoprawne.");
 
-    this.db
-      .prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?")
-      .run(this._hashPassword(newPassword), this.nowIso(), userId);
+    await this._execute("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", [this._hashPassword(newPassword), this.nowIso(), userId]);
     return { success: true };
   }
 
-  upsertMediaAsset({ recordingId, workspaceId, meetingId = "", contentType, buffer, createdByUserId }) {
+  async upsertMediaAsset({ recordingId, workspaceId, meetingId = "", contentType, buffer, createdByUserId }) {
     const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
     if (!safeRecordingId) throw new Error("Nieprawidłowy identyfikator nagrania.");
     const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
@@ -624,94 +626,84 @@ class Database {
     if (!filePath.startsWith(path.resolve(this.uploadDir) + path.sep)) throw new Error("Nieprawidłowa ścieżka pliku nagrania.");
     fs.writeFileSync(filePath, buffer);
 
-    const existing = this.db.prepare("SELECT id FROM media_assets WHERE id = ?").get(recordingId);
+    const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);
     const timestamp = this.nowIso();
 
     if (existing) {
-      this.db
-        .prepare("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?")
-        .run(workspaceId, meetingId, filePath, contentType, buffer.byteLength, timestamp, recordingId);
+      await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?", [workspaceId, meetingId, filePath, contentType, buffer.byteLength, timestamp, recordingId]);
     } else {
-      this.db
-        .prepare(`
-          INSERT INTO media_assets (
-            id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
-            size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`)
-        .run(recordingId, workspaceId, meetingId, createdByUserId, filePath, contentType || "application/octet-stream", buffer.byteLength, timestamp, timestamp);
+      await this._execute(`
+        INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`, [recordingId, workspaceId, meetingId, createdByUserId, filePath, contentType || "application/octet-stream", buffer.byteLength, timestamp, timestamp]);
     }
     return this.getMediaAsset(recordingId);
   }
 
-  getMediaAsset(recordingId) {
-    return this.db.prepare("SELECT * FROM media_assets WHERE id = ?").get(recordingId);
+  async getMediaAsset(recordingId) {
+    return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]);
   }
 
-  markTranscriptionProcessing(recordingId) {
-    this.db.prepare("UPDATE media_assets SET transcription_status = 'processing', updated_at = ? WHERE id = ?").run(this.nowIso(), recordingId);
+  async markTranscriptionProcessing(recordingId) {
+    await this._execute("UPDATE media_assets SET transcription_status = 'processing', updated_at = ? WHERE id = ?", [this.nowIso(), recordingId]);
     return this.getMediaAsset(recordingId);
   }
 
-  saveTranscriptionResult(recordingId, result = {}) {
-    this.db
-      .prepare("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?")
-      .run(this._clean(result.pipelineStatus) || "completed",
-           JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
-           JSON.stringify(result.diarization && typeof result.diarization === "object" ? { ...result.diarization, reviewSummary: result.reviewSummary || null } : { reviewSummary: result.reviewSummary || null }),
-           this.nowIso(), recordingId);
+  async saveTranscriptionResult(recordingId, result = {}) {
+    await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
+         JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
+         JSON.stringify(result.diarization && typeof result.diarization === "object" ? { ...result.diarization, reviewSummary: result.reviewSummary || null } : { reviewSummary: result.reviewSummary || null }),
+         this.nowIso(), recordingId]);
     return this.getMediaAsset(recordingId);
   }
 
-  markTranscriptionFailure(recordingId, errorMessage) {
-    this.db.prepare("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?").run(JSON.stringify({ errorMessage: this._clean(errorMessage) }), this.nowIso(), recordingId);
+  async markTranscriptionFailure(recordingId, errorMessage) {
+    await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [JSON.stringify({ errorMessage: this._clean(errorMessage) }), this.nowIso(), recordingId]);
     return this.getMediaAsset(recordingId);
   }
 
-  queueTranscription(recordingId, updates = {}) {
-    const asset = this.getMediaAsset(recordingId);
+  async queueTranscription(recordingId, updates = {}) {
+    const asset = await this.getMediaAsset(recordingId);
     if (!asset) throw new Error("Nie znaleziono nagrania.");
-    this.db
-      .prepare("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = '{}', updated_at = ? WHERE id = ?")
-      .run(this._clean(updates.workspaceId) || asset.workspace_id, this._clean(updates.meetingId) || asset.meeting_id, this._clean(updates.contentType) || asset.content_type, this.nowIso(), recordingId);
+    await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = '{}', updated_at = ? WHERE id = ?", [this._clean(updates.workspaceId) || asset.workspace_id, this._clean(updates.meetingId) || asset.meeting_id, this._clean(updates.contentType) || asset.content_type, this.nowIso(), recordingId]);
     return { diarization: { segments: [], speakerNames: {}, speakerCount: 0, confidence: 0 }, segments: [], speakerNames: {}, speakerCount: 0, confidence: 0, pipelineStatus: "queued" };
   }
 
-  updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
+  async updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
     const nextRole = ["owner", "admin", "member", "viewer"].includes(memberRole) ? memberRole : "member";
-    this.db.prepare("UPDATE workspace_members SET member_role = ? WHERE workspace_id = ? AND user_id = ?").run(nextRole, workspaceId, targetUserId);
+    await this._execute("UPDATE workspace_members SET member_role = ? WHERE workspace_id = ? AND user_id = ?", [nextRole, workspaceId, targetUserId]);
     return this.getMembership(workspaceId, targetUserId);
   }
 
-  saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }) {
+  async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }) {
     const timestamp = this.nowIso();
-    this.db
-      .prepare("INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .run(id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp);
-    return this.db.prepare("SELECT * FROM voice_profiles WHERE id = ?").get(id);
+    await this._execute("INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp]);
+    return this._get("SELECT * FROM voice_profiles WHERE id = ?", [id]);
   }
 
-  getWorkspaceVoiceProfiles(workspaceId) {
-    return this.db.prepare("SELECT * FROM voice_profiles WHERE workspace_id = ? ORDER BY created_at DESC").all(workspaceId);
+  async getWorkspaceVoiceProfiles(workspaceId) {
+    return this._query("SELECT * FROM voice_profiles WHERE workspace_id = ? ORDER BY created_at DESC", [workspaceId]);
   }
 
-  deleteVoiceProfile(id, workspaceId) {
-    const row = this.db.prepare("SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?").get(id, workspaceId);
+  async deleteVoiceProfile(id, workspaceId) {
+    const row = await this._get("SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?", [id, workspaceId]);
     if (row && row.audio_path) {
       try { require("node:fs").unlinkSync(row.audio_path); } catch (_) {}
     }
-    this.db.prepare("DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?").run(id, workspaceId);
+    await this._execute("DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?", [id, workspaceId]);
   }
 
-  getHealth() {
+  async getHealth() {
     return { ok: true };
   }
 }
 
 let defaultInstance = null;
 
-function initDatabase(dbPath, uploadDir, sessionTtlHours) {
-  defaultInstance = new Database(dbPath, uploadDir, sessionTtlHours);
+function initDatabase(dbConfig) {
+  defaultInstance = new Database(dbConfig);
   return defaultInstance;
 }
 
@@ -721,7 +713,15 @@ function getDatabase() {
     const DB_PATH = process.env.VOICELOG_DB_PATH ? path.resolve(process.env.VOICELOG_DB_PATH) : path.join(DATA_DIR, "voicelog.sqlite");
     const UPLOAD_DIR = process.env.VOICELOG_UPLOAD_DIR ? path.resolve(process.env.VOICELOG_UPLOAD_DIR) : path.join(DATA_DIR, "uploads");
     const SESSION_TTL_HOURS = Math.max(1, Number(process.env.VOICELOG_SESSION_TTL_HOURS) || 24 * 30);
-    return initDatabase(DB_PATH, UPLOAD_DIR, SESSION_TTL_HOURS);
+    const CONNECTION_STRING = process.env.DATABASE_URL || process.env.VOICELOG_DATABASE_URL;
+
+    return initDatabase({
+      type: CONNECTION_STRING ? "postgres" : "sqlite",
+      dbPath: DB_PATH,
+      uploadDir: UPLOAD_DIR,
+      sessionTtlHours: SESSION_TTL_HOURS,
+      connectionString: CONNECTION_STRING
+    });
   }
   return defaultInstance;
 }

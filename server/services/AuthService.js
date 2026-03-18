@@ -3,40 +3,40 @@ class AuthService {
     this.db = db;
   }
 
-  registerUser(draft) {
-    return this.db.registerUser(draft);
+  async registerUser(draft) {
+    return await this.db.registerUser(draft);
   }
 
-  loginUser(draft) {
-    return this.db.loginUser(draft);
+  async loginUser(draft) {
+    return await this.db.loginUser(draft);
   }
 
-  requestPasswordReset(draft) {
-    return this.db.requestPasswordReset(draft);
+  async requestPasswordReset(draft) {
+    return await this.db.requestPasswordReset(draft);
   }
 
-  resetPasswordWithCode(draft) {
-    return this.db.resetPasswordWithCode(draft);
+  async resetPasswordWithCode(draft) {
+    return await this.db.resetPasswordWithCode(draft);
   }
 
-  upsertGoogleUser(profile) {
-    return this.db.upsertGoogleUser(profile);
+  async upsertGoogleUser(profile) {
+    return await this.db.upsertGoogleUser(profile);
   }
 
-  getSession(token) {
-    return this.db.getSession(token);
+  async getSession(token) {
+    return await this.db.getSession(token);
   }
 
-  updateUserProfile(userId, updates) {
-    return this.db.updateUserProfile(userId, updates);
+  async updateUserProfile(userId, updates) {
+    return await this.db.updateUserProfile(userId, updates);
   }
 
-  changeUserPassword(userId, draft) {
-    return this.db.changeUserPassword(userId, draft);
+  async changeUserPassword(userId, draft) {
+    return await this.db.changeUserPassword(userId, draft);
   }
 
-  buildSessionPayload(userId, workspaceId) {
-    return this.db.buildSessionPayload(userId, workspaceId);
+  async buildSessionPayload(userId, workspaceId) {
+    return await this.db.buildSessionPayload(userId, workspaceId);
   }
 }
 
