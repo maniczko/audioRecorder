@@ -94,6 +94,68 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   );
 }
 
+function MeetingsTable({ userMeetings, selectedMeeting, selectMeeting, setActiveTab }) {
+  const sorted = [...userMeetings].sort(
+    (a, b) => new Date(b.startsAt || b.createdAt) - new Date(a.startsAt || a.createdAt)
+  );
+
+  if (!sorted.length) {
+    return (
+      <div className="empty-recordings">
+        <p>Brak zaplanowanych lub archiwalnych spotkań.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="panel meetings-library" style={{ marginBottom: '32px' }}>
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Workspace</div>
+          <h2>Lista spotkań</h2>
+        </div>
+        <div className="status-chip">{sorted.length}</div>
+      </div>
+      <div className="studio-recordings-table-wrap">
+        <table className="studio-recordings-table">
+          <thead>
+            <tr>
+              <th>Spotkanie</th>
+              <th>Data i godzina</th>
+              <th>Czas trwania</th>
+              <th>Nagrania</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((m) => (
+              <tr
+                key={m.id}
+                className={m.id === selectedMeeting?.id ? "active" : ""}
+                onClick={() => {
+                  selectMeeting(m);
+                  setActiveTab("studio");
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <td className="recordings-library-meeting">
+                  <strong>{m.title}</strong>
+                </td>
+                <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
+                <td>{m.durationMinutes} min</td>
+                <td>
+                  <span className="status-chip status-chip-sm">
+                    {(m.recordings || []).length}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting, setActiveTab }) {
   const allRecordings = userMeetings.flatMap((m) =>
     (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title }))
@@ -102,7 +164,7 @@ function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecor
   if (!allRecordings.length) {
     return (
       <div className="empty-recordings">
-        <p>Brak archiwalnych nagrań.</p>
+        <p>Brak dostępnych nagrań audio.</p>
       </div>
     );
   }
@@ -112,7 +174,7 @@ function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecor
       <div className="panel-header compact">
         <div>
           <div className="eyebrow">Library</div>
-          <h2>Wszystkie nagrania</h2>
+          <h2>Archiwum nagrań</h2>
         </div>
         <div className="status-chip">{allRecordings.length}</div>
       </div>
@@ -121,8 +183,8 @@ function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecor
           <thead>
             <tr>
               <th>Spotkanie</th>
-              <th>Data</th>
-              <th>Czas</th>
+              <th>Data nagrania</th>
+              <th>Długość</th>
               <th>Speakerzy</th>
               <th>Segmenty</th>
               <th>Status</th>
@@ -165,7 +227,7 @@ export default function RecordingsTab(props) {
 
   return (
     <div className="recordings-tab-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header className="recordings-tab-header" style={{ marginBottom: '24px' }}>
+      <header className="recordings-tab-header" style={{ marginBottom: '32px' }}>
         <MeetingPicker
           selectedMeeting={selectedMeeting}
           userMeetings={userMeetings}
@@ -176,6 +238,13 @@ export default function RecordingsTab(props) {
       </header>
       
       <main className="recordings-tab-content">
+        <MeetingsTable
+          userMeetings={userMeetings}
+          selectedMeeting={selectedMeeting}
+          selectMeeting={selectMeeting}
+          setActiveTab={setActiveTab}
+        />
+
         <RecordingsLibrary
           userMeetings={userMeetings}
           selectedRecordingId={selectedRecordingId}
