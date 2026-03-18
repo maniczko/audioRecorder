@@ -3457,3 +3457,172 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+/* ── Intelligence Tabs & Analysis ───────────────────── */
+
+.ff-intelligence-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.ff-it-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #7c7c8c);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ff-it-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main, #fff);
+}
+
+.ff-it-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #74d0bf; /* Brand primary matching Firefox style */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.studio-analysis-summary-panel .analysis-summary-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-main, #fff);
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+}
+
+.analysis-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.analysis-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted, #7c7c8c);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+
+.analysis-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.analysis-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-main, #fff);
+}
+
+.analysis-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #74d0bf;
+  font-weight: bold;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.insight-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.insight-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #74d0bf;
+}
+
+.insight-card > div {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--text-muted, #7c7c8c);
+}
+
+.insight-card strong {
+  color: var(--text-main, #fff);
+  font-weight: 500;
+}
+
+.feedback-meta {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.meta-item {
+  font-size: 14px;
+  color: var(--text-muted, #7c7c8c);
+}
+
+.meta-item strong {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #74d0bf;
+  margin-bottom: 4px;
+}
+
+.risk-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+}
+
+.risk-item.severity-high {
+  background: rgba(235, 87, 87, 0.1);
+  color: #eb5757;
+  border-left-color: #eb5757;
+}
+
+.risk-item.severity-medium {
+  background: rgba(242, 153, 74, 0.1);
+  color: #f2994a;
+  border-left-color: #f2994a;
+}
+
+.risk-item.severity-low {
+  background: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+  border-left-color: #27ae60;
+}
+

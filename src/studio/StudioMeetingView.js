@@ -600,15 +600,44 @@ export default function StudioMeetingView({
       {/* ── Brief panels ── */}
       <div className="ff-panels">
         {studioAnalysisTab === 'summary' && (
-          <section className="panel">
+          <section className="panel studio-analysis-summary-panel">
             <div className="panel-header compact">
               <div>
+                <div className="eyebrow">AI — podsumowanie</div>
                 <h2>Podsumowanie spotkania</h2>
               </div>
             </div>
-            <div className="panel-body">
-              <p className="soft-copy">Automatyczne podsumowanie AI pojawi się po zakończeniu analizy.</p>
-            </div>
+            {studioAnalysis?.summary ? (
+              <div className="panel-body">
+                <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+
+                {studioAnalysis.decisions?.length > 0 && (
+                  <div className="analysis-section">
+                    <h3>Decyzje</h3>
+                    <ul className="analysis-list">
+                      {studioAnalysis.decisions.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {studioAnalysis.actionItems?.length > 0 && (
+                  <div className="analysis-section">
+                    <h3>Action Items</h3>
+                    <ul className="analysis-list">
+                      {studioAnalysis.actionItems.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="panel-body">
+                <p className="soft-copy">Automatyczne podsumowanie AI pojawi się po zakończeniu analizy.</p>
+              </div>
+            )}
           </section>
         )}
 
@@ -700,32 +729,110 @@ export default function StudioMeetingView({
                 </ul>
               </div>
             </div>
+
+            {studioAnalysis?.answersToNeeds?.length > 0 && (
+              <div className="analysis-section" style={{ padding: '20px 24px' }}>
+                <div className="eyebrow">AI — analiza potrzeb</div>
+                <h3>Odpowiedzi na potrzeby</h3>
+                <ul className="analysis-list">
+                  {studioAnalysis.answersToNeeds.map((item, i) => (
+                    <li key={i}>
+                      <strong style={{ color: 'var(--brand-primary)' }}>{item.need}:</strong> {item.answer}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         )}
 
         {studioAnalysisTab === 'profile' && (
-          <section className="panel">
+          <section className="panel studio-psychological-profile-panel">
             <div className="panel-header compact">
               <div>
+                <div className="eyebrow">AI — profile</div>
                 <h2>Profil psychologiczny</h2>
               </div>
             </div>
-            <div className="panel-body">
-              <p className="soft-copy">Analiza profilu psychologicznego uczestników pojawi się tutaj.</p>
-            </div>
+            {studioAnalysis?.participantInsights?.length > 0 ? (
+              <div className="panel-body">
+                <div className="insights-grid">
+                  {studioAnalysis.participantInsights.map((insight, i) => (
+                    <div key={i} className="insight-card">
+                      <h3>{insight.speaker}</h3>
+                      <div className="insight-topic">
+                        <strong>Główny temat:</strong> {insight.mainTopic}
+                      </div>
+                      <div className="insight-stance">
+                        <strong>Nastawienie:</strong> {insight.stance}
+                      </div>
+                      <div className="insight-ratio">
+                        <strong>Udział w rozmowie:</strong> {(insight.talkRatio * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="panel-body">
+                <p className="soft-copy">Analiza profilu psychologicznego uczestników pojawi się tutaj.</p>
+              </div>
+            )}
           </section>
         )}
 
         {studioAnalysisTab === 'feedback' && (
-          <section className="panel">
+          <section className="panel studio-feedback-panel">
             <div className="panel-header compact">
               <div>
+                <div className="eyebrow">AI — feedback</div>
                 <h2>Twój feedback</h2>
               </div>
             </div>
-            <div className="panel-body">
-              <p className="soft-copy">Tutaj znajdziesz analizę zwrotną dotyczącą jakości spotkania.</p>
-            </div>
+            {studioAnalysis ? (
+              <div className="panel-body">
+                <div className="feedback-meta">
+                  <div className="meta-item">
+                    <strong>Poziom energii</strong>
+                    {studioAnalysis.energyLevel || "N/A"}
+                  </div>
+                  <div className="meta-item">
+                    <strong>Typ spotkania</strong>
+                    {studioAnalysis.meetingType || "N/A"}
+                  </div>
+                </div>
+
+                {studioAnalysis.openQuestions?.length > 0 && (
+                  <div className="analysis-section">
+                    <h3>Otwarte pytania</h3>
+                    <ul className="analysis-list">
+                      {studioAnalysis.openQuestions.map((q, i) => (
+                        <li key={i}>
+                          <strong>{q.askedBy}:</strong> {q.question}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {studioAnalysis.risks?.length > 0 && (
+                  <div className="analysis-section">
+                    <h3>Ryzyka</h3>
+                    <div className="risks-list" style={{ marginTop: '12px' }}>
+                      {studioAnalysis.risks.map((r, i) => (
+                        <div key={i} className={`risk-item severity-${r.severity || "medium"}`}>
+                          {r.risk}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="panel-body">
+                <p className="soft-copy">Tutaj znajdziesz analizę zwrotną dotyczącą jakości spotkania.</p>
+              </div>
+            )}
           </section>
         )}
 
