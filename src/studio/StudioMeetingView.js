@@ -1106,7 +1106,7 @@ export default function StudioMeetingView({
           ) : (
             <>
               <span className="ff-player-time">
-                {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration))}
+                {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration || displayRecording?.duration || 0))}
               </span>
               <div className="ff-player-controls">
                 <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>

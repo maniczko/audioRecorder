@@ -98,6 +98,7 @@ select {
   position: relative;
   min-height: 100vh;
   padding: 24px;
+  padding-bottom: 88px; /* Room for fixed player bar (64px + 24px padding) */
   overflow: hidden;
 }
 
