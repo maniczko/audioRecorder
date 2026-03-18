@@ -2639,6 +2639,29 @@
   to { transform: translateY(0); }
 }
 .ff-player-bar:empty { display: none; }
+.ff-player-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ff-player-status-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.ff-player-retry-btn {
+  background: var(--accent, #75d6c4);
+  color: #071119;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ff-player-retry-btn:hover { opacity: 0.85; }
+
 
 /* Controls group inside player (speed + back + play + fwd + download) */
 .ff-player-controls {
