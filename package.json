@@ -23,9 +23,11 @@
     "start:server": "node server/index.js",
     "start:server:watch": "node --watch server/index.js",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "lint": "eslint src --max-warnings=0",
+    "test": "npm run lint && react-scripts test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:server": "jest server/tests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
