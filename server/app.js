@@ -84,7 +84,6 @@ function createApp({ authService, workspaceService, transcriptionService, config
     const requestUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
     const pathname = requestUrl.pathname;
 
-    // --- Public Routes ---
     if (request.method === "GET" && pathname === "/health") {
       sendJson(response, 200, { ok: true }, origin, ALLOWED_ORIGINS);
       return;
@@ -140,7 +139,22 @@ function createApp({ authService, workspaceService, transcriptionService, config
       return;
     }
 
-    // --- Private Routes ---
+    // --- Private Routes Check ---
+    const isPrivate = pathname.startsWith("/auth/session") ||
+                      pathname.startsWith("/users/") ||
+                      pathname.startsWith("/state/bootstrap") ||
+                      pathname.startsWith("/state/workspaces/") ||
+                      pathname.startsWith("/workspaces/") ||
+                      pathname.startsWith("/media/") ||
+                      pathname.startsWith("/voice-profiles") ||
+                      pathname.startsWith("/transcribe/live");
+
+    if (!isPrivate) {
+      sendText(response, 404, "Not found", origin, ALLOWED_ORIGINS);
+      return;
+    }
+
+    // --- Private Routes (Auth Gated) ---
     const session = requireSession(request);
 
     if (request.method === "GET" && pathname === "/auth/session") {
