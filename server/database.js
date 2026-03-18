@@ -247,10 +247,8 @@ class Database {
     };
   }
 
-  _buildWorkspaceFromRow(row, currentUserId = "") {
-    const members = this.db
-      .prepare("SELECT user_id, member_role FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC")
-      .all(row.id);
+  async _buildWorkspaceFromRow(row, currentUserId = "") {
+    const members = await this._query("SELECT user_id, member_role FROM workspace_members WHERE workspace_id = ? ORDER BY joined_at ASC", [row.id]);
 
     const memberIds = members.map((item) => item.user_id);
     const memberRoles = members.reduce((result, item) => {
