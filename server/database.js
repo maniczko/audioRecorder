@@ -281,7 +281,7 @@ class Database {
         FROM workspace_members
         JOIN users ON users.id = workspace_members.user_id
         WHERE workspace_members.workspace_id = ?
-        ORDER BY users.name COLLATE NOCASE ASC
+        ORDER BY LOWER(users.name) ASC
       `,
       [workspaceId]
     );
