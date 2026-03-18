@@ -40,6 +40,8 @@ const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
 const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || "";
 const PYTHON_BINARY = process.env.PYTHON_BINARY || "python";
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
+const VAD_SCRIPT = path.join(__dirname, "vad.py");
+const VAD_ENABLED = process.env.VOICELOG_AUDIO_VAD !== "false";
 // Whisper prompt primes the model toward Polish business vocabulary.
 // Override with VOICELOG_WHISPER_PROMPT env var if needed.
 const WHISPER_PROMPT = process.env.VOICELOG_WHISPER_PROMPT
@@ -235,7 +237,7 @@ function parseJsonResponse(raw) {
   }
 }
 
-async function requestAudioTranscription({ filePath, contentType, fields }) {
+async function requestAudioTranscription({ filePath, contentType, fields, signal }) {
   if (!OPENAI_API_KEY) {
     throw new Error("Brakuje OPENAI_API_KEY dla serwerowego pipeline audio.");
   }
@@ -264,13 +266,15 @@ async function requestAudioTranscription({ filePath, contentType, fields }) {
     form.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
   });
 
+  const abortSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000);
+
   const response = await fetch(`${OPENAI_BASE_URL}/audio/transcriptions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: form,
-    signal: AbortSignal.timeout(120000),
+    signal: abortSignal,
   });
 
   const rawBody = await response.text();
@@ -463,42 +467,107 @@ function buildVerificationResult(diarizedSegments, verificationSegments) {
  * Runs pyannote.audio speaker diarization via Python subprocess.
  * Returns [{speaker, start, end}] or null if unavailable/failed.
  */
-function runPyannoteDiarization(audioPath) {
+async function runPyannoteDiarization(audioPath, signal) {
   if (!HF_TOKEN) return null;
   if (!fs.existsSync(DIARIZE_SCRIPT)) {
     console.warn("[audioPipeline] diarize.py not found, skipping pyannote.");
     return null;
   }
-  const { spawnSync } = require("node:child_process");
+  const { spawn } = require("node:child_process");
   console.log("[audioPipeline] Running pyannote diarization (may download ~1GB model on first run)...");
-  const result = spawnSync(PYTHON_BINARY, [DIARIZE_SCRIPT, audioPath, HF_TOKEN], {
-    timeout: 600000, // 10 minutes — first run downloads the model
-    encoding: "utf8",
-    maxBuffer: 10 * 1024 * 1024,
-  });
+  
+  return new Promise((resolve) => {
+    const child = spawn(PYTHON_BINARY, [DIARIZE_SCRIPT, audioPath, HF_TOKEN], {
+      signal,
+      timeout: 600000,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
-  if (result.error) {
-    console.warn("[audioPipeline] pyannote spawn error:", result.error.message);
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (data) => { stdout += data; });
+    
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (data) => { stderr += data; });
+
+    child.on("error", (error) => {
+      console.warn("[audioPipeline] pyannote spawn error:", error.message);
+      resolve(null);
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0 && (!signal || !signal.aborted)) {
+        console.warn("[audioPipeline] pyannote exited with status", code, stderr.slice(0, 400));
+        resolve(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout.trim());
+        if (parsed?.error) {
+          console.warn("[audioPipeline] pyannote returned error:", parsed.error);
+          resolve(null);
+          return;
+        }
+        if (!Array.isArray(parsed) || !parsed.length) return resolve(null);
+        const speakers = [...new Set(parsed.map((s) => s.speaker))];
+        console.log(`[audioPipeline] pyannote: ${parsed.length} segments, ${speakers.length} speakers: ${speakers.join(", ")}`);
+        resolve(parsed);
+      } catch (e) {
+        console.warn("[audioPipeline] pyannote JSON parse failed:", e.message, stdout.slice(0, 200));
+        resolve(null);
+      }
+    });
+  });
+}
+
+/**
+ * Runs Silero VAD via Python subprocess.
+ * Returns [{start, end}] timestamps of speech segments.
+ */
+async function runSileroVAD(audioPath, signal) {
+  if (!VAD_ENABLED) return null;
+  if (!fs.existsSync(VAD_SCRIPT)) {
+    console.warn("[audioPipeline] vad.py not found, skipping Silero VAD.");
     return null;
   }
-  if (result.status !== 0) {
-    console.warn("[audioPipeline] pyannote exited with status", result.status, result.stderr?.slice(0, 400));
-    return null;
-  }
-  try {
-    const parsed = JSON.parse((result.stdout || "").trim());
-    if (parsed?.error) {
-      console.warn("[audioPipeline] pyannote returned error:", parsed.error);
-      return null;
-    }
-    if (!Array.isArray(parsed) || !parsed.length) return null;
-    const speakers = [...new Set(parsed.map((s) => s.speaker))];
-    console.log(`[audioPipeline] pyannote: ${parsed.length} segments, ${speakers.length} speakers: ${speakers.join(", ")}`);
-    return parsed;
-  } catch (e) {
-    console.warn("[audioPipeline] pyannote JSON parse failed:", e.message, result.stdout?.slice(0, 200));
-    return null;
-  }
+  const { spawn } = require("node:child_process");
+
+  return new Promise((resolve) => {
+    const child = spawn(PYTHON_BINARY, [VAD_SCRIPT, audioPath], {
+      signal,
+      timeout: 120000,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (data) => { stdout += data; });
+
+    child.on("error", (error) => {
+      console.warn("[audioPipeline] Silero VAD spawn error:", error.message);
+      resolve(null);
+    });
+
+    child.on("close", () => {
+      try {
+        const parsed = JSON.parse(stdout.trim());
+        if (parsed?.error) {
+          console.warn("[audioPipeline] Silero VAD returned error:", parsed.error);
+          resolve(null);
+          return;
+        }
+        resolve(Array.isArray(parsed) ? parsed : null);
+      } catch (e) {
+        if (!signal || !signal.aborted) {
+          console.warn("[audioPipeline] Silero VAD JSON parse failed:", e.message);
+        }
+        resolve(null);
+      }
+    });
+  });
 }
 
 /**
@@ -561,14 +630,17 @@ function mergeWithPyannote(pyannoteSegments, whisperSegments) {
  * Returns [{filePath, offsetSeconds}] for each chunk, sorted by start time.
  * All chunks are 16kHz mono WAV so they can be sent directly to the transcription API.
  */
-async function splitAudioIntoChunks(filePath) {
-  const { execSync } = require("node:child_process");
+async function splitAudioIntoChunks(filePath, signal) {
+  const { exec } = require("node:child_process");
+  const util = require("node:util");
+  const execPromise = util.promisify(exec);
+  
   const dir = path.dirname(filePath);
   const base = `_chunk_${crypto.randomUUID().replace(/-/g, "")}_`;
   const chunkPattern = path.join(dir, `${base}%03d.wav`);
-  execSync(
+  await execPromise(
     `"${FFMPEG_BINARY}" -y -i "${filePath}" -f segment -segment_time ${CHUNK_DURATION_SECONDS} -reset_timestamps 1 -ar 16000 -ac 1 "${chunkPattern}"`,
-    { stdio: "pipe", timeout: 300000 }
+    { timeout: 300000, signal }
   );
   const chunks = fs.readdirSync(dir)
     .filter((f) => f.startsWith(base) && f.endsWith(".wav"))
@@ -643,17 +715,27 @@ function mergeChunkedDiarizedPayloads(payloads) {
  * Transcribes a large audio file by splitting it into chunks, transcribing
  * each chunk separately, and merging results with correct timestamp offsets.
  */
-async function transcribeInChunks(filePath, contentType, fields) {
-  const chunks = await splitAudioIntoChunks(filePath);
+async function transcribeInChunks(filePath, contentType, fields, options = {}) {
+  const chunks = await splitAudioIntoChunks(filePath, options.signal);
   if (DEBUG) console.log(`[audioPipeline] Split into ${chunks.length} chunks.`);
 
   const payloads = [];
   try {
     for (const chunk of chunks) {
+      if (options.signal?.aborted) throw new Error("Aborted");
+      // ── Skip silent chunks using Silero VAD ──
+      const chunkSpeech = await runSileroVAD(chunk.filePath, options.signal);
+      if (chunkSpeech && chunkSpeech.length === 0) {
+        if (DEBUG) console.log(`[audioPipeline] Skipping silent chunk: ${chunk.filePath} (offset: ${chunk.offsetSeconds}s)`);
+        payloads.push({ payload: { segments: [], text: "" }, offsetSeconds: chunk.offsetSeconds });
+        continue;
+      }
+
       const payload = await requestAudioTranscription({
         filePath: chunk.filePath,
         contentType: "audio/wav",
         fields,
+        signal: options.signal,
       });
       payloads.push({ payload, offsetSeconds: chunk.offsetSeconds });
     }
@@ -666,29 +748,20 @@ async function transcribeInChunks(filePath, contentType, fields) {
   return payloads;
 }
 
-async function preprocessAudio(filePath) {
+async function preprocessAudio(filePath, signal) {
   if (!AUDIO_PREPROCESS) return null;
-  const { execSync } = require("node:child_process");
+  const { exec } = require("node:child_process");
+  const util = require("node:util");
+  const execPromise = util.promisify(exec);
   const tmpPath = `${filePath}.prep.wav`;
   try {
-    // Filter chain rationale:
-    //  afftdn=nf=-20:nr=0.85  — FFT denoiser; nr=0.85 reduces noise without smearing
-    //                            consonant transients (s/sz/cz) that matter for Polish.
-    //  highpass=f=80           — removes mic rumble / low-frequency handling noise.
-    //  lowpass=f=16000         — keeps full 0-16 kHz speech band (Whisper mel filterbank goes to 8 kHz
-    //                            but diarization model benefits from higher bandwidth).
-    //  dynaudnorm=p=0.9:m=100:s=5 — dynamic loudness normalisation; 100ms RMS window, 5s smoothing.
-    //                            Compensates for variable speaker distance without pumping artefacts.
-    //                            More robust than loudnorm (no two-pass required) for arbitrary-length files.
-    //  aresample=resampler=swr — forces high-quality SWR resampler for the 16 kHz conversion,
-    //                            avoiding lower-quality defaults on some FFmpeg builds.
-    execSync(
+    await execPromise(
       `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr" -ar 16000 -ac 1 "${tmpPath}"`,
-      { stdio: "pipe", timeout: 180000 }
+      { timeout: 180000, signal }
     );
     return tmpPath;
   } catch (err) {
-    console.warn("[audioPipeline] Audio pre-processing failed, using original file.", err.message);
+    if (!signal?.aborted) console.warn("[audioPipeline] Audio pre-processing failed, using original file.", err.message);
     try { fs.unlinkSync(tmpPath); } catch (_) {}
     return null;
   }
@@ -849,9 +922,14 @@ async function diarizeFromTranscript(segments) {
 }
 
 async function transcribeRecording(asset, options = {}) {
-  const prepPath = await preprocessAudio(asset.file_path);
+  const prepPath = await preprocessAudio(asset.file_path, options.signal);
   const transcribeFilePath = prepPath || asset.file_path;
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
+
+  const speechSegments = await runSileroVAD(transcribeFilePath, options.signal);
+  if (DEBUG && speechSegments) {
+    console.log(`[audioPipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
+  }
 
   try {
   const fileSize = fs.statSync(transcribeFilePath).size;
@@ -886,13 +964,14 @@ async function transcribeRecording(asset, options = {}) {
     const fields = { ...whisperFields, model };
     try {
       if (isLargeFile) {
-        const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields);
+        const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields, options);
         whisperPayload = mergeChunkedPayloads(chunkPayloads);
       } else {
         whisperPayload = await requestAudioTranscription({
           filePath: transcribeFilePath,
           contentType: transcribeContentType,
           fields,
+          signal: options.signal,
         });
       }
       if (DEBUG) console.log(`[audioPipeline] Transcription succeeded with model: ${model}`);
@@ -909,7 +988,7 @@ async function transcribeRecording(asset, options = {}) {
   // ── Try pyannote diarization (best quality, requires HF_TOKEN) ──
   let diarization = null;
   if (HF_TOKEN) {
-    const pyannoteSegments = runPyannoteDiarization(transcribeFilePath);
+    const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
       if (DEBUG) console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
       diarization = mergeWithPyannote(pyannoteSegments, verificationSegments);
@@ -940,6 +1019,22 @@ async function transcribeRecording(asset, options = {}) {
 
   if (!diarization.segments.length) {
     throw new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.");
+  }
+
+  // ── Hallucination Filter (VAD-based) ──
+  if (speechSegments) {
+    const originalCount = diarization.segments.length;
+    diarization.segments = diarization.segments.filter((seg) => {
+      // If a segment has 0% overlap with VAD-detected speech, it's likely a hallucination
+      const hasSpeech = speechSegments.some((v) => {
+        const overlap = Math.max(0, Math.min(seg.endTimestamp, v.end) - Math.max(seg.timestamp, v.start));
+        return overlap > 0.1 || (overlap / (seg.endTimestamp - seg.timestamp)) > 0.2;
+      });
+      return hasSpeech;
+    });
+    if (DEBUG && diarization.segments.length < originalCount) {
+      console.log(`[audioPipeline] VAD filter removed ${originalCount - diarization.segments.length} hallucinated segment(s).`);
+    }
   }
 
   const verificationResult = buildVerificationResult(diarization.segments, verificationSegments);
@@ -983,10 +1078,12 @@ async function transcribeRecording(asset, options = {}) {
         const selectFilter = safeSegments
           .map((s) => `between(t,${Number(s.timestamp).toFixed(3)},${Number(s.endTimestamp).toFixed(3)})`)
           .join("+");
-        const { execSync } = require("node:child_process");
-        execSync(
+        const { exec } = require("node:child_process");
+        const util = require("node:util");
+        const execPromise = util.promisify(exec);
+        await execPromise(
           `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
-          { stdio: "pipe", timeout: 30000 }
+          { timeout: 30000, signal: options.signal }
         );
         const matchedName = await matchSpeakerToProfile(clipPath, voiceProfiles);
         if (matchedName) {
@@ -1040,10 +1137,12 @@ async function correctTranscriptWithLLM(segments, options = {}) {
   if (!OPENAI_API_KEY) return segments;
   const payload = segments.map((s) => ({ id: s.id, text: s.text }));
   const inputLen = payload.reduce((sum, s) => sum + (s.text?.length || 0), 0);
+  const abortSignal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(60000)]) : undefined;
   try {
     const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+      signal: abortSignal,
       body: JSON.stringify({
         model: "gpt-4o-mini",
         max_tokens: Math.min(4000, inputLen * 2 + 200),
@@ -1059,7 +1158,7 @@ async function correctTranscriptWithLLM(segments, options = {}) {
     const map = new Map(corrected.map((s) => [s.id, s.text]));
     return segments.map((s) => ({ ...s, text: map.has(s.id) ? map.get(s.id) : s.text }));
   } catch (err) {
-    console.warn("[audioPipeline] LLM correction failed, using original segments.", err.message);
+    if (!options.signal?.aborted) console.warn("[audioPipeline] LLM correction failed, using original segments.", err.message);
     return segments;
   }
 }
@@ -1072,7 +1171,7 @@ async function correctTranscriptWithLLM(segments, options = {}) {
  * @param {string} contentType  MIME type of the audio file
  * @returns {Promise<string>}  Transcribed text or empty string on failure
  */
-async function transcribeLiveChunk(filePath, contentType) {
+async function transcribeLiveChunk(filePath, contentType, options = {}) {
   if (!OPENAI_API_KEY) return "";
   try {
     const payload = await requestAudioTranscription({
@@ -1085,10 +1184,13 @@ async function transcribeLiveChunk(filePath, contentType) {
         prompt: WHISPER_PROMPT,
         temperature: 0,
       },
+      signal: options.signal,
     });
     return String(payload?.text || "").trim();
   } catch (err) {
-    if (DEBUG) console.warn("[audioPipeline] Live chunk transcription failed:", err.message);
+    if (!options.signal?.aborted) {
+      if (DEBUG) console.warn("[audioPipeline] Live chunk transcription failed:", err.message);
+    }
     return "";
   }
 }
@@ -1102,7 +1204,7 @@ async function transcribeLiveChunk(filePath, contentType) {
  * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
  * @returns {Promise<string>}  Polish coaching text (~200–300 words)
  */
-async function generateVoiceCoaching(asset, speakerId, segments) {
+async function generateVoiceCoaching(asset, speakerId, segments, options = {}) {
   if (!OPENAI_API_KEY) throw new Error("Brak klucza OpenAI API.");
 
   const spkSegs = segments.filter(
@@ -1126,7 +1228,9 @@ async function generateVoiceCoaching(asset, speakerId, segments) {
     `coaching_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_clip.wav`
   );
   try {
-    const { execSync } = require("node:child_process");
+    const { exec } = require("node:child_process");
+    const util = require("node:util");
+    const execPromise = util.promisify(exec);
     // Build aselect filter from validated timestamps only (no shell injection risk)
     const selectFilter = validSegs
       .map(
@@ -1135,9 +1239,9 @@ async function generateVoiceCoaching(asset, speakerId, segments) {
       )
       .join("+");
 
-    execSync(
+    await execPromise(
       `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
-      { stdio: "pipe", timeout: 30000 }
+      { timeout: 30000, signal: options.signal }
     );
 
     const audioBase64 = fs.readFileSync(clipPath).toString("base64");
@@ -1193,13 +1297,15 @@ async function generateVoiceCoaching(asset, speakerId, segments) {
   }
 }
 
-async function normalizeRecording(filePath) {
-  const { execSync } = require("node:child_process");
+async function normalizeRecording(filePath, options = {}) {
+  const { exec } = require("node:child_process");
+  const util = require("node:util");
+  const execPromise = util.promisify(exec);
   const tmpPath = `${filePath}.norm.tmp`;
   try {
-    execSync(
+    await execPromise(
       `"${FFMPEG_BINARY}" -y -i "${filePath}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "${tmpPath}"`,
-      { stdio: "pipe", timeout: 120000 }
+      { timeout: 120000, signal: options.signal }
     );
     fs.renameSync(tmpPath, filePath);
   } catch (err) {

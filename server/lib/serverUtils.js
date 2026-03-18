@@ -80,13 +80,20 @@ function sendNoContent(response, origin, allowedOrigins) {
 
 function readJsonBody(request, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
+    let chunks = [];
     let received = 0;
+
+    const cleanup = () => {
+      chunks = [];
+      received = 0;
+    };
+
     request.on("data", (chunk) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
         const error = new Error("Ładunek JSON przekracza maksymalny rozmiar.");
         error.statusCode = 413;
+        cleanup();
         reject(error);
         request.destroy();
         return;
@@ -99,29 +106,60 @@ function readJsonBody(request, maxBytes = 1024 * 1024) {
         resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
       } catch (e) {
         reject(new Error("Invalid JSON payload."));
+      } finally {
+        cleanup();
       }
     });
-    request.on("error", reject);
+    request.on("error", (err) => {
+      cleanup();
+      reject(err);
+    });
+    request.on("close", () => {
+      if (!request.complete) {
+        cleanup();
+        reject(new Error("Request closed or aborted by client"));
+      }
+    });
   });
 }
 
 function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
+    let chunks = [];
     let received = 0;
+
+    const cleanup = () => {
+      chunks = [];
+      received = 0;
+    };
+
     request.on("data", (chunk) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
         const error = new Error("Przesłany plik przekracza maksymalny rozmiar.");
         error.statusCode = 413;
+        cleanup();
         reject(error);
         request.destroy();
         return;
       }
       chunks.push(chunk);
     });
-    request.on("end", () => resolve(Buffer.concat(chunks)));
-    request.on("error", reject);
+    request.on("end", () => {
+      const buf = Buffer.concat(chunks);
+      cleanup();
+      resolve(buf);
+    });
+    request.on("error", (err) => {
+      cleanup();
+      reject(err);
+    });
+    request.on("close", () => {
+      if (!request.complete) {
+        cleanup();
+        reject(new Error("Request closed or aborted by client"));
+      }
+    });
   });
 }
 

@@ -67,7 +67,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     };
   }
 
-  async function handleRequest(request, response) {
+  async function handleRequest(request, response, signal) {
     const origin = String(request.headers.origin || "");
     const socketIp = String(request.socket?.remoteAddress || "unknown");
     const clientIp = config.trustProxy
@@ -340,7 +340,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       const asset = transcriptionService.getMediaAsset(recordingId);
       if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
       ensureWorkspaceAccess(session, asset.workspace_id);
-      await transcriptionService.normalizeRecording(asset.file_path);
+      await transcriptionService.normalizeRecording(asset.file_path, { signal });
       sendJson(response, 200, { ok: true }, origin, ALLOWED_ORIGINS);
       return;
     }
@@ -352,7 +352,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       const asset = transcriptionService.getMediaAsset(recordingId);
       if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
       ensureWorkspaceAccess(session, asset.workspace_id);
-      const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || []);
+      const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || [], { signal });
       sendJson(response, 200, { coaching }, origin, ALLOWED_ORIGINS);
       return;
     }
@@ -388,7 +388,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       const tmpPath = path.join(config.uploadDir, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
       try {
         fs.writeFileSync(tmpPath, buffer);
-        const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType);
+        const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, { signal });
         sendJson(response, 200, { text }, origin, ALLOWED_ORIGINS);
       } finally {
         try { fs.unlinkSync(tmpPath); } catch (_) {}
@@ -408,9 +408,21 @@ function createApp({ authService, workspaceService, transcriptionService, config
   }
 
   return async (request, response) => {
+    const ac = new AbortController();
+    request.on("close", () => {
+      // If the response is not fully writable-ended, the request was probably aborted prematurely.
+      if (!response.writableEnded) {
+        ac.abort();
+      }
+    });
+    
     try {
-      await handleRequest(request, response);
+      await handleRequest(request, response, ac.signal);
     } catch (error) {
+      if (ac.signal.aborted || error.message.includes("aborted")) {
+        // Suppress errors logged if the client disconnected gracefully
+        return;
+      }
       const statusCode = error.statusCode || 500;
       const origin = String(request.headers.origin || "");
       if (statusCode === 429 && error.retryAfter) response.setHeader("Retry-After", String(error.retryAfter));

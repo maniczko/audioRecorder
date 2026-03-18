@@ -19,9 +19,9 @@ export async function ensureNoiseReducerWorklet(audioContext) {
   if (_loadPromise) return _loadPromise;
   const url =
     (typeof process !== "undefined" ? process.env.PUBLIC_URL || "" : "") +
-    "/rnnoise-worklet.js";
+    "/advanced-noise-worklet.js";
   _loadPromise = audioContext.audioWorklet.addModule(url).catch((err) => {
-    _loadPromise = null; // allow retry on next call
+    _loadPromise = null; 
     throw err;
   });
   return _loadPromise;
@@ -45,7 +45,7 @@ export async function createNoiseReducerNode(audioContext) {
 
   try {
     await ensureNoiseReducerWorklet(audioContext);
-    const node = new AudioWorkletNode(audioContext, "noise-reducer", {
+    const node = new AudioWorkletNode(audioContext, "advanced-noise-reducer", {
       numberOfInputs: 1,
       numberOfOutputs: 1,
       outputChannelCount: [1],

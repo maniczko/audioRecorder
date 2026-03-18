@@ -22,6 +22,7 @@ export default function useWorkspaceData({
   const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
   const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
   const [calendarMeta, setCalendarMeta] = useStoredState(STORAGE_KEYS.calendarMeta, {});
+  const [vocabulary, setVocabulary] = useStoredState(STORAGE_KEYS.vocabulary, []);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
 
   const stateService = useMemo(() => createStateService(), []);
@@ -53,6 +54,7 @@ export default function useWorkspaceData({
         taskBoards: nextState.taskBoards && typeof nextState.taskBoards === "object" ? nextState.taskBoards : {},
         calendarMeta:
           nextState.calendarMeta && typeof nextState.calendarMeta === "object" ? nextState.calendarMeta : {},
+        vocabulary: Array.isArray(nextState.vocabulary) ? nextState.vocabulary : [],
       };
       const nextSnapshot = serializeWorkspaceState(normalizedState);
       if (nextSnapshot === remoteSnapshotRef.current) {
@@ -64,6 +66,7 @@ export default function useWorkspaceData({
       setTaskState(normalizedState.taskState);
       setTaskBoards(normalizedState.taskBoards);
       setCalendarMeta(normalizedState.calendarMeta);
+      setVocabulary(normalizedState.vocabulary);
       remoteSnapshotRef.current = nextSnapshot;
 
       hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || "";
@@ -167,6 +170,7 @@ export default function useWorkspaceData({
       taskState,
       taskBoards,
       calendarMeta,
+      vocabulary,
     };
     const nextSnapshot = serializeWorkspaceState(payload);
     if (nextSnapshot === remoteSnapshotRef.current) {
@@ -190,7 +194,7 @@ export default function useWorkspaceData({
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [calendarMeta, currentWorkspaceId, isHydratingRemoteState, manualTasks, meetings, session?.token, stateService, taskBoards, taskState]);
+  }, [calendarMeta, vocabulary, currentWorkspaceId, isHydratingRemoteState, manualTasks, meetings, session?.token, stateService, taskBoards, taskState]);
 
   // Polling Effect (inbound)
   useEffect(() => {
@@ -217,6 +221,7 @@ export default function useWorkspaceData({
             taskBoards: result.state.taskBoards && typeof result.state.taskBoards === "object" ? result.state.taskBoards : {},
             calendarMeta:
               result.state.calendarMeta && typeof result.state.calendarMeta === "object" ? result.state.calendarMeta : {},
+            vocabulary: Array.isArray(result.state.vocabulary) ? result.state.vocabulary : [],
           };
           const incomingSnapshot = serializeWorkspaceState(normalizedState);
           if (incomingSnapshot === remoteSnapshotRef.current) {
@@ -263,6 +268,8 @@ export default function useWorkspaceData({
     setTaskBoards,
     calendarMeta,
     setCalendarMeta,
+    vocabulary,
+    setVocabulary,
     workspaceMessage,
     setWorkspaceMessage,
     userMeetings,

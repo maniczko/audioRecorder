@@ -23,6 +23,10 @@ class WorkspaceService {
     return this.db.getWorkspaceVoiceProfiles(workspaceId);
   }
 
+  getWorkspaceMemberNames(workspaceId) {
+    return this.db.workspaceMembers(workspaceId).map((u) => u.name);
+  }
+
   saveVoiceProfile(data) {
     return this.db.saveVoiceProfile(data);
   }

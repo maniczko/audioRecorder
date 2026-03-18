@@ -1,9 +1,20 @@
 class TranscriptionService {
-  constructor(db, audioPipeline, speakerEmbedder) {
+  constructor(db, workspaceService, audioPipeline, speakerEmbedder) {
     this.db = db;
+    this.workspaceService = workspaceService;
     this.audioPipeline = audioPipeline;
     this.speakerEmbedder = speakerEmbedder;
     this.transcriptionJobs = new Map();
+  }
+
+  get pipeline() {
+    if (this.audioPipeline && typeof this.audioPipeline.transcribeRecording === 'function') {
+      return this.audioPipeline;
+    }
+    console.error(`[TranscriptionService] audioPipeline missing methods. Keys: ${Object.keys(this.audioPipeline || {})}. Recovering...`);
+    const fallback = require('../audioPipeline');
+    this.audioPipeline = fallback;
+    return fallback;
   }
 
   upsertMediaAsset(data) {
@@ -38,8 +49,17 @@ class TranscriptionService {
     const jobPromise = Promise.resolve()
       .then(async () => {
         this.markTranscriptionProcessing(recordingId);
-        const result = await this.audioPipeline.transcribeRecording(asset, {
+        const wsState = this.db.getWorkspaceState(asset.workspace_id);
+        const result = await this.pipeline.transcribeRecording(asset, {
           ...options,
+          participants: [
+            ...(options.participants || []),
+            ...this.workspaceService.getWorkspaceMemberNames(asset.workspace_id)
+          ],
+          vocabulary: [
+            ...(options.vocabulary ? [options.vocabulary] : []),
+            ...(wsState.vocabulary || [])
+          ].join(", "),
           voiceProfiles: this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
         });
         this.saveTranscriptionResult(recordingId, {
@@ -57,24 +77,24 @@ class TranscriptionService {
     this.transcriptionJobs.set(recordingId, jobPromise);
   }
 
-  async normalizeRecording(filePath) {
-    return this.audioPipeline.normalizeRecording(filePath);
+  async normalizeRecording(filePath, options = {}) {
+    return this.pipeline.normalizeRecording(filePath, options);
   }
 
-  async generateVoiceCoaching(asset, speakerId, segments) {
-    return this.audioPipeline.generateVoiceCoaching(asset, speakerId, segments);
+  async generateVoiceCoaching(asset, speakerId, segments, options = {}) {
+    return this.pipeline.generateVoiceCoaching(asset, speakerId, segments, options);
   }
 
-  async diarizeFromTranscript(whisperLike) {
-    return this.audioPipeline.diarizeFromTranscript(whisperLike);
+  async diarizeFromTranscript(whisperLike, options = {}) {
+    return this.pipeline.diarizeFromTranscript(whisperLike, options);
   }
 
-  async transcribeLiveChunk(tmpPath, contentType) {
-    return this.audioPipeline.transcribeLiveChunk(tmpPath, contentType);
+  async transcribeLiveChunk(tmpPath, contentType, options = {}) {
+    return this.pipeline.transcribeLiveChunk(tmpPath, contentType, options);
   }
 
   async analyzeMeetingWithOpenAI(data) {
-    return this.audioPipeline.analyzeMeetingWithOpenAI(data);
+    return this.pipeline.analyzeMeetingWithOpenAI(data);
   }
 
   async computeEmbedding(audioPath) {

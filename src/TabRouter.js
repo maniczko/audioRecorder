@@ -177,6 +177,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         allTags={allTags}
         onRenameTag={meetings.renameTag}
         onDeleteTag={meetings.deleteTag}
+        vocabulary={meetings.vocabulary}
+        onUpdateVocabulary={meetings.setVocabulary}
       />
     ) : ui.activeTab === "recordings" ? (
       <RecordingsTab

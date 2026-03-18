@@ -65,6 +65,7 @@ class Database {
         task_state_json TEXT NOT NULL DEFAULT '{}',
         task_boards_json TEXT NOT NULL DEFAULT '{}',
         calendar_meta_json TEXT NOT NULL DEFAULT '{}',
+        vocabulary_json TEXT NOT NULL DEFAULT '[]',
         updated_at TEXT NOT NULL,
         FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
       );
@@ -289,9 +290,10 @@ class Database {
             task_state_json,
             task_boards_json,
             calendar_meta_json,
+            vocabulary_json,
             updated_at
           )
-          VALUES (?, '[]', '[]', '{}', '{}', '{}', ?)
+          VALUES (?, '[]', '[]', '{}', '{}', '{}', '[]', ?)
         `
       )
       .run(workspaceId, timestamp);
@@ -306,6 +308,7 @@ class Database {
       taskState: this._safeJsonParse(row.task_state_json, {}),
       taskBoards: this._safeJsonParse(row.task_boards_json, {}),
       calendarMeta: this._safeJsonParse(row.calendar_meta_json, {}),
+      vocabulary: this._safeJsonParse(row.vocabulary_json, []),
       updatedAt: row.updated_at,
     };
   }
@@ -322,6 +325,7 @@ class Database {
               task_state_json = ?,
               task_boards_json = ?,
               calendar_meta_json = ?,
+              vocabulary_json = ?,
               updated_at = ?
           WHERE workspace_id = ?
         `
@@ -332,6 +336,7 @@ class Database {
         JSON.stringify(payload.taskState && typeof payload.taskState === "object" ? payload.taskState : {}),
         JSON.stringify(payload.taskBoards && typeof payload.taskBoards === "object" ? payload.taskBoards : {}),
         JSON.stringify(payload.calendarMeta && typeof payload.calendarMeta === "object" ? payload.calendarMeta : {}),
+        JSON.stringify(Array.isArray(payload.vocabulary) ? payload.vocabulary : []),
         timestamp,
         workspaceId
       );

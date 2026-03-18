@@ -142,6 +142,71 @@ function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
   );
 }
 
+function VocabularyManagerSection({ vocabulary, onUpdateVocabulary }) {
+  const [newTerm, setNewTerm] = useState("");
+
+  function handleAdd(e) {
+    e.preventDefault();
+    const term = newTerm.trim();
+    if (term && !vocabulary.includes(term)) {
+      onUpdateVocabulary([...vocabulary, term]);
+      setNewTerm("");
+    }
+  }
+
+  function removeTerm(term) {
+    onUpdateVocabulary(vocabulary.filter((t) => t !== term));
+  }
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Audio Engine</div>
+          <h2>Słownik (Vocabulary)</h2>
+        </div>
+        <span className="status-chip">{vocabulary.length}</span>
+      </div>
+      <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "12px" }}>
+        Dodaj nazwy projektów, żargon techniczny lub nazwiska. AI będzie ich używać do poprawy celności transkrypcji.
+      </p>
+
+      <form className="stack-form" style={{ marginBottom: "16px" }} onSubmit={handleAdd}>
+        <div className="button-row" style={{ gap: "8px" }}>
+          <input
+            style={{ flex: 1 }}
+            value={newTerm}
+            onChange={(e) => setNewTerm(e.target.value)}
+            placeholder="np. Antigravity, Kubernetes, Kowalski"
+          />
+          <button type="submit" className="secondary-button" disabled={!newTerm.trim()}>
+            Dodaj
+          </button>
+        </div>
+      </form>
+
+      <div className="chip-list" style={{ marginTop: "8px" }}>
+        {vocabulary.length > 0 ? (
+          vocabulary.map((term) => (
+            <span key={term} className="task-tag-chip neutral" style={{ paddingRight: "4px" }}>
+              {term}
+              <button
+                type="button"
+                style={{ marginLeft: "6px", background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
+                onClick={() => removeTerm(term)}
+              >
+                ×
+              </button>
+            </span>
+          ))
+        ) : (
+          <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Brak słów w słowniku.</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
   const [editingTag, setEditingTag] = useState(null);
   const [editValue, setEditValue] = useState("");
@@ -279,6 +344,8 @@ export default function ProfileTab({
   allTags = [],
   onRenameTag,
   onDeleteTag,
+  vocabulary = [],
+  onUpdateVocabulary,
   sessionToken,
   apiBaseUrl,
 }) {
@@ -702,6 +769,11 @@ export default function ProfileTab({
           allTags={allTags}
           onRenameTag={onRenameTag}
           onDeleteTag={onDeleteTag}
+        />
+
+        <VocabularyManagerSection
+          vocabulary={vocabulary}
+          onUpdateVocabulary={onUpdateVocabulary}
         />
 
         <VoiceProfilesSection sessionToken={sessionToken} apiBaseUrl={apiBaseUrl} />

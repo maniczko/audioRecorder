@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   personNotes: "voicelog.personNotes.v1",
   notificationState: "voicelog.notificationState.v1",
   recordingQueue: "voicelog.recordingQueue.v1",
+  vocabulary: "voicelog.vocabulary.v1",
 };
 
 export function readStorage(key, fallbackValue) {
