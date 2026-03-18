@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useStoredState from "./useStoredState";
 import { STORAGE_KEYS } from "../lib/storage";
@@ -81,7 +82,6 @@ export default function useWorkspaceData({
         );
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces, setVocabulary]
   );
 
