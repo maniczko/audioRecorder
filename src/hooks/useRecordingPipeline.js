@@ -168,7 +168,7 @@ export default function useRecordingPipeline({
     queueProcessingRef.current = true;
     setAnalysisStatus(nextItem.status === "uploading" ? "uploading" : nextItem.status === "processing" ? "processing" : "queued");
     processQueueItem(nextItem).finally(() => { queueProcessingRef.current = false; });
-  }, [normalizedQueue, processQueueItem, resolveMeetingForQueueItem, updateQueueItem]);
+  }, [isHydratingRemoteState, normalizedQueue, processQueueItem, resolveMeetingForQueueItem, updateQueueItem]);
 
   function retryRecordingQueueItem(recordingId) {
     updateQueueItem(recordingId, { status: "queued", uploaded: false, errorMessage: "" });
