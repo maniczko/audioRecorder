@@ -81,7 +81,8 @@ export default function useWorkspaceData({
         );
       }
     },
-    [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces, setVocabulary]
   );
 
   // Migration Effect
