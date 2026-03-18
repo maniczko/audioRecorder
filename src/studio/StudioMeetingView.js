@@ -1097,8 +1097,21 @@ export default function StudioMeetingView({
               </div>
               <span className="ff-player-time">{formatDuration(elapsed)}</span>
             </>
-          ) : isQueued ? (
-            <span className="ff-player-queue">{queueLabel}</span>
+          ) : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl ? (
+            <div className="ff-player-status-wrap">
+              <span className="ff-player-status-label">
+                {analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : queueLabel}
+              </span>
+              {(analysisStatus === "error" || analysisStatus === "failed") && activeQueueItem && (
+                <button
+                  type="button"
+                  className="ff-player-retry-btn"
+                  onClick={() => retryRecordingQueueItem(activeQueueItem.recordingId)}
+                >
+                  Spróbuj ponownie
+                </button>
+              )}
+            </div>
           ) : (
             <>
               <span className="ff-player-time">
