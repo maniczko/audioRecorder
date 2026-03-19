@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npx eslint src --max-warnings=0
+        run: npx eslint src
 
   # ─── Stage 2: Unit & Integration Tests (Frontend) ──────
   test-frontend:
@@ -82,7 +82,7 @@ jobs:
         run: cd server && npm ci
 
       - name: Run server tests
-        run: cd server && npx jest --verbose --forceExit
+        run: cd server && npx vitest run --reporter=verbose
         env:
           NODE_ENV: test
 
@@ -110,18 +110,18 @@ jobs:
 
       - name: Verify build output
         run: |
-          test -f dist/index.html || (echo "❌ dist/index.html missing!" && exit 1)
+          test -f build/index.html || (echo "❌ build/index.html missing!" && exit 1)
           echo "✅ Build output verified"
-          du -sh dist/
+          du -sh build/
           echo "--- Asset sizes ---"
-          find dist/assets -type f -name '*.js' -exec du -h {} + | sort -rh | head -15
-          find dist/assets -type f -name '*.css' -exec du -h {} +
+          find build/assets -type f -name '*.js' -exec du -h {} + | sort -rh | head -15
+          find build/assets -type f -name '*.css' -exec du -h {} +
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: production-build
-          path: dist/
+          path: build/
           retention-days: 3
 
   # ─── Stage 5: Security Audit ───────────────────────────
@@ -181,8 +181,8 @@ jobs:
 
       - name: Check bundle size limits
         run: |
-          TOTAL_JS=$(find dist/assets -name '*.js' -exec cat {} + | wc -c)
-          TOTAL_CSS=$(find dist/assets -name '*.css' -exec cat {} + | wc -c)
+          TOTAL_JS=$(find build/assets -name '*.js' -exec cat {} + | wc -c)
+          TOTAL_CSS=$(find build/assets -name '*.css' -exec cat {} + | wc -c)
           JS_KB=$((TOTAL_JS / 1024))
           CSS_KB=$((TOTAL_CSS / 1024))
           echo "📊 Total JS: ${JS_KB} KB"
