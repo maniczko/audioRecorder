@@ -7,9 +7,13 @@ export default defineConfig({
     outDir: 'build',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'tasks-lib': ['./src/lib/tasks.ts'],
-          'analysis-lib': ['./src/lib/analysis.ts'],
+        manualChunks(id) {
+          if (id.includes('/src/lib/tasks')) {
+            return 'tasks-lib';
+          }
+          if (id.includes('/src/lib/analysis')) {
+            return 'analysis-lib';
+          }
         }
       }
     }
