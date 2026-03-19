@@ -8,9 +8,10 @@ describe("Database & AuthService (In-Memory)", () => {
   let authService;
   const testUploadDir = path.resolve(__dirname, "test_uploads");
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Initialize with :memory:
-    db = initDatabase(":memory:", testUploadDir);
+    db = initDatabase({ dbPath: ":memory:", uploadDir: testUploadDir });
+    await db.init();
     authService = new AuthService(db);
   });
 
@@ -20,13 +21,13 @@ describe("Database & AuthService (In-Memory)", () => {
     }
   });
 
-  test("should initialize an empty database in memory", () => {
-    const users = db.db.prepare("SELECT count(*) as count FROM users").get();
+  test("should initialize an empty database in memory", async () => {
+    const users = await db._get("SELECT count(*) as count FROM users");
     expect(users.count).toBe(0);
   });
 
-  test("should register a new user successfully", () => {
-    const result = authService.registerUser({
+  test("should register a new user successfully", async () => {
+    const result = await authService.registerUser({
       email: "test@example.com",
       password: "password123",
       name: "Test User",
@@ -39,8 +40,8 @@ describe("Database & AuthService (In-Memory)", () => {
     expect(result.state.meetings).toEqual([]);
   });
 
-  test("should login the registered user", () => {
-    const result = authService.loginUser({
+  test("should login the registered user", async () => {
+    const result = await authService.loginUser({
       email: "test@example.com",
       password: "password123"
     });
@@ -49,22 +50,18 @@ describe("Database & AuthService (In-Memory)", () => {
     expect(result.token).toBeDefined();
   });
 
-  test("should prevent duplicate registration", () => {
-    expect(() => {
-      authService.registerUser({
-        email: "test@example.com",
-        password: "password456",
-        name: "Another User"
-      });
-    }).toThrow("Konto z takim adresem juz istnieje.");
+  test("should prevent duplicate registration", async () => {
+    await expect(authService.registerUser({
+      email: "test@example.com",
+      password: "password456",
+      name: "Another User"
+    })).rejects.toThrow("Konto z takim adresem juz istnieje.");
   });
 
-  test("should fail login with wrong password", () => {
-    expect(() => {
-      authService.loginUser({
-        email: "test@example.com",
-        password: "wrong-password"
-      });
-    }).toThrow("Niepoprawny email lub haslo.");
+  test("should fail login with wrong password", async () => {
+    await expect(authService.loginUser({
+      email: "test@example.com",
+      password: "wrong-password"
+    })).rejects.toThrow("Niepoprawny email lub haslo.");
   });
 });

@@ -93,10 +93,7 @@ describe("TasksTab", () => {
     const { props } = renderTasksTab();
     const dataTransfer = createDataTransfer();
     const dragHandle = screen.getByTitle("Przeciagnij zadanie");
-    const doneColumn = screen
-      .getAllByText("Zakonczone")
-      .find((element) => element.closest(".todo-kanban-column"))
-      .closest(".todo-kanban-column");
+    const doneColumn = screen.getByTestId("column-done");
 
     fireEvent.dragStart(dragHandle, { dataTransfer });
     fireEvent.dragEnter(doneColumn, { dataTransfer });

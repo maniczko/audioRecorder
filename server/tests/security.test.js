@@ -1,44 +1,51 @@
-const { server, db, authService } = require("../index");
+const bootstrap = require("../index");
 const http = require("node:http");
-const fs = require("node:fs");
-const path = require("node:path");
 
 describe("API Security Regression Tests", () => {
+  let server, db, authService;
   let port;
   let baseUrl;
   let testUserToken;
 
-  beforeAll((done) => {
+  beforeAll(async () => {
+    // Bootstrap services and server
+    const resources = await bootstrap();
+    server = resources.server;
+    db = resources.db;
+    authService = resources.authService;
+
     // Start the server on a random available port
-    server.listen(0, "127.0.0.1", () => {
-      port = server.address().port;
-      baseUrl = `http://127.0.0.1:${port}`;
-      
-      // Seed a test user for authenticated endpoints if necessary
-      try {
-         const result = authService.registerUser({
-           email: "securitytest@example.com",
-           password: "StrongPassword123",
-           name: "Security Tester",
-           workspaceName: "Sec Space"
-         });
-         testUserToken = result.token;
-      } catch (e) {
-         // User might already exist in the persistent DB, just sign in
-         const result = authService.loginUser({
-           email: "securitytest@example.com",
-           password: "StrongPassword123"
-         });
-         testUserToken = result.token;
-      }
-      done();
+    await new Promise((resolve) => {
+      server.listen(0, "127.0.0.1", resolve);
     });
+
+    port = server.address().port;
+    baseUrl = `http://127.0.0.1:${port}`;
+    
+    // Seed a test user for authenticated endpoints
+    try {
+        const result = await authService.registerUser({
+          email: "securitytest@example.com",
+          password: "StrongPassword123",
+          name: "Security Tester",
+          workspaceName: "Sec Space"
+        });
+        testUserToken = result.token;
+    } catch (e) {
+        // User might already exist in the persistent DB, just sign in
+        const result = await authService.loginUser({
+          email: "securitytest@example.com",
+          password: "StrongPassword123"
+        });
+        testUserToken = result.token;
+    }
   });
 
-  afterAll((done) => {
+  afterAll(async () => {
     // Clean up
-    server.close(done);
-    // Note: Do not wipe the whole DB as it might be a shared instance in these tests
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 
   // Helper to make native HTTP requests
@@ -136,7 +143,7 @@ describe("API Security Regression Tests", () => {
   test("[H-02] X-Forwarded-For Spoofing Bypass check", async () => {
     // Attackers usually bypass rate limits by spoofing this
     const body = JSON.stringify({ email: "rate-limit-test@example.com" });
-    const res = await makeRequest("POST", "/login", {
+    const res = await makeRequest("POST", "/auth/login", {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body),
       // Maledicted header!

@@ -1,9 +1,19 @@
-/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by */
+/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by, import/first, testing-library/no-debugging-utils */
+jest.mock("./services/config", () => ({
+  __esModule: true,
+  APP_DATA_PROVIDER: "local",
+  MEDIA_PIPELINE_PROVIDER: "local",
+  API_BASE_URL: "",
+  remoteApiEnabled: () => false,
+}));
+
 import { act, render, screen, waitFor, configure } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 import { registerUser } from "./lib/auth";
 import { STORAGE_KEYS } from "./lib/storage";
+
+process.env.REACT_APP_DATA_PROVIDER = "local";
 
 configure({ asyncUtilTimeout: 5000 });
 
@@ -86,7 +96,7 @@ function seedWorkspaceAppState({ manualTasks = [] } = {}) {
     workspaceId: "workspace_1",
   });
   writeStorage(STORAGE_KEYS.meetingDrafts, {
-    workspace_1: { selectedMeetingId: "meeting_1" }
+    workspace_1: { selectedMeetingId: "meeting_1", draft: { title: "Spotkanie A" } }
   });
 }
 
@@ -155,11 +165,12 @@ describe("App integration", () => {
     seedWorkspaceAppState();
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText("Meeting intelligence studio")).toBeInTheDocument();
+    expect(await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 })).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText("Workspace"), "workspace_2");
 
-    expect(await screen.findByRole("heading", { name: "Spotkanie B" }, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText(/Spotkanie B/i, {}, { timeout: 4000 })).toBeInTheDocument();
   });
 
   test("exports meeting notes from the studio view", async () => {

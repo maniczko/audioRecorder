@@ -136,11 +136,12 @@ function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
     request.on("data", (chunk) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
+        request.removeAllListeners("data");
+        request.resume();
         const error = new Error("Przesłany plik przekracza maksymalny rozmiar.");
         error.statusCode = 413;
         cleanup();
         reject(error);
-        request.destroy();
         return;
       }
       chunks.push(chunk);

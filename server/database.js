@@ -14,14 +14,36 @@ class Database {
       this.pool = new Pool({ connectionString });
       console.log("[DB] Using PostgreSQL (Supabase)");
     } else {
-      const { DatabaseSync } = require("node:sqlite");
       if (dbPath !== ":memory:") {
         fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       }
-      this.sqlite = new DatabaseSync(dbPath);
-      this.sqlite.exec("PRAGMA journal_mode = WAL;");
-      this.sqlite.exec("PRAGMA foreign_keys = ON;");
-      console.log("[DB] Using local SQLite at:", dbPath);
+
+      this.sqliteMode = "native";
+      try {
+        const { DatabaseSync } = require("node:sqlite");
+        this.sqlite = new DatabaseSync(dbPath);
+      } catch (e) {
+        try {
+          const BetterSqlite3 = require("better-sqlite3");
+          this.sqlite = new BetterSqlite3(dbPath);
+          this.sqliteMode = "better";
+        } catch (e2) {
+          console.error("DEBUG - both node:sqlite and better-sqlite3 failed.");
+          console.error("node:sqlite error:", e.message);
+          console.error("better-sqlite3 error:", e2.message);
+          throw new Error("Unable to load SQLite: Both node:sqlite and better-sqlite3 are missing.");
+        }
+      }
+
+      if (this.sqliteMode === "native") {
+        this.sqlite.exec("PRAGMA journal_mode = WAL;");
+        this.sqlite.exec("PRAGMA foreign_keys = ON;");
+      } else {
+        this.sqlite.pragma("journal_mode = WAL");
+        this.sqlite.pragma("foreign_keys = ON");
+      }
+
+      console.log(`[DB] Using local SQLite (${this.sqliteMode}) at:`, dbPath);
     }
 
     fs.mkdirSync(uploadDir, { recursive: true });

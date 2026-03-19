@@ -567,6 +567,7 @@ export default function TaskKanbanView({
         return (
           <section
             key={column.id}
+            data-testid={`column-${column.id}`}
             className={`todo-kanban-column${dropColumnId === column.id ? " drop" : ""}${wipExceeded ? " wip-exceeded" : ""}`}
           >
             <header

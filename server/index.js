@@ -24,18 +24,14 @@ const speakerEmbedder = require("./speakerEmbedder");
 const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
 
-async function start() {
-  console.log("1. Starting initialization...");
+async function bootstrap() {
   const db = getDatabase();
   await db.init();
-  console.log("2. Database initialized at:", db.dbPath || "Remote Connection");
 
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
   const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
-  console.log("3. Services initialized.");
 
-  // 3. Create App Handler
   const handler = createApp({
     authService,
     workspaceService,
@@ -47,10 +43,13 @@ async function start() {
     }
   });
 
-  // 4. Start Server
   const server = http.createServer(handler);
 
-  if (require.main === module) {
+  return { server, db, authService, workspaceService, transcriptionService };
+}
+
+if (require.main === module) {
+  bootstrap().then(({ server }) => {
     console.log(`4. Attempting to listen on ${HOST}:${PORT}...`);
     server.on("error", (err) => {
       console.error("SERVER ERROR:", err);
@@ -58,17 +57,10 @@ async function start() {
     server.listen(PORT, HOST, () => {
       console.log(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
     });
-  }
-
-  // Export for testing
-  module.exports.server = server;
-  module.exports.db = db;
-  module.exports.authService = authService;
-  module.exports.workspaceService = workspaceService;
-  module.exports.transcriptionService = transcriptionService;
+  }).catch(err => {
+    console.error("FAILED TO START SERVER:", err);
+    process.exit(1);
+  });
 }
 
-start().catch(err => {
-  console.error("FAILED TO START SERVER:", err);
-  process.exit(1);
-});
+module.exports = bootstrap;

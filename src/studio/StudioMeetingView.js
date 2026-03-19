@@ -407,15 +407,11 @@ export default function StudioMeetingView({
             </button>
             <button
               type="button"
-              className="secondary-button"
-              onClick={() => setActiveTab("recordings")}
-            >
-              Przejdź do Nagrań
-            </button>
-            <button
-              type="button"
               className="ghost-button"
-              onClick={startNewMeetingDraft}
+              onClick={() => {
+                startNewMeetingDraft();
+                setBriefOpen(true);
+              }}
               disabled={!currentWorkspacePermissions?.canEditWorkspace}
             >
               Przygotuj brief

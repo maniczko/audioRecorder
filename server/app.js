@@ -309,7 +309,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
       const speakerName = String(request.headers["x-speaker-name"] || "").slice(0, 120);
       if (!speakerName.trim()) return sendJson(response, 400, { message: "Brakuje naglowka X-Speaker-Name." }, origin, ALLOWED_ORIGINS);
       const contentType = request.headers["content-type"] || "audio/webm";
-      const buffer = await readBinaryBody(request);
+      const buffer = await readBinaryBody(request, 1 * 1024 * 1024); // Regression fix [H-01]: Enforce 1MB limit
       if (!buffer || buffer.byteLength < 1000) return sendJson(response, 400, { message: "Plik audio jest za krotki." }, origin, ALLOWED_ORIGINS);
       
       const profileId = `vp_${crypto.randomUUID().replace(/-/g, "")}`;
