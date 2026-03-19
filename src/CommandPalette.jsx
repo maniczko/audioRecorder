@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { VariableSizeList } from "react-window";
+import * as ReactWindow from "react-window";
+const VariableSizeList = ReactWindow.VariableSizeList || (ReactWindow.default && ReactWindow.default.VariableSizeList);
 import { filterCommandPaletteItems } from "./lib/commandPalette";
 
 function groupedItems(items) {
