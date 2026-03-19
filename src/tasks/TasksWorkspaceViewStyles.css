@@ -1,0 +1,42 @@
+
+.todo-settings-dropdown-wrap {
+  display: inline-block;
+}
+.todo-settings-btn {
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: 1rem;
+}
+.todo-settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 150;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.todo-settings-item {
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.todo-settings-item:last-child { border-bottom: none; }
+.todo-settings-item:hover { background: rgba(117, 214, 196, 0.08); }
+.todo-summary-view {
+  padding: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}

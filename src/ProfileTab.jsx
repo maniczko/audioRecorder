@@ -1,6 +1,7 @@
 import './styles/profile.css';
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
+import './ProfileTabStyles.css';
 
 function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
   const [profiles, setProfiles] = useState([]);

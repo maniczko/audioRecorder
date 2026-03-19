@@ -1,4 +1,5 @@
 import { useState } from "react";
+import './TaskScheduleViewStyles.css';
 
 const WEEKDAYS_PL = ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"];
 const MONTHS_PL = [

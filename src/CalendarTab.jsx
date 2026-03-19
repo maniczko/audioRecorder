@@ -23,6 +23,7 @@ import {
   weekdayLabels,
 } from "./lib/calendarView";
 import { formatDateTime } from "./lib/storage";
+import './CalendarTabStyles.css';
 
 const CALENDAR_WEEKDAYS = weekdayLabels();
 const CALENDAR_HOURS = buildTimeSlots(0, 23);

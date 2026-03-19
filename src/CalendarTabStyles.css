@@ -1,0 +1,33 @@
+
+
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mini-calendar-weekday {
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--soft);
+  text-transform: uppercase;
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mini-day[data-faded="true"] {
+  color: var(--soft);
+}
+
+.mini-day.selected {
+  background: linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%);
+  color: #03222a;
+  font-weight: 700;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { formatDateTime } from "./lib/storage";
+import './NotificationCenterStyles.css';
 
 function NotificationToneBadge({ tone }) {
   const label =

@@ -4,6 +4,7 @@ import TaskKanbanView from "./TaskKanbanView";
 import TaskListView from "./TaskListView";
 import TaskChartsView from "./TaskChartsView";
 import TaskScheduleView from "./TaskScheduleView";
+import './TasksWorkspaceViewStyles.css';
 
 function statCards(stats, visibleStats) {
   return [

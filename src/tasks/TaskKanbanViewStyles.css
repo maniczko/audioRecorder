@@ -1,0 +1,119 @@
+
+.wip-count {
+  font-size: 0.75rem;
+  color: var(--text-2, #a0a0b8);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.wip-count.exceeded {
+  color: #f17d72;
+  font-weight: 700;
+}
+
+.todo-kanban-column.wip-exceeded > header {
+  border-bottom-color: #f17d72;
+  box-shadow: 0 2px 0 #f17d72;
+}
+
+.swimlane-col.wip-exceeded {
+  border-left: 2px solid #f17d72;
+}
+
+.todo-kanban-header[draggable="true"],
+.swimlane-col-header[draggable="true"] {
+  cursor: grab;
+}
+
+.todo-kanban-header[draggable="true"]:active,
+.swimlane-col-header[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.todo-kanban-header.dragging,
+.swimlane-col-header.dragging {
+  opacity: 0.5;
+}
+
+.todo-kanban-swimlane {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: max-content;
+}
+
+.swimlane-header-row {
+  display: flex;
+  align-items: stretch;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-0, #13131f);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.swimlane-lane-header-spacer {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.swimlane-col-header {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid var(--column-color, #5a92ff);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: grab;
+}
+
+.swimlane-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.swimlane-lane-cell {
+  width: 160px;
+  flex-shrink: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.swimlane-lane-cell strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-1, #e0e0f0);
+}
+
+.swimlane-lane-cell small {
+  font-size: 0.72rem;
+  color: var(--text-2, #a0a0b8);
+}
+
+.swimlane-cols {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+}
+
+.swimlane-col {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px;
+}
+
+.swimlane-col.drop {
+  background: rgba(90, 146, 255, 0.06);
+}

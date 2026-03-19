@@ -2,6 +2,7 @@ import PropTypes from "prop-types";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
+import './UnifiedPlayerStyles.css';
 
 export default function UnifiedPlayer({
   // recording

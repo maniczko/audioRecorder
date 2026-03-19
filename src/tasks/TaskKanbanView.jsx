@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from "./taskViewUtils";
 import { getTaskLastActivity } from "../lib/activityFeed";
+import './TaskKanbanViewStyles.css';
 
 const COVER_COLORS = [
   { id: "none", label: "Brak", value: "" },

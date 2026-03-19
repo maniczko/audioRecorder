@@ -7,6 +7,7 @@ import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
 import { apiRequest } from "../services/httpClient";
 import { remoteApiEnabled } from "../services/config";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
+import './StudioMeetingViewStyles.css';
 
 
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { buildWorkspaceKpiDashboard } from "../lib/kpi";
+import './KpiDashboardStyles.css';
 
 function KpiCard({ label, value, tone = "info" }) {
   return (

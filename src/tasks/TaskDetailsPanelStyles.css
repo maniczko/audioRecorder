@@ -1,0 +1,56 @@
+
+
+.todo-history-toggle {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.todo-history-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.todo-mention-dropdown {
+  position: absolute;
+  bottom: calc(100% - 4rem);
+  left: 0;
+  z-index: 200;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 180px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.todo-mention-option {
+  padding: 8px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.todo-mention-option:hover {
+  background: rgba(117, 214, 196, 0.1);
+  color: var(--accent);
+}
+
+.todo-command-button:disabled,
+.todo-icon-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+}

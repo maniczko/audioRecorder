@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { List } from "react-window";
 import { filterCommandPaletteItems } from "./lib/commandPalette";
+import './CommandPaletteStyles.css';
 
 function groupedItems(items) {
   return items.reduce((groups, item) => {

@@ -1,4 +1,5 @@
 import { formatDuration } from "../lib/storage";
+import './RecorderPanelStyles.css';
 
 export default function RecorderPanel({
   isRecording,

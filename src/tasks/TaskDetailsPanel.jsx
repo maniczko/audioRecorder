@@ -6,6 +6,7 @@ import {
   TASK_PRIORITIES,
 } from "../lib/tasks";
 import { toInputDateTime } from "./taskViewUtils";
+import './TaskDetailsPanelStyles.css';
 
 function toggleItem(list, value) {
   const normalized = String(value || "").trim();

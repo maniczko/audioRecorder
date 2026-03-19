@@ -1,6 +1,7 @@
 import './styles/people.css';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
+import './PeopleTabStyles.css';
 
 const DISC_COLORS = { D: "#f17d72", I: "#ffd166", S: "#74d0bf", C: "#7b9eeb" };
 

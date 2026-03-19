@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { suggestTasksFromTranscript } from "../lib/aiTaskSuggestions";
 import { createId } from "../lib/storage";
+import './AiTaskSuggestionsPanelStyles.css';
 
 const PRIORITY_LABELS = { high: "Wysoki", medium: "Sredni", low: "Niski" };
 const PRIORITY_FLAGS = { high: "overdue", medium: "in-progress", low: "neutral" };

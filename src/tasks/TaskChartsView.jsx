@@ -1,4 +1,5 @@
 import { TASK_PRIORITIES } from "../lib/tasks";
+import './TaskChartsViewStyles.css';
 
 const PRIORITY_COLORS = { urgent: "#f17d72", high: "#f3ca72", medium: "#75d6c4", low: "#8db4ff" };
 

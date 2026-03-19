@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
+import './TranscriptPanelStyles.css';
 
 const WAVEFORM_SVG_W = 1000;
 const WAVEFORM_SVG_H = 80;

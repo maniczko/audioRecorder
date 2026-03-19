@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { formatDateTime, formatDuration } from "../lib/storage";
+import './StudioSidebarStyles.css';
 
 export default function StudioSidebar({
   currentWorkspacePermissions,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { formatDateTime } from "./lib/storage";
+import './NotesTabStyles.css';
 
 const ALLOWED_HTML = {
   ALLOWED_TAGS: ["b", "i", "u", "em", "strong", "ul", "ol", "li", "p", "br"],

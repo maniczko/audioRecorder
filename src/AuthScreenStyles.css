@@ -1,0 +1,47 @@
+
+
+.hero-copy {
+  max-width: 62ch;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.feature-card {
+  padding: 18px;
+}
+
+.feature-card h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.google-button-slot {
+  min-height: 46px;
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+  text-align: left;
+}
+
+.mode-switch.split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

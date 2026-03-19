@@ -3,6 +3,7 @@ import { useWorkspaceCtx } from "./context/WorkspaceContext";
 import { useGoogleCtx } from "./context/GoogleContext";
 import { useRecorderCtx } from "./context/RecorderContext";
 import { useUICtx } from "./context/UIContext";
+import './TopbarStyles.css';
 
 export default function Topbar() {
   const { workspace } = useWorkspaceCtx();
