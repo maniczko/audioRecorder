@@ -6,25 +6,27 @@
  * unavailable (Firefox private, Safari < 15, some mobile browsers).
  */
 
-let _loadPromise = null;
+const _loadPromises = new WeakMap();
 
 /**
  * Ensures the worklet module is registered in the given AudioContext.
  * Subsequent calls with the same context resolve immediately.
+ * Each AudioContext still needs its own module registration.
  *
  * @param {AudioContext} audioContext
  * @returns {Promise<void>}
  */
 export async function ensureNoiseReducerWorklet(audioContext) {
-  if (_loadPromise) return _loadPromise;
+  if (_loadPromises.has(audioContext)) return _loadPromises.get(audioContext);
   const url =
     (typeof process !== "undefined" ? process.env.PUBLIC_URL || "" : "") +
     "/advanced-noise-worklet.js";
-  _loadPromise = audioContext.audioWorklet.addModule(url).catch((err) => {
-    _loadPromise = null; 
+  const loadPromise = audioContext.audioWorklet.addModule(url).catch((err) => {
+    _loadPromises.delete(audioContext);
     throw err;
   });
-  return _loadPromise;
+  _loadPromises.set(audioContext, loadPromise);
+  return loadPromise;
 }
 
 /**

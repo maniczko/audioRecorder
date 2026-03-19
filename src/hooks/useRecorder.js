@@ -48,10 +48,7 @@ export default function useRecorder({
       try {
         const rid = createId("recording");
         const blob = new Blob(chunks, { type: mimeType });
-        if (typeof URL !== "undefined" && URL.createObjectURL) {
-          hydration.audioUrls[rid] = URL.createObjectURL(blob); // Note: ideally via hydration setter, but for now direct is ok as it's a ref-like update if we were careful.
-          // Better: just let hydration hydrate it in next pass or provide a manual adder.
-        }
+        hydration.registerAudioUrl(rid, blob);
         await saveAudioBlob(rid, blob);
         pipeline.setRecordingQueue((prev) =>
           upsertRecordingQueueItem(prev, createRecordingQueueItem({

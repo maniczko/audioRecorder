@@ -88,9 +88,36 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     }
   }
 
+  function registerAudioUrl(recordingId, blob) {
+    if (!recordingId || !blob || typeof URL === "undefined" || !URL.createObjectURL) {
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(blob);
+    setAudioUrls((prev) => {
+      if (prev[recordingId]) {
+        revokeAudioUrl(nextUrl);
+        return prev;
+      }
+      return {
+        ...prev,
+        [recordingId]: nextUrl,
+      };
+    });
+    setAudioHydrationErrors((prev) => {
+      if (!prev[recordingId]) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[recordingId];
+      return next;
+    });
+  }
+
   return {
     audioUrls,
     audioHydrationErrors,
     normalizeRecording,
+    registerAudioUrl,
   };
 }
