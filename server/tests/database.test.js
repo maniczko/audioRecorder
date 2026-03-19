@@ -32,11 +32,22 @@ describe("Database (Async Worker SQLite)", () => {
     expect(result).toBeUndefined();
   });
 
-  test("should execute arbitrary updates without blocking event loop", async () => {
-    // Execute multiple parallel reads to ensure worker message queuing works
-    const queries = Array.from({ length: 15 }).map((_, i) => db.getWorkspaceById(`ws_${i}`));
-    const results = await Promise.all(queries);
-    expect(results).toHaveLength(15);
-    expect(results[0]).toBeUndefined();
+  test("should persist data across simulated 'deploys' (process restarts)", async () => {
+    // 1. Zapisujemy dane symulując działanie
+    await db._query("CREATE TABLE IF NOT EXISTS test_deploy (id INTEGER PRIMARY KEY, msg TEXT)");
+    await db._query("INSERT INTO test_deploy (msg) VALUES (?)", ["Persisted Data!"]);
+
+    // 2. Symulujemy DEPLOY (zamknięcie i ubicie bazy)
+    db.worker.terminate();
+    
+    // 3. Wstajemy po deployu podpinając się pod ten sam dysk
+    const newDb = initDatabase({ dbPath: path.join(testUploadDir, "data.sqlite"), uploadDir: testUploadDir });
+    await newDb.init();
+
+    // 4. Sprawdzamy czy dane z poprzedniego życia przetrwały
+    const result = await newDb._get("SELECT * FROM test_deploy LIMIT 1");
+    expect(result.msg).toBe("Persisted Data!");
+    
+    newDb.worker.terminate();
   });
 });
