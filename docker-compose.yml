@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./data:/data
+    environment:
+      - VOICELOG_API_HOST=0.0.0.0
+      - VOICELOG_API_PORT=4000
+      - VOICELOG_DB_PATH=/data/voicelog.sqlite
+      - VOICELOG_UPLOAD_DIR=/data/uploads
+      - VOICELOG_DEBUG=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+    restart: unless-stopped

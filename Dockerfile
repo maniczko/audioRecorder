@@ -1,31 +1,30 @@
 FROM node:22.12-bookworm-slim
 
-# FFmpeg for audio processing pipeline
+# FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
+    apt-get install -y --no-install-recommends ffmpeg python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install server dependencies only (separate package.json to avoid React deps)
+# Install server dependencies
 COPY server/package.json server/package-lock.json* ./
-RUN npm install --omit=dev 2>/dev/null || npm install
+# Install ALL dependencies (including dev for tsx)
+RUN npm install
 
 COPY server/ ./server/
-RUN mkdir -p .cache && \
-    XENOVA_TRANSFORMERS_CACHE=.cache node server/scripts/download_models.js
 
-# Ensure data directories exist (Railway volume overrides this path)
+# Ensure data directories exist
 RUN mkdir -p /data/uploads
 
 ENV NODE_ENV=production
 ENV VOICELOG_API_HOST=0.0.0.0
 ENV VOICELOG_API_PORT=4000
 ENV FFMPEG_BINARY=ffmpeg
+ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
-ENV XENOVA_TRANSFORMERS_CACHE=/app/.cache
 
 EXPOSE 4000
 
-CMD ["node", "--experimental-sqlite", "server/index.js"]
+CMD ["npx", "tsx", "server/index.ts"]
