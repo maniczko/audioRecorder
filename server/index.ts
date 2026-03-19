@@ -20,9 +20,7 @@ const AuthService = require("./services/AuthService");
 const WorkspaceService = require("./services/WorkspaceService");
 const TranscriptionService = require("./services/TranscriptionService");
 
-// Assets & Pipeline
-const audioPipeline = require("./audioPipeline");
-const speakerEmbedder = require("./speakerEmbedder");
+// Assets & Pipeline (Lazily loaded internally to prevent 55KB synchronous block on startup)
 
 const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
 const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
@@ -33,7 +31,7 @@ async function bootstrap() {
 
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
-  const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
+  const transcriptionService = new TranscriptionService(db, workspaceService, null, null);
 
   const handler = createApp({
     authService,
