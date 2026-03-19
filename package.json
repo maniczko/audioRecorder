@@ -27,7 +27,7 @@
     "start:server:watch": "node --watch server/index.js",
     "build": "vite build",
     "lint": "eslint src --max-warnings=0",
-    "test": "npm run lint && vitest run",
+    "test": "npm run lint && vitest run && npm run build",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

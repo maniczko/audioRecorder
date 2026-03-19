@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { STORAGE_KEYS } from "../lib/storage";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { STORAGE_KEYS, idbJSONStorage } from "../lib/storage";
 import {
   buildRecordingQueueSummary,
   getNextProcessableRecordingQueueItem,
@@ -238,6 +238,7 @@ export const useRecorderStore = create(
     }),
     {
       name: STORAGE_KEYS.recordingQueue,
+      storage: createJSONStorage(() => idbJSONStorage),
       partialize: (state) => ({ recordingQueue: state.recordingQueue }),
     }
   )
