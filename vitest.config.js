@@ -5,11 +5,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/setupTests.js'],
-    include: ['src/**/*.test.{js,jsx}', 'server/tests/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{js,jsx,ts,tsx}', 'server/tests/**/*.test.{js,jsx,ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/**/*.js', 'server/**/*.js'],
+      include: ['src/**/*.{js,jsx,ts,tsx}', 'server/**/*.{js,ts}'],
     },
   },
 });

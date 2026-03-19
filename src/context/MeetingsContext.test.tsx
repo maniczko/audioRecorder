@@ -8,7 +8,6 @@ vi.mock("./WorkspaceContext", () => ({
 }));
 
 describe("MeetingsContext", () => {
-  const mockSetMeetings = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();

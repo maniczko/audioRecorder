@@ -328,10 +328,12 @@ function createApp({ authService, workspaceService, transcriptionService, config
       fs.writeFileSync(audioPath, buffer);
       
       const embedding = await transcriptionService.computeEmbedding(audioPath);
+      
       const profile = await workspaceService.saveVoiceProfile({
         id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
         speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
       });
+      
       sendJson(response, 201, { id: profile.id, speakerName: profile.speaker_name, hasEmbedding: (embedding || []).length > 0, createdAt: profile.created_at }, origin, ALLOWED_ORIGINS);
       return;
     }
