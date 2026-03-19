@@ -340,7 +340,7 @@ export default function ProfileTab({
   workspaceRole,
   onLogout,
   theme,
-  onToggleTheme,
+  onSetTheme,
   allTags = [],
   onRenameTag,
   onDeleteTag,
@@ -755,12 +755,20 @@ export default function ProfileTab({
           <div className="integration-card">
             <div className="integration-row">
               <div>
-                <strong>Motyw interfejsu</strong>
-                <p>Aktywny: <strong>{theme === "light" ? "Jasny" : "Ciemny"}</strong></p>
+                <strong>Motyw interfejsu (Layout)</strong>
+                <p>Aktywny: <strong>{theme === "beaver" ? "Bóbr" : theme === "light" ? "Jasny" : "Ciemny"}</strong></p>
               </div>
-              <button type="button" className="ghost-button theme-toggle-btn" onClick={onToggleTheme}>
-                {theme === "light" ? "🌙 Ciemny" : "☀️ Jasny"}
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button type="button" className={`ghost-button ${theme === "dark" ? "active" : ""}`} onClick={() => onSetTheme("dark")} style={{ background: theme === "dark" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  🌙 Ciemny
+                </button>
+                <button type="button" className={`ghost-button ${theme === "light" ? "active" : ""}`} onClick={() => onSetTheme("light")} style={{ background: theme === "light" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  ☀️ Jasny
+                </button>
+                <button type="button" className={`ghost-button ${theme === "beaver" ? "active" : ""}`} onClick={() => onSetTheme("beaver")} style={{ background: theme === "beaver" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  🦫 Bóbr
+                </button>
+              </div>
             </div>
           </div>
         </section>

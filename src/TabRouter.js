@@ -1,17 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, lazy, Suspense } from "react";
 import ErrorBoundary from "./lib/ErrorBoundary";
-import CalendarTab from "./CalendarTab";
-import NotesTab from "./NotesTab";
-import PeopleTab from "./PeopleTab";
-import ProfileTab from "./ProfileTab";
-import StudioTab from "./StudioTab";
-import TasksTab from "./TasksTab";
-import RecordingsTab from "./RecordingsTab";
+
 import { useWorkspaceCtx } from "./context/WorkspaceContext";
 import { useMeetingsCtx } from "./context/MeetingsContext";
 import { useGoogleCtx } from "./context/GoogleContext";
 import { useRecorderCtx } from "./context/RecorderContext";
 import { useUICtx } from "./context/UIContext";
+
+const CalendarTab = lazy(() => import("./CalendarTab"));
+const NotesTab = lazy(() => import("./NotesTab"));
+const PeopleTab = lazy(() => import("./PeopleTab"));
+const ProfileTab = lazy(() => import("./ProfileTab"));
+const StudioTab = lazy(() => import("./StudioTab"));
+const TasksTab = lazy(() => import("./TasksTab"));
+const RecordingsTab = lazy(() => import("./RecordingsTab"));
 
 export default function TabRouter({ calendarMonth, setCalendarMonth }) {
   const { workspace, auth } = useWorkspaceCtx();
@@ -50,6 +52,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
       : ui.activeTab === "profile" ? "Profil"
       : "Studio"
     }>
+    <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "var(--color-surface-600)" }}>Ładowanie ekranu...</div>}>
     {ui.activeTab === "calendar" ? (
       <CalendarTab
         activeMonth={calendarMonth}
@@ -172,6 +175,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         workspaceRole={workspace.currentWorkspaceRole}
         theme={ui.theme}
         onToggleTheme={() => ui.setTheme((t) => (t === "dark" ? "light" : "dark"))}
+        onSetTheme={ui.setTheme}
         sessionToken={workspace.session?.token || ""}
         apiBaseUrl={process.env.REACT_APP_API_BASE_URL || ""}
         allTags={allTags}
@@ -256,6 +260,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
       />
     )}
+    </Suspense>
     </ErrorBoundary>
   );
 }

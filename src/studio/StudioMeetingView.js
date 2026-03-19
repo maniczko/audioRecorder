@@ -417,6 +417,19 @@ export default function StudioMeetingView({
               Przygotuj brief
             </button>
           </div>
+          {recordingMessage && (
+            <div className={`ff-status-banner${analysisStatus === "error" ? " ff-status-error" : ""}`} style={{ marginTop: '24px' }}>
+              <span>{recordingMessage}</span>
+              <button
+                type="button"
+                className="ff-status-dismiss-btn"
+                onClick={() => setRecordingMessage("")}
+                aria-label="Zamknij powiadomienie"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );

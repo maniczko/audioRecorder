@@ -324,11 +324,7 @@ class Database {
       `,
       [userId]
     );
-    const results = [];
-    for (const row of rows) {
-      results.push(await this._buildWorkspaceFromRow(row, userId));
-    }
-    return results;
+    return Promise.all(rows.map((row) => this._buildWorkspaceFromRow(row, userId)));
   }
 
   async ensureWorkspaceState(workspaceId) {
@@ -355,8 +351,11 @@ class Database {
   }
 
   async getWorkspaceState(workspaceId) {
-    await this.ensureWorkspaceState(workspaceId);
-    const row = await this._get("SELECT * FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
+    let row = await this._get("SELECT * FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
+    if (!row) {
+      await this.ensureWorkspaceState(workspaceId);
+      row = await this._get("SELECT * FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
+    }
     return {
       meetings: this._safeJsonParse(row.meetings_json, []),
       manualTasks: this._safeJsonParse(row.manual_tasks_json, []),
@@ -442,18 +441,26 @@ class Database {
   }
 
   async buildSessionPayload(userId, workspaceId) {
-    const userRow = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
-    const nextWorkspaceId = await this.selectWorkspaceForUser(userId, workspaceId);
+    const [userRow, nextWorkspaceId] = await Promise.all([
+      this._get("SELECT * FROM users WHERE id = ?", [userId]),
+      this.selectWorkspaceForUser(userId, workspaceId)
+    ]);
     if (!userRow || !nextWorkspaceId) {
       throw new Error("Unable to build session payload.");
     }
 
+    const [users, workspaces, state] = await Promise.all([
+      this.workspaceMembers(nextWorkspaceId),
+      this.accessibleWorkspaces(userId),
+      this.getWorkspaceState(nextWorkspaceId),
+    ]);
+
     return {
       user: this._buildUserFromRow(userRow),
-      users: await this.workspaceMembers(nextWorkspaceId),
-      workspaces: await this.accessibleWorkspaces(userId),
+      users,
+      workspaces,
       workspaceId: nextWorkspaceId,
-      state: await this.getWorkspaceState(nextWorkspaceId),
+      state,
     };
   }
 
@@ -532,8 +539,11 @@ class Database {
     const workspaceId = await this.selectWorkspaceForUser(row.id, this._clean(draft.workspaceId));
     if (!workspaceId) throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
 
-    const session = await this.createSession(row.id, workspaceId);
-    return { ...(await this.buildSessionPayload(row.id, workspaceId)), token: session.token, expiresAt: session.expiresAt };
+    const [session, payload] = await Promise.all([
+      this.createSession(row.id, workspaceId),
+      this.buildSessionPayload(row.id, workspaceId),
+    ]);
+    return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
   async requestPasswordReset(draft = {}) {
@@ -608,9 +618,13 @@ class Database {
       throw error;
     }
 
-    const userId = row?.id || (await this._get("SELECT id FROM users WHERE email = ?", [email]))?.id;
-    const session = await this.createSession(userId, workspaceId || (await this.selectWorkspaceForUser(userId)));
-    return { ...(await this.buildSessionPayload(userId, workspaceId)), token: session.token, expiresAt: session.expiresAt };
+    const actualUserId = row?.id || (await this._get("SELECT id FROM users WHERE email = ?", [email]))?.id;
+    const actualWorkspaceId = workspaceId || (await this.selectWorkspaceForUser(actualUserId));
+    const [session, payload] = await Promise.all([
+      this.createSession(actualUserId, actualWorkspaceId),
+      this.buildSessionPayload(actualUserId, actualWorkspaceId),
+    ]);
+    return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
   async updateUserProfile(userId, updates = {}) {

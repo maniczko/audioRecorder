@@ -29,3 +29,18 @@
   --warning: #b8860b;
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
 }
+
+:root[data-theme="beaver"] {
+  --bg: #eff1e1;
+  --bg-panel: rgba(255, 255, 255, 0.6);
+  --bg-panel-strong: rgba(239, 241, 225, 0.9);
+  --stroke: rgba(56, 78, 42, 0.15);
+  --text: #384e2a;
+  --muted: rgba(56, 78, 42, 0.65);
+  --soft: rgba(56, 78, 42, 0.4);
+  --accent: #557c3d;
+  --accent-strong: #405c2d;
+  --danger: #d44d4d;
+  --warning: #cc8e2a;
+  --shadow: 0 12px 36px rgba(56, 78, 42, 0.12);
+}
