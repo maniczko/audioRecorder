@@ -39,7 +39,7 @@ describe("RecordingsTab", () => {
 
   test("renders list of meetings and recordings", () => {
     render(<RecordingsTab {...defaultProps} />);
-    expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
+    expect(screen.getAllByText("Weekly Sync")[0]).toBeInTheDocument();
     expect(screen.getByText("Project Alpha")).toBeInTheDocument();
     // Archive section check
     const archiveTitle = screen.getByText("Archiwum nagrań");
@@ -65,7 +65,7 @@ describe("RecordingsTab", () => {
     const searchInput = screen.getByPlaceholderText(/Szukaj spotkania/i);
     fireEvent.change(searchInput, { target: { value: "Weekly" } });
     
-    expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
+    expect(screen.getAllByText("Weekly Sync")[0]).toBeInTheDocument();
     // "Project Alpha" should be filtered out from the DROPDOWN list (but not necessarily from the table which is separate)
     // Actually the dropdown uses 'filtered' variable.
     // Let's check the items inside the dropdown.

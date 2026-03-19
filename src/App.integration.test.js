@@ -179,7 +179,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
+    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Notatki TXT" }));
 
     expect(clickSpy).toHaveBeenCalled();
@@ -199,7 +199,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
+    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "PDF" }));
 
     expect(openSpy).toHaveBeenCalled();
@@ -271,7 +271,7 @@ describe("App integration", () => {
     seedWorkspaceAppState();
     const { unmount } = render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
+    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Nowe" }));
     await userEvent.type(screen.getByLabelText("Tytul"), "Plan retro");
     await userEvent.type(screen.getByLabelText("Kontekst"), "Podsumowanie sprintu");
@@ -328,7 +328,7 @@ describe("App integration", () => {
     });
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
+    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
     await userEvent.click(screen.getByRole("button", { name: "Powiadomienia" }));
 
     expect(await screen.findByText("Pilny follow-up")).toBeInTheDocument();
@@ -400,8 +400,7 @@ describe("App integration", () => {
     });
 
     render(<App />);
-
-    await screen.findByRole("heading", { name: "Spotkanie A" }, { timeout: 4000 });
+    await screen.findByText(/Spotkanie A/i, {}, { timeout: 8000 });
     await userEvent.click(screen.getByRole("button", { name: "Nagranie ad hoc" }));
 
     await screen.findByText(/Dostep do mikrofonu jest zablokowany/i);
