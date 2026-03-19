@@ -1,0 +1,53 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.skeleton-card {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 12px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+  border-radius: 6px;
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-text:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-banner {
+  width: 100%;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

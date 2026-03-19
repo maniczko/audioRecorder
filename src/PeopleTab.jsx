@@ -1,3 +1,4 @@
+import './styles/people.css';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 

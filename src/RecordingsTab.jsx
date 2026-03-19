@@ -1,3 +1,4 @@
+import './styles/recordings.css';
 import React from "react";
 import { formatDateTime, formatDuration } from "./lib/storage";
 

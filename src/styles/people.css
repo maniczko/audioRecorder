@@ -1,0 +1,335 @@
+
+
+.person-task-card-clickable {
+  width: 100%;
+  text-align: left;
+  background: inherit;
+  border: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.person-task-card-clickable:hover {
+  background: rgba(117, 214, 196, 0.07);
+  border-color: rgba(117, 214, 196, 0.22);
+}
+
+.task-composer-header,
+.composer-footer,
+.task-group-header,
+.task-progress-row,
+.column-editor-row,
+.column-create-form,
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-group,
+.tasks-list-groups,
+.column-badge-list,
+.column-editor,
+.people-list,
+.people-task-list,
+.people-main,
+.people-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.task-group,
+.tasks-list-groups,
+.column-badge-list,
+.column-editor,
+.people-list,
+.people-task-list,
+.people-main,
+.people-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.task-group,
+.tasks-list-groups,
+.column-badge-list,
+.column-editor,
+.people-list,
+.people-task-list,
+.people-main,
+.people-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.task-group,
+.tasks-list-groups,
+.column-badge-list,
+.column-editor,
+.people-list,
+.people-task-list,
+.people-main,
+.people-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.people-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.people-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.person-row {
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-row.active {
+  border-color: rgba(134, 189, 255, 0.28);
+  background: linear-gradient(135deg, rgba(83, 144, 255, 0.16) 0%, rgba(116, 208, 191, 0.08) 100%);
+}
+
+.people-search-field {
+  display: grid;
+  gap: 6px;
+}
+
+.person-row span,
+.people-search-field span,
+.person-task-card p {
+  color: var(--muted);
+}
+
+.person-row span,
+.people-search-field span,
+.person-task-card p {
+  color: var(--muted);
+}
+
+.person-row span,
+.people-search-field span,
+.person-task-card p {
+  color: var(--muted);
+}
+
+.people-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.person-task-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 1120px) {
+  .auth-shell,
+  .calendar-layout,
+  .tasks-layout,
+  .people-layout,
+  .profile-grid,
+  .profile-hero,
+  .task-composer-grid,
+  .task-toolbar,
+  .kanban-board,
+  .people-grid,
+  .toggle-grid,
+  .profile-quick-grid,
+  .workspace-layout,
+  .main-grid,
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-shell,
+  .calendar-layout,
+  .tasks-layout,
+  .people-layout,
+  .profile-grid,
+  .profile-hero,
+  .task-composer-grid,
+  .task-toolbar,
+  .kanban-board,
+  .people-grid,
+  .toggle-grid,
+  .profile-quick-grid,
+  .workspace-layout,
+  .main-grid,
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.primary-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.tab-pill:not(.active):hover,
+.todo-command-button:not(:disabled):hover,
+.todo-side-link:not(.active):hover,
+.calendar-filter-chip:not(.active):hover,
+.note-card:not(.active):hover,
+.meeting-card:not(.active):hover,
+.recording-card:not(.active):hover,
+.agenda-card:not(:disabled):hover,
+.person-row:not(.active):hover,
+.calendar-tag-chip:not(.active):hover,
+.brief-tab:not(.active):hover,
+.topbar-record-btn:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.people-search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.people-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.05rem;
+  pointer-events: none;
+}
+
+.people-search-input {
+  width: 100%;
+  padding: 10px 36px 10px 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s;
+}
+
+.people-search-input:focus {
+  border-color: rgba(116, 208, 191, 0.45);
+}
+
+.people-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.people-add-task-btn {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(117,214,196,0.3);
+  background: rgba(117,214,196,0.08);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+  font-weight: 500;
+}
+
+.people-add-task-btn:hover {
+  background: rgba(117,214,196,0.18);
+  border-color: rgba(117,214,196,0.6);
+}
+
+.person-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-notes-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.person-notes-item span {
+  flex: 1;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.person-notes-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+
+.person-notes-item:hover .person-notes-remove {
+  opacity: 1;
+}
+
+.person-notes-remove:hover {
+  color: rgba(241, 125, 114, 0.9);
+}
+
+.person-notes-add-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 6px 0 8px;
+}
+
+.person-notes-add-form input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.84rem;
+  padding: 5px 10px;
+  outline: none;
+}
+
+.person-notes-add-form input:focus {
+  border-color: rgba(116, 208, 191, 0.4);
+}
+
+.person-notes-add-form .ghost-button {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  white-space: nowrap;
+}

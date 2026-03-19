@@ -1,3 +1,4 @@
+import './styles/tasks.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildTaskGroups, getTaskSlaState, taskListStats } from "./lib/tasks";
 import TaskDetailsPanel from "./tasks/TaskDetailsPanel";

@@ -1,3 +1,4 @@
+import './styles/calendar.css';
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   REMINDER_PRESETS,

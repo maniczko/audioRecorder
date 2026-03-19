@@ -1,3 +1,4 @@
+import './styles/auth.css';
 import { formatDateTime } from "./lib/storage";
 
 export default function AuthScreen({

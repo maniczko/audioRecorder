@@ -11,6 +11,7 @@ import TabRouter from "./TabRouter";
 import { useWorkspaceCtx } from "./context/WorkspaceContext";
 import { useUICtx } from "./context/UIContext";
 import { useGoogleCtx } from "./context/GoogleContext";
+import { SkeletonBanner, SkeletonList } from "./components/Skeleton";
 
 export default function AppShell({ calendarMonth, setCalendarMonth }) {
   const { workspace, auth } = useWorkspaceCtx();
@@ -24,8 +25,21 @@ export default function AppShell({ calendarMonth, setCalendarMonth }) {
           <div className="topbar-title">
             <div>
               <div className="eyebrow">VoiceLog OS</div>
-              <h1>Przywracamy sesje i workspace...</h1>
+              <h1>Ładowanie środowiska...</h1>
             </div>
+          </div>
+        </div>
+        <div className="workspace-layout">
+          <div className="workspace-sidebar">
+             <SkeletonBanner height={64} />
+             <SkeletonList items={4} lines={2} />
+          </div>
+          <div className="workspace-main">
+             <SkeletonBanner height={120} />
+             <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px' }}>
+                <SkeletonList items={3} lines={3} />
+                <SkeletonList items={3} lines={3} />
+             </div>
           </div>
         </div>
       </div>

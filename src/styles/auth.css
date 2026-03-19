@@ -1,0 +1,202 @@
+
+
+:root[data-theme="light"] .topbar,
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .auth-panel {
+  background: var(--bg-panel);
+  border-color: var(--stroke);
+}
+
+.app-shell,
+.auth-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 24px;
+  padding-bottom: 88px; /* Room for fixed player bar (64px + 24px padding) */
+  overflow: hidden;
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 420px);
+  gap: 24px;
+  align-items: center;
+}
+
+.auth-hero,
+.auth-panel,
+.topbar,
+.workspace-layout {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-hero,
+.auth-panel,
+.topbar,
+.workspace-layout {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-hero,
+.auth-panel,
+.panel,
+.hero-panel,
+.topbar {
+  backdrop-filter: blur(18px);
+  background: var(--bg-panel);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+}
+
+.auth-hero,
+.auth-panel,
+.panel,
+.hero-panel,
+.topbar {
+  backdrop-filter: blur(18px);
+  background: var(--bg-panel);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+}
+
+.auth-hero,
+.auth-panel,
+.panel,
+.hero-panel {
+  border-radius: 28px;
+}
+
+.auth-hero,
+.auth-panel,
+.panel,
+.hero-panel {
+  border-radius: 28px;
+}
+
+.auth-hero {
+  padding: 38px;
+}
+
+.auth-hero h1,
+.topbar h1,
+.hero-panel h2,
+.panel h2 {
+  margin: 10px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-hero h1 {
+  max-width: 12ch;
+  font-size: clamp(2.4rem, 4vw, 4.8rem);
+  line-height: 0.95;
+}
+
+.auth-panel {
+  padding: 28px;
+}
+
+.google-auth-block {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--soft);
+  font-size: 0.86rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-form,
+.stack-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form label,
+.stack-form label,
+.speaker-editor-row {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-form span,
+.stack-form span,
+.speaker-editor-row span,
+.soft-copy,
+.microcopy,
+.meeting-card p,
+.recording-card p {
+  color: var(--muted);
+}
+
+@media (max-width: 1120px) {
+  .auth-shell,
+  .calendar-layout,
+  .tasks-layout,
+  .people-layout,
+  .profile-grid,
+  .profile-hero,
+  .task-composer-grid,
+  .task-toolbar,
+  .kanban-board,
+  .people-grid,
+  .toggle-grid,
+  .profile-quick-grid,
+  .workspace-layout,
+  .main-grid,
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell,
+  .auth-shell {
+    padding: 14px;
+  }
+
+  .topbar,
+  .hero-panel,
+  .panel,
+  .auth-panel,
+  .auth-hero {
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .topbar,
+  .hero-panel,
+  .panel,
+  .auth-panel,
+  .auth-hero {
+    border-radius: 22px;
+    padding: 18px;
+  }
+}
