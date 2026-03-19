@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   vocabulary: "voicelog.vocabulary.v1",
 };
 
+import { get, set, del } from "idb-keyval";
+
 export function readStorage(key, fallbackValue) {
   if (!isBrowser) {
     return fallbackValue;
@@ -41,6 +43,52 @@ export function writeStorage(key, value) {
     console.error(`Unable to write localStorage key "${key}".`, error);
   }
 }
+
+export async function readStorageAsync(key, fallbackValue) {
+  if (!isBrowser) return fallbackValue;
+  try {
+    let val = await get(key);
+    if (val === undefined) {
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        val = JSON.parse(raw);
+        await set(key, val);
+      } else {
+        val = fallbackValue;
+      }
+    }
+    return val;
+  } catch (e) {
+    console.error(`Unable to read idb key "${key}".`, e);
+    return fallbackValue;
+  }
+}
+
+export async function writeStorageAsync(key, value) {
+  if (!isBrowser) return;
+  try {
+    await set(key, value);
+  } catch (e) {
+    console.error(`Unable to write idb key "${key}".`, e);
+  }
+}
+
+export const idbJSONStorage = {
+  getItem: async (name) => {
+    const val = await readStorageAsync(name, null);
+    // Zustand expects string outputs if using createJSONStorage, but idb-keyval stores parsed objects.
+    // If we supply raw storage, we can bypass createJSONStorage if we want, or ensure we stringify since it parses inside IDB.
+    // To match raw idb, we should stringify before returning so createJSONStorage can JSON.parse it.
+    return val !== null ? JSON.stringify(val) : null;
+  },
+  setItem: async (name, value) => {
+    // createJSONStorage passes already stringified value. We decode it to store as object.
+    await writeStorageAsync(name, JSON.parse(value));
+  },
+  removeItem: async (name) => {
+    await del(name);
+  },
+};
 
 export function createId(prefix = "id") {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;

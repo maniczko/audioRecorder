@@ -1,14 +1,23 @@
-import { useCallback, useState } from "react";
-import { readStorage, writeStorage } from "../lib/storage";
+import { useCallback, useState, useEffect } from "react";
+import { readStorageAsync, writeStorageAsync } from "../lib/storage";
 
 export default function useStoredState(key, initialValue) {
-  const [state, setState] = useState(() => readStorage(key, initialValue));
+  const [state, setState] = useState(initialValue);
+
+  useEffect(() => {
+    let active = true;
+    readStorageAsync(key, initialValue).then((val) => {
+      if (active) setState(val);
+    });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   const setStoredState = useCallback(
     (nextValue) => {
       setState((current) => {
         const resolved = typeof nextValue === "function" ? nextValue(current) : nextValue;
-        writeStorage(key, resolved);
+        writeStorageAsync(key, resolved);
         return resolved;
       });
     },

@@ -16,7 +16,7 @@ export function MeetingsProvider({ children }) {
     setSession: workspace.setSession,
     currentUser: workspace.currentUser,
     currentUserId: workspace.currentUserId,
-    currentWorkspaceId: workspace.currentWorkspaceId,
+    currentWorkspaceId: workspace.currentWorkspace?.id || workspace.currentWorkspaceId || workspace.workspaces[0]?.id || "",
     currentWorkspaceMembers: workspace.currentWorkspaceMembers,
     isHydratingRemoteState: workspace.isHydratingRemoteState,
   });

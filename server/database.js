@@ -14,43 +14,47 @@ class Database {
       this.pool = new Pool({ connectionString });
       console.log("[DB] Using PostgreSQL (Supabase)");
     } else {
+      const { Worker } = require("node:worker_threads");
       if (dbPath !== ":memory:") {
         fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       }
-
-      this.sqliteMode = "native";
-      try {
-        const { DatabaseSync } = require("node:sqlite");
-        this.sqlite = new DatabaseSync(dbPath);
-      } catch (e) {
-        try {
-          const BetterSqlite3 = require("better-sqlite3");
-          this.sqlite = new BetterSqlite3(dbPath);
-          this.sqliteMode = "better";
-        } catch (e2) {
-          console.error("DEBUG - both node:sqlite and better-sqlite3 failed.");
-          console.error("node:sqlite error:", e.message);
-          console.error("better-sqlite3 error:", e2.message);
-          throw new Error("Unable to load SQLite: Both node:sqlite and better-sqlite3 are missing.");
+      
+      this.msgId = 0;
+      this.callbacks = new Map();
+      this.worker = new Worker(path.join(__dirname, "sqliteWorker.js"));
+      
+      this.worker.on("message", (msg) => {
+        const { id, result, error } = msg;
+        const cb = this.callbacks.get(id);
+        if (cb) {
+          this.callbacks.delete(id);
+          if (error) cb.reject(new Error(error));
+          else cb.resolve(result);
         }
-      }
-
-      if (this.sqliteMode === "native") {
-        this.sqlite.exec("PRAGMA journal_mode = WAL;");
-        this.sqlite.exec("PRAGMA foreign_keys = ON;");
-      } else {
-        this.sqlite.pragma("journal_mode = WAL");
-        this.sqlite.pragma("foreign_keys = ON");
-      }
-
-      console.log(`[DB] Using local SQLite (${this.sqliteMode}) at:`, dbPath);
+      });
+      
+      this.worker.on("error", (err) => console.error("SQLite Worker Error:", err));
+      
+      this.sqliteInitPromise = this._sendToWorker("init", null, null, dbPath);
+      console.log("[DB] Using local async SQLite Worker at:", dbPath);
     }
 
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
   async init() {
+    if (this.type !== "postgres") {
+      await this.sqliteInitPromise;
+    }
     await this._createSchema();
+  }
+
+  _sendToWorker(type, sql, params = null, dbPath = null) {
+    return new Promise((resolve, reject) => {
+      const id = ++this.msgId;
+      this.callbacks.set(id, { resolve, reject });
+      this.worker.postMessage({ id, type, sql, params, dbPath });
+    });
   }
 
   async _query(sql, params = []) {
@@ -60,7 +64,7 @@ class Database {
       const res = await this.pool.query(pgSql, params);
       return res.rows;
     } else {
-      return this.sqlite.prepare(sql).all(...params);
+      return this._sendToWorker("query", sql, params);
     }
   }
 
@@ -71,7 +75,8 @@ class Database {
       const res = await this.pool.query(pgSql, params);
       return res.rows[0] || null;
     } else {
-      return this.sqlite.prepare(sql).get(...params) || null;
+      const result = await this._sendToWorker("get", sql, params);
+      return result || null;
     }
   }
 
@@ -81,7 +86,7 @@ class Database {
       const pgSql = sql.replace(/\?/g, () => `$${++i}`);
       await this.pool.query(pgSql, params);
     } else {
-      this.sqlite.prepare(sql).run(...params);
+      await this._sendToWorker("execute", sql, params);
     }
   }
 

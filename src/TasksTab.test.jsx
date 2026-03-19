@@ -172,4 +172,17 @@ describe("TasksTab", () => {
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Overdue")).toBeInTheDocument();
   });
+
+  test("pokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)", async () => {
+    const { props } = renderTasksTab({
+      defaultView: "list",
+      onCreateTask: jest.fn().mockReturnValue(null),
+    });
+
+    await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Felerne zadanie");
+    await userEvent.click(screen.getByRole("button", { name: "Dodaj zadanie" }));
+
+    expect(props.onCreateTask).toHaveBeenCalled();
+    expect(await screen.findByText("Nie udalo sie dodac zadania.")).toBeInTheDocument();
+  });
 });
