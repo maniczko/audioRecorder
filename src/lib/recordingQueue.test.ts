@@ -57,6 +57,22 @@ describe("recordingQueue helpers", () => {
     expect(resolvedFallback.title).toBe("Stary tytuł");
   });
 
+  test("preserves meetingId when ad-hoc meeting snapshot is asynchronous and unavailable", () => {
+    // Simulates the bug fix where ad-hoc meeting creation leaves the meeting snapshot undefined
+    // but the recording process explicitly provides the requested meetingId.
+    const item = createRecordingQueueItem({
+      recordingId: "recording_2",
+      meetingId: "adhoc_meeting_1",
+      meeting: undefined, // Unavailable at creation
+      mimeType: "audio/webm",
+    });
+
+    expect(item.meetingId).toBe("adhoc_meeting_1");
+    expect(item.workspaceId).toBe("");
+    expect(item.meetingTitle).toBe("Spotkanie");
+    expect(item.meetingSnapshot).toBeNull();
+  });
+
   test("returns the next processable pending item based on a predicate", () => {
     const first = createRecordingQueueItem({
       recordingId: "recording_1",

@@ -16,6 +16,11 @@ function createApp({ authService, workspaceService, transcriptionService, config
   const ALLOWED_ORIGINS = config.allowedOrigins || "http://localhost:3000";
 
   async function requireSession(request) {
+    const parsedUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+    if (parsedUrl.pathname === "/health" && request.method === "GET") {
+      return null; // bypassed
+    }
+
     const token = getBearerToken(request);
     if (!token) {
       const error = new Error("Brak tokenu autoryzacyjnego.");
@@ -126,6 +131,11 @@ function createApp({ authService, workspaceService, transcriptionService, config
       } catch (err) {
         sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
       }
+      return;
+    }
+
+    if (request.method === "GET" && pathname === "/health") {
+      sendJson(response, 200, { status: "ok", uptime: process.uptime() }, origin, ALLOWED_ORIGINS);
       return;
     }
 

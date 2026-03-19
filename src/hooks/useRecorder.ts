@@ -53,7 +53,8 @@ export default function useRecorder({
         pipeline.setRecordingQueue((prev) =>
           upsertRecordingQueueItem(prev, createRecordingQueueItem({
             recordingId: rid,
-            meeting: userMeetings.find(m => m.id === meetingId) || selectedMeeting,
+            meetingId,
+            meeting: userMeetingsRef.current.find(m => m.id === meetingId) || selectedMeeting,
             mimeType,
             rawSegments,
             duration,

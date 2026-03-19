@@ -11,6 +11,7 @@ export function normalizeRecordingPipelineStatus(value) {
 export function createRecordingQueueItem({
   recordingId,
   meeting,
+  meetingId,
   mimeType,
   rawSegments = [],
   duration = 0,
@@ -19,7 +20,7 @@ export function createRecordingQueueItem({
   return {
     id: recordingId,
     recordingId,
-    meetingId: meeting?.id || "",
+    meetingId: meetingId || meeting?.id || "",
     workspaceId: meeting?.workspaceId || "",
     meetingTitle: meeting?.title || "Spotkanie",
     meetingSnapshot: meeting || null,

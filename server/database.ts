@@ -91,86 +91,37 @@ class Database {
   }
 
   async _createSchema() {
-    const queries = `
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT NOT NULL UNIQUE,
-        password_hash TEXT,
-        name TEXT NOT NULL,
-        provider TEXT NOT NULL DEFAULT 'local',
-        google_sub TEXT NOT NULL DEFAULT '',
-        google_email TEXT NOT NULL DEFAULT '',
-        recovery_code_hash TEXT NOT NULL DEFAULT '',
-        recovery_code_expires_at TEXT NOT NULL DEFAULT '',
-        profile_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
+    await this._execute(`
+      CREATE TABLE IF NOT EXISTS server_migrations (
+        version TEXT PRIMARY KEY,
+        applied_at TEXT NOT NULL
       );
+    `);
 
-      CREATE TABLE IF NOT EXISTS workspaces (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        owner_user_id TEXT NOT NULL,
-        invite_code TEXT NOT NULL UNIQUE,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
+    const { logger } = require("./logger");
+    const migrationsDir = path.join(__dirname, "migrations");
+    if (!fs.existsSync(migrationsDir)) return;
 
-      CREATE TABLE IF NOT EXISTS workspace_members (
-        workspace_id TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        member_role TEXT NOT NULL DEFAULT 'member',
-        joined_at TEXT NOT NULL,
-        PRIMARY KEY (workspace_id, user_id)
-      );
+    const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith(".sql")).sort();
 
-      CREATE TABLE IF NOT EXISTS workspace_state (
-        workspace_id TEXT PRIMARY KEY,
-        meetings_json TEXT NOT NULL DEFAULT '[]',
-        manual_tasks_json TEXT NOT NULL DEFAULT '[]',
-        task_state_json TEXT NOT NULL DEFAULT '{}',
-        task_boards_json TEXT NOT NULL DEFAULT '{}',
-        calendar_meta_json TEXT NOT NULL DEFAULT '{}',
-        vocabulary_json TEXT NOT NULL DEFAULT '[]',
-        updated_at TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS sessions (
-        token TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        workspace_id TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        expires_at TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS media_assets (
-        id TEXT PRIMARY KEY,
-        workspace_id TEXT NOT NULL,
-        meeting_id TEXT NOT NULL DEFAULT '',
-        created_by_user_id TEXT NOT NULL,
-        file_path TEXT NOT NULL,
-        content_type TEXT NOT NULL,
-        size_bytes INTEGER NOT NULL DEFAULT 0,
-        transcription_status TEXT NOT NULL DEFAULT 'queued',
-        transcript_json TEXT NOT NULL DEFAULT '[]',
-        diarization_json TEXT NOT NULL DEFAULT '{}',
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS voice_profiles (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        workspace_id TEXT NOT NULL,
-        speaker_name TEXT NOT NULL,
-        audio_path TEXT NOT NULL,
-        embedding_json TEXT NOT NULL DEFAULT '[]',
-        created_at TEXT NOT NULL
-      );
-    `.split(';').filter(q => q.trim());
-
-    for (const q of queries) {
-      await this._execute(q);
+    for (const file of files) {
+      const row = await this._get("SELECT version FROM server_migrations WHERE version = ?", [file]);
+      if (!row) {
+        if (logger && logger.info) logger.info(`Applying migration: ${file}`);
+        const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
+        const queries = sql.split(';').map(q => q.trim()).filter(q => q);
+        for (const q of queries) {
+          if (q.length > 0) {
+            try {
+              await this._execute(q);
+            } catch (err) {
+              if (logger && logger.error) logger.error(`Migration error in ${file} query: ${q}`, err);
+              throw err;
+            }
+          }
+        }
+        await this._execute("INSERT INTO server_migrations (version, applied_at) VALUES (?, ?)", [file, new Date().toISOString()]);
+      }
     }
   }
 

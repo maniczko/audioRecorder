@@ -1,11 +1,14 @@
 // Load .env from project root before any other requires
 try { require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") }); } catch (_) {}
+
+const { logger } = require("./logger");
+
 process.on("uncaughtException", (err) => {
-  console.error("FATAL UNCAUGHT EXCEPTION:", err);
+  logger.error("FATAL UNCAUGHT EXCEPTION:", err);
   process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
-  console.error("FATAL UNHANDLED REJECTION:", reason);
+  logger.error("FATAL UNHANDLED REJECTION:", reason instanceof Error ? reason : new Error(String(reason)));
 });
 
 const http = require("node:http");
@@ -50,15 +53,15 @@ async function bootstrap() {
 
 if (require.main === module) {
   bootstrap().then(({ server }) => {
-    console.log(`4. Attempting to listen on ${HOST}:${PORT}...`);
+    logger.info(`Attempting to listen on ${HOST}:${PORT}...`);
     server.on("error", (err) => {
-      console.error("SERVER ERROR:", err);
+      logger.error("SERVER ERROR:", err);
     });
     server.listen(PORT, HOST, () => {
-      console.log(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
+      logger.info(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
     });
   }).catch(err => {
-    console.error("FAILED TO START SERVER:", err);
+    logger.error("FAILED TO START SERVER:", err);
     process.exit(1);
   });
 }
