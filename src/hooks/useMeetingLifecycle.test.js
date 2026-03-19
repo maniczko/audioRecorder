@@ -99,12 +99,18 @@ describe("useMeetingLifecycle", () => {
     expect(result.current.selectedMeetingId).toBeNull();
   });
 
-  test("handles empty props gracefully", () => {
+  test("handles empty props gracefully and rejects ad hoc meeting", () => {
     const { result } = renderHook(() => useMeetingLifecycle({
       ...baseProps,
       currentUserId: null,
       currentWorkspaceId: null,
     }));
     expect(result.current.selectedMeetingId).toBeNull();
+    
+    let m1;
+    act(() => {
+      m1 = result.current.createAdHocMeeting();
+    });
+    expect(m1).toBeNull();
   });
 });

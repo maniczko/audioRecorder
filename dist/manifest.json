@@ -1,0 +1,29 @@
+{
+  "short_name": "VoiceLog",
+  "name": "VoiceLog OS - Meeting Intelligence Studio",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "id": "/",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#071119",
+  "background_color": "#071119",
+  "description": "Meeting intelligence workspace z nagrywaniem, transkrypcja, taskami i kalendarzem.",
+  "categories": ["productivity", "business", "utilities"]
+}

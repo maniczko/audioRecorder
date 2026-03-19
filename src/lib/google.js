@@ -4,7 +4,7 @@ const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 let googleScriptPromise = null;
 
-export const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 function loadGoogleScript() {
   if (typeof window === "undefined") {

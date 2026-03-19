@@ -177,7 +177,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         onToggleTheme={() => ui.setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onSetTheme={ui.setTheme}
         sessionToken={workspace.session?.token || ""}
-        apiBaseUrl={process.env.REACT_APP_API_BASE_URL || ""}
+        apiBaseUrl={import.meta.env.VITE_API_BASE_URL || ""}
         allTags={allTags}
         onRenameTag={meetings.renameTag}
         onDeleteTag={meetings.deleteTag}

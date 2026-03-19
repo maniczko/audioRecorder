@@ -13,7 +13,7 @@ import App from "./App";
 import { registerUser } from "./lib/auth";
 import { STORAGE_KEYS } from "./lib/storage";
 
-process.env.REACT_APP_DATA_PROVIDER = "local";
+import.meta.env.VITE_DATA_PROVIDER = "local";
 
 configure({ asyncUtilTimeout: 10000 });
 jest.setTimeout(15000);

@@ -1,6 +1,6 @@
-const API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY;
-const MODEL = process.env.REACT_APP_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Import lazily to avoid circular deps — apiRequest reads from localStorage for the session token
 let _apiRequest = null;

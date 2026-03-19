@@ -18,7 +18,7 @@ export default function AiTaskSuggestionsPanel({
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({});
 
-  const apiKey = process.env.REACT_APP_ANTHROPIC_API_KEY;
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
     return null;
   }

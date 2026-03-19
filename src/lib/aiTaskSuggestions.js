@@ -1,7 +1,7 @@
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
 export async function suggestTasksFromTranscript(transcript, people = []) {
-  const apiKey = process.env.REACT_APP_ANTHROPIC_API_KEY;
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error("REACT_APP_ANTHROPIC_API_KEY nie jest ustawiony");
   }
