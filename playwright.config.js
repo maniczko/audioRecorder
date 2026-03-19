@@ -25,5 +25,9 @@ module.exports = defineConfig({
     timeout: 120_000,
     stdout: "ignore",
     stderr: "pipe",
+    env: {
+      REACT_APP_DATA_PROVIDER: "local",
+      REACT_APP_MEDIA_PROVIDER: "local"
+    }
   },
 });
