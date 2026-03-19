@@ -24,3 +24,23 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# temp test/debug artifacts
+*.test_output.txt
+all_test_results*.txt
+integration_debug.txt
+integration_fail.txt
+jest-custom.txt
+jest-hooks.json
+jest-results.json
+lazy_fail.txt
+people_fail.txt
+test_output.txt
+lint_output.txt
+test_sqlite.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

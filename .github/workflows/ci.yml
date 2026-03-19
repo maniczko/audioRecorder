@@ -1,0 +1,228 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  # ─── Stage 1: Lint ──────────────────────────────────────
+  lint:
+    name: 🔍 Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src --max-warnings=0
+
+  # ─── Stage 2: Unit & Integration Tests (Frontend) ──────
+  test-frontend:
+    name: 🧪 Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npx vitest run --reporter=verbose --coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ─── Stage 3: Unit Tests (Server) ──────────────────────
+  test-server:
+    name: 🖥️ Server Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Run server tests
+        run: cd server && npx jest --verbose --forceExit
+        env:
+          NODE_ENV: test
+
+  # ─── Stage 4: Production Build ─────────────────────────
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [test-frontend, test-server]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Verify build output
+        run: |
+          test -f dist/index.html || (echo "❌ dist/index.html missing!" && exit 1)
+          echo "✅ Build output verified"
+          du -sh dist/
+          echo "--- Asset sizes ---"
+          find dist/assets -type f -name '*.js' -exec du -h {} + | sort -rh | head -15
+          find dist/assets -type f -name '*.css' -exec du -h {} +
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+          retention-days: 3
+
+  # ─── Stage 5: Security Audit ───────────────────────────
+  security:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (non-blocking)
+        run: npm audit --omit=dev || true
+
+      - name: Check for critical vulnerabilities
+        run: |
+          CRITICAL=$(npm audit --json --omit=dev 2>/dev/null | node -e "
+            let data=''; process.stdin.on('data',c=>data+=c); process.stdin.on('end',()=>{
+              try { const r=JSON.parse(data); console.log(r.metadata?.vulnerabilities?.critical||0); }
+              catch(e) { console.log(0); }
+            })
+          ")
+          echo "Critical vulnerabilities: $CRITICAL"
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::warning::Found $CRITICAL critical npm vulnerabilities"
+          fi
+
+  # ─── Stage 6: Bundle Size Check ────────────────────────
+  bundle-analysis:
+    name: 📦 Bundle Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and measure
+        run: npm run build 2>&1 | tee build_output.txt
+        env:
+          NODE_ENV: production
+
+      - name: Check bundle size limits
+        run: |
+          TOTAL_JS=$(find dist/assets -name '*.js' -exec cat {} + | wc -c)
+          TOTAL_CSS=$(find dist/assets -name '*.css' -exec cat {} + | wc -c)
+          JS_KB=$((TOTAL_JS / 1024))
+          CSS_KB=$((TOTAL_CSS / 1024))
+          echo "📊 Total JS: ${JS_KB} KB"
+          echo "📊 Total CSS: ${CSS_KB} KB"
+
+          # Warn if JS exceeds 800KB (uncompressed)
+          if [ "$JS_KB" -gt 800 ]; then
+            echo "::warning::JS bundle is ${JS_KB}KB (limit: 800KB)"
+          fi
+
+          # Warn if CSS exceeds 300KB
+          if [ "$CSS_KB" -gt 300 ]; then
+            echo "::warning::CSS bundle is ${CSS_KB}KB (limit: 300KB) — consider splitting"
+          fi
+
+          echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| JavaScript | ${JS_KB} KB |" >> $GITHUB_STEP_SUMMARY
+          echo "| CSS | ${CSS_KB} KB |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Final Gate ────────────────────────────────────────
+  ci-passed:
+    name: ✅ CI Passed
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [lint, test-frontend, test-server, build, security]
+    steps:
+      - name: Check all jobs
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "❌ Lint failed"; exit 1
+          fi
+          if [ "${{ needs.test-frontend.result }}" != "success" ]; then
+            echo "❌ Frontend tests failed"; exit 1
+          fi
+          if [ "${{ needs.test-server.result }}" != "success" ]; then
+            echo "❌ Server tests failed"; exit 1
+          fi
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Build failed"; exit 1
+          fi
+          echo "✅ All CI stages passed successfully!"
