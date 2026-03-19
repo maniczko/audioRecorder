@@ -10,7 +10,7 @@ export default function useStoredState(key, initialValue) {
   // If IDB has a newer/larger value it will upgrade the state.
   useEffect(() => {
     // eslint-disable-next-line no-undef
-    const isTest = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
+    const isTest = import.meta.env.MODE === "test";
     if (isTest) return;
 
     let active = true;

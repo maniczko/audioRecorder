@@ -18,9 +18,7 @@ const _loadPromises = new WeakMap();
  */
 export async function ensureNoiseReducerWorklet(audioContext) {
   if (_loadPromises.has(audioContext)) return _loadPromises.get(audioContext);
-  const url =
-    (typeof process !== "undefined" ? process.env.PUBLIC_URL || "" : "") +
-    "/advanced-noise-worklet.js";
+  const url = import.meta.env.BASE_URL + "advanced-noise-worklet.js";
   const loadPromise = audioContext.audioWorklet.addModule(url).catch((err) => {
     _loadPromises.delete(audioContext);
     throw err;
