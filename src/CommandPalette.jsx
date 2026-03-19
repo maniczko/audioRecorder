@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as ReactWindow from "react-window";
-const VariableSizeList = ReactWindow.VariableSizeList || (ReactWindow.default && ReactWindow.default.VariableSizeList);
+import { List } from "react-window";
 import { filterCommandPaletteItems } from "./lib/commandPalette";
 
 function groupedItems(items) {
@@ -170,7 +169,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
 
         <div className="command-palette-results">
           {filteredItems.length ? (
-            <VariableSizeList
+            <List
               ref={listRef}
               height={360}
               width="100%"
@@ -179,7 +178,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
               overscanCount={5}
             >
               {Row}
-            </VariableSizeList>
+            </List>
           ) : (
             <div className="empty-panel">
               <strong>Brak wynikow</strong>

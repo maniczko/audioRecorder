@@ -88,6 +88,11 @@ export const idbJSONStorage = {
     await writeStorageAsync(name, JSON.parse(value));
   },
   removeItem: async (name) => {
+    if (!isBrowser) return;
+    if (!window.indexedDB) {
+      window.localStorage.removeItem(name);
+      return;
+    }
     await del(name);
   },
 };
