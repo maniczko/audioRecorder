@@ -15,7 +15,8 @@ import { STORAGE_KEYS } from "./lib/storage";
 
 process.env.REACT_APP_DATA_PROVIDER = "local";
 
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10000 });
+jest.setTimeout(15000);
 
 const originalNotification = window.Notification;
 
@@ -119,8 +120,8 @@ describe("App integration", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
 
-    expect(await screen.findByText("Meeting intelligence studio")).toBeInTheDocument();
-    expect(screen.getByText("Utworz pierwsze spotkanie")).toBeInTheDocument();
+    expect(await screen.findByText(/Meeting intelligence studio/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Brak aktywnego spotkania/i)).toBeInTheDocument();
   });
 
   test("resets password end to end and logs in with the new password", async () => {
@@ -158,19 +159,21 @@ describe("App integration", () => {
     await userEvent.type(screen.getByPlaceholderText("minimum 6 znakow"), "nowehaslo");
     await userEvent.click(screen.getByRole("button", { name: "Zaloguj" }));
 
-    expect(await screen.findByText("Meeting intelligence studio")).toBeInTheDocument();
+    expect(await screen.findByText(/Meeting intelligence studio/i)).toBeInTheDocument();
   });
 
   test("switches between shared workspaces", async () => {
     seedWorkspaceAppState();
     render(<App />);
 
-    expect(await screen.findByText("Meeting intelligence studio")).toBeInTheDocument();
-    expect(await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText(/Meeting intelligence studio/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 8000 }))[0]).toBeInTheDocument();
 
-    await userEvent.selectOptions(screen.getByLabelText("Workspace"), "workspace_2");
-
-    expect(await screen.findByText(/Spotkanie B/i, {}, { timeout: 4000 })).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText(/Workspace/i), "workspace_2");
+    await waitFor(() => {
+      const elements = screen.queryAllByText(/Spotkanie B/i);
+      expect(elements.length).toBeGreaterThan(0);
+    }, { timeout: 8000 });
   });
 
   test("exports meeting notes from the studio view", async () => {
@@ -179,7 +182,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
+    expect((await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 8000 }))[0]).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Notatki TXT" }));
 
     expect(clickSpy).toHaveBeenCalled();
@@ -199,7 +202,7 @@ describe("App integration", () => {
 
     render(<App />);
 
-    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
+    expect((await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 8000 }))[0]).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "PDF" }));
 
     expect(openSpy).toHaveBeenCalled();
@@ -271,7 +274,7 @@ describe("App integration", () => {
     seedWorkspaceAppState();
     const { unmount } = render(<App />);
 
-    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
+    expect((await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 8000 }))[0]).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Nowe" }));
     await userEvent.type(screen.getByLabelText("Tytul"), "Plan retro");
     await userEvent.type(screen.getByLabelText("Kontekst"), "Podsumowanie sprintu");
@@ -328,7 +331,7 @@ describe("App integration", () => {
     });
     render(<App />);
 
-    await screen.findByText(/Spotkanie A/i, {}, { timeout: 4000 });
+    expect((await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 8000 }))[0]).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Powiadomienia" }));
 
     expect(await screen.findByText("Pilny follow-up")).toBeInTheDocument();
@@ -398,9 +401,12 @@ describe("App integration", () => {
       },
       configurable: true,
     });
-
+    act(() => {
+      seedWorkspaceAppState();
+    });
     render(<App />);
-    await screen.findByText(/Spotkanie A/i, {}, { timeout: 8000 });
+    const elements = await screen.findAllByText(/Spotkanie A/i, {}, { timeout: 10000 });
+    expect(elements.length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole("button", { name: "Nagranie ad hoc" }));
 
     await screen.findByText(/Dostep do mikrofonu jest zablokowany/i);

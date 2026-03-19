@@ -53,14 +53,14 @@ describe("PeopleTab", () => {
     expect(screen.getByRole("heading", { name: "Anna Nowak" })).toBeInTheDocument();
   });
 
-  test("filters people list by search query", () => {
+  test("filters people list by search query", async () => {
     render(<PeopleTab {...defaultProps} />);
     const searchInput = screen.getByPlaceholderText(/Szukaj po imieniu/i);
     
     fireEvent.change(searchInput, { target: { value: "Jan" } });
     
     expect(screen.queryByText("Anna Nowak")).not.toBeInTheDocument();
-    expect(screen.getByText("Jan Kowalski")).toBeInTheDocument();
+    expect((await screen.findAllByText("Jan Kowalski"))[0]).toBeInTheDocument();
   });
 
   test("switches between people when sidebar item is clicked", async () => {

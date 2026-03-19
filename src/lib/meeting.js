@@ -117,11 +117,11 @@ export function meetingToDraft(meeting) {
     context: meeting.context,
     startsAt,
     durationMinutes: meeting.durationMinutes,
-    attendees: meeting.attendees.join("\n"),
+    attendees: (meeting.attendees || []).join("\n"),
     tags: (meeting.tags || []).join("\n"),
-    needs: meeting.needs.join("\n"),
+    needs: (meeting.needs || []).join("\n"),
     concerns: (meeting.concerns || []).join("\n"),
-    desiredOutputs: meeting.desiredOutputs.join("\n"),
+    desiredOutputs: (meeting.desiredOutputs || []).join("\n"),
     location: meeting.location || "",
   };
 }
