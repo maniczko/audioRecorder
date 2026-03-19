@@ -1,3 +1,5 @@
+import { get, set, del } from "idb-keyval";
+
 const isBrowser = typeof window !== "undefined";
 
 export const STORAGE_KEYS = {
@@ -15,8 +17,6 @@ export const STORAGE_KEYS = {
   recordingQueue: "voicelog.recordingQueue.v1",
   vocabulary: "voicelog.vocabulary.v1",
 };
-
-import { get, set, del } from "idb-keyval";
 
 export function readStorage(key, fallbackValue) {
   if (!isBrowser) {
@@ -46,6 +46,7 @@ export function writeStorage(key, value) {
 
 export async function readStorageAsync(key, fallbackValue) {
   if (!isBrowser) return fallbackValue;
+  if (!window.indexedDB) return readStorage(key, fallbackValue);
   try {
     let val = await get(key);
     if (val === undefined) {
@@ -66,6 +67,7 @@ export async function readStorageAsync(key, fallbackValue) {
 
 export async function writeStorageAsync(key, value) {
   if (!isBrowser) return;
+  if (!window.indexedDB) return writeStorage(key, value);
   try {
     await set(key, value);
   } catch (e) {

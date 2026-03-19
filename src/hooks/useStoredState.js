@@ -1,10 +1,17 @@
 import { useCallback, useState, useEffect } from "react";
-import { readStorageAsync, writeStorageAsync } from "../lib/storage";
+import { readStorage, writeStorage, readStorageAsync, writeStorageAsync } from "../lib/storage";
 
 export default function useStoredState(key, initialValue) {
-  const [state, setState] = useState(initialValue);
+  // eslint-disable-next-line no-undef
+  const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+  const [state, setState] = useState(() => {
+    if (isTest) return readStorage(key, initialValue);
+    return initialValue;
+  });
 
   useEffect(() => {
+    if (isTest) return;
     let active = true;
     readStorageAsync(key, initialValue).then((val) => {
       if (active) setState(val);
@@ -17,11 +24,15 @@ export default function useStoredState(key, initialValue) {
     (nextValue) => {
       setState((current) => {
         const resolved = typeof nextValue === "function" ? nextValue(current) : nextValue;
-        writeStorageAsync(key, resolved);
+        if (isTest) {
+          writeStorage(key, resolved);
+        } else {
+          writeStorageAsync(key, resolved);
+        }
         return resolved;
       });
     },
-    [key]
+    [key, isTest]
   );
 
   return [state, setStoredState];

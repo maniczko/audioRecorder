@@ -3,29 +3,30 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
-HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
-  clearRect: jest.fn(),
-  createLinearGradient: jest.fn(() => ({
-    addColorStop: jest.fn(),
+HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+  clearRect: vi.fn(),
+  createLinearGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
   })),
-  fillRect: jest.fn(),
-  beginPath: jest.fn(),
-  moveTo: jest.fn(),
-  lineTo: jest.fn(),
-  closePath: jest.fn(),
-  fill: jest.fn(),
-  save: jest.fn(),
-  restore: jest.fn(),
-  stroke: jest.fn(),
+  fillRect: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  stroke: vi.fn(),
 }));
 
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 if (!window.URL.createObjectURL) {
-  window.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+  window.URL.createObjectURL = vi.fn(() => "blob:mock-url");
 }
 
 if (!window.URL.revokeObjectURL) {
-  window.URL.revokeObjectURL = jest.fn();
+  window.URL.revokeObjectURL = vi.fn();
 }

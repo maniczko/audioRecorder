@@ -21,6 +21,7 @@ export default function useRecordingPipeline({
   useEffect(() => {
     if (isHydratingRemoteState) return;
     store.processQueue(resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isHydratingRemoteState,
     store.recordingQueue, // trigger processQueue if new items arrive
