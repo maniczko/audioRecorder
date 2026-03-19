@@ -5,28 +5,33 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+/* eslint-disable no-undef */
+window.jest = vi;
+globalThis.jest = vi;
+/* eslint-enable no-undef */
+
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
-  clearRect: vi.fn(),
-  createLinearGradient: vi.fn(() => ({
-    addColorStop: vi.fn(),
+  clearRect: jest.fn(),
+  createLinearGradient: jest.fn(() => ({
+    addColorStop: jest.fn(),
   })),
-  fillRect: vi.fn(),
-  beginPath: vi.fn(),
-  moveTo: vi.fn(),
-  lineTo: vi.fn(),
-  closePath: vi.fn(),
-  fill: vi.fn(),
-  save: vi.fn(),
-  restore: vi.fn(),
-  stroke: vi.fn(),
+  fillRect: jest.fn(),
+  beginPath: jest.fn(),
+  moveTo: jest.fn(),
+  lineTo: jest.fn(),
+  closePath: jest.fn(),
+  fill: jest.fn(),
+  save: jest.fn(),
+  restore: jest.fn(),
+  stroke: jest.fn(),
 }));
 
-window.HTMLElement.prototype.scrollIntoView = vi.fn();
+window.HTMLElement.prototype.scrollIntoView = jest.fn();
 
 if (!window.URL.createObjectURL) {
-  window.URL.createObjectURL = vi.fn(() => "blob:mock-url");
+  window.URL.createObjectURL = jest.fn(() => "blob:mock-url");
 }
 
 if (!window.URL.revokeObjectURL) {
-  window.URL.revokeObjectURL = vi.fn();
+  window.URL.revokeObjectURL = jest.fn();
 }

@@ -77,19 +77,6 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
     };
   }, [activeIndex, filteredItems, onClose, onSelect, open]);
 
-  useEffect(() => {
-    if (listRef.current && flattenedItems.length) {
-      const flatIndex = flattenedItems.findIndex((x) => !x.isGroup && x.item === filteredItems[activeIndex]);
-      if (flatIndex !== -1) {
-        listRef.current.scrollToItem(flatIndex, "smart");
-      }
-    }
-  }, [activeIndex, flattenedItems, filteredItems]);
-
-  if (!open) {
-    return null;
-  }
-
   const flattenedItems = useMemo(() => {
     const list = [];
     for (const [group, groupItems] of grouped.entries()) {
@@ -101,7 +88,20 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
     return list;
   }, [grouped]);
 
+  useEffect(() => {
+    if (listRef.current && flattenedItems.length) {
+      const flatIndex = flattenedItems.findIndex((x) => !x.isGroup && x.item === filteredItems[activeIndex]);
+      if (flatIndex !== -1) {
+        listRef.current.scrollToItem(flatIndex, "smart");
+      }
+    }
+  }, [activeIndex, flattenedItems, filteredItems]);
+
   const getItemSize = (index) => flattenedItems[index]?.isGroup ? 40 : 56;
+
+  if (!open) {
+    return null;
+  }
 
   const Row = ({ index, style }) => {
     const data = flattenedItems[index];
