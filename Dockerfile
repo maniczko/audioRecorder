@@ -8,8 +8,8 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
-# Copy only manifest + lockfile first for maximum Docker cache efficiency
-COPY package.json pnpm-lock.yaml ./
+# Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/package*.json ./server/
 
 # Install everything including dev dependencies so we get esbuild/typescript
