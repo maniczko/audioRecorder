@@ -19,6 +19,7 @@ export default function StudioSidebar({
   selectMeeting,
   selectedRecordingId,
   setSelectedRecordingId,
+  onClose,
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
   const [activeSection, setActiveSection] = useState("basic");
@@ -321,10 +322,16 @@ export default function StudioSidebar({
         )}
 
         <div className="button-row brief-actions">
-          <button type="button" className="primary-button" onClick={saveMeeting} disabled={!canEditWorkspace || !meetingDraft.title?.trim()}>
+          <button type="button" className="primary-button" onClick={() => {
+            saveMeeting();
+            if (onClose) onClose();
+          }} disabled={!canEditWorkspace || !meetingDraft.title?.trim()}>
             {isDetachedMeetingDraft ? "Utwórz spotkanie" : "Zapisz zmiany"}
           </button>
-          <button type="button" className="ghost-button" onClick={clearMeetingDraft} disabled={!canEditWorkspace}>
+          <button type="button" className="ghost-button" onClick={() => {
+            clearMeetingDraft();
+            if (onClose) onClose();
+          }} disabled={!canEditWorkspace}>
             Anuluj
           </button>
         </div>
