@@ -1,6 +1,6 @@
 const path = require("node:path");
 const fs = require("node:fs");
-const { initDatabase, getDatabase } = require("../database");
+const { initDatabase, getDatabase } = require("../database.ts");
 
 describe("Database (Async Worker SQLite)", () => {
   let db;
@@ -16,7 +16,11 @@ describe("Database (Async Worker SQLite)", () => {
       db.worker.terminate();
     }
     if (fs.existsSync(testUploadDir)) {
-      fs.rmSync(testUploadDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(testUploadDir, { recursive: true, force: true });
+      } catch (err) {
+        // Ignore locked file EPERM on Windows test runner
+      }
     }
   });
 
@@ -28,20 +32,24 @@ describe("Database (Async Worker SQLite)", () => {
 
   test("should successfully query users via worker thread", async () => {
     // Tests the worker based async `_query` and `_get` internally
-    const result = await db.getUserByEmail("nonexistent_user_for_db_layer@example.com");
-    expect(result).toBeUndefined();
+    const result = await db._get("SELECT * FROM users WHERE email = ?", ["nonexistent_user_for_db_layer@example.com"]);
+    expect(result).toBeNull();
   });
 
   test("should persist data across simulated 'deploys' (process restarts)", async () => {
-    // 1. Zapisujemy dane symulując działanie
-    await db._query("CREATE TABLE IF NOT EXISTS test_deploy (id INTEGER PRIMARY KEY, msg TEXT)");
-    await db._query("INSERT INTO test_deploy (msg) VALUES (?)", ["Persisted Data!"]);
+    const dbPath = path.join(testUploadDir, "data.sqlite");
+    
+    // 1. Zapisujemy dane na dysk
+    const oldDb = initDatabase({ dbPath, uploadDir: testUploadDir });
+    await oldDb.init();
+    await oldDb._query("CREATE TABLE IF NOT EXISTS test_deploy (id INTEGER PRIMARY KEY, msg TEXT)");
+    await oldDb._query("INSERT INTO test_deploy (msg) VALUES (?)", ["Persisted Data!"]);
 
     // 2. Symulujemy DEPLOY (zamknięcie i ubicie bazy)
-    db.worker.terminate();
+    oldDb.worker.terminate();
     
     // 3. Wstajemy po deployu podpinając się pod ten sam dysk
-    const newDb = initDatabase({ dbPath: path.join(testUploadDir, "data.sqlite"), uploadDir: testUploadDir });
+    const newDb = initDatabase({ dbPath, uploadDir: testUploadDir });
     await newDb.init();
 
     // 4. Sprawdzamy czy dane z poprzedniego życia przetrwały

@@ -1,4 +1,4 @@
-const bootstrap = require("../index");
+const bootstrap = require("../index.ts");
 const http = require("node:http");
 
 describe("API Security Regression Tests", () => {

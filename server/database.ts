@@ -98,7 +98,7 @@ class Database {
       );
     `);
 
-    const { logger } = require("./logger");
+    const { logger } = require("./logger.ts");
     const migrationsDir = path.join(__dirname, "migrations");
     if (!fs.existsSync(migrationsDir)) return;
 
@@ -169,7 +169,13 @@ class Database {
     const [salt, expected] = String(storedHash || "").split(":");
     if (!salt || !expected) return false;
     const actual = crypto.scryptSync(String(secret || ""), salt, 64).toString("hex");
-    return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
+    
+    // Fix: timingSafeEqual throws TypeError if lengths mismatch
+    const actualBuf = Buffer.from(actual, "hex");
+    const expectedBuf = Buffer.from(expected, "hex");
+    if (actualBuf.length !== expectedBuf.length) return false;
+    
+    return crypto.timingSafeEqual(actualBuf, expectedBuf);
   }
 
   _hashRecoveryCode(code) {

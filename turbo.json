@@ -2,16 +2,28 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "outputs": ["build/**", "dist/**"]
+      "outputs": [".vite/**", "build/**"],
+      "inputs": ["src/**", "index.html", "vite.config.js", "package.json"]
     },
-    "test": {
-      "dependsOn": ["build"]
+    "build:server": {
+      "outputs": ["dist-server/**"],
+      "inputs": ["server/**"]
     },
     "lint": {
-      "cache": true
+      "outputs": [],
+      "inputs": ["src/**", ".eslintrc.json", "package.json"]
     },
-    "start": {
-      "cache": false
+    "test": {
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "tests/**", "vitest.config.js"]
+    },
+    "test:server": {
+      "outputs": [],
+      "inputs": ["server/**", "vitest.config.js"]
+    },
+    "typecheck": {
+      "outputs": [],
+      "inputs": ["server/**", "src/**", "tsconfig.json"]
     }
   }
 }

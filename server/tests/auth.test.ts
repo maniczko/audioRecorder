@@ -1,5 +1,5 @@
-const { initDatabase } = require("../database");
-const AuthService = require("../services/AuthService");
+const { initDatabase } = require("../database.ts");
+const AuthService = require("../services/AuthService.ts");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -16,8 +16,15 @@ describe("Database & AuthService (In-Memory)", () => {
   });
 
   afterAll(() => {
+    if (db && db.worker) {
+      db.worker.terminate();
+    }
     if (fs.existsSync(testUploadDir)) {
-      fs.rmSync(testUploadDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(testUploadDir, { recursive: true, force: true });
+      } catch (e) {
+        // Ignore EPERM lock on Windows
+      }
     }
   });
 
@@ -64,4 +71,21 @@ describe("Database & AuthService (In-Memory)", () => {
       password: "wrong-password"
     })).rejects.toThrow("Niepoprawny email lub haslo.");
   });
+
+  test("should handle legacy or corrupted password hashes gracefully without crashing (500 Error prevention)", async () => {
+    // Forcefully inject a corrupted hash with invalid byte length directly into DB
+    const weirdHash = "somesalt123:c0rrupt3dh4shth4t1s2sh0rt"; // much shorter than 64 bytes
+    const row = await db._get("SELECT id FROM users WHERE email = 'test@example.com'");
+    
+    // Mutate the row manually to simulate dirty DB state
+    await db._execute("UPDATE users SET password_hash = ? WHERE id = ?", [weirdHash, row.id]);
+
+    // Expected behavior: Login should securely reject the user with standard 401 error,
+    // NOT throw a raw TypeError ("Input buffers must have the same byte length")
+    await expect(authService.loginUser({
+      email: "test@example.com",
+      password: "password123"
+    })).rejects.toThrow("Niepoprawny email lub haslo.");
+  });
 });
+

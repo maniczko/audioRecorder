@@ -1,7 +1,7 @@
 // Load .env from project root before any other requires
 try { require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") }); } catch (_) {}
 
-const { logger } = require("./logger");
+const { logger } = require("./logger.ts");
 
 process.on("uncaughtException", (err) => {
   logger.error("FATAL UNCAUGHT EXCEPTION:", err);
@@ -12,13 +12,13 @@ process.on("unhandledRejection", (reason) => {
 });
 
 const http = require("node:http");
-const { getDatabase } = require("./database");
-const { createApp } = require("./app");
+const { getDatabase } = require("./database.ts");
+const { createApp } = require("./app.ts");
 
 // Services
-const AuthService = require("./services/AuthService");
-const WorkspaceService = require("./services/WorkspaceService");
-const TranscriptionService = require("./services/TranscriptionService");
+const AuthService = require("./services/AuthService.ts");
+const WorkspaceService = require("./services/WorkspaceService.ts");
+const TranscriptionService = require("./services/TranscriptionService.ts");
 
 // Assets & Pipeline (Lazily loaded internally to prevent 55KB synchronous block on startup)
 

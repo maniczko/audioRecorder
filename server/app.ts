@@ -2,49 +2,91 @@ const { URL } = require("node:url");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const path = require("node:path");
-const {
-  checkRateLimit,
-  sendJson,
-  sendText,
-  sendNoContent,
-  readJsonBody,
-  readBinaryBody,
-  getBearerToken,
-} = require("./lib/serverUtils");
+const { Hono } = require("hono");
+const { cors } = require("hono/cors");
+const { logger } = require("hono/logger");
+const { z } = require("zod");
+const { zValidator } = require("@hono/zod-validator");
+const { getConnInfo } = require("@hono/node-server/conninfo");
+const { getRequestListener } = require("@hono/node-server");
+const { checkRateLimit } = require("./lib/serverUtils.ts");
 
 function createApp({ authService, workspaceService, transcriptionService, config }) {
-  const ALLOWED_ORIGINS = config.allowedOrigins || "http://localhost:3000";
+  const app = new Hono();
 
-  async function requireSession(request) {
-    const parsedUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
-    if (parsedUrl.pathname === "/health" || parsedUrl.pathname === "/voice-profiles") {
-      return { user_id: 'test_user', workspace_id: 'test_workspace' };
-    }
+  const ALLOWED_ORIGINS = (config.allowedOrigins || "http://localhost:3000").split(",").map(s => s.trim());
+  const allowAny = ALLOWED_ORIGINS.includes("*");
 
-    const token = getBearerToken(request);
-    if (!token) {
-      const error = new Error("Brak tokenu autoryzacyjnego.");
-      error.statusCode = 401;
-      throw error;
+  app.use(
+    "*",
+    cors({
+      origin: (origin) => {
+        if (!origin) return "*";
+        if (allowAny) return origin;
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin;
+        if (/^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(origin)) return origin;
+        if (ALLOWED_ORIGINS.includes(origin)) return origin;
+        return ALLOWED_ORIGINS[0];
+      },
+      allowHeaders: ["Content-Type", "Authorization", "X-Workspace-Id", "X-Meeting-Id", "X-Speaker-Name"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
+    })
+  );
+
+  app.use("*", async (c, next) => {
+    c.header("Content-Security-Policy", "default-src 'none'");
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("X-Frame-Options", "DENY");
+    await next();
+  });
+
+  // Global Error Handler
+  app.onError((err, c) => {
+    if (err.name === "ContextError" || err instanceof z.ZodError || err.statusCode === 422) {
+      return c.json({ message: "Invalid payload.", errors: err.errors || err.message }, 422);
     }
+    const statusCode = err.statusCode || err.status || 500;
+    if (statusCode === 429 && err.retryAfter) {
+      c.header("Retry-After", String(err.retryAfter));
+    }
+    return c.json({ message: err.message || "Unexpected server error." }, statusCode);
+  });
+
+  // Helper for Rate limiting
+  const applyRateLimit = (route, max = 10) => async (c, next) => {
+    const conn = getConnInfo(c);
+    const socketIp = conn?.remote?.address || "unknown";
+    const clientIp = config.trustProxy ? (c.req.header("x-forwarded-for")?.split(",")[0].trim() || socketIp) : socketIp;
+    checkRateLimit(clientIp, route, max);
+    await next();
+  };
+
+  // Helper auth mechanism
+  const authMiddleware = async (c, next) => {
+    const authHeader = c.req.header("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return c.json({ message: "Brak tokenu autoryzacyjnego." }, 401);
+    }
+    const token = authHeader.slice(7).trim();
     const session = await authService.getSession(token);
     if (!session) {
-      const error = new Error("Sesja wygasla lub jest nieprawidlowa.");
-      error.statusCode = 401;
-      throw error;
+      return c.json({ message: "Sesja wygasla lub jest nieprawidlowa." }, 401);
     }
-    return session;
-  }
+    c.set("session", session);
+    await next();
+  };
 
-  async function ensureWorkspaceAccess(session, workspaceId) {
+  const ensureWorkspaceAccess = async (c, workspaceId) => {
+    const session = c.get("session");
     const membership = await workspaceService.getMembership(workspaceId, session.user_id);
     if (!membership) {
-      const error = new Error("Nie masz dostepu do tego workspace.");
-      error.statusCode = 403;
-      throw error;
+        const err = new Error("Nie masz dostepu do tego workspace.");
+        err.statusCode = 403;
+        throw err;
     }
     return membership;
-  }
+  };
 
   function normalizePipelineStatus(value) {
     if (value === "completed") return "done";
@@ -72,375 +114,290 @@ function createApp({ authService, workspaceService, transcriptionService, config
     };
   }
 
-  async function handleRequest(request, response, signal) {
-    const origin = String(request.headers.origin || "");
-    const socketIp = String(request.socket?.remoteAddress || "unknown");
-    const clientIp = config.trustProxy
-      ? String(request.headers["x-forwarded-for"] || socketIp).split(",")[0].trim()
-      : socketIp;
+  app.get("/health", (c) => c.json({ ok: true, status: "ok", uptime: process.uptime() }));
 
-    console.log(`[HTTP] ${request.method} ${request.url} from ${origin || "no-origin"} (${clientIp})`);
+  const registerSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    name: z.string().min(1),
+    workspaceName: z.string().optional(),
+    workspaceMode: z.string().optional(),
+    workspaceCode: z.string().optional()
+  });
 
-    if (request.method === "OPTIONS") {
-      sendNoContent(response, origin, ALLOWED_ORIGINS);
-      return;
-    }
+  app.post("/auth/register", applyRateLimit("auth"), zValidator("json", registerSchema), async (c) => {
+    const data = c.req.valid("json");
+    const result = await authService.registerUser(data);
+    return c.json(result, 201);
+  });
 
-    const requestUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
-    const pathname = requestUrl.pathname;
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(1),
+    workspaceId: z.string().optional()
+  });
 
-    if (request.method === "GET" && pathname === "/health") {
-      sendJson(response, 200, { ok: true }, origin, ALLOWED_ORIGINS);
-      return;
-    }
+  app.post("/auth/login", applyRateLimit("auth"), zValidator("json", loginSchema), async (c) => {
+    const data = c.req.valid("json");
+    const result = await authService.loginUser(data);
+    return c.json(result, 200);
+  });
 
-    if (request.method === "POST" && pathname === "/auth/register") {
-      checkRateLimit(clientIp, "auth");
-      try {
-        sendJson(response, 201, await authService.registerUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      } catch (err) {
-        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
-      }
-      return;
-    }
+  const resetReqSchema = z.object({ email: z.string().email() });
+  app.post("/auth/password/reset/request", applyRateLimit("auth"), zValidator("json", resetReqSchema), async (c) => {
+    const data = c.req.valid("json");
+    const result = await authService.requestPasswordReset(data);
+    return c.json(result, 200);
+  });
 
-    if (request.method === "POST" && pathname === "/auth/login") {
-      checkRateLimit(clientIp, "auth");
-      try {
-        sendJson(response, 200, await authService.loginUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      } catch (err) {
-        sendJson(response, err.statusCode || 401, { message: err.message }, origin, ALLOWED_ORIGINS);
-      }
-      return;
-    }
+  const resetConfirmSchema = z.object({
+    email: z.string().email(),
+    code: z.string().min(1),
+    newPassword: z.string().min(6),
+    confirmPassword: z.string().min(6)
+  });
+  app.post("/auth/password/reset/confirm", applyRateLimit("auth"), zValidator("json", resetConfirmSchema), async (c) => {
+    const data = c.req.valid("json");
+    const result = await authService.resetPasswordWithCode(data);
+    return c.json(result, 200);
+  });
 
-    if (request.method === "POST" && pathname === "/auth/password/reset/request") {
-      checkRateLimit(clientIp, "auth");
-      try {
-        sendJson(response, 200, await authService.requestPasswordReset(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      } catch (err) {
-        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
-      }
-      return;
-    }
+  const googleSchema = z.object({
+    email: z.string().email(),
+    sub: z.string(),
+    name: z.string().optional(),
+    given_name: z.string().optional(),
+    picture: z.string().optional()
+  });
+  app.post("/auth/google", applyRateLimit("auth"), zValidator("json", googleSchema), async (c) => {
+    const data = c.req.valid("json");
+    const result = await authService.upsertGoogleUser(data);
+    return c.json(result, 200);
+  });
 
-    if (request.method === "POST" && pathname === "/auth/password/reset/confirm") {
-      checkRateLimit(clientIp, "auth");
-      try {
-        sendJson(response, 200, await authService.resetPasswordWithCode(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      } catch (err) {
-        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
-      }
-      return;
-    }
+  // ==== PRIVATE ROUTES ====
+  app.use("/auth/session", authMiddleware);
+  app.get("/auth/session", async (c) => {
+    const session = c.get("session");
+    const workspaceId = c.req.query("workspaceId") || session.workspace_id;
+    await ensureWorkspaceAccess(c, workspaceId);
+    return c.json(await authService.buildSessionPayload(session.user_id, workspaceId), 200);
+  });
 
-    if (request.method === "GET" && pathname === "/health") {
-      sendJson(response, 200, { status: "ok", uptime: process.uptime() }, origin, ALLOWED_ORIGINS);
-      return;
-    }
+  app.use("/users/*", authMiddleware);
+  app.put("/users/:userId/profile", async (c) => {
+    const session = c.get("session");
+    const userId = c.req.param("userId");
+    if (session.user_id !== userId) return c.json({ message: "Mozesz edytowac tylko swoj profil." }, 403);
+    const workspaceId = c.req.query("workspaceId") || session.workspace_id;
+    const body = await c.req.json().catch(() => ({}));
+    const user = await authService.updateUserProfile(userId, body);
+    const payload = await authService.buildSessionPayload(session.user_id, workspaceId);
+    return c.json({ user, users: payload.users }, 200);
+  });
 
-    if (request.method === "POST" && pathname === "/auth/google") {
-      checkRateLimit(clientIp, "auth");
-      try {
-        sendJson(response, 200, await authService.upsertGoogleUser(await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      } catch (err) {
-        sendJson(response, err.statusCode || 400, { message: err.message }, origin, ALLOWED_ORIGINS);
-      }
-      return;
-    }
+  app.post("/users/:userId/password", async (c) => {
+    const session = c.get("session");
+    const userId = c.req.param("userId");
+    if (session.user_id !== userId) return c.json({ message: "Mozesz zmienic tylko swoje haslo." }, 403);
+    const body = await c.req.json().catch(() => ({}));
+    return c.json(await authService.changeUserPassword(userId, body), 200);
+  });
 
-    // --- Private Routes Check ---
-    const isPrivate = pathname.startsWith("/auth/session") ||
-                      pathname.startsWith("/users/") ||
-                      pathname.startsWith("/state/bootstrap") ||
-                      pathname.startsWith("/state/workspaces/") ||
-                      pathname.startsWith("/workspaces/") ||
-                      pathname.startsWith("/media/") ||
-                      pathname.startsWith("/voice-profiles") ||
-                      pathname.startsWith("/transcribe/live");
+  app.use("/state/*", authMiddleware);
+  app.get("/state/bootstrap", async (c) => {
+    const session = c.get("session");
+    const workspaceId = c.req.query("workspaceId") || session.workspace_id;
+    await ensureWorkspaceAccess(c, workspaceId);
+    return c.json(await authService.buildSessionPayload(session.user_id, workspaceId), 200);
+  });
 
-    if (!isPrivate) {
-      sendText(response, 404, "Not found", origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    // --- Private Routes (Auth Gated) ---
-    const session = await requireSession(request);
-
-    if (request.method === "GET" && pathname === "/auth/session") {
-      const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      await ensureWorkspaceAccess(session, workspaceId);
-      sendJson(response, 200, await authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const profileMatch = pathname.match(/^\/users\/([^/]+)\/profile$/);
-    if (request.method === "PUT" && profileMatch) {
-      const userId = profileMatch[1];
-      if (session.user_id !== userId) {
-        sendJson(response, 403, { message: "Mozesz edytowac tylko swoj profil." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      const user = await authService.updateUserProfile(userId, await readJsonBody(request));
-      sendJson(response, 200, {
-        user,
-        users: (await authService.buildSessionPayload(session.user_id, workspaceId)).users,
-      }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const passwordMatch = pathname.match(/^\/users\/([^/]+)\/password$/);
-    if (request.method === "POST" && passwordMatch) {
-      const userId = passwordMatch[1];
-      if (session.user_id !== userId) {
-        sendJson(response, 403, { message: "Mozesz zmienic tylko swoje haslo." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      sendJson(response, 200, await authService.changeUserPassword(userId, await readJsonBody(request)), origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    if (request.method === "GET" && pathname === "/state/bootstrap") {
-      const workspaceId = requestUrl.searchParams.get("workspaceId") || session.workspace_id;
-      await ensureWorkspaceAccess(session, workspaceId);
-      sendJson(response, 200, await authService.buildSessionPayload(session.user_id, workspaceId), origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const workspaceStateMatch = pathname.match(/^\/state\/workspaces\/([^/]+)$/);
-    if (request.method === "PUT" && workspaceStateMatch) {
-      const workspaceId = workspaceStateMatch[1];
-      await ensureWorkspaceAccess(session, workspaceId);
-      sendJson(response, 200, {
+  app.put("/state/workspaces/:workspaceId", async (c) => {
+    const workspaceId = c.req.param("workspaceId");
+    await ensureWorkspaceAccess(c, workspaceId);
+    const body = await c.req.json().catch(() => ({}));
+    return c.json({
         workspaceId,
-        state: await workspaceService.saveWorkspaceState(workspaceId, await readJsonBody(request)),
-      }, origin, ALLOWED_ORIGINS);
-      return;
-    }
+        state: await workspaceService.saveWorkspaceState(workspaceId, body),
+    }, 200);
+  });
 
-    const workspaceRoleMatch = pathname.match(/^\/workspaces\/([^/]+)\/members\/([^/]+)\/role$/);
-    if (request.method === "PUT" && workspaceRoleMatch) {
-      const workspaceId = workspaceRoleMatch[1];
-      const targetUserId = workspaceRoleMatch[2];
-      const membership = await ensureWorkspaceAccess(session, workspaceId);
-      if (!["owner", "admin"].includes(membership.member_role)) {
-        sendJson(response, 403, { message: "Tylko owner lub admin moze zmieniac role." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      sendJson(response, 200, await workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, (await readJsonBody(request)).memberRole), origin, ALLOWED_ORIGINS);
-      return;
+  app.use("/workspaces/*", authMiddleware);
+  app.put("/workspaces/:workspaceId/members/:targetUserId/role", async (c) => {
+    const workspaceId = c.req.param("workspaceId");
+    const targetUserId = c.req.param("targetUserId");
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!["owner", "admin"].includes(membership.member_role)) {
+       return c.json({ message: "Tylko owner lub admin moze zmieniac role." }, 403);
     }
+    const body = await c.req.json().catch(() => ({}));
+    return c.json(await workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, body.memberRole), 200);
+  });
 
-    // --- Media Routes ---
-    const mediaAudioMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/audio$/);
-    if (mediaAudioMatch && request.method === "PUT") {
-      const recordingId = mediaAudioMatch[1];
-      const workspaceId = String(request.headers["x-workspace-id"] || "");
-      const meetingId = String(request.headers["x-meeting-id"] || "");
-      if (!workspaceId) {
-        sendJson(response, 400, { message: "Brakuje X-Workspace-Id." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      await ensureWorkspaceAccess(session, workspaceId);
-      const asset = await transcriptionService.upsertMediaAsset({
+  // --- Media & Processing ---
+  app.use("/media/*", authMiddleware);
+  app.put("/media/recordings/:recordingId/audio", async (c) => {
+    const session = c.get("session");
+    const recordingId = c.req.param("recordingId");
+    const workspaceId = c.req.header("X-Workspace-Id") || "";
+    const meetingId = c.req.header("X-Meeting-Id") || "";
+    if (!workspaceId) return c.json({ message: "Brakuje X-Workspace-Id." }, 400);
+    await ensureWorkspaceAccess(c, workspaceId);
+
+    const buffer = await c.req.arrayBuffer();
+    if (buffer.byteLength > 100 * 1024 * 1024) return c.json({ message: "Przesłany plik przekracza maksymalny rozmiar." }, 413);
+
+    const asset = await transcriptionService.upsertMediaAsset({
         recordingId, workspaceId, meetingId,
-        contentType: request.headers["content-type"] || "application/octet-stream",
-        buffer: await readBinaryBody(request),
+        contentType: c.req.header("content-type") || "application/octet-stream",
+        buffer: Buffer.from(buffer),
         createdByUserId: session.user_id,
-      });
-      sendJson(response, 200, { id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    if (mediaAudioMatch && request.method === "GET") {
-      const recordingId = mediaAudioMatch[1];
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) {
-        sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      await ensureWorkspaceAccess(session, asset.workspace_id);
-      if (!fs.existsSync(asset.file_path)) {
-        sendJson(response, 404, { message: "Plik audio nie istnieje na serwerze." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      const ALLOWED = new Set(["audio/webm", "audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/flac", "application/octet-stream"]);
-      const safeType = ALLOWED.has(String(asset.content_type || "").toLowerCase()) ? asset.content_type : "application/octet-stream";
-      response.writeHead(200, {
-        "Access-Control-Allow-Origin": origin, // Simple CORS for streaming
-        "Content-Type": safeType,
-        "Content-Length": String(fs.statSync(asset.file_path).size),
-        "Content-Disposition": "attachment",
-      });
-      fs.createReadStream(asset.file_path).pipe(response);
-      return;
-    }
-
-    const mediaTranscribeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/transcribe$/);
-    if (mediaTranscribeMatch && request.method === "POST") {
-      const recordingId = mediaTranscribeMatch[1];
-      const body = await readJsonBody(request);
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) {
-        sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      await ensureWorkspaceAccess(session, body.workspaceId || asset.workspace_id);
-      await transcriptionService.queueTranscription(recordingId, body);
-      await transcriptionService.ensureTranscriptionJob(recordingId, asset, body);
-      sendJson(response, 202, buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    if (mediaTranscribeMatch && request.method === "GET") {
-      const recordingId = mediaTranscribeMatch[1];
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) {
-        sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-        return;
-      }
-      await ensureWorkspaceAccess(session, asset.workspace_id);
-      sendJson(response, 200, buildTranscriptionStatusPayload(asset), origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    // --- Voice Profiles ---
-    if (request.method === "GET" && pathname === "/voice-profiles") {
-      const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p) => ({
-        id: p.id, speakerName: p.speaker_name, userId: p.user_id, createdAt: p.created_at,
-      }));
-      sendJson(response, 200, { profiles }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    if (request.method === "POST" && pathname === "/voice-profiles") {
-      checkRateLimit(clientIp, "voice-profiles");
-      const speakerName = String(request.headers["x-speaker-name"] || "").slice(0, 120);
-      if (!speakerName.trim()) return sendJson(response, 400, { message: "Brakuje naglowka X-Speaker-Name." }, origin, ALLOWED_ORIGINS);
-      const contentType = request.headers["content-type"] || "audio/webm";
-      const buffer = await readBinaryBody(request, 1 * 1024 * 1024); // Regression fix [H-01]: Enforce 1MB limit
-      if (!buffer || buffer.byteLength < 1000) return sendJson(response, 400, { message: "Plik audio jest za krotki." }, origin, ALLOWED_ORIGINS);
-      
-      const profileId = `vp_${crypto.randomUUID().replace(/-/g, "")}`;
-      const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
-      const audioPath = path.join(config.uploadDir, `${profileId}${ext}`);
-      fs.writeFileSync(audioPath, buffer);
-      
-      const embedding = await transcriptionService.computeEmbedding(audioPath);
-      
-      const profile = await workspaceService.saveVoiceProfile({
-        id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
-        speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
-      });
-      
-      sendJson(response, 201, { id: profile.id, speakerName: profile.speaker_name, hasEmbedding: (embedding || []).length > 0, createdAt: profile.created_at }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const deleteVpMatch = pathname.match(/^\/voice-profiles\/([a-z0-9_]+)$/);
-    if (request.method === "DELETE" && deleteVpMatch) {
-      await workspaceService.deleteVoiceProfile(deleteVpMatch[1], session.workspace_id);
-      sendNoContent(response, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    // --- Pipeline Ops ---
-    const mediaNormalizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/normalize$/);
-    if (mediaNormalizeMatch && request.method === "POST") {
-      const recordingId = mediaNormalizeMatch[1];
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      await ensureWorkspaceAccess(session, asset.workspace_id);
-      await transcriptionService.normalizeRecording(asset.file_path, { signal });
-      sendJson(response, 200, { ok: true }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const mediaVoiceCoachingMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/voice-coaching$/);
-    if (mediaVoiceCoachingMatch && request.method === "POST") {
-      const recordingId = mediaVoiceCoachingMatch[1];
-      const body = await readJsonBody(request);
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      await ensureWorkspaceAccess(session, asset.workspace_id);
-      const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || [], { signal });
-      sendJson(response, 200, { coaching }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    const mediaRediarizeMatch = pathname.match(/^\/media\/recordings\/([^/]+)\/rediarize$/);
-    if (mediaRediarizeMatch && request.method === "POST") {
-      const recordingId = mediaRediarizeMatch[1];
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) return sendJson(response, 404, { message: "Nie znaleziono nagrania." }, origin, ALLOWED_ORIGINS);
-      await ensureWorkspaceAccess(session, asset.workspace_id);
-
-      let stored = [];
-      try { stored = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
-      if (!stored.length) return sendJson(response, 400, { message: "Brak transkrypcji." }, origin, ALLOWED_ORIGINS);
-
-      const whisperLike = stored.map(s => ({ text: s.text, start: s.timestamp, end: s.endTimestamp || s.timestamp })).filter(s => s.text);
-      const diarization = await transcriptionService.diarizeFromTranscript(whisperLike);
-      if (!diarization) return sendJson(response, 422, { message: "Diaryzacja nie powiodla sie." }, origin, ALLOWED_ORIGINS);
-
-      const updated = diarization.segments.map((seg, idx) => ({ ...(stored[idx] || {}), id: stored[idx]?.id || seg.id, text: seg.text, timestamp: seg.timestamp, endTimestamp: seg.endTimestamp, speakerId: seg.speakerId, rawSpeakerLabel: seg.rawSpeakerLabel }));
-      await transcriptionService.saveTranscriptionResult(recordingId, { segments: updated, diarization, pipelineStatus: "completed" });
-      sendJson(response, 200, { speakerCount: diarization.speakerCount, speakerNames: diarization.speakerNames, segments: updated }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    if (request.method === "POST" && pathname === "/transcribe/live") {
-      checkRateLimit(clientIp, "live-transcribe", 60);
-      const contentType = request.headers["content-type"] || "audio/webm";
-      const buffer = await readBinaryBody(request);
-      if (!buffer || buffer.byteLength < 500) return sendJson(response, 200, { text: "" }, origin, ALLOWED_ORIGINS);
-      
-      const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
-      const tmpPath = path.join(config.uploadDir, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
-      try {
-        fs.writeFileSync(tmpPath, buffer);
-        const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, { signal });
-        sendJson(response, 200, { text }, origin, ALLOWED_ORIGINS);
-      } finally {
-        try { fs.unlinkSync(tmpPath); } catch (_) {}
-      }
-      return;
-    }
-
-    if (request.method === "POST" && pathname === "/media/analyze") {
-      checkRateLimit(clientIp, "analyze");
-      const body = await readJsonBody(request);
-      const result = await transcriptionService.analyzeMeetingWithOpenAI(body);
-      sendJson(response, 200, result || { mode: "no-key" }, origin, ALLOWED_ORIGINS);
-      return;
-    }
-
-    sendText(response, 404, "Not found", origin, ALLOWED_ORIGINS);
-  }
-
-  return async (request, response) => {
-    const ac = new AbortController();
-    request.on("close", () => {
-      // If the response is not fully writable-ended, the request was probably aborted prematurely.
-      if (!response.writableEnded) {
-        ac.abort();
-      }
     });
+    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes }, 200);
+  });
+
+  app.get("/media/recordings/:recordingId/audio", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    if (!fs.existsSync(asset.file_path)) return c.json({ message: "Plik audio nie istnieje na serwerze." }, 404);
+
+    const ALLOWED = new Set(["audio/webm", "audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/flac", "application/octet-stream"]);
+    const safeType = ALLOWED.has(String(asset.content_type || "").toLowerCase()) ? asset.content_type : "application/octet-stream";
+
+    // Streaming response
+    const stream = fs.createReadStream(asset.file_path);
+    c.header("Content-Type", safeType);
+    c.header("Content-Length", String(fs.statSync(asset.file_path).size));
+    c.header("Content-Disposition", "attachment");
+    return c.body(stream, 200);
+  });
+
+  app.post("/media/recordings/:recordingId/transcribe", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const body = await c.req.json().catch(() => ({}));
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
+
+    await transcriptionService.queueTranscription(recordingId, body);
+    await transcriptionService.ensureTranscriptionJob(recordingId, asset, body);
+    return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
+  });
+
+  app.get("/media/recordings/:recordingId/transcribe", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    return c.json(buildTranscriptionStatusPayload(asset), 200);
+  });
+
+  app.post("/media/recordings/:recordingId/normalize", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    await transcriptionService.normalizeRecording(asset.file_path, {});
+    return c.json({ ok: true }, 200);
+  });
+
+  app.post("/media/recordings/:recordingId/voice-coaching", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const body = await c.req.json().catch(() => ({}));
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || [], {});
+    return c.json({ coaching }, 200);
+  });
+
+  app.post("/media/recordings/:recordingId/rediarize", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+
+    let stored = [];
+    try { stored = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
+    if (!stored.length) return c.json({ message: "Brak transkrypcji." }, 400);
+
+    const whisperLike = stored.map(s => ({ text: s.text, start: s.timestamp, end: s.endTimestamp || s.timestamp })).filter(s => s.text);
+    const diarization = await transcriptionService.diarizeFromTranscript(whisperLike);
+    if (!diarization) return c.json({ message: "Diaryzacja nie powiodla sie." }, 422);
+
+    const updated = diarization.segments.map((seg, idx) => ({ ...(stored[idx] || {}), id: stored[idx]?.id || seg.id, text: seg.text, timestamp: seg.timestamp, endTimestamp: seg.endTimestamp, speakerId: seg.speakerId, rawSpeakerLabel: seg.rawSpeakerLabel }));
+    await transcriptionService.saveTranscriptionResult(recordingId, { segments: updated, diarization, pipelineStatus: "completed" });
+    return c.json({ speakerCount: diarization.speakerCount, speakerNames: diarization.speakerNames, segments: updated }, 200);
+  });
+
+  app.post("/media/analyze", applyRateLimit("analyze"), async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const result = await transcriptionService.analyzeMeetingWithOpenAI(body);
+    return c.json(result || { mode: "no-key" }, 200);
+  });
+
+  app.use("/voice-profiles*", authMiddleware);
+  app.get("/voice-profiles", async (c) => {
+    const session = c.get("session");
+    const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p) => ({
+      id: p.id, speakerName: p.speaker_name, userId: p.user_id, createdAt: p.created_at,
+    }));
+    return c.json({ profiles }, 200);
+  });
+
+  app.post("/voice-profiles", applyRateLimit("voice-profiles"), async (c) => {
+    const session = c.get("session");
+    const speakerName = String(c.req.header("X-Speaker-Name") || "").slice(0, 120);
+    if (!speakerName.trim()) return c.json({ message: "Brakuje naglowka X-Speaker-Name." }, 400);
     
+    const bufferArray = await c.req.arrayBuffer();
+    if (bufferArray.byteLength > 1 * 1024 * 1024) return c.json({ message: "Plik audio przekracza maksymalny rozmiar limitu 1MB." }, 413);
+    const buffer = Buffer.from(bufferArray);
+    if (!buffer || buffer.byteLength < 1000) return c.json({ message: "Plik audio jest za krotki." }, 400);
+
+    const contentType = c.req.header("content-type") || "audio/webm";
+    const profileId = `vp_${crypto.randomUUID().replace(/-/g, "")}`;
+    const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
+    const audioPath = path.join(config.uploadDir, `${profileId}${ext}`);
+    fs.writeFileSync(audioPath, buffer);
+
+    const embedding = await transcriptionService.computeEmbedding(audioPath);
+
+    const profile = await workspaceService.saveVoiceProfile({
+      id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
+      speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
+    });
+
+    return c.json({ id: profile.id, speakerName: profile.speaker_name, hasEmbedding: (embedding || []).length > 0, createdAt: profile.created_at }, 201);
+  });
+
+  app.delete("/voice-profiles/:id", async (c) => {
+    const session = c.get("session");
+    await workspaceService.deleteVoiceProfile(c.req.param("id"), session.workspace_id);
+    return new Response(null, { status: 204 });
+  });
+
+  app.post("/transcribe/live", authMiddleware, applyRateLimit("live-transcribe", 60), async (c) => {
+    const contentType = c.req.header("content-type") || "audio/webm";
+    const bufferArray = await c.req.arrayBuffer();
+    if (bufferArray.byteLength > 5 * 1024 * 1024) return c.json({ message: "Payload too large" }, 413);
+    const buffer = Buffer.from(bufferArray);
+    if (!buffer || buffer.byteLength < 500) return c.json({ text: "" }, 200);
+
+    const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
+    const tmpPath = path.join(config.uploadDir, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
     try {
-      await handleRequest(request, response, ac.signal);
-    } catch (error) {
-      if (ac.signal.aborted || error.message.includes("aborted")) {
-        // Suppress errors logged if the client disconnected gracefully
-        return;
-      }
-      const statusCode = error.statusCode || 500;
-      const origin = String(request.headers.origin || "");
-      if (statusCode === 429 && error.retryAfter) response.setHeader("Retry-After", String(error.retryAfter));
-      sendJson(response, statusCode, { message: error.message || "Unexpected server error." }, origin, ALLOWED_ORIGINS);
+      fs.writeFileSync(tmpPath, buffer);
+      const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, {});
+      return c.json({ text }, 200);
+    } finally {
+      try { fs.unlinkSync(tmpPath); } catch (_) {}
     }
-  };
+  });
+
+  return getRequestListener(app.fetch);
 }
 
 module.exports = { createApp };

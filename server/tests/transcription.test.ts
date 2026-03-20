@@ -1,4 +1,4 @@
-const TranscriptionService = require('../services/TranscriptionService');
+const TranscriptionService = require('../services/TranscriptionService.ts');
 
 // Mock dependencies
 const mockDb = {

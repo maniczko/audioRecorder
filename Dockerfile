@@ -1,18 +1,65 @@
-FROM node:22.12-bookworm-slim
-
-# FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg python3 python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+# ==========================================
+# STAGE 1: Build (TypeScript Compilation)
+# ==========================================
+FROM node:22.12-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install server dependencies
-COPY server/package.json server/package-lock.json* ./
-# Install ALL dependencies (including dev for tsx)
-RUN npm install
+# Install build dependencies
+# We copy root package.json for monorepo workspace resolution if any
+COPY package*.json ./
+COPY server/package*.json ./server/
 
+# Install everything including dev dependencies so we get esbuild/typescript
+RUN npm ci
+
+# Copy server code
 COPY server/ ./server/
+
+# Transpile TS -> JS using esbuild into dist-server/
+# We use find to recursively grab all ts/js files within server dodging sh glob limitations
+RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
+
+# Prune node_modules down to only production dependencies to save space
+# Note: npm prune --production in root removes dev dependencies
+RUN npm prune --production
+
+
+# ==========================================
+# STAGE 2: Production Release
+# ==========================================
+FROM node:22.12-bookworm-slim
+
+# Install FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg python3 python3-venv && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install uv (astronomically fast API from Astral) to build python modules 100x faster
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Create virtual environment and activate it permanently for the container
+RUN uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
+COPY server/requirements.txt ./server/
+RUN uv pip install -r server/requirements.txt
+
+# Copy production node_modules from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Copy compiled backend code instead of raw TS
+COPY --from=builder /app/dist-server ./server
+
+# Copy python scripts separately since esbuild doesn't transpile .py
+COPY server/*.py ./server/
+
+# Copy server package mapping (optional if needed for runtime)
+COPY server/package*.json ./server/
 
 # Ensure data directories exist
 RUN mkdir -p /data/uploads
@@ -27,4 +74,5 @@ ENV VOICELOG_UPLOAD_DIR=/data/uploads
 
 EXPOSE 4000
 
-CMD ["npx", "tsx", "server/index.ts"]
+# Execute natively instead of using tsx (huge memory savings & instant boot)
+CMD ["node", "server/index.js"]
