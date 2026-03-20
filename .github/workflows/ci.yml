@@ -31,7 +31,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Run ESLint
         run: pnpm exec eslint src
@@ -54,7 +54,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Run Vitest
         run: pnpm exec vitest run --reporter=verbose --coverage
@@ -85,10 +85,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install root dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Install server dependencies
-        run: cd server && pnpm install
+        run: cd server && pnpm install --no-frozen-lockfile
 
       - name: Run server tests
         run: cd server && pnpm exec vitest run --reporter=verbose
@@ -113,7 +113,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build production bundle
         run: pnpm run build
@@ -154,14 +154,14 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Run npm audit (non-blocking)
-        run: npm audit --omit=dev || true
+      - name: Run pnpm audit (non-blocking)
+        run: pnpm audit --prod || true
 
       - name: Check for critical vulnerabilities
         run: |
-          CRITICAL=$(npm audit --json --omit=dev 2>/dev/null | node -e "
+          CRITICAL=$(pnpm audit --json --prod 2>/dev/null | node -e "
             let data=''; process.stdin.on('data',c=>data+=c); process.stdin.on('end',()=>{
               try { const r=JSON.parse(data); console.log(r.metadata?.vulnerabilities?.critical||0); }
               catch(e) { console.log(0); }
@@ -169,7 +169,7 @@ jobs:
           ")
           echo "Critical vulnerabilities: $CRITICAL"
           if [ "$CRITICAL" -gt 0 ]; then
-            echo "::warning::Found $CRITICAL critical npm vulnerabilities"
+            echo "::warning::Found $CRITICAL critical pnpm vulnerabilities"
           fi
 
   # ─── Stage 6: Bundle Size Check ────────────────────────
@@ -190,7 +190,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build and measure
         run: pnpm run build 2>&1 | tee build_output.txt
