@@ -10,6 +10,10 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ""));
+}
+
 function normalizeLines(value) {
   return String(value || "")
     .split(/\r?\n|,/)
@@ -64,6 +68,10 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
     throw new Error("Uzupelnij imie, email i haslo.");
   }
 
+  if (!isValidEmail(email)) {
+    throw new Error("Podaj poprawny adres email.");
+  }
+
   if (password.length < 6) {
     throw new Error("Haslo musi miec przynajmniej 6 znakow.");
   }
@@ -76,6 +84,9 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
   let workspaces = Array.isArray(existingWorkspaces) ? [...existingWorkspaces] : [];
 
   if (workspaceMode === "join") {
+    if (!inviteCode) {
+      throw new Error("Podaj kod workspace, aby dolaczyc.");
+    }
     const workspace = workspaces.find((item) => normalizeWorkspaceCode(item.inviteCode) === inviteCode);
     if (!workspace) {
       throw new Error("Nie znaleziono workspace o takim kodzie.");
@@ -137,7 +148,18 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
 
 export async function loginUser(existingUsers, existingWorkspaces, draft) {
   const email = normalizeEmail(draft.email);
-  const passwordHash = await hashSecret(draft.password);
+  const password = String(draft.password || "");
+  const passwordHash = await hashSecret(password);
+  const userByEmail = existingUsers.find((candidate) => normalizeEmail(candidate.email) === email);
+
+  if (!email || !password) {
+    throw new Error("Uzupelnij email i haslo.");
+  }
+
+  if (userByEmail && !userByEmail.passwordHash) {
+    throw new Error("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+  }
+
   const user = existingUsers.find(
     (candidate) => normalizeEmail(candidate.email) === email && candidate.passwordHash === passwordHash
   );
@@ -146,7 +168,15 @@ export async function loginUser(existingUsers, existingWorkspaces, draft) {
     throw new Error("Niepoprawny email lub haslo.");
   }
 
-  const workspaceId = resolveWorkspaceForUser(user, existingWorkspaces, draft.workspaceId);
+  const requestedWorkspaceId = String(draft.workspaceId || "").trim();
+  if (requestedWorkspaceId) {
+    const allowedWorkspaceId = resolveWorkspaceForUser(user, existingWorkspaces, requestedWorkspaceId);
+    if (allowedWorkspaceId !== requestedWorkspaceId) {
+      throw new Error("Nie masz dostepu do wybranego workspace.");
+    }
+  }
+
+  const workspaceId = resolveWorkspaceForUser(user, existingWorkspaces, requestedWorkspaceId);
   if (!workspaceId) {
     throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
   }

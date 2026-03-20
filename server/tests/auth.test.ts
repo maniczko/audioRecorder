@@ -93,5 +93,32 @@ describe("Database & AuthService (In-Memory)", () => {
       password: "password123"
     })).rejects.toThrow("Niepoprawny email lub haslo.");
   });
-});
 
+  test("should reject login to a workspace the user does not belong to", async () => {
+    const outsider = await authService.registerUser({
+      email: "outsider@example.com",
+      password: "password123",
+      name: "Outsider",
+      workspaceName: "Outsider Workspace"
+    });
+
+    await expect(authService.loginUser({
+      email: "test@example.com",
+      password: "password123",
+      workspaceId: outsider.workspaceId,
+    })).rejects.toThrow("Nie masz dostepu do wybranego workspace.");
+  });
+
+  test("should show a dedicated error for Google-managed accounts", async () => {
+    await authService.upsertGoogleUser({
+      email: "google@example.com",
+      sub: "google-sub-1",
+      name: "Google User",
+    });
+
+    await expect(authService.loginUser({
+      email: "google@example.com",
+      password: "password123",
+    })).rejects.toThrow("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+  });
+});

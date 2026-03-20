@@ -72,4 +72,46 @@ describe("auth flows", () => {
 
     expect(loginResult.user.email).toBe("marta@example.com");
   });
+
+  test("rejects login when a specific workspace is requested but user is not a member", async () => {
+    const workspace = createWorkspace("Sprzedaz", "owner_1");
+    const otherWorkspace = createWorkspace("Marketing", "owner_2");
+    const registerResult = await registerUser([], [workspace, otherWorkspace], {
+      name: "Jan Kowalski",
+      email: "jan@example.com",
+      password: "sekret12",
+      workspaceMode: "join",
+      workspaceCode: workspace.inviteCode,
+    });
+
+    await expect(
+      loginUser(registerResult.users, registerResult.workspaces, {
+        email: "jan@example.com",
+        password: "sekret12",
+        workspaceId: otherWorkspace.id,
+      })
+    ).rejects.toThrow("Nie masz dostepu do wybranego workspace.");
+  });
+
+  test("shows a dedicated message for Google-managed accounts during password login", async () => {
+    await expect(
+      loginUser(
+        [
+          {
+            id: "user_google_1",
+            email: "google@example.com",
+            passwordHash: null,
+            provider: "google",
+            workspaceIds: ["workspace_1"],
+            defaultWorkspaceId: "workspace_1",
+          },
+        ],
+        [{ id: "workspace_1", memberIds: ["user_google_1"] }],
+        {
+          email: "google@example.com",
+          password: "sekret12",
+        }
+      )
+    ).rejects.toThrow("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+  });
 });

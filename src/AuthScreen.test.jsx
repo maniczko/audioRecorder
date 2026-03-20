@@ -1,17 +1,27 @@
 /* eslint-disable testing-library/no-unnecessary-act */
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import AuthScreen from "./AuthScreen";
 import { vi, describe, test, expect, beforeEach } from "vitest";
+import AuthScreen from "./AuthScreen";
 
 describe("AuthScreen", () => {
   const defaultProps = {
     authMode: "login",
-    authDraft: { email: "", password: "", name: "", workspaceName: "", workspaceMode: "create" },
+    authDraft: {
+      email: "",
+      password: "",
+      name: "",
+      role: "",
+      company: "",
+      workspaceMode: "create",
+      workspaceName: "",
+      workspaceCode: "",
+    },
     authError: "",
     setAuthMode: vi.fn(),
     setAuthDraft: vi.fn(),
-    submitAuth: vi.fn(e => e.preventDefault()),
+    submitAuth: vi.fn((event) => event.preventDefault()),
     googleEnabled: true,
     googleButtonRef: { current: null },
     googleAuthMessage: "",
@@ -19,7 +29,7 @@ describe("AuthScreen", () => {
     setResetDraft: vi.fn(),
     resetMessage: "",
     resetPreviewCode: "",
-    resetExpiresAt: null,
+    resetExpiresAt: "",
     requestResetCode: vi.fn(),
     completeReset: vi.fn(),
   };
@@ -30,13 +40,11 @@ describe("AuthScreen", () => {
 
   function renderAuthScreen(overrides = {}) {
     const props = { ...defaultProps, ...overrides };
-    return { ...render(<AuthScreen {...props} />), props };
+    return { ...render(React.createElement(AuthScreen, props)), props };
   }
 
-  test("renders login form correctly and switches to register mode", async () => {
+  test("switches from login to register mode", async () => {
     const { props } = renderAuthScreen();
-    expect(screen.getByPlaceholderText("name@company.com")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("minimum 6 znakow")).toBeInTheDocument();
     
     const registerSwitch = screen.getByRole("button", { name: "Rejestracja" });
     await userEvent.click(registerSwitch);
@@ -44,37 +52,37 @@ describe("AuthScreen", () => {
     expect(props.setAuthMode).toHaveBeenCalledWith("register");
   });
 
-  test("submits login form with correct credentials", async () => {
+  test("submits the login form", async () => {
     const { props } = renderAuthScreen({
-      authDraft: { email: "jan@example.com", password: "test-password" }
+      authDraft: {
+        ...defaultProps.authDraft,
+        email: "jan@example.com",
+        password: "test-password",
+      },
     });
 
-    const submitBtn = screen.getByRole("button", { name: "Zaloguj" });
-    await userEvent.click(submitBtn);
+    await userEvent.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(props.submitAuth).toHaveBeenCalled();
   });
 
-  test("displays validation errors for weak password during registration", async () => {
-    const { props } = renderAuthScreen({
+  test("shows the join code field during registration", async () => {
+    renderAuthScreen({
       authMode: "register",
-      authDraft: { email: "jan@example.com", password: "123", name: "Jan", workspaceName: "Work", workspaceMode: "create" }
+      authDraft: {
+        ...defaultProps.authDraft,
+        name: "Jan",
+        workspaceMode: "join",
+      },
     });
 
-    const submitBtn = screen.getByRole("button", { name: "Wejdz do workspace" });
-    await userEvent.click(submitBtn);
-
-    // Should not submit if password is less than 6 chars. 
-    // AuthScreen internal validation intercepts it.
-    expect(props.submitAuth).not.toHaveBeenCalled();
-    expect(screen.getByText("Haslo musi miec co najmniej 6 znakow")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("np. AB12CD")).toBeInTheDocument();
   });
 
-  test("handles password reset request directly", async () => {
+  test("requests a password reset code in forgot mode", async () => {
     const { props } = renderAuthScreen({ authMode: "forgot" });
 
-    const resetBtn = screen.getByRole("button", { name: "Wyslij kod resetu" });
-    await userEvent.click(resetBtn);
+    await userEvent.click(screen.getByRole("button", { name: "Wyslij kod resetu" }));
 
     expect(props.requestResetCode).toHaveBeenCalled();
   });

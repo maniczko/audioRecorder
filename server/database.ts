@@ -171,6 +171,10 @@ export class Database {
     return this._clean(email).toLowerCase();
   }
 
+  _isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ""));
+  }
+
   _normalizeWorkspaceCode(code) {
     return this._clean(code).replace(/\s+/g, "").toUpperCase();
   }
@@ -458,6 +462,7 @@ export class Database {
     const requestedWorkspaceName = this._clean(draft.workspaceName);
 
     if (!email || !password || !name) throw new Error("Uzupelnij imie, email i haslo.");
+    if (!this._isValidEmail(email)) throw new Error("Podaj poprawny adres email.");
     if (password.length < 6) throw new Error("Haslo musi miec przynajmniej 6 znakow.");
 
     const existingUser = await this._get("SELECT id FROM users WHERE email = ?", [email]);
@@ -486,6 +491,7 @@ export class Database {
       );
 
       if (workspaceMode === "join") {
+        if (!inviteCode) throw new Error("Podaj kod workspace, aby dolaczyc.");
         const workspace = await this._get("SELECT * FROM workspaces WHERE invite_code = ?", [inviteCode]);
         if (!workspace) throw new Error("Nie znaleziono workspace o takim kodzie.");
 
@@ -515,14 +521,23 @@ export class Database {
   async loginUser(draft: UserDraft): Promise<any> {
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
+    const preferredWorkspaceId = this._clean(draft.workspaceId);
+    if (!email || !password) throw new Error("Uzupelnij email i haslo.");
     const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (row && !row.password_hash) {
+      throw new Error("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+    }
 
     if (!row || !row.password_hash || !this._verifyPassword(password, row.password_hash)) {
       throw new Error("Niepoprawny email lub haslo.");
     }
 
-    const workspaceId = await this.selectWorkspaceForUser(row.id, this._clean(draft.workspaceId));
+    const workspaceId = await this.selectWorkspaceForUser(row.id, preferredWorkspaceId);
     if (!workspaceId) throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
+    if (preferredWorkspaceId && workspaceId !== preferredWorkspaceId) {
+      throw new Error("Nie masz dostepu do wybranego workspace.");
+    }
 
     const [session, payload] = await Promise.all([
       this.createSession(row.id, workspaceId),
@@ -750,4 +765,3 @@ export function getDatabase() {
   }
   return defaultInstance;
 }
-
