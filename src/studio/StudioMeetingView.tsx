@@ -550,7 +550,8 @@ export default function StudioMeetingView({
           { id: 'summary', label: 'Podsumowanie spotkania' },
           { id: 'needs', label: 'Potrzeby i obawy' },
           { id: 'profile', label: 'Profil psychologiczny' },
-          { id: 'feedback', label: 'Twój feedback' }
+          { id: 'feedback', label: 'Twój feedback' },
+          { id: 'tasks', label: 'Zadania' }
         ].map(t => (
           <button
             key={t.id}
@@ -931,13 +932,15 @@ export default function StudioMeetingView({
           </section>
         )}
 
-        <AiTaskSuggestionsPanel
-          selectedRecording={selectedRecording}
-          displaySpeakerNames={displaySpeakerNames}
-          peopleProfiles={peopleProfiles}
-          onCreateTask={onCreateTask}
-          canEdit={currentWorkspacePermissions?.canEditWorkspace}
-        />
+        {studioAnalysisTab === 'tasks' && (
+          <AiTaskSuggestionsPanel
+            selectedRecording={selectedRecording}
+            displaySpeakerNames={displaySpeakerNames}
+            peopleProfiles={peopleProfiles}
+            onCreateTask={onCreateTask}
+            canEdit={currentWorkspacePermissions?.canEditWorkspace}
+          />
+        )}
 
           </div>{/* /ff-panels */}
         </div>{/* /ff-studio-left-col */}
