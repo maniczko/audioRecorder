@@ -1,65 +1,72 @@
 import { render, screen } from "@testing-library/react";
 import StudioMeetingView from "./StudioMeetingView";
 import React from "react";
+import { vi } from "vitest";
 
 // Mock dependencies that we don't need to test for basic rendering
-jest.mock("./RecorderPanel", () => () => <div data-testid="recorder-panel" />);
-jest.mock("./StudioSidebar", () => () => <div data-testid="studio-sidebar" />);
+vi.mock("./RecorderPanel", () => ({ default: () => <div data-testid="recorder-panel" /> }));
+vi.mock("./StudioSidebar", () => ({ default: () => <div data-testid="studio-sidebar" /> }));
+vi.mock("./AiTaskSuggestionsPanel", () => ({ default: () => <div data-testid="ai-task-suggestions" /> }));
+vi.mock("../context/MeetingsContext", () => ({
+  useMeetingsCtx: () => ({ meetings: { updateMeeting: vi.fn() } }),
+}));
+vi.mock("../services/config", () => ({
+  remoteApiEnabled: () => false,
+}));
 
 describe("StudioMeetingView", () => {
   const defaultProps = {
-    selectedMeeting: { id: "m1", title: "Test Meeting", tags: [] },
+    selectedMeeting: { id: "m1", title: "Test Meeting", tags: [], needs: [], concerns: [] },
     displayRecording: { transcript: [], duration: 60 },
     studioAnalysis: { summary: "", decisions: [], actionItems: [] },
     isRecording: false,
     analysisStatus: "idle",
     activeQueueItem: null,
-    selectedMeetingQueue: [],
+    selectedMeetingQueue: null,
     elapsed: 0,
     visualBars: [],
-    stopRecording: jest.fn(),
-    startRecording: jest.fn(),
-    retryRecordingQueueItem: jest.fn(),
+    stopRecording: vi.fn(),
+    startRecording: vi.fn(),
+    retryRecordingQueueItem: vi.fn(),
     recordPermission: "granted",
     speechRecognitionSupported: true,
     liveText: "",
     liveTranscriptEnabled: false,
-    setLiveTranscriptEnabled: jest.fn(),
+    setLiveTranscriptEnabled: vi.fn(),
     recordingMessage: "",
-    setRecordingMessage: jest.fn(), // This was missing and caused a crash
+    setRecordingMessage: vi.fn(),
     selectedRecording: null,
     displaySpeakerNames: {},
     selectedRecordingAudioUrl: null,
     selectedRecordingAudioError: "",
     selectedRecordingId: null,
-    setSelectedRecordingId: jest.fn(),
-    exportTranscript: jest.fn(),
-    exportMeetingNotes: jest.fn(),
-    exportMeetingPdfFile: jest.fn(),
-    startNewMeetingDraft: jest.fn(),
-    selectMeeting: jest.fn(),
-    currentWorkspacePermissions: { canEditMeeting: true },
+    setSelectedRecordingId: vi.fn(),
+    exportTranscript: vi.fn(),
+    exportMeetingNotes: vi.fn(),
+    exportMeetingPdfFile: vi.fn(),
+    startNewMeetingDraft: vi.fn(),
+    selectMeeting: vi.fn(),
+    currentWorkspacePermissions: { canEditMeeting: true, canRecordAudio: true, canExportWorkspaceData: true, canEditWorkspace: true },
     currentWorkspaceRole: "owner",
     currentWorkspace: { id: "w1", name: "Work" },
     userMeetings: [],
     meetingTasks: [],
-    onCreateTask: jest.fn(),
+    onCreateTask: vi.fn(),
     peopleProfiles: [],
-    addMeetingComment: jest.fn(),
+    addMeetingComment: vi.fn(),
     currentUserName: "User",
     meetingDraft: { title: "" },
-    setMeetingDraft: jest.fn(),
-    saveMeeting: jest.fn(),
-    renameSpeaker: jest.fn(),
-    updateTranscriptSegment: jest.fn(),
+    setMeetingDraft: vi.fn(),
+    saveMeeting: vi.fn(),
+    renameSpeaker: vi.fn(),
+    updateTranscriptSegment: vi.fn(),
     briefOpen: true,
-    setBriefOpen: jest.fn(),
-    setActiveTab: jest.fn(),
+    setBriefOpen: vi.fn(),
+    setActiveTab: vi.fn(),
   };
 
   test("renders without crashing", () => {
     render(<StudioMeetingView {...defaultProps} />);
-    // Check for some header text
     expect(screen.getByText(/Test Meeting/i)).toBeInTheDocument();
   });
 
@@ -67,5 +74,34 @@ describe("StudioMeetingView", () => {
     const props = { ...defaultProps, recordingMessage: "Test Message", analysisStatus: "error" };
     render(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
+  });
+
+  test("renders empty state when no meeting selected", () => {
+    const props = { ...defaultProps, selectedMeeting: null };
+    render(<StudioMeetingView {...props} />);
+    const els = screen.getAllByText(/Brak aktywnego spotkania/i);
+    expect(els.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("renders analysis tabs", () => {
+    render(<StudioMeetingView {...defaultProps} />);
+    expect(screen.getAllByText(/Podsumowanie spotkania/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Potrzeby i obawy/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Profil psychologiczny/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Twój feedback/i).length).toBeGreaterThan(0);
+  });
+
+  test("renders toolbar buttons", () => {
+    render(<StudioMeetingView {...defaultProps} />);
+    expect(screen.getByText(/Notatki/i)).toBeInTheDocument();
+    expect(screen.getByText(/Transkrypt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rozpocznij nagrywanie/i)).toBeInTheDocument();
+  });
+
+  test("shows recording controls when isRecording is true", () => {
+    const props = { ...defaultProps, isRecording: true };
+    render(<StudioMeetingView {...props} />);
+    expect(screen.getByText(/Stop/i)).toBeInTheDocument();
+    expect(screen.getByText(/● REC/i)).toBeInTheDocument();
   });
 });

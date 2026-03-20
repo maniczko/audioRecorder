@@ -158,9 +158,9 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
     userMeetings.forEach((m) => {
-      if (m.tags) {
-        m.tags.split('\n').forEach(t => {
-          if (t.trim()) tags.add(t.trim());
+      if (Array.isArray(m.tags)) {
+        m.tags.forEach(t => {
+          if (t && t.trim()) tags.add(t.trim());
         });
       }
     });
@@ -174,8 +174,8 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
         if (!d || !d.startsWith(dateFilter)) return false;
       }
       if (tagFilter) {
-        if (!m.tags) return false;
-        const mt = m.tags.split('\n').map(t=>t.trim());
+        if (!Array.isArray(m.tags)) return false;
+        const mt = m.tags.map(t=>t.trim());
         if (!mt.includes(tagFilter)) return false;
       }
       return true;
@@ -248,7 +248,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                    {(m.tags ? m.tags.split('\n') : []).map((t, idx) => {
+                    {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
                       if (!t.trim()) return null;
                       return <span key={idx} className="status-chip status-chip-sm" style={{ background: 'rgba(116, 208, 191, 0.15)', color: '#74d0bf' }}>{t.trim()}</span>
                     })}

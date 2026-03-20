@@ -50,6 +50,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
       : ui.activeTab === "notes" ? "Notatki"
       : ui.activeTab === "people" ? "Osoby"
       : ui.activeTab === "profile" ? "Profil"
+      : ui.activeTab === "recordings" ? "Nagrania"
       : "Studio"
     }>
     <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "var(--color-surface-600)" }}>Ładowanie ekranu...</div>}>
