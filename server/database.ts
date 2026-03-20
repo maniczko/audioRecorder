@@ -44,7 +44,8 @@ export class Database {
       
       this.msgId = 0;
       this.callbacks = new Map();
-      this.worker = new Worker(path.join(__dirname, "sqliteWorker.ts"));
+      const ext = __filename.endsWith(".ts") ? ".ts" : ".js";
+      this.worker = new Worker(path.join(__dirname, `sqliteWorker${ext}`));
       
       this.worker.on("message", (msg) => {
         const { id, result, error } = msg;
