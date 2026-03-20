@@ -212,6 +212,13 @@ describe("Authentication Logic (Server Layer)", () => {
       workspaceName: "Outsider Workspace"
     });
 
+    await db.registerUser({
+      email: "test@example.com",
+      password: "password123",
+      name: "Test User",
+      workspaceName: "Test Workspace"
+    });
+
     await expect(db.loginUser({
       email: "test@example.com",
       password: "password123",
