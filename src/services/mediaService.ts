@@ -3,7 +3,7 @@ import { getAudioBlob, saveAudioBlob } from "../lib/audioStore";
 import { createBrowserTranscriptionController, TRANSCRIPTION_PROVIDER } from "../lib/transcription";
 import { getSpeechRecognitionClass } from "../lib/recording";
 import { apiRequest } from "./httpClient";
-import { MEDIA_PIPELINE_PROVIDER } from "./config";
+import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from "./config";
 
 export const REMOTE_TRANSCRIPTION_PROVIDER = {
   id: "remote-pipeline",
@@ -50,6 +50,22 @@ function createLocalMediaService() {
     async normalizeRecordingAudio() {
       throw new Error("Normalizacja głośności niedostępna w trybie lokalnym.");
     },
+    async getVoiceCoaching(recordingId, speakerId, segments) {
+      throw new Error("Trener Wymowy AI korzystający z analizy akustycznej dostępny jest tylko przy użyciu pełnego trybu serwerowego. Skonfiguruj bazę by odblokować supermoce OpenAI.");
+    },
+    async rediarize(recordingId) {
+      throw new Error("Diarizacja zaawansowana dostępna tylko w trybie serwerowym.");
+    },
+    subscribeToTranscriptionProgress() {
+      return () => {};
+    },
+    async extractVoiceProfileFromSpeaker() {
+      throw new Error("Generowanie profili głosowych bazujących na nagraniach z transkrypcji dostępne tylko w trybie serwerowym.");
+    },
+    async askRAG(workspaceId, question) {
+      if (!question) return "Zadaj konkretne pytanie.";
+      return "Funkcja przeszukiwania baz danych dostępna tylko przez zdalne API.";
+    },
   };
 }
 
@@ -65,7 +81,7 @@ function createRemoteMediaService() {
       // the server does high-quality Whisper transcription post-recording.
       return createBrowserTranscriptionController(options);
     },
-    async persistRecordingAudio(recordingId, blob, options = {}) {
+    async persistRecordingAudio(recordingId, blob, options: any = {}) {
       await apiRequest(`/media/recordings/${recordingId}/audio`, {
         method: "PUT",
         body: blob,
@@ -147,6 +163,31 @@ function createRemoteMediaService() {
     },
     async rediarize(recordingId) {
       return apiRequest(`/media/recordings/${recordingId}/rediarize`, { method: "POST" });
+    },
+    subscribeToTranscriptionProgress(recordingId, onProgress) {
+      const url = `${API_BASE_URL}/media/recordings/${recordingId}/progress`;
+      const es = new EventSource(url);
+      es.addEventListener("progress", (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          onProgress(payload);
+          if (payload?.progress >= 100) es.close();
+        } catch(err) {}
+      });
+      es.onerror = () => es.close();
+      return () => es.close();
+    },
+    async extractVoiceProfileFromSpeaker(recordingId, speakerId, speakerName) {
+      return apiRequest(`/media/recordings/${recordingId}/voice-profiles/from-speaker`, {
+        method: "POST",
+        body: { speakerId, speakerName },
+      });
+    },
+    async askRAG(workspaceId, question) {
+      return apiRequest(`/workspaces/${workspaceId}/rag/ask`, {
+        method: "POST",
+        body: { question }
+      });
     },
   };
 }

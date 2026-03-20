@@ -20,6 +20,7 @@ export default function usePeopleProfiles({
       return {
         ...profile,
         needs: overrides.needs !== undefined ? overrides.needs : profile.needs,
+        concerns: overrides.concerns !== undefined ? overrides.concerns : profile.concerns,
         outputs: overrides.outputs !== undefined ? overrides.outputs : profile.outputs,
       };
     });

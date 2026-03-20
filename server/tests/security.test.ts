@@ -20,23 +20,15 @@ describe("API Security Regression Tests", () => {
 
     port = server.address().port;
     
+    const uniqueEmail = `securitytest_${Date.now()}@example.com`;
     // Seed a test user for authenticated endpoints
-    try {
-        const result = await authService.registerUser({
-          email: "securitytest@example.com",
-          password: "StrongPassword123",
-          name: "Security Tester",
-          workspaceName: "Sec Space"
-        });
-        testUserToken = result.token;
-    } catch (e) {
-        // User might already exist in the persistent DB, just sign in
-        const result = await authService.loginUser({
-          email: "securitytest@example.com",
-          password: "StrongPassword123"
-        });
-        testUserToken = result.token;
-    }
+    const result = await authService.registerUser({
+      email: uniqueEmail,
+      password: "StrongPassword123",
+      name: "Security Tester",
+      workspaceName: "Sec Space"
+    });
+    testUserToken = result.token;
   });
 
   afterAll(async () => {

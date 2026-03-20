@@ -738,11 +738,25 @@ export class Database {
   async getHealth() {
     return { ok: true };
   }
+
+  async updateMeetingTasks(draft: MeetingUpdates): Promise<void> {}
+
+  // --- RAG (Retrieval-Augmented Generation) ---
+  async saveRagChunk(chunk: { id: string; workspaceId: string; recordingId: string; speakerName: string; text: string; embedding: number[]; createdAt: string }) {
+    await this._execute(
+      `INSERT INTO rag_chunks (id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [chunk.id, chunk.workspaceId, chunk.recordingId, chunk.speakerName, chunk.text, JSON.stringify(chunk.embedding), chunk.createdAt]
+    );
+  }
+
+  async getAllRagChunksForWorkspace(workspaceId: string): Promise<any[]> {
+    return this._query(`SELECT * FROM rag_chunks WHERE workspace_id = ?`, [String(workspaceId)]);
+  }
 }
 
 let defaultInstance: Database | null = null;
 
-export function initDatabase(dbConfig: any) {
+export function initDatabase(dbConfig?: any): Database {
   defaultInstance = new Database(dbConfig);
   return defaultInstance;
 }

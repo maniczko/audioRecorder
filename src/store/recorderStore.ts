@@ -138,8 +138,15 @@ export const useRecorderStore = create<any>()(
 
           const startStatus = normalizeRecordingPipelineStatus(started?.pipelineStatus);
 
+          const unsubscribeProgress = mediaService.subscribeToTranscriptionProgress?.(nextItem.recordingId, (payload) => {
+            if (payload && payload.message) {
+               set({ recordingMessage: `⏳ ${payload.progress}%: ${payload.message}` });
+            }
+          });
+
           let transcription;
-          if (startStatus === "done") {
+          try {
+            if (startStatus === "done") {
             transcription = { ...started, pipelineStatus: "done" };
           } else {
             let attempts = 0;
@@ -162,6 +169,9 @@ export const useRecorderStore = create<any>()(
               throw new Error("Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.");
             }
             transcription = finalTranscription;
+          }
+          } finally {
+            if (unsubscribeProgress) unsubscribeProgress();
           }
 
           const verifiedSegments = Array.isArray(transcription.verifiedSegments)

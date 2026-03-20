@@ -91,7 +91,11 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         .filter((task) => personOwnsTask(task, name))
         .sort((left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime());
 
-      const needs = uniqueStrings(personMeetings.flatMap((meeting) => meeting.needs || []));
+      const aiNeeds = uniqueStrings(personMeetings.flatMap((meeting) => meeting.analysis?.participantInsights?.find(p => p.speaker === name)?.needs || []));
+      const aiConcerns = uniqueStrings(personMeetings.flatMap((meeting) => meeting.analysis?.participantInsights?.find(p => p.speaker === name)?.concerns || []));
+
+      const needs = uniqueStrings([...personMeetings.flatMap((meeting) => meeting.needs || []), ...aiNeeds]);
+      const concerns = aiConcerns;
       const outputs = uniqueStrings(personMeetings.flatMap((meeting) => meeting.desiredOutputs || []));
       const tags = uniqueStrings([
         ...personMeetings.flatMap((meeting) => meeting.tags || []),
@@ -108,6 +112,21 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
           .includes(normalizedTarget);
       });
 
+      const sentimentHistory = [...personMeetings]
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+        .map(m => {
+          const insight = m.analysis?.participantInsights?.find(p => p.speaker === name);
+          if (insight && typeof insight.sentimentScore === 'number') {
+            return {
+              date: m.startsAt,
+              title: m.title,
+              score: insight.sentimentScore
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
       return {
         id: slugify(name) || name,
         name,
@@ -115,8 +134,10 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         tasks: personTasks,
         tags,
         needs,
+        concerns,
         outputs,
         nextMeeting,
+        sentimentHistory,
         completedTasks: personTasks.filter((task) => task.completed).length,
         openTasks: personTasks.filter((task) => !task.completed).length,
         summary: personSummary(name, personMeetings, personTasks, needs, outputs),

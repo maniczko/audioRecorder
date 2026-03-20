@@ -60,6 +60,69 @@ function DiscRadarChart({ disc }) {
   );
 }
 
+function SentimentTimelineChart({ history }) {
+  if (!history || history.length < 2) {
+    return (
+       <div className="psych-section" style={{ marginTop: '24px' }}>
+         <div className="psych-section-label">Temperatura relacji</div>
+         <p className="soft-copy" style={{ fontSize: '0.85rem' }}>Wygeneruj profil i zbierz 2 spotkania, aby zobaczyć EKG nastawienia.</p>
+       </div>
+    );
+  }
+
+  const width = 600;
+  const height = 180;
+  const padding = { top: 30, right: 30, bottom: 40, left: 30 };
+  const innerW = width - padding.left - padding.right;
+  const innerH = height - padding.top - padding.bottom;
+
+  // Wymuszenie marginesów u góry i na dole wykresu by linia nie dotykała brzegów
+  const minScoreRaw = Math.min(...history.map(h => h.score));
+  const maxScoreRaw = Math.max(...history.map(h => h.score));
+  const minScore = Math.max(0, minScoreRaw - 10);
+  const maxScore = Math.min(100, maxScoreRaw + 10);
+  const range = Math.max(20, maxScore - minScore);
+
+  const getX = (index) => padding.left + (index / (history.length - 1)) * innerW;
+  const getY = (score) => padding.top + innerH - ((score - minScore) / range) * innerH;
+
+  const pts = history.map((h, i) => `${getX(i)},${getY(h.score)}`).join(" ");
+
+  return (
+    <div className="sentiment-timeline-chart" style={{ marginTop: '24px', overflow: 'hidden' }}>
+      <div className="psych-section-label">Temperatura Relacji w Czasie (AI Sentyment)</div>
+      <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>Wizualna ewolucja zaangażowania podczas kolejnych spotkań – od chłodu po głębokie partnerstwo.</p>
+      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* Grid */}
+        <line x1={padding.left} y1={padding.top} x2={width-padding.right} y2={padding.top} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+        <line x1={padding.left} y1={height-padding.bottom} x2={width-padding.right} y2={height-padding.bottom} stroke="rgba(255,255,255,0.2)" />
+
+        {/* Line */}
+        <polyline points={pts} fill="none" stroke="url(#tempGradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        
+        <defs>
+          <linearGradient id="tempGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor="#7b9eeb" />
+            <stop offset="50%" stopColor="#feca57" />
+            <stop offset="100%" stopColor="#f17d72" />
+          </linearGradient>
+        </defs>
+
+        {/* Nodes */}
+        {history.map((h, i) => (
+          <g key={i}>
+            <circle cx={getX(i)} cy={getY(h.score)} r="5" fill="#121212" stroke="#fff" strokeWidth="2" />
+            <text x={getX(i)} y={getY(h.score) - 12} fill="#fff" fontSize="12" fontWeight="600" textAnchor="middle">{h.score}</text>
+            <text x={getX(i)} y={height - padding.bottom + 20} fill="rgba(255,255,255,0.5)" fontSize="10" textAnchor="middle">
+               {new Date(h.date).toLocaleDateString()}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function PsychProfilePanel({ person, onAnalyze, analyzing }) {
   const [showRedFlags, setShowRedFlags] = useState(false);
   const p = person.psychProfile;
@@ -195,6 +258,8 @@ function PsychProfilePanel({ person, onAnalyze, analyzing }) {
         </div>
       )}
 
+      <SentimentTimelineChart history={person.sentimentHistory} />
+
       <div className="psych-footer">
         <span>Na podstawie {p.meetingsAnalyzed || person.meetings.length} spotkań · model probabilistyczny</span>
         <button type="button" className="ghost-button" style={{ fontSize: "0.75rem" }} onClick={onAnalyze} disabled={analyzing}>
@@ -211,8 +276,10 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
   const [editingSummary, setEditingSummary] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [newNeedDraft, setNewNeedDraft] = useState("");
+  const [newConcernDraft, setNewConcernDraft] = useState("");
   const [newOutputDraft, setNewOutputDraft] = useState("");
   const [addingNeed, setAddingNeed] = useState(false);
+  const [addingConcern, setAddingConcern] = useState(false);
   const [addingOutput, setAddingOutput] = useState(false);
   const [analyzingPsych, setAnalyzingPsych] = useState(false);
   const meetingsSectionRef = useRef(null);
@@ -495,6 +562,54 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                       )) : <li className="soft-copy">Brak danych.</li>}
                     </ul>
                   </div>
+
+                  <div>
+                    <div className="brief-col-head">
+                      <h3>Obawy i ryzyka</h3>
+                      <button
+                        type="button"
+                        className="what-matters-add-btn"
+                        onClick={() => { setAddingConcern(true); setNewConcernDraft(""); }}
+                        title="Dodaj obawę lub ryzyko"
+                      >+</button>
+                    </div>
+                    {addingConcern && (
+                      <form
+                        className="person-notes-add-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const val = newConcernDraft.trim();
+                          if (!val) return;
+                          onUpdatePersonNotes?.(selectedPerson.id, { concerns: [...(selectedPerson.concerns || []), val] });
+                          setAddingConcern(false);
+                          setNewConcernDraft("");
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          value={newConcernDraft}
+                          onChange={(e) => setNewConcernDraft(e.target.value)}
+                          placeholder="np. Ograniczony budżet"
+                        />
+                        <button type="submit" className="ghost-button">Dodaj</button>
+                        <button type="button" className="ghost-button" onClick={() => setAddingConcern(false)}>×</button>
+                      </form>
+                    )}
+                    <ul className="clean-list person-notes-list">
+                      {(selectedPerson.concerns && selectedPerson.concerns.length) ? selectedPerson.concerns.map((concern) => (
+                        <li key={concern} className="person-notes-item">
+                          <span>{concern}</span>
+                          <button
+                            type="button"
+                            className="person-notes-remove"
+                            onClick={() => onUpdatePersonNotes?.(selectedPerson.id, { concerns: selectedPerson.concerns.filter((c) => c !== concern) })}
+                            title="Usuń"
+                          >×</button>
+                        </li>
+                      )) : <li className="soft-copy">Brak nagranych obaw.</li>}
+                    </ul>
+                  </div>
+
                   <div>
                     <div className="brief-col-head">
                       <h3>Outputy</h3>

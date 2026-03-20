@@ -6,6 +6,7 @@ import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import { streamSSE } from "hono/streaming";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { getRequestListener } from "@hono/node-server";
 import { checkRateLimit } from "./lib/serverUtils.ts";
@@ -235,6 +236,47 @@ export function createApp({ authService, workspaceService, transcriptionService,
     return c.json(await workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, body.memberRole), 200);
   });
 
+  app.post("/workspaces/:workspaceId/rag/ask", async (c) => {
+    const workspaceId = c.req.param("workspaceId");
+    await ensureWorkspaceAccess(c, workspaceId);
+    
+    const body = await c.req.json().catch(() => ({}));
+    const question = String(body.question || "").trim();
+    if (!question) return c.json({ answer: "Zadaj konkretne pytanie." }, 400);
+
+    // Bierzemy pasujące kawałki
+    const topChunks = await transcriptionService.queryRAG(workspaceId, question);
+    if (!topChunks || topChunks.length === 0) {
+      return c.json({ answer: "Brak danych z archiwalnych spotkań na ten temat." }, 200);
+    }
+
+    const contextStr = topChunks.map((c: any) => `[Spotkanie: ${c.recording_id}] ${c.speaker_name}: ${c.text}`).join("\n");
+    
+    // Udzielamy 1-strzałowej odpowiedzi przez LLMa za pomocą audioPipeline
+    try {
+      if (!config.OPENAI_API_KEY) throw new Error("Brak klucza API do RAG LLMa.");
+      const res = await fetch(`${config.OPENAI_BASE_URL || "https://api.openai.com/v1"}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${config.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "Jesteś asystentem wiedzy bazy RAG. Udziel krótkiej, konkretnej odpowiedzi bazując WYŁĄCZNIE na poniższym archiwalnym kontekście ze spotkań klienta. Jeśli pytanie wykracza poza kontekst, powiedz, że nie wiesz." },
+            { role: "user", content: `Kontekt ze spotkań:\n${contextStr}\n\nPytanie użytkownika: ${question}` }
+          ],
+          temperature: 0.2
+        })
+      });
+      const data = await res.json();
+      return c.json({ answer: data.choices[0]?.message?.content || "Błąd RAG." });
+    } catch (err: any) {
+      return c.json({ answer: `Błąd LLM: ${err.message}` }, 500);
+    }
+  });
+
   // --- Media & Processing ---
   app.use("/media/*", authMiddleware);
   app.put("/media/recordings/:recordingId/audio", async (c) => {
@@ -295,6 +337,43 @@ export function createApp({ authService, workspaceService, transcriptionService,
     return c.json(buildTranscriptionStatusPayload(asset), 200);
   });
 
+  app.get("/media/recordings/:recordingId/progress", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    
+    // NOTE: EventSource API w przeglądarkach często nie może swobodnie używać nagłówka "Authorization: Bearer"
+    // dlatego polegamy na trudnym do odgadnięcia recordingId przydzielonym wewnętrznie (UUID w bazie).
+
+    return streamSSE(c, async (stream) => {
+      let active = true;
+
+      const progressCallback = async (data: any) => {
+        if (!active) return;
+        await stream.writeSSE({
+          data: JSON.stringify(data),
+          event: "progress"
+        });
+      };
+
+      transcriptionService.on(`progress-${recordingId}`, progressCallback);
+
+      // Keep connection alive otherwise Chrome drops SSE
+      const pingId = setInterval(async () => {
+        if (active) {
+          await stream.writeSSE({ data: JSON.stringify({ ping: "stay-alive" }), event: "ping" }).catch(() => {});
+        }
+      }, 15000);
+
+      c.req.raw.signal.addEventListener("abort", () => {
+        active = false;
+        clearInterval(pingId);
+        transcriptionService.removeListener(`progress-${recordingId}`, progressCallback);
+      });
+
+      // Keep HTTP response stream indefinitely active
+      await new Promise(() => {});
+    });
+  });
+
   app.post("/media/recordings/:recordingId/normalize", async (c) => {
     const recordingId = c.req.param("recordingId");
     const asset = await transcriptionService.getMediaAsset(recordingId);
@@ -302,6 +381,24 @@ export function createApp({ authService, workspaceService, transcriptionService,
     await ensureWorkspaceAccess(c, asset.workspace_id);
     await transcriptionService.normalizeRecording(asset.file_path, {});
     return c.json({ ok: true }, 200);
+  });
+
+  app.post("/media/recordings/:recordingId/voice-profiles/from-speaker", async (c) => {
+    const session = c.get("session") as any;
+    const recordingId = c.req.param("recordingId");
+    const body = await c.req.json().catch(() => ({}));
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+
+    try {
+      const profile = await transcriptionService.createVoiceProfileFromSpeaker(
+        asset, body.speakerId, body.speakerName, session.user_id, {}
+      );
+      return c.json(profile, 201);
+    } catch (err) {
+      return c.json({ message: err.message }, 400);
+    }
   });
 
   app.post("/media/recordings/:recordingId/voice-coaching", async (c) => {

@@ -885,7 +885,7 @@ export default function StudioMeetingView({
           <div className="ff-sticky-header" style={{ padding: '16px 20px 12px' }}>
             <div className="ff-tabs" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '20px' }}>
-                <button className="ff-tab active" type="button">Transcript</button>
+                <button className="ff-tab active" type="button">Transkrypcja</button>
               </div>
               
               {transcript.length > 0 && remoteApiEnabled() && (
@@ -1173,7 +1173,31 @@ export default function StudioMeetingView({
                     <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
                   </svg>
                 </button>
-                <a className="ff-player-ctrl" href={selectedRecordingAudioUrl} download title="Pobierz">
+                <a
+                  className="ff-player-ctrl"
+                  href={selectedRecordingAudioUrl}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!selectedRecordingAudioUrl) return;
+                    fetch(selectedRecordingAudioUrl)
+                      .then((res) => res.blob())
+                      .then((blob) => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        const safeTitle = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+                        a.download = `${safeTitle}.mp3`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                      })
+                      .catch(() => {
+                        window.open(selectedRecordingAudioUrl, "_blank");
+                      });
+                  }}
+                  title="Pobierz MP3"
+                >
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>

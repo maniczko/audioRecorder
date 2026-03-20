@@ -1558,13 +1558,19 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg-surface, #fff);
+  background: var(--surface, #fff);
   padding: 16px 20px 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 16px;
   border-radius: 12px 12px 0 0;
+}
+
+[data-theme="dark"] .ff-sticky-header,
+:root[data-theme="dark"] .ff-sticky-header {
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .ff-tabs {
@@ -1619,12 +1625,14 @@
   gap: 8px;
   background: rgba(0, 0, 0, 0.03);
   padding: 10px 14px;
+  border: 1px solid transparent;
   border-radius: 8px;
   color: var(--muted);
 }
 
 [data-theme="dark"] .ff-search-bar {
   background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .ff-search-bar input {

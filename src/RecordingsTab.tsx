@@ -3,6 +3,61 @@ import React from "react";
 import { formatDateTime } from "./lib/storage";
 import './RecordingsTabStyles.css';
 
+import { createMediaService } from "./services/mediaService";
+
+function RAGSearchPanel({ currentWorkspace }) {
+  const [query, setQuery] = React.useState("");
+  const [answer, setAnswer] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!query.trim() || !currentWorkspace?.id) return;
+    setLoading(true);
+    setAnswer("");
+    try {
+      const ms = await createMediaService();
+      const res = await ms.askRAG(currentWorkspace.id, query);
+      setAnswer(res?.answer || "Brak odpowiedzi");
+    } catch(err) {
+      setAnswer("Wystąpił błąd podczas przeszukiwania archiwalnych nagrań.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="panel" style={{ marginBottom: '32px', background: 'linear-gradient(145deg, rgba(117,214,196,0.1) 0%, rgba(0,0,0,0.4) 100%)', border: '1px solid rgba(117,214,196,0.2)' }}>
+      <div className="panel-header compact" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+        <div>
+          <div className="eyebrow" style={{ color: '#75d6c4' }}>AI RAG Memory</div>
+          <h2>Zapytaj o Archiwum</h2>
+          <p className="soft-copy" style={{ fontSize: '0.85rem', marginTop: '4px' }}>Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne ustalenia.</p>
+        </div>
+      </div>
+      <div className="panel-body">
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '12px' }}>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
+            style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '0.95rem' }}
+          />
+          <button type="submit" className="primary-button" disabled={loading || !query.trim()} style={{ background: '#75d6c4', color: '#000', fontWeight: 600 }}>
+            {loading ? "Szukam w wektorach..." : "Wyciągnij informację"}
+          </button>
+        </form>
+        {answer && (
+          <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '3px solid #75d6c4', lineHeight: 1.5, fontSize: '0.95rem' }}>
+            {answer}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, setActiveTab }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -214,21 +269,60 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
 }
 
 export default function RecordingsTab(props) {
-  const { userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, setActiveTab } = props;
+  const { currentWorkspace, userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, setActiveTab, onCreateMeeting, queueRecording } = props;
+
+  const mainFileInputRef = React.useRef(null);
+
+  const handleMainFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      if (onCreateMeeting && queueRecording) {
+        const newMeeting = await onCreateMeeting({
+          title: `Import: ${file.name.replace(/\.[^/.]+$/, "")}`,
+          context: "Zaimportowane nagranie audio z pliku.",
+          startsAt: new Date().toISOString()
+        });
+        selectMeeting(newMeeting);
+        queueRecording(newMeeting.id, file);
+        setActiveTab("studio");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Wystąpił błąd przy wgrywaniu pliku.");
+    }
+  };
 
   return (
     <div className="recordings-tab-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header className="recordings-tab-header" style={{ marginBottom: '32px' }}>
-        <MeetingPicker
-          selectedMeeting={selectedMeeting}
-          userMeetings={userMeetings}
-          selectMeeting={selectMeeting}
-          startNewMeetingDraft={startNewMeetingDraft}
-          setActiveTab={setActiveTab}
-        />
+      <header className="recordings-tab-header" style={{ marginBottom: '32px', display: 'flex', gap: '24px' }}>
+        <div className="recordings-tab-upload-box" style={{ flex: '0 0 240px' }}>
+          <button 
+            className="hover-pop"
+            type="button" 
+            onClick={() => mainFileInputRef.current?.click()} 
+            style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px dashed rgba(117,214,196,0.4)', borderRadius: '12px', color: '#75d6c4', fontSize: '1rem', fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'inset 0 0 10px rgba(117,214,196,0.05)' }}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.2)'; e.currentTarget.style.borderColor = '#75d6c4'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.1)'; e.currentTarget.style.borderColor = 'rgba(117,214,196,0.4)'; }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Wgraj własne nagranie
+          </button>
+          <input type="file" ref={mainFileInputRef} accept="audio/*,video/*" style={{ display: 'none' }} onChange={handleMainFileUpload} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <MeetingPicker
+             selectedMeeting={selectedMeeting}
+             userMeetings={userMeetings}
+             selectMeeting={selectMeeting}
+             startNewMeetingDraft={startNewMeetingDraft}
+             setActiveTab={setActiveTab}
+          />
+        </div>
       </header>
       
       <main className="recordings-tab-content">
+        <RAGSearchPanel currentWorkspace={currentWorkspace} />
         <UnifiedLibrary
           userMeetings={userMeetings}
           selectedMeeting={selectedMeeting}

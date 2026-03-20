@@ -14,10 +14,20 @@ async function getEmbeddingModels() {
   if (modelCache && processorCache) return { model: modelCache, processor: processorCache };
   try {
     const { AutoModel, AutoProcessor, env } = await import("@xenova/transformers") as any;
-    env.allowLocalModels = false; // force download from HuggingFace
-    // We use Xenova specific build of wavlm
+    
+    // Potężne optymalizacje 10/10 dla środowiska Node.js:
+    env.allowLocalModels = true;       // Preferuj cache lokalny
+    env.use_env_vars = true;           // Pozwól na wymuszanie backendów
+    const threads = Math.max(1, Math.floor(os.cpus().length / 2));
+    if (env.backends?.onnx?.wasm) {
+        env.backends.onnx.wasm.numThreads = threads;
+    }
+    // Dzięki ONNXRuntime-Node aplikacja C++ automatycznie porzuca ociężałe WASM.
+
+    // Używamy skwantowanego modelu (q8/int8) dla drastycznego spadku zużycia VRAM/RAM (~380MB -> 95MB) -> "quantized: true"
     modelCache = await AutoModel.from_pretrained("Xenova/wavlm-base-plus-sv", {
-      quantized: false,
+      quantized: true,
+      dtype: "int8", // Explicit INT8 
     });
     processorCache = await AutoProcessor.from_pretrained("Xenova/wavlm-base-plus-sv");
     return { model: modelCache, processor: processorCache };

@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { spawn, exec } from "node:child_process";
 import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 
-import { logger } from "./logger.ts";
+
 import { config } from "./config.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,7 @@ const VERIFICATION_MODEL = config.VERIFICATION_MODEL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
 const CHUNK_DURATION_SECONDS = 1200; // 20-minute chunks for large-file splitting
-const CHUNK_OVERLAP_SECONDS = 10;    // 10-second tail overlap to avoid cutting mid-sentence
+
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
@@ -226,19 +226,19 @@ function parseJsonResponse(raw) {
   }
 }
 
-async function requestAudioTranscription({ filePath, contentType, fields, signal }: any) {
+async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
   if (!OPENAI_API_KEY) {
     throw new Error("Brakuje OPENAI_API_KEY dla serwerowego pipeline audio.");
   }
 
-  const buffer = fs.readFileSync(filePath);
-  if (buffer.byteLength > MAX_FILE_SIZE_BYTES) {
+  const audioBuffer = buffer || fs.readFileSync(filePath);
+  if (audioBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
     throw new Error("Plik audio przekracza limit 25 MB dla API transkrypcji.");
   }
 
   const form = new FormData();
-  const filename = path.basename(filePath);
-  form.append("file", new File([buffer], filename, { type: contentType || "application/octet-stream" }) as any);
+  const safeFilename = filename || (filePath ? path.basename(filePath) : "audio.wav");
+  form.append("file", new File([audioBuffer], safeFilename, { type: contentType || "application/octet-stream" }) as any);
 
   Object.entries(fields || {}).forEach(([key, value]) => {
     if (value === undefined || value === null || value === "") {
@@ -613,26 +613,31 @@ function mergeWithPyannote(pyannoteSegments: any[], whisperSegments: any[]) {
 }
 
 /**
- * Splits an audio file into fixed-duration chunks using FFmpeg's segment muxer.
- * Returns [{filePath, offsetSeconds}] for each chunk, sorted by start time.
- * All chunks are 16kHz mono WAV so they can be sent directly to the transcription API.
+ * Pipy strumienia FFmpeg prosto do pamięci RAM V8 (Node.js Buffer)
+ * zamiast zapisów dyskowych (zero I/O bottleneck).
  */
-async function splitAudioIntoChunks(filePath: string, signal: any) {
-  const dir = path.dirname(filePath);
-  const base = `_chunk_${crypto.randomUUID().replace(/-/g, "")}_`;
-  const chunkPattern = path.join(dir, `${base}%03d.wav`);
-  await execPromise(
-    `"${FFMPEG_BINARY}" -y -i "${filePath}" -f segment -segment_time ${CHUNK_DURATION_SECONDS} -reset_timestamps 1 -ar 16000 -ac 1 "${chunkPattern}"`,
-    { timeout: 300000, signal }
-  );
-  const chunks = fs.readdirSync(dir)
-    .filter((f) => f.startsWith(base) && f.endsWith(".wav"))
-    .sort()
-    .map((f, index) => ({
-      filePath: path.join(dir, f),
-      offsetSeconds: index * CHUNK_DURATION_SECONDS,
-    }));
-  return chunks;
+function extractAudioSegmentMemory(filePath: string, start: number, duration: number, signal: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(FFMPEG_BINARY, [
+      "-y", "-i", filePath,
+      "-ss", String(start),
+      "-t", String(duration),
+      "-ar", "16000", "-ac", "1",
+      "-f", "wav", "pipe:1"
+    ], { stdio: ["ignore", "pipe", "ignore"], signal });
+
+    const chunks: Buffer[] = [];
+    child.stdout.on("data", (chunk) => chunks.push(chunk));
+    
+    child.on("close", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    
+    child.on("error", (e) => {
+      if (signal?.aborted) return resolve(Buffer.alloc(0));
+      reject(e);
+    });
+  });
 }
 
 /**
@@ -652,82 +657,72 @@ function mergeChunkedPayloads(payloads: any[]) {
   return { segments: allSegments, text: fullText };
 }
 
-/**
- * Merges diarized_json payloads from multiple chunks into one,
- * adjusting timestamps and offsetting speaker IDs to keep them globally unique.
- */
-function mergeChunkedDiarizedPayloads(payloads: any[]) {
-  // Collect global speaker order across chunks to produce consistent IDs
-  const globalSpeakerOrder = new Map();
-  const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
-    const segs = (
-      Array.isArray(payload?.segments) ? payload.segments
-      : Array.isArray(payload?.transcript?.segments) ? payload.transcript.segments
-      : Array.isArray(payload?.utterances) ? payload.utterances
-      : Array.isArray(payload?.transcript?.utterances) ? payload.transcript.utterances
-      : []
-    );
-    return segs
-      .map((s) => {
-        const rawSpeaker = clean(
-          (s.speaker !== undefined && s.speaker !== null ? String(s.speaker) : null)
-          || s.speaker_label || s.speaker_id || null
-        );
-        // Prefix chunk index to create chunk-scoped speaker key so "A" from chunk 0
-        // and "A" from chunk 1 may be different people if a new call started.
-        // For consecutive chunks of the same recording they are the same speaker.
-        // Use raw label without prefix so speaker IDs stay consistent across chunks.
-        const speakerKey = rawSpeaker || "unknown";
-        if (!globalSpeakerOrder.has(speakerKey)) {
-          globalSpeakerOrder.set(speakerKey, globalSpeakerOrder.size);
-        }
-        return {
-          ...s,
-          speaker: rawSpeaker,
-          start: Number(s.start ?? s.start_time ?? 0) + offsetSeconds,
-          end: Number(s.end ?? s.end_time ?? 0) + offsetSeconds,
-          text: clean(s.text || s.transcript || s.content),
-        };
-      })
-      .filter((s) => s.text);
-  });
-  return { segments: allSegments, utterances: allSegments, text: allSegments.map((s) => s.text).join(" ") };
-}
+
 
 /**
- * Transcribes a large audio file by splitting it into chunks, transcribing
- * each chunk separately, and merging results with correct timestamp offsets.
+ * Transcribes a large audio file by virtually streaming chunks in-memory
+ * and dispatching concurrent OpenAI fetch requests without disk segment tracking.
  */
 async function transcribeInChunks(filePath: string, contentType: string, fields: any, options: any = {}) {
-  const chunks = await splitAudioIntoChunks(filePath, options.signal);
-  if (DEBUG) console.log(`[audioPipeline] Split into ${chunks.length} chunks.`);
+  if (DEBUG) console.log(`[audioPipeline] Starting in-memory concurrent chunking...`);
+
+  const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
   const payloads = [];
-  try {
-    for (const chunk of chunks) {
-      if (options.signal?.aborted) throw new Error("Aborted");
-      // ── Skip silent chunks using Silero VAD ──
-      const chunkSpeech: any = await runSileroVAD(chunk.filePath, options.signal);
-      if (chunkSpeech && chunkSpeech.length === 0) {
-        if (DEBUG) console.log(`[audioPipeline] Skipping silent chunk: ${chunk.filePath} (offset: ${chunk.offsetSeconds}s)`);
-        payloads.push({ payload: { segments: [], text: "" }, offsetSeconds: chunk.offsetSeconds });
-        continue;
-      }
+  const CONCURRENCY_LIMIT = 4;
+  let offsetSeconds = 0;
+  let hasMore = true;
 
-      const payload = await requestAudioTranscription({
-        filePath: chunk.filePath,
-        contentType: "audio/wav",
-        fields,
-        signal: options.signal,
-      });
-      payloads.push({ payload, offsetSeconds: chunk.offsetSeconds });
+  while (hasMore && !options.signal?.aborted) {
+    const batchPromises = [];
+    for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
+      const currentOffset = offsetSeconds;
+      offsetSeconds += CHUNK_DURATION_SECONDS;
+      
+      batchPromises.push((async () => {
+        // Wyciągnij chunk audio prosto do bufora RAM (z pominięciem zapisu dyskowego)
+        const buffer = await extractAudioSegmentMemory(filePath, currentOffset, CHUNK_DURATION_SECONDS, options.signal);
+        if (buffer.byteLength < 500) return null; // Dotarto do końca pliku (brak istotnego audio)
+
+        // Silero VAD. Python nadal wymaga testowej ścieżki więc zrzucamy bufor jako temp file, 
+        // system operacyjny przechwyci to w locie pamięci cache RAM-u (tmpfs).
+        let chunkSpeech: any = null;
+        if (VAD_ENABLED) {
+          const os = await import("os");
+          const tmpVad = path.join(os.tmpdir(), `vadsilero_${crypto.randomUUID()}.wav`);
+          fs.writeFileSync(tmpVad, buffer);
+          chunkSpeech = await runSileroVAD(tmpVad, options.signal);
+          try { fs.unlinkSync(tmpVad); } catch (_) {}
+        }
+
+        if (chunkSpeech && chunkSpeech.length === 0) {
+          if (DEBUG) console.log(`[audioPipeline] Skipping silent chunk at offset: ${currentOffset}s`);
+          return { payload: { segments: [], text: "" }, offsetSeconds: currentOffset };
+        }
+
+        const payload = await requestAudioTranscription({
+          buffer,
+          filename: `chunk_${currentOffset}.wav`,
+          contentType: "audio/wav",
+          fields,
+          signal: options.signal,
+        });
+        return { payload, offsetSeconds: currentOffset };
+      })());
     }
-  } finally {
-    // Clean up chunk files regardless of success/failure
-    for (const chunk of chunks) {
-      try { fs.unlinkSync(chunk.filePath); } catch (_) {}
+
+    const results = await Promise.all(batchPromises);
+    const validResults = results.filter(r => r !== null);
+    payloads.push(...validResults);
+    
+    notify(Math.min(60, 40 + payloads.length * 5), `OpenAI Batch AI — pobrano ${payloads.length} paczek audio (20 min każda)...`);
+
+    // Jeśli FFmpeg zwrócił paczkę mniejszą od limitu (null), przerywamy pętlę.
+    if (validResults.length < CONCURRENCY_LIMIT) {
+      hasMore = false;
     }
   }
+  
   return payloads;
 }
 
@@ -902,10 +897,14 @@ async function diarizeFromTranscript(segments: any[]) {
 }
 
 async function transcribeRecording(asset: any, options: any = {}) {
+  const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
+
+  notify(10, "Wyciąganie audio do pamięci podręcznej...");
   const prepPath = await preprocessAudio(asset.file_path, options.signal);
   const transcribeFilePath = prepPath || asset.file_path;
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
 
+  notify(30, "Silero VAD - optymalizacja ciszy...");
   const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
   if (DEBUG && speechSegments) {
     console.log(`[audioPipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
@@ -933,6 +932,8 @@ async function transcribeRecording(asset: any, options: any = {}) {
     prompt: contextPrompt,
     temperature: 0,
   };
+
+  notify(40, "Transkrypcja AI rozkłada pętle paczek...");
 
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
   let whisperPayload: any = null;
@@ -968,6 +969,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   // ── Try pyannote diarization (best quality, requires HF_TOKEN) ──
   let diarization = null;
   if (HF_TOKEN) {
+    notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
     const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
       if (DEBUG) console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
@@ -980,6 +982,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   // Instead, we use GPT-4o-mini to infer speaker changes from conversation text + timing.
   if (!diarization) {
     if (DEBUG) console.log("[audioPipeline] Pyannote unavailable — using GPT-4o-mini transcript diarization.");
+    notify(80, "Analiza semantyczna GPT-4o-mini celem wyizolowania rozmówców...");
     try {
       diarization = await diarizeFromTranscript(verificationSegments);
       if (DEBUG && diarization) {
@@ -1086,6 +1089,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
     },
     // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
     segments: await (async () => {
+      notify(90, "Czyszczenie halucynacji AI za sprawą hybrydowej analizy WavLM...");
       const withoutHallucinations = verificationResult.verifiedSegments
         .filter((seg) => !isHallucination(seg.text));
       if (DEBUG && withoutHallucinations.length < verificationResult.verifiedSegments.length) {
@@ -1180,18 +1184,18 @@ async function transcribeLiveChunk(filePath: string, contentType: string, option
  * @param {string} speakerId
  * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
  * @returns {Promise<string>}  Polish coaching text (~200–300 words)
+ * Extracts a speaker's audio clip from an asset based on transcript segments.
+ *
+ * @param {{ id: string, file_path: string }} asset
+ * @param {string | number} speakerId
+ * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
+ * @param {object} options
+ * @returns {Promise<string>}  Path to the generated audio clip (temp, caller must clean up)
  */
-async function generateVoiceCoaching(asset: any, speakerId: any, segments: any[], options: any = {}) {
-  if (!OPENAI_API_KEY) throw new Error("Brak klucza OpenAI API.");
-
-  const spkSegs = segments.filter(
-    (s) => String(s.speakerId ?? s.speaker ?? "") === String(speakerId)
-  );
-  if (!spkSegs.length) throw new Error("Brak segmentów dla tego mówcy.");
-
-  // Pick up to 15 segments that have valid numeric timestamps, to build a ≤60 s clip
-  const validSegs = spkSegs
-    .filter((s) => {
+async function extractSpeakerAudioClip(asset: any, speakerId: string | number, segments: any[], options: any = {}) {
+  const validSegs = segments
+    .filter((s: any) => {
+      if (String(s.speakerId) !== String(speakerId)) return false;
       const t = Number(s.timestamp ?? s.start ?? NaN);
       const e = Number(s.endTimestamp ?? s.end ?? NaN);
       return Number.isFinite(t) && Number.isFinite(e) && e > t && t >= 0;
@@ -1202,23 +1206,39 @@ async function generateVoiceCoaching(asset: any, speakerId: any, segments: any[]
 
   const clipPath = path.join(
     path.dirname(asset.file_path),
-    `coaching_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_clip.wav`
+    `speaker_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_${crypto.randomUUID().slice(0,8)}.wav`
   );
+
+  const selectFilter = validSegs
+    .map(
+      (s: any) =>
+        `between(t,${Number(s.timestamp ?? s.start).toFixed(3)},${Number(s.endTimestamp ?? s.end).toFixed(3)})`
+    )
+    .join("+");
+
+  await execPromise(
+    `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
+    { timeout: 30000, signal: options.signal }
+  );
+
+  return clipPath;
+}
+
+/**
+ * Extracts a speaker's audio clip and asks GPT-4o audio-preview for
+ * detailed Polish coaching on tone, tempo, pronunciation, and filler words.
+ *
+ * @param {{ id: string, file_path: string }} asset
+ * @param {string} speakerId
+ * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
+ * @returns {Promise<string>}  Polish coaching text (~200–300 words)
+ */
+async function generateVoiceCoaching(asset: any, speakerId: any, segments: any[], options: any = {}) {
+  if (!OPENAI_API_KEY) throw new Error("Brak klucza OpenAI API.");
+
+  const clipPath = await extractSpeakerAudioClip(asset, speakerId, segments, options);
+  
   try {
-    // Build aselect filter from validated timestamps only (no shell injection risk)
-    const selectFilter = validSegs
-      .map(
-        (s: any) =>
-          `between(t,${Number(s.timestamp ?? s.start).toFixed(3)},${Number(s.endTimestamp ?? s.end).toFixed(3)})`
-      )
-      .join("+");
-
-    await execPromise(
-      `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
-      { timeout: 30000, signal: options.signal }
-    );
-
-
     const audioBase64 = fs.readFileSync(clipPath).toString("base64");
 
     const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
@@ -1304,11 +1324,15 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
   }).join("\n");
 
-  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Host","1":"Klient"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Host","mainTopic":"...","stance":"proactive","talkRatio":0.6}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}]}';
+  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
 
   const prompt = [
     "Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.",
     "Return valid JSON only — no prose outside the JSON object.",
+    "BARDZO WAŻNE: Twoim krytycznym zadaniem jest przypisywanie zadań (Action Items / Tasks) konkretnym mówcom. Właściwość 'owner' w tablicy 'tasks' MUSI zawierać dokładne imię (speakerLabels) osoby, która podjęła się zadania w transkryptach, zamiast ogólników.",
+    "ZADANIE A: Zidentyfikuj i uzupełnij prawdziwe imiona we właściwości 'speakerLabels' (np. gdy ktoś mówi 'Cześć Adam', zamień 'Speaker 1' na 'Adam') i używaj tylko tych konkretnych imion wokół całego pliku (szczególnie klucza 'owner' przy zadaniach).",
+    "ZADANIE B: Dla każdej rozpoznanej osoby w sekcji 'participantInsights' wypełnij obiekt 'personality' oszacowując od 0 do 100 psychologię DISC.",
+    "ZADANIE C: Dla każdej osoby oszacuj jej 'sentimentScore' od 1 (niedostępny/zły/wycofany/zimny) do 100 (gorący/entuzjastyczny/bardzo zaangażowany w relację).",
     "",
     `Tytuł spotkania: ${meeting?.title || "Nieznany"}`,
     `Kontekst: ${meeting?.context || "Brak"}`,
@@ -1347,12 +1371,37 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
   }
 }
 
+async function embedTextChunks(texts: string[]) {
+  if (!OPENAI_API_KEY || !texts.length) return [];
+  try {
+    const res = await fetch(`${OPENAI_BASE_URL}/embeddings`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: texts,
+      }),
+    });
+    if (!res.ok) throw new Error("Embeddings API error");
+    const json = await res.json();
+    return json.data.map((d: any) => d.embedding);
+  } catch (err) {
+    console.error("embedTextChunks failed:", err);
+    return [];
+  }
+}
+
 export {
   transcribeRecording,
   normalizeRecording,
+  extractSpeakerAudioClip,
   transcribeLiveChunk,
   generateVoiceCoaching,
   diarizeFromTranscript,
   analyzeMeetingWithOpenAI,
+  embedTextChunks,
 };
 

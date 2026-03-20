@@ -5665,3 +5665,19 @@
 .tasks-layout.ms-todo .todo-col-sort-btn.active {
   color: #2564ea;
 }
+
+/* Fix CSS jump for Tabs */
+.tasks-layout.ms-todo .todo-view-button {
+  box-sizing: border-box;
+  height: 42px;
+  line-height: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tasks-layout.ms-todo .todo-view-button.active {
+  border: 1px solid transparent; /* Match border size of inactive */
+  margin: 0;
+  transform: none !important; /* Stop vertical transform jitter on active */
+}

@@ -186,6 +186,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
       />
     ) : ui.activeTab === "recordings" ? (
       <RecordingsTab
+        currentWorkspace={workspace.currentWorkspace}
         userMeetings={meetings.userMeetings}
         selectedMeeting={meetings.selectedMeeting}
         selectMeeting={meetings.selectMeeting}
@@ -193,6 +194,9 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         selectedRecordingId={meetings.selectedRecordingId}
         setSelectedRecordingId={meetings.setSelectedRecordingId}
         setActiveTab={ui.setActiveTab}
+        saveMeeting={meetings.saveMeeting}
+        onCreateMeeting={meetings.createMeetingDirect}
+        queueRecording={recorder.queueRecording}
       />
     ) : (
       <StudioTab
