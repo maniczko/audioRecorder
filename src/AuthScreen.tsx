@@ -23,6 +23,14 @@ export default function AuthScreen({
   const isRegister = authMode === "register";
   const isForgot = authMode === "forgot";
 
+  function internalSubmit(event) {
+    event.preventDefault();
+    if (isRegister && authDraft.password.length < 6) {
+        return;
+    }
+    submitAuth(event);
+  }
+
   return (
     <div className="auth-shell">
       <div className="backdrop-orb backdrop-orb-left" />
@@ -149,12 +157,13 @@ export default function AuthScreen({
             </button>
           </div>
         ) : (
-          <form className="auth-form" onSubmit={submitAuth}>
+          <form className="auth-form" onSubmit={internalSubmit}>
             {isRegister ? (
               <>
-                <label>
-                  <span>Imie</span>
+                <label htmlFor="auth-name">
+                  <span>Imię i nazwisko</span>
                   <input
+                    id="auth-name"
                     value={authDraft.name}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
                     placeholder="np. Anna Nowak"
@@ -220,24 +229,29 @@ export default function AuthScreen({
               </>
             ) : null}
 
-            <label>
+            <label htmlFor="auth-email">
               <span>Email</span>
               <input
+                id="auth-email"
                 type="email"
                 value={authDraft.email}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
                 placeholder="name@company.com"
               />
             </label>
-            <label>
-              <span>Haslo</span>
+            <label htmlFor="auth-password">
+              <span>Hasło</span>
               <input
+                id="auth-password"
                 type="password"
                 value={authDraft.password}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
                 placeholder="minimum 6 znakow"
               />
             </label>
+            {isRegister && authDraft.password && authDraft.password.length < 6 ? (
+                <div className="inline-alert error" style={{ marginTop: '8px' }}>Haslo musi miec co najmniej 6 znakow</div>
+            ) : null}
             {!isRegister ? (
               <button type="button" className="link-button" onClick={() => setAuthMode("forgot")}>
                 Zapomnialem hasla

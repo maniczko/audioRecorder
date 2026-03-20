@@ -29,7 +29,7 @@ function normalizeMeetingDraftValue(draft) {
     accumulator[field] =
       field === "durationMinutes" ? Number(safeDraft[field]) || 45 : String(safeDraft[field] ?? "");
     return accumulator;
-  }, {});
+  }, {} as any);
 }
 
 function areMeetingDraftsEqual(left, right) {
@@ -286,7 +286,7 @@ export default function useMeetingLifecycle({
     return adHocMeeting;
   }
 
-  function saveMeeting(draftOverride) {
+  function saveMeeting(draftOverride?) {
     if (!currentUser || !currentWorkspaceId) return;
 
     if (!selectedMeeting) {
