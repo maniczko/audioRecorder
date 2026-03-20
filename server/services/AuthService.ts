@@ -1,43 +1,46 @@
-class AuthService {
-  constructor(db) {
+import { UserDraft } from "../lib/types.ts";
+
+export default class AuthService {
+  db: any;
+  constructor(db: any) {
     this.db = db;
   }
 
-  async registerUser(draft) {
+  async registerUser(draft: UserDraft) {
     return await this.db.registerUser(draft);
   }
 
-  async loginUser(draft) {
+  async loginUser(draft: UserDraft) {
     return await this.db.loginUser(draft);
   }
 
-  async requestPasswordReset(draft) {
+  async requestPasswordReset(draft: { email: string }) {
     return await this.db.requestPasswordReset(draft);
   }
 
-  async resetPasswordWithCode(draft) {
+  async resetPasswordWithCode(draft: { email: string; code: string; newPassword?: string; confirmPassword?: string }) {
     return await this.db.resetPasswordWithCode(draft);
   }
 
-  async upsertGoogleUser(profile) {
+  async upsertGoogleUser(profile: UserDraft) {
     return await this.db.upsertGoogleUser(profile);
   }
 
-  async getSession(token) {
+  async getSession(token: string) {
     return await this.db.getSession(token);
   }
 
-  async updateUserProfile(userId, updates) {
+  async updateUserProfile(userId: string, updates: Partial<UserDraft>) {
     return await this.db.updateUserProfile(userId, updates);
   }
 
-  async changeUserPassword(userId, draft) {
+  async changeUserPassword(userId: string, draft: any) {
     return await this.db.changeUserPassword(userId, draft);
   }
 
-  async buildSessionPayload(userId, workspaceId) {
+  async buildSessionPayload(userId: string, workspaceId: string) {
     return await this.db.buildSessionPayload(userId, workspaceId);
   }
 }
 
-module.exports = AuthService;
+

@@ -28,9 +28,9 @@ function buildFallbackAnalysis(message, diarization) {
   };
 }
 
-export const useRecorderStore = create(
+export const useRecorderStore = create<any>()(
   persist(
-    (set, get) => ({
+    (set, get: any) => ({
       recordingQueue: [],
       analysisStatus: "idle",
       recordingMessage: "",

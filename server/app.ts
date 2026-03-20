@@ -1,18 +1,17 @@
-const { URL } = require("node:url");
-const fs = require("node:fs");
-const crypto = require("node:crypto");
-const path = require("node:path");
-const { Hono } = require("hono");
-const { cors } = require("hono/cors");
-const { logger } = require("hono/logger");
-const { z } = require("zod");
-const { zValidator } = require("@hono/zod-validator");
-const { getConnInfo } = require("@hono/node-server/conninfo");
-const { getRequestListener } = require("@hono/node-server");
-const { checkRateLimit } = require("./lib/serverUtils.ts");
+import fs from "node:fs";
+import crypto from "node:crypto";
+import path from "node:path";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger as honoLogger } from "hono/logger";
+import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
+import { getConnInfo } from "@hono/node-server/conninfo";
+import { getRequestListener } from "@hono/node-server";
+import { checkRateLimit } from "./lib/serverUtils.ts";
 
-function createApp({ authService, workspaceService, transcriptionService, config }) {
-  const app = new Hono();
+export function createApp({ authService, workspaceService, transcriptionService, config }: any) {
+  const app = new Hono<{ Variables: { session: any; user: any } }>();
 
   const ALLOWED_ORIGINS = (config.allowedOrigins || "http://localhost:3000").split(",").map(s => s.trim());
   const allowAny = ALLOWED_ORIGINS.includes("*");
@@ -34,6 +33,8 @@ function createApp({ authService, workspaceService, transcriptionService, config
     })
   );
 
+  app.use("*", honoLogger());
+
   app.use("*", async (c, next) => {
     c.header("Content-Security-Policy", "default-src 'none'");
     c.header("X-Content-Type-Options", "nosniff");
@@ -42,19 +43,19 @@ function createApp({ authService, workspaceService, transcriptionService, config
   });
 
   // Global Error Handler
-  app.onError((err, c) => {
-    if (err.name === "ContextError" || err instanceof z.ZodError || err.statusCode === 422) {
-      return c.json({ message: "Invalid payload.", errors: err.errors || err.message }, 422);
+  app.onError((err: any, c) => {
+    if (err.name === "ContextError" || err instanceof z.ZodError || (err as any).statusCode === 422) {
+      return c.json({ message: "Invalid payload.", errors: (err as any).errors || err.message }, 422);
     }
-    const statusCode = err.statusCode || err.status || 500;
-    if (statusCode === 429 && err.retryAfter) {
-      c.header("Retry-After", String(err.retryAfter));
+    const statusCode = (err as any).statusCode || (err as any).status || 500;
+    if (statusCode === 429 && (err as any).retryAfter) {
+      c.header("Retry-After", String((err as any).retryAfter));
     }
-    return c.json({ message: err.message || "Unexpected server error." }, statusCode);
+    return c.json({ message: err.message || "Unexpected server error." }, statusCode as any);
   });
 
   // Helper for Rate limiting
-  const applyRateLimit = (route, max = 10) => async (c, next) => {
+  const applyRateLimit = (route: string, max = 10) => async (c: any, next: any) => {
     const conn = getConnInfo(c);
     const socketIp = conn?.remote?.address || "unknown";
     const clientIp = config.trustProxy ? (c.req.header("x-forwarded-for")?.split(",")[0].trim() || socketIp) : socketIp;
@@ -81,7 +82,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     const session = c.get("session");
     const membership = await workspaceService.getMembership(workspaceId, session.user_id);
     if (!membership) {
-        const err = new Error("Nie masz dostepu do tego workspace.");
+        const err = new Error("Nie masz dostepu do tego workspace.") as any;
         err.statusCode = 403;
         throw err;
     }
@@ -95,7 +96,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   }
 
   function buildTranscriptionStatusPayload(asset) {
-    let diarization = {};
+    let diarization = {} as any;
     let segments = [];
     try { diarization = JSON.parse(asset?.diarization_json || "{}"); } catch (_) {}
     try { segments = JSON.parse(asset?.transcript_json || "[]"); } catch (_) {}
@@ -178,7 +179,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   // ==== PRIVATE ROUTES ====
   app.use("/auth/session", authMiddleware);
   app.get("/auth/session", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const workspaceId = c.req.query("workspaceId") || session.workspace_id;
     await ensureWorkspaceAccess(c, workspaceId);
     return c.json(await authService.buildSessionPayload(session.user_id, workspaceId), 200);
@@ -186,7 +187,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
   app.use("/users/*", authMiddleware);
   app.put("/users/:userId/profile", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const userId = c.req.param("userId");
     if (session.user_id !== userId) return c.json({ message: "Mozesz edytowac tylko swoj profil." }, 403);
     const workspaceId = c.req.query("workspaceId") || session.workspace_id;
@@ -197,7 +198,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   });
 
   app.post("/users/:userId/password", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const userId = c.req.param("userId");
     if (session.user_id !== userId) return c.json({ message: "Mozesz zmienic tylko swoje haslo." }, 403);
     const body = await c.req.json().catch(() => ({}));
@@ -206,7 +207,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
   app.use("/state/*", authMiddleware);
   app.get("/state/bootstrap", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const workspaceId = c.req.query("workspaceId") || session.workspace_id;
     await ensureWorkspaceAccess(c, workspaceId);
     return c.json(await authService.buildSessionPayload(session.user_id, workspaceId), 200);
@@ -237,7 +238,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   // --- Media & Processing ---
   app.use("/media/*", authMiddleware);
   app.put("/media/recordings/:recordingId/audio", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const recordingId = c.req.param("recordingId");
     const workspaceId = c.req.header("X-Workspace-Id") || "";
     const meetingId = c.req.header("X-Meeting-Id") || "";
@@ -271,7 +272,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     c.header("Content-Type", safeType);
     c.header("Content-Length", String(fs.statSync(asset.file_path).size));
     c.header("Content-Disposition", "attachment");
-    return c.body(stream, 200);
+    return c.body(stream as any, 200);
   });
 
   app.post("/media/recordings/:recordingId/transcribe", async (c) => {
@@ -319,7 +320,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
-    let stored = [];
+    let stored = [] as any[];
     try { stored = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
     if (!stored.length) return c.json({ message: "Brak transkrypcji." }, 400);
 
@@ -340,7 +341,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
 
   app.use("/voice-profiles*", authMiddleware);
   app.get("/voice-profiles", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p) => ({
       id: p.id, speakerName: p.speaker_name, userId: p.user_id, createdAt: p.created_at,
     }));
@@ -348,7 +349,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   });
 
   app.post("/voice-profiles", applyRateLimit("voice-profiles"), async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     const speakerName = String(c.req.header("X-Speaker-Name") || "").slice(0, 120);
     if (!speakerName.trim()) return c.json({ message: "Brakuje naglowka X-Speaker-Name." }, 400);
     
@@ -374,7 +375,7 @@ function createApp({ authService, workspaceService, transcriptionService, config
   });
 
   app.delete("/voice-profiles/:id", async (c) => {
-    const session = c.get("session");
+    const session = c.get("session") as any;
     await workspaceService.deleteVoiceProfile(c.req.param("id"), session.workspace_id);
     return new Response(null, { status: 204 });
   });
@@ -400,4 +401,3 @@ function createApp({ authService, workspaceService, transcriptionService, config
   return getRequestListener(app.fetch);
 }
 
-module.exports = { createApp };

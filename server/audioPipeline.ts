@@ -1,51 +1,40 @@
-const fs = require("node:fs");
-const path = require("node:path");
-const { File } = require("node:buffer");
-const crypto = require("node:crypto");
-const { matchSpeakerToProfile } = require("./speakerEmbedder");
+import fs from "node:fs";
+import path from "node:path";
+import { File } from "node:buffer";
+import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import { spawn, exec } from "node:child_process";
+import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || "";
-// Validate OPENAI_BASE_URL to prevent accidental SSRF via misconfigured env.
-// Must be https:// or http://localhost / 127.0.0.1 (for local proxies / testing).
-const _rawOpenAiBase = String(process.env.VOICELOG_OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
-(function validateOpenAiBase(url) {
-  try {
-    const parsed = new URL(url);
-    const isHttps = parsed.protocol === "https:";
-    const isLocalHttp = parsed.protocol === "http:" && (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
-    if (!isHttps && !isLocalHttp) {
-      console.warn(`[audioPipeline] VOICELOG_OPENAI_BASE_URL "${url}" is not https — using default.`);
-      return;
-    }
-  } catch (_) {
-    console.warn(`[audioPipeline] VOICELOG_OPENAI_BASE_URL is not a valid URL — using default.`);
-  }
-})(_rawOpenAiBase);
-const OPENAI_BASE_URL = _rawOpenAiBase;
-// DIARIZATION_MODEL is kept for reference only — OpenAI does not expose a public
-// speaker-diarization model via the transcriptions API. Diarization is handled by
-// pyannote (when HF_TOKEN is set) or GPT-4o-mini transcript analysis (see diarizeFromTranscript).
-const DIARIZATION_MODEL = process.env.VOICELOG_AUDIO_DIARIZE_MODEL || "whisper-1";
-// gpt-4o-transcribe is significantly more accurate than whisper-1 for Polish,
-// especially for proper nouns, jargon, and mixed-language utterances.
-// Falls back to whisper-1 if VOICELOG_AUDIO_VERIFY_MODEL is set to that.
-const VERIFICATION_MODEL = process.env.VOICELOG_AUDIO_VERIFY_MODEL || "gpt-4o-transcribe";
-const AUDIO_LANGUAGE = process.env.VOICELOG_AUDIO_LANGUAGE || "pl";
+import { logger } from "./logger.ts";
+import { config } from "./config.ts";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const execPromise = promisify(exec);
+
+const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || "";
+const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
+
+const VERIFICATION_MODEL = config.VERIFICATION_MODEL;
+const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
 const CHUNK_DURATION_SECONDS = 1200; // 20-minute chunks for large-file splitting
 const CHUNK_OVERLAP_SECONDS = 10;    // 10-second tail overlap to avoid cutting mid-sentence
-const AUDIO_PREPROCESS = process.env.VOICELOG_AUDIO_PREPROCESS !== "false";
-const TRANSCRIPT_CORRECTION = process.env.VOICELOG_TRANSCRIPT_CORRECTION === "true";
-const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
-const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || "";
-const PYTHON_BINARY = process.env.PYTHON_BINARY || "python";
+const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
+const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
+const FFMPEG_BINARY = config.FFMPEG_BINARY;
+const HF_TOKEN = config.HF_TOKEN || config.HUGGINGFACE_TOKEN || "";
+const PYTHON_BINARY = config.PYTHON_BINARY;
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
-const VAD_ENABLED = process.env.VOICELOG_AUDIO_VAD !== "false";
+const VAD_ENABLED = config.VAD_ENABLED;
 // Whisper prompt primes the model toward Polish business vocabulary.
 // Override with VOICELOG_WHISPER_PROMPT env var if needed.
-const WHISPER_PROMPT = process.env.VOICELOG_WHISPER_PROMPT
+const WHISPER_PROMPT = config.WHISPER_PROMPT
   || "Transkrypcja spotkania biznesowego w języku polskim.";
+
 
 /**
  * Builds a context-aware Whisper initial_prompt from meeting metadata.
@@ -54,7 +43,7 @@ const WHISPER_PROMPT = process.env.VOICELOG_WHISPER_PROMPT
  *
  * @param {{ meetingTitle?: string, participants?: string[], tags?: string[], vocabulary?: string }} opts
  */
-function buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary } = {}) {
+function buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary }: any = {}) {
   const parts = [WHISPER_PROMPT];
   if (meetingTitle) parts.push(`Spotkanie: ${String(meetingTitle).trim().slice(0, 80)}.`);
   if (Array.isArray(participants) && participants.length) {
@@ -237,7 +226,7 @@ function parseJsonResponse(raw) {
   }
 }
 
-async function requestAudioTranscription({ filePath, contentType, fields, signal }) {
+async function requestAudioTranscription({ filePath, contentType, fields, signal }: any) {
   if (!OPENAI_API_KEY) {
     throw new Error("Brakuje OPENAI_API_KEY dla serwerowego pipeline audio.");
   }
@@ -249,7 +238,7 @@ async function requestAudioTranscription({ filePath, contentType, fields, signal
 
   const form = new FormData();
   const filename = path.basename(filePath);
-  form.append("file", new File([buffer], filename, { type: contentType || "application/octet-stream" }));
+  form.append("file", new File([buffer], filename, { type: contentType || "application/octet-stream" }) as any);
 
   Object.entries(fields || {}).forEach(([key, value]) => {
     if (value === undefined || value === null || value === "") {
@@ -355,7 +344,7 @@ function normalizeDiarizedSegments(payload) {
   };
 }
 
-function normalizeVerificationSegments(payload) {
+function normalizeVerificationSegments(payload: any) {
   const rawSegments = Array.isArray(payload?.segments) ? payload.segments : [];
   return rawSegments
     .map((segment) => ({
@@ -418,7 +407,7 @@ function evaluateAgainstVerificationPass(segment, verificationSegments) {
   };
 }
 
-function buildVerificationResult(diarizedSegments, verificationSegments) {
+function buildVerificationResult(diarizedSegments: any[], verificationSegments: any[]) {
   const verifiedSegments = diarizedSegments.map((segment, index) => {
     const qualityScore = estimateQualityScore(segment.text);
     const verification = evaluateAgainstVerificationPass(segment, verificationSegments);
@@ -467,13 +456,12 @@ function buildVerificationResult(diarizedSegments, verificationSegments) {
  * Runs pyannote.audio speaker diarization via Python subprocess.
  * Returns [{speaker, start, end}] or null if unavailable/failed.
  */
-async function runPyannoteDiarization(audioPath, signal) {
+async function runPyannoteDiarization(audioPath: string, signal: any) {
   if (!HF_TOKEN) return null;
   if (!fs.existsSync(DIARIZE_SCRIPT)) {
     console.warn("[audioPipeline] diarize.py not found, skipping pyannote.");
     return null;
   }
-  const { spawn } = require("node:child_process");
   console.log("[audioPipeline] Running pyannote diarization (may download ~1GB model on first run)...");
   
   return new Promise((resolve) => {
@@ -526,13 +514,12 @@ async function runPyannoteDiarization(audioPath, signal) {
  * Runs Silero VAD via Python subprocess.
  * Returns [{start, end}] timestamps of speech segments.
  */
-async function runSileroVAD(audioPath, signal) {
+async function runSileroVAD(audioPath: string, signal: any) {
   if (!VAD_ENABLED) return null;
   if (!fs.existsSync(VAD_SCRIPT)) {
     console.warn("[audioPipeline] vad.py not found, skipping Silero VAD.");
     return null;
   }
-  const { spawn } = require("node:child_process");
 
   return new Promise((resolve) => {
     const child = spawn(PYTHON_BINARY, [VAD_SCRIPT, audioPath], {
@@ -574,7 +561,7 @@ async function runSileroVAD(audioPath, signal) {
  * Merges pyannote speaker assignments [{speaker, start, end}] with Whisper text segments.
  * For each Whisper segment, assigns the pyannote speaker with the greatest time overlap.
  */
-function mergeWithPyannote(pyannoteSegments, whisperSegments) {
+function mergeWithPyannote(pyannoteSegments: any[], whisperSegments: any[]) {
   const speakerOrder = new Map();
   const speakerNames = {};
 
@@ -630,11 +617,7 @@ function mergeWithPyannote(pyannoteSegments, whisperSegments) {
  * Returns [{filePath, offsetSeconds}] for each chunk, sorted by start time.
  * All chunks are 16kHz mono WAV so they can be sent directly to the transcription API.
  */
-async function splitAudioIntoChunks(filePath, signal) {
-  const { exec } = require("node:child_process");
-  const util = require("node:util");
-  const execPromise = util.promisify(exec);
-  
+async function splitAudioIntoChunks(filePath: string, signal: any) {
   const dir = path.dirname(filePath);
   const base = `_chunk_${crypto.randomUUID().replace(/-/g, "")}_`;
   const chunkPattern = path.join(dir, `${base}%03d.wav`);
@@ -656,7 +639,7 @@ async function splitAudioIntoChunks(filePath, signal) {
  * Merges verbose_json payloads from multiple chunks into one,
  * adjusting segment timestamps by chunkOffset.
  */
-function mergeChunkedPayloads(payloads) {
+function mergeChunkedPayloads(payloads: any[]) {
   const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
     const segs = Array.isArray(payload?.segments) ? payload.segments : [];
     return segs.map((s) => ({
@@ -673,7 +656,7 @@ function mergeChunkedPayloads(payloads) {
  * Merges diarized_json payloads from multiple chunks into one,
  * adjusting timestamps and offsetting speaker IDs to keep them globally unique.
  */
-function mergeChunkedDiarizedPayloads(payloads) {
+function mergeChunkedDiarizedPayloads(payloads: any[]) {
   // Collect global speaker order across chunks to produce consistent IDs
   const globalSpeakerOrder = new Map();
   const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
@@ -715,7 +698,7 @@ function mergeChunkedDiarizedPayloads(payloads) {
  * Transcribes a large audio file by splitting it into chunks, transcribing
  * each chunk separately, and merging results with correct timestamp offsets.
  */
-async function transcribeInChunks(filePath, contentType, fields, options = {}) {
+async function transcribeInChunks(filePath: string, contentType: string, fields: any, options: any = {}) {
   const chunks = await splitAudioIntoChunks(filePath, options.signal);
   if (DEBUG) console.log(`[audioPipeline] Split into ${chunks.length} chunks.`);
 
@@ -724,7 +707,7 @@ async function transcribeInChunks(filePath, contentType, fields, options = {}) {
     for (const chunk of chunks) {
       if (options.signal?.aborted) throw new Error("Aborted");
       // ── Skip silent chunks using Silero VAD ──
-      const chunkSpeech = await runSileroVAD(chunk.filePath, options.signal);
+      const chunkSpeech: any = await runSileroVAD(chunk.filePath, options.signal);
       if (chunkSpeech && chunkSpeech.length === 0) {
         if (DEBUG) console.log(`[audioPipeline] Skipping silent chunk: ${chunk.filePath} (offset: ${chunk.offsetSeconds}s)`);
         payloads.push({ payload: { segments: [], text: "" }, offsetSeconds: chunk.offsetSeconds });
@@ -748,11 +731,8 @@ async function transcribeInChunks(filePath, contentType, fields, options = {}) {
   return payloads;
 }
 
-async function preprocessAudio(filePath, signal) {
+async function preprocessAudio(filePath: string, signal: any) {
   if (!AUDIO_PREPROCESS) return null;
-  const { exec } = require("node:child_process");
-  const util = require("node:util");
-  const execPromise = util.promisify(exec);
   const tmpPath = `${filePath}.prep.wav`;
   try {
     await execPromise(
@@ -778,7 +758,7 @@ async function preprocessAudio(filePath, signal) {
  * @param {Array<{text: string, start: number, end: number}>} segments  verbose_json segments
  * @returns {Promise<object|null>}  diarization result ({segments, speakerNames, speakerCount, text})
  */
-async function diarizeFromTranscript(segments) {
+async function diarizeFromTranscript(segments: any[]) {
   if (!OPENAI_API_KEY || !segments.length) return null;
 
   const CHUNK_SIZE = 180;
@@ -921,12 +901,12 @@ async function diarizeFromTranscript(segments) {
   }
 }
 
-async function transcribeRecording(asset, options = {}) {
+async function transcribeRecording(asset: any, options: any = {}) {
   const prepPath = await preprocessAudio(asset.file_path, options.signal);
   const transcribeFilePath = prepPath || asset.file_path;
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
 
-  const speechSegments = await runSileroVAD(transcribeFilePath, options.signal);
+  const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
   if (DEBUG && speechSegments) {
     console.log(`[audioPipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
   }
@@ -955,7 +935,7 @@ async function transcribeRecording(asset, options = {}) {
   };
 
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
-  let whisperPayload = null;
+  let whisperPayload: any = null;
   const modelsToTry = VERIFICATION_MODEL !== "whisper-1"
     ? [VERIFICATION_MODEL, "whisper-1"]
     : ["whisper-1"];
@@ -991,7 +971,7 @@ async function transcribeRecording(asset, options = {}) {
     const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
       if (DEBUG) console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
-      diarization = mergeWithPyannote(pyannoteSegments, verificationSegments);
+      diarization = mergeWithPyannote(pyannoteSegments as any[], verificationSegments as any[]);
     }
   }
 
@@ -1078,9 +1058,6 @@ async function transcribeRecording(asset, options = {}) {
         const selectFilter = safeSegments
           .map((s) => `between(t,${Number(s.timestamp).toFixed(3)},${Number(s.endTimestamp).toFixed(3)})`)
           .join("+");
-        const { exec } = require("node:child_process");
-        const util = require("node:util");
-        const execPromise = util.promisify(exec);
         await execPromise(
           `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
           { timeout: 30000, signal: options.signal }
@@ -1092,7 +1069,7 @@ async function transcribeRecording(asset, options = {}) {
       } catch (err) {
         console.warn(`[audioPipeline] Speaker clip extraction failed for speaker ${speakerId}:`, err.message);
       } finally {
-        try { require("node:fs").unlinkSync(clipPath); } catch (_) {}
+        try { fs.unlinkSync(clipPath); } catch (_) {}
       }
     }
   }
@@ -1132,7 +1109,7 @@ async function transcribeRecording(asset, options = {}) {
   }
 }
 
-async function correctTranscriptWithLLM(segments, options = {}) {
+async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
   if (!TRANSCRIPT_CORRECTION && !options.transcriptCorrection) return segments;
   if (!OPENAI_API_KEY) return segments;
   const payload = segments.map((s) => ({ id: s.id, text: s.text }));
@@ -1171,7 +1148,7 @@ async function correctTranscriptWithLLM(segments, options = {}) {
  * @param {string} contentType  MIME type of the audio file
  * @returns {Promise<string>}  Transcribed text or empty string on failure
  */
-async function transcribeLiveChunk(filePath, contentType, options = {}) {
+async function transcribeLiveChunk(filePath: string, contentType: string, options: any = {}) {
   if (!OPENAI_API_KEY) return "";
   try {
     const payload = await requestAudioTranscription({
@@ -1204,7 +1181,7 @@ async function transcribeLiveChunk(filePath, contentType, options = {}) {
  * @param {Array<{speakerId: string, timestamp: number, endTimestamp: number}>} segments  all transcript segments
  * @returns {Promise<string>}  Polish coaching text (~200–300 words)
  */
-async function generateVoiceCoaching(asset, speakerId, segments, options = {}) {
+async function generateVoiceCoaching(asset: any, speakerId: any, segments: any[], options: any = {}) {
   if (!OPENAI_API_KEY) throw new Error("Brak klucza OpenAI API.");
 
   const spkSegs = segments.filter(
@@ -1228,13 +1205,10 @@ async function generateVoiceCoaching(asset, speakerId, segments, options = {}) {
     `coaching_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_clip.wav`
   );
   try {
-    const { exec } = require("node:child_process");
-    const util = require("node:util");
-    const execPromise = util.promisify(exec);
     // Build aselect filter from validated timestamps only (no shell injection risk)
     const selectFilter = validSegs
       .map(
-        (s) =>
+        (s: any) =>
           `between(t,${Number(s.timestamp ?? s.start).toFixed(3)},${Number(s.endTimestamp ?? s.end).toFixed(3)})`
       )
       .join("+");
@@ -1243,6 +1217,7 @@ async function generateVoiceCoaching(asset, speakerId, segments, options = {}) {
       `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
       { timeout: 30000, signal: options.signal }
     );
+
 
     const audioBase64 = fs.readFileSync(clipPath).toString("base64");
 
@@ -1297,10 +1272,7 @@ async function generateVoiceCoaching(asset, speakerId, segments, options = {}) {
   }
 }
 
-async function normalizeRecording(filePath, options = {}) {
-  const { exec } = require("node:child_process");
-  const util = require("node:util");
-  const execPromise = util.promisify(exec);
+async function normalizeRecording(filePath: string, options: any = {}) {
   const tmpPath = `${filePath}.norm.tmp`;
   try {
     await execPromise(
@@ -1318,7 +1290,7 @@ async function normalizeRecording(filePath, options = {}) {
  * Analyze a meeting transcript using GPT-4o-mini and return structured JSON.
  * Returns null if OPENAI_API_KEY is not set or an error occurs.
  */
-async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }) {
+async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any) {
   if (!OPENAI_API_KEY || !segments.length) return null;
 
   const fmt = (s) => {
@@ -1375,7 +1347,7 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }) {
   }
 }
 
-module.exports = {
+export {
   transcribeRecording,
   normalizeRecording,
   transcribeLiveChunk,
@@ -1383,3 +1355,4 @@ module.exports = {
   diarizeFromTranscript,
   analyzeMeetingWithOpenAI,
 };
+

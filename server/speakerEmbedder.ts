@@ -1,35 +1,34 @@
-/**
- * Speaker embedding using WavLM (via @xenova/transformers ONNX).
- * Requires ffmpeg on PATH for audio decoding.
- */
-const { execSync } = require("node:child_process");
-const fs = require("node:fs");
-const path = require("node:path");
-const os = require("node:os");
+import { execSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { config } from "./config.ts";
 
 const SIMILARITY_THRESHOLD = 0.82;
-const FFMPEG_BINARY = process.env.FFMPEG_BINARY || "ffmpeg";
+const FFMPEG_BINARY = config.FFMPEG_BINARY;
 
-let modelCache = null;
-let processorCache = null;
+let modelCache: any = null;
+let processorCache: any = null;
 
 async function getEmbeddingModels() {
   if (modelCache && processorCache) return { model: modelCache, processor: processorCache };
   try {
-    const { AutoModel, AutoProcessor, env } = await import("@xenova/transformers");
+    const { AutoModel, AutoProcessor, env } = await import("@xenova/transformers") as any;
     env.allowLocalModels = false; // force download from HuggingFace
+    // We use Xenova specific build of wavlm
     modelCache = await AutoModel.from_pretrained("Xenova/wavlm-base-plus-sv", {
       quantized: false,
     });
     processorCache = await AutoProcessor.from_pretrained("Xenova/wavlm-base-plus-sv");
     return { model: modelCache, processor: processorCache };
-  } catch (err) {
+  } catch (err: any) {
+
     console.error("[speakerEmbedder] Failed to load WavLM models:", err.message);
     return null;
   }
 }
 
-function cosineSimilarity(a, b) {
+export function cosineSimilarity(a: number[], b: number[]) {
   if (!a || !b || a.length !== b.length) return 0;
   let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < a.length; i++) {
@@ -44,7 +43,7 @@ function cosineSimilarity(a, b) {
  * Decodes audio file to 16kHz mono Float32Array using ffmpeg.
  * Returns null if ffmpeg is unavailable.
  */
-function decodeAudioToFloat32(inputPath) {
+function decodeAudioToFloat32(inputPath: string) {
   const tmpPath = path.join(os.tmpdir(), `spkemb_${Date.now()}.raw`);
   try {
     execSync(
@@ -54,7 +53,7 @@ function decodeAudioToFloat32(inputPath) {
     const buf = fs.readFileSync(tmpPath);
     const float32 = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
     return float32;
-  } catch (err) {
+  } catch (err: any) {
     console.warn("[speakerEmbedder] ffmpeg decode failed:", err.message);
     return null;
   } finally {
@@ -66,7 +65,7 @@ function decodeAudioToFloat32(inputPath) {
  * Compute a 512-dim embedding for an audio file.
  * Returns null on failure.
  */
-async function computeEmbedding(audioFilePath) {
+export async function computeEmbedding(audioFilePath: string) {
   const models = await getEmbeddingModels();
   if (!models) return null;
 
@@ -78,14 +77,14 @@ async function computeEmbedding(audioFilePath) {
     const output = await models.model(inputs);
     
     // Normalize the 512-dim embedding vector (L2 norm)
-    const arr = Array.from(output.embeddings.data);
+    const arr = Array.from(output.embeddings.data) as number[];
     let sqSum = 0;
     for (let i = 0; i < arr.length; i++) {
         sqSum += arr[i] * arr[i];
     }
     const norm = Math.sqrt(sqSum) || 1e-8;
     return arr.map(v => v / norm);
-  } catch (err) {
+  } catch (err: any) {
     console.error("[speakerEmbedder] Embedding computation failed:", err.message);
     return null;
   }
@@ -95,13 +94,13 @@ async function computeEmbedding(audioFilePath) {
  * Given a list of voice profiles (with .embedding arrays) and an audio file,
  * return the best matching profile name (or null if no match above threshold).
  */
-async function matchSpeakerToProfile(audioFilePath, voiceProfiles) {
+export async function matchSpeakerToProfile(audioFilePath: string, voiceProfiles: any[]) {
   if (!voiceProfiles || !voiceProfiles.length) return null;
 
   const embedding = await computeEmbedding(audioFilePath);
   if (!embedding) return null;
 
-  let best = null;
+  let best: any = null;
   let bestScore = SIMILARITY_THRESHOLD;
 
   for (const profile of voiceProfiles) {
@@ -123,4 +122,3 @@ async function matchSpeakerToProfile(audioFilePath, voiceProfiles) {
   return best ? best.name : null;
 }
 
-module.exports = { computeEmbedding, matchSpeakerToProfile, cosineSimilarity };

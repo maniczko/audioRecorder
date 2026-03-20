@@ -58,7 +58,8 @@ async function seedMeeting(page, meeting) {
     tags: [],
     createdAt: new Date().toISOString(),
     workspaceId: "ws_e2e",
-    createdBy: "user_e2e",
+    createdByUserId: "user_e2e",
+    updatedAt: new Date().toISOString(),
     recordings: [],
     tasks: [],
     activity: [],
@@ -85,8 +86,9 @@ async function seedTask(page, task) {
     tags: [],
     completed: false,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     workspaceId: "ws_e2e",
-    createdBy: "user_e2e",
+    createdByUserId: "user_e2e",
   };
   const merged = { ...defaultTask, ...(task || {}) };
   await page.addInitScript(

@@ -20,5 +20,10 @@ export default defineConfig({
   },
   build: {
     outDir: 'build', // keep CRA's build output dir so your Github Actions don't break again!
+  },
+  define: {
+    'process.env.REACT_APP_DATA_PROVIDER': JSON.stringify(process.env.REACT_APP_DATA_PROVIDER || ''),
+    'process.env.REACT_APP_MEDIA_PROVIDER': JSON.stringify(process.env.REACT_APP_MEDIA_PROVIDER || ''),
+    'process.env.REACT_APP_API_BASE_URL': JSON.stringify(process.env.REACT_APP_API_BASE_URL || ''),
   }
 });

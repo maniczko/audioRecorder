@@ -26,8 +26,9 @@ module.exports = defineConfig({
     stdout: "ignore",
     stderr: "pipe",
     env: {
-      REACT_APP_DATA_PROVIDER: "local",
-      REACT_APP_MEDIA_PROVIDER: "local"
+      VITE_DATA_PROVIDER: "local",
+      VITE_MEDIA_PROVIDER: "local",
+      VITE_API_BASE_URL: "http://localhost:4000"
     }
   },
 });

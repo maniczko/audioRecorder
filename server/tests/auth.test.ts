@@ -1,12 +1,18 @@
-const { initDatabase } = require("../database.ts");
-const AuthService = require("../services/AuthService.ts");
-const path = require("node:path");
-const fs = require("node:fs");
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import { initDatabase } from "../database.ts";
+import AuthService from "../services/AuthService.ts";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("Database & AuthService (In-Memory)", () => {
-  let db;
-  let authService;
+  let db: any;
+  let authService: any;
   const testUploadDir = path.resolve(__dirname, "test_uploads");
+
 
   beforeAll(async () => {
     // Initialize with :memory:

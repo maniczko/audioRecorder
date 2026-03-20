@@ -1,27 +1,28 @@
-const Sentry = require("@sentry/node");
+import * as Sentry from "@sentry/node";
+import { config } from "./config.ts";
 
-const IS_PROD = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+const IS_PROD = config.NODE_ENV === "production" || config.NODE_ENV === "staging";
 
-if (process.env.SENTRY_DSN) {
+if (config.SENTRY_DSN) {
   Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || "development",
+    dsn: config.SENTRY_DSN,
+    environment: config.NODE_ENV || "development",
     tracesSampleRate: 1.0,
     debug: !IS_PROD,
   });
 }
 
-const logger = {
-  info: (msg, meta = {}) => {
+export const logger = {
+  info: (msg: string, meta: any = {}) => {
     console.log(`[INFO] ${msg}`, Object.keys(meta).length ? meta : '');
   },
-  warn: (msg, meta = {}) => {
+  warn: (msg: string, meta: any = {}) => {
     console.warn(`[WARN] ${msg}`, Object.keys(meta).length ? meta : '');
     if (process.env.SENTRY_DSN) {
       Sentry.captureMessage(msg, "warning");
     }
   },
-  error: (msg, err = null) => {
+  error: (msg: string, err: any = null) => {
     console.error(`[ERROR] ${msg}`, err || '');
     if (process.env.SENTRY_DSN && err instanceof Error) {
       Sentry.captureException(err);
@@ -31,4 +32,3 @@ const logger = {
   }
 };
 
-module.exports = { logger };

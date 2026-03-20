@@ -1,7 +1,20 @@
-// Load .env from project root before any other requires
-try { require("dotenv").config({ path: require("node:path").resolve(__dirname, "../.env") }); } catch (_) {}
+import { fileURLToPath } from "node:url";
+import http from "node:http";
+import { logger } from "./logger.ts";
+import { getDatabase } from "./database.ts";
+import { createApp } from "./app.ts";
+import { config } from "./config.ts";
+import AuthService from "./services/AuthService.ts";
+import WorkspaceService from "./services/WorkspaceService.ts";
+import TranscriptionService from "./services/TranscriptionService.ts";
+import * as audioPipeline from "./audioPipeline.ts";
+import * as speakerEmbedder from "./speakerEmbedder.ts";
 
-const { logger } = require("./logger.ts");
+const __filename = fileURLToPath(import.meta.url);
+// __dirname is not used in this file but kept for reference if needed elsewhere
+
+// Config is loaded and validated in config.ts
+
 
 process.on("uncaughtException", (err) => {
   logger.error("FATAL UNCAUGHT EXCEPTION:", err);
@@ -11,35 +24,26 @@ process.on("unhandledRejection", (reason) => {
   logger.error("FATAL UNHANDLED REJECTION:", reason instanceof Error ? reason : new Error(String(reason)));
 });
 
-const http = require("node:http");
-const { getDatabase } = require("./database.ts");
-const { createApp } = require("./app.ts");
+const PORT = Number(config.VOICELOG_API_PORT || config.PORT) || 4000;
+const HOST = config.VOICELOG_API_HOST || "0.0.0.0";
 
-// Services
-const AuthService = require("./services/AuthService.ts");
-const WorkspaceService = require("./services/WorkspaceService.ts");
-const TranscriptionService = require("./services/TranscriptionService.ts");
-
-// Assets & Pipeline (Lazily loaded internally to prevent 55KB synchronous block on startup)
-
-const PORT = Number(process.env.PORT || process.env.VOICELOG_API_PORT) || 4000;
-const HOST = process.env.VOICELOG_API_HOST || "0.0.0.0";
-
-async function bootstrap() {
+export async function bootstrap() {
   const db = getDatabase();
   await db.init();
 
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
-  const transcriptionService = new TranscriptionService(db, workspaceService, null, null);
+  
+  logger.info(`[Bootstrap] Initializing TranscriptionService with audioPipeline (${typeof audioPipeline}, keys: ${Object.keys(audioPipeline).join(", ")})`);
+  const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
 
   const handler = createApp({
     authService,
     workspaceService,
     transcriptionService,
     config: {
-      allowedOrigins: process.env.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000",
-      trustProxy: process.env.VOICELOG_TRUST_PROXY === "true",
+      allowedOrigins: config.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000",
+      trustProxy: config.VOICELOG_TRUST_PROXY === true,
       uploadDir: db.uploadDir,
     }
   });
@@ -49,7 +53,8 @@ async function bootstrap() {
   return { server, db, authService, workspaceService, transcriptionService };
 }
 
-if (require.main === module) {
+// Since we are using tsx or bundling, we can check if this is the main module
+if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
   bootstrap().then(({ server }) => {
     logger.info(`Attempting to listen on ${HOST}:${PORT}...`);
     server.on("error", (err) => {
@@ -64,4 +69,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = bootstrap;
+export default bootstrap;
+

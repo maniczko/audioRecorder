@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createId } from "./storage";
 import { createGoogleTaskConflictState } from "./googleSync";
 

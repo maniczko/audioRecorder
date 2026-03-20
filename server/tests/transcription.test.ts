@@ -1,26 +1,28 @@
-const TranscriptionService = require('../services/TranscriptionService.ts');
+import { describe, it, expect, vi } from "vitest";
+import TranscriptionService from "../services/TranscriptionService.ts";
 
 // Mock dependencies
-const mockDb = {
-  getWorkspaceState: jest.fn(),
-  getWorkspaceVoiceProfiles: jest.fn(),
-  queueTranscription: jest.fn(),
-  markTranscriptionProcessing: jest.fn(),
-  saveTranscriptionResult: jest.fn(),
-  markTranscriptionFailure: jest.fn(),
+const mockDb: any = {
+  getWorkspaceState: vi.fn(),
+  getWorkspaceVoiceProfiles: vi.fn(),
+  queueTranscription: vi.fn(),
+  markTranscriptionProcessing: vi.fn(),
+  saveTranscriptionResult: vi.fn(),
+  markTranscriptionFailure: vi.fn(),
 };
 
-const mockWorkspaceService = {
-  getWorkspaceMemberNames: jest.fn().mockReturnValue(['Anna', 'Jan']),
+const mockWorkspaceService: any = {
+  getWorkspaceMemberNames: vi.fn().mockReturnValue(['Anna', 'Jan']),
 };
 
-const mockSpeakerEmbedder = {};
+const mockSpeakerEmbedder: any = {};
+
 
 describe("TranscriptionService", () => {
   it("should successfully fallback to audioPipeline and call transcribeRecording without throwing 'is not a function'", async () => {
     // Create a mock audioPipeline with transcribeRecording exported
     const mockAudioPipeline = {
-      transcribeRecording: jest.fn().mockResolvedValue({ segments: [], speakerCount: 0 })
+      transcribeRecording: vi.fn().mockResolvedValue({ segments: [], speakerCount: 0 })
     };
 
     const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
@@ -39,14 +41,12 @@ describe("TranscriptionService", () => {
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalled();
   });
 
-  it("should handle missing transcribeRecording gracefully by logging and recovering if possible", () => {
+  it("should throw a descriptive error if transcribeRecording is missing", () => {
     // Empty object simulating circular dependency missing export
     const brokenAudioPipeline = {};
     const service = new TranscriptionService(mockDb, mockWorkspaceService, brokenAudioPipeline, mockSpeakerEmbedder);
 
-    // It should invoke the fallback logic in get pipeline()
-    const pipeline = service.pipeline;
-    expect(pipeline).toBeDefined();
-    // Since fallback requires the actual pipeline module, just ensure it doesn't crash here.
+    // It should throw instead of returning an invalid object
+    expect(() => service.pipeline).toThrow("Critical: TranscriptionService.audioPipeline is missing 'transcribeRecording'");
   });
 });

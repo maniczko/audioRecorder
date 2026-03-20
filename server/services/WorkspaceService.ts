@@ -1,40 +1,40 @@
-class WorkspaceService {
-  constructor(db) {
+export default class WorkspaceService {
+  db: any;
+  constructor(db: any) {
     this.db = db;
   }
 
-  async getWorkspaceState(workspaceId) {
+  async getWorkspaceState(workspaceId: string) {
     return await this.db.getWorkspaceState(workspaceId);
   }
 
-  async saveWorkspaceState(workspaceId, payload) {
+  async saveWorkspaceState(workspaceId: string, payload: any) {
     return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 
-  async updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {
+  async updateWorkspaceMemberRole(workspaceId: string, targetUserId: string, memberRole: string) {
     return await this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
   }
 
-  async getMembership(workspaceId, userId) {
+  async getMembership(workspaceId: string, userId: string) {
     return await this.db.getMembership(workspaceId, userId);
   }
 
-  async getWorkspaceVoiceProfiles(workspaceId) {
+  async getWorkspaceVoiceProfiles(workspaceId: string) {
     return await this.db.getWorkspaceVoiceProfiles(workspaceId);
   }
 
-  async getWorkspaceMemberNames(workspaceId) {
+  async getWorkspaceMemberNames(workspaceId: string) {
     const members = await this.db.workspaceMembers(workspaceId);
-    return members.map((u) => u.name);
+    return members.map((u: any) => u.name);
   }
 
-  async saveVoiceProfile(data) {
+  async saveVoiceProfile(data: any) {
     return await this.db.saveVoiceProfile(data);
   }
 
-  async deleteVoiceProfile(id, workspaceId) {
+  async deleteVoiceProfile(id: string, workspaceId: string) {
     return await this.db.deleteVoiceProfile(id, workspaceId);
   }
 }
 
-module.exports = WorkspaceService;

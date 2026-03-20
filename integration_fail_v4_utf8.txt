@@ -1,0 +1,50 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/Users/user/new/audioRecorder[39m
+
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mregisters a user and enters the workspace
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mresets password end to end and logs in with the new password
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mswitches between shared workspaces
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mexports meeting notes from the studio view
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mexports meeting pdf from the studio view
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows task deadlines in the calendar and opens the task details
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22madds a manual task from the tasks tab
+ [31m├Ś[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mrestores an autosaved meeting draft after refresh[33m 5028[2mms[22m[39m
+[31m   Ôćĺ Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows notification center items and requests browser notification permission
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mopens task details from the command palette
+ [2m[90mÔćô[39m[22m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows a microphone error for ad hoc recording when permission is blocked
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Tests 1 [49m[22m[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m src/App.integration.test.tsx[2m > [22mApp integration[2
+m > [22mrestores an autosaved meeting draft after refresh
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configu
+re it globally with "testTimeout".[39m
+[36m [2mÔŁ»[22m src/App.integration.test.tsx:[2m291:3[22m[39m
+    [90m289|[39m   })[33m;[39m
+    [90m290|[39m
+    [90m291|[39m   test("restores an autosaved meeting draft after refresh", async
+ () =ÔÇŽ
+    [90m   |[39m   [31m^[39m
+    [90m292|[39m     [34mseedWorkspaceAppState[39m()[33m;[39m
+    [90m293|[39m     [35mconst[39m { unmount } [33m=[39m [34mrender[39m([33
+m<[39m[33mApp[39m [33m/[39m[33m>[39m)[33m;[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/
+1]ÔÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[33m10 skipped[39m[90m (11)[39m
+[2m   Start at [22m 09:35:02
+[2m   Duration [22m 8.20s[2m (transform 1.30s, setup 166ms, import 1.51s, tests 5.03s, environment 1.20s)[22m
+

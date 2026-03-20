@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+import fs from "node:fs";
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const rateLimitMap = new Map();
@@ -10,7 +10,7 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-function checkRateLimit(ip, route, max = 10) {
+export function checkRateLimit(ip: string, route: string, max = 10) {
   const key = `${ip}:${route}`;
   const now = Date.now();
   let entry = rateLimitMap.get(key);
@@ -23,14 +23,14 @@ function checkRateLimit(ip, route, max = 10) {
   entry.count += 1;
   if (entry.count > max) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    const error = new Error("Zbyt wiele prob. Sprobuj ponownie za chwile.");
+    const error = new Error("Zbyt wiele prob. Sprobuj ponownie za chwile.") as any;
     error.statusCode = 429;
     error.retryAfter = retryAfter;
     throw error;
   }
 }
 
-function corsHeaders(requestOrigin, allowedOrigins = "http://localhost:3000") {
+export function corsHeaders(requestOrigin: string, allowedOrigins = "http://localhost:3000") {
   const allowed = allowedOrigins.split(",").map(s => s.trim()).filter(Boolean);
   const allowAny = allowed.includes("*");
   const src = String(requestOrigin || "");
@@ -47,7 +47,7 @@ function corsHeaders(requestOrigin, allowedOrigins = "http://localhost:3000") {
   };
 }
 
-function securityHeaders() {
+export function securityHeaders() {
   return {
     "Content-Security-Policy": "default-src 'none'",
     "X-Content-Type-Options": "nosniff",
@@ -55,7 +55,7 @@ function securityHeaders() {
   };
 }
 
-function sendJson(response, statusCode, payload, origin, allowedOrigins) {
+export function sendJson(response: any, statusCode: number, payload: any, origin: string, allowedOrigins: string) {
   response.writeHead(statusCode, {
     ...corsHeaders(origin, allowedOrigins),
     ...securityHeaders(),
@@ -64,7 +64,7 @@ function sendJson(response, statusCode, payload, origin, allowedOrigins) {
   response.end(JSON.stringify(payload));
 }
 
-function sendText(response, statusCode, body, origin, allowedOrigins) {
+export function sendText(response: any, statusCode: number, body: string, origin: string, allowedOrigins: string) {
   response.writeHead(statusCode, {
     ...corsHeaders(origin, allowedOrigins),
     ...securityHeaders(),
@@ -73,14 +73,14 @@ function sendText(response, statusCode, body, origin, allowedOrigins) {
   response.end(body);
 }
 
-function sendNoContent(response, origin, allowedOrigins) {
+export function sendNoContent(response: any, origin: string, allowedOrigins: string) {
   response.writeHead(204, { ...corsHeaders(origin, allowedOrigins), ...securityHeaders() });
   response.end();
 }
 
-function readJsonBody(request, maxBytes = 1024 * 1024) {
+export function readJsonBody(request: any, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    let chunks = [];
+    let chunks: any[] = [];
     let received = 0;
 
     const cleanup = () => {
@@ -88,10 +88,10 @@ function readJsonBody(request, maxBytes = 1024 * 1024) {
       received = 0;
     };
 
-    request.on("data", (chunk) => {
+    request.on("data", (chunk: any) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
-        const error = new Error("Ładunek JSON przekracza maksymalny rozmiar.");
+        const error = new Error("Ładunek JSON przekracza maksymalny rozmiar.") as any;
         error.statusCode = 413;
         cleanup();
         reject(error);
@@ -110,7 +110,7 @@ function readJsonBody(request, maxBytes = 1024 * 1024) {
         cleanup();
       }
     });
-    request.on("error", (err) => {
+    request.on("error", (err: any) => {
       cleanup();
       reject(err);
     });
@@ -123,9 +123,9 @@ function readJsonBody(request, maxBytes = 1024 * 1024) {
   });
 }
 
-function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
+export function readBinaryBody(request: any, maxBytes = 100 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    let chunks = [];
+    let chunks: any[] = [];
     let received = 0;
 
     const cleanup = () => {
@@ -133,12 +133,12 @@ function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
       received = 0;
     };
 
-    request.on("data", (chunk) => {
+    request.on("data", (chunk: any) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
         request.removeAllListeners("data");
         request.resume();
-        const error = new Error("Przesłany plik przekracza maksymalny rozmiar.");
+        const error = new Error("Przesłany plik przekracza maksymalny rozmiar.") as any;
         error.statusCode = 413;
         cleanup();
         reject(error);
@@ -151,7 +151,7 @@ function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
       cleanup();
       resolve(buf);
     });
-    request.on("error", (err) => {
+    request.on("error", (err: any) => {
       cleanup();
       reject(err);
     });
@@ -164,20 +164,9 @@ function readBinaryBody(request, maxBytes = 100 * 1024 * 1024) {
   });
 }
 
-function getBearerToken(request) {
+export function getBearerToken(request: any) {
   const header = String(request.headers.authorization || "");
   if (!header.startsWith("Bearer ")) return "";
   return header.slice(7).trim();
 }
 
-module.exports = {
-  checkRateLimit,
-  sendJson,
-  sendText,
-  sendNoContent,
-  readJsonBody,
-  readBinaryBody,
-  getBearerToken,
-  securityHeaders,
-  corsHeaders,
-};

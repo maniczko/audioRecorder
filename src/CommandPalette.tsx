@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { List } from "react-window";
 import { filterCommandPaletteItems } from "./lib/commandPalette";
 import './CommandPaletteStyles.css';
 
@@ -18,7 +17,6 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const resultButtonsRef = useRef([]);
-  const listRef = useRef(null);
 
   const filteredItems = useMemo(() => filterCommandPaletteItems(items, query), [items, query]);
   const grouped = useMemo(() => groupedItems(filteredItems), [filteredItems]);
@@ -77,67 +75,15 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
     };
   }, [activeIndex, filteredItems, onClose, onSelect, open]);
 
-  const flattenedItems = useMemo(() => {
-    const list = [];
-    for (const [group, groupItems] of grouped.entries()) {
-      list.push({ isGroup: true, id: `group-${group}`, group });
-      for (const item of groupItems) {
-        list.push({ isGroup: false, id: item.id, item });
-      }
-    }
-    return list;
-  }, [grouped]);
-
   useEffect(() => {
-    if (listRef.current && flattenedItems.length) {
-      const flatIndex = flattenedItems.findIndex((x) => !x.isGroup && x.item === filteredItems[activeIndex]);
-      if (flatIndex !== -1) {
-        listRef.current.scrollToItem(flatIndex, "smart");
-      }
+    if (resultButtonsRef.current[activeIndex]) {
+      resultButtonsRef.current[activeIndex].scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
-  }, [activeIndex, flattenedItems, filteredItems]);
-
-  const getItemSize = (index) => flattenedItems[index]?.isGroup ? 40 : 56;
+  }, [activeIndex]);
 
   if (!open) {
     return null;
   }
-
-  const Row = ({ index, style }) => {
-    const data = flattenedItems[index];
-
-    if (data.isGroup) {
-      return (
-        <div style={{ ...style, display: "flex", alignItems: "flex-end", paddingBottom: "4px" }} className="command-palette-group">
-          <div className="command-palette-group-label" style={{ margin: 0 }}>{data.group}</div>
-        </div>
-      );
-    }
-
-    const { item } = data;
-    const itemIndex = filteredItems.indexOf(item);
-
-    return (
-      <div style={style}>
-        <button
-          ref={(node) => {
-            resultButtonsRef.current[itemIndex] = node;
-          }}
-          type="button"
-          className={itemIndex === activeIndex ? "command-result active" : "command-result"}
-          style={{ width: "100%", height: "100%", margin: 0 }}
-          onMouseEnter={() => setActiveIndex(itemIndex)}
-          onClick={() => onSelect(item)}
-        >
-          <div>
-            <strong>{item.title}</strong>
-            <span>{item.subtitle}</span>
-          </div>
-          <small>{item.type}</small>
-        </button>
-      </div>
-    );
-  };
 
   return (
     <div className="command-palette-backdrop" onClick={onClose}>
@@ -170,16 +116,34 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
 
         <div className="command-palette-results">
           {filteredItems.length ? (
-            <List
-              ref={listRef}
-              height={360}
-              width="100%"
-              itemCount={flattenedItems.length}
-              itemSize={getItemSize}
-              overscanCount={5}
-            >
-              {Row}
-            </List>
+            Array.from(grouped.entries()).map(([group, groupItems]) => (
+              <div key={group} className="command-palette-group">
+                <div className="command-palette-group-label">{group}</div>
+                <div className="command-palette-group-items">
+                  {groupItems.map((item) => {
+                    const itemIndex = filteredItems.indexOf(item);
+                    return (
+                      <button
+                        key={item.id}
+                        ref={(node) => {
+                          resultButtonsRef.current[itemIndex] = node;
+                        }}
+                        type="button"
+                        className={itemIndex === activeIndex ? "command-result active" : "command-result"}
+                        onMouseEnter={() => setActiveIndex(itemIndex)}
+                        onClick={() => onSelect(item)}
+                      >
+                        <div>
+                          <strong>{item.title}</strong>
+                          <span>{item.subtitle}</span>
+                        </div>
+                        <small>{item.type}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           ) : (
             <div className="empty-panel">
               <strong>Brak wynikow</strong>

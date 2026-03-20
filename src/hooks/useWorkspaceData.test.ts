@@ -2,21 +2,22 @@ import { renderHook, act } from '@testing-library/react';
 import useWorkspaceData from './useWorkspaceData';
 
 // Mock dependencies
-// Mock dependencies
-jest.mock('./useStoredState', () => (key, initialValue) => [initialValue, jest.fn()]);
+vi.mock('./useStoredState', () => ({
+  default: (key, initialValue) => [initialValue, vi.fn()]
+}));
 
-jest.mock('../services/stateService', () => ({
-  createStateService: jest.fn(() => ({
+vi.mock('../services/stateService', () => ({
+  createStateService: vi.fn(() => ({
     mode: 'local',
-    bootstrap: jest.fn().mockResolvedValue({}),
-    syncWorkspaceState: jest.fn().mockResolvedValue({}),
+    bootstrap: vi.fn().mockResolvedValue({}),
+    syncWorkspaceState: vi.fn().mockResolvedValue({}),
   }))
 }));
 
 
-jest.mock('../lib/workspace', () => ({
+vi.mock('../lib/workspace', () => ({
   __esModule: true,
-  migrateWorkspaceData: jest.fn((data) => ({ changed: false, ...data }))
+  migrateWorkspaceData: vi.fn((data) => ({ changed: false, ...data }))
 }));
 
 
@@ -24,16 +25,16 @@ describe('useWorkspaceData hook', () => {
 
   const defaultProps = {
     users: [],
-    setUsers: jest.fn(),
+    setUsers: vi.fn(),
     workspaces: [],
-    setWorkspaces: jest.fn(),
+    setWorkspaces: vi.fn(),
     session: { token: 'mock-token', userId: 'user1', workspaceId: 'ws1' },
-    setSession: jest.fn(),
+    setSession: vi.fn(),
     currentWorkspaceId: 'ws1',
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('should initialize with default states', () => {

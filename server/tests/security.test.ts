@@ -1,17 +1,16 @@
-const bootstrap = require("../index.ts");
-const http = require("node:http");
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import bootstrap from "../index.ts";
+import http from "node:http";
 
 describe("API Security Regression Tests", () => {
-  let server, db, authService;
-  let port;
-  let baseUrl;
-  let testUserToken;
+  let server: any, authService: any;
+  let port: number;
+  let testUserToken: string;
 
   beforeAll(async () => {
     // Bootstrap services and server
-    const resources = await bootstrap();
+    const resources: any = await bootstrap();
     server = resources.server;
-    db = resources.db;
     authService = resources.authService;
 
     // Start the server on a random available port
@@ -20,7 +19,6 @@ describe("API Security Regression Tests", () => {
     });
 
     port = server.address().port;
-    baseUrl = `http://127.0.0.1:${port}`;
     
     // Seed a test user for authenticated endpoints
     try {
@@ -87,7 +85,7 @@ describe("API Security Regression Tests", () => {
     const body = JSON.stringify({ name: largeString });
     
     // We send this intentionally big JSON payload
-    const res = await makeRequest("POST", "/voice-profiles", {
+    const res: any = await makeRequest("POST", "/voice-profiles", {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body),
       "Authorization": `Bearer ${testUserToken}`,
@@ -98,7 +96,7 @@ describe("API Security Regression Tests", () => {
   });
 
   test("[H-04] GET /health - Should not leak dbPath or uploadDir (Information Disclosure)", async () => {
-    const res = await makeRequest("GET", "/health");
+    const res: any = await makeRequest("GET", "/health");
     const json = JSON.parse(res.body);
 
     expect(res.statusCode).toBe(200);
@@ -112,7 +110,7 @@ describe("API Security Regression Tests", () => {
   test("[M-03] GET /media/recordings/:id/audio - Should fallback Content-Type if invalid (Stored XSS)", async () => {
     // This requires a mock recording, we will test the /media route behavior 
     // Usually invalid IDs should return 404, we just want to ensure it doesn't crash
-    const res = await makeRequest("GET", "/media/recordings/non_existent_id/audio", {
+    const res: any = await makeRequest("GET", "/media/recordings/non_existent_id/audio", {
       "Authorization": `Bearer ${testUserToken}`
     });
 
@@ -128,7 +126,7 @@ describe("API Security Regression Tests", () => {
     const body = JSON.stringify({ someKey: "value" });
     const hugeHeader = "b".repeat(5000); 
 
-    const res = await makeRequest("POST", "/voice-profiles", {
+    const res: any = await makeRequest("POST", "/voice-profiles", {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body),
       "Authorization": `Bearer ${testUserToken}`,
@@ -143,7 +141,7 @@ describe("API Security Regression Tests", () => {
   test("[H-02] X-Forwarded-For Spoofing Bypass check", async () => {
     // Attackers usually bypass rate limits by spoofing this
     const body = JSON.stringify({ email: "rate-limit-test@example.com" });
-    const res = await makeRequest("POST", "/auth/login", {
+    const res: any = await makeRequest("POST", "/auth/login", {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body),
       // Maledicted header!

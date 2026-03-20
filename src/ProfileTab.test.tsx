@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ProfileTab from "./ProfileTab";
+import { vi, describe, test, expect } from "vitest";
 
 describe("ProfileTab", () => {
   const mockUser = {
@@ -29,20 +30,20 @@ describe("ProfileTab", () => {
   const defaultProps = {
     currentUser: mockUser,
     profileDraft: mockProfileDraft,
-    setProfileDraft: jest.fn(),
-    saveProfile: jest.fn(e => e.preventDefault()),
+    setProfileDraft: vi.fn(),
+    saveProfile: vi.fn(e => e.preventDefault()),
     profileMessage: "",
     googleEnabled: true,
     googleCalendarStatus: "idle",
     googleCalendarMessage: "",
     googleCalendarEventsCount: 0,
     googleCalendarLastSyncedAt: null,
-    connectGoogleCalendar: jest.fn(),
-    disconnectGoogleCalendar: jest.fn(),
-    refreshGoogleCalendar: jest.fn(),
+    connectGoogleCalendar: vi.fn(),
+    disconnectGoogleCalendar: vi.fn(),
+    refreshGoogleCalendar: vi.fn(),
     passwordDraft: { currentPassword: "", newPassword: "", confirmPassword: "" },
-    setPasswordDraft: jest.fn(),
-    updatePassword: jest.fn(e => e.preventDefault()),
+    setPasswordDraft: vi.fn(),
+    updatePassword: vi.fn(e => e.preventDefault()),
     securityMessage: "",
     googleTasksEnabled: true,
     googleTasksStatus: "idle",
@@ -50,40 +51,40 @@ describe("ProfileTab", () => {
     googleTasksLastSyncedAt: null,
     googleTaskLists: [],
     selectedGoogleTaskListId: "",
-    onSelectGoogleTaskList: jest.fn(),
-    onConnectGoogleTasks: jest.fn(),
-    onImportGoogleTasks: jest.fn(),
-    onExportGoogleTasks: jest.fn(),
-    onRefreshGoogleTasks: jest.fn(),
+    onSelectGoogleTaskList: vi.fn(),
+    onConnectGoogleTasks: vi.fn(),
+    onImportGoogleTasks: vi.fn(),
+    onExportGoogleTasks: vi.fn(),
+    onRefreshGoogleTasks: vi.fn(),
     workspaceRole: "owner",
-    onLogout: jest.fn(),
+    onLogout: vi.fn(),
     theme: "dark",
-    onToggleTheme: jest.fn(),
+    onSetTheme: vi.fn(),
     allTags: [{ tag: "important", taskCount: 2, meetingCount: 1 }],
-    onRenameTag: jest.fn(),
-    onDeleteTag: jest.fn(),
+    onRenameTag: vi.fn(),
+    onDeleteTag: vi.fn(),
     vocabulary: ["Antigravity"],
-    onUpdateVocabulary: jest.fn(),
+    onUpdateVocabulary: vi.fn(),
     sessionToken: "test_token",
     apiBaseUrl: "http://localhost:4000",
   };
 
   test("renders profile information correctly", () => {
-    render(<ProfileTab {...defaultProps} />);
+    render(<ProfileTab {...defaultProps as any} />);
     expect(screen.getByText("Anna Nowak")).toBeInTheDocument();
     expect(screen.getByText(/Product Manager/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue("Anna Nowak")).toBeInTheDocument();
   });
 
-  test("calls onToggleTheme when theme button is clicked", () => {
-    render(<ProfileTab {...defaultProps} />);
+  test("calls onSetTheme when theme button is clicked", () => {
+    render(<ProfileTab {...defaultProps as any} />);
     const themeBtn = screen.getByText(/Jasny/i); // Current is dark, button shows "Jasny"
     fireEvent.click(themeBtn);
-    expect(defaultProps.onToggleTheme).toHaveBeenCalled();
+    expect(defaultProps.onSetTheme).toHaveBeenCalledWith("light");
   });
 
   test("renames a tag in the tag manager", () => {
-    render(<ProfileTab {...defaultProps} />);
+    render(<ProfileTab {...defaultProps as any} />);
     const tagBtn = screen.getByText("#important");
     fireEvent.click(tagBtn);
     
@@ -95,7 +96,7 @@ describe("ProfileTab", () => {
   });
 
   test("adds a term to vocabulary", () => {
-    render(<ProfileTab {...defaultProps} />);
+    render(<ProfileTab {...defaultProps as any} />);
     const input = screen.getByPlaceholderText(/np. Antigravity/i);
     fireEvent.change(input, { target: { value: "Kubernetes" } });
     fireEvent.submit(input);
@@ -104,7 +105,7 @@ describe("ProfileTab", () => {
   });
 
   test("calls onLogout when logout button is clicked", () => {
-    render(<ProfileTab {...defaultProps} />);
+    render(<ProfileTab {...defaultProps as any} />);
     const logoutBtn = screen.getByText("Wyloguj");
     fireEvent.click(logoutBtn);
     expect(defaultProps.onLogout).toHaveBeenCalled();

@@ -1,10 +1,16 @@
-const path = require("node:path");
-const fs = require("node:fs");
-const { initDatabase, getDatabase } = require("../database.ts");
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import path from "node:path";
+import fs from "node:fs";
+import { initDatabase, getDatabase } from "../database.ts";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("Database (Async Worker SQLite)", () => {
-  let db;
+  let db: any;
   const testUploadDir = path.resolve(__dirname, "test_uploads_db_layer");
+
 
   beforeAll(async () => {
     db = initDatabase({ dbPath: ":memory:", uploadDir: testUploadDir });

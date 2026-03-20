@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import useWorkspace from "../hooks/useWorkspace";
 import useAuth from "../hooks/useAuth";
 
-const WorkspaceContext = createContext(null);
+export const WorkspaceContext = createContext(null);
 
 export function WorkspaceProvider({ children }) {
   const workspace = useWorkspace();

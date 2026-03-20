@@ -501,7 +501,7 @@ export default function StudioMeetingView({
       {/* ═══════════════════════════════════════════
            TOOLBAR — Grupa 1: Eksport/Brief | Separator | Grupa 2: Nagrywanie
           ═══════════════════════════════════════════ */}
-      <div className="ff-toolbar">
+      <div className="ff-toolbar" data-testid="studio-toolbar">
 
         {/* ── Grupa 1: Zakładki/Eksport (zawsze widoczne) ── */}
         <button type="button" className="ff-tb-btn" onClick={exportMeetingNotes}

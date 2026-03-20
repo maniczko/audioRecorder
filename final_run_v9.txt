@@ -1,0 +1,3974 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/Users/user/new/audioRecorder[39m
+
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mregisters a user and enters the workspace[33m 555[2mms[22m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mresets password end to end and logs in with the new password[33m 555[2mms[22m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mswitches between shared workspaces[33m 411[2mms[22m[39m
+ [31m├Ś[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mexports meeting notes from the studio view[33m 15157[2mms[22m[39m
+[31m   Ôćĺ Unable to find an element by: [data-testid="studio-toolbar"]
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxml...
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxml...[39m
+ [31m├Ś[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mexports meeting pdf from the studio view[33m 15173[2mms[22m[39m
+[31m   Ôćĺ Unable to find an element by: [data-testid="studio-toolbar"]
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxml...
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxml...[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows task deadlines in the calendar and opens the task details[33m 1054[2mms[22m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22madds a manual task from the tasks tab[33m 783[2mms[22m[39m
+ [31m├Ś[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mrestores an autosaved meeting draft after refresh[33m 16767[2mms[22m[39m
+[31m   Ôćĺ Unable to find an element with the display value: Plan retro.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<polyline[31m
+                  [33mpoints[31m=[32m"9 11 12 14 22 4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mZadania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Osoby"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[31m
+                [36m/>[31m
+                [36m<circle[31m
+                  [33mcx[31m=[32m"9"[31m
+                  [33mcy[31m=[32m"7"[31m
+                  [33mr[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M16 3.13a4 4 0 0 1 0 7.75"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mOsoby[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Notatki"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"[31m
+                [36m/>[31m
+                [36m<polyline[31m
+                  [33mpoints[31m=[32m"14 2 14 8 20 8"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"13"[31m
+                  [33my2[31m=[32m"13"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"17"[31m
+                  [33my2[31m=[32m"17"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"10"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"9"[31m
+                  [33my2[31m=[32m"9"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNotatki[0m
+              [36m</span>[31m
+            [36m</button>[31m
+          [36m</div>[31m
+        [36m</div>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-actions"[31m
+        [36m>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"notification-anchor"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Powiadomienia"[31m
+              [33mclass[31m=[32m"notification-trigger"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<span[31m
+                [33mclass[31m=[32m"notification-trigger-icon"[31m
+              [36m>[31m
+                [0mÔĆ░[0m
+              [36m</span>[31m
+            [36m</button>[31m
+          [36m</div>[31m
+          [36m<button[31m
+            [33mclass[31m=[32m"ghost-button command-palette-launcher"[31m
+            [33mtype[31m=[32m"button"[31m
+          [36m>[31m
+            [0mSzukaj[0m
+            [36m<span>[31m
+              [0mCtrl+K[0m
+            [36m</span>[31m
+          [36m</button>[31m
+          [36m<button[31m
+            [33mclass[31m=[32m"topbar-record-btn"[31m
+            [33mtitle[31m=[32m"Nagranie ad hoc"[31m
+            [33mtype[31m=[32m"button"[31m
+          [36m>[31m
+            [36m<span[31m
+              [33mclass[31m=[32m"topbar-record-dot"[31m
+            [36m/>[31m
+            [0mNagraj[0m
+          [36m</button>[31m
+          [36m<label[31m
+            [33mclass[31m=[32m"workspace-switch"[31m
+          [36m>[31m
+            [36m<span>[31m
+              [0mWorkspace[0m
+            [36m</span>[31m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"workspace_1"[31m
+              [36m>[31m
+                [0mWorkspace One[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"workspace_2"[31m
+              [36m>[31m
+                [0mWorkspace Two[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"user-card"[31m
+          [36m>[31m
+            [36m<div>[31m
+              [36m<strong>[31m
+                [0mAnna Nowak[0m
+              [36m</strong>[31m
+              [36m<span>[31m
+                [0mPM[0m
+              [36m</span>[31m
+            [36m</div>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Otworz ustawienia"[31m
+              [33mclass[31m=[32m"settings-button"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔÜÖ[0m
+            [36m</button>[31m
+          [36m</div>[31m
+        [36m</div>[31m
+      [36m</header>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"workspace-layout"[31m
+      [36m>[31m
+        [36m<aside[31m
+          [33mclass[31m=[32m"workspace-sidebar"[31m
+        [36m>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"panel"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"panel-header compact"[31m
+            [36m>[31m
+              [36m<div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"eyebrow"[31m
+                [36m>[31m
+                  [0mMeeting brief[0m
+                [36m</div>[31m
+                [36m<h2>[31m
+                  [0mNowe spotkanie[0m
+                [36m</h2>[31m
+              [36m</div>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"ghost-button"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0m+ Nowe[0m
+              [36m</button>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"brief-tab-bar"[31m
+            [36m>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"brief-tab active"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mPodstawowe[0m
+              [36m</button>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"brief-tab"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mSzczeg├│┼éy[0m
+              [36m</button>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"stack-form brief-form-section"[31m
+            [36m>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mTytu┼é [0m
+                  [36m<span[31m
+                    [33mclass[31m=[32m"required-star"[31m
+                  [36m>[31m
+                    [0m*[0m
+                  [36m</span>[31m
+                [36m</span>[31m
+                [36m<input[31m
+                  [33mplaceholder[31m=[32m"np. Spotkanie z klientem"[31m
+                  [33mvalue[31m=[32m""[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mKontekst[0m
+                [36m</span>[31m
+                [36m<textarea[31m
+                  [33mplaceholder[31m=[32m"O czym b─Ödzie to spotkanie?"[31m
+                  [33mrows[31m=[32m"3"[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label[31m
+                [33mclass[31m=[32m"full"[31m
+              [36m>[31m
+                [36m<span>[31m
+                  [0mTermin[0m
+                [36m</span>[31m
+                [36m<input[31m
+                  [33mtype[31m=[32m"datetime-local"[31m
+                  [33mvalue[31m=[32m"2026-03-20T10:22"[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mCzas trwania[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"duration-picker"[31m
+                [36m>[31m
+                  [36m<select>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"15"[31m
+                    [36m>[31m
+                      [0m15 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"30"[31m
+                    [36m>[31m
+                      [0m30 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"45"[31m
+                    [36m>[31m
+                      [0m45 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"60"[31m
+                    [36m>[31m
+                      [0m1 godz[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"custom"[31m
+                    [36m>[31m
+                      [0mW┼éasny czas[0m
+                    [36m</option>[31m
+                  [36m</select>[31m
+                [36m</div>[31m
+              [36m</label>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"brief-attendees-field"[31m
+              [36m>[31m
+                [36m<span[31m
+                  [33mclass[31m=[32m"brief-field-label"[31m
+                [36m>[31m
+                  [0mUczestnicy[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendees-chips"[31m
+                [36m/>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendee-input-wrap"[31m
+                [36m>[31m
+                  [36m<input[31m
+                    [33mclass[31m=[32m"brief-attendee-input"[31m
+                    [33mplaceholder[31m=[32m"Dodaj uczestnika..."[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m/>[31m
+                [36m</div>[31m
+              [36m</div>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"brief-attendees-field"[31m
+              [36m>[31m
+                [36m<span[31m
+                  [33mclass[31m=[32m"brief-field-label"[31m
+                [36m>[31m
+                  [0mTagi[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendees-chips"[31m
+                [36m/>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendee-input-wrap"[31m
+                [36m>[31m
+                  [36m<input[31m
+                    [33mclass[31m=[32m"brief-attendee-input"[31m
+                    [33mplaceholder[31m=[32m"Dodaj tag..."[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m/>[31m
+                [36m</div>[31m
+              [36m</div>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"button-row brief-actions"[31m
+            [36m>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"primary-button"[31m
+                [33mdisabled[31m=[32m""[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mUtw├│rz spotkanie[0m
+              [36m</button>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"ghost-button"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mAnuluj[0m
+              [36m</button>[31m
+            [36m</div>[31m
+          [36m</section>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"panel sidebar-recordings-panel"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"panel-header compact"[31m
+            [36m>[31m
+              [36m<div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"eyebrow"[31m
+                [36m>[31m
+                  [0mArchiwum[0m
+                [36m</div>[31m
+                [36m<h2>[31m
+                  [0mNagrania[0m
+                [36m</h2>[31m
+              [36m</div>[31m
+              [36m<span[31m
+                [33mclass[31m=[32m"status-chip"[31m
+              [36m>[31m
+                [0m1[0m
+              [36m</span>[31m
+            [36m</div>[31m
+            [36m<ul[31m
+              [33mclass[31m=[32m"sidebar-recordings-list"[31m
+            [36m>[31m
+              [36m<li[31m
+                [33mclass[31m=[32m"sidebar-recording-item"[31m
+              [36m>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"sidebar-recording-title"[31m
+                [36m>[31m
+                  [0mSpotkanie A[0m
+                [36m</div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"sidebar-recording-meta"[31m
+                [36m>[31m
+                  [36m<span>[31m
+                    [0m20 mar 2026, 09:52[0m
+                  [36m</span>[31m
+                  [36m<span>[31m
+                    [0m02:00[0m
+                  [36m</span>[31m
+                  [36m<span[31m
+                    [33mclass[31m=[32m"status-chip status-chip-sm done"[31m
+                  [36m>[31m
+                    [0mdone[0m
+                  [36m</span>[31m
+                [36m</div>[31m
+              [36m</li>[31m
+            [36m</ul>[31m
+          [36m</section>[31m
+        [36m</aside>[31m
+        [36m<main[31m
+          [33mclass[31m=[32m"workspace-main"[31m
+          [33mstyle[31m=[32m"width: 100%;"[31m
+        [36m>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"hero-panel empty-workspace"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"empty-workspace-inner"[31m
+            [36m>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"eyebrow"[31m
+              [36m>[31m
+                [0mStudio[0m
+              [36m</div>[31m
+              [36m<h2>[31m
+                [0mBrak aktywnego spotkania[0m
+              [36m</h2>[31m
+              [36m<p>[31m
+                [0mPrzejd┼║ do zak┼éadki [0m
+                [36m<strong>[31m
+                  [0mNagrania[0m
+                [36m</strong>[31m
+                [0m, aby wybra─ç nagranie do analizy lub uruchom nagranie ad hoc.[0m
+              [36m</p>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"button-row"[31m
+              [36m>[31m
+                [36m<button[31m
+                  [33mclass[31m=[32m"primary-button"[31m
+                  [33mtype[31m=[32m"button"[31m
+                [36m>[31m
+                  [0mÔČĄ Nagraj ad hoc[0m
+                [36m</button>[31m
+                [36m<button[31m
+                  [33mclass[31m=[32m"ghost-button"[31m
+                  [33mtype[31m=[32m"button"[31m
+                [36m>[31m
+                  [0mPrzygotuj brief[0m
+                [36m</button>[31m
+              [36m</div>[31m
+            [36m</div>[31m
+          [36m</section>[31m
+        [36m</main>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"app-shell"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-left"[31m
+      [36m/>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"backdrop-orb backdrop-orb-right"[31m
+      [36m/>[31m
+      [36m<header[31m
+        [33mclass[31m=[32m"topbar"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-title"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"eyebrow"[31m
+            [36m>[31m
+              [0mVoiceLog OS[0m
+            [36m</div>[31m
+            [36m<h1>[31m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"tab-switcher"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[31m
+              [33mclass[31m=[32m"tab-back-btn"[31m
+              [33mtitle[31m=[32m"Cofnij"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔćÉ[0m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Studio"[31m
+              [33mclass[31m=[32m"tab-pill active"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"19"[31m
+                  [33my2[31m=[32m"22"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mStudio[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Nagrania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M11 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M15 3v4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M3 11h18"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNagrania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Kalendarz"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<rect[31m
+                  [33mheight[31m=[32m"18"[31m
+                  [33mrx[31m=[32m"2"[31m
+                  [33mry[31m=[32m"2"[31m
+                  [33mwidth[31m=[32m"18"[31m
+                  [33mx[31m=[32m"3"[31m
+                  [33my[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"16"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"8"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"2"[31m
+                  [33my2[31m=[32m"6"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"3"[31m
+                  [33mx2[31m=[32m"21"[31m
+                  [33my1[31m=[32m"10"[31m
+                  [33my2[31m=[32m"10"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mKalendarz[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Zadania"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<polyline[31m
+                  [33mpoints[31m=[32m"9 11 12 14 22 4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mZadania[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Osoby"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[31m
+                [36m/>[31m
+                [36m<circle[31m
+                  [33mcx[31m=[32m"9"[31m
+                  [33mcy[31m=[32m"7"[31m
+                  [33mr[31m=[32m"4"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[31m
+                [36m/>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M16 3.13a4 4 0 0 1 0 7.75"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mOsoby[0m
+              [36m</span>[31m
+            [36m</button>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Tab Notatki"[31m
+              [33mclass[31m=[32m"tab-pill"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"16"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"16"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<path[31m
+                  [33md[31m=[32m"M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"[31m
+                [36m/>[31m
+                [36m<polyline[31m
+                  [33mpoints[31m=[32m"14 2 14 8 20 8"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"13"[31m
+                  [33my2[31m=[32m"13"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"16"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"17"[31m
+                  [33my2[31m=[32m"17"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"10"[31m
+                  [33mx2[31m=[32m"8"[31m
+                  [33my1[31m=[32m"9"[31m
+                  [33my2[31m=[32m"9"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+              [36m<span>[31m
+                [0mNotatki[0m
+              [36m</span>[31m
+            [36m</button>[31m
+          [36m</div>[31m
+        [36m</div>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"topbar-actions"[31m
+        [36m>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"notification-anchor"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Powiadomienia"[31m
+              [33mclass[31m=[32m"notification-trigger"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<span[31m
+                [33mclass[31m=[32m"notification-trigger-icon"[31m
+              [36m>[31m
+                [0mÔĆ░[0m
+              [36m</span>[31m
+            [36m</button>[31m
+          [36m</div>[31m
+          [36m<button[31m
+            [33mclass[31m=[32m"ghost-button command-palette-launcher"[31m
+            [33mtype[31m=[32m"button"[31m
+          [36m>[31m
+            [0mSzukaj[0m
+            [36m<span>[31m
+              [0mCtrl+K[0m
+            [36m</span>[31m
+          [36m</button>[31m
+          [36m<button[31m
+            [33mclass[31m=[32m"topbar-record-btn"[31m
+            [33mtitle[31m=[32m"Nagranie ad hoc"[31m
+            [33mtype[31m=[32m"button"[31m
+          [36m>[31m
+            [36m<span[31m
+              [33mclass[31m=[32m"topbar-record-dot"[31m
+            [36m/>[31m
+            [0mNagraj[0m
+          [36m</button>[31m
+          [36m<label[31m
+            [33mclass[31m=[32m"workspace-switch"[31m
+          [36m>[31m
+            [36m<span>[31m
+              [0mWorkspace[0m
+            [36m</span>[31m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"workspace_1"[31m
+              [36m>[31m
+                [0mWorkspace One[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"workspace_2"[31m
+              [36m>[31m
+                [0mWorkspace Two[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"user-card"[31m
+          [36m>[31m
+            [36m<div>[31m
+              [36m<strong>[31m
+                [0mAnna Nowak[0m
+              [36m</strong>[31m
+              [36m<span>[31m
+                [0mPM[0m
+              [36m</span>[31m
+            [36m</div>[31m
+            [36m<button[31m
+              [33maria-label[31m=[32m"Otworz ustawienia"[31m
+              [33mclass[31m=[32m"settings-button"[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [0mÔÜÖ[0m
+            [36m</button>[31m
+          [36m</div>[31m
+        [36m</div>[31m
+      [36m</header>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"workspace-layout"[31m
+      [36m>[31m
+        [36m<aside[31m
+          [33mclass[31m=[32m"workspace-sidebar"[31m
+        [36m>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"panel"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"panel-header compact"[31m
+            [36m>[31m
+              [36m<div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"eyebrow"[31m
+                [36m>[31m
+                  [0mMeeting brief[0m
+                [36m</div>[31m
+                [36m<h2>[31m
+                  [0mNowe spotkanie[0m
+                [36m</h2>[31m
+              [36m</div>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"ghost-button"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0m+ Nowe[0m
+              [36m</button>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"brief-tab-bar"[31m
+            [36m>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"brief-tab active"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mPodstawowe[0m
+              [36m</button>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"brief-tab"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mSzczeg├│┼éy[0m
+              [36m</button>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"stack-form brief-form-section"[31m
+            [36m>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mTytu┼é [0m
+                  [36m<span[31m
+                    [33mclass[31m=[32m"required-star"[31m
+                  [36m>[31m
+                    [0m*[0m
+                  [36m</span>[31m
+                [36m</span>[31m
+                [36m<input[31m
+                  [33mplaceholder[31m=[32m"np. Spotkanie z klientem"[31m
+                  [33mvalue[31m=[32m""[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mKontekst[0m
+                [36m</span>[31m
+                [36m<textarea[31m
+                  [33mplaceholder[31m=[32m"O czym b─Ödzie to spotkanie?"[31m
+                  [33mrows[31m=[32m"3"[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label[31m
+                [33mclass[31m=[32m"full"[31m
+              [36m>[31m
+                [36m<span>[31m
+                  [0mTermin[0m
+                [36m</span>[31m
+                [36m<input[31m
+                  [33mtype[31m=[32m"datetime-local"[31m
+                  [33mvalue[31m=[32m"2026-03-20T10:22"[31m
+                [36m/>[31m
+              [36m</label>[31m
+              [36m<label>[31m
+                [36m<span>[31m
+                  [0mCzas trwania[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"duration-picker"[31m
+                [36m>[31m
+                  [36m<select>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"15"[31m
+                    [36m>[31m
+                      [0m15 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"30"[31m
+                    [36m>[31m
+                      [0m30 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"45"[31m
+                    [36m>[31m
+                      [0m45 min[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"60"[31m
+                    [36m>[31m
+                      [0m1 godz[0m
+                    [36m</option>[31m
+                    [36m<option[31m
+                      [33mvalue[31m=[32m"custom"[31m
+                    [36m>[31m
+                      [0mW┼éasny czas[0m
+                    [36m</option>[31m
+                  [36m</select>[31m
+                [36m</div>[31m
+              [36m</label>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"brief-attendees-field"[31m
+              [36m>[31m
+                [36m<span[31m
+                  [33mclass[31m=[32m"brief-field-label"[31m
+                [36m>[31m
+                  [0mUczestnicy[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendees-chips"[31m
+                [36m/>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendee-input-wrap"[31m
+                [36m>[31m
+                  [36m<input[31m
+                    [33mclass[31m=[32m"brief-attendee-input"[31m
+                    [33mplaceholder[31m=[32m"Dodaj uczestnika..."[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m/>[31m
+                [36m</div>[31m
+              [36m</div>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"brief-attendees-field"[31m
+              [36m>[31m
+                [36m<span[31m
+                  [33mclass[31m=[32m"brief-field-label"[31m
+                [36m>[31m
+                  [0mTagi[0m
+                [36m</span>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendees-chips"[31m
+                [36m/>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"brief-attendee-input-wrap"[31m
+                [36m>[31m
+                  [36m<input[31m
+                    [33mclass[31m=[32m"brief-attendee-input"[31m
+                    [33mplaceholder[31m=[32m"Dodaj tag..."[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m/>[31m
+                [36m</div>[31m
+              [36m</div>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"button-row brief-actions"[31m
+            [36m>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"primary-button"[31m
+                [33mdisabled[31m=[32m""[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mUtw├│rz spotkanie[0m
+              [36m</button>[31m
+              [36m<button[31m
+                [33mclass[31m=[32m"ghost-button"[31m
+                [33mtype[31m=[32m"button"[31m
+              [36m>[31m
+                [0mAnuluj[0m
+              [36m</button>[31m
+            [36m</div>[31m
+          [36m</section>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"panel sidebar-recordings-panel"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"panel-header compact"[31m
+            [36m>[31m
+              [36m<div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"eyebrow"[31m
+                [36m>[31m
+                  [0mArchiwum[0m
+                [36m</div>[31m
+                [36m<h2>[31m
+                  [0mNagrania[0m
+                [36m</h2>[31m
+              [36m</div>[31m
+              [36m<span[31m
+                [33mclass[31m=[32m"status-chip"[31m
+              [36m>[31m
+                [0m1[0m
+              [36m</span>[31m
+            [36m</div>[31m
+            [36m<ul[31m
+              [33mclass[31m=[32m"sidebar-recordings-list"[31m
+            [36m>[31m
+              [36m<li[31m
+                [33mclass[31m=[32m"sidebar-recording-item"[31m
+              [36m>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"sidebar-recording-title"[31m
+                [36m>[31m
+                  [0mSpotkanie A[0m
+                [36m</div>[31m
+                [36m<div[31m
+                  [33mclass[31m=[32m"sidebar-recording-meta"[31m
+                [36m>[31m
+                  [36m<span>[31m
+                    [0m20 mar 2026, 09:52[0m
+                  [36m</span>[31m
+                  [36m<span>[31m
+                    [0m02:00[0m
+                  [36m</span>[31m
+                  [36m<span[31m
+                    [33mclass[31m=[32m"status-chip status-chip-sm done"[31m
+                  [36m>[31m
+                    [0mdone[0m
+                  [36m</span>[31m
+                [36m</div>[31m
+              [36m</li>[31m
+            [36m</ul>[31m
+          [36m</section>[31m
+        [36m</aside>[31m
+        [36m<main[31m
+          [33mclass[31m=[32m"workspace-main"[31m
+          [33mstyle[31m=[32m"width: 100%;"[31m
+        [36m>[31m
+          [36m<section[31m
+            [33mclass[31m=[32m"hero-panel empty-workspace"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"empty-workspace-inner"[31m
+            [36m>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"eyebrow"[31m
+              [36m>[31m
+                [0mStudio[0m
+              [36m</div>[31m
+              [36m<h2>[31m
+                [0mBrak aktywnego spotkania[0m
+              [36m</h2>[31m
+              [36m<p>[31m
+                [0mPrzejd┼║ do zak┼éadki [0m
+                [36m<strong>[31m
+                  [0mNagrania[0m
+                [36m</strong>[31m
+                [0m, aby wybra─ç nagranie do analizy lub uruchom nagranie ad hoc.[0m
+              [36m</p>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"button-row"[31m
+              [36m>[31m
+                [36m<button[31m
+                  [33mclass[31m=[32m"primary-button"[31m
+                  [33mtype[31m=[32m"button"[31m
+                [36m>[31m
+                  [0mÔČĄ Nagraj ad hoc[0m
+                [36m</button>[31m
+                [36m<button[31m
+                  [33mclass[31m=[32m"ghost-button"[31m
+                  [33mtype[31m=[32m"button"[31m
+                [36m>[31m
+                  [0mPrzygotuj brief[0m
+                [36m</button>[31m
+              [36m</div>[31m
+            [36m</div>[31m
+          [36m</section>[31m
+        [36m</main>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows notification center items and requests browser notification permission[32m 286[2mms[22m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mopens task details from the command palette[33m 392[2mms[22m[39m
+ [32mÔťô[39m src/App.integration.test.tsx[2m > [22mApp integration[2m > [22mshows a microphone error for ad hoc recording when permission is blocked[32m 240[2mms[22m[39m
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Tests 3 [49m[22m[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m src/App.integration.test.tsx[2m > [22mApp integration[2
+m > [22mexports meeting notes from the studio view
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element by: [data-t
+estid="studio-toolbar"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxml...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxml...
+[90m [2mÔŁ»[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js
+:[2m163:27[22m[39m
+[90m [2mÔŁ»[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m86:33
+[22m[39m
+[36m [2mÔŁ»[22m src/App.integration.test.tsx:[2m205:34[22m[39m
+    [90m203|[39m
+    [90m204|[39m     [90m// Use data-testid to target the correct button[39m
+    [90m205|[39m     [35mconst[39m toolbar [33m=[39m [35mawait[39m screen[3
+3m.[39m[34mfindByTestId[39m([32m"studio-toolbar"[39m)[33m;[39m
+    [90m   |[39m                                  [31m^[39m
+    [90m206|[39m     const exportBtn = await within(toolbar).findByRole("button", 
+{ namÔÇŽ
+    [90m207|[39m     [35mawait[39m userEvent[33m.[39m[34mclick[39m(exportBtn
+)[33m;[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/
+3]ÔÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/App.integration.test.tsx[2m > [22mApp integration[2
+m > [22mexports meeting pdf from the studio view
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element by: [data-t
+estid="studio-toolbar"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxml...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxml...
+[90m [2mÔŁ»[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js
+:[2m163:27[22m[39m
+[90m [2mÔŁ»[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m86:33
+[22m[39m
+[36m [2mÔŁ»[22m src/App.integration.test.tsx:[2m231:34[22m[39m
+    [90m229|[39m     await userEvent.click(screen.getByRole("button", { name: "Tab
+ StudÔÇŽ
+    [90m230|[39m
+    [90m231|[39m     [35mconst[39m toolbar [33m=[39m [35mawait[39m screen[3
+3m.[39m[34mfindByTestId[39m([32m"studio-toolbar"[39m)[33m;[39m
+    [90m   |[39m                                  [31m^[39m
+    [90m232|[39m     const pdfBtn = await within(toolbar).findByRole("button", { n
+ame: ÔÇŽ
+    [90m233|[39m     [35mawait[39m userEvent[33m.[39m[34mclick[39m(pdfBtn)[
+33m;[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/
+3]ÔÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/App.integration.test.tsx[2m > [22mApp integration[2
+m > [22mrestores an autosaved meeting draft after refresh
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the di
+splay value: Plan retro.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<polyline[39m
+                  [33mpoints[39m=[32m"9 11 12 14 22 4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0
+ 1 2-2h11"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mZadania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Osoby"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"9"[39m
+                  [33mcy[39m=[32m"7"[39m
+                  [33mr[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 3.13a4 4 0 0 1 0 7.75"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mOsoby[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Notatki"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 
+0 0 0 2-2V7.5L14.5 2z"[39m
+                [36m/>[39m
+                [36m<polyline[39m
+                  [33mpoints[39m=[32m"14 2 14 8 20 8"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"13"[39m
+                  [33my2[39m=[32m"13"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"17"[39m
+                  [33my2[39m=[32m"17"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"10"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"9"[39m
+                  [33my2[39m=[32m"9"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNotatki[0m
+              [36m</span>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-actions"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notification-anchor"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Powiadomienia"[39m
+              [33mclass[39m=[32m"notification-trigger"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"notification-trigger-icon"[39m
+              [36m>[39m
+                [0mÔĆ░[0m
+              [36m</span>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"ghost-button command-palette-launcher"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSzukaj[0m
+            [36m<span>[39m
+              [0mCtrl+K[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"topbar-record-btn"[39m
+            [33mtitle[39m=[32m"Nagranie ad hoc"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"topbar-record-dot"[39m
+            [36m/>[39m
+            [0mNagraj[0m
+          [36m</button>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"workspace-switch"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mWorkspace[0m
+            [36m</span>[39m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"workspace_1"[39m
+              [36m>[39m
+                [0mWorkspace One[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"workspace_2"[39m
+              [36m>[39m
+                [0mWorkspace Two[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"user-card"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<strong>[39m
+                [0mAnna Nowak[0m
+              [36m</strong>[39m
+              [36m<span>[39m
+                [0mPM[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Otworz ustawienia"[39m
+              [33mclass[39m=[32m"settings-button"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔÜÖ[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"workspace-layout"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"workspace-sidebar"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"panel"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"panel-header compact"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"eyebrow"[39m
+                [36m>[39m
+                  [0mMeeting brief[0m
+                [36m</div>[39m
+                [36m<h2>[39m
+                  [0mNowe spotkanie[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"ghost-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0m+ Nowe[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"brief-tab-bar"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"brief-tab active"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mPodstawowe[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"brief-tab"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mSzczeg├│┼éy[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"stack-form brief-form-section"[39m
+            [36m>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mTytu┼é [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"required-star"[39m
+                  [36m>[39m
+                    [0m*[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+                [36m<input[39m
+                  [33mplaceholder[39m=[32m"np. Spotkanie z klientem"[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mKontekst[0m
+                [36m</span>[39m
+                [36m<textarea[39m
+                  [33mplaceholder[39m=[32m"O czym b─Ödzie to spotkanie?"[39m
+                  [33mrows[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"full"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0mTermin[0m
+                [36m</span>[39m
+                [36m<input[39m
+                  [33mtype[39m=[32m"datetime-local"[39m
+                  [33mvalue[39m=[32m"2026-03-20T10:22"[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mCzas trwania[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"duration-picker"[39m
+                [36m>[39m
+                  [36m<select>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"15"[39m
+                    [36m>[39m
+                      [0m15 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"30"[39m
+                    [36m>[39m
+                      [0m30 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"45"[39m
+                    [36m>[39m
+                      [0m45 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"60"[39m
+                    [36m>[39m
+                      [0m1 godz[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"custom"[39m
+                    [36m>[39m
+                      [0mW┼éasny czas[0m
+                    [36m</option>[39m
+                  [36m</select>[39m
+                [36m</div>[39m
+              [36m</label>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"brief-attendees-field"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"brief-field-label"[39m
+                [36m>[39m
+                  [0mUczestnicy[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendees-chips"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendee-input-wrap"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"brief-attendee-input"[39m
+                    [33mplaceholder[39m=[32m"Dodaj uczestnika..."[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"brief-attendees-field"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"brief-field-label"[39m
+                [36m>[39m
+                  [0mTagi[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendees-chips"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendee-input-wrap"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"brief-attendee-input"[39m
+                    [33mplaceholder[39m=[32m"Dodaj tag..."[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"button-row brief-actions"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"primary-button"[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mUtw├│rz spotkanie[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"ghost-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mAnuluj[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"panel sidebar-recordings-panel"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"panel-header compact"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"eyebrow"[39m
+                [36m>[39m
+                  [0mArchiwum[0m
+                [36m</div>[39m
+                [36m<h2>[39m
+                  [0mNagrania[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"status-chip"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<ul[39m
+              [33mclass[39m=[32m"sidebar-recordings-list"[39m
+            [36m>[39m
+              [36m<li[39m
+                [33mclass[39m=[32m"sidebar-recording-item"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"sidebar-recording-title"[39m
+                [36m>[39m
+                  [0mSpotkanie A[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"sidebar-recording-meta"[39m
+                [36m>[39m
+                  [36m<span>[39m
+                    [0m20 mar 2026, 09:52[0m
+                  [36m</span>[39m
+                  [36m<span>[39m
+                    [0m02:00[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"status-chip status-chip-sm done"[39m
+                  [36m>[39m
+                    [0mdone[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+              [36m</li>[39m
+            [36m</ul>[39m
+          [36m</section>[39m
+        [36m</aside>[39m
+        [36m<main[39m
+          [33mclass[39m=[32m"workspace-main"[39m
+          [33mstyle[39m=[32m"width: 100%;"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"hero-panel empty-workspace"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"empty-workspace-inner"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"eyebrow"[39m
+              [36m>[39m
+                [0mStudio[0m
+              [36m</div>[39m
+              [36m<h2>[39m
+                [0mBrak aktywnego spotkania[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mPrzejd┼║ do zak┼éadki [0m
+                [36m<strong>[39m
+                  [0mNagrania[0m
+                [36m</strong>[39m
+                [0m, aby wybra─ç nagranie do analizy lub uruchom nagranie ad hoc.[
+0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"button-row"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"primary-button"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mÔČĄ Nagraj ad hoc[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"ghost-button"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mPrzygotuj brief[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+        [36m</main>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-left"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"backdrop-orb backdrop-orb-right"[39m
+      [36m/>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-title"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"eyebrow"[39m
+            [36m>[39m
+              [0mVoiceLog OS[0m
+            [36m</div>[39m
+            [36m<h1>[39m
+              [0mMeeting intelligence studio[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"tab-switcher"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Wr├│─ç do poprzedniej zak┼éadki"[39m
+              [33mclass[39m=[32m"tab-back-btn"[39m
+              [33mtitle[39m=[32m"Cofnij"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔćÉ[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Studio"[39m
+              [33mclass[39m=[32m"tab-pill active"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-
+3-3Z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 10v2a7 7 0 0 1-14 0v-2"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"19"[39m
+                  [33my2[39m=[32m"22"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mStudio[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Nagrania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 19V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 
+0 0 2 2h16a2 2 0 0 0 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 21v-4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M11 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 3v4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 11h18"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNagrania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Kalendarz"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mrx[39m=[32m"2"[39m
+                  [33mry[39m=[32m"2"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"16"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"8"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"2"[39m
+                  [33my2[39m=[32m"6"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"3"[39m
+                  [33mx2[39m=[32m"21"[39m
+                  [33my1[39m=[32m"10"[39m
+                  [33my2[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mKalendarz[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Zadania"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<polyline[39m
+                  [33mpoints[39m=[32m"9 11 12 14 22 4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0
+ 1 2-2h11"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mZadania[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Osoby"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"9"[39m
+                  [33mcy[39m=[32m"7"[39m
+                  [33mr[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 3.13a4 4 0 0 1 0 7.75"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mOsoby[0m
+              [36m</span>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Tab Notatki"[39m
+              [33mclass[39m=[32m"tab-pill"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 
+0 0 0 2-2V7.5L14.5 2z"[39m
+                [36m/>[39m
+                [36m<polyline[39m
+                  [33mpoints[39m=[32m"14 2 14 8 20 8"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"13"[39m
+                  [33my2[39m=[32m"13"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"16"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"17"[39m
+                  [33my2[39m=[32m"17"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"10"[39m
+                  [33mx2[39m=[32m"8"[39m
+                  [33my1[39m=[32m"9"[39m
+                  [33my2[39m=[32m"9"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<span>[39m
+                [0mNotatki[0m
+              [36m</span>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"topbar-actions"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notification-anchor"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Powiadomienia"[39m
+              [33mclass[39m=[32m"notification-trigger"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"notification-trigger-icon"[39m
+              [36m>[39m
+                [0mÔĆ░[0m
+              [36m</span>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"ghost-button command-palette-launcher"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mSzukaj[0m
+            [36m<span>[39m
+              [0mCtrl+K[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"topbar-record-btn"[39m
+            [33mtitle[39m=[32m"Nagranie ad hoc"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"topbar-record-dot"[39m
+            [36m/>[39m
+            [0mNagraj[0m
+          [36m</button>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"workspace-switch"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mWorkspace[0m
+            [36m</span>[39m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"workspace_1"[39m
+              [36m>[39m
+                [0mWorkspace One[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"workspace_2"[39m
+              [36m>[39m
+                [0mWorkspace Two[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"user-card"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<strong>[39m
+                [0mAnna Nowak[0m
+              [36m</strong>[39m
+              [36m<span>[39m
+                [0mPM[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Otworz ustawienia"[39m
+              [33mclass[39m=[32m"settings-button"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mÔÜÖ[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"workspace-layout"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"workspace-sidebar"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"panel"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"panel-header compact"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"eyebrow"[39m
+                [36m>[39m
+                  [0mMeeting brief[0m
+                [36m</div>[39m
+                [36m<h2>[39m
+                  [0mNowe spotkanie[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"ghost-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0m+ Nowe[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"brief-tab-bar"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"brief-tab active"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mPodstawowe[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"brief-tab"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mSzczeg├│┼éy[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"stack-form brief-form-section"[39m
+            [36m>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mTytu┼é [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"required-star"[39m
+                  [36m>[39m
+                    [0m*[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+                [36m<input[39m
+                  [33mplaceholder[39m=[32m"np. Spotkanie z klientem"[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mKontekst[0m
+                [36m</span>[39m
+                [36m<textarea[39m
+                  [33mplaceholder[39m=[32m"O czym b─Ödzie to spotkanie?"[39m
+                  [33mrows[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"full"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0mTermin[0m
+                [36m</span>[39m
+                [36m<input[39m
+                  [33mtype[39m=[32m"datetime-local"[39m
+                  [33mvalue[39m=[32m"2026-03-20T10:22"[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label>[39m
+                [36m<span>[39m
+                  [0mCzas trwania[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"duration-picker"[39m
+                [36m>[39m
+                  [36m<select>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"15"[39m
+                    [36m>[39m
+                      [0m15 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"30"[39m
+                    [36m>[39m
+                      [0m30 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"45"[39m
+                    [36m>[39m
+                      [0m45 min[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"60"[39m
+                    [36m>[39m
+                      [0m1 godz[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"custom"[39m
+                    [36m>[39m
+                      [0mW┼éasny czas[0m
+                    [36m</option>[39m
+                  [36m</select>[39m
+                [36m</div>[39m
+              [36m</label>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"brief-attendees-field"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"brief-field-label"[39m
+                [36m>[39m
+                  [0mUczestnicy[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendees-chips"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendee-input-wrap"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"brief-attendee-input"[39m
+                    [33mplaceholder[39m=[32m"Dodaj uczestnika..."[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"brief-attendees-field"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"brief-field-label"[39m
+                [36m>[39m
+                  [0mTagi[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendees-chips"[39m
+
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"brief-attendee-input-wrap"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"brief-attendee-input"[39m
+                    [33mplaceholder[39m=[32m"Dodaj tag..."[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"button-row brief-actions"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"primary-button"[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mUtw├│rz spotkanie[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"ghost-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mAnuluj[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"panel sidebar-recordings-panel"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"panel-header compact"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"eyebrow"[39m
+                [36m>[39m
+                  [0mArchiwum[0m
+                [36m</div>[39m
+                [36m<h2>[39m
+                  [0mNagrania[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"status-chip"[39m
+              [36m>[39m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<ul[39m
+              [33mclass[39m=[32m"sidebar-recordings-list"[39m
+            [36m>[39m
+              [36m<li[39m
+                [33mclass[39m=[32m"sidebar-recording-item"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"sidebar-recording-title"[39m
+                [36m>[39m
+                  [0mSpotkanie A[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"sidebar-recording-meta"[39m
+                [36m>[39m
+                  [36m<span>[39m
+                    [0m20 mar 2026, 09:52[0m
+                  [36m</span>[39m
+                  [36m<span>[39m
+                    [0m02:00[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"status-chip status-chip-sm done"[39m
+                  [36m>[39m
+                    [0mdone[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+              [36m</li>[39m
+            [36m</ul>[39m
+          [36m</section>[39m
+        [36m</aside>[39m
+        [36m<main[39m
+          [33mclass[39m=[32m"workspace-main"[39m
+          [33mstyle[39m=[32m"width: 100%;"[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m8 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 09:52:10
+[2m   Duration [22m 54.37s[2m (transform 1.50s, setup 170ms, import 1.19s, tests 51.38s, environment 1.43s)[22m
+
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"hero-panel empty-workspace"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"empty-workspace-inner"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"eyebrow"[39m
+              [36m>[39m
+                [0mStudio[0m
+              [36m</div>[39m
+              [36m<h2>[39m
+                [0mBrak aktywnego spotkania[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mPrzejd┼║ do zak┼éadki [0m
+                [36m<strong>[39m
+                  [0mNagrania[0m
+                [36m</strong>[39m
+                [0m, aby wybra─ç nagranie do analizy lub uruchom nagranie ad hoc.[
+0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"button-row"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"primary-button"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mÔČĄ Nagraj ad hoc[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"ghost-button"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mPrzygotuj brief[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+        [36m</main>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+[90m [2mÔŁ»[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js
+:[2m163:27[22m[39m
+[90m [2mÔŁ»[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m86:33
+[22m[39m
+[36m [2mÔŁ»[22m src/App.integration.test.tsx:[2m324:25[22m[39m
+    [90m322|[39m     [35mawait[39m userEvent[33m.[39m[34mclick[39m(briefBtnA
+fter)[33m;[39m
+    [90m323|[39m
+    [90m324|[39m     expect(await screen.findByDisplayValue("Plan retro")).toBeInT
+heDocÔÇŽ
+    [90m   |[39m                         [31m^[39m
+    [90m325|[39m     expect(screen.getByDisplayValue("Podsumowanie sprintu")).toBe
+InTheÔÇŽ
+    [90m326|[39m   })[33m;[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3/
+3]ÔÄ»[22m[39m
+

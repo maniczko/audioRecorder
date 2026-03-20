@@ -1,10 +1,34 @@
-const fs = require("node:fs");
-const path = require("node:path");
-const crypto = require("node:crypto");
-const { Pool } = require("pg");
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { Pool } from "pg";
+import { fileURLToPath } from "node:url";
+import { Worker } from "node:worker_threads";
+import { logger } from "./logger.ts";
+import { config } from "./config.ts";
+import { 
+  UserProfile, 
+  UserDraft, 
+  MeetingUpdates, 
+  MediaAsset, 
+  TranscriptionResult, 
+  WorkspaceState 
+} from "./lib/types.ts";
 
-class Database {
-  constructor(dbConfig = {}) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export class Database {
+  type: string;
+  uploadDir: string;
+  sessionTtlHours: number;
+  pool: Pool | any;
+  msgId: number;
+  callbacks: Map<number, { resolve: (val: any) => void; reject: (err: Error) => void }>;
+  worker: Worker | any;
+  sqliteInitPromise: Promise<any>;
+
+  constructor(dbConfig: any = {}) {
     const { type = "sqlite", dbPath = ":memory:", uploadDir = "./uploads", sessionTtlHours = 24 * 30, connectionString } = dbConfig;
     this.type = connectionString ? "postgres" : type;
     this.uploadDir = uploadDir;
@@ -14,7 +38,6 @@ class Database {
       this.pool = new Pool({ connectionString });
       console.log("[DB] Using PostgreSQL (Supabase)");
     } else {
-      const { Worker } = require("node:worker_threads");
       if (dbPath !== ":memory:") {
         fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       }
@@ -98,7 +121,6 @@ class Database {
       );
     `);
 
-    const { logger } = require("./logger.ts");
     const migrationsDir = path.join(__dirname, "migrations");
     if (!fs.existsSync(migrationsDir)) return;
 
@@ -124,6 +146,7 @@ class Database {
       }
     }
   }
+
 
   nowIso() {
     return new Date().toISOString();
@@ -182,7 +205,7 @@ class Database {
     return crypto.createHash("sha256").update(String(code || "")).digest("hex");
   }
 
-  _pickProfileDraft(draft = {}, email = "") {
+  _pickProfileDraft(draft: any = {}, email = ""): UserProfile {
     return {
       role: this._clean(draft.role),
       company: this._clean(draft.company),
@@ -197,7 +220,7 @@ class Database {
         ? draft.preferredInsights.filter(Boolean)
         : String(draft.preferredInsights || "")
             .split(/\r?\n|,/)
-            .map((item) => item.trim())
+            .map((item: any) => item.trim())
             .filter(Boolean),
       notifyDailyDigest: Boolean(draft.notifyDailyDigest ?? true),
       autoTaskCapture: Boolean(draft.autoTaskCapture ?? true),
@@ -312,7 +335,7 @@ class Database {
     );
   }
 
-  async getWorkspaceState(workspaceId) {
+  async getWorkspaceState(workspaceId: string): Promise<WorkspaceState> {
     let row = await this._get("SELECT * FROM workspace_state WHERE workspace_id = ?", [workspaceId]);
     if (!row) {
       await this.ensureWorkspaceState(workspaceId);
@@ -329,7 +352,7 @@ class Database {
     };
   }
 
-  async saveWorkspaceState(workspaceId, payload = {}) {
+  async saveWorkspaceState(workspaceId: string, payload: Partial<WorkspaceState> = {}): Promise<WorkspaceState> {
     await this.ensureWorkspaceState(workspaceId);
     const timestamp = this.nowIso();
     await this._execute(
@@ -426,7 +449,7 @@ class Database {
     };
   }
 
-  async registerUser(draft = {}) {
+  async registerUser(draft: UserDraft): Promise<any> {
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
     const name = this._clean(draft.name);
@@ -484,12 +507,12 @@ class Database {
     }
 
     const session = await this.createSession(userId, workspaceId);
-    const payload = await this.buildSessionPayload(userId, workspaceId);
+    const payload: any = await this.buildSessionPayload(userId, workspaceId);
     payload.user.workspaceMemberRole = memberRole || (await this.getMembership(workspaceId, userId))?.member_role || "member";
     return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
-  async loginUser(draft = {}) {
+  async loginUser(draft: UserDraft): Promise<any> {
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
     const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
@@ -508,7 +531,7 @@ class Database {
     return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
-  async requestPasswordReset(draft = {}) {
+  async requestPasswordReset(draft: { email: string }): Promise<any> {
     const email = this._normalizeEmail(draft.email);
     const genericExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
@@ -524,7 +547,7 @@ class Database {
     return { expiresAt };
   }
 
-  async resetPasswordWithCode(draft = {}) {
+  async resetPasswordWithCode(draft: { email: string; code: string; newPassword?: string; confirmPassword?: string }): Promise<any> {
     const email = this._normalizeEmail(draft.email);
     const code = this._clean(draft.code);
     const newPassword = String(draft.newPassword || "");
@@ -543,7 +566,7 @@ class Database {
     return { success: true };
   }
 
-  async upsertGoogleUser(profile = {}) {
+  async upsertGoogleUser(profile: UserDraft): Promise<any> {
     const email = this._normalizeEmail(profile.email);
     if (!email) throw new Error("Brakuje adresu email z Google.");
 
@@ -589,7 +612,7 @@ class Database {
     return { ...payload, token: session.token, expiresAt: session.expiresAt };
   }
 
-  async updateUserProfile(userId, updates = {}) {
+  async updateUserProfile(userId: string, updates: Partial<UserDraft> = {}): Promise<any> {
     const row = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
     if (!row) throw new Error("Nie znaleziono konta.");
 
@@ -602,7 +625,7 @@ class Database {
     return this._buildUserFromRow(await this._get("SELECT * FROM users WHERE id = ?", [userId]));
   }
 
-  async changeUserPassword(userId, draft = {}) {
+  async changeUserPassword(userId: string, draft: any): Promise<any> {
     const row = await this._get("SELECT * FROM users WHERE id = ?", [userId]);
     if (!row) throw new Error("Nie znaleziono konta.");
     if (!row.password_hash) throw new Error("Haslem tego konta zarzadza Google.");
@@ -620,7 +643,7 @@ class Database {
     return { success: true };
   }
 
-  async upsertMediaAsset({ recordingId, workspaceId, meetingId = "", contentType, buffer, createdByUserId }) {
+  async upsertMediaAsset({ recordingId, workspaceId, meetingId = "", contentType, buffer, createdByUserId }: any): Promise<MediaAsset | null> {
     const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
     if (!safeRecordingId) throw new Error("Nieprawidłowy identyfikator nagrania.");
     const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
@@ -644,8 +667,8 @@ class Database {
     return this.getMediaAsset(recordingId);
   }
 
-  async getMediaAsset(recordingId) {
-    return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]);
+  async getMediaAsset(recordingId: string): Promise<MediaAsset | null> {
+    return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]) as Promise<MediaAsset | null>;
   }
 
   async markTranscriptionProcessing(recordingId) {
@@ -653,7 +676,7 @@ class Database {
     return this.getMediaAsset(recordingId);
   }
 
-  async saveTranscriptionResult(recordingId, result = {}) {
+  async saveTranscriptionResult(recordingId: string, result: TranscriptionResult = {}): Promise<MediaAsset | null> {
     await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
          JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
          JSON.stringify(result.diarization && typeof result.diarization === "object" ? { ...result.diarization, reviewSummary: result.reviewSummary || null } : { reviewSummary: result.reviewSummary || null }),
@@ -666,7 +689,7 @@ class Database {
     return this.getMediaAsset(recordingId);
   }
 
-  async queueTranscription(recordingId, updates = {}) {
+  async queueTranscription(recordingId: string, updates: MeetingUpdates = {}): Promise<any> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset) throw new Error("Nie znaleziono nagrania.");
     await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = '{}', updated_at = ? WHERE id = ?", [this._clean(updates.workspaceId) || asset.workspace_id, this._clean(updates.meetingId) || asset.meeting_id, this._clean(updates.contentType) || asset.content_type, this.nowIso(), recordingId]);
@@ -679,7 +702,7 @@ class Database {
     return this.getMembership(workspaceId, targetUserId);
   }
 
-  async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }) {
+  async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
     const timestamp = this.nowIso();
     await this._execute("INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp]);
     return this._get("SELECT * FROM voice_profiles WHERE id = ?", [id]);
@@ -692,7 +715,7 @@ class Database {
   async deleteVoiceProfile(id, workspaceId) {
     const row = await this._get("SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?", [id, workspaceId]);
     if (row && row.audio_path) {
-      try { require("node:fs").unlinkSync(row.audio_path); } catch (_) {}
+      try { fs.unlinkSync(row.audio_path); } catch (_) {}
     }
     await this._execute("DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?", [id, workspaceId]);
   }
@@ -702,20 +725,20 @@ class Database {
   }
 }
 
-let defaultInstance = null;
+let defaultInstance: Database | null = null;
 
-function initDatabase(dbConfig) {
+export function initDatabase(dbConfig: any) {
   defaultInstance = new Database(dbConfig);
   return defaultInstance;
 }
 
-function getDatabase() {
+export function getDatabase() {
   if (!defaultInstance) {
     const DATA_DIR = path.resolve(__dirname, "data");
-    const DB_PATH = process.env.VOICELOG_DB_PATH ? path.resolve(process.env.VOICELOG_DB_PATH) : path.join(DATA_DIR, "voicelog.sqlite");
-    const UPLOAD_DIR = process.env.VOICELOG_UPLOAD_DIR ? path.resolve(process.env.VOICELOG_UPLOAD_DIR) : path.join(DATA_DIR, "uploads");
-    const SESSION_TTL_HOURS = Math.max(1, Number(process.env.VOICELOG_SESSION_TTL_HOURS) || 24 * 30);
-    const CONNECTION_STRING = process.env.DATABASE_URL || process.env.VOICELOG_DATABASE_URL;
+    const DB_PATH = config.VOICELOG_DB_PATH ? path.resolve(config.VOICELOG_DB_PATH) : path.join(DATA_DIR, "voicelog.sqlite");
+    const UPLOAD_DIR = config.VOICELOG_UPLOAD_DIR ? path.resolve(config.VOICELOG_UPLOAD_DIR) : path.join(DATA_DIR, "uploads");
+    const SESSION_TTL_HOURS = Math.max(1, config.VOICELOG_SESSION_TTL_HOURS || 24 * 30);
+    const CONNECTION_STRING = config.VOICELOG_DATABASE_URL || config.DATABASE_URL;
 
     return initDatabase({
       type: CONNECTION_STRING ? "postgres" : "sqlite",
@@ -728,8 +751,3 @@ function getDatabase() {
   return defaultInstance;
 }
 
-module.exports = {
-  Database,
-  initDatabase,
-  getDatabase,
-};

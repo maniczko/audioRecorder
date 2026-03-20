@@ -1,5 +1,11 @@
-class TranscriptionService {
-  constructor(db, workspaceService, audioPipeline, speakerEmbedder) {
+export default class TranscriptionService {
+  db: any;
+  workspaceService: any;
+  audioPipeline: any;
+  speakerEmbedder: any;
+  transcriptionJobs: Map<string, Promise<void>>;
+
+  constructor(db: any, workspaceService: any, audioPipeline: any, speakerEmbedder: any) {
     this.db = db;
     this.workspaceService = workspaceService;
     this.audioPipeline = audioPipeline;
@@ -8,36 +14,51 @@ class TranscriptionService {
   }
 
   get pipeline() {
-    if (this.audioPipeline) return this.audioPipeline;
-    this.audioPipeline = require('../audioPipeline');
+    if (this.audioPipeline && typeof this.audioPipeline.transcribeRecording === 'function') {
+      return this.audioPipeline;
+    }
+    
+    // Safety fallback: if injection failed but we are in a context where we can try to recover
+    if (this.audioPipeline && Object.keys(this.audioPipeline).length === 0) {
+       console.warn("[TranscriptionService] audioPipeline looks like an empty object (circular dep?).");
+    }
+
+    if (!this.audioPipeline) {
+       throw new Error("Critical: TranscriptionService.audioPipeline is null or undefined. Check bootstrap injection.");
+    }
+    
+    if (typeof this.audioPipeline.transcribeRecording !== 'function') {
+       throw new Error(`Critical: TranscriptionService.audioPipeline is missing 'transcribeRecording'. Found: ${typeof this.audioPipeline.transcribeRecording}`);
+    }
+
     return this.audioPipeline;
   }
 
-  async upsertMediaAsset(data) {
+  async upsertMediaAsset(data: any) {
     return await this.db.upsertMediaAsset(data);
   }
 
-  async getMediaAsset(recordingId) {
+  async getMediaAsset(recordingId: string) {
     return await this.db.getMediaAsset(recordingId);
   }
 
-  async queueTranscription(recordingId, updates) {
+  async queueTranscription(recordingId: string, updates: any) {
     return await this.db.queueTranscription(recordingId, updates);
   }
 
-  async markTranscriptionProcessing(recordingId) {
+  async markTranscriptionProcessing(recordingId: string) {
     return await this.db.markTranscriptionProcessing(recordingId);
   }
 
-  async saveTranscriptionResult(recordingId, result) {
+  async saveTranscriptionResult(recordingId: string, result: any) {
     return await this.db.saveTranscriptionResult(recordingId, result);
   }
 
-  async markTranscriptionFailure(recordingId, errorMessage) {
+  async markTranscriptionFailure(recordingId: string, errorMessage: string) {
     return await this.db.markTranscriptionFailure(recordingId, errorMessage);
   }
 
-  async ensureTranscriptionJob(recordingId, asset, options) {
+  async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
     if (!recordingId || this.transcriptionJobs.has(recordingId)) {
       return;
     }
@@ -63,7 +84,7 @@ class TranscriptionService {
           pipelineStatus: "completed",
         });
       })
-      .catch(async (error) => {
+      .catch(async (error: any) => {
         await this.markTranscriptionFailure(recordingId, error.message);
       })
       .finally(() => {
@@ -73,32 +94,33 @@ class TranscriptionService {
     this.transcriptionJobs.set(recordingId, jobPromise);
   }
 
-  async normalizeRecording(filePath, options = {}) {
+  async normalizeRecording(filePath: string, options = {}) {
     return this.pipeline.normalizeRecording(filePath, options);
   }
 
-  async generateVoiceCoaching(asset, speakerId, segments, options = {}) {
+  async generateVoiceCoaching(asset: any, speakerId: string, segments: any[], options = {}) {
     return this.pipeline.generateVoiceCoaching(asset, speakerId, segments, options);
   }
 
-  async diarizeFromTranscript(whisperLike, options = {}) {
+  async diarizeFromTranscript(whisperLike: any[], options = {}) {
     return this.pipeline.diarizeFromTranscript(whisperLike, options);
   }
 
-  async transcribeLiveChunk(tmpPath, contentType, options = {}) {
+  async transcribeLiveChunk(tmpPath: string, contentType: string, options = {}) {
     return this.pipeline.transcribeLiveChunk(tmpPath, contentType, options);
   }
 
-  async analyzeMeetingWithOpenAI(data) {
+  async analyzeMeetingWithOpenAI(data: any) {
     return this.pipeline.analyzeMeetingWithOpenAI(data);
   }
 
-  async computeEmbedding(audioPath) {
+  async computeEmbedding(audioPath: string) {
     if (!this.speakerEmbedder) {
-      this.speakerEmbedder = require('../speakerEmbedder');
+      // Lazy load speakerEmbedder if needed
+      const { computeEmbedding } = await import('../speakerEmbedder.ts');
+      this.speakerEmbedder = { computeEmbedding };
     }
     return this.speakerEmbedder.computeEmbedding(audioPath);
   }
 }
 
-module.exports = TranscriptionService;

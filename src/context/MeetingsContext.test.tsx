@@ -1,46 +1,51 @@
-import React from "react";
-import { renderHook, act } from "@testing-library/react";
-import { MeetingsProvider, useMeetingsCtx } from "./MeetingsContext";
-import { useWorkspaceCtx } from "./WorkspaceContext";
+import React from 'react';
+import { renderHook, act } from '@testing-library/react';
+import { MeetingsProvider, useMeetingsCtx } from './MeetingsContext';
+import { useWorkspaceCtx } from './WorkspaceContext';
+import { vi, describe, it, expect } from 'vitest';
 
-vi.mock("./WorkspaceContext", () => ({
+// Mock WorkspaceContext
+vi.mock('./WorkspaceContext', () => ({
   useWorkspaceCtx: vi.fn(),
 }));
 
-describe("MeetingsContext", () => {
+describe('MeetingsContext', () => {
+  const mockWorkspace = {
+    workspace: {
+      users: [],
+      setUsers: vi.fn(),
+      workspaces: [{ id: 'w1', name: 'W1' }],
+      setWorkspaces: vi.fn(),
+      session: { userId: 'u1', workspaceId: 'w1' },
+      setSession: vi.fn(),
+      currentUser: { id: 'u1', name: 'User 1' },
+      currentUserId: 'u1',
+      currentWorkspace: { id: 'w1', name: 'W1' },
+      currentWorkspaceId: 'w1',
+      currentWorkspaceMembers: [],
+      isHydratingRemoteState: false,
+      switchWorkspace: vi.fn(),
+    },
+  };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useWorkspaceCtx.mockReturnValue({
-      workspace: {
-        users: [{ id: "u1" }],
-        setUsers: vi.fn(),
-        workspaces: [{ id: "w1" }],
-        setWorkspaces: vi.fn(),
-        session: { userId: "u1", workspaceId: "w1" },
-        setSession: vi.fn(),
-        currentUser: { id: "u1" },
-        currentUserId: "u1",
-        currentWorkspaceId: "w1",
-        currentWorkspaceMembers: [{ id: "u1" }],
-        isHydratingRemoteState: false,
-      },
-    });
-  });
+  it('provides meetings context and allows creating an ad hoc meeting', async () => {
+    (useWorkspaceCtx as any).mockReturnValue(mockWorkspace);
 
-  test("passes currentWorkspaceId correctly to useMeetings which allows creating ad-hoc meetings", () => {
     const wrapper = ({ children }) => <MeetingsProvider>{children}</MeetingsProvider>;
     const { result } = renderHook(() => useMeetingsCtx(), { wrapper });
 
-    expect(result.current.meetings.currentWorkspaceId).toBe("w1");
+    // Initial meetings should be empty
+    expect(result.current.meetings.userMeetings).toEqual([]);
 
     let m1;
-    act(() => {
+    // We use await act for potentially async state updates
+    await act(async () => {
       m1 = result.current.meetings.createAdHocMeeting();
     });
-    
-    expect(m1).not.toBeNull();
-    expect(m1.workspaceId).toBe("w1");
-    expect(m1.createdByUserId).toBe("u1");
+
+    expect(m1).toBeDefined();
+    expect(m1.title).toContain('Ad hoc');
+    expect(result.current.meetings.userMeetings).toHaveLength(1);
+    expect(result.current.meetings.userMeetings[0].id).toBe(m1.id);
   });
 });

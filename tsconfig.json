@@ -16,6 +16,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "checkJs": false,
+    "useUnknownInCatchVariables": false,
     "types": ["node", "vitest/globals"]
   },
   "include": ["src", "server"],
