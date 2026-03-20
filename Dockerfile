@@ -3,26 +3,26 @@
 # ==========================================
 FROM node:22.12-bookworm-slim AS builder
 
+# Install pnpm globally (matching packageManager version)
+RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+
 WORKDIR /app
 
-# Install build dependencies
-# We copy root package.json for monorepo workspace resolution if any
-COPY package*.json ./
+# Copy only manifest + lockfile first for maximum Docker cache efficiency
+COPY package.json pnpm-lock.yaml ./
 COPY server/package*.json ./server/
 
 # Install everything including dev dependencies so we get esbuild/typescript
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy server code
 COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
-# We use find to recursively grab all ts/js files within server dodging sh glob limitations
 RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
 
 # Prune node_modules down to only production dependencies to save space
-# Note: npm prune --production in root removes dev dependencies
-RUN npm prune --production
+RUN pnpm prune --prod
 
 
 # ==========================================
@@ -50,7 +50,7 @@ RUN uv pip install -r server/requirements.txt
 
 # Copy production node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json ./
 
 # Copy compiled backend code instead of raw TS
 COPY --from=builder /app/dist-server ./server
@@ -60,6 +60,9 @@ COPY server/*.py ./server/
 
 # Copy server package mapping (optional if needed for runtime)
 COPY server/package*.json ./server/
+
+# Copy SQL migrations for database setup
+COPY server/migrations/ ./server/migrations/
 
 # Ensure data directories exist
 RUN mkdir -p /data/uploads
