@@ -2,6 +2,7 @@
   "name": "audio-recorder",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.8.2",
   "engines": {
     "node": ">=22.5"
   },
@@ -22,11 +23,14 @@
     "web-vitals": "^2.1.4",
     "zustand": "^5.0.12"
   },
+  "workspaces": [
+    "server"
+  ],
   "scripts": {
     "start": "vite",
     "start:server": "tsx server/index.ts",
     "start:server:watch": "tsx --watch server/index.ts",
-    "build": "vite build",
+    "build": "turbo run build",
     "lint": "eslint src --max-warnings=0",
     "test": "npm run lint && vitest run",
     "test:watch": "vitest",
@@ -61,6 +65,7 @@
     "postcss": "^8.5.8",
     "postcss-selector-parser": "^7.1.1",
     "tsx": "^4.21.0",
+    "turbo": "^2.8.20",
     "typescript": "^5.9.3",
     "vite": "^8.0.1",
     "vitest": "^4.1.0"
