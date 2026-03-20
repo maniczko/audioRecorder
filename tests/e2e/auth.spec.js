@@ -111,4 +111,16 @@ test.describe("Auth — rejestracja i logowanie", () => {
     await expect(page.locator(".inline-alert.error")).toBeVisible();
     await expect(page.locator(".auth-shell")).toBeVisible();
   });
+  // ── Login — error: user does not exist ────────────────────────────────
+  test("logowanie nieistniejacym uzytkownikiem pokazuje blad", async ({ page }) => {
+    // Directly try to login with a user that doesn't exist
+    await page.getByRole("button", { name: "Logowanie" }).click();
+
+    await page.getByPlaceholder("name@company.com").fill("nie_istnieje@example.com");
+    await page.getByPlaceholder("minimum 6 znakow").fill("cokolwiek");
+    await page.getByRole("button", { name: "Zaloguj" }).click();
+
+    await expect(page.locator(".inline-alert.error")).toBeVisible();
+    await expect(page.locator(".inline-alert.error")).toContainText("Niepoprawny email lub haslo.");
+  });
 });

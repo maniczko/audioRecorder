@@ -20,6 +20,9 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
+  // Skip non-http requests (e.g. chrome-extension://)
+  if (!url.protocol.startsWith("http")) return;
+
   // Skip API requests entirely
   if (url.pathname.startsWith("/api/") || url.port === "4000" || url.port === "4001") return;
 
