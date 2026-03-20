@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
-RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
+RUN find server -name "*.ts" -o -name "*.js" | xargs pnpm exec esbuild --outdir=dist-server --platform=node --format=cjs
 
 # Prune node_modules down to only production dependencies to save space
 RUN pnpm prune --prod
