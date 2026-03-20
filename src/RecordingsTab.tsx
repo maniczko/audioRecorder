@@ -1,6 +1,6 @@
 import './styles/recordings.css';
 import React from "react";
-import { formatDateTime, formatDuration } from "./lib/storage";
+import { formatDateTime } from "./lib/storage";
 import './RecordingsTabStyles.css';
 
 function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, setActiveTab }) {
@@ -18,7 +18,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   }, [open]);
 
   const sorted = [...userMeetings].sort(
-    (a, b) => new Date(b.startsAt || b.createdAt) - new Date(a.startsAt || a.createdAt)
+    (a, b) => new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
   );
   const filtered = query.trim()
     ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
@@ -96,29 +96,70 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   );
 }
 
-function MeetingsTable({ userMeetings, selectedMeeting, selectMeeting, setActiveTab }) {
-  const sorted = [...userMeetings].sort(
-    (a, b) => new Date(b.startsAt || b.createdAt) - new Date(a.startsAt || a.createdAt)
-  );
+function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiveTab }) {
+  const [dateFilter, setDateFilter] = React.useState("");
+  const [tagFilter, setTagFilter] = React.useState("");
 
-  if (!sorted.length) {
-    return (
-      <div className="empty-recordings">
-        <p>Brak zaplanowanych lub archiwalnych spotkań.</p>
-      </div>
+  const allTags = React.useMemo(() => {
+    const tags = new Set<string>();
+    userMeetings.forEach((m) => {
+      if (m.tags) {
+        m.tags.split('\n').forEach(t => {
+          if (t.trim()) tags.add(t.trim());
+        });
+      }
+    });
+    return Array.from(tags).sort();
+  }, [userMeetings]);
+
+  const sortedAndFiltered = React.useMemo(() => {
+    return [...userMeetings].filter(m => {
+      if (dateFilter) {
+        const d = m.startsAt || m.createdAt;
+        if (!d || !d.startsWith(dateFilter)) return false;
+      }
+      if (tagFilter) {
+        if (!m.tags) return false;
+        const mt = m.tags.split('\n').map(t=>t.trim());
+        if (!mt.includes(tagFilter)) return false;
+      }
+      return true;
+    }).sort(
+      (a, b) => new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
     );
-  }
+  }, [userMeetings, dateFilter, tagFilter]);
 
   return (
     <section className="panel meetings-library" style={{ marginBottom: '32px' }}>
-      <div className="panel-header compact">
-        <div>
+      <div className="panel-header compact" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
           <div className="eyebrow">Workspace</div>
-          <h2>Lista spotkań</h2>
+          <h2>Baza spotkań i nagrań</h2>
         </div>
-        <div className="status-chip">{sorted.length}</div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <input 
+            type="date" 
+            className="studio-picker-search" 
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{ width: 'auto', padding: '6px 12px', borderRadius: '6px' }}
+          />
+          <select 
+            className="studio-picker-search"
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            style={{ width: 'auto', padding: '6px 12px', borderRadius: '6px' }}
+          >
+            <option value="">Wszystkie tagi</option>
+            {allTags.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <div className="status-chip">{sortedAndFiltered.length}</div>
+        </div>
       </div>
       <div className="studio-recordings-table-wrap">
+        {sortedAndFiltered.length ? (
         <table className="studio-recordings-table">
           <thead>
             <tr>
@@ -126,10 +167,11 @@ function MeetingsTable({ userMeetings, selectedMeeting, selectMeeting, setActive
               <th>Data i godzina</th>
               <th>Czas trwania</th>
               <th>Nagrania</th>
+              <th>Tagi</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((m) => (
+            {sortedAndFiltered.map((m) => (
               <tr
                 key={m.id}
                 className={m.id === selectedMeeting?.id ? "active" : ""}
@@ -149,83 +191,30 @@ function MeetingsTable({ userMeetings, selectedMeeting, selectMeeting, setActive
                     {(m.recordings || []).length}
                   </span>
                 </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function RecordingsLibrary({ userMeetings, selectedRecordingId, setSelectedRecordingId, selectMeeting, setActiveTab }) {
-  const allRecordings = userMeetings.flatMap((m) =>
-    (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title }))
-  ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  if (!allRecordings.length) {
-    return (
-      <div className="empty-recordings">
-        <p>Brak dostępnych nagrań audio.</p>
-      </div>
-    );
-  }
-
-  return (
-    <section className="panel recordings-library">
-      <div className="panel-header compact">
-        <div>
-          <div className="eyebrow">Library</div>
-          <h2>Archiwum nagrań</h2>
-        </div>
-        <div className="status-chip">{allRecordings.length}</div>
-      </div>
-      <div className="studio-recordings-table-wrap">
-        <table className="studio-recordings-table">
-          <thead>
-            <tr>
-              <th>Spotkanie</th>
-              <th>Data nagrania</th>
-              <th>Długość</th>
-              <th>Speakerzy</th>
-              <th>Segmenty</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allRecordings.map((rec) => (
-              <tr
-                key={rec.id}
-                className={rec.id === selectedRecordingId ? "active" : ""}
-                onClick={() => {
-                  const meeting = userMeetings.find((m) => m.id === rec.meetingId);
-                  if (meeting) selectMeeting(meeting);
-                  setSelectedRecordingId(rec.id);
-                  setActiveTab("studio");
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <td className="recordings-library-meeting">{rec.meetingTitle}</td>
-                <td>{formatDateTime(rec.createdAt)}</td>
-                <td>{formatDuration(rec.duration)}</td>
-                <td>{rec.speakerCount || 0}</td>
-                <td>{rec.transcript?.length || 0}</td>
                 <td>
-                  <span className={`status-chip status-chip-sm ${rec.pipelineStatus || "done"}`}>
-                    {rec.pipelineStatus || "done"}
-                  </span>
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    {(m.tags ? m.tags.split('\n') : []).map((t, idx) => {
+                      if (!t.trim()) return null;
+                      return <span key={idx} className="status-chip status-chip-sm" style={{ background: 'rgba(116, 208, 191, 0.15)', color: '#74d0bf' }}>{t.trim()}</span>
+                    })}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        ) : (
+          <div className="empty-recordings" style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)' }}>
+            <p>Brak spotkań spełniających kryteria.</p>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
 export default function RecordingsTab(props) {
-  const { userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, selectedRecordingId, setSelectedRecordingId, setActiveTab } = props;
+  const { userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, setActiveTab } = props;
 
   return (
     <div className="recordings-tab-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -240,17 +229,9 @@ export default function RecordingsTab(props) {
       </header>
       
       <main className="recordings-tab-content">
-        <MeetingsTable
+        <UnifiedLibrary
           userMeetings={userMeetings}
           selectedMeeting={selectedMeeting}
-          selectMeeting={selectMeeting}
-          setActiveTab={setActiveTab}
-        />
-
-        <RecordingsLibrary
-          userMeetings={userMeetings}
-          selectedRecordingId={selectedRecordingId}
-          setSelectedRecordingId={setSelectedRecordingId}
           selectMeeting={selectMeeting}
           setActiveTab={setActiveTab}
         />

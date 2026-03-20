@@ -33,17 +33,17 @@ describe("RecordingsTab", () => {
 
   test("renders empty state when no meetings are provided", () => {
     render(<RecordingsTab {...defaultProps} userMeetings={[]} />);
-    expect(screen.getByText(/Brak zaplanowanych lub archiwalnych spotkań/i)).toBeInTheDocument();
-    expect(screen.getByText(/Brak dostępnych nagrań audio/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak spotkań spełniających kryteria/i)).toBeInTheDocument();
   });
 
   test("renders list of meetings and recordings", () => {
     render(<RecordingsTab {...defaultProps} />);
     expect(screen.getAllByText("Weekly Sync")[0]).toBeInTheDocument();
     expect(screen.getByText("Project Alpha")).toBeInTheDocument();
-    // Archive section check
-    const archiveTitle = screen.getByText("Archiwum nagrań");
-    expect(archiveTitle).toBeInTheDocument();
+    
+    // Filters should be displayed
+    const tagFilter = screen.getByText("Wszystkie tagi");
+    expect(tagFilter).toBeInTheDocument();
   });
 
   test("calls selectMeeting and setActiveTab when a meeting is clicked in the table", () => {
