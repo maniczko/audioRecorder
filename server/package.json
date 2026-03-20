@@ -1,5 +1,5 @@
 {
-  "name": "voicelog-server",
+  "name": "voicelog-api",
   "version": "0.1.0",
   "private": true,
   "engines": {

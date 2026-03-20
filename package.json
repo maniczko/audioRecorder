@@ -1,5 +1,5 @@
 {
-  "name": "audio-recorder",
+  "name": "voicelog-server",
   "version": "0.1.0",
   "private": true,
   "packageManager": "npm@11.9.0",
