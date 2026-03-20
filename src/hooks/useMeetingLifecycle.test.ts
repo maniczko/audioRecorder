@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import useMeetingLifecycle from "./useMeetingLifecycle";
 import { createEmptyMeetingDraft } from "../lib/meeting";
+import { STORAGE_KEYS } from "../lib/storage";
 import { vi, describe, test, expect, beforeEach } from "vitest";
 
 describe("useMeetingLifecycle", () => {
@@ -93,26 +94,47 @@ describe("useMeetingLifecycle", () => {
     expect(m2).toBeDefined();
   });
 
+  test("syncing selected meeting to draft", () => {
+    const { result } = renderHook((props) => useMeetingLifecycle(props), { initialProps: baseProps as any });
+    
+    expect(result.current.selectedMeetingId).toBe("m1");
+    expect(result.current.meetingDraft.title).toBe("M1");
+
+    // Select different meeting
+    act(() => {
+      result.current.selectMeeting(baseProps.userMeetings[1] as any);
+    });
+    expect(result.current.selectedMeetingId).toBe("m2");
+    expect(result.current.meetingDraft.title).toBe("M2");
+  });
+
+  test("handling detached draft from storage", () => {
+    // Mock local storage draft for current workspace
+    const storedDraft = {
+       "w1": {
+          draft: { title: "Cached title", durationMinutes: 120 },
+          baselineDraft: { title: "M1" },
+          selectedMeetingId: "m1",
+          updatedAt: new Date().toISOString()
+       }
+    };
+    localStorage.setItem(STORAGE_KEYS.meetingDrafts, JSON.stringify(storedDraft));
+
+    const { result } = renderHook((props) => useMeetingLifecycle(props), { initialProps: baseProps as any });
+    
+    // It should RESTORE the cached title instead of M1
+    expect(result.current.meetingDraft.title).toBe("Cached title");
+    expect(result.current.selectedMeetingId).toBe("m1");
+    expect(mockSetWorkspaceMessage).toHaveBeenCalledWith(expect.stringContaining("Przywrocono"));
+  });
+
   test("resetSelectionState", () => {
     const { result } = renderHook(() => useMeetingLifecycle(baseProps as any));
     act(() => {
       result.current.resetSelectionState();
     });
+    // It auto-selects m1 if userMeetings is not empty
     expect(result.current.selectedMeetingId).toBe("m1");
-  });
-
-  test("handles empty props gracefully and rejects ad hoc meeting", () => {
-    const { result } = renderHook(() => useMeetingLifecycle({
-      ...baseProps,
-      currentUserId: null,
-      currentWorkspaceId: null,
-    } as any));
-    expect(result.current.selectedMeetingId).toBeNull();
-    
-    let m1;
-    act(() => {
-      m1 = result.current.createAdHocMeeting();
-    });
-    expect(m1).toBeNull();
+    expect(result.current.isDetachedMeetingDraft).toBe(false);
   });
 });

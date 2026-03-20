@@ -13,6 +13,9 @@ function normalizeWhitespace(value) {
 function slugify(value) {
   return normalizeWhitespace(value)
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ł/g, "l")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -39,13 +42,13 @@ function inferTraits(meetings, tasks, needs, outputs) {
     traits.push("regularnie uczestniczy w kluczowych spotkaniach");
   }
   if (/ryzyk|plan|harmonogram|deadline|termin/.test(signals)) {
-    traits.push("pilnuje planu i terminow");
+    traits.push("pilnuje planu i terminów");
   }
-  if (/budzet|koszt|rentown|zakres/.test(signals)) {
+  if (/budżet|budzet|koszt|rentown|zakres/.test(signals)) {
     traits.push("patrzy na decyzje przez pryzmat kosztu i zakresu");
   }
-  if (/klient|uzytkownik|feedback|potrzeb/.test(signals)) {
-    traits.push("wnosi perspektywe potrzeb i oczekiwan");
+  if (/klient|użytkownik|uzytkownik|feedback|potrzeb/.test(signals)) {
+    traits.push("wnosi perspektywę potrzeb i oczekiwań");
   }
 
   return traits.slice(0, 3);
@@ -53,11 +56,11 @@ function inferTraits(meetings, tasks, needs, outputs) {
 
 function personSummary(name, meetings, tasks, needs, outputs) {
   const traits = inferTraits(meetings, tasks, needs, outputs);
-  const firstTrait = traits[0] || "bierze udzial w spotkaniach roboczych";
+  const firstTrait = traits[0] || "bierze udział w spotkaniach roboczych";
   const firstNeed = needs[0] || "jasne ustalenia";
   const firstOutput = outputs[0] || "konkretne kolejne kroki";
 
-  return `${name} ${firstTrait}. Najczesciej oczekuje: ${firstNeed}. Po spotkaniach najbardziej licza sie dla tej osoby: ${firstOutput}.`;
+  return `${name} ${firstTrait}. Najczęściej oczekuje: ${firstNeed}. Po spotkaniach najbardziej liczą się dla tej osoby: ${firstOutput}.`;
 }
 
 export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembers = []) {

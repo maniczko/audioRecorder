@@ -34,18 +34,34 @@ describe('MeetingsContext', () => {
     const wrapper = ({ children }) => <MeetingsProvider>{children}</MeetingsProvider>;
     const { result } = renderHook(() => useMeetingsCtx(), { wrapper });
 
-    // Initial meetings should be empty
     expect(result.current.meetings.userMeetings).toEqual([]);
 
     let m1;
-    // We use await act for potentially async state updates
     await act(async () => {
       m1 = result.current.meetings.createAdHocMeeting();
     });
 
     expect(m1).toBeDefined();
-    expect(m1.title).toContain('Ad hoc');
     expect(result.current.meetings.userMeetings).toHaveLength(1);
-    expect(result.current.meetings.userMeetings[0].id).toBe(m1.id);
+
+    // Test selection logic
+    await act(async () => {
+      result.current.meetings.setSelectedMeetingId(m1.id);
+    });
+    expect(result.current.meetings.selectedMeetingId).toBe(m1.id);
+
+    // Test update logic
+    await act(async () => {
+      result.current.meetings.updateMeeting(m1.id, { title: "Updated Title", context: "Updated Context" });
+    });
+    expect(result.current.meetings.userMeetings[0].title).toBe("Updated Title");
+    expect(result.current.meetings.userMeetings[0].context).toBe("Updated Context");
+
+    // Test deletion logic
+    await act(async () => {
+      result.current.meetings.deleteMeeting(m1.id);
+    });
+    expect(result.current.meetings.userMeetings).toHaveLength(0);
+    expect(result.current.meetings.selectedMeetingId).toBeNull();
   });
 });

@@ -412,4 +412,55 @@ describe("App integration", () => {
 
     await screen.findByText(/Dostep do mikrofonu jest zablokowany/i);
   });
+
+  test("navigates to Studio and verifies transcript segments", async () => {
+    seedWorkspaceAppState();
+    render(<App />);
+
+    // Go to Studio tab
+    const studioTabBtn = await screen.findByRole("button", { name: "Tab Studio" });
+    await userEvent.click(studioTabBtn);
+
+    // Verify transcript segment from seed is visible
+    expect(await screen.findByText("Cześć w studio!")).toBeInTheDocument();
+  });
+
+  test("navigates to People tab and checks psych profile trigger", async () => {
+    seedWorkspaceAppState();
+    render(<App />);
+
+    // Go to People tab
+    const peopleTabBtn = await screen.findByRole("button", { name: "Tab Osoby" });
+    await userEvent.click(peopleTabBtn);
+
+    // Verify Anna Nowak is selected and her header is visible
+    // Using a regex to be more flexible with potential surrounding text or elements
+    expect(await screen.findByRole("heading", { name: /Anna Nowak/i, level: 2 })).toBeInTheDocument();
+
+    // Check if "Generuj profil" button exists when pychProfile is null
+    const analyzeBtn = await screen.findByRole("button", { name: /Generuj profil/i });
+    expect(analyzeBtn).toBeInTheDocument();
+    expect(analyzeBtn).not.toBeDisabled();
+  });
+
+  test("manages voice profiles: opening the dialog and simulating recording", async () => {
+    seedWorkspaceAppState();
+    render(<App />);
+
+    // Go to Profile tab
+    const profileTabBtn = await screen.findByRole("button", { name: "Otworz ustawienia" });
+    await userEvent.click(profileTabBtn);
+
+    // No separate dialog button, it's rendered in ProfileTab
+    const voiceSectionHeading = await screen.findByText(/Profile głosowe/i);
+    expect(voiceSectionHeading).toBeInTheDocument();
+    
+    // Type name in the speaker name input
+    const nameInput = screen.getByPlaceholderText(/np. Marek/i);
+    await userEvent.type(nameInput, "Tester Głosowy");
+
+    // Verify button "Nagraj głos" is enabled
+    const recordBtn = screen.getByRole("button", { name: /Nagraj głos/i });
+    expect(recordBtn).not.toBeDisabled();
+  });
 });
