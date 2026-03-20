@@ -1,11 +1,17 @@
 function readEnv(key, fallback = "") {
-  if (typeof process !== "undefined" && process.env && process.env[key]) {
+  if (typeof process !== "undefined" && process.env && process.env[key] !== undefined) {
     return process.env[key];
   }
   // @ts-ignore
-  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
     // @ts-ignore
-    return import.meta.env[key];
+    const env = import.meta.env;
+    if (key === "VITE_DATA_PROVIDER" && env.VITE_DATA_PROVIDER !== undefined) return env.VITE_DATA_PROVIDER;
+    if (key === "REACT_APP_DATA_PROVIDER" && env.REACT_APP_DATA_PROVIDER !== undefined) return env.REACT_APP_DATA_PROVIDER;
+    if (key === "VITE_MEDIA_PROVIDER" && env.VITE_MEDIA_PROVIDER !== undefined) return env.VITE_MEDIA_PROVIDER;
+    if (key === "REACT_APP_MEDIA_PROVIDER" && env.REACT_APP_MEDIA_PROVIDER !== undefined) return env.REACT_APP_MEDIA_PROVIDER;
+    if (key === "VITE_API_BASE_URL" && env.VITE_API_BASE_URL !== undefined) return env.VITE_API_BASE_URL;
+    if (key === "REACT_APP_API_BASE_URL" && env.REACT_APP_API_BASE_URL !== undefined) return env.REACT_APP_API_BASE_URL;
   }
   return fallback;
 }

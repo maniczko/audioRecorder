@@ -39,6 +39,7 @@ async function seedLoggedInUser(page) {
       localStorage.setItem("voicelog.users.v3", JSON.stringify([user]));
       localStorage.setItem("voicelog.session.v3", JSON.stringify(session));
       localStorage.setItem("voicelog.workspaces.v1", JSON.stringify([workspace]));
+      localStorage.setItem("voicelog.e2e", "true");
     },
     { user: SEED_USER, workspace: SEED_WORKSPACE, session: SEED_SESSION }
   );
@@ -99,4 +100,30 @@ async function seedTask(page, task) {
   );
 }
 
-module.exports = { seedLoggedInUser, seedMeeting, seedTask };
+/**
+ * Seed a recording queue item (e.g. for testing error states).
+ */
+async function seedQueueItem(page, item) {
+  const defaultItem = {
+    id: "q_e2e_1",
+    recordingId: "rec_e2e_1",
+    meetingId: "meeting_e2e",
+    status: "failed",
+    addedAt: new Date().toISOString(),
+    retryCount: 0,
+    error: "Mock error",
+  };
+  const merged = { ...defaultItem, ...(item || {}) };
+  const zustandState = {
+    state: { recordingQueue: [merged] },
+    version: 0
+  };
+  await page.addInitScript(
+    ({ statePayload }) => {
+      localStorage.setItem("voicelog.recordingQueue.v1", JSON.stringify(statePayload));
+    },
+    { statePayload: zustandState }
+  );
+}
+
+module.exports = { seedLoggedInUser, seedMeeting, seedTask, seedQueueItem };

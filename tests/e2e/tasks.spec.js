@@ -21,19 +21,19 @@ test.describe("Tasks — CRUD zadan", () => {
     await quickInput.press("Enter");
 
     // The task should now appear in the task list
-    await expect(page.locator(".task-list-row, .task-item").filter({ hasText: taskTitle })).toBeVisible();
+    await expect(page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: taskTitle })).toBeVisible();
   });
 
   // ── Create task — error: empty title ─────────────────────────────────────
   test("pusty tytul nie dodaje zadania", async ({ page }) => {
-    const taskListBefore = await page.locator(".task-list-row, .task-item").count();
+    const taskListBefore = await page.locator(".todo-table-row, .todo-kanban-card").count();
 
     const quickInput = page.locator(".quick-add-input, input[placeholder*='Dodaj zadanie'], input[placeholder*='Nowe zadanie']").first();
     await quickInput.fill("");
     await quickInput.press("Enter");
 
     // Count should not have increased
-    const taskListAfter = await page.locator(".task-list-row, .task-item").count();
+    const taskListAfter = await page.locator(".todo-table-row, .todo-kanban-card").count();
     expect(taskListAfter).toBe(taskListBefore);
   });
 
@@ -44,14 +44,15 @@ test.describe("Tasks — CRUD zadan", () => {
     await page.locator(".tab-pill").filter({ hasText: "Zadania" }).click();
 
     // Click on the task to open details
-    await page.locator(".task-list-row, .task-item").filter({ hasText: "Zadanie do edycji" }).click();
+    await page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: "Zadanie do edycji" }).click();
 
     // Find title input in the details panel and update it
-    const titleInput = page.locator("[data-task-title-input], .task-details-panel input[type='text']").first();
+    const titleInput = page.locator(".todo-details label:has-text('Tytul') input").first();
+    await titleInput.waitFor({ state: "visible" });
     await titleInput.fill("Zadanie po edycji");
     await titleInput.press("Tab");
 
-    await expect(page.locator(".task-list-row, .task-item").filter({ hasText: "Zadanie po edycji" })).toBeVisible();
+    await expect(page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: "Zadanie po edycji" })).toBeVisible();
   });
 
   // ── Delete task ───────────────────────────────────────────────────────────
@@ -60,13 +61,13 @@ test.describe("Tasks — CRUD zadan", () => {
     await page.reload();
     await page.locator(".tab-pill").filter({ hasText: "Zadania" }).click();
 
-    await page.locator(".task-list-row, .task-item").filter({ hasText: "Zadanie do usuniecia" }).click();
+    await page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: "Zadanie do usuniecia" }).click();
 
     // Delete via button in details panel
-    const deleteButton = page.locator(".task-details-panel").getByRole("button", { name: /usu/i }).last();
+    const deleteButton = page.locator(".todo-details button").filter({ hasText: /usun|ukryj/i }).last();
     await deleteButton.click();
 
-    await expect(page.locator(".task-list-row, .task-item").filter({ hasText: "Zadanie do usuniecia" })).not.toBeVisible();
+    await expect(page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: "Zadanie do usuniecia" })).not.toBeVisible();
   });
 
   // ── Complete task ─────────────────────────────────────────────────────────
@@ -76,11 +77,12 @@ test.describe("Tasks — CRUD zadan", () => {
     await page.locator(".tab-pill").filter({ hasText: "Zadania" }).click();
 
     // Find the completion checkbox/button for the task
-    const taskRow = page.locator(".task-list-row, .task-item").filter({ hasText: "Zadanie do ukonczenia" });
-    await taskRow.locator("input[type='checkbox'], .task-done-toggle, button.complete-btn").first().click();
+    const taskRow = page.locator(".todo-table-row, .todo-kanban-card").filter({ hasText: "Zadanie do ukonczenia" });
+    const completeButton = taskRow.locator(".todo-task-circle").first();
+    await completeButton.click();
 
-    // Task row should get a "completed" class or similar indicator
-    await expect(taskRow).toHaveClass(/completed|done/);
+    // Button should get a "completed" class
+    await expect(completeButton).toHaveClass(/completed/);
   });
 
   // ── Google Tasks import mock ──────────────────────────────────────────────

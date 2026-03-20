@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { buildCalendarDescription, buildGoogleCalendarUrl, downloadMeetingIcs } from './calendar';
 import * as storage from './storage';
 

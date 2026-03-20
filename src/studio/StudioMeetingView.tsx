@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Virtuoso } from "react-virtuoso";
+
 import PropTypes from "prop-types";
 import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
@@ -207,7 +209,6 @@ export default function StudioMeetingView({
   displayRecording,
   studioAnalysis,
   isRecording,
-  analysisStatus,
   activeQueueItem,
   selectedMeetingQueue,
   elapsed,
@@ -269,12 +270,15 @@ export default function StudioMeetingView({
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
 
   const audioRef = useRef(null);
-  const activeSegRef = useRef(null);
+  const virtuosoRef = useRef(null);
+
+
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
 
+  const analysisStatus = selectedMeetingQueue?.status;
   const isQueued = ["queued", "uploading", "processing"].includes(analysisStatus) && !isRecording;
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
@@ -359,10 +363,18 @@ export default function StudioMeetingView({
   }
 
   useEffect(() => {
-    if (activeSegRef.current) {
-      activeSegRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (virtuosoRef.current && activeSeg?.id) {
+       const index = filteredTranscript.findIndex(s => s.id === activeSeg.id);
+       if (index !== -1) {
+          virtuosoRef.current.scrollToIndex({
+            index,
+            align: 'center',
+            behavior: 'smooth'
+          });
+       }
     }
-  }, [activeSeg?.id]);
+  }, [activeSeg?.id, filteredTranscript]);
+
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -905,103 +917,107 @@ export default function StudioMeetingView({
           {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
 
           {/* Segments list */}
-          <div className="transcript-list" style={{ maxHeight: '600px' }}>
+          <div className="transcript-list" style={{ flex: 1, minHeight: 0 }}>
             {filteredTranscript.length ? (
-              filteredTranscript.map((seg) => {
-                const isActive = activeSeg?.id === seg.id;
-                const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
-                const letter = (name || "S")[0].toUpperCase();
-                const color = getSpeakerColor(seg.speakerId);
-                return (
-                  <div
-                    key={seg.id}
-                    ref={isActive ? activeSegRef : null}
-                    className={`fireflies-segment${isActive ? " active" : ""}`}
-                  >
-                    <div className="fireflies-avatar" style={{ background: color }}>{letter}</div>
-                    
-                    <div className="fireflies-content">
-                      <div className="fireflies-header">
-                        <div className="ff-speaker-picker-wrap" style={{ display: 'flex', alignItems: 'center' }}>
-                          {renamingSpeakerId === String(seg.speakerId) ? (
-                            <input
-                              className="ff-speaker-rename-input"
-                              autoFocus
-                              value={renameValue}
-                              onChange={(e) => setRenameValue(e.target.value)}
-                              onBlur={() => {
-                                if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
-                                setRenamingSpeakerId(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") e.target.blur();
-                                if (e.key === "Escape") { setRenamingSpeakerId(null); }
-                              }}
-                            />
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                                onClick={() => setSpeakerDropdownSegId(speakerDropdownSegId === seg.id ? null : seg.id)}
-                              >
-                                <span className="fireflies-speaker">{name}</span>
-                                <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-                              </button>
-                              {speakerDropdownSegId === seg.id ? (
-                                <SpeakerDropdown
-                                  seg={seg}
-                                  currentSpeakerId={String(seg.speakerId ?? "")}
-                                  speakers={uniqueSpeakers}
-                                  nextSpeakerId={nextSpeakerId}
-                                  displaySpeakerNames={displaySpeakerNames}
-                                  onReassign={(newId) => reassignSegmentSpeaker(seg.id, newId)}
-                                  onRename={(sid) => {
-                                    setSpeakerDropdownSegId(null);
-                                    setRenamingSpeakerId(String(sid));
-                                    setRenameValue(labelSpeaker(displaySpeakerNames, sid));
-                                  }}
-                                  onClose={() => setSpeakerDropdownSegId(null)}
-                                />
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                        <span className="fireflies-dot">·</span>
-                        <button
-                          type="button"
-                          className="fireflies-time"
-                          onClick={() => { if (audioRef.current) audioRef.current.currentTime = seg.timestamp; }}
-                        >
-                          {formatDuration(Math.floor(seg.timestamp))}
-                        </button>
-                      </div>
-                      <div className="fireflies-text-area">
-                        <textarea
-                          className="fireflies-textarea"
-                          value={seg.text}
-                          onChange={(e) => updateTranscriptSegment(seg.id, { text: e.target.value })}
-                          rows={Math.max(1, Math.ceil(seg.text.length / 80))}
-                          spellCheck="false"
-                        />
-                      </div>
+              <Virtuoso
+                ref={virtuosoRef}
+                data={filteredTranscript}
+                style={{ height: '100%', width: '100%' }}
+                itemContent={(index, seg) => {
+                  const isActive = activeSeg?.id === seg.id;
+                  const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
+                  const letter = (name || "S")[0].toUpperCase();
+                  const color = getSpeakerColor(seg.speakerId);
+                  return (
+                    <div
+                      key={seg.id}
+                      className={`fireflies-segment${isActive ? " active" : ""}`}
+                      style={{ marginBottom: '24px' }}
+                    >
+                      <div className="fireflies-avatar" style={{ background: color }}>{letter}</div>
                       
-                      {/* Action icons hidden by default, shown on hover */}
-                      <div className="fireflies-actions">
-                         <button type="button" className="icon-button" aria-label="Copy">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      <div className="fireflies-content">
+                        <div className="fireflies-header">
+                          <div className="ff-speaker-picker-wrap" style={{ display: 'flex', alignItems: 'center' }}>
+                            {renamingSpeakerId === String(seg.speakerId) ? (
+                              <input
+                                className="ff-speaker-rename-input"
+                                autoFocus
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onBlur={() => {
+                                  if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
+                                  setRenamingSpeakerId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as any).blur();
+                                  if (e.key === "Escape") { setRenamingSpeakerId(null); }
+                                }}
+                              />
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                  onClick={() => setSpeakerDropdownSegId(speakerDropdownSegId === seg.id ? null : seg.id)}
+                                >
+                                  <span className="fireflies-speaker">{name}</span>
+                                  <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                                {speakerDropdownSegId === seg.id ? (
+                                  <SpeakerDropdown
+                                    seg={seg}
+                                    currentSpeakerId={String(seg.speakerId ?? "")}
+                                    speakers={uniqueSpeakers}
+                                    nextSpeakerId={nextSpeakerId}
+                                    displaySpeakerNames={displaySpeakerNames}
+                                    onReassign={(newId) => reassignSegmentSpeaker(seg.id, newId)}
+                                    onRename={(sid) => {
+                                      setSpeakerDropdownSegId(null);
+                                      setRenamingSpeakerId(String(sid));
+                                      setRenameValue(labelSpeaker(displaySpeakerNames, sid));
+                                    }}
+                                    onClose={() => setSpeakerDropdownSegId(null)}
+                                  />
+                                ) : null}
+                              </>
+                            )}
+                          </div>
+                          <span className="fireflies-dot">·</span>
+                          <button
+                            type="button"
+                            className="fireflies-time"
+                            onClick={() => { if (audioRef.current) audioRef.current.currentTime = seg.timestamp; }}
+                          >
+                            {formatDuration(Math.floor(seg.timestamp))}
                           </button>
-                          <button type="button" className="icon-button" aria-label="Create Soundbite">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-                          </button>
-                          <label className="fireflies-select" title="Zaznacz">
-                            <input type="checkbox" />
-                          </label>
+                        </div>
+                        <div className="fireflies-text-area">
+                          <textarea
+                            className="fireflies-textarea"
+                            value={seg.text}
+                            onChange={(e) => updateTranscriptSegment(seg.id, { text: e.target.value })}
+                            rows={Math.max(1, Math.ceil(seg.text.length / 80))}
+                            spellCheck="false"
+                          />
+                        </div>
+                        
+                        <div className="fireflies-actions">
+                           <button type="button" className="icon-button" aria-label="Copy">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            </button>
+                            <button type="button" className="icon-button" aria-label="Create Soundbite">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                            </button>
+                            <label className="fireflies-select" title="Zaznacz">
+                              <input type="checkbox" />
+                            </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                }}
+              />
             ) : (
               <div className="ff-segments-empty">
                 {transcript.length ? (
@@ -1025,6 +1041,7 @@ export default function StudioMeetingView({
               </div>
             )}
           </div>
+
 
           {/* Floating "Sync with audio" button */}
           {transcript.length > 0 && selectedRecordingAudioUrl && !isRecording ? (
@@ -1105,7 +1122,7 @@ export default function StudioMeetingView({
       {/* ═══════════════════════════════════════════
            PLAYER BAR — ALWAYS visible — at bottom
           ═══════════════════════════════════════════ */}
-      {(isRecording || selectedRecordingAudioUrl || isQueued || analysisStatus === "error") && (
+      {(isRecording || selectedRecordingAudioUrl || isQueued || analysisStatus === "error" || analysisStatus === "failed") && (
         <div className="ff-player-bar">
           {isRecording ? (
             <>

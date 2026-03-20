@@ -753,15 +753,17 @@ export function getDatabase() {
     const DB_PATH = config.VOICELOG_DB_PATH ? path.resolve(config.VOICELOG_DB_PATH) : path.join(DATA_DIR, "voicelog.sqlite");
     const UPLOAD_DIR = config.VOICELOG_UPLOAD_DIR ? path.resolve(config.VOICELOG_UPLOAD_DIR) : path.join(DATA_DIR, "uploads");
     const SESSION_TTL_HOURS = Math.max(1, config.VOICELOG_SESSION_TTL_HOURS || 24 * 30);
-    const CONNECTION_STRING = config.VOICELOG_DATABASE_URL || config.DATABASE_URL;
+    const IS_TEST = process.env.NODE_ENV === "test" || config.NODE_ENV === "test";
+    const CONNECTION_STRING = !IS_TEST ? (config.VOICELOG_DATABASE_URL || config.DATABASE_URL) : null;
 
     return initDatabase({
       type: CONNECTION_STRING ? "postgres" : "sqlite",
-      dbPath: DB_PATH,
+      dbPath: IS_TEST ? ":memory:" : DB_PATH,
       uploadDir: UPLOAD_DIR,
       sessionTtlHours: SESSION_TTL_HOURS,
       connectionString: CONNECTION_STRING
     });
+
   }
   return defaultInstance;
 }

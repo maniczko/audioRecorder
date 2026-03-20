@@ -28,7 +28,8 @@ module.exports = defineConfig({
     env: {
       VITE_DATA_PROVIDER: "local",
       VITE_MEDIA_PROVIDER: "local",
-      VITE_API_BASE_URL: "http://localhost:4000"
+      VITE_API_BASE_URL: "http://localhost:4000",
+      VITE_E2E_TEST: "true"
     }
   },
 });

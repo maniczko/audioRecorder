@@ -14,6 +14,8 @@ test.describe("Studio — tworzenie i edycja spotkania", () => {
   test("utworzenie spotkania z tytulem zapisuje je do listy", async ({ page }) => {
     const meetingTitle = `E2E Spotkanie ${Date.now()}`;
 
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+
     // The sidebar meeting form should be visible
     await expect(page.locator(".workspace-sidebar")).toBeVisible();
 
@@ -23,12 +25,14 @@ test.describe("Studio — tworzenie i edycja spotkania", () => {
     // Save
     await page.locator(".brief-actions .primary-button").click();
 
-    // The meeting title should now appear somewhere in the sidebar recordings or header
-    await expect(page.locator(".workspace-sidebar").getByText(meetingTitle)).toBeVisible();
+    // The meeting title should now appear in the header
+    await expect(page.locator(".ff-header-title")).toHaveText(meetingTitle);
   });
 
   // ── Create meeting — error: empty title ──────────────────────────────────
   test("przycisk zapisu jest nieaktywny gdy tytul jest pusty", async ({ page }) => {
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+
     // Clear the title field (should be empty by default for a new draft)
     const titleInput = page.locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']");
     await titleInput.fill("");
@@ -39,6 +43,8 @@ test.describe("Studio — tworzenie i edycja spotkania", () => {
 
   // ── Create meeting — fill datetime ────────────────────────────────────────
   test("uzupelnienie terminu spotkania i zapis dziala poprawnie", async ({ page }) => {
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+
     const meetingTitle = `Spotkanie z datą ${Date.now()}`;
     await page.locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']").fill(meetingTitle);
 
@@ -48,11 +54,13 @@ test.describe("Studio — tworzenie i edycja spotkania", () => {
 
     await page.locator(".brief-actions .primary-button").click();
 
-    await expect(page.locator(".workspace-sidebar").getByText(meetingTitle)).toBeVisible();
+    await expect(page.locator(".ff-header-title")).toHaveText(meetingTitle);
   });
 
   // ── New meeting draft button ──────────────────────────────────────────────
   test("klikniecie Nowe resetuje formularz", async ({ page }) => {
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+
     const titleInput = page.locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']");
     await titleInput.fill("Tymczasowy tytul");
 

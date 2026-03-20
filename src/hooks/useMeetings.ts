@@ -329,6 +329,22 @@ export default function useMeetings({
     setWorkspaceMessage("Notatka zapisana.");
   }
 
+  function updateMeeting(meetingId, updates) {
+    setMeetings((previous) =>
+      previous.map((meeting) =>
+        meeting.id !== meetingId ? meeting : { ...meeting, ...updates, updatedAt: new Date().toISOString() }
+      )
+    );
+  }
+
+  function deleteMeeting(meetingId) {
+    setMeetings((previous) => previous.filter((meeting) => meeting.id !== meetingId));
+    if (lifecycle.selectedMeetingId === meetingId) {
+      lifecycle.resetSelectionState();
+    }
+  }
+
+
   return {
     ...workspaceData,
     ...lifecycle,
@@ -344,6 +360,9 @@ export default function useMeetings({
     syncLinkedGoogleCalendarEvents,
     applyCalendarSyncSnapshot,
     updateCalendarEntryMeta,
+    updateMeeting,
+    deleteMeeting,
     createManualNote,
   };
 }
+

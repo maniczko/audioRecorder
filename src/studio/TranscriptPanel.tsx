@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
+
 import PropTypes from "prop-types";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
@@ -42,7 +44,8 @@ function WaveformPanel({
     let cancelled = false;
     setIsDecoding(true);
 
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+
     if (!AudioContextClass) {
       setIsDecoding(false);
       return undefined;
@@ -343,7 +346,9 @@ export default function TranscriptPanel({
   canEditTranscript = true,
   onNormalize,
 }) {
-  const activeReviewItemRef = useRef(null);
+  const virtuosoRef = useRef(null);
+
+
   const [filterMode, setFilterMode] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
@@ -495,9 +500,18 @@ export default function TranscriptPanel({
   }, [bulkSpeakerId, speakerOptions]);
 
   useEffect(() => {
-    if (!activeReviewItemRef.current) return;
-    activeReviewItemRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [activeSegmentId]);
+    if (!virtuosoRef.current || !activeSegmentId) return;
+    
+    const index = filteredSegments.findIndex((s) => s.id === activeSegmentId);
+    if (index !== -1) {
+      virtuosoRef.current.scrollToIndex({
+        index,
+        align: "center",
+        behavior: "smooth",
+      });
+    }
+  }, [activeSegmentId, filteredSegments]);
+
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -952,124 +966,130 @@ export default function TranscriptPanel({
 
       <div className="transcript-list">
         {filteredSegments.length ? (
-          filteredSegments.map((segment) => {
-            const isSelected = selectedSegmentIds.includes(segment.id);
-            const isActive = segment.id === activeSegmentId;
+          <Virtuoso
+            ref={virtuosoRef}
+            data={filteredSegments}
+            style={{ height: "100%", width: "100%" }}
+            itemContent={(index, segment) => {
+              const isSelected = selectedSegmentIds.includes(segment.id);
+              const isActive = segment.id === activeSegmentId;
 
-            return (
-              <div
-                key={segment.id}
-                className={`fireflies-segment ${isActive ? "active" : ""} ${segment.verificationStatus === "review" ? "needs-review" : ""}`}
-                onClick={() => !isActive && activateSegment(segment)}
-              >
-                <div className="fireflies-avatar" style={{ background: getSpeakerColor(segment.speakerId) }}>
-                  {labelSpeaker(displaySpeakerNames, segment.speakerId).substring(0, 1).toUpperCase()}
-                </div>
-                
-                <div className="fireflies-content">
-                  <div className="fireflies-header">
-                    <strong className="fireflies-speaker">
-                      {labelSpeaker(displaySpeakerNames, segment.speakerId)}
-                    </strong>
-                    <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-                    <span className="fireflies-dot">·</span>
-                    <button
-                      type="button"
-                      className="fireflies-time"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        playFromTimestamp(segment.timestamp);
-                      }}
-                      disabled={!selectedRecordingAudioUrl}
-                      title="Odtwórz od tego momentu"
-                    >
-                      {formatDuration(segment.timestamp)}
-                    </button>
-                    {segment.verificationStatus === "review" && (
-                      <span className="task-flag review" style={{ padding: "2px 6px", fontSize: "0.7rem", borderRadius: "4px" }}>
-                        Do weryfikacji
-                      </span>
-                    )}
-                    <label className="fireflies-select" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSegmentSelection(segment.id)}
+              return (
+                <div
+                  className={`fireflies-segment ${isActive ? "active" : ""} ${segment.verificationStatus === "review" ? "needs-review" : ""}`}
+                  onClick={() => !isActive && activateSegment(segment)}
+                  style={{ marginBottom: '24px' }} // Maintain gap from CSS
+                >
+                  <div className="fireflies-avatar" style={{ background: getSpeakerColor(segment.speakerId) }}>
+                    {labelSpeaker(displaySpeakerNames, segment.speakerId).substring(0, 1).toUpperCase()}
+                  </div>
+                  
+                  <div className="fireflies-content">
+                    <div className="fireflies-header">
+                      <strong className="fireflies-speaker">
+                        {labelSpeaker(displaySpeakerNames, segment.speakerId)}
+                      </strong>
+                      <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                      <span className="fireflies-dot">·</span>
+                      <button
+                        type="button"
+                        className="fireflies-time"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playFromTimestamp(segment.timestamp);
+                        }}
+                        disabled={!selectedRecordingAudioUrl}
+                        title="Odtwórz od tego momentu"
+                      >
+                        {formatDuration(segment.timestamp)}
+                      </button>
+                      {segment.verificationStatus === "review" && (
+                        <span className="task-flag review" style={{ padding: "2px 6px", fontSize: "0.7rem", borderRadius: "4px" }}>
+                          Do weryfikacji
+                        </span>
+                      )}
+                      <label className="fireflies-select" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSegmentSelection(segment.id)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="fireflies-text-area">
+                      <textarea
+                        rows={2}
+
+                        value={segment.text}
+                        onFocus={() => setActiveSegmentId(segment.id)}
+                        onSelect={(event) =>
+                          setSplitCursor({
+                            segmentId: segment.id,
+                            start: event.currentTarget.selectionStart || 0,
+                          })
+                        }
+                        onChange={(event) => updateTranscriptSegment(segment.id, { text: event.target.value })}
+                        disabled={!canEditTranscript}
+                        className="fireflies-textarea"
                       />
-                    </label>
-                  </div>
+                    </div>
 
-                  <div className="fireflies-text-area">
-                    <textarea
-                      rows="2"
-                      value={segment.text}
-                      onFocus={() => setActiveSegmentId(segment.id)}
-                      onSelect={(event) =>
-                        setSplitCursor({
-                          segmentId: segment.id,
-                          start: event.currentTarget.selectionStart || 0,
-                        })
-                      }
-                      onChange={(event) => updateTranscriptSegment(segment.id, { text: event.target.value })}
-                      disabled={!canEditTranscript}
-                      className="fireflies-textarea"
-                    />
-                  </div>
+                    {segment.verificationReasons?.length > 0 && (
+                      <div className="microcopy">Powód: {segment.verificationReasons.join(", ")}</div>
+                    )}
+                    {segment.verificationEvidence?.comparisonText && (
+                      <div className="microcopy">Weryfikacja: {segment.verificationEvidence.comparisonText}</div>
+                    )}
 
-                  {segment.verificationReasons?.length > 0 && (
-                    <div className="microcopy">Powód: {segment.verificationReasons.join(", ")}</div>
-                  )}
-                  {segment.verificationEvidence?.comparisonText && (
-                    <div className="microcopy">Weryfikacja: {segment.verificationEvidence.comparisonText}</div>
-                  )}
-
-                  <div className="fireflies-actions">
-                    <button
-                      type="button"
-                      className="ghost-button small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateTranscriptSegment(segment.id, {
-                          verificationStatus: "verified",
-                          verificationReasons: [],
-                        });
-                      }}
-                      disabled={!canEditTranscript}
-                    >
-                      Zatwierdź
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateTranscriptSegment(segment.id, {
-                          verificationStatus: "review",
-                          verificationReasons: segment.verificationReasons?.length
-                            ? segment.verificationReasons
-                            : ["oznaczone ręcznie do ponownego sprawdzenia"],
-                        });
-                      }}
-                      disabled={!canEditTranscript}
-                    >
-                      Oznacz do sprawdzenia
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        playFromTimestamp(segment.timestamp);
-                      }}
-                      disabled={!selectedRecordingAudioUrl}
-                    >
-                      Odtwórz od {formatDuration(segment.timestamp)}
-                    </button>
+                    <div className="fireflies-actions">
+                      <button
+                        type="button"
+                        className="ghost-button small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateTranscriptSegment(segment.id, {
+                            verificationStatus: "verified",
+                            verificationReasons: [],
+                          });
+                        }}
+                        disabled={!canEditTranscript}
+                      >
+                        Zatwierdź
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateTranscriptSegment(segment.id, {
+                            verificationStatus: "review",
+                            verificationReasons: segment.verificationReasons?.length
+                              ? segment.verificationReasons
+                              : ["oznaczone ręcznie do ponownego sprawdzenia"],
+                          });
+                        }}
+                        disabled={!canEditTranscript}
+                      >
+                        Oznacz do sprawdzenia
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playFromTimestamp(segment.timestamp);
+                        }}
+                        disabled={!selectedRecordingAudioUrl}
+                      >
+                        Odtwórz od {formatDuration(segment.timestamp)}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            }}
+          />
         ) : (
           <div className="empty-panel large">
             <strong>Brak transkrypcji</strong>
@@ -1077,6 +1097,7 @@ export default function TranscriptPanel({
           </div>
         )}
       </div>
+
       </div>
     </section>
   );
