@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { useMeetingsCtx } from "../context/MeetingsContext";
 
 import PropTypes from "prop-types";
 import { formatDateTime, formatDuration } from "../lib/storage";
@@ -257,6 +258,12 @@ export default function StudioMeetingView({
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState("");
 
+  const { meetings } = useMeetingsCtx();
+  const updateMeeting = meetings?.updateMeeting;
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraftValue, setTitleDraftValue] = useState("");
+
   const [studioAnalysisTab, setStudioAnalysisTab] = useState("needs"); // default to needs for now as it's the main one
 
   const [transcriptSearch, setTranscriptSearch] = useState("");
@@ -464,11 +471,68 @@ export default function StudioMeetingView({
            HEADER — title + subtitle
           ═══════════════════════════════════════════ */}
       <div className="ff-header">
-        <h1 className="ff-header-title">
-          {isRecording
-            ? (meetingDraft?.title?.trim() || "Ad hoc")
-            : (selectedMeeting?.title || "Ad hoc")}
-        </h1>
+        {isEditingTitle ? (
+          <input
+            autoFocus
+            className="ff-header-title-input"
+            type="text"
+            value={titleDraftValue}
+            onChange={(e) => setTitleDraftValue(e.target.value)}
+            onBlur={() => {
+              setIsEditingTitle(false);
+              const val = titleDraftValue.trim();
+              if (!val) return;
+              if (isRecording && setMeetingDraft) {
+                setMeetingDraft({ ...meetingDraft, title: val });
+              } else if (selectedMeeting && updateMeeting && val !== selectedMeeting.title) {
+                updateMeeting(selectedMeeting.id, { title: val });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") setIsEditingTitle(false);
+            }}
+            style={{
+              fontSize: "1.75rem",
+              fontWeight: 700,
+              color: "var(--text)",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              borderRadius: "8px",
+              padding: "4px 12px",
+              margin: "0 0 8px 0",
+              width: "100%",
+              outline: "none",
+            }}
+          />
+        ) : (
+          <h1 
+            className="ff-header-title" 
+            title="Kliknij, aby edytować nazwę"
+            onClick={() => {
+              setTitleDraftValue(
+                isRecording
+                  ? (meetingDraft?.title?.trim() || "Ad hoc")
+                  : (selectedMeeting?.title || "Ad hoc")
+              );
+              setIsEditingTitle(true);
+            }}
+            style={{ cursor: "pointer", display: "inline-block", padding: "4px 8px", margin: "0 -8px 8px -8px", borderRadius: "6px" }}
+            onMouseOver={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"}
+            onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            {isRecording
+              ? (meetingDraft?.title?.trim() || "Ad hoc")
+              : (selectedMeeting?.title || "Ad hoc")}
+            <svg 
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ display: "inline-block", marginLeft: "12px", opacity: 0.4, verticalAlign: "middle" }}
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </h1>
+        )}
         <p className="ff-header-sub">
           {displayRecording
             ? [
