@@ -310,6 +310,85 @@ function integrationStatusLabel(status, connectedCount) {
   return "Kalendarz nie jest jeszcze podpiety";
 }
 
+function ChangelogSection() {
+  const [expandedVersion, setExpandedVersion] = useState("v1.5.0");
+  
+  const changelogData = [
+    {
+      version: "v1.5.0",
+      date: "20 marca 2026",
+      title: "Uporządkowanie Nagrań i Filtrowanie",
+      changes: [
+        "Jeden zintegrowany widok nagrań i spotkań zamiast dwóch oddzielnych paneli",
+        "Dodano możliwość filtrowania spotkań i nagrań po wybranej dacie (kalendarzyk)",
+        "Rozwinięto widok tabeli o tagi oraz możliwość natychmiastowego filtrowania (dropdown tagów)",
+        "Nowe chipy tagów widoczne bezpośrednio na liście bez wchodzenia w detale",
+        "Wyeliminowano błędy Service Workera i przystosowano testy Playwright E2E"
+      ]
+    },
+    {
+      version: "v1.4.2",
+      date: "19 marca 2026",
+      title: "Audio Pipeline i Backend",
+      changes: [
+        "Przeprowadzono migrację bazy IndexedDB do produkcyjnego silnika SQLite + Hono",
+        "Uporządkowano zarządzanie zduplikowanymi plikami logiki i poprawiono deploy na Vercel",
+        "Wprowadzono stabilny routing oraz natywne asercje w procesach rejestracji i resetu haseł",
+        "Zaimplementowano poprawki estetyki dashboardu dla Google Login"
+      ]
+    },
+    {
+      version: "v1.4.0",
+      date: "18 marca 2026",
+      title: "Core UX",
+      changes: [
+        "Odtwarzacz plików reaguje asynchronicznie i naprawiono testy widoczności status bara",
+        "Refaktoryzacja bazy E2E – zadania potwierdzane są klasą complete zamiast toggle'a"
+      ]
+    }
+  ];
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Dziennik zmian</div>
+          <h2>Changelog</h2>
+        </div>
+      </div>
+      <div className="integration-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {changelogData.map((item, idx) => {
+          const isExpanded = expandedVersion === item.version || (idx === 0 && !expandedVersion);
+          return (
+            <div key={idx} style={{ borderBottom: idx < changelogData.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingBottom: idx < changelogData.length - 1 ? '16px' : '0' }}>
+              <div 
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                onClick={() => setExpandedVersion(isExpanded ? null : item.version)}
+              >
+                <div>
+                  <strong style={{ fontSize: '1.05rem', color: 'var(--text)' }}>{item.version} - {item.title}</strong>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '4px' }}>{item.date}</p>
+                </div>
+                <span style={{ fontSize: '1.2rem', color: 'var(--muted)' }}>
+                  {isExpanded ? '▴' : '▾'}
+                </span>
+              </div>
+              
+              {isExpanded && (
+                <ul style={{ marginTop: '12px', paddingLeft: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {item.changes.map((change, i) => (
+                    <li key={i}>{change}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function ProfileTab({
   currentUser,
   profileDraft,
@@ -485,7 +564,7 @@ export default function ProfileTab({
             <label>
               <span>Priorytetowe insighty</span>
               <textarea
-                rows="4"
+                rows={4}
                 value={profileDraft.preferredInsights}
                 onChange={(event) =>
                   setProfileDraft((previous) => ({ ...previous, preferredInsights: event.target.value }))
@@ -496,7 +575,7 @@ export default function ProfileTab({
             <label>
               <span>Bio</span>
               <textarea
-                rows="5"
+                rows={5}
                 value={profileDraft.bio}
                 onChange={(event) => setProfileDraft((previous) => ({ ...previous, bio: event.target.value }))}
               />
@@ -788,6 +867,8 @@ export default function ProfileTab({
 
         <VoiceProfilesSection sessionToken={sessionToken} apiBaseUrl={apiBaseUrl} />
 
+        <ChangelogSection />
+
         <section className="panel">
           <div className="panel-header compact">
             <div>
@@ -822,7 +903,7 @@ export default function ProfileTab({
             <div className="integration-row">
               <div>
                 <strong>Tryb działania</strong>
-                <p>{typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator?.standalone) ? "Aplikacja (PWA)" : "Przeglądarka"}</p>
+                <p>{typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)")?.matches || (window.navigator as any)?.standalone) ? "Aplikacja (PWA)" : "Przeglądarka"}</p>
               </div>
               <div>
                 <strong>Cache offline</strong>
