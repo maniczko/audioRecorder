@@ -30,10 +30,20 @@ RUN pnpm prune --prod
 # ==========================================
 FROM node:22.12-bookworm-slim
 
-# Install FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+# Install Python and dependencies, skip ffmpeg apt package to avoid heavy GPU/X11 libraries which cause Railway OOM
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg python3 python3-venv && \
+    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Install static FFmpeg build directly
+RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
+    tar xf ffmpeg-release-amd64-static.tar.xz && \
+    mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
+    mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
+    rm -rf ffmpeg-*-amd64-static*
 
 # Install uv (astronomically fast API from Astral) to build python modules 100x faster
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
