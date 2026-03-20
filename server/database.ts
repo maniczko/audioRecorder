@@ -21,7 +21,7 @@ class Database {
       
       this.msgId = 0;
       this.callbacks = new Map();
-      this.worker = new Worker(path.join(__dirname, "sqliteWorker.js"));
+      this.worker = new Worker(path.join(__dirname, "sqliteWorker.ts"));
       
       this.worker.on("message", (msg) => {
         const { id, result, error } = msg;

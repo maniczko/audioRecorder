@@ -8,13 +8,9 @@ class TranscriptionService {
   }
 
   get pipeline() {
-    if (this.audioPipeline && typeof this.audioPipeline.transcribeRecording === 'function') {
-      return this.audioPipeline;
-    }
-    console.error(`[TranscriptionService] audioPipeline missing methods. Keys: ${Object.keys(this.audioPipeline || {})}. Recovering...`);
-    const fallback = require('../audioPipeline');
-    this.audioPipeline = fallback;
-    return fallback;
+    if (this.audioPipeline) return this.audioPipeline;
+    this.audioPipeline = require('../audioPipeline');
+    return this.audioPipeline;
   }
 
   async upsertMediaAsset(data) {
@@ -98,6 +94,9 @@ class TranscriptionService {
   }
 
   async computeEmbedding(audioPath) {
+    if (!this.speakerEmbedder) {
+      this.speakerEmbedder = require('../speakerEmbedder');
+    }
     return this.speakerEmbedder.computeEmbedding(audioPath);
   }
 }

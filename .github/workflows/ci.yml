@@ -91,7 +91,7 @@ jobs:
     name: 🏗️ Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [test-frontend, test-server]
+    needs: lint
     steps:
       - uses: actions/checkout@v4
 

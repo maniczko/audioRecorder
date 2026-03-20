@@ -19,7 +19,7 @@ async function getEmbeddingModels() {
     const { AutoModel, AutoProcessor, env } = await import("@xenova/transformers");
     env.allowLocalModels = false; // force download from HuggingFace
     modelCache = await AutoModel.from_pretrained("Xenova/wavlm-base-plus-sv", {
-      quantized: true,
+      quantized: false,
     });
     processorCache = await AutoProcessor.from_pretrained("Xenova/wavlm-base-plus-sv");
     return { model: modelCache, processor: processorCache };
