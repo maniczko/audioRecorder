@@ -711,7 +711,7 @@ export default function TranscriptPanel({
                   }
                 }}
               >
-                {isNormalizing ? "Normalizuję…" : "Normalizuj głośność"}
+                {isNormalizing ? "Koryguję…" : "Korekcja szumu i głośności"}
               </button>
             ) : null}
           </div>
