@@ -196,6 +196,90 @@ describe("audioPipeline exports", () => {
     await expect(pipeline.transcribeLiveChunk("/tmp/live.wav", "audio/wav")).resolves.toBe("");
   });
 
+  it("builds transcript segments from word-level output when the STT payload has no segments", async () => {
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
+        VERIFICATION_MODEL: "gpt-4o-transcribe",
+        AUDIO_LANGUAGE: "pl",
+        AUDIO_PREPROCESS: false,
+        TRANSCRIPT_CORRECTION: false,
+        FFMPEG_BINARY: "ffmpeg",
+        HF_TOKEN: "",
+        HUGGINGFACE_TOKEN: "",
+        PYTHON_BINARY: "python",
+        VAD_ENABLED: false,
+        WHISPER_PROMPT: "Prompt testowy",
+        DIARIZATION_MODEL: "model",
+        SPEAKER_IDENTIFICATION_MODEL: "model",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          statSync: vi.fn(() => ({ size: 1024 })),
+          readFileSync: vi.fn(() => Buffer.from("audio")),
+        },
+        statSync: vi.fn(() => ({ size: 1024 })),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+      };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(JSON.stringify({
+          text: "Dzien dobry to test nagrania",
+          words: [
+            { word: "Dzien", start: 0, end: 0.3 },
+            { word: "dobry", start: 0.31, end: 0.6 },
+            { word: "to", start: 0.8, end: 0.9 },
+            { word: "test", start: 0.91, end: 1.2 },
+            { word: "nagrania.", start: 1.21, end: 1.6 },
+          ],
+        })),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: JSON.stringify({ segments: [] }) } }],
+        }),
+      });
+
+    const result = await pipeline.transcribeRecording({
+      id: "rec_words_only",
+      file_path: "/tmp/audio.wav",
+      content_type: "audio/wav",
+    });
+
+    expect(result.pipelineStatus).toBe("completed");
+    expect(result.segments).toHaveLength(1);
+    expect(result.segments[0]).toMatchObject({
+      text: "Dzien dobry to test nagrania.",
+      speakerId: 0,
+    });
+    expect(result.reviewSummary).toEqual(
+      expect.objectContaining({
+        approved: expect.any(Number),
+        needsReview: expect.any(Number),
+      })
+    );
+  });
+
   it("extracts speaker audio clips, normalizes audio and generates voice coaching with mocked exec/fs", async () => {
     const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => callback?.(null, "", ""));
     const renameSync = vi.fn();

@@ -283,6 +283,99 @@ function normalizeSpeakerLabel(label, index) {
   return safeLabel;
 }
 
+function getRawWords(payload) {
+  if (Array.isArray(payload?.words)) return payload.words;
+  if (Array.isArray(payload?.transcript?.words)) return payload.transcript.words;
+  if (Array.isArray(payload?.results?.words)) return payload.results.words;
+  return [];
+}
+
+function synthesizeSegmentsFromWords(payload) {
+  const words = getRawWords(payload)
+    .map((word, index) => {
+      const text = clean(word?.word || word?.text || word?.token || word?.content);
+      if (!text) return null;
+      const start = Number(word?.start ?? word?.start_time ?? word?.offset ?? 0);
+      const end = Number(word?.end ?? word?.end_time ?? word?.offset_end ?? start);
+      return {
+        text,
+        start: Number.isFinite(start) ? start : 0,
+        end: Number.isFinite(end) && end > start ? end : start + 0.45,
+        index,
+      };
+    })
+    .filter(Boolean);
+
+  if (words.length) {
+    const segments = [];
+    let current = null;
+
+    const flushCurrent = () => {
+      if (!current || !current.words.length) return;
+      const joinedText = current.words.map((word) => word.text).join(" ").trim();
+      if (!joinedText) return;
+      const start = current.words[0].start;
+      const lastWord = current.words[current.words.length - 1];
+      const end = Math.max(start + 0.8, lastWord.end);
+      segments.push({
+        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+        text: joinedText,
+        timestamp: start,
+        endTimestamp: end,
+        speakerId: 0,
+        rawSpeakerLabel: "speaker_0",
+      });
+    };
+
+    for (const word of words) {
+      if (!current) {
+        current = { words: [word] };
+        continue;
+      }
+
+      const previousWord = current.words[current.words.length - 1];
+      const gap = Math.max(0, word.start - previousWord.end);
+      const punctuationBreak = /[.!?…:]$/.test(previousWord.text);
+      const maxWordCount = current.words.length >= 18;
+      const maxDuration = word.end - current.words[0].start >= 12;
+
+      if (gap > 1.2 || punctuationBreak || maxWordCount || maxDuration) {
+        flushCurrent();
+        current = { words: [word] };
+      } else {
+        current.words.push(word);
+      }
+    }
+
+    flushCurrent();
+
+    return {
+      segments,
+      text: segments.map((segment) => segment.text).join(" ").trim(),
+    };
+  }
+
+  const rawText = clean(payload?.text || payload?.transcript || payload?.results?.text);
+  if (!rawText) {
+    return { segments: [], text: "" };
+  }
+
+  const estimatedDuration = Math.max(1.5, tokenize(rawText).length * 0.42);
+  return {
+    segments: [
+      {
+        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+        text: rawText,
+        timestamp: 0,
+        endTimestamp: estimatedDuration,
+        speakerId: 0,
+        rawSpeakerLabel: "speaker_0",
+      },
+    ],
+    text: rawText,
+  };
+}
+
 function normalizeDiarizedSegments(payload) {
   const rawSegments = Array.isArray(payload?.segments)
     ? payload.segments
@@ -290,13 +383,14 @@ function normalizeDiarizedSegments(payload) {
       ? payload.transcript.segments
       : Array.isArray(payload?.utterances)
         ? payload.utterances
-        : Array.isArray(payload?.transcript?.utterances)
-          ? payload.transcript.utterances
-          : [];
+          : Array.isArray(payload?.transcript?.utterances)
+            ? payload.transcript.utterances
+            : [];
+  const synthesized = !rawSegments.length ? synthesizeSegmentsFromWords(payload) : null;
   const speakerOrder = new Map();
   const speakerNames = {};
 
-  const segments = rawSegments
+  const segments = (rawSegments.length ? rawSegments : (synthesized?.segments || []))
     .map((segment, index) => {
       const text = clean(segment.text || segment.transcript || segment.content);
       if (!text) {
@@ -339,12 +433,21 @@ function normalizeDiarizedSegments(payload) {
     segments,
     speakerNames,
     speakerCount: Object.keys(speakerNames).length,
-    text: clean(payload?.text || payload?.transcript || segments.map((segment) => segment.text).join(" ")),
+    text: clean(payload?.text || payload?.transcript || synthesized?.text || segments.map((segment) => segment.text).join(" ")),
   };
 }
 
 function normalizeVerificationSegments(payload: any) {
   const rawSegments = Array.isArray(payload?.segments) ? payload.segments : [];
+  if (!rawSegments.length) {
+    return (synthesizeSegmentsFromWords(payload)?.segments || []).map((segment) => ({
+      text: segment.text,
+      start: segment.timestamp,
+      end: segment.endTimestamp,
+      avgLogprob: null,
+      noSpeechProb: null,
+    }));
+  }
   return rawSegments
     .map((segment) => ({
       text: clean(segment.text || segment.transcript),
@@ -652,8 +755,16 @@ function mergeChunkedPayloads(payloads: any[]) {
       end: Number(s.end || 0) + offsetSeconds,
     }));
   });
+  const allWords = payloads.flatMap(({ payload, offsetSeconds }) => {
+    const words = getRawWords(payload);
+    return words.map((word) => ({
+      ...word,
+      start: Number(word?.start ?? word?.start_time ?? word?.offset ?? 0) + offsetSeconds,
+      end: Number(word?.end ?? word?.end_time ?? word?.offset_end ?? word?.start ?? 0) + offsetSeconds,
+    }));
+  });
   const fullText = payloads.map(({ payload }) => payload?.text || "").join(" ").trim();
-  return { segments: allSegments, text: fullText };
+  return { segments: allSegments, words: allWords, text: fullText };
 }
 
 
@@ -1431,4 +1542,3 @@ export {
   analyzeMeetingWithOpenAI,
   embedTextChunks,
 };
-
