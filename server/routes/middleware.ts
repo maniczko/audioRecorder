@@ -26,10 +26,12 @@ export function createMiddlewares(services: AppServices) {
 
   const authMiddleware = async (c: any, next: any) => {
     const authHeader = c.req.header("Authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) {
+    const queryToken = String(c.req.query?.("token") || "").trim();
+    const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    const token = bearerToken || queryToken;
+    if (!token) {
       return c.json({ message: "Brak tokenu autoryzacyjnego." }, 401);
     }
-    const token = authHeader.slice(7).trim();
     const session = await authService.getSession(token);
     if (!session) {
       return c.json({ message: "Sesja wygasla lub jest nieprawidlowa." }, 401);

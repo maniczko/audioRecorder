@@ -231,4 +231,32 @@ describe("recorderStore", () => {
       "Blad w kolejce: Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile."
     );
   });
+
+  test("maps empty-stt-output failures to a recording quality message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi
+        .fn()
+        .mockRejectedValue(new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage:
+        "Model transkrypcji nie wykryl wypowiedzi w nagraniu. Sprawdz jakosc pliku albo sprobuj ponownie innym formatem.",
+    });
+  });
 });

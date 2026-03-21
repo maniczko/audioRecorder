@@ -42,6 +42,34 @@ describe("route middleware", () => {
     expect(validNext).toHaveBeenCalledTimes(1);
   });
 
+  it("authMiddleware accepts token from query string for SSE-style requests", async () => {
+    const services = {
+      authService: {
+        getSession: vi.fn().mockResolvedValue({ user_id: "u1", workspace_id: "ws1" }),
+      },
+      workspaceService: {
+        getMembership: vi.fn().mockResolvedValue({ member_role: "owner" }),
+      },
+      config: { trustProxy: false },
+    } as any;
+    const { authMiddleware } = createMiddlewares(services);
+    const next = vi.fn();
+    const ctx: any = {
+      req: {
+        header: vi.fn().mockReturnValue(""),
+        query: vi.fn().mockImplementation((key: string) => (key === "token" ? "query-token" : "")),
+      },
+      json: vi.fn(),
+      set: vi.fn(),
+    };
+
+    await authMiddleware(ctx, next);
+
+    expect(services.authService.getSession).toHaveBeenCalledWith("query-token");
+    expect(ctx.set).toHaveBeenCalledWith("session", { user_id: "u1", workspace_id: "ws1" });
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
   it("ensureWorkspaceAccess throws 403 when membership is missing", async () => {
     const { ensureWorkspaceAccess } = createMiddlewares({
       authService: {},

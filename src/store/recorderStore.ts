@@ -111,6 +111,10 @@ function toUserFacingQueueError(error: any) {
     return "Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile.";
   }
 
+  if (errorMessage.includes("Model STT nie zwrocil zadnych segmentow transkrypcji")) {
+    return "Model transkrypcji nie wykryl wypowiedzi w nagraniu. Sprawdz jakosc pliku albo sprobuj ponownie innym formatem.";
+  }
+
   return errorMessage;
 }
 

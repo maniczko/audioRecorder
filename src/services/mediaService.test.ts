@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { STORAGE_KEYS } from "../lib/storage";
 
 async function loadMediaService(provider = "local") {
   const apiRequest = vi.fn();
@@ -71,6 +72,7 @@ describe("mediaService", () => {
 
   test("remote media service calls API endpoints and maps responses", async () => {
     const { createMediaService, apiRequest } = await loadMediaService("remote");
+    localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({ token: "session-token" }));
     apiRequest
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({ blob: vi.fn().mockResolvedValue(new Blob(["audio"])) })
@@ -117,6 +119,9 @@ describe("mediaService", () => {
     await expect(service.extractVoiceProfileFromSpeaker("rec1", "0", "Anna")).resolves.toEqual({ id: "vp1" });
     await expect(service.askRAG("ws1", "co?")).resolves.toEqual({ answer: "rag" });
     expect(apiRequest).toHaveBeenCalled();
+    expect(EventSourceMock).toHaveBeenCalledWith(
+      "https://api.example.test/media/recordings/rec1/progress?token=session-token"
+    );
     expect(es.close).toHaveBeenCalled();
   });
 });

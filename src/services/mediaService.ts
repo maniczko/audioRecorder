@@ -4,6 +4,7 @@ import { createBrowserTranscriptionController, TRANSCRIPTION_PROVIDER } from "..
 import { getSpeechRecognitionClass } from "../lib/recording";
 import { apiRequest } from "./httpClient";
 import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from "./config";
+import { resolvePersistedSession } from "../lib/sessionStorage";
 
 export const REMOTE_TRANSCRIPTION_PROVIDER = {
   id: "remote-pipeline",
@@ -165,7 +166,9 @@ function createRemoteMediaService() {
       return apiRequest(`/media/recordings/${recordingId}/rediarize`, { method: "POST" });
     },
     subscribeToTranscriptionProgress(recordingId, onProgress) {
-      const url = `${API_BASE_URL}/media/recordings/${recordingId}/progress`;
+      const token = resolvePersistedSession()?.token || "";
+      const query = token ? `?token=${encodeURIComponent(token)}` : "";
+      const url = `${API_BASE_URL}/media/recordings/${recordingId}/progress${query}`;
       const es = new EventSource(url);
       es.addEventListener("progress", (e) => {
         try {
