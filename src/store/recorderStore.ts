@@ -96,6 +96,9 @@ function buildFallbackAnalysis(message, diarization) {
   };
 }
 
+const EMPTY_TRANSCRIPT_MESSAGE =
+  "Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.";
+
 function toUserFacingQueueError(error: any) {
   const errorMessage = String(error?.message || "Blad przetwarzania.");
 
@@ -120,10 +123,15 @@ function toUserFacingQueueError(error: any) {
   }
 
   if (errorMessage.includes("Model STT nie zwrocil zadnych segmentow transkrypcji")) {
-    return "Model transkrypcji nie wykryl wypowiedzi w nagraniu. Sprawdz jakosc pliku albo sprobuj ponownie innym formatem.";
+    return EMPTY_TRANSCRIPT_MESSAGE;
   }
 
   return errorMessage;
+}
+
+function isExpectedDomainFailure(error: any) {
+  const errorMessage = String(error?.message || "");
+  return errorMessage.includes("Model STT nie zwrocil zadnych segmentow transkrypcji.");
 }
 
 export const useRecorderStore = create<any>()(
@@ -352,6 +360,47 @@ export const useRecorderStore = create<any>()(
             : [];
           if (setCurrentSegments) setCurrentSegments(verifiedSegments);
 
+          const isEmptyTranscript =
+            transcription?.pipelineStatus === "done" &&
+            transcription?.transcriptOutcome === "empty";
+
+          if (isEmptyTranscript) {
+            const emptyMessage = EMPTY_TRANSCRIPT_MESSAGE;
+            const emptyAnalysis = buildFallbackAnalysis(
+              "Nie wykryto wypowiedzi w nagraniu.",
+              transcription.diarization || { speakerNames: {}, speakerCount: 0 }
+            );
+            const recording = {
+              id: nextItem.recordingId,
+              createdAt: nextItem.createdAt || new Date().toISOString(),
+              duration: nextItem.duration || 0,
+              transcript: [],
+              transcriptOutcome: "empty",
+              emptyReason: transcription.emptyReason || "no_segments_from_stt",
+              speakerNames: transcription.diarization?.speakerNames || {},
+              speakerCount: transcription.diarization?.speakerCount || 0,
+              diarizationConfidence: transcription.diarization?.confidence || 0,
+              reviewSummary: transcription.reviewSummary || { needsReview: 0, approved: 0 },
+              transcriptionProvider: transcription.providerId,
+              transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
+              pipelineStatus: "done",
+              storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
+              analysis: emptyAnalysis,
+            };
+
+            attachCompletedRecording(target.id, recording);
+            get().removeQueueItem(nextItem.recordingId);
+            const doneSnapshot = getPipelineSnapshot("done");
+            set({
+              lastQueueErrorKey: "",
+              analysisStatus: "done",
+              pipelineProgressPercent: doneSnapshot.progressPercent,
+              pipelineStageLabel: doneSnapshot.stageLabel,
+              recordingMessage: emptyMessage,
+            });
+            return;
+          }
+
           const reviewSnapshot = getPipelineSnapshot(
             "review",
             92,
@@ -417,7 +466,9 @@ export const useRecorderStore = create<any>()(
           const userFacingMessage = toUserFacingQueueError(error);
           const errorKey = `${nextItem.recordingId}:${userFacingMessage}`;
           if (get().lastQueueErrorKey !== errorKey) {
-            console.error("Recording queue item failed.", error);
+            if (!isExpectedDomainFailure(error)) {
+              console.error("Recording queue item failed.", error);
+            }
             set({ lastQueueErrorKey: errorKey });
           }
           get().updateQueueItem(nextItem.recordingId, {

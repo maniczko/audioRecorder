@@ -61,6 +61,9 @@ export interface MediaAsset {
 
 export interface TranscriptionResult {
   pipelineStatus?: string;
+  transcriptOutcome?: "normal" | "empty";
+  emptyReason?: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations";
+  userMessage?: string;
   segments?: any[];
   diarization?: any;
   reviewSummary?: string | null;

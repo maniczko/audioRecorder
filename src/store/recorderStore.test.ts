@@ -31,6 +31,7 @@ describe("recorderStore", () => {
   beforeEach(async () => {
     localStorage.clear();
     vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.getAudioBlob.mockReset();
     mocks.analyzeMeeting.mockReset();
     mocks.createMediaService.mockReset();
@@ -370,7 +371,70 @@ describe("recorderStore", () => {
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
       status: "failed",
       errorMessage:
-        "Model transkrypcji nie wykryl wypowiedzi w nagraniu. Sprawdz jakosc pliku albo sprobuj ponownie innym formatem.",
+        "Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.",
     });
+  });
+
+  test("treats empty transcript as a completed import without console error", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    const consoleErrorSpy = vi.spyOn(console, "error");
+    consoleErrorSpy.mockClear();
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi.fn().mockResolvedValue({
+        pipelineStatus: "done",
+        transcriptOutcome: "empty",
+        emptyReason: "no_segments_from_stt",
+        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        diarization: { speakerNames: {}, speakerCount: 0, confidence: 0 },
+        verifiedSegments: [],
+        providerId: "remote",
+        providerLabel: "Remote",
+        reviewSummary: { needsReview: 0, approved: 0 },
+      }),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    const attachCompletedRecording = vi.fn();
+    const setCurrentSegments = vi.fn();
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: "rec1",
+          status: "queued",
+          uploaded: false,
+          createdAt: "2026-03-21T10:00:00.000Z",
+          duration: 12,
+          rawSegments: [],
+        },
+      ],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", title: "Weekly", attendees: [] }),
+      attachCompletedRecording,
+      setCurrentSegments
+    );
+
+    expect(attachCompletedRecording).toHaveBeenCalledWith(
+      "m1",
+      expect.objectContaining({
+        id: "rec1",
+        pipelineStatus: "done",
+        transcript: [],
+        transcriptOutcome: "empty",
+        analysis: expect.objectContaining({
+          summary: "Nie wykryto wypowiedzi w nagraniu.",
+        }),
+      })
+    );
+    expect(useRecorderStore.getState().recordingQueue).toEqual([]);
+    expect(useRecorderStore.getState().analysisStatus).toBe("done");
+    expect(useRecorderStore.getState().recordingMessage).toBe(
+      "Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem."
+    );
+    expect(useRecorderStore.getState().pipelineProgressPercent).toBe(100);
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 });

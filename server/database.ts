@@ -693,9 +693,24 @@ export class Database {
   }
 
   async saveTranscriptionResult(recordingId: string, result: TranscriptionResult = {}): Promise<MediaAsset | null> {
+    const diarizationPayload =
+      result.diarization && typeof result.diarization === "object"
+        ? {
+            ...result.diarization,
+            reviewSummary: result.reviewSummary || null,
+            transcriptOutcome: result.transcriptOutcome || "normal",
+            emptyReason: result.emptyReason || "",
+            userMessage: result.userMessage || "",
+          }
+        : {
+            reviewSummary: result.reviewSummary || null,
+            transcriptOutcome: result.transcriptOutcome || "normal",
+            emptyReason: result.emptyReason || "",
+            userMessage: result.userMessage || "",
+          };
     await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
          JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
-         JSON.stringify(result.diarization && typeof result.diarization === "object" ? { ...result.diarization, reviewSummary: result.reviewSummary || null } : { reviewSummary: result.reviewSummary || null }),
+         JSON.stringify(diarizationPayload),
          this.nowIso(), recordingId]);
     return this.getMediaAsset(recordingId);
   }

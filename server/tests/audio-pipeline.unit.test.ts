@@ -280,6 +280,79 @@ describe("audioPipeline exports", () => {
     );
   });
 
+  it("returns an empty transcript result when STT payload has no segments, words or text", async () => {
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
+        VERIFICATION_MODEL: "gpt-4o-transcribe",
+        AUDIO_LANGUAGE: "pl",
+        AUDIO_PREPROCESS: false,
+        TRANSCRIPT_CORRECTION: false,
+        FFMPEG_BINARY: "ffmpeg",
+        HF_TOKEN: "",
+        HUGGINGFACE_TOKEN: "",
+        PYTHON_BINARY: "python",
+        VAD_ENABLED: false,
+        WHISPER_PROMPT: "Prompt testowy",
+        DIARIZATION_MODEL: "model",
+        SPEAKER_IDENTIFICATION_MODEL: "model",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          statSync: vi.fn(() => ({ size: 1024 })),
+          readFileSync: vi.fn(() => Buffer.from("audio")),
+        },
+        statSync: vi.fn(() => ({ size: 1024 })),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+      };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(JSON.stringify({})),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: JSON.stringify({ segments: [] }) } }],
+        }),
+      });
+
+    const result = await pipeline.transcribeRecording({
+      id: "rec_empty",
+      file_path: "/tmp/audio.wav",
+      content_type: "audio/wav",
+    });
+
+    expect(result).toMatchObject({
+      pipelineStatus: "completed",
+      transcriptOutcome: "empty",
+      emptyReason: "no_segments_from_stt",
+      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      speakerCount: 0,
+      speakerNames: {},
+      segments: [],
+      reviewSummary: { needsReview: 0, approved: 0 },
+    });
+  });
+
   it("extracts speaker audio clips, normalizes audio and generates voice coaching with mocked exec/fs", async () => {
     const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => callback?.(null, "", ""));
     const renameSync = vi.fn();

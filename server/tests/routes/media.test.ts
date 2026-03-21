@@ -113,7 +113,16 @@ describe("Media Routes", () => {
 
   it("GET /media/recordings/:recordingId/transcribe - returns payload", async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_2", workspace_id: "ws_1", transcription_status: "completed", diarization_json: JSON.stringify({ speakerCount: 2 }), transcript_json: "[]"
+      id: "rec_2",
+      workspace_id: "ws_1",
+      transcription_status: "completed",
+      diarization_json: JSON.stringify({
+        speakerCount: 2,
+        transcriptOutcome: "empty",
+        emptyReason: "no_segments_from_stt",
+        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      }),
+      transcript_json: "[]"
     });
 
     const res = await app.request("/media/recordings/rec_2/transcribe", {
@@ -126,6 +135,9 @@ describe("Media Routes", () => {
     expect(data.recordingId).toBe("rec_2");
     expect(data.pipelineStatus).toBe("done"); 
     expect(data.diarization.speakerCount).toBe(2);
+    expect(data.transcriptOutcome).toBe("empty");
+    expect(data.emptyReason).toBe("no_segments_from_stt");
+    expect(data.userMessage).toBe("Nie wykryto wypowiedzi w nagraniu.");
   });
 
   it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {

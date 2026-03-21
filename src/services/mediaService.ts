@@ -125,6 +125,9 @@ function createRemoteMediaService() {
         providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
         providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
         pipelineStatus: response.pipelineStatus || "queued",
+        transcriptOutcome: response.transcriptOutcome || "normal",
+        emptyReason: response.emptyReason || "",
+        userMessage: response.userMessage || "",
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };
@@ -140,6 +143,9 @@ function createRemoteMediaService() {
         providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
         providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
         pipelineStatus: response.pipelineStatus || "queued",
+        transcriptOutcome: response.transcriptOutcome || "normal",
+        emptyReason: response.emptyReason || "",
+        userMessage: response.userMessage || "",
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };

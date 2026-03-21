@@ -92,7 +92,13 @@ export default class TranscriptionService extends EventEmitter {
           voiceProfiles: await this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
         });
         
-        this.emit(`progress-${recordingId}`, { progress: 100, message: "Trener wymowy gotowy! (Zakończono)" });
+        const isEmptyTranscript = result?.transcriptOutcome === "empty";
+        this.emit(`progress-${recordingId}`, {
+          progress: 100,
+          message: isEmptyTranscript
+            ? (result?.userMessage || "Nie wykryto wypowiedzi w nagraniu.")
+            : "Trener wymowy gotowy! (Zakończono)",
+        });
 
         await this.saveTranscriptionResult(recordingId, {
           ...result,
@@ -107,7 +113,7 @@ export default class TranscriptionService extends EventEmitter {
         });
 
         // Wectorize for RAG in the background without blocking the UI updates
-        if (result.segments && result.segments.length > 0) {
+        if (!isEmptyTranscript && result.segments && result.segments.length > 0) {
           this.vectorizeTranscriptionResultToRAG(asset.workspace_id, recordingId, result.segments).catch(err => {
             console.error("[RAG] Background vectorization failed:", err);
           });
@@ -264,4 +270,3 @@ export default class TranscriptionService extends EventEmitter {
     return topChunks.map(s => s.chunk);
   }
 }
-

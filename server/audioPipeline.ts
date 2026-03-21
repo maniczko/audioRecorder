@@ -554,6 +554,34 @@ function buildVerificationResult(diarizedSegments: any[], verificationSegments: 
   };
 }
 
+function buildEmptyTranscriptResult(reason: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations") {
+  return {
+    providerId: "openai-audio-pipeline",
+    providerLabel: "OpenAI STT + diarization",
+    pipelineStatus: "completed",
+    transcriptOutcome: "empty" as const,
+    emptyReason: reason,
+    userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    diarization: {
+      speakerNames: {},
+      speakerCount: 0,
+      confidence: 0,
+      text: "",
+      transcriptOutcome: "empty",
+      emptyReason: reason,
+      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    },
+    segments: [],
+    speakerNames: {},
+    speakerCount: 0,
+    confidence: 0,
+    reviewSummary: {
+      needsReview: 0,
+      approved: 0,
+    },
+  };
+}
+
 /**
  * Runs pyannote.audio speaker diarization via Python subprocess.
  * Returns [{speaker, start, end}] or null if unavailable/failed.
@@ -1129,7 +1157,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   });
 
   if (!diarization.segments.length) {
-    throw new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.");
+    return buildEmptyTranscriptResult("no_segments_from_stt");
   }
 
   // ── Hallucination Filter (VAD-based) ──
@@ -1145,6 +1173,9 @@ async function transcribeRecording(asset: any, options: any = {}) {
     });
     if (DEBUG && diarization.segments.length < originalCount) {
       console.log(`[audioPipeline] VAD filter removed ${originalCount - diarization.segments.length} hallucinated segment(s).`);
+    }
+    if (!diarization.segments.length) {
+      return buildEmptyTranscriptResult("segments_removed_by_vad");
     }
   }
 
@@ -1205,35 +1236,49 @@ async function transcribeRecording(asset: any, options: any = {}) {
     }
   }
 
+  const processedSegments = await (async () => {
+    notify(90, "Czyszczenie halucynacji AI za sprawą hybrydowej analizy WavLM...");
+    const withoutHallucinations = verificationResult.verifiedSegments
+      .filter((seg) => !isHallucination(seg.text));
+    if (DEBUG && withoutHallucinations.length < verificationResult.verifiedSegments.length) {
+      console.log(`[audioPipeline] Hallucination filter removed ${verificationResult.verifiedSegments.length - withoutHallucinations.length} segment(s).`);
+    }
+    if (!withoutHallucinations.length) {
+      return buildEmptyTranscriptResult("segments_removed_as_hallucinations").segments;
+    }
+    const merged = mergeShortSegments(withoutHallucinations);
+    const corrected = await correctTranscriptWithLLM(merged, options);
+    return corrected;
+  })();
+
+  if (!processedSegments.length) {
+    return buildEmptyTranscriptResult("segments_removed_as_hallucinations");
+  }
+
   return {
     providerId: "openai-audio-pipeline",
     providerLabel: "OpenAI STT + diarization",
     pipelineStatus: "completed",
+    transcriptOutcome: "normal",
+    emptyReason: "",
+    userMessage: "",
     diarization: {
       speakerNames: identifiedNames,
       speakerCount: diarization.speakerCount,
       confidence: verificationResult.confidence,
       text: diarization.text,
+      transcriptOutcome: "normal",
+      emptyReason: "",
+      userMessage: "",
     },
     // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
-    segments: await (async () => {
-      notify(90, "Czyszczenie halucynacji AI za sprawą hybrydowej analizy WavLM...");
-      const withoutHallucinations = verificationResult.verifiedSegments
-        .filter((seg) => !isHallucination(seg.text));
-      if (DEBUG && withoutHallucinations.length < verificationResult.verifiedSegments.length) {
-        console.log(`[audioPipeline] Hallucination filter removed ${verificationResult.verifiedSegments.length - withoutHallucinations.length} segment(s).`);
-      }
-      const merged = mergeShortSegments(withoutHallucinations);
-      return correctTranscriptWithLLM(merged, options);
-    })(),
+    segments: processedSegments,
     speakerNames: identifiedNames,
     speakerCount: diarization.speakerCount,
     confidence: verificationResult.confidence,
     reviewSummary: {
-      needsReview: verificationResult.verifiedSegments.filter((segment) => segment.verificationStatus === "review")
-        .length,
-      approved: verificationResult.verifiedSegments.filter((segment) => segment.verificationStatus === "verified")
-        .length,
+      needsReview: processedSegments.filter((segment) => segment.verificationStatus === "review").length,
+      approved: processedSegments.filter((segment) => segment.verificationStatus === "verified").length,
     },
   };
   } finally {

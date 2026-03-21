@@ -119,6 +119,46 @@ describe("TranscriptionService", () => {
     expect(service.transcriptionJobs.has("rec_2")).toBe(false);
   });
 
+  it("persists empty transcript results without marking failure or vectorizing RAG", async () => {
+    const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
+    const progressEvents: any[] = [];
+    service.on("progress-rec_empty", (payload) => progressEvents.push(payload));
+    mockAudioPipeline.transcribeRecording.mockResolvedValue({
+      pipelineStatus: "completed",
+      transcriptOutcome: "empty",
+      emptyReason: "no_segments_from_stt",
+      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      segments: [],
+      diarization: {
+        speakerNames: {},
+        speakerCount: 0,
+        confidence: 0,
+      },
+      reviewSummary: { needsReview: 0, approved: 0 },
+    });
+    const asset = { id: "asset_empty", file_path: "test.wav", workspace_id: "ws_1" };
+
+    service.ensureTranscriptionJob("rec_empty", asset, {});
+    await service.transcriptionJobs.get("rec_empty");
+
+    expect(mockDb.saveTranscriptionResult).toHaveBeenCalledWith(
+      "rec_empty",
+      expect.objectContaining({
+        pipelineStatus: "completed",
+        transcriptOutcome: "empty",
+        emptyReason: "no_segments_from_stt",
+      })
+    );
+    expect(mockDb.markTranscriptionFailure).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockDb.saveRagChunk).not.toHaveBeenCalled();
+    expect(progressEvents).toEqual(
+      expect.arrayContaining([
+        { progress: 100, message: "Nie wykryto wypowiedzi w nagraniu." },
+      ])
+    );
+  });
+
   it("creates voice profile from speaker clip and removes temp file afterward", async () => {
     vi.resetModules();
     const renameSync = vi.fn();

@@ -82,12 +82,18 @@ describe("mediaService", () => {
         providerId: "remote",
         providerLabel: "Remote",
         pipelineStatus: "queued",
+        transcriptOutcome: "empty",
+        emptyReason: "no_segments_from_stt",
+        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
         reviewSummary: { approved: 1 },
       })
       .mockResolvedValueOnce({
         diarization: { speakerCount: 1 },
         segments: [{ text: "a" }],
         pipelineStatus: "done",
+        transcriptOutcome: "empty",
+        emptyReason: "segments_removed_by_vad",
+        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
       })
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({ text: "live" })
@@ -108,8 +114,18 @@ describe("mediaService", () => {
 
     await expect(service.persistRecordingAudio("rec1", new Blob(["audio"], { type: "audio/webm" }), { workspaceId: "ws1", meetingId: "m1" })).resolves.toEqual({ storageMode: "remote" });
     await expect(service.getRecordingAudioBlob("rec1")).resolves.toBeInstanceOf(Blob);
-    await expect(service.startTranscriptionJob({ recordingId: "rec1", blob: new Blob(["audio"], { type: "audio/webm" }), meeting: { id: "m1", workspaceId: "ws1", attendees: ["Anna"], title: "Weekly", tags: ["tag"] } })).resolves.toMatchObject({ pipelineStatus: "queued" });
-    await expect(service.getTranscriptionJobStatus("rec1")).resolves.toMatchObject({ pipelineStatus: "done" });
+    await expect(service.startTranscriptionJob({ recordingId: "rec1", blob: new Blob(["audio"], { type: "audio/webm" }), meeting: { id: "m1", workspaceId: "ws1", attendees: ["Anna"], title: "Weekly", tags: ["tag"] } })).resolves.toMatchObject({
+      pipelineStatus: "queued",
+      transcriptOutcome: "empty",
+      emptyReason: "no_segments_from_stt",
+      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    });
+    await expect(service.getTranscriptionJobStatus("rec1")).resolves.toMatchObject({
+      pipelineStatus: "done",
+      transcriptOutcome: "empty",
+      emptyReason: "segments_removed_by_vad",
+      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    });
     await expect(service.normalizeRecordingAudio("rec1")).resolves.toBeUndefined();
     await expect(service.transcribeLiveChunk(new Blob(["audio"], { type: "audio/webm" }))).resolves.toBe("live");
     await expect(service.getVoiceCoaching("rec1", "0", [])).resolves.toBe("coach");

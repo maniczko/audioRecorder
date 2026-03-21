@@ -21,6 +21,9 @@ function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStat
   return {
     recordingId: asset?.id || "",
     pipelineStatus: normalizePipelineStatus(asset?.transcription_status),
+    transcriptOutcome: diarization?.transcriptOutcome || "normal",
+    emptyReason: diarization?.emptyReason || "",
+    userMessage: diarization?.userMessage || "",
     segments: Array.isArray(segments) ? segments : [],
     diarization: diarization && typeof diarization === "object" ? diarization : {},
     speakerNames: diarization?.speakerNames || {},

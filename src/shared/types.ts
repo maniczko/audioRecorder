@@ -34,6 +34,9 @@ export interface DiarizationResult {
 export interface TranscriptionStatusPayload {
   recordingId: string;
   pipelineStatus: "uploading" | "queued" | "processing" | "diarization" | "review" | "done" | "failed";
+  transcriptOutcome?: "normal" | "empty";
+  emptyReason?: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations";
+  userMessage?: string;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;
