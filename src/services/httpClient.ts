@@ -1,4 +1,4 @@
-import { API_BASE_URL, remoteApiEnabled } from "./config";
+import { API_BASE_URL, apiBaseUrlConfigured } from "./config";
 import { STORAGE_KEYS } from "../lib/storage";
 
 const unauthorizedHandlers = new Set();
@@ -9,8 +9,8 @@ export function onUnauthorized(handler) {
 
 function buildUrl(path) {
   const safePath = String(path || "").startsWith("/") ? path : `/${String(path || "")}`;
-  if (!remoteApiEnabled()) {
-    throw new Error("Remote API is not configured. Set REACT_APP_API_BASE_URL first.");
+  if (!apiBaseUrlConfigured()) {
+    throw new Error("Remote API is not configured. Set VITE_API_BASE_URL or REACT_APP_API_BASE_URL first.");
   }
 
   return `${API_BASE_URL}${safePath}`;

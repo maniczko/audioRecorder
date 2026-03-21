@@ -2,11 +2,12 @@ import './styles/profile.css';
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
 import { apiRequest } from "./services/httpClient";
-import { remoteApiEnabled } from "./services/config";
+import { apiBaseUrlConfigured } from "./services/config";
+import type { VoiceProfileSummary, VoiceProfilesListPayload } from "./shared/types";
 import './ProfileTabStyles.css';
 
 function VoiceProfilesSection() {
-  const [profiles, setProfiles] = useState([]);
+  const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [speakerName, setSpeakerName] = useState("");
@@ -14,15 +15,20 @@ function VoiceProfilesSection() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const backendApiReady = apiBaseUrlConfigured();
 
   useEffect(() => {
-    if (!remoteApiEnabled()) return;
+    if (!backendApiReady) return;
     apiRequest("/voice-profiles")
-      .then((data) => setProfiles(data.profiles || []))
+      .then((data: VoiceProfilesListPayload) => setProfiles(data.profiles || []))
       .catch(() => {});
-  }, []);
+  }, [backendApiReady]);
 
   async function startRecording() {
+    if (!backendApiReady) {
+      setStatus("Backend API nie jest skonfigurowane. Ustaw VITE_API_BASE_URL lub REACT_APP_API_BASE_URL.");
+      return;
+    }
     if (!speakerName.trim()) { setStatus("Podaj imię osoby przed nagraniem."); return; }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
     if (!stream) { setStatus("Brak dostępu do mikrofonu."); return; }
@@ -44,7 +50,7 @@ function VoiceProfilesSection() {
             "Content-Type": blob.type,
             "X-Speaker-Name": speakerName.trim(),
           },
-        });
+        }) as VoiceProfileSummary;
         setProfiles((prev) => [data, ...prev]);
         setSpeakerName("");
         setStatus(data.hasEmbedding ? "Profil głosowy zapisany i gotowy." : "Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.");
@@ -104,11 +110,22 @@ function VoiceProfilesSection() {
               <span style={{ fontSize: "0.82rem", color: "var(--accent)" }}>Nagrywa…</span>
             </>
           ) : (
-            <button type="button" className="primary-button" onClick={startRecording} disabled={!speakerName.trim()}>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={startRecording}
+              disabled={!speakerName.trim() || !backendApiReady}
+              title={!backendApiReady ? "Skonfiguruj backend API, aby nagrywac profile glosowe." : undefined}
+            >
               ● Nagraj głos
             </button>
           )}
         </div>
+        {!backendApiReady ? (
+          <div className="inline-alert info">
+            Profile glosowe wymagaja backend API. Ustaw `VITE_API_BASE_URL` albo `REACT_APP_API_BASE_URL`.
+          </div>
+        ) : null}
         {status ? <div className={`inline-alert ${status.startsWith("Błąd") ? "error" : "info"}`}>{status}</div> : null}
       </div>
 

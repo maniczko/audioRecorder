@@ -35,6 +35,10 @@ export const API_BASE_URL = String(
   readEnv("VITE_API_BASE_URL") || readEnv("REACT_APP_API_BASE_URL") || "http://localhost:4000"
 ).trim();
 
+export function apiBaseUrlConfigured() {
+  return Boolean(API_BASE_URL);
+}
+
 export function remoteApiEnabled() {
-  return APP_DATA_PROVIDER === "remote" && Boolean(API_BASE_URL);
+  return APP_DATA_PROVIDER === "remote" && apiBaseUrlConfigured();
 }

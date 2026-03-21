@@ -5,7 +5,18 @@ async function loadHttpClient() {
   vi.resetModules();
   vi.doMock("./config", () => ({
     API_BASE_URL: "https://api.example.test",
+    apiBaseUrlConfigured: () => true,
     remoteApiEnabled: () => true,
+  }));
+  return import("./httpClient");
+}
+
+async function loadHttpClientWithoutApi() {
+  vi.resetModules();
+  vi.doMock("./config", () => ({
+    API_BASE_URL: "",
+    apiBaseUrlConfigured: () => false,
+    remoteApiEnabled: () => false,
   }));
   return import("./httpClient");
 }
@@ -84,5 +95,13 @@ describe("httpClient", () => {
       status: 401,
     });
     expect(unauthorized).toHaveBeenCalledTimes(1);
+  });
+
+  test("throws a clear error when backend api base url is missing", async () => {
+    const { apiRequest } = await loadHttpClientWithoutApi();
+
+    await expect(apiRequest("/voice-profiles")).rejects.toMatchObject({
+      message: "Remote API is not configured. Set VITE_API_BASE_URL or REACT_APP_API_BASE_URL first.",
+    });
   });
 });

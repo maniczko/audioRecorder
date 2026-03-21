@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { Hono } from "hono";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
+import type { VoiceProfileSummary, VoiceProfilesListPayload } from "../../src/shared/types.ts";
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
@@ -106,10 +107,14 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.use("/voice-profiles/*", authMiddleware);
   router.get("/voice-profiles", async (c) => {
     const session = c.get("session") as any;
-    const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p: any) => ({
-      id: p.id, speakerName: p.speaker_name, userId: p.user_id, createdAt: p.created_at,
+    const profiles: VoiceProfileSummary[] = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p: any) => ({
+      id: p.id,
+      speakerName: p.speaker_name,
+      userId: p.user_id,
+      createdAt: p.created_at,
     }));
-    return c.json({ profiles }, 200);
+    const payload: VoiceProfilesListPayload = { profiles };
+    return c.json(payload, 200);
   });
 
   router.post("/voice-profiles", applyRateLimit("voice-profiles"), async (c) => {

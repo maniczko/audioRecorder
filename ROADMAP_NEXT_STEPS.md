@@ -36,6 +36,83 @@ Techniczne wskazowki:
 
 ---
 
+## PRIORYTET P1.5 - refaktoring kodu i obnizenie kosztu zmian
+
+## R05A. [REFACTOR] Rozbic `server/app.ts` na mniejsze moduly tras i bootstrap
+Status: `in_progress`
+Priorytet: `P1`
+Cel: glowny plik backendu nie powinien byc miejscem mieszania konfiguracji, middleware, tras i logiki uruchomieniowej.
+Akceptacja:
+- `server/app.ts` odpowiada glownie za zlozenie aplikacji
+- trasy sa podzielone na logiczne moduly, np. `auth`, `media`, `state`, `workspaces`
+- middleware i wiring serwisow sa wydzielone do osobnych plikow
+- zmiana jednej domeny backendu nie wymaga czytania calego bootstrapu
+Techniczne wskazowki:
+- utrzymac jeden punkt wejscia `createApp(...)`
+- nie przenosic logiki biznesowej do tras; trasy maja pozostac cienkie
+
+---
+
+## R05B. [REFACTOR] Uporzadkowac kontrakty danych miedzy frontendem i backendem
+Status: `in_progress`
+Priorytet: `P1`
+Cel: payloady, statusy pipeline i encje domenowe musza miec jeden kontrakt, zeby unikac rozjazdow typow i pol.
+Akceptacja:
+- najwazniejsze payloady maja wspolne typy w `src/shared` lub `shared`
+- frontend i backend importuja te same typy dla auth, state bootstrap, meeting asset i transcription status
+- ograniczona liczba lokalnych duplikatow typow i `any`
+- zmiana kontraktu API jest od razu widoczna po obu stronach
+Techniczne wskazowki:
+- zaczac od `auth`, `state`, `media`, `recording analysis`
+- najpierw przeniesc payloady najczesciej uzywane przez testy i UI
+
+---
+
+## R05C. [REFACTOR] Wydzielic backendowy orchestration layer dla pipeline nagran
+Status: `todo`
+Priorytet: `P1`
+Cel: upload, transkrypcja, diarization, analiza i zapis wyniku powinny byc zarzadzane przez jeden spojny orchestration flow po stronie serwera.
+Akceptacja:
+- pipeline ma jeden kanoniczny lifecycle joba
+- analiza spotkania nie zalezy od osobnego kroku odpalonego z frontendu
+- wynik koncowy jest zapisywany po stronie backendu razem ze statusem przetwarzania
+- frontend glownie obserwuje status i pobiera finalny rezultat
+Techniczne wskazowki:
+- oprzec to o `TranscriptionService` zamiast dokladac kolejny punkt wejscia
+- zachowac kompatybilnosc API i stopniowo wygaszac frontend-driven analysis
+
+---
+
+## R05D. [REFACTOR] Uproscic warstwe stanu frontendu i odpowiedzialnosci hookow
+Status: `todo`
+Priorytet: `P1`
+Cel: contexty, store i hooki powinny miec jasne granice, zeby przeplyw danych byl przewidywalny.
+Akceptacja:
+- opisany i wdrozony podzial: `context` dla dostarczania zaleznosci, `store` dla trwawego stanu, `hooks` dla orchestration/UI glue
+- mniej duplikacji side effectow i mniej efektow zaleznych od kilku zrodel prawdy
+- hooki typu `useMeetings`, `useUI`, `useRecorder` maja czytelniejsze API
+- latwiej testowac logike bez montowania polowy aplikacji
+Techniczne wskazowki:
+- zaczac od mapy zaleznosci i miejsc, gdzie te same dane sa przepychane przez kilka warstw
+- priorytet dla flow: auth, workspace bootstrap, recorder pipeline, selected meeting/recording
+
+---
+
+## R05E. [REFACTOR] Wyczyscic warstwe uslug i adapterow API
+Status: `todo`
+Priorytet: `P1`
+Cel: serwisy frontendowe i backendowe adaptery powinny miec spójne nazewnictwo, przewidywalne zwroty i lepsza separacje transportu od domeny.
+Akceptacja:
+- `services/*` maja spojne konwencje nazw i odpowiedzialnosci
+- logika mapowania odpowiedzi API jest skupiona w jednym miejscu na serwis
+- ograniczone mieszanie transportu, fallbackow i logiki domenowej w jednym pliku
+- bledy transportowe sa normalizowane zanim trafia do UI
+Techniczne wskazowki:
+- zaczac od `mediaService`, `stateService`, `authService`, `httpClient`
+- nie laczyc helperow local-mode i remote-mode bez wyraznego kontraktu
+
+---
+
 ## PRIORYTET P2 - jakosc produktu i UX audio
 
 ## R06. [UX] Dopracowac statusy pipeline audio w UI
@@ -273,6 +350,66 @@ Techniczne wskazowki:
 
 ---
 
+## R17F. [TEST] Dodac testy kontraktowe dla API i serializacji stanu
+Status: `in_progress`
+Priorytet: `P2`
+Cel: krytyczne flow nie powinny psuc sie przez ciche zmiany w payloadach, serializacji lub fallbackach local/remote.
+Akceptacja:
+- istnieja testy kontraktowe dla `auth`, `state bootstrap`, `workspace sync`, `media status`
+- payloady przechodzace miedzy frontendem i backendem sa walidowane na poziomie shape i pol wymaganych
+- testy wykrywaja rozjazd typow lub brakujace pola zanim trafi to do UI
+- local mode i remote mode maja osobne scenariusze tam, gdzie zachowanie jest rozne
+Techniczne wskazowki:
+- zaczac od miejsc, gdzie frontend i backend maja wspolne typy w `shared`
+- utrzymac te testy lekkie; nie sa to E2E tylko kontrakty i serializacja
+
+---
+
+## R17G. [TEST] Ustabilizowac testy asynchroniczne i usunac flaky patterns
+Status: `todo`
+Priorytet: `P2`
+Cel: suite ma byc przewidywalna; test, ktory przechodzi losowo, jest gorszy niz brak testu.
+Akceptacja:
+- ograniczone sa testy zalezne od `setTimeout`, przypadkowego timingu i realnych interwalow
+- helpery testowe maja wspolne utility do kolejek, storage, auth i SSE
+- flaky scenariusze sa przepisane albo oznaczone do oddzielnego workflow
+- glowne suite przechodza stabilnie wielokrotnie lokalnie i w CI
+Techniczne wskazowki:
+- preferowac fake timers, deterministyczne mocki i jawne flushowanie async queue
+- przejrzec szczegolnie testy queue recordera, workspace sync i Playwright auth flow
+
+---
+
+## R17H. [TEST] Podniesc jakosc fixture, mockow i test utilities
+Status: `todo`
+Priorytet: `P2`
+Cel: niska jakosc fixture i przypadkowe mocki psuja czytelnosc testow oraz utrudniaja dalszy refaktoring.
+Akceptacja:
+- powstaja wspolne factory dla `meeting`, `recording`, `workspace`, `session`, `task`
+- mocki API, storage i SSE sa wielokrotnego uzytku
+- nowe testy nie tworza ad hoc wielkich inline obiektow, jesli da sie uzyc fixture factory
+- testy sa krotsze i bardziej czytelne
+Techniczne wskazowki:
+- zaczac od katalogow `src/test-utils` i `server/tests/helpers`
+- nie budowac zbyt ogolnego frameworka; tylko najczestsze obiekty i zaleznosci
+
+---
+
+## R17I. [TEST] Wprowadzic review checklist dla zmian kodu i test-first dla obszarow krytycznych
+Status: `todo`
+Priorytet: `P2`
+Cel: jakosc testow musi byc czescia procesu zmian, a nie tylko osobnym projektem porzadkowym.
+Akceptacja:
+- istnieje checklista PR: kontrakt, unit/integration, regression risk, coverage impact
+- zmiany w `server/routes`, `server/services`, `src/hooks`, `src/store`, `src/services` wymagaja testow lub uzasadnienia
+- krytyczne bugfixy maja test regresyjny dodany w tym samym PR
+- zasady sa opisane w repo i stosowane przez CI lub review
+Techniczne wskazowki:
+- zaczac od prostego dokumentu i lekkiego egzekwowania w review
+- polaczyc to z quality gates i dashboardem raportow
+
+---
+
 ## PRIORYTET P2.8 - przewaga produktowa nad Fireflies
 
 ## R18. [PRODUCT] Zbudowac mocniejszy "meeting intelligence" niz standardowe summary
@@ -397,14 +534,11 @@ Akceptacja:
 
 ## Proponowana kolejnosc wykonania
 
-1. `R05` Uporzadkowac timeouty/retry dla AI
-2. `R09-R14` zbudowac spojny system layoutu i wariantow
-3. `R06` Poprawic statusy pipeline audio w UI
-4. `R15-R17` podniesc jakosc testow frontend/e2e/coverage
-5. `R25-R30` przyspieszyc i ustabilizowac deploye
-6. `R08` Uporzadkowac warstwe stanu
-7. `R18-R23` budowac przewage produktowa
-8. `R24` Dopracowac README i dokumentacje
-9. `R04` Dodac obserwowalnosc
-10. `R07` Ujednolicic stany
-11. `R31-R33` rozwijac dalej produktowo
+1. `R05A-R05E` wykonac refaktoring backendu, kontraktow i warstwy stanu
+2. `R05` uporzadkowac timeouty/retry dla AI
+3. `R17A-R17I` podniesc jakosc testow backend/frontend/e2e i procesu review
+4. `R09-R14` utrzymac spojny system layoutu i wariantow
+5. `R06-R08` domknac statusy pipeline, stany UI i uproszczenie warstwy stanu
+6. `R18-R23` budowac przewage produktowa
+7. `R04` dodac obserwowalnosc i metryki
+8. `R31-R33` rozwijac dalej produktowo

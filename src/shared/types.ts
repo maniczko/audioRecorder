@@ -58,6 +58,18 @@ export interface MeetingAsset {
   updated_at: string;
 }
 
+export interface VoiceProfileSummary {
+  id: string;
+  speakerName: string;
+  userId: string;
+  createdAt: string;
+  hasEmbedding?: boolean;
+}
+
+export interface VoiceProfilesListPayload {
+  profiles: VoiceProfileSummary[];
+}
+
 export interface AiTask {
   _id?: string;
   id?: string;
