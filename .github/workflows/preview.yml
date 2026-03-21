@@ -1,85 +1,67 @@
-name: Deploy Preview
+name: Preview Deployment (Vercel)
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: preview-${{ github.event.pull_request.number }}
+  group: preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  preview-comment:
-    name: 📝 PR Summary
+  vercel-preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: write
+    name: 🚀 Deploy Preview
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: 22
 
-      - name: Gather PR stats
-        id: stats
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm install -g vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy Project Artifacts to Vercel
+        id: vercel_deploy
         run: |
-          CHANGED=$(git diff --shortstat origin/main...HEAD)
-          FILES_CHANGED=$(git diff --name-only origin/main...HEAD | wc -l)
-          TESTS_CHANGED=$(git diff --name-only origin/main...HEAD | grep -c '\.test\.' || true)
-          SRC_CHANGED=$(git diff --name-only origin/main...HEAD | grep -c '^src/' || true)
-          SERVER_CHANGED=$(git diff --name-only origin/main...HEAD | grep -c '^server/' || true)
-
-          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
-          echo "files=$FILES_CHANGED" >> $GITHUB_OUTPUT
-          echo "tests=$TESTS_CHANGED" >> $GITHUB_OUTPUT
-          echo "src=$SRC_CHANGED" >> $GITHUB_OUTPUT
-          echo "server=$SERVER_CHANGED" >> $GITHUB_OUTPUT
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Comment on PR
         uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const stats = {
-              changed: '${{ steps.stats.outputs.changed }}',
-              files: '${{ steps.stats.outputs.files }}',
-              tests: '${{ steps.stats.outputs.tests }}',
-              src: '${{ steps.stats.outputs.src }}',
-              server: '${{ steps.stats.outputs.server }}'
-            };
-
-            const body = `## 📊 PR Change Summary
-
-            | Metric | Value |
-            |---|---|
-            | Files changed | ${stats.files} |
-            | Frontend files | ${stats.src} |
-            | Server files | ${stats.server} |
-            | Test files touched | ${stats.tests} |
-            | Diff | ${stats.changed} |
-
-            > 🤖 Vercel will automatically create a preview deployment for this PR.
-            > CI pipeline must pass before merging.`;
-
-            const { data: comments } = await github.rest.issues.listComments({
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const existing = comments.find(c => c.body.includes('PR Change Summary'));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+              body: `✅ **Vercel Preview Environment is ready!** \n\n🚀 Access the preview: ${'${{ steps.vercel_deploy.outputs.preview_url }}'}`
+            })

@@ -33,11 +33,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run ESLint
-        run: pnpm exec eslint src
+      - name: Turbo Cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
 
-      - name: Run Typecheck
-        run: pnpm run typecheck
+      - name: Run Linter & Typecheck via Turbo
+        run: npx turbo run lint typecheck
 
   # ─── Stage 2: Unit & Integration Tests (Frontend) ──────
   test-frontend:
@@ -115,8 +119,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build production bundle
-        run: pnpm run build
+      - name: Turbo Cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+
+      - name: Build production bundle via Turbo
+        run: pnpm run turbo:build
         env:
           NODE_ENV: production
 

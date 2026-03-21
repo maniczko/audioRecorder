@@ -29,6 +29,13 @@ const PORT = Number(config.VOICELOG_API_PORT || config.PORT) || 4000;
 const HOST = config.VOICELOG_API_HOST || "0.0.0.0";
 
 export async function bootstrap() {
+  const missingEnv = ["DATABASE_URL"].filter(key => !process.env[key] && !config[key as keyof typeof config]);
+  if (missingEnv.length > 0) {
+    logger.error(`[Bootstrap] FATAL: Brakujące wymagane zmienne środowiskowe: ${missingEnv.join(", ")}`);
+    // Fail fast przed połączeniem z bazą
+    if (process.env.NODE_ENV !== 'test') process.exit(1);
+  }
+
   const db = getDatabase();
   await db.init();
 

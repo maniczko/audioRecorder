@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({ open: false, filename: 'build/bundle-stats.html' })
+  ],
   esbuild: {
     loader: 'tsx', // Treat all unknown files via tsx loader so JSX in .js works
     include: /src\/.*\.[tj]sx?$/,

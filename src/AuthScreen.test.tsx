@@ -79,6 +79,21 @@ describe("AuthScreen", () => {
     expect(screen.getByPlaceholderText("np. AB12CD")).toBeInTheDocument();
   });
 
+  test("does not crash when register draft has missing string fields", async () => {
+    const { props } = renderAuthScreen({
+      authMode: "register",
+      authDraft: {
+        email: "jan@example.com",
+        workspaceMode: "create",
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
+
+    expect(props.submitAuth).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("jan@example.com")).toBeInTheDocument();
+  });
+
   test("requests a password reset code in forgot mode", async () => {
     const { props } = renderAuthScreen({ authMode: "forgot" });
 

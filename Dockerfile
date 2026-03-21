@@ -87,6 +87,9 @@ ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${VOICELOG_API_PORT:-4000}/health || exit 1
+
 EXPOSE 4000
 
 # Execute natively instead of using tsx (huge memory savings & instant boot)

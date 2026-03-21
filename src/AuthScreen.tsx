@@ -1,5 +1,6 @@
 import './styles/auth.css';
 import { formatDateTime } from "./lib/storage";
+import { APP_DATA_PROVIDER } from "./services/config";
 import './AuthScreenStyles.css';
 
 export default function AuthScreen({
@@ -22,11 +23,27 @@ export default function AuthScreen({
 }) {
   const isRegister = authMode === "register";
   const isForgot = authMode === "forgot";
+  const authValues = {
+    name: String(authDraft?.name || ""),
+    role: String(authDraft?.role || ""),
+    company: String(authDraft?.company || ""),
+    email: String(authDraft?.email || ""),
+    password: String(authDraft?.password || ""),
+    workspaceMode: authDraft?.workspaceMode === "join" ? "join" : "create",
+    workspaceName: String(authDraft?.workspaceName || ""),
+    workspaceCode: String(authDraft?.workspaceCode || ""),
+  };
+  const resetValues = {
+    email: String(resetDraft?.email || ""),
+    code: String(resetDraft?.code || ""),
+    newPassword: String(resetDraft?.newPassword || ""),
+    confirmPassword: String(resetDraft?.confirmPassword || ""),
+  };
 
   function internalSubmit(event) {
     event.preventDefault();
-    if (isRegister && authDraft.password.length < 6) {
-        return;
+    if (isRegister && authValues.password.length < 6) {
+      return;
     }
     submitAuth(event);
   }
@@ -98,13 +115,19 @@ export default function AuthScreen({
           <span>albo klasycznie</span>
         </div>
 
+        {APP_DATA_PROVIDER !== "remote" ? (
+          <div className="inline-alert info">
+            Ta instancja dziala w trybie lokalnym. Konta i sesja sa zapisane tylko w tej przegladarce, wiec po deployu na innym adresie albo po czyszczeniu storage mozesz nie widziec poprzedniego uzytkownika.
+          </div>
+        ) : null}
+
         {isForgot ? (
           <div className="auth-form">
             <label>
               <span>Email</span>
               <input
                 type="email"
-                value={resetDraft.email}
+                value={resetValues.email}
                 onChange={(event) => setResetDraft((previous) => ({ ...previous, email: event.target.value }))}
                 placeholder="name@company.com"
               />
@@ -125,7 +148,7 @@ export default function AuthScreen({
             <label>
               <span>Kod resetu</span>
               <input
-                value={resetDraft.code}
+                value={resetValues.code}
                 onChange={(event) => setResetDraft((previous) => ({ ...previous, code: event.target.value }))}
                 placeholder="6-cyfrowy kod"
               />
@@ -134,7 +157,7 @@ export default function AuthScreen({
               <span>Nowe haslo</span>
               <input
                 type="password"
-                value={resetDraft.newPassword}
+                value={resetValues.newPassword}
                 onChange={(event) => setResetDraft((previous) => ({ ...previous, newPassword: event.target.value }))}
                 placeholder="minimum 6 znakow"
               />
@@ -143,7 +166,7 @@ export default function AuthScreen({
               <span>Powtorz nowe haslo</span>
               <input
                 type="password"
-                value={resetDraft.confirmPassword}
+                value={resetValues.confirmPassword}
                 onChange={(event) =>
                   setResetDraft((previous) => ({ ...previous, confirmPassword: event.target.value }))
                 }
@@ -164,7 +187,7 @@ export default function AuthScreen({
                   <span>Imię i nazwisko</span>
                   <input
                     id="auth-name"
-                    value={authDraft.name}
+                    value={authValues.name}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
                     placeholder="np. Anna Nowak"
                   />
@@ -172,7 +195,7 @@ export default function AuthScreen({
                 <label>
                   <span>Rola</span>
                   <input
-                    value={authDraft.role}
+                    value={authValues.role}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
                     placeholder="np. Product Manager"
                   />
@@ -180,7 +203,7 @@ export default function AuthScreen({
                 <label>
                   <span>Firma</span>
                   <input
-                    value={authDraft.company}
+                    value={authValues.company}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
                     placeholder="np. VoiceLog"
                   />
@@ -189,25 +212,25 @@ export default function AuthScreen({
                 <div className="mode-switch split">
                   <button
                     type="button"
-                    className={authDraft.workspaceMode === "join" ? "pill" : "pill active"}
+                    className={authValues.workspaceMode === "join" ? "pill" : "pill active"}
                     onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "create" }))}
                   >
                     Nowy workspace
                   </button>
                   <button
                     type="button"
-                    className={authDraft.workspaceMode === "join" ? "pill active" : "pill"}
+                    className={authValues.workspaceMode === "join" ? "pill active" : "pill"}
                     onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "join" }))}
                   >
                     Dolacz po kodzie
                   </button>
                 </div>
 
-                {authDraft.workspaceMode === "join" ? (
+                {authValues.workspaceMode === "join" ? (
                   <label>
                     <span>Kod workspace</span>
                     <input
-                      value={authDraft.workspaceCode}
+                      value={authValues.workspaceCode}
                       onChange={(event) =>
                         setAuthDraft((previous) => ({ ...previous, workspaceCode: event.target.value }))
                       }
@@ -218,7 +241,7 @@ export default function AuthScreen({
                   <label>
                     <span>Nazwa workspace</span>
                     <input
-                      value={authDraft.workspaceName}
+                      value={authValues.workspaceName}
                       onChange={(event) =>
                         setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))
                       }
@@ -234,7 +257,7 @@ export default function AuthScreen({
               <input
                 id="auth-email"
                 type="email"
-                value={authDraft.email}
+                value={authValues.email}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
                 placeholder="name@company.com"
               />
@@ -244,12 +267,12 @@ export default function AuthScreen({
               <input
                 id="auth-password"
                 type="password"
-                value={authDraft.password}
+                value={authValues.password}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
                 placeholder="minimum 6 znakow"
               />
             </label>
-            {isRegister && authDraft.password && authDraft.password.length < 6 ? (
+            {isRegister && authValues.password && authValues.password.length < 6 ? (
                 <div className="inline-alert error" style={{ marginTop: '8px' }}>Haslo musi miec co najmniej 6 znakow</div>
             ) : null}
             {!isRegister ? (

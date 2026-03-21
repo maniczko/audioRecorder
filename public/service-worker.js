@@ -1,72 +1,108 @@
-const CACHE_NAME = "voicelog-os-v1";
+const CACHE_NAME = "voicelog-os-v2";
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/favicon.ico", "/logo192.png", "/logo512.png"];
+
+function isHttpRequest(url) {
+  return String(url?.protocol || "").startsWith("http");
+}
+
+function shouldSkipRequest(requestUrl) {
+  return (
+    requestUrl.pathname.startsWith("/api/") ||
+    requestUrl.port === "4000" ||
+    requestUrl.port === "4001"
+  );
+}
+
+function isCacheableResponse(response) {
+  return Boolean(
+    response &&
+      response.ok &&
+      !response.bodyUsed &&
+      (response.type === "basic" || response.type === "cors")
+  );
+}
+
+async function cacheResponse(request, response) {
+  if (!isCacheableResponse(response)) return;
+
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  } catch (error) {
+    console.warn("Service worker cache skipped.", request.url, error);
+  }
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  const url = new URL(event.request.url);
+  const requestUrl = new URL(event.request.url);
+  if (!isHttpRequest(requestUrl) || shouldSkipRequest(requestUrl)) {
+    return;
+  }
 
-  // Skip non-http requests (e.g. chrome-extension://)
-  if (!url.protocol.startsWith("http")) return;
-
-  // Skip API requests entirely
-  if (url.pathname.startsWith("/api/") || url.port === "4000" || url.port === "4001") return;
-
-  // Stale-While-Revalidate for Vite Assets (JS, CSS, WOFF2)
-  if (url.pathname.startsWith("/assets/")) {
+  if (requestUrl.pathname.startsWith("/assets/")) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        const fetchPromise = fetch(event.request).then((networkResponse) => {
-          if (networkResponse.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
-          }
-          return networkResponse;
-        });
-        return cachedResponse || fetchPromise;
+      caches.match(event.request).then(async (cachedResponse) => {
+        const networkResponsePromise = fetch(event.request)
+          .then(async (networkResponse) => {
+            await cacheResponse(event.request, networkResponse);
+            return networkResponse;
+          })
+          .catch(() => null);
+
+        return cachedResponse || networkResponsePromise || fetch(event.request);
       })
     );
     return;
   }
 
-  // Network-First for HTML/Navigation, fallback to Cache
-  if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname === "/index.html") {
+  if (event.request.mode === "navigate" || requestUrl.pathname === "/" || requestUrl.pathname === "/index.html") {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
-          }
+        .then(async (response) => {
+          await cacheResponse(event.request, response);
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(async () => {
+          const cachedResponse = await caches.match(event.request);
+          return cachedResponse || caches.match("/index.html");
+        })
     );
     return;
   }
 
-  // General Cache-First with Network Fallback
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") return response;
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        return response;
-      });
+    caches.match(event.request).then(async (cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+
+      const networkResponse = await fetch(event.request);
+      await cacheResponse(event.request, networkResponse);
+      return networkResponse;
     })
   );
 });

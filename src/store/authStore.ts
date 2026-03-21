@@ -18,6 +18,14 @@ function mergeUserIntoCollection(existingUsers: any[], user: any) {
   return nextUsers;
 }
 
+function resolveDraftUpdate<T>(previous: T, nextValue: T | ((previous: T) => T)) {
+  const resolved = typeof nextValue === "function" ? nextValue(previous) : nextValue;
+  if (!resolved || typeof resolved !== "object") {
+    return previous;
+  }
+  return { ...previous, ...resolved };
+}
+
 export const useAuthStore = create<any>((set, get) => ({
   authMode: "register",
   authDraft: EMPTY_AUTH_DRAFT,
@@ -33,12 +41,24 @@ export const useAuthStore = create<any>((set, get) => ({
   securityMessage: "",
 
   setAuthMode: (authMode) => set({ authMode, authError: "", googleAuthMessage: "", resetMessage: "", resetPreviewCode: "", resetExpiresAt: "" }),
-  setAuthDraft: (authDraft) => set({ authDraft }),
+  setAuthDraft: (authDraft) =>
+    set((state) => ({
+      authDraft: resolveDraftUpdate(state.authDraft, authDraft),
+    })),
   setAuthError: (err) => set({ authError: err }),
   setGoogleAuthMessage: (msg) => set({ googleAuthMessage: msg }),
-  setResetDraft: (draft) => set({ resetDraft: draft }),
-  setProfileDraft: (draft) => set({ profileDraft: draft }),
-  setPasswordDraft: (draft) => set({ passwordDraft: draft }),
+  setResetDraft: (draft) =>
+    set((state) => ({
+      resetDraft: resolveDraftUpdate(state.resetDraft, draft),
+    })),
+  setProfileDraft: (draft) =>
+    set((state) => ({
+      profileDraft: resolveDraftUpdate(state.profileDraft, draft),
+    })),
+  setPasswordDraft: (draft) =>
+    set((state) => ({
+      passwordDraft: resolveDraftUpdate(state.passwordDraft, draft),
+    })),
 
   submitAuth: async () => {
     set({ authError: "", resetMessage: "" });
