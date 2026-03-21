@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
-RUN find server -name "*.ts" -o -name "*.js" | xargs pnpm exec esbuild --outdir=dist-server --platform=node --format=cjs
+RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node --external:@sentry/node
 
 # Prune node_modules down to only production dependencies to save space
 RUN pnpm prune --prod
@@ -35,7 +35,7 @@ ENV TZ=Etc/UTC
 
 # Install Python and dependencies, skip ffmpeg apt package to avoid heavy GPU/X11 libraries which cause Railway OOM
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates && \
+    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates libgomp1 libsndfile1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Install static FFmpeg build directly
@@ -81,7 +81,6 @@ RUN mkdir -p /data/uploads
 
 ENV NODE_ENV=production
 ENV VOICELOG_API_HOST=0.0.0.0
-ENV VOICELOG_API_PORT=4000
 ENV FFMPEG_BINARY=ffmpeg
 ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
