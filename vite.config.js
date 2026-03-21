@@ -21,6 +21,36 @@ export default defineConfig({
   },
   server: {
     port: 3000, // keep the CRA default port
+    proxy: {
+      '/voice-profiles': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/users': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/state': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/workspaces': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/media': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      },
+      '/transcribe': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      }
+    }
   },
   build: {
     outDir: 'build', // keep CRA's build output dir so your Github Actions don't break again!

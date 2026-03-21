@@ -24,6 +24,7 @@ import {
   weekdayLabels,
 } from "./lib/calendarView";
 import { formatDateTime } from "./lib/storage";
+import { EmptyState } from "./components/Skeleton";
 import './CalendarTabStyles.css';
 
 const CALENDAR_WEEKDAYS = weekdayLabels();
