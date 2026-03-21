@@ -2,6 +2,7 @@ import './styles/recordings.css';
 import React from "react";
 import { formatDateTime } from "./lib/storage";
 import { EmptyState } from "./components/Skeleton";
+import { RecordingPipelineStatus } from "./components/RecordingPipelineStatus";
 import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
@@ -268,11 +269,29 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
 }
 
 export default function RecordingsTab(props) {
-  const { currentWorkspace, userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, setActiveTab, onCreateMeeting, queueRecording } = props;
+  const {
+    currentWorkspace,
+    userMeetings,
+    selectedMeeting,
+    selectMeeting,
+    startNewMeetingDraft,
+    setActiveTab,
+    onCreateMeeting,
+    queueRecording,
+    analysisStatus = "idle",
+    recordingMessage = "",
+    pipelineProgressPercent = 0,
+    pipelineStageLabel = "",
+  } = props;
 
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const mainFileInputRef = React.useRef(null);
+  const showPipelineStatus =
+    Boolean(recordingMessage) ||
+    ["queued", "uploading", "processing", "diarization", "review", "failed", "done"].includes(
+      String(analysisStatus || "")
+    );
 
   const handleMainFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -351,6 +370,32 @@ export default function RecordingsTab(props) {
           />
         </div>
       </header>
+
+      {showPipelineStatus ? (
+        <section
+          className="panel"
+          style={{ marginBottom: "24px", padding: "18px 20px", border: "1px solid rgba(117,214,196,0.16)" }}
+        >
+          <div className="panel-header compact" style={{ borderBottom: "none", paddingBottom: 0 }}>
+            <div>
+              <div className="eyebrow">Pipeline</div>
+              <h2 style={{ marginBottom: "6px" }}>Status przetwarzania nagrania</h2>
+              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+                {recordingMessage || "Nagranie jest aktualnie przetwarzane przez pipeline audio."}
+              </p>
+            </div>
+          </div>
+          <div className="panel-body" style={{ paddingTop: "12px" }}>
+            <RecordingPipelineStatus
+              status={analysisStatus}
+              progressMessage={recordingMessage}
+              progressPercent={pipelineProgressPercent}
+              stageLabel={pipelineStageLabel}
+              errorMessage={recordingMessage}
+            />
+          </div>
+        </section>
+      ) : null}
       
       <main className="recordings-tab-content">
         <RAGSearchPanel currentWorkspace={currentWorkspace} />

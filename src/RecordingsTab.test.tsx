@@ -28,7 +28,11 @@ describe("RecordingsTab", () => {
     startNewMeetingDraft: jest.fn(),
     selectedRecordingId: "",
     setSelectedRecordingId: jest.fn(),
-    setActiveTab: jest.fn()
+    setActiveTab: jest.fn(),
+    analysisStatus: "idle",
+    recordingMessage: "",
+    pipelineProgressPercent: 0,
+    pipelineStageLabel: "",
   };
 
   test("renders empty state when no meetings are provided", () => {
@@ -72,5 +76,21 @@ describe("RecordingsTab", () => {
     const items = screen.getAllByRole("button").filter(b => b.className.includes("studio-picker-item"));
     expect(items.length).toBe(1);
     expect(items[0]).toHaveTextContent("Weekly Sync");
+  });
+
+  test("renders real recording pipeline progress when background processing is active", () => {
+    render(
+      <RecordingsTab
+        {...defaultProps}
+        analysisStatus="processing"
+        recordingMessage="Audio przeslane. Oczekiwanie na przetwarzanie..."
+        pipelineProgressPercent={64}
+        pipelineStageLabel="Serwer przygotowuje transkrypcje"
+      />
+    );
+
+    expect(screen.getByText(/Status przetwarzania nagrania/i)).toBeInTheDocument();
+    expect(screen.getByText(/Serwer przygotowuje transkrypcje \(64%\)/i)).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /Postep przetwarzania nagrania/i })).toBeInTheDocument();
   });
 });

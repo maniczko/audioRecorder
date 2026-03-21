@@ -202,6 +202,10 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         saveMeeting={meetings.saveMeeting}
         onCreateMeeting={meetings.createMeetingDirect}
         queueRecording={recorder.queueRecording}
+        analysisStatus={recorder.analysisStatus}
+        recordingMessage={recorder.recordingMessage}
+        pipelineProgressPercent={recorder.pipelineProgressPercent}
+        pipelineStageLabel={recorder.pipelineStageLabel}
       />
     ) : (
       <StudioTab
