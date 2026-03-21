@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useUIStore } from "../store/uiStore";
-import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
-import { useMeetingsStore } from "../store/meetingsStore";
+import { useWorkspaceStore } from "../store/workspaceStore";
 import { useRecorderCtx } from "../context/RecorderContext";
 import { useGoogleCtx } from "../context/GoogleContext";
 import useMeetings from "./useMeetings";
@@ -16,23 +15,33 @@ import { buildGoogleCalendarUrl } from "../lib/calendar";
 export default function useUI() {
   const uiState = useUIStore();
   const workspace = useWorkspaceStore();
-  const { currentWorkspaceId } = useWorkspaceSelectors();
   // We use the useMeetings hook to get derived task columns and helper methods
   const meetings = useMeetings(); 
   const recorder = useRecorderCtx();
   const google = useGoogleCtx();
+  const {
+    notificationState,
+    notificationPermission,
+    deliverBrowserNotifications,
+    setCommandPaletteOpen,
+    setActiveTab,
+    setPendingTaskId,
+    setPendingPersonId,
+    dismissNotification,
+    setNotificationCenterOpen,
+  } = uiState;
 
   // ── Command palette ─────────────────────────────────────
   useEffect(() => {
     function handlePaletteShortcut(event: KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && String(event.key || "").toLowerCase() === "k") {
         event.preventDefault();
-        uiState.setCommandPaletteOpen(true);
+        setCommandPaletteOpen(true);
       }
     }
     window.addEventListener("keydown", handlePaletteShortcut);
     return () => window.removeEventListener("keydown", handlePaletteShortcut);
-  }, [uiState.setCommandPaletteOpen]);
+  }, [setCommandPaletteOpen]);
 
   const commandPaletteItems = useMemo(
     () =>
@@ -56,7 +65,10 @@ export default function useUI() {
       : null;
 
   const displayRecording = liveRecording || meetings.selectedRecording;
-  const displaySpeakerNames = displayRecording?.speakerNames || meetings.selectedMeeting?.speakerNames || {};
+  const displaySpeakerNames = useMemo(
+    () => displayRecording?.speakerNames || meetings.selectedMeeting?.speakerNames || {},
+    [displayRecording?.speakerNames, meetings.selectedMeeting?.speakerNames]
+  );
   const studioAnalysis = meetings.selectedRecording?.analysis || meetings.selectedMeeting?.analysis || null;
 
   const selectedRecordingAudioUrl = meetings.selectedRecording
@@ -89,16 +101,16 @@ export default function useUI() {
       buildWorkspaceNotifications({
         reminders: upcomingReminders,
         taskNotifications: meetings.taskNotifications,
-      }).filter((item) => !(uiState.notificationState.dismissedIds || []).includes(item.id)),
-    [meetings.taskNotifications, uiState.notificationState.dismissedIds, upcomingReminders]
+      }).filter((item) => !(notificationState.dismissedIds || []).includes(item.id)),
+    [meetings.taskNotifications, notificationState.dismissedIds, upcomingReminders]
   );
 
   const unreadNotificationCount = notificationItems.length;
 
   // ── Browser notifications delivery ─────────────────────
   useEffect(() => {
-    uiState.deliverBrowserNotifications(notificationItems);
-  }, [notificationItems, uiState.notificationPermission, uiState.deliverBrowserNotifications]);
+    deliverBrowserNotifications(notificationItems);
+  }, [deliverBrowserNotifications, notificationItems, notificationPermission]);
 
   // ── Google calendar sync effect ─────────────────────────
   const syncLinkedGoogleCalendarEvents = meetings.syncLinkedGoogleCalendarEvents;
@@ -139,8 +151,8 @@ export default function useUI() {
     const meeting = meetings.userMeetings.find((item: any) => item.id === meetingId);
     if (!meeting) return;
     meetings.selectMeeting(meeting);
-    uiState.setActiveTab("studio");
-  }, [meetings, uiState]);
+    setActiveTab("studio");
+  }, [meetings, setActiveTab]);
 
   const openGoogleCalendarForMeeting = useCallback((meetingId: string) => {
     const meeting = meetings.userMeetings.find((item: any) => item.id === meetingId);
@@ -149,59 +161,59 @@ export default function useUI() {
   }, [meetings]);
 
   const openTaskFromCalendar = useCallback((taskId: string) => {
-    uiState.setPendingTaskId(taskId);
-    uiState.setActiveTab("tasks");
-  }, [uiState]);
+    setPendingTaskId(taskId);
+    setActiveTab("tasks");
+  }, [setActiveTab, setPendingTaskId]);
 
   const createTaskForPerson = useCallback((prefill: any = {}) => {
     const created = meetings.createTaskFromComposer({ title: "", ...prefill });
     const createdId = created?.id || created;
-    if (createdId) uiState.setPendingTaskId(createdId);
-    uiState.setActiveTab("tasks");
-  }, [meetings, uiState]);
+    if (createdId) setPendingTaskId(createdId);
+    setActiveTab("tasks");
+  }, [meetings, setActiveTab, setPendingTaskId]);
 
   const createMeetingForPerson = useCallback((personName: string) => {
     meetings.startNewMeetingDraft({ attendees: personName });
-    uiState.setActiveTab("studio");
-  }, [meetings, uiState]);
+    setActiveTab("studio");
+  }, [meetings, setActiveTab]);
 
   const openPersonFromPalette = useCallback((personId: string) => {
-    uiState.setPendingPersonId(personId);
-    uiState.setActiveTab("people");
-  }, [uiState]);
+    setPendingPersonId(personId);
+    setActiveTab("people");
+  }, [setActiveTab, setPendingPersonId]);
 
   const handleCommandPaletteSelect = useCallback((item: any) => {
     if (!item) return;
-    if (item.type === "tab") uiState.setActiveTab(item.payload.tabId);
+    if (item.type === "tab") setActiveTab(item.payload.tabId);
     else if (item.type === "meeting") openMeetingFromCalendar(item.payload.meetingId);
     else if (item.type === "task") openTaskFromCalendar(item.payload.taskId);
     else if (item.type === "person") openPersonFromPalette(item.payload.personId);
-    uiState.setCommandPaletteOpen(false);
-  }, [uiState, openMeetingFromCalendar, openTaskFromCalendar, openPersonFromPalette]);
+    setCommandPaletteOpen(false);
+  }, [openMeetingFromCalendar, openPersonFromPalette, openTaskFromCalendar, setActiveTab, setCommandPaletteOpen]);
 
   const activateNotification = useCallback((item: any) => {
     if (!item?.action) {
-      uiState.dismissNotification(item?.id);
-      uiState.setNotificationCenterOpen(false);
+      dismissNotification(item?.id);
+      setNotificationCenterOpen(false);
       return;
     }
     if (item.action.type === "meeting") openMeetingFromCalendar(item.action.id);
     else if (item.action.type === "task") openTaskFromCalendar(item.action.id);
-    else uiState.setActiveTab("calendar");
+    else setActiveTab("calendar");
 
-    uiState.dismissNotification(item.id);
-    uiState.setNotificationCenterOpen(false);
-  }, [uiState, openMeetingFromCalendar, openTaskFromCalendar]);
+    dismissNotification(item.id);
+    setNotificationCenterOpen(false);
+  }, [dismissNotification, openMeetingFromCalendar, openTaskFromCalendar, setActiveTab, setNotificationCenterOpen]);
 
   const switchWorkspace = useCallback((workspaceId: string) => {
     workspace.switchWorkspace(workspaceId);
     meetings.resetSelectionState();
     google.resetGoogleSession();
-    uiState.setPendingTaskId("");
-    uiState.setPendingPersonId("");
-    uiState.setCommandPaletteOpen(false);
-    uiState.setNotificationCenterOpen(false);
-  }, [workspace, meetings, google, uiState]);
+    setPendingTaskId("");
+    setPendingPersonId("");
+    setCommandPaletteOpen(false);
+    setNotificationCenterOpen(false);
+  }, [workspace, meetings, google, setCommandPaletteOpen, setNotificationCenterOpen, setPendingPersonId, setPendingTaskId]);
 
   const logout = useCallback(() => {
     if (recorder.isRecording) recorder.stopRecording();
@@ -209,12 +221,12 @@ export default function useUI() {
     meetings.resetSelectionState();
     google.resetGoogleSession();
     recorder.resetRecorderState();
-    uiState.setActiveTab("studio");
-    uiState.setPendingTaskId("");
-    uiState.setPendingPersonId("");
-    uiState.setCommandPaletteOpen(false);
-    uiState.setNotificationCenterOpen(false);
-  }, [workspace, meetings, google, recorder, uiState]);
+    setActiveTab("studio");
+    setPendingTaskId("");
+    setPendingPersonId("");
+    setCommandPaletteOpen(false);
+    setNotificationCenterOpen(false);
+  }, [workspace, meetings, google, recorder, setActiveTab, setCommandPaletteOpen, setNotificationCenterOpen, setPendingPersonId, setPendingTaskId]);
 
   return {
     ...uiState,

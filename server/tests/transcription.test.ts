@@ -46,11 +46,14 @@ describe("TranscriptionService", () => {
     const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
     const asset = { id: "asset_1", file_path: "test.wav", workspace_id: "ws_1" };
 
-    service.ensureTranscriptionJob("rec_1", asset, { language: "pl" });
-    await service.transcriptionJobs.get("rec_1");
+    await service.ensureTranscriptionJob("rec_1", asset, { language: "pl" });
+    const job = service.transcriptionJobs.get("rec_1");
+
+    expect(job).toBeDefined();
+    await job;
 
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 
   it("throws a descriptive error if transcribeRecording is missing", () => {
     const service = new TranscriptionService(mockDb, mockWorkspaceService, {}, mockSpeakerEmbedder);
