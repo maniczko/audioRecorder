@@ -14,9 +14,9 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  # ─── Stage 1: Lint ──────────────────────────────────────
-  lint:
-    name: 🔍 Lint
+  # ─── Stage 1: Lint & Typecheck ──────────────────────────
+  lint-and-typecheck:
+    name: 🔍 Lint & Typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -35,6 +35,9 @@ jobs:
 
       - name: Run ESLint
         run: pnpm exec eslint src
+
+      - name: Run Typecheck
+        run: pnpm run typecheck
 
   # ─── Stage 2: Unit & Integration Tests (Frontend) ──────
   test-frontend:
@@ -87,11 +90,8 @@ jobs:
       - name: Install root dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Install server dependencies
-        run: cd server && pnpm install --no-frozen-lockfile
-
       - name: Run server tests
-        run: cd server && pnpm exec vitest run --reporter=verbose
+        run: pnpm run test:server
         env:
           NODE_ENV: test
 
@@ -222,17 +222,44 @@ jobs:
           echo "| JavaScript | ${JS_KB} KB |" >> $GITHUB_STEP_SUMMARY
           echo "| CSS | ${CSS_KB} KB |" >> $GITHUB_STEP_SUMMARY
 
+  # ─── Stage 7: E2E Smoke Tests ──────────────────────────
+  e2e-smoke:
+    name: 🎭 E2E Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Smoke Tests
+        run: pnpm exec playwright test tests/e2e/auth.spec.js tests/e2e/meeting.spec.js --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-smoke-report
+          path: playwright-report/
+          retention-days: 7
+
   # ─── Final Gate ────────────────────────────────────────
   ci-passed:
     name: ✅ CI Passed
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint, test-frontend, test-server, build, security]
+    needs: [lint-and-typecheck, test-frontend, test-server, build, security, e2e-smoke]
     steps:
       - name: Check all jobs
         run: |
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            echo "❌ Lint failed"; exit 1
+          if [ "${{ needs.lint-and-typecheck.result }}" != "success" ]; then
+            echo "❌ Lint/Typecheck failed"; exit 1
           fi
           if [ "${{ needs.test-frontend.result }}" != "success" ]; then
             echo "❌ Frontend tests failed"; exit 1
@@ -242,5 +269,8 @@ jobs:
           fi
           if [ "${{ needs.build.result }}" != "success" ]; then
             echo "❌ Build failed"; exit 1
+          fi
+          if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
+            echo "❌ E2E Smoke tests failed"; exit 1
           fi
           echo "✅ All CI stages passed successfully!"
