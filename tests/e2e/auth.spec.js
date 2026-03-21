@@ -27,7 +27,7 @@ test.describe("Auth — rejestracja i logowanie", () => {
 
   // ── Registration — error: duplicate email ────────────────────────────────
   test("rejestracja z istniejacym emailem pokazuje blad", async ({ page }) => {
-    // Seed an existing user in localStorage before the app loads
+    // Seed current persisted workspace state used by zustand.
     await page.addInitScript(() => {
       const user = {
         id: "user_existing",
@@ -38,7 +38,17 @@ test.describe("Auth — rejestracja i logowanie", () => {
         workspaceIds: [],
         defaultWorkspaceId: "",
       };
-      localStorage.setItem("voicelog.users.v3", JSON.stringify([user]));
+      localStorage.setItem(
+        "voicelog_workspace_store",
+        JSON.stringify({
+          state: {
+            users: [user],
+            workspaces: [],
+            session: null,
+          },
+          version: 0,
+        })
+      );
     });
 
     await page.goto("/");

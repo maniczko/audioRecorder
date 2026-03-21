@@ -1,52 +1,168 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TranscriptionService from "../services/TranscriptionService.ts";
 
-// Mock dependencies
-const mockDb: any = {
-  getWorkspaceState: vi.fn(),
-  getWorkspaceVoiceProfiles: vi.fn(),
-  queueTranscription: vi.fn(),
-  markTranscriptionProcessing: vi.fn(),
-  saveTranscriptionResult: vi.fn(),
-  markTranscriptionFailure: vi.fn(),
-};
-
-const mockWorkspaceService: any = {
-  getWorkspaceMemberNames: vi.fn().mockReturnValue(['Anna', 'Jan']),
-};
-
-const mockSpeakerEmbedder: any = {};
-
-
 describe("TranscriptionService", () => {
-  it("should successfully fallback to audioPipeline and call transcribeRecording without throwing 'is not a function'", async () => {
-    // Create a mock audioPipeline with transcribeRecording exported
-    const mockAudioPipeline = {
-      transcribeRecording: vi.fn().mockResolvedValue({ segments: [], speakerCount: 0 })
+  let mockDb: any;
+  let mockWorkspaceService: any;
+  let mockSpeakerEmbedder: any;
+  let mockAudioPipeline: any;
+
+  beforeEach(() => {
+    mockDb = {
+      uploadDir: "/tmp",
+      getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: ["crm"] }),
+      getWorkspaceVoiceProfiles: vi.fn().mockResolvedValue([{ id: "vp1" }]),
+      queueTranscription: vi.fn(),
+      markTranscriptionProcessing: vi.fn(),
+      saveTranscriptionResult: vi.fn(),
+      markTranscriptionFailure: vi.fn(),
+      saveRagChunk: vi.fn(),
     };
-
-    const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
-
-    const asset = { id: "asset_1", file_path: "test.wav", workspace_id: "ws_1" };
-    const options = { language: "pl" };
-
-    mockDb.getWorkspaceState.mockReturnValue({ vocabulary: [] });
-
-    // Ensure the job is spawned
-    service.ensureTranscriptionJob("rec_1", asset, options);
-
-    // Wait for the async job promise to settle
-    await service.transcriptionJobs.get("rec_1");
-
-    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalled();
+    mockWorkspaceService = {
+      getWorkspaceMemberNames: vi.fn().mockResolvedValue(["Anna", "Jan"]),
+      saveVoiceProfile: vi.fn().mockResolvedValue({ id: "vp_new", speaker_name: "Anna" }),
+    };
+    mockSpeakerEmbedder = {
+      computeEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+    };
+    mockAudioPipeline = {
+      transcribeRecording: vi.fn(),
+      extractSpeakerAudioClip: vi.fn(),
+      diarizeFromTranscript: vi.fn(),
+      transcribeLiveChunk: vi.fn(),
+      analyzeMeetingWithOpenAI: vi.fn(),
+      normalizeRecording: vi.fn(),
+      generateVoiceCoaching: vi.fn(),
+      embedTextChunks: vi.fn(),
+    };
   });
 
-  it("should throw a descriptive error if transcribeRecording is missing", () => {
-    // Empty object simulating circular dependency missing export
-    const brokenAudioPipeline = {};
-    const service = new TranscriptionService(mockDb, mockWorkspaceService, brokenAudioPipeline, mockSpeakerEmbedder);
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    // It should throw instead of returning an invalid object
+  it("falls back to injected audioPipeline and calls transcribeRecording", async () => {
+    mockAudioPipeline.transcribeRecording.mockResolvedValue({ segments: [], diarization: { confidence: 0 } });
+    const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
+    const asset = { id: "asset_1", file_path: "test.wav", workspace_id: "ws_1" };
+
+    service.ensureTranscriptionJob("rec_1", asset, { language: "pl" });
+    await service.transcriptionJobs.get("rec_1");
+
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws a descriptive error if transcribeRecording is missing", () => {
+    const service = new TranscriptionService(mockDb, mockWorkspaceService, {}, mockSpeakerEmbedder);
     expect(() => service.pipeline).toThrow("Critical: TranscriptionService.audioPipeline is missing 'transcribeRecording'");
+  });
+
+  it("deduplicates in-flight transcription jobs and persists successful results", async () => {
+    const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
+    const progressEvents: any[] = [];
+    service.on("progress-rec_1", (payload) => progressEvents.push(payload));
+    mockAudioPipeline.transcribeRecording.mockImplementation(async (_asset: any, options: any) => {
+      options.onProgress({ progress: 55, message: "mid" });
+      return {
+        segments: [
+          { text: "Pierwszy segment tekstu", speakerId: 0 },
+          { text: "Drugi segment tekstu", speakerId: 0 },
+          { text: "Trzeci segment tekstu", speakerId: 1 },
+        ],
+        diarization: { confidence: 0.91 },
+      };
+    });
+    mockAudioPipeline.embedTextChunks.mockResolvedValue([[0.1]]);
+    const asset = { id: "asset_1", file_path: "test.wav", workspace_id: "ws_1" };
+
+    service.ensureTranscriptionJob("rec_1", asset, { participants: ["Kasia"], vocabulary: "lead" });
+    service.ensureTranscriptionJob("rec_1", asset, { participants: ["Kasia"], vocabulary: "lead" });
+    await service.transcriptionJobs.get("rec_1");
+
+    expect(mockDb.markTranscriptionProcessing).toHaveBeenCalledWith("rec_1");
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledWith(
+      asset,
+      expect.objectContaining({
+        participants: ["Kasia", "Anna", "Jan"],
+        vocabulary: "lead, crm",
+        voiceProfiles: [{ id: "vp1" }],
+      })
+    );
+    expect(progressEvents).toEqual(
+      expect.arrayContaining([
+        { progress: 55, message: "mid" },
+        { progress: 100, message: "Trener wymowy gotowy! (Zakończono)" },
+      ])
+    );
+    expect(mockDb.saveTranscriptionResult).toHaveBeenCalledWith(
+      "rec_1",
+      expect.objectContaining({ pipelineStatus: "completed" })
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockDb.saveRagChunk).toHaveBeenCalledTimes(1);
+    expect(service.transcriptionJobs.has("rec_1")).toBe(false);
+  });
+
+  it("marks transcription failure and clears the job map on pipeline error", async () => {
+    const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
+    mockAudioPipeline.transcribeRecording.mockRejectedValue(new Error("STT exploded"));
+    const asset = { id: "asset_2", file_path: "test.wav", workspace_id: "ws_1" };
+
+    service.ensureTranscriptionJob("rec_2", asset, {});
+    await service.transcriptionJobs.get("rec_2");
+
+    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith("rec_2", "STT exploded");
+    expect(service.transcriptionJobs.has("rec_2")).toBe(false);
+  });
+
+  it("creates voice profile from speaker clip and removes temp file afterward", async () => {
+    vi.resetModules();
+    const renameSync = vi.fn();
+    const unlinkSync = vi.fn();
+    vi.doMock("node:fs", () => ({
+      default: { renameSync, unlinkSync },
+      renameSync,
+      unlinkSync,
+    }));
+    const { default: DynamicTranscriptionService } = await import("../services/TranscriptionService.ts");
+    const service = new DynamicTranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
+    mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue("/tmp/clip.wav");
+    const asset = {
+      id: "asset_3",
+      workspace_id: "ws_1",
+      transcript_json: JSON.stringify([{ text: "hello", speakerId: 0, timestamp: 0, endTimestamp: 1 }]),
+    };
+
+    const profile = await service.createVoiceProfileFromSpeaker(asset, "0", "Anna", "u1");
+
+    expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledWith(
+      asset,
+      "0",
+      [{ text: "hello", speakerId: 0, timestamp: 0, endTimestamp: 1 }],
+      {}
+    );
+    expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        workspaceId: "ws_1",
+        speakerName: "Anna",
+        audioPath: expect.stringMatching(/vp_.*\.wav$/),
+      })
+    );
+    expect(renameSync).toHaveBeenCalledTimes(1);
+    expect(unlinkSync).toHaveBeenCalledWith("/tmp/clip.wav");
+    expect(profile).toEqual({ id: "vp_new", speaker_name: "Anna" });
+  });
+
+  it("lazy-loads speaker embedder when missing", async () => {
+    vi.resetModules();
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      computeEmbedding: vi.fn().mockResolvedValue([0.9, 0.8]),
+    }));
+    const { default: DynamicTranscriptionService } = await import("../services/TranscriptionService.ts");
+    const service = new DynamicTranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, null);
+
+    await expect(service.computeEmbedding("/tmp/audio.wav")).resolves.toEqual([0.9, 0.8]);
   });
 });

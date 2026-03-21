@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap");
 
+body, html {
+  overflow-x: hidden;
+}
+
 :root {
   --bg: #071119;
   --bg-panel: rgba(10, 24, 38, 0.82);

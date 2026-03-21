@@ -599,10 +599,7 @@ export default function StudioMeetingView({
           </svg>
           Transkrypt
         </button>
-        <button type="button" className="ff-tb-btn" onClick={exportMeetingPdfFile}
-          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
-          PDF
-        </button>
+
         <button
           type="button"
           className={`ff-tb-btn${briefOpen ? " active" : ""}`}

@@ -1,104 +1,178 @@
 /* eslint-disable testing-library/no-unnecessary-act */
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { vi, describe, test, expect, beforeEach } from "vitest";
-import AuthScreen from "./AuthScreen";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
+function buildDefaultDraft() {
+  return {
+    email: "",
+    password: "",
+    name: "",
+    role: "",
+    company: "",
+    workspaceMode: "create",
+    workspaceName: "",
+    workspaceCode: "",
+  };
+}
+
+function buildResetDraft() {
+  return {
+    email: "",
+    code: "",
+    newPassword: "",
+    confirmPassword: "",
+  };
+}
+
+async function renderAuthHarness({
+  provider = "local",
+  authMode = "login",
+  authError = "",
+  googleEnabled = true,
+  googleAuthMessage = "",
+  resetMessage = "",
+  resetPreviewCode = "",
+  resetExpiresAt = "",
+} = {}) {
+  vi.resetModules();
+  vi.doMock("./services/config", () => ({
+    APP_DATA_PROVIDER: provider,
+  }));
+
+  const { default: AuthScreen } = await import("./AuthScreen");
+  const submitAuth = vi.fn((event) => event?.preventDefault?.());
+  const requestResetCode = vi.fn();
+  const completeReset = vi.fn();
+  const setAuthModeSpy = vi.fn();
+
+  function Harness() {
+    const [mode, setMode] = React.useState(authMode);
+    const [draft, setDraft] = React.useState(buildDefaultDraft());
+    const [resetDraft, setResetDraft] = React.useState(buildResetDraft());
+
+    return (
+      <AuthScreen
+        authMode={mode}
+        authDraft={draft}
+        authError={authError}
+        setAuthMode={(nextMode) => {
+          setAuthModeSpy(nextMode);
+          setMode(nextMode);
+        }}
+        setAuthDraft={(updater) => {
+          setDraft((previous) => (typeof updater === "function" ? updater(previous) : updater));
+        }}
+        submitAuth={submitAuth}
+        googleEnabled={googleEnabled}
+        googleButtonRef={{ current: null }}
+        googleAuthMessage={googleAuthMessage}
+        resetDraft={resetDraft}
+        setResetDraft={(updater) => {
+          setResetDraft((previous) => (typeof updater === "function" ? updater(previous) : updater));
+        }}
+        resetMessage={resetMessage}
+        resetPreviewCode={resetPreviewCode}
+        resetExpiresAt={resetExpiresAt}
+        requestResetCode={requestResetCode}
+        completeReset={completeReset}
+      />
+    );
+  }
+
+  render(<Harness />);
+
+  return {
+    submitAuth,
+    requestResetCode,
+    completeReset,
+    setAuthModeSpy,
+  };
+}
 
 describe("AuthScreen", () => {
-  const defaultProps = {
-    authMode: "login",
-    authDraft: {
-      email: "",
-      password: "",
-      name: "",
-      role: "",
-      company: "",
-      workspaceMode: "create",
-      workspaceName: "",
-      workspaceCode: "",
-    },
-    authError: "",
-    setAuthMode: vi.fn(),
-    setAuthDraft: vi.fn(),
-    submitAuth: vi.fn((event) => event.preventDefault()),
-    googleEnabled: true,
-    googleButtonRef: { current: null },
-    googleAuthMessage: "",
-    resetDraft: { email: "", code: "", newPassword: "", confirmPassword: "" },
-    setResetDraft: vi.fn(),
-    resetMessage: "",
-    resetPreviewCode: "",
-    resetExpiresAt: "",
-    requestResetCode: vi.fn(),
-    completeReset: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  function renderAuthScreen(overrides = {}) {
-    const props = { ...defaultProps, ...overrides };
-    return { ...render(React.createElement(AuthScreen, props)), props };
-  }
-
-  test("switches from login to register mode", async () => {
-    const { props } = renderAuthScreen();
-    
-    const registerSwitch = screen.getByRole("button", { name: "Rejestracja" });
-    await userEvent.click(registerSwitch);
-
-    expect(props.setAuthMode).toHaveBeenCalledWith("register");
+  afterEach(() => {
+    cleanup();
+    vi.resetModules();
   });
 
-  test("submits the login form", async () => {
-    const { props } = renderAuthScreen({
-      authDraft: {
-        ...defaultProps.authDraft,
-        email: "jan@example.com",
-        password: "test-password",
-      },
-    });
+  test("submits login flow after filling all fields", async () => {
+    const { submitAuth } = await renderAuthHarness();
 
-    await userEvent.click(screen.getByRole("button", { name: "Zaloguj" }));
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "jan@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText("minimum 6 znakow"), { target: { value: "test-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Zaloguj" }));
 
-    expect(props.submitAuth).toHaveBeenCalled();
-  });
-
-  test("shows the join code field during registration", async () => {
-    renderAuthScreen({
-      authMode: "register",
-      authDraft: {
-        ...defaultProps.authDraft,
-        name: "Jan",
-        workspaceMode: "join",
-      },
-    });
-
-    expect(screen.getByPlaceholderText("np. AB12CD")).toBeInTheDocument();
-  });
-
-  test("does not crash when register draft has missing string fields", async () => {
-    const { props } = renderAuthScreen({
-      authMode: "register",
-      authDraft: {
-        email: "jan@example.com",
-        workspaceMode: "create",
-      },
-    });
-
-    await userEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
-
-    expect(props.submitAuth).not.toHaveBeenCalled();
     expect(screen.getByDisplayValue("jan@example.com")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("test-password")).toBeInTheDocument();
+    expect(submitAuth).toHaveBeenCalledTimes(1);
   });
 
-  test("requests a password reset code in forgot mode", async () => {
-    const { props } = renderAuthScreen({ authMode: "forgot" });
+  test("supports full registration flow including join workspace mode", async () => {
+    const { submitAuth } = await renderAuthHarness({ authMode: "register" });
 
-    await userEvent.click(screen.getByRole("button", { name: "Wyslij kod resetu" }));
+    fireEvent.change(screen.getByPlaceholderText("np. Anna Nowak"), { target: { value: "Anna Nowak" } });
+    fireEvent.change(screen.getByPlaceholderText("np. Product Manager"), { target: { value: "Product Manager" } });
+    fireEvent.change(screen.getByPlaceholderText("np. VoiceLog"), { target: { value: "VoiceLog" } });
+    fireEvent.click(screen.getByRole("button", { name: "Dolacz po kodzie" }));
+    fireEvent.change(screen.getByPlaceholderText("np. AB12CD"), { target: { value: "AB12CD" } });
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "anna@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText("minimum 6 znakow"), { target: { value: "secret-123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
 
-    expect(props.requestResetCode).toHaveBeenCalled();
+    expect(screen.getByDisplayValue("Anna Nowak")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("AB12CD")).toBeInTheDocument();
+    expect(submitAuth).toHaveBeenCalledTimes(1);
+  });
+
+  test("blocks registration submit when password is too short", async () => {
+    const { submitAuth } = await renderAuthHarness({ authMode: "register" });
+
+    fireEvent.change(screen.getByPlaceholderText("np. Anna Nowak"), { target: { value: "Anna Nowak" } });
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "anna@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText("minimum 6 znakow"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
+
+    expect(screen.getByText("Haslo musi miec co najmniej 6 znakow")).toBeInTheDocument();
+    expect(submitAuth).not.toHaveBeenCalled();
+  });
+
+  test("supports forgot-password flow with request and completion actions", async () => {
+    const { requestResetCode, completeReset, setAuthModeSpy } = await renderAuthHarness({
+      authMode: "login",
+      resetPreviewCode: "123456",
+      resetExpiresAt: "2026-03-21T10:30:00.000Z",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Zapomnialem hasla" }));
+
+    expect(setAuthModeSpy).toHaveBeenCalledWith("forgot");
+
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), { target: { value: "anna@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Wyslij kod resetu" }));
+    fireEvent.change(screen.getByPlaceholderText("6-cyfrowy kod"), { target: { value: "123456" } });
+    fireEvent.change(screen.getAllByPlaceholderText("minimum 6 znakow")[0], { target: { value: "new-secret" } });
+    fireEvent.change(screen.getByPlaceholderText("powtorz haslo"), { target: { value: "new-secret" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ustaw nowe haslo" }));
+
+    expect(screen.getByText(/W tej lokalnej wersji kod pokazujemy tutaj/)).toBeInTheDocument();
+    expect(requestResetCode).toHaveBeenCalledTimes(1);
+    expect(completeReset).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows local-session warning only in local provider mode", async () => {
+    await renderAuthHarness({ provider: "local" });
+    expect(screen.getByText(/Ta instancja dziala w trybie lokalnym/)).toBeInTheDocument();
+
+    cleanup();
+
+    await renderAuthHarness({ provider: "remote" });
+    await waitFor(() => {
+      expect(screen.queryByText(/Ta instancja dziala w trybie lokalnym/)).not.toBeInTheDocument();
+    });
   });
 });

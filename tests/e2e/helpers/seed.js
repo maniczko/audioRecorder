@@ -36,9 +36,17 @@ const SEED_SESSION = {
 async function seedLoggedInUser(page) {
   await page.addInitScript(
     ({ user, workspace, session }) => {
-      localStorage.setItem("voicelog.users.v3", JSON.stringify([user]));
-      localStorage.setItem("voicelog.session.v3", JSON.stringify(session));
-      localStorage.setItem("voicelog.workspaces.v1", JSON.stringify([workspace]));
+      localStorage.setItem(
+        "voicelog_workspace_store",
+        JSON.stringify({
+          state: {
+            users: [user],
+            workspaces: [workspace],
+            session,
+          },
+          version: 0,
+        })
+      );
       localStorage.setItem("voicelog.e2e", "true");
     },
     { user: SEED_USER, workspace: SEED_WORKSPACE, session: SEED_SESSION }
@@ -68,7 +76,24 @@ async function seedMeeting(page, meeting) {
   const merged = { ...defaultMeeting, ...(meeting || {}) };
   await page.addInitScript(
     ({ meetings }) => {
-      localStorage.setItem("voicelog.meetings.v3", JSON.stringify(meetings));
+      const existingRaw = localStorage.getItem("voicelog_meetings_store");
+      const existing = existingRaw ? JSON.parse(existingRaw) : null;
+      const existingState = existing?.state || {};
+      localStorage.setItem(
+        "voicelog_meetings_store",
+        JSON.stringify({
+          state: {
+            meetings,
+            manualTasks: existingState.manualTasks || [],
+            taskState: existingState.taskState || {},
+            taskBoards: existingState.taskBoards || {},
+            calendarMeta: existingState.calendarMeta || {},
+            vocabulary: existingState.vocabulary || [],
+            storedMeetingDrafts: existingState.storedMeetingDrafts || {},
+          },
+          version: 0,
+        })
+      );
     },
     { meetings: [merged] }
   );
@@ -94,7 +119,24 @@ async function seedTask(page, task) {
   const merged = { ...defaultTask, ...(task || {}) };
   await page.addInitScript(
     ({ tasks }) => {
-      localStorage.setItem("voicelog.manualTasks.v1", JSON.stringify(tasks));
+      const existingRaw = localStorage.getItem("voicelog_meetings_store");
+      const existing = existingRaw ? JSON.parse(existingRaw) : null;
+      const existingState = existing?.state || {};
+      localStorage.setItem(
+        "voicelog_meetings_store",
+        JSON.stringify({
+          state: {
+            meetings: existingState.meetings || [],
+            manualTasks: tasks,
+            taskState: existingState.taskState || {},
+            taskBoards: existingState.taskBoards || {},
+            calendarMeta: existingState.calendarMeta || {},
+            vocabulary: existingState.vocabulary || [],
+            storedMeetingDrafts: existingState.storedMeetingDrafts || {},
+          },
+          version: 0,
+        })
+      );
     },
     { tasks: [merged] }
   );
@@ -114,15 +156,11 @@ async function seedQueueItem(page, item) {
     error: "Mock error",
   };
   const merged = { ...defaultItem, ...(item || {}) };
-  const zustandState = {
-    state: { recordingQueue: [merged] },
-    version: 0
-  };
   await page.addInitScript(
     ({ statePayload }) => {
       localStorage.setItem("voicelog.recordingQueue.v1", JSON.stringify(statePayload));
     },
-    { statePayload: zustandState }
+    { statePayload: { state: { recordingQueue: [merged] }, version: 0 } }
   );
 }
 

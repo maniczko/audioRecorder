@@ -270,6 +270,8 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
 export default function RecordingsTab(props) {
   const { currentWorkspace, userMeetings, selectedMeeting, selectMeeting, startNewMeetingDraft, setActiveTab, onCreateMeeting, queueRecording } = props;
 
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState(0);
   const mainFileInputRef = React.useRef(null);
 
   const handleMainFileUpload = async (e) => {
@@ -277,17 +279,38 @@ export default function RecordingsTab(props) {
     if (!file) return;
     try {
       if (onCreateMeeting && queueRecording) {
+        setIsUploading(true);
+        setUploadProgress(5);
+        
+        let progress = 5;
+        const progressInterval = setInterval(() => {
+          progress += Math.floor(Math.random() * 15) + 5;
+          if (progress > 90) progress = 90;
+          setUploadProgress(progress);
+        }, 300);
+
         const newMeeting = await onCreateMeeting({
           title: `Import: ${file.name.replace(/\.[^/.]+$/, "")}`,
           context: "Zaimportowane nagranie audio z pliku.",
           startsAt: new Date().toISOString()
         });
-        selectMeeting(newMeeting);
+        
         queueRecording(newMeeting.id, file);
-        setActiveTab("studio");
+
+        setTimeout(() => {
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
+            selectMeeting(newMeeting);
+            setActiveTab("studio");
+          }, 400);
+        }, 1200);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (_) {
+      setIsUploading(false);
+      setUploadProgress(0);
       alert("Wystąpił błąd przy wgrywaniu pliku.");
     }
   };
@@ -296,17 +319,26 @@ export default function RecordingsTab(props) {
     <div className="recordings-tab-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <header className="recordings-tab-header" style={{ marginBottom: '32px', display: 'flex', gap: '24px' }}>
         <div className="recordings-tab-upload-box" style={{ flex: '0 0 240px' }}>
-          <button 
-            className="hover-pop"
-            type="button" 
-            onClick={() => mainFileInputRef.current?.click()} 
-            style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px dashed rgba(117,214,196,0.4)', borderRadius: '12px', color: '#75d6c4', fontSize: '1rem', fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'inset 0 0 10px rgba(117,214,196,0.05)' }}
-            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.2)'; e.currentTarget.style.borderColor = '#75d6c4'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.1)'; e.currentTarget.style.borderColor = 'rgba(117,214,196,0.4)'; }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Wgraj własne nagranie
-          </button>
+          {isUploading ? (
+            <div style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px solid rgba(117,214,196,0.4)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+              <div style={{ color: '#75d6c4', fontSize: '0.90rem', fontWeight: 600 }}>Wgrywanie ({uploadProgress}%)</div>
+              <div style={{ width: '70%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#75d6c4', transition: 'width 0.2s ease-in-out' }} />
+              </div>
+            </div>
+          ) : (
+            <button 
+              className="hover-pop"
+              type="button" 
+              onClick={() => mainFileInputRef.current?.click()} 
+              style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px dashed rgba(117,214,196,0.4)', borderRadius: '12px', color: '#75d6c4', fontSize: '1rem', fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'inset 0 0 10px rgba(117,214,196,0.05)' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.2)'; e.currentTarget.style.borderColor = '#75d6c4'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.1)'; e.currentTarget.style.borderColor = 'rgba(117,214,196,0.4)'; }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Wgraj własne nagranie
+            </button>
+          )}
           <input type="file" ref={mainFileInputRef} accept="audio/*,video/*" style={{ display: 'none' }} onChange={handleMainFileUpload} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>

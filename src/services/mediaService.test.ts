@@ -1,82 +1,122 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { createMediaService } from './mediaService';
-import { apiRequest } from './httpClient';
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-vi.mock('./httpClient', () => ({
-  apiRequest: vi.fn(),
-}));
+async function loadMediaService(provider = "local") {
+  const apiRequest = vi.fn();
+  const diarizeSegments = vi.fn(() => ({ segments: [{ text: "a", speakerId: 0 }], speakerNames: { "0": "Speaker 1" }, speakerCount: 1 }));
+  const verifyRecognizedSegments = vi.fn(() => [{ text: "a", verificationStatus: "verified" }]);
+  const getAudioBlob = vi.fn();
+  const saveAudioBlob = vi.fn();
+  const createBrowserTranscriptionController = vi.fn(() => ({ stop: vi.fn() }));
+  const getSpeechRecognitionClass = vi.fn(() => function SpeechRecognition() {});
+  vi.resetModules();
+  vi.doMock("./config", () => ({
+    MEDIA_PIPELINE_PROVIDER: provider,
+    API_BASE_URL: "https://api.example.test",
+  }));
+  vi.doMock("./httpClient", () => ({ apiRequest }));
+  vi.doMock("../lib/diarization", () => ({ diarizeSegments, verifyRecognizedSegments }));
+  vi.doMock("../lib/audioStore", () => ({ getAudioBlob, saveAudioBlob }));
+  vi.doMock("../lib/transcription", () => ({
+    createBrowserTranscriptionController,
+    TRANSCRIPTION_PROVIDER: { id: "browser", label: "Browser" },
+  }));
+  vi.doMock("../lib/recording", () => ({ getSpeechRecognitionClass }));
 
-vi.mock('./config', () => ({
-  MEDIA_PIPELINE_PROVIDER: 'remote',
-}));
+  const module = await import("./mediaService");
+  return {
+    ...module,
+    apiRequest,
+    diarizeSegments,
+    verifyRecognizedSegments,
+    getAudioBlob,
+    saveAudioBlob,
+    createBrowserTranscriptionController,
+    getSpeechRecognitionClass,
+  };
+}
 
-describe('mediaService - remote mode', () => {
-  const mediaService = createMediaService();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
+describe("mediaService", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  test('persistRecordingAudio sends PUT to /media/recordings/:id/audio', async () => {
-    const mockBlob = new Blob(['test'], { type: 'audio/webm' });
-    await mediaService.persistRecordingAudio('rec_1', mockBlob, { workspaceId: 'w1', meetingId: 'm1' });
+  test("local media service stores audio and performs local diarization", async () => {
+    const { createMediaService, saveAudioBlob, getAudioBlob } = await loadMediaService("local");
+    getAudioBlob.mockResolvedValue(new Blob(["audio"]));
+    const service = createMediaService();
 
-    expect(apiRequest).toHaveBeenCalledWith('/media/recordings/rec_1/audio', {
-      method: 'PUT',
-      body: mockBlob,
-      headers: expect.objectContaining({
-        'Content-Type': 'audio/webm',
-        'X-Workspace-Id': 'w1',
-        'X-Meeting-Id': 'm1'
+    expect(service.mode).toBe("local");
+    expect(service.supportsLiveTranscription()).toBe(true);
+    expect(service.createLiveController({ language: "pl" })).toBeTruthy();
+    await expect(service.persistRecordingAudio("rec1", new Blob(["audio"]))).resolves.toEqual({ storageMode: "indexeddb" });
+    await expect(service.getRecordingAudioBlob("rec1")).resolves.toBeInstanceOf(Blob);
+    await expect(service.startTranscriptionJob({ rawSegments: [{ text: "a" }] })).resolves.toMatchObject({
+      pipelineStatus: "done",
+      providerId: "browser",
+    });
+    expect(saveAudioBlob).toHaveBeenCalledTimes(1);
+  });
+
+  test("local media service throws for remote-only features", async () => {
+    const { createMediaService } = await loadMediaService("local");
+    const service = createMediaService();
+
+    await expect(service.normalizeRecordingAudio("rec1")).rejects.toThrow(/lokalnym/);
+    await expect(service.getVoiceCoaching("rec1", "0", [])).rejects.toThrow(/serwerowego/);
+    await expect(service.rediarize("rec1")).rejects.toThrow(/serwerowym/);
+    await expect(service.extractVoiceProfileFromSpeaker("rec1", "0", "Anna")).rejects.toThrow(/serwerowym/);
+    await expect(service.askRAG("ws1", "")).resolves.toBe("Zadaj konkretne pytanie.");
+  });
+
+  test("remote media service calls API endpoints and maps responses", async () => {
+    const { createMediaService, apiRequest } = await loadMediaService("remote");
+    apiRequest
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ blob: vi.fn().mockResolvedValue(new Blob(["audio"])) })
+      .mockResolvedValueOnce({
+        diarization: { speakerCount: 1 },
+        segments: [{ text: "a" }],
+        providerId: "remote",
+        providerLabel: "Remote",
+        pipelineStatus: "queued",
+        reviewSummary: { approved: 1 },
       })
+      .mockResolvedValueOnce({
+        diarization: { speakerCount: 1 },
+        segments: [{ text: "a" }],
+        pipelineStatus: "done",
+      })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ text: "live" })
+      .mockResolvedValueOnce({ coaching: "coach" })
+      .mockResolvedValueOnce({ speakerCount: 2 })
+      .mockResolvedValueOnce({ id: "vp1" })
+      .mockResolvedValueOnce({ answer: "rag" });
+    const service = createMediaService();
+    const es = {
+      addEventListener: vi.fn((_event, handler) => handler({ data: JSON.stringify({ progress: 100, message: "done" }) })),
+      close: vi.fn(),
+      onerror: null as any,
+    };
+    const EventSourceMock = vi.fn(function EventSourceMock() {
+      return es;
     });
-  });
+    vi.stubGlobal("EventSource", EventSourceMock as any);
 
-  test('startTranscriptionJob sends POST to /media/recordings/:id/transcribe', async () => {
-    const meeting = { id: 'm1', workspaceId: 'w1', title: 'Test', attendees: ['Jan'] };
-    const mockBlob = new Blob();
-
-    (apiRequest as any).mockResolvedValue({ pipelineStatus: 'queued' });
-
-    await mediaService.startTranscriptionJob({
-      recordingId: 'rec_1',
-      blob: mockBlob,
-      meeting
-    });
-
-    expect(apiRequest).toHaveBeenCalledWith('/media/recordings/rec_1/transcribe', {
-      method: 'POST',
-      body: {
-        meetingId: 'm1',
-        workspaceId: 'w1',
-        contentType: 'audio/webm',
-        meetingTitle: 'Test',
-        participants: ['Jan'],
-        tags: []
-      }
-    });
-  });
-
-  test('getTranscriptionJobStatus sends GET to /media/recordings/:id/transcribe', async () => {
-    (apiRequest as any).mockResolvedValue({ 
-      pipelineStatus: 'done', 
-      segments: [{ text: 'Done', speakerId: 0, timestamp: 0 }] 
-    });
-
-    const status = await mediaService.getTranscriptionJobStatus('rec_1');
-
-    expect(apiRequest).toHaveBeenCalledWith('/media/recordings/rec_1/transcribe', {
-      method: 'GET'
-    });
-    
-    expect(status.pipelineStatus).toBe('done');
-    expect(status.verifiedSegments).toHaveLength(1);
-  });
-
-  test('normalizeRecordingAudio sends POST to /media/recordings/:id/normalize', async () => {
-    await mediaService.normalizeRecordingAudio('rec_1');
-    expect(apiRequest).toHaveBeenCalledWith('/media/recordings/rec_1/normalize', {
-      method: 'POST'
-    });
+    await expect(service.persistRecordingAudio("rec1", new Blob(["audio"], { type: "audio/webm" }), { workspaceId: "ws1", meetingId: "m1" })).resolves.toEqual({ storageMode: "remote" });
+    await expect(service.getRecordingAudioBlob("rec1")).resolves.toBeInstanceOf(Blob);
+    await expect(service.startTranscriptionJob({ recordingId: "rec1", blob: new Blob(["audio"], { type: "audio/webm" }), meeting: { id: "m1", workspaceId: "ws1", attendees: ["Anna"], title: "Weekly", tags: ["tag"] } })).resolves.toMatchObject({ pipelineStatus: "queued" });
+    await expect(service.getTranscriptionJobStatus("rec1")).resolves.toMatchObject({ pipelineStatus: "done" });
+    await expect(service.normalizeRecordingAudio("rec1")).resolves.toBeUndefined();
+    await expect(service.transcribeLiveChunk(new Blob(["audio"], { type: "audio/webm" }))).resolves.toBe("live");
+    await expect(service.getVoiceCoaching("rec1", "0", [])).resolves.toBe("coach");
+    await expect(service.rediarize("rec1")).resolves.toEqual({ speakerCount: 2 });
+    const unsubscribe = service.subscribeToTranscriptionProgress("rec1", vi.fn());
+    unsubscribe();
+    await expect(service.extractVoiceProfileFromSpeaker("rec1", "0", "Anna")).resolves.toEqual({ id: "vp1" });
+    await expect(service.askRAG("ws1", "co?")).resolves.toEqual({ answer: "rag" });
+    expect(apiRequest).toHaveBeenCalled();
+    expect(es.close).toHaveBeenCalled();
   });
 });

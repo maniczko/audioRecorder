@@ -205,6 +205,74 @@ Techniczne wskazowki:
 
 ---
 
+## PRIORYTET P2.6 - program podniesienia jakosci testow do bardzo dobrego poziomu
+
+## R17A. [TEST] Domknac backend krytyczny: `audioPipeline`, `TranscriptionService`, `media routes`, `serverUtils`
+Status: `in_progress`
+Priorytet: `P2`
+Cel: najbardziej ryzykowny backend audio musi byc broniony przez testy kontraktowe, bledy i cleanup.
+Akceptacja:
+- `server/routes/media.ts` ma pokryte happy path i glowne branche bledow
+- `server/services/TranscriptionService.ts` ma testy job lifecycle, progress, cleanup i failure
+- `server/audioPipeline.ts` ma testy eksportow i najwazniejszych fallbackow
+- `server/lib/serverUtils.ts` ma testy helperow transport/security/rate limiting
+Techniczne wskazowki:
+- unikac testow zaleznych od realnego ffmpeg/OpenAI; testowac kontrakty i branch logic
+
+---
+
+## R17B. [TEST] Podniesc frontend logic coverage dla hookow, store i services do poziomu bardzo dobrego
+Status: `todo`
+Priorytet: `P2`
+Cel: warstwa logiki frontendu ma byc broniona tam, gdzie zmiany najczesciej psuja aplikacje.
+Akceptacja:
+- `src/hooks`, `src/store`, `src/services` dochodza do wysokiego, stabilnego coverage
+- testy obejmuja local/remote, side effecty, persist, unauthorized i cleanup
+- nowe testy nie sa flaky i nie bazuja na przypadkowym timingu
+Techniczne wskazowki:
+- priorytet dla `useMeetings`, `useWorkspaceData`, `authStore`, `recorderStore`, `mediaService`
+
+---
+
+## R17C. [TEST] Domknac glówne zakladki i studio flow testami komponentowymi
+Status: `todo`
+Priorytet: `P2`
+Cel: krytyczne ekrany produktu musza miec regresyjna oslone na poziomie UI.
+Akceptacja:
+- testy dla `CalendarTab`, `PeopleTab`, `TasksTab`, `RecordingsTab`
+- testy dla `StudioTab`, `StudioMeetingView`, `TranscriptPanel`
+- pokryte loading, empty, error, retry i glowne akcje usera
+Techniczne wskazowki:
+- preferowac deterministyczne mocki i testy o jednej odpowiedzialnosci
+
+---
+
+## R17D. [TEST] Rozszerzyc E2E o krytyczne flow produktowe i deploy-sensitive scenariusze
+Status: `todo`
+Priorytet: `P2`
+Cel: smoke suite ma chronic najwazniejsze sciezki, a osobna warstwa extended ma bronic zlozone flow.
+Akceptacja:
+- smoke obejmuje logowanie, meeting, task, recording, calendar -> meeting
+- extended obejmuje upload -> transcribe -> review, voice profiles, session persistence po deployu
+- flaky scenariusze sa izolowane poza glownym CI
+Techniczne wskazowki:
+- utrzymac male smoke w kazdym PR, a ciezsze E2E przeniesc do nightly/manual
+
+---
+
+## R17E. [TEST] Wprowadzic per-folder quality gates i dashboard raportow
+Status: `todo`
+Priorytet: `P2`
+Cel: testy maja byc mierzone tam, gdzie ryzyko jest najwieksze, a wyniki maja byc latwo widoczne.
+Akceptacja:
+- osobne progi dla `server/routes`, `server/services`, `src/hooks`, `src/store`, `src/services`
+- dostepna jedna strona lub dashboard z podsumowaniem frontend/backend/e2e
+- spadki coverage lub fail w krytycznych katalogach blokuja CI
+Techniczne wskazowki:
+- publikowac statyczny dashboard z istniejacych raportow zamiast zmieniac same testy
+
+---
+
 ## PRIORYTET P2.8 - przewaga produktowa nad Fireflies
 
 ## R18. [PRODUCT] Zbudowac mocniejszy "meeting intelligence" niz standardowe summary
@@ -290,19 +358,7 @@ Techniczne wskazowki:
 
 ---
 
-## PRIORYTET P3 - porzadek repo i proces developerski
 
-## R24. [DOCS] Dopracowac README i dokumentacje uruchomienia
-Status: `todo`
-Priorytet: `P3`
-Cel: wejscie do projektu powinno byc jednoznaczne, bez zgadywania, ktore uslugi i env sa wymagane.
-Akceptacja:
-- README zawiera aktualny quick start dla frontu i backendu
-- jest sekcja architektury na poziomie wysokim
-- opisane sa tryby local/remote oraz wymagane klucze i fallbacki
-- jest sekcja testow i troubleshooting
-
----
 
 ## PRIORYTET P4 - dalszy rozwoj produktu
 

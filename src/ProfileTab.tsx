@@ -1,9 +1,11 @@
 import './styles/profile.css';
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
+import { apiRequest } from "./services/httpClient";
+import { remoteApiEnabled } from "./services/config";
 import './ProfileTabStyles.css';
 
-function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
+function VoiceProfilesSection() {
   const [profiles, setProfiles] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -14,14 +16,11 @@ function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!sessionToken || !apiBaseUrl) return;
-    fetch(`${apiBaseUrl}/voice-profiles`, {
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    })
-      .then((r) => r.json())
+    if (!remoteApiEnabled()) return;
+    apiRequest("/voice-profiles")
       .then((data) => setProfiles(data.profiles || []))
       .catch(() => {});
-  }, [sessionToken, apiBaseUrl]);
+  }, []);
 
   async function startRecording() {
     if (!speakerName.trim()) { setStatus("Podaj imię osoby przed nagraniem."); return; }
@@ -38,17 +37,14 @@ function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
       setStatus("Przetwarzanie…");
       try {
-        const res = await fetch(`${apiBaseUrl}/voice-profiles`, {
+        const data = await apiRequest("/voice-profiles", {
           method: "POST",
+          body: blob,
           headers: {
-            Authorization: `Bearer ${sessionToken}`,
             "Content-Type": blob.type,
             "X-Speaker-Name": speakerName.trim(),
           },
-          body: blob,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Błąd serwera.");
         setProfiles((prev) => [data, ...prev]);
         setSpeakerName("");
         setStatus(data.hasEmbedding ? "Profil głosowy zapisany i gotowy." : "Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.");
@@ -69,10 +65,7 @@ function VoiceProfilesSection({ sessionToken, apiBaseUrl }) {
   }
 
   async function deleteProfile(id) {
-    await fetch(`${apiBaseUrl}/voice-profiles/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    await apiRequest(`/voice-profiles/${id}`, { method: "DELETE", parseAs: "raw" });
     setProfiles((prev) => prev.filter((p) => p.id !== id));
   }
 
@@ -884,7 +877,7 @@ export default function ProfileTab({
           onUpdateVocabulary={onUpdateVocabulary}
         />
 
-        <VoiceProfilesSection sessionToken={sessionToken} apiBaseUrl={apiBaseUrl} />
+        <VoiceProfilesSection />
 
         <ChangelogSection />
 

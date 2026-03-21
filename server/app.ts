@@ -1,16 +1,17 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger as honoLogger } from "hono/logger";
+import crypto from "node:crypto";
 import { z } from "zod";
 
 import { createMiddlewares, AppServices, AppMiddlewares } from "./routes/middleware.ts";
 import { createAuthRoutes } from "./routes/auth.ts";
 import { createWorkspacesRoutes } from "./routes/workspaces.ts";
 import { createMediaRoutes, createTranscribeRoutes } from "./routes/media.ts";
+import { logger } from "./logger.ts";
 
 export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewares) {
   const { config } = services;
-  const app = new Hono<{ Variables: { session: any; user: any } }>();
+  const app = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
 
   const ALLOWED_ORIGINS = (config.allowedOrigins || "http://localhost:3000").split(",").map((s: string) => s.trim());
   const allowAny = ALLOWED_ORIGINS.includes("*");
@@ -32,9 +33,23 @@ export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewa
     })
   );
 
-  app.use("*", honoLogger());
-
   app.use("*", async (c, next) => {
+    const reqId = crypto.randomUUID();
+    c.set("reqId", reqId);
+    c.res.headers.set("X-Request-Id", reqId);
+    
+    const start = performance.now();
+    await next();
+    const ms = performance.now() - start;
+    
+    logger.info(`[REQ] ${c.req.method} ${c.req.path} - ${c.res.status} [${ms.toFixed(1)}ms]`, {
+      requestId: reqId,
+      method: c.req.method,
+      route: c.req.path,
+      status: c.res.status,
+      durationMs: ms.toFixed(2),
+    });
+  });  app.use("*", async (c, next) => {
     c.header("Content-Security-Policy", "default-src 'none'");
     c.header("X-Content-Type-Options", "nosniff");
     c.header("X-Frame-Options", "DENY");

@@ -1,5 +1,8 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
+
+test.skip(process.env.CI === "true", "Visual baselines sa utrzymywane lokalnie, nie w glownym CI.");
+
 async function seedUi(page, { theme = "dark", layoutPreset = "default" } = {}) {
   await page.addInitScript(({ payload }) => {
     localStorage.setItem(

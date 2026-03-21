@@ -1,79 +1,173 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useRecorderStore } from "./recorderStore";
-import * as audioStore from "../lib/audioStore";
-import * as mediaService from "../services/mediaService";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("../lib/audioStore", () => ({
+const mocks = vi.hoisted(() => ({
   getAudioBlob: vi.fn(),
-}));
-
-vi.mock("../services/mediaService", () => ({
+  analyzeMeeting: vi.fn(),
   createMediaService: vi.fn(),
 }));
 
-describe("recorderStore - processQueue", () => {
-  beforeEach(() => {
+vi.mock("../lib/audioStore", () => ({
+  getAudioBlob: (...args: any[]) => mocks.getAudioBlob(...args),
+}));
+
+vi.mock("../lib/analysis", () => ({
+  analyzeMeeting: (...args: any[]) => mocks.analyzeMeeting(...args),
+}));
+
+vi.mock("../services/mediaService", () => ({
+  createMediaService: () => mocks.createMediaService(),
+}));
+
+describe("recorderStore", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.useFakeTimers();
+    mocks.getAudioBlob.mockReset();
+    mocks.analyzeMeeting.mockReset();
+    mocks.createMediaService.mockReset();
+    const { useRecorderStore } = await import("./recorderStore");
     useRecorderStore.setState({
       recordingQueue: [],
-      isProcessingQueue: false,
       analysisStatus: "idle",
       recordingMessage: "",
+      isProcessingQueue: false,
     });
-    vi.clearAllMocks();
   });
 
-  it("should process a queued item and transition through states", async () => {
-    const mockBlob = new Blob(["audio data"], { type: "audio/webm" });
-    (audioStore.getAudioBlob as any).mockResolvedValue(mockBlob);
+  test("retries queued item by resetting flags and status message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "failed", uploaded: true, errorMessage: "boom" }],
+    });
 
-    const mockMediaService = {
+    useRecorderStore.getState().retryRecordingQueueItem("rec1");
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      recordingId: "rec1",
+      status: "queued",
+      uploaded: false,
+      errorMessage: "",
+    });
+    expect(useRecorderStore.getState().recordingMessage).toBe("Ponawiamy nagranie z kolejki.");
+  });
+
+  test("fails blocked queue item when meeting cannot be resolved", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(() => null, vi.fn(), vi.fn());
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "Nie znaleziono spotkania.",
+    });
+    expect(useRecorderStore.getState().analysisStatus).toBe("error");
+  });
+
+  test("fails queue item when local audio blob is missing", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(null);
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1" }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "Brakuje lokalnego audio.",
+    });
+  });
+
+  test("processes successful queue item and builds fallback analysis on AI error", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.analyzeMeeting.mockRejectedValue(new Error("analysis failed"));
+    const persistRecordingAudio = vi.fn().mockResolvedValue({ storageMode: "remote" });
+    const startTranscriptionJob = vi.fn().mockResolvedValue({
+      pipelineStatus: "done",
+      diarization: { speakerNames: { "0": "Anna" }, speakerCount: 1, confidence: 0.7 },
+      verifiedSegments: [{ text: "hello", verificationStatus: "review" }],
+      providerId: "remote",
+      providerLabel: "Remote",
+      reviewSummary: null,
+    });
+    const subscribeToTranscriptionProgress = vi.fn(() => () => {});
+    mocks.createMediaService.mockReturnValue({
       mode: "remote",
-      persistRecordingAudio: vi.fn().mockResolvedValue({ storageMode: "remote" }),
-      startTranscriptionJob: vi.fn().mockResolvedValue({ 
-        pipelineStatus: "done", 
-        verifiedSegments: [{ text: "Hello", speakerId: 0, timestamp: 0 }] 
-      }),
-      getTranscriptionJobStatus: vi.fn(),
-    };
-    (mediaService.createMediaService as any).mockReturnValue(mockMediaService);
-
-    const resolveMeeting = vi.fn().mockReturnValue({ id: "m1", workspaceId: "w1" });
-    const attachCompleted = vi.fn();
+      persistRecordingAudio,
+      startTranscriptionJob,
+      subscribeToTranscriptionProgress,
+    });
+    const attachCompletedRecording = vi.fn();
     const setCurrentSegments = vi.fn();
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: "rec1",
+          status: "queued",
+          uploaded: false,
+          createdAt: "2026-03-21T10:00:00.000Z",
+          duration: 12,
+          rawSegments: [],
+        },
+      ],
+    });
 
-    const item = { recordingId: "rec_1", status: "queued", uploaded: false };
-    useRecorderStore.getState().setRecordingQueue([item]);
+    const promise = useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", title: "Weekly", attendees: [] }),
+      attachCompletedRecording,
+      setCurrentSegments
+    );
+    await promise;
 
-    // Manually trigger processQueue
-    await useRecorderStore.getState().processQueue(resolveMeeting, attachCompleted, setCurrentSegments);
-
-    const finalState = useRecorderStore.getState();
-    expect(finalState.recordingQueue.length).toBe(0);
-    expect(finalState.analysisStatus).toBe("done");
-    expect(attachCompleted).toHaveBeenCalledWith("m1", expect.objectContaining({
-      id: "rec_1",
-      transcript: [{ text: "Hello", speakerId: 0, timestamp: 0 }]
-    }));
+    expect(persistRecordingAudio).toHaveBeenCalledTimes(1);
+    expect(startTranscriptionJob).toHaveBeenCalledTimes(1);
+    expect(setCurrentSegments).toHaveBeenCalledWith([{ text: "hello", verificationStatus: "review" }]);
+    expect(attachCompletedRecording).toHaveBeenCalledWith(
+      "m1",
+      expect.objectContaining({
+        id: "rec1",
+        pipelineStatus: "done",
+        storageMode: "remote",
+        analysis: expect.objectContaining({
+          summary: "Analiza AI nie powiodla sie. Zachowalismy transkrypcje i segmenty.",
+        }),
+      })
+    );
+    expect(useRecorderStore.getState().recordingQueue).toEqual([]);
+    expect(useRecorderStore.getState().recordingMessage).toBe("Nagranie czeka czesciowo na review.");
   });
 
-  it("should handle server errors and show correctly in state", async () => {
-    (audioStore.getAudioBlob as any).mockResolvedValue(new Blob());
-
-    const mockMediaService = {
+  test("marks item as failed when remote transcription throws", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
       mode: "remote",
       persistRecordingAudio: vi.fn().mockResolvedValue({}),
-      startTranscriptionJob: vi.fn().mockRejectedValue(new Error("Cannot read properties of null (reading 'transcribeRecording')")),
-    };
-    (mediaService.createMediaService as any).mockReturnValue(mockMediaService);
+      startTranscriptionJob: vi.fn().mockRejectedValue(new Error("server exploded")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
 
-    const item = { recordingId: "rec_error", status: "queued", uploaded: false };
-    useRecorderStore.getState().setRecordingQueue([item]);
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
 
-    await useRecorderStore.getState().processQueue(vi.fn().mockReturnValue({ id: "m1" }), vi.fn(), vi.fn());
-
-    const finalState = useRecorderStore.getState();
-    expect(finalState.analysisStatus).toBe("error");
-    expect(finalState.recordingMessage).toContain("Błąd w kolejce: Cannot read properties of null");
-    expect(finalState.recordingQueue[0].status).toBe("failed");
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "server exploded",
+    });
+    expect(useRecorderStore.getState().analysisStatus).toBe("error");
   });
 });

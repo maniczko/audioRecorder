@@ -68,7 +68,13 @@ export default class TranscriptionService extends EventEmitter {
 
     const jobPromise = Promise.resolve()
       .then(async () => {
+        const startSTT = performance.now();
+        const reqId = options.requestId || "internal-stt";
+        const { logger } = await import("../logger.ts");
+
+        logger.info(`[Pipeline] Rozpoczynam transkrypcję i analizę audio.`, { requestId: reqId, recordingId });
         await this.markTranscriptionProcessing(recordingId);
+        
         const wsState = await this.db.getWorkspaceState(asset.workspace_id);
         const result = await this.pipeline.transcribeRecording(asset, {
           ...options,
@@ -91,6 +97,13 @@ export default class TranscriptionService extends EventEmitter {
         await this.saveTranscriptionResult(recordingId, {
           ...result,
           pipelineStatus: "completed",
+        });
+
+        logger.info(`[Metrics] Całkowity Pipeline Czas Zakończony (Transkrypcja + LLM = Sukces)`, { 
+          requestId: reqId, 
+          recordingId: recordingId,
+          durationMs: (performance.now() - startSTT).toFixed(2),
+          confidence: result.diarization?.confidence || 0,
         });
 
         // Wectorize for RAG in the background without blocking the UI updates

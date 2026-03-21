@@ -33,13 +33,15 @@ function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStat
 }
 
 export function createMediaRoutes(services: AppServices, middlewares: AppMiddlewares) {
-  const router = new Hono<{ Variables: { session: any; user: any } }>();
+  const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
   const { transcriptionService } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
 
   // --- Media & Processing ---
   router.use("/recordings/*", authMiddleware);
   router.put("/recordings/:recordingId/audio", async (c) => {
+    const uploadStart = performance.now();
+    const reqId = c.get("reqId");
     const session = c.get("session") as any;
     const recordingId = c.req.param("recordingId");
     const workspaceId = c.req.header("X-Workspace-Id") || "";
@@ -56,6 +58,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         buffer: Buffer.from(buffer),
         createdByUserId: session.user_id,
     });
+    
+    // R04 Metrics
+    const { logger } = await import("../logger.ts");
+    logger.info(`[Metrics] Uploaded audio chunk`, {
+       requestId: reqId,
+       recordingId,
+       sizeBytes: asset.size_bytes,
+       durationMs: (performance.now() - uploadStart).toFixed(2)
+    });
+
     return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes }, 200);
   });
 
@@ -84,7 +96,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
     await transcriptionService.queueTranscription(recordingId, body);
-    await transcriptionService.ensureTranscriptionJob(recordingId, asset, body);
+    
+    // Przekazanie requestId do jobów asynchronicznych (metryki/observability)
+    await transcriptionService.ensureTranscriptionJob(recordingId, asset, {
+      ...body,
+      requestId: c.get("reqId")
+    });
+    
     return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
   });
 

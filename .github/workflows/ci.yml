@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
-          path: coverage/
+          path: coverage/frontend/
           retention-days: 7
 
   # ─── Stage 3: Unit Tests (Server) ──────────────────────
@@ -94,10 +94,18 @@ jobs:
       - name: Install root dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run server tests
-        run: pnpm run test:server
+      - name: Run server tests with coverage
+        run: pnpm run test:server:coverage
         env:
           NODE_ENV: test
+
+      - name: Upload server coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: coverage/server/
+          retention-days: 7
 
   # ─── Stage 4: Production Build ─────────────────────────
   build:
@@ -252,7 +260,7 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
       - name: Run Smoke Tests
-        run: pnpm exec playwright test tests/e2e/auth.spec.js tests/e2e/meeting.spec.js --project=chromium
+        run: pnpm run test:e2e:smoke -- --project=chromium
       - uses: actions/upload-artifact@v4
         if: always()
         with:

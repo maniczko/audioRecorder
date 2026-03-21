@@ -24,7 +24,7 @@ import {
   weekdayLabels,
 } from "./lib/calendarView";
 import { formatDateTime } from "./lib/storage";
-import { EmptyState } from "./components/Skeleton";
+import { EmptyState as EmptyBox } from "./components/Skeleton";
 import './CalendarTabStyles.css';
 
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -513,7 +513,7 @@ export default function CalendarTab({
                 </button>
               ))
             ) : (
-              <EmptyState title="Brak spotkań" message="Dodaj spotkanie, a pojawi się tutaj." />
+              <EmptyBox title="Brak spotkań" message="Dodaj spotkanie, a pojawi się tutaj." />
             )}
           </div>
         </section>
@@ -528,7 +528,7 @@ export default function CalendarTab({
                 </button>
               ))
             ) : (
-              <EmptyState title="Brak terminów" message="Taski z terminem pojawią się tutaj automatycznie." />
+              <EmptyBox title="Brak terminów" message="Taski z terminem pojawią się tutaj automatycznie." />
             )}
           </div>
         </section>
@@ -712,7 +712,7 @@ export default function CalendarTab({
                   <p>{eventTimeLabel(entry)}</p>
                   {(conflictMap[entry.key] || []).length ? <small className="calendar-conflict-label">{(conflictMap[entry.key] || []).length} konfliktow</small> : null}
                 </div>
-              )) : <EmptyState title="Ten dzień jest pusty" message="Wybierz inny dzień albo dodaj nowe spotkanie." />}
+              )) : <EmptyBox title="Ten dzień jest pusty" message="Wybierz inny dzień albo dodaj nowe spotkanie." />}
             </div>
           </div>
 
@@ -830,7 +830,7 @@ export default function CalendarTab({
               </div>
             ) : (
               <div className="selected-day-panel">
-                <EmptyState title="Wybierz wydarzenie" message="Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły." />
+                <EmptyBox title="Wybierz wydarzenie" message="Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły." />
               </div>
             )}
           </div>

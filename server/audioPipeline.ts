@@ -6,9 +6,8 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { spawn, exec } from "node:child_process";
 import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
-
-
 import { config } from "./config.ts";
+import { logger } from "./logger.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -941,6 +940,9 @@ async function transcribeRecording(asset: any, options: any = {}) {
     ? [VERIFICATION_MODEL, "whisper-1"]
     : ["whisper-1"];
 
+  const reqId = options.requestId || "internal-pipeline";
+  const startTranscribe = performance.now();
+
   for (const model of modelsToTry) {
     const fields = { ...whisperFields, model };
     try {
@@ -964,10 +966,18 @@ async function transcribeRecording(asset: any, options: any = {}) {
       }
     }
   }
+  
+  logger.info(`[Metrics] STT Transcription Stage Complete`, {
+    requestId: reqId,
+    recordingId: asset.id,
+    durationMs: (performance.now() - startTranscribe).toFixed(2),
+  });
+
   const verificationSegments = normalizeVerificationSegments(whisperPayload || {});
 
   // ── Try pyannote diarization (best quality, requires HF_TOKEN) ──
   let diarization = null;
+  const startDiarize = performance.now();
   if (HF_TOKEN) {
     notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
     const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
@@ -999,6 +1009,13 @@ async function transcribeRecording(asset: any, options: any = {}) {
     if (DEBUG) console.log("[audioPipeline] Using whisper segments as single-speaker fallback.");
     diarization = normalizeDiarizedSegments(whisperPayload || {});
   }
+  
+  logger.info(`[Metrics] Diarization Stage Complete`, {
+    requestId: reqId,
+    recordingId: asset.id,
+    durationMs: (performance.now() - startDiarize).toFixed(2),
+    speakersIdentified: diarization.speakerCount
+  });
 
   if (!diarization.segments.length) {
     throw new Error("Model STT nie zwrocil zadnych segmentow transkrypcji.");
@@ -1345,6 +1362,9 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     transcriptText,
   ].join("\n");
 
+  const startAnalyze = performance.now();
+  const reqId = meeting?.requestId || "internal-analysis";
+
   try {
     const resp = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
       method: "POST",
@@ -1364,6 +1384,13 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
     const json = await resp.json();
     const content = json.choices?.[0]?.message?.content || "{}";
+    
+    logger.info(`[Metrics] LLM Meeting Analysis Complete`, {
+      requestId: reqId,
+      durationMs: (performance.now() - startAnalyze).toFixed(2),
+      transcriptLength: transcriptText.length
+    });
+    
     return JSON.parse(content);
   } catch (err) {
     console.warn("[audioPipeline] analyzeMeetingWithOpenAI failed:", err.message);
