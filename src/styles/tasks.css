@@ -14,8 +14,8 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 340px;
-  gap: 20px;
+  grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr) var(--layout-aside-width);
+  gap: var(--layout-gap-lg);
 }
 
 .tasks-sidebar,
@@ -80,7 +80,7 @@
 .tasks-list-panel,
 .tasks-main-panel,
 .task-detail-panel {
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .tasks-brand-panel,
@@ -5680,4 +5680,4 @@
   border: 1px solid transparent; /* Match border size of inactive */
   margin: 0;
   transform: none !important; /* Stop vertical transform jitter on active */
-}
+}

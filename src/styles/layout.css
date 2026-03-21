@@ -1,11 +1,11 @@
 .topbar {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
+  gap: var(--layout-gap-lg);
   align-items: flex-start;
-  padding: 22px 26px;
-  border-radius: 28px;
-  margin-bottom: 24px;
+  padding: var(--panel-padding-compact) var(--panel-padding);
+  border-radius: var(--panel-radius);
+  margin-bottom: var(--layout-gap-lg);
 }
 
 .topbar h1 {
@@ -19,7 +19,7 @@
 
 .tab-switcher {
   display: inline-flex;
-  gap: 10px;
+  gap: var(--space-2);
   padding: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -64,8 +64,8 @@
 
 .workspace-layout {
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: var(--layout-sidebar-wide) minmax(0, 1fr);
+  gap: var(--layout-gap-lg);
 }
 
 .workspace-sidebar,
@@ -77,12 +77,12 @@
 .speaker-editor-list,
 .analysis-stack {
   display: grid;
-  gap: 18px;
+  gap: var(--layout-gap-md);
 }
 
 .main-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 18px;
+  margin-top: var(--layout-gap-md);
 }
 
 .recorder-panel,

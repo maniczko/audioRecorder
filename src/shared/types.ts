@@ -33,7 +33,7 @@ export interface DiarizationResult {
 
 export interface TranscriptionStatusPayload {
   recordingId: string;
-  pipelineStatus: "queued" | "processing" | "done" | "failed";
+  pipelineStatus: "uploading" | "queued" | "processing" | "diarization" | "review" | "done" | "failed";
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;

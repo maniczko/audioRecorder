@@ -19,29 +19,15 @@ import {
   createGoogleCalendarConflictState,
 } from "../lib/googleSync";
 
-export default function useMeetings({
-  users,
-  setUsers,
-  workspaces,
-  setWorkspaces,
-  session,
-  setSession,
-  currentUser,
-  currentUserId,
-  currentWorkspaceId,
-  currentWorkspaceMembers,
-  isHydratingRemoteState,
-}) {
+import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
+import { useMeetingsStore } from "../store/meetingsStore";
+
+export default function useMeetings() {
+  const { users } = useWorkspaceStore();
+  const { currentUser, currentUserId, currentWorkspaceId, currentWorkspaceMembers } = useWorkspaceSelectors();
+
   // 1. Core State & Sync
-  const workspaceData = useWorkspaceData({
-    users,
-    setUsers,
-    workspaces,
-    setWorkspaces,
-    session,
-    setSession,
-    currentWorkspaceId,
-  });
+  const { userMeetings, isHydratingRemoteState } = useWorkspaceData();
 
   const {
     setMeetings,
@@ -54,8 +40,7 @@ export default function useMeetings({
     calendarMeta,
     setCalendarMeta,
     setWorkspaceMessage,
-    userMeetings,
-  } = workspaceData;
+  } = useMeetingsStore();
 
   // 2. Lifecycle & Drafts
   const lifecycle = useMeetingLifecycle({
@@ -306,7 +291,7 @@ export default function useMeetings({
       setCalendarMeta((prev) => {
         const next = { ...prev };
         Object.entries(metaUpdates).forEach(([key, patch]) => {
-          next[key] = { ...(prev[key] || {}), ...patch };
+          next[key] = { ...(prev[key] || {}), ...(patch as any) };
         });
         return next;
       });
@@ -346,7 +331,18 @@ export default function useMeetings({
 
 
   return {
-    ...workspaceData,
+    userMeetings,
+    isHydratingRemoteState,
+    manualTasks,
+    taskState,
+    taskBoards,
+    calendarMeta,
+    setMeetings,
+    setManualTasks,
+    setTaskState,
+    setTaskBoards,
+    setCalendarMeta,
+    setWorkspaceMessage,
     ...lifecycle,
     ...taskOps,
     ...peopleProfiles,

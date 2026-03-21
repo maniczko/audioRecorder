@@ -422,6 +422,8 @@ export default function ProfileTab({
   onLogout,
   theme,
   onSetTheme,
+  layoutPreset = "default",
+  onSetLayoutPreset,
   allTags = [],
   onRenameTag,
   onDeleteTag,
@@ -772,6 +774,23 @@ export default function ProfileTab({
               </div>
               <span className="status-chip">{workspaceRole || "member"}</span>
             </div>
+            <div className="integration-row" style={{ alignItems: "start" }}>
+              <div>
+                <strong>Gestosc i charakter layoutu</strong>
+                <p>Aktywny: <strong>{layoutPreset === "compact" ? "Compact" : layoutPreset === "bobr" ? "Bobr" : "Default"}</strong></p>
+              </div>
+              <div className="button-row">
+                <button type="button" className={`ghost-button ${layoutPreset === "default" ? "active" : ""}`} onClick={() => onSetLayoutPreset?.("default")} style={{ background: layoutPreset === "default" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  Default
+                </button>
+                <button type="button" className={`ghost-button ${layoutPreset === "compact" ? "active" : ""}`} onClick={() => onSetLayoutPreset?.("compact")} style={{ background: layoutPreset === "compact" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  Compact
+                </button>
+                <button type="button" className={`ghost-button ${layoutPreset === "bobr" ? "active" : ""}`} onClick={() => onSetLayoutPreset?.("bobr")} style={{ background: layoutPreset === "bobr" ? "var(--bg-panel-strong)" : "transparent" }}>
+                  Bobr
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -830,16 +849,16 @@ export default function ProfileTab({
           <div className="panel-header compact">
             <div>
               <div className="eyebrow">Wygląd</div>
-              <h2>Motyw</h2>
+              <h2>Motyw i layout</h2>
             </div>
           </div>
           <div className="integration-card">
             <div className="integration-row">
               <div>
-                <strong>Motyw interfejsu (Layout)</strong>
+                <strong>Motyw interfejsu</strong>
                 <p>Aktywny: <strong>{theme === "beaver" ? "Bóbr" : theme === "light" ? "Jasny" : "Ciemny"}</strong></p>
               </div>
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div className="button-row">
                 <button type="button" className={`ghost-button ${theme === "dark" ? "active" : ""}`} onClick={() => onSetTheme("dark")} style={{ background: theme === "dark" ? "var(--bg-panel-strong)" : "transparent" }}>
                   🌙 Ciemny
                 </button>

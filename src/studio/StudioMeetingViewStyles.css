@@ -819,12 +819,12 @@
 
 .ff-studio-split-view {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  gap: var(--layout-gap-lg);
   width: 100%;
   min-width: 0;
   min-height: calc(100vh - 220px);
-  margin-top: 24px;
+  margin-top: var(--layout-gap-lg);
   align-items: stretch;
 }
 
@@ -844,24 +844,29 @@
 .ff-studio-left-col {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--layout-gap-lg);
   height: 100%;
   overflow-y: auto;
-  padding-right: 12px;
+  min-width: 0;
+  padding-right: var(--space-3);
 }
 
 .ff-studio-right-col {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-surface, #fff);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  overflow: auto;
+  background: var(--surface-panel);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--surface-stroke);
+  border-left: 1px solid var(--surface-stroke-strong);
+  box-shadow: var(--shadow-panel);
 }
 
 [data-theme="dark"] .ff-studio-right-col {
-  background: var(--bg-surface, #12121f);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--surface-panel);
+  border-color: var(--surface-stroke);
 }
 
 .ff-intelligence-tabs {

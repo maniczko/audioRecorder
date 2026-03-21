@@ -3,12 +3,12 @@ import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { z } from "zod";
 
-import { createMiddlewares, AppServices } from "./routes/middleware.ts";
+import { createMiddlewares, AppServices, AppMiddlewares } from "./routes/middleware.ts";
 import { createAuthRoutes } from "./routes/auth.ts";
 import { createWorkspacesRoutes } from "./routes/workspaces.ts";
 import { createMediaRoutes, createTranscribeRoutes } from "./routes/media.ts";
 
-export function createApp(services: AppServices) {
+export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewares) {
   const { config } = services;
   const app = new Hono<{ Variables: { session: any; user: any } }>();
 
@@ -55,7 +55,7 @@ export function createApp(services: AppServices) {
 
   app.get("/health", (c) => c.json({ ok: true, status: "ok", uptime: process.uptime() }));
 
-  const middlewares = createMiddlewares(services);
+  const middlewares = mockedMiddlewares || createMiddlewares(services);
 
   app.route("/auth", createAuthRoutes(services, middlewares));
   app.route("/", createWorkspacesRoutes(services, middlewares));

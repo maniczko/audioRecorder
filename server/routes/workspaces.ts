@@ -102,7 +102,8 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   });
 
   // --- Voice Profiles ---
-  router.use("/voice-profiles*", authMiddleware);
+  router.use("/voice-profiles", authMiddleware);
+  router.use("/voice-profiles/*", authMiddleware);
   router.get("/voice-profiles", async (c) => {
     const session = c.get("session") as any;
     const profiles = (await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)).map((p: any) => ({

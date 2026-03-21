@@ -8,50 +8,6 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 ## PRIORYTET P1 - stabilizacja architektury i backendu
 
-## R01. [ARCH] Rozbic `server/app.ts` na moduly tras
-Status: `todo`
-Priorytet: `P1`
-Cel: obecny plik HTTP jest zbyt duzy i skupia auth, workspace, media, voice profiles i RAG w jednym miejscu. To spowalnia zmiany i utrudnia testowanie.
-Akceptacja:
-- powstaja osobne moduly tras, np. `server/routes/auth.ts`, `server/routes/workspaces.ts`, `server/routes/media.ts`, `server/routes/voiceProfiles.ts`
-- `server/app.ts` sklada aplikacje i middleware, ale nie zawiera logiki endpointow
-- zachowanie API pozostaje bez zmian
-- testy backendu przechodza bez regresji
-Techniczne wskazowki:
-- wydzielic wspolne helpery typu `authMiddleware`, `ensureWorkspaceAccess`, `applyRateLimit`
-- utrzymac jeden punkt tworzenia aplikacji `createApp(...)`
-
----
-
-## R02. [ARCH] Uporzadkowac kontrakty typow miedzy frontendem i backendem
-Status: `todo`
-Priorytet: `P1`
-Cel: te same encje sa modelowane w wielu miejscach osobno, co sprzyja rozjazdom typow i payloadow.
-Akceptacja:
-- powstaje wspolny katalog kontraktow, np. `shared/` albo `src/shared/`
-- typy dla auth, meetings, tasks, recordings i transcription status sa wspoldzielone
-- frontend i backend importuja te same typy dla najwazniejszych payloadow
-- redukcja lokalnych `any` i duplikatow typow
-Techniczne wskazowki:
-- zaczac od najczesciej przekazywanych obiektow: session bootstrap, recording asset, transcript segment, task
-
----
-
-## R03. [TEST] Dodac integracyjne testy backendu dla kluczowych flow
-Status: `todo`
-Priorytet: `P1`
-Cel: backend ma krytyczne trasy audio i auth, ale potrzebuje mocniejszego zabezpieczenia przed regresjami.
-Akceptacja:
-- testy pokrywaja co najmniej: auth session, upload audio, transcribe start, transcribe status, voice profile create, RAG ask
-- testy uruchamiaja sie lokalnie jednym poleceniem
-- mockowane sa zaleznosci zewnetrzne OpenAI i embedding/diarization
-- pojawiaja sie testy dla blednych payloadow i autoryzacji
-Techniczne wskazowki:
-- wykorzystac istniejace `vitest` i testowac `createApp(...)` przez request listener
-- osobno mockowac `authService`, `workspaceService`, `transcriptionService`
-
----
-
 ## R04. [OBS] Dodac request id, logi strukturalne i podstawowe metryki
 Status: `todo`
 Priorytet: `P1`
@@ -123,49 +79,220 @@ Techniczne wskazowki:
 
 ---
 
-## R09. [AUDIO] Usprawnic review transkryptu i speaker correction
+## PRIORYTET P2.2 - spojnosc layoutu i system UI
+
+## R09. [LAYOUT] Zdefiniowac foundation layoutu i design tokens
 Status: `todo`
 Priorytet: `P2`
-Cel: najwieksza wartosc produktu powstaje po nagraniu, wiec poprawki speakerow i transkryptu musza byc szybkie.
+Cel: odstepy, szerokosci, wysokosci, grid i breakpoints musza wynikac z jednego systemu, a nie z lokalnych decyzji w kazdym widoku.
 Akceptacja:
-- uzytkownik moze latwo poprawic nazwe mowcy i przypisanie segmentu
-- fragmenty o niskiej pewnosci sa wyraznie oznaczone
-- poprawki sa trwale i widoczne w analizie oraz eksporcie
+- istnieje jeden zestaw tokenow dla spacingu, promieni, szerokosci kontenera, wysokosci topbara, gapow i breakpointow
+- nowe i przebudowane widoki korzystaja z tokenow zamiast arbitralnych wartosci
+- odstepy miedzy przyciskami, panelami i sekcjami sa przewidywalne i powtarzalne
 Techniczne wskazowki:
-- wykorzystac obecne pola confidence/reviewSummary i rozbudowac flow edycji
+- oprzec to o `src/styles/variables.css` i wydzielic warstwe `layout tokens`
+- zdefiniowac jasna skale spacingu, np. `4/8/12/16/24/32`
+
+---
+
+## R10. [LAYOUT] Wydzielic prymitywy layoutowe wielokrotnego uzytku
+Status: `todo`
+Priorytet: `P2`
+Cel: zamiast skladac kazdy ekran recznie z przypadkowych `div` i lokalnych klas, aplikacja powinna miec zestaw prymitywow layoutowych.
+Akceptacja:
+- powstaja komponenty/prymitywy typu `PageShell`, `PageHeader`, `Panel`, `Stack`, `Cluster`, `SplitPane`, `ContentGrid`
+- glowne zakladki korzystaja z tych samych prymitywow
+- kod layoutu w widokach jest krotszy i bardziej przewidywalny
+Techniczne wskazowki:
+- zaczac od lekkich wrapperow CSS, bez budowy ciezkiego frameworka komponentowego
+- pilnowac, by prymitywy rozwiazywaly layout, nie logike biznesowa
+
+---
+
+## R11. [LAYOUT] Ujednolicic system przyciskow, toolbarow i akcji
+Status: `todo`
+Priorytet: `P2`
+Cel: nierowne odstepy i niespojne akcje najczesciej wychodza na poziomie przyciskow, grup akcji i naglowkow sekcji.
+Akceptacja:
+- istnieja stale rozmiary i odstpy dla przyciskow, icon buttonow i grup akcji
+- toolbar i akcje glowne sa rozmieszczane wedlug jednego wzorca
+- nie ma lokalnych "magic numbers" tylko po to, zeby cos wizualnie dosunac
+Techniczne wskazowki:
+- zbudowac wspolne klasy lub komponenty dla `button row`, `section actions`, `top actions`
+- powiazac to z tokenami spacingu i wysokosci
+
+---
+
+## R12. [LAYOUT] Ujednolicic strukture ekranow glownych
+Status: `todo`
+Priorytet: `P2`
+Cel: zakladki typu studio, tasks, notes, people, profile i recordings powinny miec jedna logike kompozycji strony.
+Akceptacja:
+- kazdy ekran ma spojny układ: header, controls, content, secondary panel
+- szerokosci kolumn, odstpy pionowe i rytm sekcji sa podobne miedzy widokami
+- mobile i desktop maja przewidywalny responsive behavior
+Techniczne wskazowki:
+- zaczac od 2-3 najwazniejszych ekranow i dopiero potem propagowac wzorzec
+- unifikowac layout bez niszczenia specyfiki widokow
+
+---
+
+## R13. [THEME] Dodac warianty layoutu i motywy, np. "bobr"
+Status: `todo`
+Priorytet: `P2`
+Cel: chcesz miec rozne wersje layoutow i klimatow wizualnych, ale musi to byc systemowe, a nie przez kopiowanie CSS per widok.
+Akceptacja:
+- layout i theme mozna przelaczac przez zestaw tokenow lub `data-theme` / `data-layout`
+- wariant "bobr" moze zmieniac kolorystyke, promienie, tlo, akcenty, a nawet gestość layoutu bez przepisywania widokow
+- komponenty i layout prymitywy pozostaja te same niezaleznie od wariantu
+Techniczne wskazowki:
+- oddzielic `semantic tokens` od konkretnych kolorow i wartosci wizualnych
+- przygotowac warstwe wariantow zamiast rozwidlac pliki CSS
+
+---
+
+## R14. [LAYOUT] Dodac visual regression i checklisty UI dla spojnosc layoutu
+Status: `todo`
+Priorytet: `P2`
+Cel: bez stalej kontroli layout znow zacznie sie rozjezdzac po kolejnych zmianach.
+Akceptacja:
+- istnieje podstawowy zestaw screenshot/visual regression dla kluczowych ekranow
+- PR zmieniajacy layout pokazuje roznice wizualne
+- istnieje krotka checklista UI: spacing, align, responsive, states
+Techniczne wskazowki:
+- zaczac od kilku ekranow i breakpoints, nie od pelnego pokrycia wszystkiego
+
+---
+
+## PRIORYTET P2.5 - poprawa testow i odpornosci na regresje
+
+## R15. [TEST] Zwiekszyc pokrycie testowe kluczowych hookow frontendu
+Status: `todo`
+Priorytet: `P2`
+Cel: duza czesc logiki aplikacji siedzi w hookach, wiec to one powinny byc bronione przed regresja.
+Akceptacja:
+- lepsze pokrycie dla `useMeetings`, `useWorkspace`, `useRecorder`, `useRecordingPipeline`, `useLiveTranscript`
+- testowane sa happy path, edge case i cleanup side effectow
+- ograniczona liczba niestabilnych testow zaleznych od timingu
+Techniczne wskazowki:
+- priorytet dla hookow z logika stanu i synchronizacji z backendem lub local storage
+
+---
+
+## R16. [TEST] Dodac smoke E2E dla krytycznych scenariuszy produktowych
+Status: `todo`
+Priorytet: `P2`
+Cel: e2e powinny chronic najwazniejsze sciezki uzytkownika, ale pozostac szybkie.
+Akceptacja:
+- smoke suite obejmuje logowanie, utworzenie spotkania, dodanie taska i wejscie do widoku nagrania
+- suite odpala sie stabilnie lokalnie i w CI
+- flaky testy sa ograniczone lub usuniete
+Techniczne wskazowki:
+- trzymac smoke E2E male i przewidywalne; bardziej szczegolowe przypadki zostawic unit/integration
+
+---
+
+## R17. [TEST] Dodac raportowanie pokrycia i minimalne progi quality gate
+Status: `todo`
+Priorytet: `P2`
+Cel: sama obecnosc testow nie wystarczy; trzeba mierzyc czy suite chroni istotne obszary.
+Akceptacja:
+- coverage raportowane dla frontendu i backendu
+- ustawione sa minimalne progi dla najwazniejszych katalogow albo globalnie
+- spadek ponizej progu powoduje blad w CI
+Techniczne wskazowki:
+- nie ustawiac zbyt wysokich progow na start; lepiej wejsc stopniowo i podnosic je wraz z porzadkowaniem testow
+
+---
+
+## PRIORYTET P2.8 - przewaga produktowa nad Fireflies
+
+## R18. [PRODUCT] Zbudowac mocniejszy "meeting intelligence" niz standardowe summary
+Status: `todo`
+Priorytet: `P2`
+Cel: Fireflies mocno stoi na transkrypcji, summary, action items i Q&A. Zeby wygrac, aplikacja musi dawac glebsza wartosc operacyjna, nie tylko notatke ze spotkania.
+Akceptacja:
+- po kazdym spotkaniu powstaje nie tylko summary, ale tez decyzje, ryzyka, zaleznosci, unresolved questions i nastepne kroki
+- kazdy insight ma odniesienie do konkretnych fragmentow transkryptu
+- wynik nadaje sie od razu do pracy operacyjnej zespolu, nie wymaga recznego przepisywania
+Techniczne wskazowki:
+- rozbudowac pipeline analizy o output strukturalny zamiast jednego bloku tekstu
+- utrzymac linkowanie do segmentow transkryptu i speakerow
+
+---
+
+## R19. [PRODUCT] Dodac "workspace memory" i RAG na poziomie calej organizacji
+Status: `todo`
+Priorytet: `P2`
+Cel: Fireflies oferuje pytania do spotkan i AI apps; przewage da trwala pamiec organizacyjna ponad pojedynczym meetingiem.
+Akceptacja:
+- mozna zadawac pytania nie tylko o jedno spotkanie, ale o cala historie workspace
+- odpowiedzi lacza wnioski z wielu spotkan, taskow i notatek
+- system wskazuje zrodla i poziom pewnosci odpowiedzi
+Techniczne wskazowki:
+- rozszerzyc obecne RAG z poziomu pojedynczego flow do indeksu workspace/global search
+- dodac filtrowanie po osobach, projektach, okresie i tagach
+
+---
+
+## R20. [PRODUCT] Dodac analityke rozmow i trendow zespolowych
+Status: `todo`
+Priorytet: `P2`
+Cel: Fireflies publicznie podkresla analytics, talk time i trendy. Zeby byc lepszym, trzeba miec bardziej praktyczne insighty.
+Akceptacja:
+- dashboard pokazuje trendy: talk ratio, tempo spotkan, zalegle decyzje, powracajace tematy, SLA taskow
+- widoczne sa zmiany w czasie, nie tylko snapshot jednego spotkania
+- metryki pomagaja prowadzic zespol, a nie tylko ogladac dane
+Techniczne wskazowki:
+- oprzec na danych ze speakerow, taskow, kalendarza i analizy tresci
+- zaczac od kilku metryk, ale z sensowna interpretacja biznesowa
+
+---
+
+## R21. [PRODUCT] Dodac zaawansowane review i edycje po spotkaniu
+Status: `todo`
+Priorytet: `P2`
+Cel: przewage nad Fireflies da "human-in-the-loop" lepiej dopracowany niz typowy notetaker.
+Akceptacja:
+- uzytkownik moze zatwierdzac lub poprawiac: speakerow, decyzje, action items, wazne cytaty
+- poprawki aktualizuja summary, taski i baze wiedzy
+- system zapamietuje korekty i poprawia kolejne analizy
+Techniczne wskazowki:
+- powiazac review z voice profiles i warstwa analityczna
+- logowac korekty jako material do ulepszania heurystyk lub promptow
+
+---
+
+## R22. [PRODUCT] Dodac workflow automation i integracje "po wyniku", nie tylko import
+Status: `todo`
+Priorytet: `P2`
+Cel: Fireflies ma szerokie integracje. Zeby wygrac, trzeba automatycznie wykonywac dalsza prace po spotkaniu.
+Akceptacja:
+- po analizie mozna automatycznie wyslac wynik do Slack, Notion, Linear, Jira, HubSpot lub webhooka
+- taski i follow-upy tworza sie bez recznego przeklejania
+- mozna konfigurowac reguly per workspace
+Techniczne wskazowki:
+- zaczac od webhook + 2-3 najwazniejszych integracji
+- budowac system adapterow zamiast twardych integracji per plik
+
+---
+
+## R23. [PRODUCT] Dodac mobilny lub PWA-first capture flow dla spotkan offline i in-person
+Status: `todo`
+Priorytet: `P2`
+Cel: Fireflies ma mobile app i web recorder. Zeby byc lepszym, nagrywanie offline i szybkie przejscie do analizy musi byc bardzo lekkie i niezawodne.
+Akceptacja:
+- aplikacja dobrze dziala jako PWA na telefonie i desktopie
+- nagranie offline synchronizuje sie po powrocie sieci
+- capture flow ma minimalna liczbe krokow i odporny upload kolejki
+Techniczne wskazowki:
+- rozbudowac obecne PWA/service worker o kolejke synchronizacji i resumable upload
 
 ---
 
 ## PRIORYTET P3 - porzadek repo i proces developerski
 
-## R10. [REPO] Posprzatac artefakty debugowe i wyniki testow z katalogu glownego
-Status: `todo`
-Priorytet: `P3`
-Cel: repo powinno wygladac jak projekt produktowy, a nie katalog roboczy po wielu uruchomieniach.
-Akceptacja:
-- logi i artefakty typu `test_error*.txt`, `final_run*.txt`, `integration_*.txt` sa przeniesione do jednego katalogu roboczego albo ignorowane przez git
-- katalog glowny zawiera tylko istotne pliki projektu
-- `.gitignore` uwzglednia pliki generowane lokalnie
-Techniczne wskazowki:
-- nie usuwac potrzebnych raportow bez decyzji, ale zmienic ich miejsce i policy
-
----
-
-## R11. [CI] Ustawic twardy pipeline CI dla lint, typecheck, unit, server i e2e smoke
-Status: `todo`
-Priorytet: `P3`
-Cel: dalszy rozwoj bez automatycznej kontroli szybko spowoduje regresje.
-Akceptacja:
-- GitHub Actions uruchamia `lint`, `typecheck`, `vitest`, `test:server`
-- e2e smoke odpala przynajmniej jeden krytyczny scenariusz
-- merge bez zielonego CI jest blokowany
-Techniczne wskazowki:
-- rozdzielic joby dla frontendu i backendu
-- e2e ograniczyc do smoke path, zeby czas pipeline nie byl zbyt duzy
-
----
-
-## R12. [DOCS] Dopracowac README i dokumentacje uruchomienia
+## R24. [DOCS] Dopracowac README i dokumentacje uruchomienia
 Status: `todo`
 Priorytet: `P3`
 Cel: wejscie do projektu powinno byc jednoznaczne, bez zgadywania, ktore uslugi i env sa wymagane.
@@ -177,9 +304,91 @@ Akceptacja:
 
 ---
 
+## PRIORYTET P3.5 - szybsze i bardziej stabilne deploye
+
+## R25. [DEPLOY] Wprowadzic preview environments dla kazdego PR
+Status: `todo`
+Priorytet: `P3`
+Cel: szybsza walidacja zmian i mniejsze ryzyko regresji przed merge.
+Akceptacja:
+- kazdy PR dostaje automatyczny preview frontend + API lub przynajmniej frontend z podlaczonym staging API
+- link do preview pojawia sie w CI
+- mozna latwo przetestowac UI i smoke scenariusze bez lokalnego setupu
+Techniczne wskazowki:
+- wykorzystac Vercel/Render/Fly.io lub inna platforme z ephemeral environments
+
+---
+
+## R26. [DEPLOY] Zoptymalizowac pipeline build pod cache i mniejsze artefakty
+Status: `todo`
+Priorytet: `P3`
+Cel: deploye powinny byc szybkie, przewidywalne i tanie.
+Akceptacja:
+- cache zaleznosci i buildow skraca czas CI/deploy
+- frontend i backend buduja sie osobno tylko gdy ich obszar sie zmienil
+- artefakty deployowe sa mniejsze i nie zawieraja smieci developerskich
+Techniczne wskazowki:
+- wykorzystac `turbo`, cache pnpm i warstwowanie Dockera
+- dodac analizator bundle i prune niepotrzebnych plikow
+
+---
+
+## R27. [DEPLOY] Ustabilizowac Docker build i runtime health checks
+Status: `todo`
+Priorytet: `P3`
+Cel: deploy produkcyjny nie moze zalezec od przypadkowego stanu maszyny buildowej.
+Akceptacja:
+- Docker build jest deterministyczny i oparty o lockfile
+- kontener ma poprawny `HEALTHCHECK`
+- startup serwera waliduje wymagane env i jasno failuje przy zlej konfiguracji
+Techniczne wskazowki:
+- sprawdzic multi-stage build, rozdzielenie deps build/runtime i startup checks
+
+---
+
+## R28. [DEPLOY] Dodac bezpieczne migracje i rollout bez przestoju
+Status: `todo`
+Priorytet: `P3`
+Cel: przy rozwoju backendu i bazy deploye musza byc odwracalne i przewidywalne.
+Akceptacja:
+- migracje uruchamiaja sie w kontrolowany sposob podczas deployu
+- istnieje plan rollbacku dla nieudanej wersji
+- zmiany schematu sa kompatybilne z rolling deployem przynajmniej w podstawowych scenariuszach
+Techniczne wskazowki:
+- rozdzielic deploy aplikacji od migracji bazy
+- unikac "breaking migration first" bez warstwy kompatybilnosci
+
+---
+
+## R29. [DEPLOY] Dodac smoke checks po deployu i automatyczny rollback
+Status: `todo`
+Priorytet: `P3`
+Cel: nieudany deploy powinien byc wykrywany od razu, bez recznego odkrywania awarii.
+Akceptacja:
+- po deployu odpalane sa lekkie smoke checks dla health, auth bootstrap i podstawowego API
+- nieudany smoke check oznacza alert i mozliwy rollback
+- zespol widzi status ostatniego wdrozenia
+Techniczne wskazowki:
+- zaczac od prostych HTTP checks i jednego scenariusza aplikacyjnego
+
+---
+
+## R30. [DEPLOY] Dodac staging data set i powtarzalny seed do testowania deployow
+Status: `todo`
+Priorytet: `P3`
+Cel: preview i staging bez realistycznych danych slabo wykrywaja prawdziwe problemy.
+Akceptacja:
+- istnieje kontrolowany seed danych dla workspace, users, meetings, tasks i recordings
+- staging da sie odtworzyc po kazdym deployu
+- smoke i manual QA dzialaja na przewidywalnym stanie
+Techniczne wskazowki:
+- wykorzystac seed w Playwright i rozszerzyc go o backend/staging fixtures
+
+---
+
 ## PRIORYTET P4 - dalszy rozwoj produktu
 
-## R13. [PRODUCT] Dodac onboarding i sample workspace
+## R31. [PRODUCT] Dodac onboarding i sample workspace
 Status: `todo`
 Priorytet: `P4`
 Cel: nowy uzytkownik powinien od razu zobaczyc wartosc bez recznego budowania wszystkiego od zera.
@@ -190,7 +399,7 @@ Akceptacja:
 
 ---
 
-## R14. [PRODUCT] Dodac eksport wynikow spotkania
+## R32. [PRODUCT] Dodac eksport wynikow spotkania
 Status: `todo`
 Priorytet: `P4`
 Cel: wynik pracy aplikacji musi latwo wychodzic poza sam interfejs.
@@ -201,7 +410,7 @@ Akceptacja:
 
 ---
 
-## R15. [PRODUCT] Rozszerzyc funkcje wspolpracy zespolowej
+## R33. [PRODUCT] Rozszerzyc funkcje wspolpracy zespolowej
 Status: `todo`
 Priorytet: `P4`
 Cel: z czasem aplikacja powinna przejsc z narzedzia osobistego do zespolowego.
@@ -214,13 +423,14 @@ Akceptacja:
 
 ## Proponowana kolejnosc wykonania
 
-1. `R01` Rozbic backendowe trasy
-2. `R03` Dodac testy integracyjne backendu
-3. `R05` Uporzadkowac timeouty/retry dla AI
-4. `R06` Poprawic statusy pipeline audio w UI
-5. `R10` Posprzatac repo
-6. `R11` Spiac wszystko pod CI
-7. `R02` Ujednolicic typy kontraktow
-8. `R08` Uporzadkowac warstwe stanu
-9. `R09` Poprawic review transkryptu
-10. `R12-R15` rozwijac produktowo
+1. `R05` Uporzadkowac timeouty/retry dla AI
+2. `R09-R14` zbudowac spojny system layoutu i wariantow
+3. `R06` Poprawic statusy pipeline audio w UI
+4. `R15-R17` podniesc jakosc testow frontend/e2e/coverage
+5. `R25-R30` przyspieszyc i ustabilizowac deploye
+6. `R08` Uporzadkowac warstwe stanu
+7. `R18-R23` budowac przewage produktowa
+8. `R24` Dopracowac README i dokumentacje
+9. `R04` Dodac obserwowalnosc
+10. `R07` Ujednolicic stany
+11. `R31-R33` rozwijac dalej produktowo

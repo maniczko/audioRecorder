@@ -1,11 +1,12 @@
 import { useMemo, useState, lazy, Suspense } from "react";
 import ErrorBoundary from "./lib/ErrorBoundary";
 
-import { useWorkspaceCtx } from "./context/WorkspaceContext";
-import { useMeetingsCtx } from "./context/MeetingsContext";
+import { useWorkspaceSelectors } from "./store/workspaceStore";
+import { useAuthStore } from "./store/authStore";
+import useMeetings from "./hooks/useMeetings";
 import { useGoogleCtx } from "./context/GoogleContext";
 import { useRecorderCtx } from "./context/RecorderContext";
-import { useUICtx } from "./context/UIContext";
+import useUI from "./hooks/useUI";
 
 const CalendarTab = lazy(() => import("./CalendarTab"));
 const NotesTab = lazy(() => import("./NotesTab"));
@@ -16,11 +17,12 @@ const TasksTab = lazy(() => import("./TasksTab"));
 const RecordingsTab = lazy(() => import("./RecordingsTab"));
 
 export default function TabRouter({ calendarMonth, setCalendarMonth }) {
-  const { workspace, auth } = useWorkspaceCtx();
-  const { meetings } = useMeetingsCtx();
+  const workspace = useWorkspaceSelectors();
+  const auth = useAuthStore();
+  const meetings = useMeetings();
   const google = useGoogleCtx();
   const recorder = useRecorderCtx();
-  const ui = useUICtx();
+  const ui = useUI();
 
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => new Date());
 
@@ -177,6 +179,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         theme={ui.theme}
         onToggleTheme={() => ui.setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onSetTheme={ui.setTheme}
+        layoutPreset={ui.layoutPreset}
+        onSetLayoutPreset={ui.setLayoutPreset}
         sessionToken={workspace.session?.token || ""}
         apiBaseUrl={import.meta.env.VITE_API_BASE_URL || ""}
         allTags={allTags}

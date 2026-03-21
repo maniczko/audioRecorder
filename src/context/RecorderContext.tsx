@@ -1,11 +1,11 @@
 import { createContext, useContext } from "react";
 import useRecorder from "../hooks/useRecorder";
-import { useMeetingsCtx } from "./MeetingsContext";
+import useMeetings from "../hooks/useMeetings";
 
 const RecorderContext = createContext(null);
 
 export function RecorderProvider({ children }) {
-  const { meetings } = useMeetingsCtx();
+  const meetings = useMeetings();
 
   const recorder = useRecorder({
     selectedMeeting: meetings.selectedMeeting,

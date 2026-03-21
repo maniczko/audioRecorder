@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { labelSpeaker } from "../lib/recording";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
+import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
 import './TranscriptPanelStyles.css';
 
 const WAVEFORM_SVG_W = 1000;
@@ -686,7 +687,7 @@ export default function TranscriptPanel({
               <span className="status-chip">{selectedRecording.transcriptionProviderLabel}</span>
             ) : null}
             {selectedRecording.pipelineStatus ? (
-              <span className="status-chip">{selectedRecording.pipelineStatus}</span>
+              <RecordingPipelineStatus status={selectedRecording.pipelineStatus} />
             ) : null}
             {selectedRecording.reviewSummary?.needsReview ? (
               <span className="status-chip">

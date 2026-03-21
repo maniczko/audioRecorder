@@ -1,6 +1,7 @@
 import './styles/recordings.css';
 import React from "react";
 import { formatDateTime } from "./lib/storage";
+import { EmptyState } from "./components/Skeleton";
 import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
@@ -259,9 +260,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
           </tbody>
         </table>
         ) : (
-          <div className="empty-recordings" style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)' }}>
-            <p>Brak spotkań spełniających kryteria.</p>
-          </div>
+          <EmptyState icon="🎙️" title="Brak nagrań" message="Brak spotkań spełniających kryteria wyszukiwania." />
         )}
       </div>
     </section>

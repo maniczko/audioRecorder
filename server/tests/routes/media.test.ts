@@ -30,6 +30,29 @@ describe("Media Routes", () => {
     });
   });
 
+  it("PUT /media/recordings/:recordingId/audio - upload success", async () => {
+    mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
+      id: "rec_new", workspace_id: "ws_1", size_bytes: 512
+    });
+
+    const res = await app.request("/media/recordings/rec_new/audio", {
+      method: "PUT",
+      headers: { 
+        "Authorization": "Bearer fake_token", 
+        "Content-Type": "audio/webm",
+        "X-Workspace-Id": "ws_1" 
+      },
+      body: Buffer.from("small-audio-data")
+    });
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.id).toBe("rec_new");
+    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledWith(
+      expect.objectContaining({ recordingId: "rec_new", workspaceId: "ws_1", contentType: "audio/webm" })
+    );
+  });
+
   it("POST /media/recordings/:recordingId/transcribe - queues job", async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: "rec_1", workspace_id: "ws_1", file_path: "/tmp/fake.webm", content_type: "audio/webm", size_bytes: 1024, transcription_status: "queued"

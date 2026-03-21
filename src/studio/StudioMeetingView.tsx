@@ -10,6 +10,7 @@ import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
 import { apiRequest } from "../services/httpClient";
 import { remoteApiEnabled } from "../services/config";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
+import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
 import './StudioMeetingViewStyles.css';
 
 
@@ -463,9 +464,9 @@ export default function StudioMeetingView({
         </audio>
       ) : null}
 
-      <div className="ff-studio-split-view" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 0.8fr)', gap: '24px', width: '100%', minHeight: 'calc(100vh - 200px)' }}>
+      <div className="ff-studio-split-view">
         {/* LEFT COLUMN: Actions, Briefs, Panels */}
-        <div className="ff-studio-left-col" style={{ minWidth: 0, overflow: 'auto' }}>
+        <div className="ff-studio-left-col">
 
       {/* ═══════════════════════════════════════════
            HEADER — title + subtitle
@@ -946,7 +947,7 @@ export default function StudioMeetingView({
         </div>{/* /ff-studio-left-col */}
 
         {/* RIGHT COLUMN: Transcript */}
-        <div className="ff-studio-right-col" style={{ minWidth: 0, overflow: 'auto', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="ff-studio-right-col">
 
           {/* Section header */}
           <div className="ff-sticky-header" style={{ padding: '16px 20px 12px' }}>
@@ -1202,18 +1203,12 @@ export default function StudioMeetingView({
             </>
           ) : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl ? (
             <div className="ff-player-status-wrap">
-              <span className="ff-player-status-label">
-                {analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : queueLabel}
-              </span>
-              {(analysisStatus === "error" || analysisStatus === "failed") && activeQueueItem && (
-                <button
-                  type="button"
-                  className="ff-player-retry-btn"
-                  onClick={() => retryRecordingQueueItem(activeQueueItem.recordingId)}
-                >
-                  Spróbuj ponownie
-                </button>
-              )}
+              <RecordingPipelineStatus 
+                status={analysisStatus === "error" || analysisStatus === "failed" || activeQueueItem?.status === "failed" ? "failed" : (activeQueueItem?.status || "processing")}
+                errorMessage={activeQueueItem?.errorMessage || (analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : undefined)}
+                onRetry={activeQueueItem ? () => retryRecordingQueueItem(activeQueueItem.recordingId) : undefined}
+                progressMessage={queueLabel}
+              />
             </div>
           ) : (
             <>
@@ -1322,5 +1317,4 @@ StudioMeetingView.propTypes = {
   updateTranscriptSegment: PropTypes.func,
   setActiveTab: PropTypes.func,
 };
-
 

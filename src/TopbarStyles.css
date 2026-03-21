@@ -11,16 +11,17 @@
 
 .tab-switcher {
   display: inline-flex;
-  gap: 10px;
+  gap: var(--space-2);
   padding: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-panel-muted);
+  border: 1px solid var(--surface-stroke);
+  align-items: center;
 }
 
 .tab-pill {
-  padding: 10px 16px;
-  border-radius: 999px;
+  padding-inline: var(--control-padding-inline-md);
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
@@ -52,11 +53,8 @@
 }
 
 .settings-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--surface-stroke);
+  background: var(--surface-panel-muted);
   color: var(--text);
   cursor: pointer;
 }
@@ -98,10 +96,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--surface-stroke);
+  background: var(--surface-panel-muted);
   color: var(--text);
   font-size: 0.84rem;
   font-weight: 500;

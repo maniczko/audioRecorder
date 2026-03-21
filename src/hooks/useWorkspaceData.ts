@@ -1,34 +1,36 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import useStoredState from "./useStoredState";
-import { STORAGE_KEYS } from "../lib/storage";
 import { createStateService } from "../services/stateService";
 import { migrateWorkspaceData } from "../lib/workspace";
+import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
+import { useMeetingsStore } from "../store/meetingsStore";
 
-function serializeWorkspaceState(payload) {
+function serializeWorkspaceState(payload: any) {
   return JSON.stringify(payload || {});
 }
 
-export default function useWorkspaceData({
-  users,
-  setUsers,
-  workspaces,
-  setWorkspaces,
-  session,
-  setSession,
-  currentWorkspaceId,
-}) {
-  const [meetings, setMeetings] = useStoredState(STORAGE_KEYS.meetings, []);
-  const [manualTasks, setManualTasks] = useStoredState(STORAGE_KEYS.manualTasks, []);
-  const [taskState, setTaskState] = useStoredState(STORAGE_KEYS.taskState, {});
-  const [taskBoards, setTaskBoards] = useStoredState(STORAGE_KEYS.taskBoards, {});
-  const [calendarMeta, setCalendarMeta] = useStoredState(STORAGE_KEYS.calendarMeta, {});
-  const [vocabulary, setVocabulary] = useStoredState(STORAGE_KEYS.vocabulary, []);
-  const [workspaceMessage, setWorkspaceMessage] = useState("");
+export default function useWorkspaceData() {
+  const { currentWorkspaceId } = useWorkspaceSelectors();
+  const { users, setUsers, workspaces, setWorkspaces, session, setSession } = useWorkspaceStore();
+  const {
+    meetings,
+    setMeetings,
+    manualTasks,
+    setManualTasks,
+    taskState,
+    setTaskState,
+    taskBoards,
+    setTaskBoards,
+    calendarMeta,
+    setCalendarMeta,
+    vocabulary,
+    setVocabulary,
+    setWorkspaceMessage,
+  } = useMeetingsStore();
 
   const stateService = useMemo(() => createStateService(), []);
-  const syncTimerRef = useRef(null);
-  const remotePollTimerRef = useRef(null);
+  const syncTimerRef = useRef<number | null>(null);
+  const remotePollTimerRef = useRef<number | null>(null);
   const hydratedWorkspaceIdRef = useRef("");
   const remoteSnapshotRef = useRef("");
 
@@ -37,7 +39,7 @@ export default function useWorkspaceData({
   );
 
   const applyRemoteWorkspaceState = useCallback(
-    (result) => {
+    (result: any) => {
       if (!result) return;
 
       if (Array.isArray(result.users)) {
@@ -72,7 +74,7 @@ export default function useWorkspaceData({
 
       hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || "";
       if (result.workspaceId && result.workspaceId !== session?.workspaceId) {
-        setSession((previous) =>
+        setSession((previous: any) =>
           previous
             ? {
                 ...previous,
@@ -85,7 +87,6 @@ export default function useWorkspaceData({
     [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces, setVocabulary]
   );
 
-  // Migration Effect
   useEffect(() => {
     const migration = migrateWorkspaceData({
       users,
@@ -108,7 +109,6 @@ export default function useWorkspaceData({
     setSession(migration.session);
   }, [manualTasks, meetings, session, setManualTasks, setMeetings, setSession, setTaskBoards, setUsers, setWorkspaces, taskBoards, users, workspaces]);
 
-  // Bootstrap Effect
   useEffect(() => {
     if (stateService?.mode !== "remote") {
       hydratedWorkspaceIdRef.current = currentWorkspaceId || "";
@@ -133,7 +133,7 @@ export default function useWorkspaceData({
         }
         applyRemoteWorkspaceState(result);
       })
-      .catch((error) => {
+      .catch((error: any) => {
         if (cancelled) {
           return;
         }
@@ -151,7 +151,6 @@ export default function useWorkspaceData({
     };
   }, [currentWorkspaceId, applyRemoteWorkspaceState, session?.token, session?.userId, session?.workspaceId, stateService]);
 
-  // Sync Effect (outbound)
   useEffect(() => {
     if (stateService?.mode !== "remote") {
       return undefined;
@@ -184,7 +183,7 @@ export default function useWorkspaceData({
         .then(() => {
           remoteSnapshotRef.current = nextSnapshot;
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error("Remote workspace sync failed.", error);
           setWorkspaceMessage(error.message || "Nie udalo sie zapisac workspace na backendzie.");
         });
@@ -197,7 +196,6 @@ export default function useWorkspaceData({
     };
   }, [calendarMeta, vocabulary, currentWorkspaceId, isHydratingRemoteState, manualTasks, meetings, session?.token, stateService, taskBoards, taskState]);
 
-  // Polling Effect (inbound)
   useEffect(() => {
     if (stateService?.mode !== "remote") {
       return undefined;
@@ -259,20 +257,6 @@ export default function useWorkspaceData({
   );
 
   return {
-    meetings,
-    setMeetings,
-    manualTasks,
-    setManualTasks,
-    taskState,
-    setTaskState,
-    taskBoards,
-    setTaskBoards,
-    calendarMeta,
-    setCalendarMeta,
-    vocabulary,
-    setVocabulary,
-    workspaceMessage,
-    setWorkspaceMessage,
     userMeetings,
     isHydratingRemoteState,
     applyRemoteWorkspaceState,

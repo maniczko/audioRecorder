@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { formatDateTime, formatDuration } from "../lib/storage";
+import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
 import './StudioSidebarStyles.css';
 
 export default function StudioSidebar({
@@ -354,7 +355,7 @@ function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordi
 
   const allRecordings = userMeetings
     .flatMap((m) => (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title })))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const filtered = search.trim()
     ? allRecordings.filter(
@@ -402,9 +403,7 @@ function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordi
               <div className="sidebar-recording-meta">
                 <span>{formatDateTime(rec.createdAt)}</span>
                 <span>{formatDuration(rec.duration)}</span>
-                <span className={`status-chip status-chip-sm ${rec.pipelineStatus || "done"}`}>
-                  {rec.pipelineStatus || "done"}
-                </span>
+                <RecordingPipelineStatus status={rec.pipelineStatus || "done"} />
               </div>
             </li>
           );

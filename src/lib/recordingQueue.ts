@@ -2,7 +2,7 @@ export function normalizeRecordingPipelineStatus(value) {
   if (value === "completed") {
     return "done";
   }
-  if (["queued", "uploading", "processing", "failed", "done"].includes(String(value || ""))) {
+  if (["uploading", "queued", "processing", "diarization", "review", "failed", "done"].includes(String(value || ""))) {
     return value;
   }
   return "queued";
@@ -105,9 +105,9 @@ export function getNextPendingRecordingQueueItem(queue) {
   );
 }
 
-export function getNextProcessableRecordingQueueItem(queue, canProcess = () => true) {
+export function getNextProcessableRecordingQueueItem(queue, canProcess = (item) => true) {
   return normalizeRecordingQueue(queue).find(
-    (item) => ["queued", "uploading", "processing"].includes(item.status) && canProcess(item)
+    (item) => ["uploading", "queued", "processing", "diarization"].includes(item.status) && canProcess(item)
   );
 }
 

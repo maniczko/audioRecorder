@@ -7,6 +7,9 @@ import App from './App';
 import { registerServiceWorker } from './pwa';
 import reportWebVitals from './reportWebVitals';
 
+document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'dark');
+document.documentElement.setAttribute('data-layout', document.documentElement.getAttribute('data-layout') || 'default');
+
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <React.StrictMode>

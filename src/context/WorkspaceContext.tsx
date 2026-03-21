@@ -1,27 +1,36 @@
 import { createContext, useContext } from "react";
-import useWorkspace from "../hooks/useWorkspace";
-import useAuth from "../hooks/useAuth";
+import { useWorkspaceSelectors, useWorkspaceStore } from "../store/workspaceStore";
 
-export const WorkspaceContext = createContext(null);
+const WorkspaceContext = createContext<any>(null);
 
 export function WorkspaceProvider({ children }) {
-  const workspace = useWorkspace();
-  const auth = useAuth({
-    currentUser: workspace.currentUser,
-    users: workspace.users,
-    setUsers: workspace.setUsers,
-    workspaces: workspace.workspaces,
-    setWorkspaces: workspace.setWorkspaces,
-    setSession: workspace.setSession,
-  });
+  const selectors = useWorkspaceSelectors();
+  const workspaceStore = useWorkspaceStore();
 
-  const value = { workspace, auth };
+  const value = {
+    workspace: {
+      users: workspaceStore.users,
+      setUsers: workspaceStore.setUsers,
+      workspaces: workspaceStore.workspaces,
+      setWorkspaces: workspaceStore.setWorkspaces,
+      session: workspaceStore.session,
+      setSession: workspaceStore.setSession,
+      currentUser: selectors.currentUser,
+      currentUserId: selectors.currentUserId,
+      currentWorkspace: selectors.currentWorkspace,
+      currentWorkspaceId: selectors.currentWorkspaceId,
+      currentWorkspaceMembers: selectors.currentWorkspaceMembers,
+      currentWorkspaceRole: selectors.currentWorkspaceRole,
+      currentWorkspacePermissions: selectors.currentWorkspacePermissions,
+      isHydratingRemoteState: selectors.isHydratingRemoteState,
+      isHydratingSession: selectors.isHydratingSession,
+      availableWorkspaces: selectors.availableWorkspaces,
+      switchWorkspace: workspaceStore.switchWorkspace,
+      logout: workspaceStore.logout,
+    },
+  };
 
-  return (
-    <WorkspaceContext.Provider value={value}>
-      {children}
-    </WorkspaceContext.Provider>
-  );
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspaceCtx() {

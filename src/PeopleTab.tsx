@@ -1,6 +1,7 @@
 import './styles/people.css';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "./lib/storage";
+import { EmptyState } from "./components/Skeleton";
 import './PeopleTabStyles.css';
 
 const DISC_COLORS = { D: "#f17d72", I: "#ffd166", S: "#74d0bf", C: "#7b9eeb" };
@@ -130,17 +131,21 @@ function PsychProfilePanel({ person, onAnalyze, analyzing }) {
 
   if (!p) {
     return (
-      <div className="psych-empty-state">
-        <p className="soft-copy">
-          {canAnalyze
-            ? `${person.meetings.length} spotkanie${person.meetings.length > 1 ? "ń" : ""} z tą osobą — gotowe do analizy.`
-            : "Potrzeba co najmniej 1 spotkania, aby wygenerować profil."}
-        </p>
-        <button type="button" className="secondary-button" onClick={onAnalyze} disabled={!canAnalyze || analyzing}>
-          {analyzing ? "Analizuję…" : "Generuj profil"}
-        </button>
-        {analyzing && <div className="psych-loading-bar" />}
-      </div>
+      <EmptyState 
+        icon="🧠" 
+        title="Brak profilu" 
+        message={canAnalyze
+          ? `${person.meetings.length} spotkanie${person.meetings.length > 1 ? "ń" : ""} z tą osobą — gotowe do analizy.`
+          : "Potrzeba co najmniej 1 spotkania, aby wygenerować profil."}
+        action={
+          <>
+            <button type="button" className="secondary-button" onClick={onAnalyze} disabled={!canAnalyze || analyzing}>
+              {analyzing ? "Analizuję…" : "Generuj profil"}
+            </button>
+            {analyzing && <div className="psych-loading-bar" />}
+          </>
+        }
+      />
     );
   }
 
@@ -383,10 +388,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                 </button>
               ))
             ) : (
-              <div className="task-empty-state">
-                <strong>Brak osob</strong>
-                <span>Dodaj uczestnikow do spotkan albo przypisz taski, aby tu sie pojawili.</span>
-              </div>
+              <EmptyState title="Brak osób" message="Dodaj uczestników do spotkań albo przypisz taski, aby tu się pojawili." />
             )}
           </div>
         </section>
@@ -690,10 +692,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                       </button>
                     ))
                   ) : (
-                    <div className="empty-panel">
-                      <strong>Brak spotkan</strong>
-                      <span>Ta osoba nie pojawila sie jeszcze w zadnym spotkaniu.</span>
-                    </div>
+                    <EmptyState title="Brak spotkań" message="Ta osoba nie pojawiła się jeszcze w żadnym spotkaniu." />
                   )}
                 </div>
               </section>
@@ -743,10 +742,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                       </button>
                     ))
                   ) : (
-                    <div className="empty-panel">
-                      <strong>Brak zadan</strong>
-                      <span>Na razie nic nie jest przypisane do tej osoby.</span>
-                    </div>
+                    <EmptyState title="Brak zadań" message="Na razie nic nie jest przypisane do tej osoby." />
                   )}
                 </div>
               </section>

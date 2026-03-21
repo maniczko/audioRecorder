@@ -1,9 +1,9 @@
 import { ReactNode, useState } from "react";
-import { WorkspaceProvider } from "./context/WorkspaceContext";
-import { MeetingsProvider } from "./context/MeetingsContext";
 import { GoogleProvider } from "./context/GoogleContext";
+import { MeetingsProvider } from "./context/MeetingsContext";
 import { RecorderProvider } from "./context/RecorderContext";
-import { UIProvider } from "./context/UIContext";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
+import MeetingsSyncManager from "./components/MeetingsSyncManager";
 
 export default function AppProviders({ children }: { children: ReactNode | ((props: any) => ReactNode) }) {
   const [calendarMonth, setCalendarMonth] = useState(
@@ -13,15 +13,15 @@ export default function AppProviders({ children }: { children: ReactNode | ((pro
   return (
     <WorkspaceProvider>
       <MeetingsProvider>
-        <GoogleProvider calendarMonth={calendarMonth}>
-          <RecorderProvider>
-            <UIProvider>
+        <MeetingsSyncManager>
+          <GoogleProvider calendarMonth={calendarMonth}>
+            <RecorderProvider>
               {typeof children === "function"
                 ? (children as any)({ calendarMonth, setCalendarMonth })
                 : children}
-            </UIProvider>
-          </RecorderProvider>
-        </GoogleProvider>
+            </RecorderProvider>
+          </GoogleProvider>
+        </MeetingsSyncManager>
       </MeetingsProvider>
     </WorkspaceProvider>
   );

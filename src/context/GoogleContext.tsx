@@ -1,13 +1,15 @@
 import { createContext, useContext } from "react";
 import useGoogleIntegrations from "../hooks/useGoogleIntegrations";
-import { useWorkspaceCtx } from "./WorkspaceContext";
-import { useMeetingsCtx } from "./MeetingsContext";
+import { useWorkspaceSelectors } from "../store/workspaceStore";
+import { useAuthStore } from "../store/authStore";
+import useMeetings from "../hooks/useMeetings";
 
 const GoogleContext = createContext(null);
 
 export function GoogleProvider({ calendarMonth, children }) {
-  const { workspace, auth } = useWorkspaceCtx();
-  const { meetings } = useMeetingsCtx();
+  const workspace = useWorkspaceSelectors();
+  const auth = useAuthStore();
+  const meetings = useMeetings();
 
   const google = useGoogleIntegrations({
     currentUser: workspace.currentUser,

@@ -1,0 +1,84 @@
+.pipeline-status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-chip.processing {
+  background: rgba(129, 140, 248, 0.15);
+  color: #818cf8;
+  border-color: rgba(129, 140, 248, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-chip.done {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.status-chip.failed {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.status-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-rotate 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pipeline-progress-text {
+  font-size: 0.75rem;
+  color: var(--text-2, #a1a1aa);
+  font-style: italic;
+}
+
+.pipeline-error-box {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pipeline-error-text {
+  font-size: 0.75rem;
+  color: #fca5a5;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pipeline-retry-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pipeline-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

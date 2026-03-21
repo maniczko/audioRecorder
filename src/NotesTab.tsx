@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { formatDateTime } from "./lib/storage";
+import { EmptyState } from "./components/Skeleton";
 import './NotesTabStyles.css';
 
 const ALLOWED_HTML = {
@@ -33,7 +34,7 @@ function tagStyle(tag) {
 
 function dateBucket(dateStr) {
   if (!dateStr) return "Brak daty";
-  const diff = (Date.now() - new Date(dateStr)) / 86400000;
+  const diff = (Date.now() - new Date(dateStr).getTime()) / 86400000;
   if (diff < 7) return "Ten tydzień";
   if (diff < 30) return "Ten miesiąc";
   if (diff < 90) return "Ostatnie 3 miesiące";
@@ -44,7 +45,7 @@ const BUCKET_ORDER = ["Ten tydzień", "Ten miesiąc", "Ostatnie 3 miesiące", "S
 
 function buildNote(meeting) {
   const recs = Array.isArray(meeting.recordings) ? meeting.recordings : [];
-  const latest = [...recs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+  const latest = [...recs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   const analysis = meeting.analysis || latest?.analysis || null;
   const markers = recs.flatMap((r) =>
     (Array.isArray(r.markers) ? r.markers : []).filter((m) => m.note || m.label)
@@ -256,11 +257,7 @@ function NoteDetail({ note, onOpenMeeting }) {
   if (!note) {
     return (
       <aside className="notes-detail-panel">
-        <div className="notes-empty-detail">
-          <div className="notes-empty-icon">📄</div>
-          <strong>Wybierz notatkę</strong>
-          <span>Kliknij dowolną kartę, żeby zobaczyć pełną treść notatki.</span>
-        </div>
+        <EmptyState title="Wybierz notatkę" message="Kliknij dowolną kartę, żeby zobaczyć pełną treść notatki." />
       </aside>
     );
   }
@@ -532,7 +529,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
     () =>
       userMeetings
         .map(buildNote)
-        .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)),
+        .sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()),
     [userMeetings]
   );
 
@@ -677,17 +674,11 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
       {/* ─ Main content ─────────────────────────────────── */}
       <main className="notes-main">
         {filteredNotes.length === 0 ? (
-          <div className="notes-empty-state">
-            <div className="notes-empty-icon">📝</div>
-            <strong>
-              {hasFilters ? "Brak wyników" : "Brak notatek"}
-            </strong>
-            <span>
-              {hasFilters
-                ? "Zmień wyszukiwaną frazę lub wyczyść filtry."
-                : "Nagraj spotkanie i uruchom analizę, aby tu pojawiły się notatki."}
-            </span>
-          </div>
+          <EmptyState 
+            icon="📝" 
+            title={hasFilters ? "Brak wyników" : "Brak notatek"} 
+            message={hasFilters ? "Zmień wyszukiwaną frazę lub wyczyść filtry." : "Nagraj spotkanie i uruchom analizę, aby tu pojawiły się notatki."} 
+          />
         ) : (
           groups.map((group) => (
             <section key={group.key} className="notes-group">

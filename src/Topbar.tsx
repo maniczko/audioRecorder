@@ -1,35 +1,36 @@
 import NotificationCenter from "./NotificationCenter";
-import { useWorkspaceCtx } from "./context/WorkspaceContext";
+import { useWorkspaceSelectors } from "./store/workspaceStore";
 import { useGoogleCtx } from "./context/GoogleContext";
 import { useRecorderCtx } from "./context/RecorderContext";
-import { useUICtx } from "./context/UIContext";
-import './TopbarStyles.css';
+import useUI from "./hooks/useUI";
+import { Cluster } from "./ui/LayoutPrimitives";
+import "./TopbarStyles.css";
 
 export default function Topbar() {
-  const { workspace } = useWorkspaceCtx();
+  const workspace = useWorkspaceSelectors();
   const google = useGoogleCtx();
   const recorder = useRecorderCtx();
-  const ui = useUICtx();
+  const ui = useUI();
 
   return (
-    <header className="topbar">
+    <header className="topbar ui-topbar">
       <div className="topbar-title">
         <div>
           <div className="eyebrow">VoiceLog OS</div>
           <h1>Meeting intelligence studio</h1>
         </div>
-        <div className="tab-switcher">
-          {ui.canGoBack && (
+        <Cluster className="tab-switcher" gap="sm">
+          {ui.canGoBack ? (
             <button
               type="button"
               className="tab-back-btn"
               onClick={ui.navigateBack}
               title="Cofnij"
-              aria-label="Wróć do poprzedniej zakładki"
+              aria-label="Wroc do poprzedniej zakladki"
             >
               ←
             </button>
-          )}
+          ) : null}
           <button type="button" className={ui.activeTab === "studio" ? "tab-pill active" : "tab-pill"} onClick={() => ui.setActiveTab("studio")} aria-label="Tab Studio">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
             <span>Studio</span>
@@ -54,10 +55,10 @@ export default function Topbar() {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
             <span>Notatki</span>
           </button>
-        </div>
+        </Cluster>
       </div>
 
-      <div className="topbar-actions">
+      <Cluster className="topbar-actions" gap="sm" justify="end">
         {google.googleEnabled ? <div className="status-chip">Google ready</div> : null}
         <NotificationCenter
           open={ui.notificationCenterOpen}
@@ -123,7 +124,7 @@ export default function Topbar() {
             {"\u2699"}
           </button>
         </div>
-      </div>
+      </Cluster>
     </header>
   );
 }

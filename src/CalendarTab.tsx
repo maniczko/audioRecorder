@@ -512,10 +512,7 @@ export default function CalendarTab({
                 </button>
               ))
             ) : (
-              <div className="empty-panel">
-                <strong>Brak spotkan</strong>
-                <span>Dodaj spotkanie, a pojawi sie tutaj.</span>
-              </div>
+              <EmptyState title="Brak spotkań" message="Dodaj spotkanie, a pojawi się tutaj." />
             )}
           </div>
         </section>
@@ -530,10 +527,7 @@ export default function CalendarTab({
                 </button>
               ))
             ) : (
-              <div className="empty-panel">
-                <strong>Brak terminow</strong>
-                <span>Taski z terminem pojawia sie tutaj automatycznie.</span>
-              </div>
+              <EmptyState title="Brak terminów" message="Taski z terminem pojawią się tutaj automatycznie." />
             )}
           </div>
         </section>
@@ -717,7 +711,7 @@ export default function CalendarTab({
                   <p>{eventTimeLabel(entry)}</p>
                   {(conflictMap[entry.key] || []).length ? <small className="calendar-conflict-label">{(conflictMap[entry.key] || []).length} konfliktow</small> : null}
                 </div>
-              )) : <div className="empty-panel"><strong>Ten dzien jest pusty</strong><span>Wybierz inny dzien albo dodaj nowe spotkanie.</span></div>}
+              )) : <EmptyState title="Ten dzień jest pusty" message="Wybierz inny dzień albo dodaj nowe spotkanie." />}
             </div>
           </div>
 
@@ -835,10 +829,7 @@ export default function CalendarTab({
               </div>
             ) : (
               <div className="selected-day-panel">
-                <div className="empty-panel">
-                  <strong>Wybierz wydarzenie</strong>
-                  <span>Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły.</span>
-                </div>
+                <EmptyState title="Wybierz wydarzenie" message="Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły." />
               </div>
             )}
           </div>
