@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node --external:@sentry/node
+RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node
 
 # Prune node_modules down to only production dependencies to save space
 RUN pnpm prune --prod
