@@ -43,7 +43,7 @@ RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-stati
     tar xf ffmpeg-release-amd64-static.tar.xz && \
     mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
     mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
-    rm -rf ffmpeg-*-amd64-static*
+    rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
 
 # Install uv (astronomically fast API from Astral) to build python modules 100x faster
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -56,7 +56,9 @@ WORKDIR /app
 
 # Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
 COPY server/requirements.txt ./server/
-RUN uv pip install -r server/requirements.txt
+# Install CPU-only PyTorch first (saves ~6GB of image space), then the rest without caching wheels
+RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu torch torchaudio && \
+    uv pip install --no-cache -r server/requirements.txt
 
 # Copy production node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
