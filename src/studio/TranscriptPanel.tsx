@@ -976,7 +976,7 @@ export default function TranscriptPanel({
 
               return (
                 <div
-                  className={`fireflies-segment ${isActive ? "active" : ""} ${segment.verificationStatus === "review" ? "needs-review" : ""}`}
+                  className={`fireflies-segment ${isActive ? "active" : ""} ${segment.verificationStatus === "review" ? "needs-review" : ""} ${Number(segment.verificationScore || 1) < 0.6 ? "low-confidence" : ""}`}
                   onClick={() => !isActive && activateSegment(segment)}
                   style={{ marginBottom: '24px' }} // Maintain gap from CSS
                 >
@@ -986,10 +986,32 @@ export default function TranscriptPanel({
                   
                   <div className="fireflies-content">
                     <div className="fireflies-header">
-                      <strong className="fireflies-speaker">
-                        {labelSpeaker(displaySpeakerNames, segment.speakerId)}
-                      </strong>
-                      <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                      {canEditTranscript ? (
+                        <select
+                          className="fireflies-speaker-select"
+                          value={segment.speakerId}
+                          onChange={(e) => assignSpeakerToTranscriptSegments([segment.id], Number(e.target.value))}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {speakerOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <strong className="fireflies-speaker">
+                          {labelSpeaker(displaySpeakerNames, segment.speakerId)}
+                        </strong>
+                      )}
+                      
+                      {Number(segment.verificationScore || 1) < 0.6 && (
+                        <span className="task-flag low-confidence" title={`Niska pewność transkrypcji (${Math.round(Number(segment.verificationScore || 0) * 100)}%)`} style={{ padding: "2px 6px", fontSize: "0.7rem", borderRadius: "4px", marginLeft: "6px" }}>
+                          ⚠️ {(Number(segment.verificationScore || 0) * 100).toFixed(0)}%
+                        </span>
+                      )}
+                      
+                      <svg className="fireflies-chevron" style={{ marginLeft: "8px" }} xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                       <span className="fireflies-dot">·</span>
                       <button
                         type="button"
