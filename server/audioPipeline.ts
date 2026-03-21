@@ -555,7 +555,11 @@ function buildVerificationResult(diarizedSegments: any[], verificationSegments: 
 }
 
 function buildEmptyTranscriptResult(
-  reason: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations",
+  reason:
+    | "no_segments_from_stt"
+    | "segments_removed_by_vad"
+    | "segments_removed_as_hallucinations"
+    | "all_chunks_discarded_as_too_small",
   transcriptionDiagnostics: any = {}
 ) {
   return {
@@ -780,7 +784,8 @@ function extractAudioSegmentMemory(filePath: string, start: number, duration: nu
  * adjusting segment timestamps by chunkOffset.
  */
 function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
-  const safePayloads = Array.isArray(payloads) ? payloads.filter(Boolean) : [];
+  const attempts = Array.isArray(payloads) ? payloads.filter(Boolean) : [];
+  const safePayloads = attempts.filter(({ payload }) => payload);
   const allSegments = safePayloads.flatMap(({ payload, offsetSeconds }) => {
     const segs = Array.isArray(payload?.segments) ? payload.segments : [];
     return segs.map((s) => ({
@@ -805,15 +810,31 @@ function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
     transcriptionDiagnostics: {
       usedChunking: true,
       fileSizeBytes,
-      chunksAttempted: safePayloads.length,
-      chunksTranscribed: safePayloads.filter(({ diagnostics }) => diagnostics?.sentToStt !== false).length,
-      chunksWithSegments: safePayloads.filter(({ diagnostics }) => diagnostics?.hasSegments).length,
-      chunksWithWords: safePayloads.filter(({ diagnostics }) => diagnostics?.hasWords).length,
-      chunksWithText: safePayloads.filter(({ diagnostics }) => diagnostics?.hasText).length,
-      chunksFlaggedSilentByVad: safePayloads.filter(({ diagnostics }) => diagnostics?.vadFlaggedSilent).length,
+      chunksAttempted: attempts.length,
+      chunksExtracted: attempts.filter(({ diagnostics }) => diagnostics?.extracted).length,
+      chunksDiscardedAsTooSmall: attempts.filter(({ diagnostics }) => diagnostics?.discardedAsTooSmall).length,
+      chunksSentToStt: attempts.filter(({ diagnostics }) => diagnostics?.sentToStt).length,
+      chunksFailedAtStt: attempts.filter(({ diagnostics }) => diagnostics?.sttFailed).length,
+      chunksReturnedEmptyPayload: attempts.filter(
+        ({ diagnostics }) =>
+          diagnostics?.sentToStt &&
+          !diagnostics?.sttFailed &&
+          !diagnostics?.hasSegments &&
+          !diagnostics?.hasWords &&
+          !diagnostics?.hasText
+      ).length,
+      chunksWithSegments: attempts.filter(({ diagnostics }) => diagnostics?.hasSegments).length,
+      chunksWithWords: attempts.filter(({ diagnostics }) => diagnostics?.hasWords).length,
+      chunksWithText: attempts.filter(({ diagnostics }) => diagnostics?.hasText).length,
+      chunksFlaggedSilentByVad: attempts.filter(({ diagnostics }) => diagnostics?.vadFlaggedSilent).length,
       mergedSegmentsCount: allSegments.length,
       mergedWordsCount: allWords.length,
       mergedTextLength: fullText.length,
+      lastChunkErrorMessage:
+        [...attempts]
+          .reverse()
+          .map(({ diagnostics }) => clean(diagnostics?.sttErrorMessage || ""))
+          .find(Boolean) || "",
     },
   };
 }
@@ -841,8 +862,25 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
       offsetSeconds += CHUNK_DURATION_SECONDS;
       
       batchPromises.push((async () => {
+        const diagnostics = {
+          extracted: false,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: false,
+          sttFailed: false,
+          sttErrorMessage: "",
+          hasSegments: false,
+          hasWords: false,
+          hasText: false,
+        };
         // Wyciągnij chunk audio prosto do bufora RAM (z pominięciem zapisu dyskowego)
         const buffer = await extractAudioSegmentMemory(filePath, currentOffset, CHUNK_DURATION_SECONDS, options.signal);
+        diagnostics.extracted = true;
+        if (buffer.byteLength < 500) {
+          diagnostics.extracted = false;
+          diagnostics.discardedAsTooSmall = true;
+          return { payload: null, offsetSeconds: currentOffset, diagnostics };
+        }
         if (buffer.byteLength < 500) return null; // Dotarto do końca pliku (brak istotnego audio)
 
         // Silero VAD. Python nadal wymaga testowej ścieżki więc zrzucamy bufor jako temp file, 
@@ -855,36 +893,45 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
           chunkSpeech = await runSileroVAD(tmpVad, options.signal);
           try { fs.unlinkSync(tmpVad); } catch (_) {}
         }
+        diagnostics.vadFlaggedSilent = Boolean(chunkSpeech && chunkSpeech.length === 0);
 
-        const payload = await requestAudioTranscription({
-          buffer,
-          filename: `chunk_${currentOffset}.wav`,
-          contentType: "audio/wav",
-          fields,
-          signal: options.signal,
-        });
-        return {
-          payload,
-          offsetSeconds: currentOffset,
-          diagnostics: {
-            sentToStt: true,
-            vadFlaggedSilent: Boolean(chunkSpeech && chunkSpeech.length === 0),
-            hasSegments: Array.isArray(payload?.segments) && payload.segments.length > 0,
-            hasWords: getRawWords(payload).length > 0,
-            hasText: Boolean(clean(payload?.text || payload?.transcript || payload?.results?.text)),
-          },
-        };
+        try {
+          diagnostics.sentToStt = true;
+          const payload = await requestAudioTranscription({
+            buffer,
+            filename: `chunk_${currentOffset}.wav`,
+            contentType: "audio/wav",
+            fields,
+            signal: options.signal,
+          });
+          diagnostics.hasSegments = Array.isArray(payload?.segments) && payload.segments.length > 0;
+          diagnostics.hasWords = getRawWords(payload).length > 0;
+          diagnostics.hasText = Boolean(clean(payload?.text || payload?.transcript || payload?.results?.text));
+          return {
+            payload,
+            offsetSeconds: currentOffset,
+            diagnostics,
+          };
+        } catch (error: any) {
+          diagnostics.sentToStt = true;
+          diagnostics.sttFailed = true;
+          diagnostics.sttErrorMessage = clean(error?.message || "STT request failed");
+          return {
+            payload: null,
+            offsetSeconds: currentOffset,
+            diagnostics,
+          };
+        }
       })());
     }
 
     const results = await Promise.all(batchPromises);
-    const validResults = results.filter(r => r !== null);
-    payloads.push(...validResults);
+    payloads.push(...results.filter(Boolean));
     
     notify(Math.min(60, 40 + payloads.length * 5), `OpenAI Batch AI — pobrano ${payloads.length} paczek audio (20 min każda)...`);
 
     // Jeśli FFmpeg zwrócił paczkę mniejszą od limitu (null), przerywamy pętlę.
-    if (validResults.length < CONCURRENCY_LIMIT) {
+    if (results.some((result) => result?.diagnostics?.discardedAsTooSmall)) {
       hasMore = false;
     }
   }
@@ -1083,7 +1130,11 @@ async function transcribeRecording(asset: any, options: any = {}) {
     usedChunking: isLargeFile,
     fileSizeBytes: fileSize,
     chunksAttempted: 0,
-    chunksTranscribed: 0,
+    chunksExtracted: 0,
+    chunksDiscardedAsTooSmall: 0,
+    chunksSentToStt: 0,
+    chunksFailedAtStt: 0,
+    chunksReturnedEmptyPayload: 0,
     chunksWithSegments: 0,
     chunksWithWords: 0,
     chunksWithText: 0,
@@ -1091,6 +1142,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
     mergedSegmentsCount: 0,
     mergedWordsCount: 0,
     mergedTextLength: 0,
+    lastChunkErrorMessage: "",
   };
   if (isLargeFile) {
     console.log(`[audioPipeline] File size ${(fileSize / 1024 / 1024).toFixed(1)} MB > limit — will process in chunks.`);
@@ -1122,6 +1174,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
 
   const reqId = options.requestId || "internal-pipeline";
   const startTranscribe = performance.now();
+  let lastTranscriptionError: any = null;
 
   for (const model of modelsToTry) {
     const fields = { ...whisperFields, model };
@@ -1133,6 +1186,13 @@ async function transcribeRecording(asset: any, options: any = {}) {
           ...transcriptionDiagnostics,
           ...(whisperPayload?.transcriptionDiagnostics || {}),
         };
+        const sentToStt = Number(transcriptionDiagnostics.chunksSentToStt || 0);
+        const failedAtStt = Number(transcriptionDiagnostics.chunksFailedAtStt || 0);
+        if (sentToStt > 0 && failedAtStt === sentToStt) {
+          const error: any = new Error("Transkrypcja STT nie powiodla sie dla zadnego modelu.");
+          error.transcriptionDiagnostics = transcriptionDiagnostics;
+          throw error;
+        }
       } else {
         whisperPayload = await requestAudioTranscription({
           filePath: transcribeFilePath,
@@ -1143,23 +1203,53 @@ async function transcribeRecording(asset: any, options: any = {}) {
         transcriptionDiagnostics = {
           ...transcriptionDiagnostics,
           chunksAttempted: 1,
-          chunksTranscribed: 1,
+          chunksExtracted: 1,
+          chunksDiscardedAsTooSmall: 0,
+          chunksSentToStt: 1,
+          chunksFailedAtStt: 0,
+          chunksReturnedEmptyPayload:
+            Array.isArray(whisperPayload?.segments) && whisperPayload.segments.length > 0
+              ? 0
+              : getRawWords(whisperPayload).length > 0
+                ? 0
+                : clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text)
+                  ? 0
+                  : 1,
           chunksWithSegments: Array.isArray(whisperPayload?.segments) && whisperPayload.segments.length > 0 ? 1 : 0,
           chunksWithWords: getRawWords(whisperPayload).length > 0 ? 1 : 0,
           chunksWithText: clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text) ? 1 : 0,
           mergedSegmentsCount: Array.isArray(whisperPayload?.segments) ? whisperPayload.segments.length : 0,
           mergedWordsCount: getRawWords(whisperPayload).length,
           mergedTextLength: clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text).length,
+          lastChunkErrorMessage: "",
         };
       }
       if (DEBUG) console.log(`[audioPipeline] Transcription succeeded with model: ${model}`);
       break; // success — stop trying fallbacks
-    } catch (error) {
+    } catch (error: any) {
+      whisperPayload = null;
+      lastTranscriptionError = error;
+      transcriptionDiagnostics = {
+        ...transcriptionDiagnostics,
+        lastChunkErrorMessage: clean(error?.transcriptionDiagnostics?.lastChunkErrorMessage || error?.message || ""),
+        ...(error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === "object"
+          ? error.transcriptionDiagnostics
+          : {}),
+      };
       console.error(`[audioPipeline] Transcription failed with model ${model}:`, error.message);
       if (model === modelsToTry[modelsToTry.length - 1]) {
         console.error("[audioPipeline] All transcription models exhausted.");
       }
     }
+  }
+
+  if (!whisperPayload) {
+    const error: any =
+      lastTranscriptionError instanceof Error
+        ? lastTranscriptionError
+        : new Error("Transkrypcja STT nie powiodla sie dla zadnego modelu.");
+    error.transcriptionDiagnostics = transcriptionDiagnostics;
+    throw error;
   }
   
   logger.info(`[Metrics] STT Transcription Stage Complete`, {
@@ -1213,6 +1303,14 @@ async function transcribeRecording(asset: any, options: any = {}) {
   });
 
   if (!diarization.segments.length) {
+    if (
+      isLargeFile &&
+      Number(transcriptionDiagnostics.chunksExtracted || 0) === 0 &&
+      Number(transcriptionDiagnostics.chunksDiscardedAsTooSmall || 0) > 0 &&
+      Number(transcriptionDiagnostics.chunksSentToStt || 0) === 0
+    ) {
+      return buildEmptyTranscriptResult("all_chunks_discarded_as_too_small", transcriptionDiagnostics);
+    }
     return buildEmptyTranscriptResult("no_segments_from_stt", transcriptionDiagnostics);
   }
 

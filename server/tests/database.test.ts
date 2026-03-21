@@ -127,12 +127,22 @@ describe("Database (Async Worker SQLite)", () => {
         createdByUserId: "user_meta",
       });
 
-      await db.markTranscriptionFailure("rec_meta_failed", "old failure");
+      await db.markTranscriptionFailure("rec_meta_failed", "old failure", {
+        usedChunking: true,
+        chunksAttempted: 3,
+        chunksSentToStt: 3,
+        chunksFailedAtStt: 3,
+        lastChunkErrorMessage: "provider timeout",
+      });
       let failed = await db.getMediaAsset("rec_meta_failed");
       let diarization = JSON.parse(failed.diarization_json);
       expect(failed.transcription_status).toBe("failed");
       expect(diarization.errorMessage).toBe("old failure");
       expect(diarization.pipelineGitSha).toBe("dbfail123");
+      expect(diarization.transcriptionDiagnostics).toMatchObject({
+        chunksFailedAtStt: 3,
+        lastChunkErrorMessage: "provider timeout",
+      });
 
       await db.queueTranscription("rec_meta_failed", {
         workspaceId: "ws_meta",

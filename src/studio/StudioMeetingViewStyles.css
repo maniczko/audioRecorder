@@ -477,6 +477,21 @@
 
 .ff-player-bar:empty { display: none; }
 
+.ff-player-main {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ff-player-progress-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
 .ff-player-status-wrap {
   display: flex;
   align-items: center;
@@ -519,6 +534,73 @@
   white-space: nowrap;
   min-width: 90px;
   font-variant-numeric: tabular-nums;
+}
+
+.ff-player-time-current,
+.ff-player-time-total {
+  min-width: 54px;
+}
+
+.ff-player-time-current {
+  text-align: right;
+}
+
+.ff-player-scrubber {
+  width: 100%;
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  outline: none;
+  background:
+    linear-gradient(
+      90deg,
+      var(--accent, #75d6c4) 0%,
+      var(--accent, #75d6c4) var(--ff-player-progress, 0%),
+      rgba(255,255,255,0.12) var(--ff-player-progress, 0%),
+      rgba(255,255,255,0.12) 100%
+    );
+}
+
+.ff-player-scrubber::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.ff-player-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-strong, #9ef2db);
+  box-shadow: 0 0 6px rgba(158, 242, 219, 0.45);
+  cursor: grab;
+}
+
+.ff-player-scrubber::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+}
+
+.ff-player-scrubber::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent, #75d6c4);
+}
+
+.ff-player-scrubber::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-strong, #9ef2db);
+  cursor: grab;
 }
 
 .ff-player-speed {

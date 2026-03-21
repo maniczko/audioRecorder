@@ -735,11 +735,11 @@ export class Database {
     return this.getMediaAsset(recordingId);
   }
 
-  async markTranscriptionFailure(recordingId, errorMessage) {
+  async markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics = null) {
     await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [
       JSON.stringify({
         errorMessage: this._clean(errorMessage),
-        transcriptionDiagnostics: null,
+        transcriptionDiagnostics: transcriptionDiagnostics || null,
         ...this._buildPipelineMetadata(),
       }),
       this.nowIso(),

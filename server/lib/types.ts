@@ -63,7 +63,11 @@ export interface TranscriptionDiagnostics {
   usedChunking?: boolean;
   fileSizeBytes?: number;
   chunksAttempted?: number;
-  chunksTranscribed?: number;
+  chunksExtracted?: number;
+  chunksDiscardedAsTooSmall?: number;
+  chunksSentToStt?: number;
+  chunksFailedAtStt?: number;
+  chunksReturnedEmptyPayload?: number;
   chunksWithSegments?: number;
   chunksWithWords?: number;
   chunksWithText?: number;
@@ -71,12 +75,17 @@ export interface TranscriptionDiagnostics {
   mergedSegmentsCount?: number;
   mergedWordsCount?: number;
   mergedTextLength?: number;
+  lastChunkErrorMessage?: string;
 }
 
 export interface TranscriptionResult {
   pipelineStatus?: string;
   transcriptOutcome?: "normal" | "empty";
-  emptyReason?: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations";
+  emptyReason?:
+    | "no_segments_from_stt"
+    | "segments_removed_by_vad"
+    | "segments_removed_as_hallucinations"
+    | "all_chunks_discarded_as_too_small";
   userMessage?: string;
   pipelineVersion?: string;
   pipelineGitSha?: string;

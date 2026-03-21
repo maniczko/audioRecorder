@@ -143,6 +143,22 @@ describe("StudioMeetingView", () => {
     ).toBeInTheDocument();
   });
 
+  test("renders playback scrubber and lets user seek audio", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{ transcript: [], duration: 120 }}
+        selectedRecording={{ id: "rec-audio", transcript: [], duration: 120 }}
+        selectedRecordingAudioUrl="blob:test-audio"
+      />
+    );
+
+    const slider = screen.getByRole("slider", { name: /Pozycja odtwarzania/i });
+    expect(slider).toBeInTheDocument();
+    fireEvent.change(slider, { target: { value: "42" } });
+    expect(screen.getByText("00:42")).toBeInTheDocument();
+  });
+
   test("renders empty state when no meeting selected", () => {
     const props = { ...defaultProps, selectedMeeting: null };
     render(<StudioMeetingView {...props} />);

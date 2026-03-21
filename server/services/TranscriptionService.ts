@@ -57,8 +57,8 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.saveTranscriptionResult(recordingId, result);
   }
 
-  async markTranscriptionFailure(recordingId: string, errorMessage: string) {
-    return await this.db.markTranscriptionFailure(recordingId, errorMessage);
+  async markTranscriptionFailure(recordingId: string, errorMessage: string, transcriptionDiagnostics: any = null) {
+    return await this.db.markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics);
   }
 
   async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
@@ -120,7 +120,13 @@ export default class TranscriptionService extends EventEmitter {
         }
       })
       .catch(async (error: any) => {
-        await this.markTranscriptionFailure(recordingId, error.message);
+        await this.markTranscriptionFailure(
+          recordingId,
+          error.message,
+          error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === "object"
+            ? error.transcriptionDiagnostics
+            : null
+        );
       })
       .finally(() => {
         this.transcriptionJobs.delete(recordingId);

@@ -25,6 +25,20 @@ function formatPipelineDiagnostics(item) {
   }
   if (
     diagnostics &&
+    Number.isFinite(Number(diagnostics.chunksSentToStt)) &&
+    Number.isFinite(Number(diagnostics.chunksAttempted))
+  ) {
+    details.push(`Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
+  }
+  if (
+    diagnostics &&
+    Number.isFinite(Number(diagnostics.chunksFailedAtStt)) &&
+    Number(diagnostics.chunksFailedAtStt) > 0
+  ) {
+    details.push(`Chunks failed at STT: ${Number(diagnostics.chunksFailedAtStt)}`);
+  }
+  if (
+    diagnostics &&
     Number.isFinite(Number(diagnostics.chunksWithText)) &&
     Number.isFinite(Number(diagnostics.chunksAttempted))
   ) {
@@ -370,6 +384,12 @@ export default function RecordingsTab(props) {
     const parts = [];
     if (latestSelectedRecording?.emptyReason) {
       parts.push(`Powod: ${latestSelectedRecording.emptyReason}`);
+    }
+    if (
+      Number.isFinite(Number(diagnostics.chunksSentToStt)) &&
+      Number.isFinite(Number(diagnostics.chunksAttempted))
+    ) {
+      parts.push(`Chunki wyslane do STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
     }
     if (
       Number.isFinite(Number(diagnostics.chunksWithText)) &&

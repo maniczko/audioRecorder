@@ -109,13 +109,28 @@ describe("TranscriptionService", () => {
 
   it("marks transcription failure and clears the job map on pipeline error", async () => {
     const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
-    mockAudioPipeline.transcribeRecording.mockRejectedValue(new Error("STT exploded"));
+    const failure: any = new Error("STT exploded");
+    failure.transcriptionDiagnostics = {
+      usedChunking: true,
+      chunksAttempted: 2,
+      chunksSentToStt: 2,
+      chunksFailedAtStt: 2,
+      lastChunkErrorMessage: "timeout",
+    };
+    mockAudioPipeline.transcribeRecording.mockRejectedValue(failure);
     const asset = { id: "asset_2", file_path: "test.wav", workspace_id: "ws_1" };
 
     service.ensureTranscriptionJob("rec_2", asset, {});
     await service.transcriptionJobs.get("rec_2");
 
-    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith("rec_2", "STT exploded");
+    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
+      "rec_2",
+      "STT exploded",
+      expect.objectContaining({
+        chunksFailedAtStt: 2,
+        lastChunkErrorMessage: "timeout",
+      })
+    );
     expect(service.transcriptionJobs.has("rec_2")).toBe(false);
   });
 

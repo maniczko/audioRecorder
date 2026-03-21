@@ -353,6 +353,179 @@ describe("audioPipeline exports", () => {
     });
   });
 
+  it("returns all_chunks_discarded_as_too_small when chunk extraction never yields a transcribable buffer", async () => {
+    const { EventEmitter } = await import("node:events");
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
+        VERIFICATION_MODEL: "gpt-4o-transcribe",
+        AUDIO_LANGUAGE: "pl",
+        AUDIO_PREPROCESS: false,
+        TRANSCRIPT_CORRECTION: false,
+        FFMPEG_BINARY: "ffmpeg",
+        HF_TOKEN: "",
+        HUGGINGFACE_TOKEN: "",
+        PYTHON_BINARY: "python",
+        VAD_ENABLED: false,
+        WHISPER_PROMPT: "Prompt testowy",
+        DIARIZATION_MODEL: "model",
+        SPEAKER_IDENTIFICATION_MODEL: "model",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync: vi.fn(() => true),
+          statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+          readFileSync: vi.fn(() => Buffer.from("audio")),
+        },
+        existsSync: vi.fn(() => true),
+        statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+      };
+    });
+    vi.doMock("node:child_process", () => {
+      const spawn = vi.fn(() => {
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stdout.setEncoding = vi.fn();
+        queueMicrotask(() => {
+          child.stdout.emit("data", Buffer.alloc(0));
+          child.emit("close", 0);
+        });
+        return child;
+      });
+      return { spawn, exec: vi.fn() };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    const result = await pipeline.transcribeRecording({
+      id: "rec_small_chunks",
+      file_path: "/tmp/audio-large.wav",
+      content_type: "audio/wav",
+    });
+
+    expect(result).toMatchObject({
+      pipelineStatus: "completed",
+      transcriptOutcome: "empty",
+      emptyReason: "all_chunks_discarded_as_too_small",
+    });
+    expect(result.transcriptionDiagnostics).toMatchObject({
+      usedChunking: true,
+      chunksAttempted: 4,
+      chunksExtracted: 0,
+      chunksDiscardedAsTooSmall: 4,
+      chunksSentToStt: 0,
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("fails the pipeline when every chunked STT request fails instead of classifying it as empty transcript", async () => {
+    const { EventEmitter } = await import("node:events");
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
+        VERIFICATION_MODEL: "gpt-4o-transcribe",
+        AUDIO_LANGUAGE: "pl",
+        AUDIO_PREPROCESS: false,
+        TRANSCRIPT_CORRECTION: false,
+        FFMPEG_BINARY: "ffmpeg",
+        HF_TOKEN: "",
+        HUGGINGFACE_TOKEN: "",
+        PYTHON_BINARY: "python",
+        VAD_ENABLED: false,
+        WHISPER_PROMPT: "Prompt testowy",
+        DIARIZATION_MODEL: "model",
+        SPEAKER_IDENTIFICATION_MODEL: "model",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync: vi.fn(() => true),
+          statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+          readFileSync: vi.fn(() => Buffer.from("audio")),
+        },
+        existsSync: vi.fn(() => true),
+        statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+      };
+    });
+    vi.doMock("node:child_process", () => {
+      const spawn = vi.fn((command, args) => {
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stdout.setEncoding = vi.fn();
+        const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
+        const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
+        queueMicrotask(() => {
+          if (offsetValue === 0) {
+            child.stdout.emit("data", Buffer.alloc(1600, 1));
+          } else {
+            child.stdout.emit("data", Buffer.alloc(0));
+          }
+          child.emit("close", 0);
+        });
+        return child;
+      });
+      return { spawn, exec: vi.fn() };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ error: { message: "upstream timeout" } })),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ error: { message: "upstream timeout" } })),
+      });
+
+    await expect(
+      pipeline.transcribeRecording({
+        id: "rec_chunk_fail",
+        file_path: "/tmp/audio-large.wav",
+        content_type: "audio/wav",
+      })
+    ).rejects.toMatchObject({
+      message: "Transkrypcja STT nie powiodla sie dla zadnego modelu.",
+      transcriptionDiagnostics: expect.objectContaining({
+        usedChunking: true,
+        chunksSentToStt: 1,
+        chunksFailedAtStt: 1,
+      }),
+    });
+  });
+
   it("still sends chunked audio to STT when chunk-level VAD reports silence", async () => {
     const { EventEmitter } = await import("node:events");
     vi.resetModules();
@@ -467,7 +640,7 @@ describe("audioPipeline exports", () => {
     expect(result.transcriptionDiagnostics).toMatchObject({
       usedChunking: true,
       chunksFlaggedSilentByVad: 1,
-      chunksAttempted: 1,
+      chunksAttempted: 4,
       chunksWithWords: 1,
     });
   });

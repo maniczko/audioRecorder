@@ -217,6 +217,12 @@ function formatEmptyTranscriptDiagnostics(recording) {
   if (diagnostics.usedChunking) {
     details.push("Chunking: tak");
   }
+  if (Number.isFinite(Number(diagnostics.chunksSentToStt)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
+    details.push(`Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
+  }
+  if (Number.isFinite(Number(diagnostics.chunksFailedAtStt)) && Number(diagnostics.chunksFailedAtStt) > 0) {
+    details.push(`Chunks failed at STT: ${Number(diagnostics.chunksFailedAtStt)}`);
+  }
   if (Number.isFinite(Number(diagnostics.chunksWithText)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
     details.push(`STT chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
   }
@@ -466,6 +472,10 @@ export default function StudioMeetingView({
       : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl
         ? "queued"
         : "playback-ready";
+  const playbackDuration = Math.max(0, Number(audioDuration || displayRecording?.duration || 0));
+  const scrubberMax = Math.max(playbackDuration, 1);
+  const scrubberValue = Math.min(scrubberMax, Math.max(0, Number(currentTime || 0)));
+  const scrubberProgress = scrubberMax > 0 ? Math.min(100, Math.max(0, (scrubberValue / scrubberMax) * 100)) : 0;
 
 
 
@@ -1330,9 +1340,32 @@ export default function StudioMeetingView({
             </div>
           ) : (
             <>
-              <span className="ff-player-time">
-                {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(audioDuration || displayRecording?.duration || 0))}
-              </span>
+              <div className="ff-player-main">
+                <div className="ff-player-progress-row">
+                  <span className="ff-player-time ff-player-time-current">
+                    {formatDuration(Math.floor(currentTime))}
+                  </span>
+                  <input
+                    type="range"
+                    className="ff-player-scrubber"
+                    aria-label="Pozycja odtwarzania"
+                    min={0}
+                    max={scrubberMax}
+                    step={0.1}
+                    value={scrubberValue}
+                    onChange={(event) => {
+                      const nextValue = Number(event.target.value || 0);
+                      setCurrentTime(nextValue);
+                      if (audioRef.current) {
+                        audioRef.current.currentTime = nextValue;
+                      }
+                    }}
+                    style={{ "--ff-player-progress": `${scrubberProgress}%` }}
+                  />
+                  <span className="ff-player-time ff-player-time-total">
+                    {formatDuration(Math.floor(playbackDuration))}
+                  </span>
+                </div>
               <div className="ff-player-controls">
                 <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }} title="-15s">
@@ -1382,6 +1415,7 @@ export default function StudioMeetingView({
                     <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
                 </a>
+              </div>
               </div>
             </>
           )}

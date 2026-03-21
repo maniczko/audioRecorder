@@ -40,6 +40,15 @@ async function main() {
       emptyReason: (diarization as any).emptyReason || "",
       errorMessage: (diarization as any).errorMessage || "",
       transcriptionDiagnostics: (diarization as any).transcriptionDiagnostics || null,
+      chunksAttempted: Number((diarization as any).transcriptionDiagnostics?.chunksAttempted || 0),
+      chunksExtracted: Number((diarization as any).transcriptionDiagnostics?.chunksExtracted || 0),
+      chunksDiscardedAsTooSmall: Number((diarization as any).transcriptionDiagnostics?.chunksDiscardedAsTooSmall || 0),
+      chunksSentToStt: Number((diarization as any).transcriptionDiagnostics?.chunksSentToStt || 0),
+      chunksFailedAtStt: Number((diarization as any).transcriptionDiagnostics?.chunksFailedAtStt || 0),
+      chunksReturnedEmptyPayload: Number((diarization as any).transcriptionDiagnostics?.chunksReturnedEmptyPayload || 0),
+      chunksWithText: Number((diarization as any).transcriptionDiagnostics?.chunksWithText || 0),
+      mergedTextLength: Number((diarization as any).transcriptionDiagnostics?.mergedTextLength || 0),
+      lastChunkErrorMessage: (diarization as any).transcriptionDiagnostics?.lastChunkErrorMessage || "",
       transcriptLength: Array.isArray(transcript) ? transcript.length : 0,
     };
   });
