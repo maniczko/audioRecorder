@@ -1,30 +1,15 @@
-function isEphemeralVercelPreviewHost(hostname: string) {
-  return /\.vercel\.app$/i.test(String(hostname || ""));
-}
-
-async function unregisterPreviewServiceWorkers() {
-  const registrations = await navigator.serviceWorker.getRegistrations?.();
-  await Promise.all((registrations || []).map((registration) => registration.unregister?.()));
-
-  if (!("caches" in window)) return;
-
-  const cacheKeys = await window.caches.keys();
-  await Promise.all(cacheKeys.filter((key) => key.startsWith("voicelog-os-")).map((key) => window.caches.delete(key)));
-}
+import { shouldEnableServiceWorker } from "./runtime/browserRuntime";
 
 export function registerServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return;
   }
 
-  window.addEventListener("load", () => {
-    if (isEphemeralVercelPreviewHost(window.location.hostname)) {
-      unregisterPreviewServiceWorkers().catch((error) => {
-        console.error("Preview service worker cleanup failed.", error);
-      });
-      return;
-    }
+  if (!shouldEnableServiceWorker(window.location.hostname)) {
+    return;
+  }
 
+  window.addEventListener("load", () => {
     let hasReloadedForUpdate = false;
 
     navigator.serviceWorker.addEventListener("controllerchange", () => {

@@ -14,7 +14,7 @@ describe("registerServiceWorker", () => {
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 
-  test("registers service worker, promotes waiting worker and reloads once on controller change", async () => {
+  test("registers service worker on localhost and reloads once on controller change", async () => {
     const waitingWorker = { postMessage: vi.fn() };
     const installingListeners: Record<string, () => void> = {};
     const installingWorker = {
@@ -36,6 +36,7 @@ describe("registerServiceWorker", () => {
     const serviceWorkerListeners: Record<string, () => void> = {};
     const register = vi.fn().mockResolvedValue(registration);
     const reload = vi.fn();
+    let loadHandler: (() => void) | null = null;
 
     Object.defineProperty(window, "navigator", {
       configurable: true,
@@ -51,11 +52,16 @@ describe("registerServiceWorker", () => {
     });
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { reload },
+      value: { hostname: "localhost", reload },
     });
+    vi.spyOn(window, "addEventListener").mockImplementation(((event: string, handler: () => void) => {
+      if (event === "load") {
+        loadHandler = handler;
+      }
+    }) as any);
 
     registerServiceWorker();
-    window.dispatchEvent(new Event("load"));
+    loadHandler?.();
     await Promise.resolve();
 
     expect(register).toHaveBeenCalledWith("/service-worker.js", { updateViaCache: "none" });
@@ -71,20 +77,15 @@ describe("registerServiceWorker", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  test("does not register service worker on ephemeral vercel previews and clears stale caches", async () => {
-    const unregister = vi.fn().mockResolvedValue(true);
-    const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
+  test("does not register service worker on hosted vercel previews", () => {
     const register = vi.fn();
-    const deleteCache = vi.fn().mockResolvedValue(true);
-    const keys = vi.fn().mockResolvedValue(["voicelog-os-v2", "other-cache"]);
+    let loadHandler: (() => void) | null = null;
 
     Object.defineProperty(window, "navigator", {
       configurable: true,
       value: {
         serviceWorker: {
-          controller: {},
           register,
-          getRegistrations,
           addEventListener: vi.fn(),
         },
       },
@@ -93,21 +94,15 @@ describe("registerServiceWorker", () => {
       configurable: true,
       value: { hostname: "preview-deployment.vercel.app", reload: vi.fn() },
     });
-    Object.defineProperty(window, "caches", {
-      configurable: true,
-      value: {
-        keys,
-        delete: deleteCache,
-      },
-    });
+    vi.spyOn(window, "addEventListener").mockImplementation(((event: string, handler: () => void) => {
+      if (event === "load") {
+        loadHandler = handler;
+      }
+    }) as any);
 
     registerServiceWorker();
-    window.dispatchEvent(new Event("load"));
-    await Promise.resolve();
-    await Promise.resolve();
+    loadHandler?.();
 
-    expect(getRegistrations).toHaveBeenCalled();
-    expect(unregister).toHaveBeenCalled();
     expect(register).not.toHaveBeenCalled();
   });
 });

@@ -5,17 +5,24 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { registerServiceWorker } from './pwa';
+import { prepareHostedRuntime } from './runtime/browserRuntime';
 import reportWebVitals from './reportWebVitals';
 
 document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'dark');
 document.documentElement.setAttribute('data-layout', document.documentElement.getAttribute('data-layout') || 'default');
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+async function bootstrap() {
+  await prepareHostedRuntime();
+
+  const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+
+bootstrap();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
