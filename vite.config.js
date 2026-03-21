@@ -1,6 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+function readClientEnv(...keys) {
+  for (const key of keys) {
+    if (process.env[key] !== undefined) {
+      return process.env[key];
+    }
+  }
+  return '';
+}
+
 export default defineConfig(async () => {
   const plugins = [react()];
 
@@ -8,6 +17,13 @@ export default defineConfig(async () => {
     const { visualizer } = await import('rollup-plugin-visualizer');
     plugins.push(visualizer({ open: false, filename: 'build/bundle-stats.html' }));
   }
+
+  const productionRemoteFallback = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+  const dataProvider = readClientEnv('VITE_DATA_PROVIDER', 'REACT_APP_DATA_PROVIDER') || (productionRemoteFallback ? 'remote' : '');
+  const mediaProvider = readClientEnv('VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') || (productionRemoteFallback ? 'remote' : '');
+  const apiBaseUrl =
+    readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') ||
+    (productionRemoteFallback ? 'https://audiorecorder-production.up.railway.app' : '');
 
   return {
     plugins,
@@ -60,20 +76,15 @@ export default defineConfig(async () => {
       outDir: 'build',
     },
     define: {
-      'process.env.REACT_APP_DATA_PROVIDER': JSON.stringify(
-        process.env.REACT_APP_DATA_PROVIDER ||
-          (process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'remote' : '')
-      ),
-      'process.env.REACT_APP_MEDIA_PROVIDER': JSON.stringify(
-        process.env.REACT_APP_MEDIA_PROVIDER ||
-          (process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'remote' : '')
-      ),
-      'process.env.REACT_APP_API_BASE_URL': JSON.stringify(
-        process.env.REACT_APP_API_BASE_URL ||
-          (process.env.NODE_ENV === 'production' || process.env.VERCEL
-            ? 'https://audiorecorder-production.up.railway.app'
-            : '')
-      ),
+      'process.env.REACT_APP_DATA_PROVIDER': JSON.stringify(dataProvider),
+      'process.env.REACT_APP_MEDIA_PROVIDER': JSON.stringify(mediaProvider),
+      'process.env.REACT_APP_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      'import.meta.env.REACT_APP_DATA_PROVIDER': JSON.stringify(dataProvider),
+      'import.meta.env.REACT_APP_MEDIA_PROVIDER': JSON.stringify(mediaProvider),
+      'import.meta.env.REACT_APP_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      'import.meta.env.VITE_DATA_PROVIDER': JSON.stringify(dataProvider),
+      'import.meta.env.VITE_MEDIA_PROVIDER': JSON.stringify(mediaProvider),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
     },
   };
 });

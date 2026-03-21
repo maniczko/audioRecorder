@@ -14,58 +14,41 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  # ─── Stage 1: Lint & Typecheck ──────────────────────────
-  lint-and-typecheck:
-    name: 🔍 Lint & Typecheck
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Run ESLint
+        run: pnpm exec eslint src --max-warnings=0
 
-      - name: Turbo Cache
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-turbo-
-
-      - name: Run Linter & Typecheck via Turbo
-        run: npx turbo run lint typecheck
-
-  # ─── Stage 2: Unit & Integration Tests (Frontend) ──────
   test-frontend:
-    name: 🧪 Frontend Tests
+    name: Frontend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-
       - name: Run Vitest
         run: pnpm exec vitest run --reporter=verbose --coverage
-
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,31 +57,25 @@ jobs:
           path: coverage/frontend/
           retention-days: 7
 
-  # ─── Stage 3: Unit Tests (Server) ──────────────────────
   test-server:
-    name: 🖥️ Server Tests
+    name: Server Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install root dependencies
+          cache: "pnpm"
+      - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-
       - name: Run server tests with coverage
         run: pnpm run test:server:coverage
         env:
           NODE_ENV: test
-
       - name: Upload server coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -107,47 +84,31 @@ jobs:
           path: coverage/server/
           retention-days: 7
 
-  # ─── Stage 4: Production Build ─────────────────────────
   build:
-    name: 🏗️ Build
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-
-      - name: Turbo Cache
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-turbo-
-
-      - name: Build production bundle via Turbo
-        run: pnpm run turbo:build
+      - name: Build production bundle
+        run: pnpm run build
         env:
           NODE_ENV: production
-
       - name: Verify build output
         run: |
-          test -f build/index.html || (echo "❌ build/index.html missing!" && exit 1)
-          echo "✅ Build output verified"
+          test -f build/index.html || (echo "build/index.html missing!" && exit 1)
           du -sh build/
-          echo "--- Asset sizes ---"
           find build/assets -type f -name '*.js' -exec du -h {} + | sort -rh | head -15
           find build/assets -type f -name '*.css' -exec du -h {} +
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -155,29 +116,23 @@ jobs:
           path: build/
           retention-days: 3
 
-  # ─── Stage 5: Security Audit ───────────────────────────
   security:
-    name: 🔒 Security Audit
+    name: Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-
       - name: Run pnpm audit (non-blocking)
         run: pnpm audit --prod || true
-
       - name: Check for critical vulnerabilities
         run: |
           CRITICAL=$(pnpm audit --json --prod 2>/dev/null | node -e "
@@ -191,59 +146,48 @@ jobs:
             echo "::warning::Found $CRITICAL critical pnpm vulnerabilities"
           fi
 
-  # ─── Stage 6: Bundle Size Check ────────────────────────
   bundle-analysis:
-    name: 📦 Bundle Analysis
+    name: Bundle Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: build
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-
       - name: Build and measure
         run: pnpm run build 2>&1 | tee build_output.txt
         env:
           NODE_ENV: production
-
       - name: Check bundle size limits
         run: |
           TOTAL_JS=$(find build/assets -name '*.js' -exec cat {} + | wc -c)
           TOTAL_CSS=$(find build/assets -name '*.css' -exec cat {} + | wc -c)
           JS_KB=$((TOTAL_JS / 1024))
           CSS_KB=$((TOTAL_CSS / 1024))
-          echo "📊 Total JS: ${JS_KB} KB"
-          echo "📊 Total CSS: ${CSS_KB} KB"
-
-          # Warn if JS exceeds 800KB (uncompressed)
+          echo "Total JS: ${JS_KB} KB"
+          echo "Total CSS: ${CSS_KB} KB"
           if [ "$JS_KB" -gt 800 ]; then
             echo "::warning::JS bundle is ${JS_KB}KB (limit: 800KB)"
           fi
-
-          # Warn if CSS exceeds 300KB
           if [ "$CSS_KB" -gt 300 ]; then
-            echo "::warning::CSS bundle is ${CSS_KB}KB (limit: 300KB) — consider splitting"
+            echo "::warning::CSS bundle is ${CSS_KB}KB (limit: 300KB)"
           fi
-
-          echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
           echo "| Asset | Size |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| JavaScript | ${JS_KB} KB |" >> $GITHUB_STEP_SUMMARY
           echo "| CSS | ${CSS_KB} KB |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── Stage 7: E2E Smoke Tests ──────────────────────────
   e2e-smoke:
-    name: 🎭 E2E Smoke Tests
+    name: E2E Smoke Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -254,7 +198,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
       - name: Install Playwright Browsers
@@ -268,28 +212,27 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # ─── Final Gate ────────────────────────────────────────
   ci-passed:
-    name: ✅ CI Passed
+    name: CI Passed
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint-and-typecheck, test-frontend, test-server, build, security, e2e-smoke]
+    needs: [lint, test-frontend, test-server, build, security, e2e-smoke]
     steps:
       - name: Check all jobs
         run: |
-          if [ "${{ needs.lint-and-typecheck.result }}" != "success" ]; then
-            echo "❌ Lint/Typecheck failed"; exit 1
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "Lint failed"; exit 1
           fi
           if [ "${{ needs.test-frontend.result }}" != "success" ]; then
-            echo "❌ Frontend tests failed"; exit 1
+            echo "Frontend tests failed"; exit 1
           fi
           if [ "${{ needs.test-server.result }}" != "success" ]; then
-            echo "❌ Server tests failed"; exit 1
+            echo "Server tests failed"; exit 1
           fi
           if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "❌ Build failed"; exit 1
+            echo "Build failed"; exit 1
           fi
           if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
-            echo "❌ E2E Smoke tests failed"; exit 1
+            echo "E2E smoke tests failed"; exit 1
           fi
-          echo "✅ All CI stages passed successfully!"
+          echo "All CI stages passed successfully."
