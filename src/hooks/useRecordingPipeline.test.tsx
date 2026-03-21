@@ -11,6 +11,8 @@ const { mockStore } = vi.hoisted(() => ({
     pipelineStageLabel: "",
     isProcessingQueue: false,
     processQueue: vi.fn(),
+    setAnalysisStatus: vi.fn(),
+    setPipelineProgress: vi.fn(),
     setRecordingMessage: vi.fn(),
     retryRecordingQueueItem: vi.fn(),
     updateQueueItem: vi.fn(),

@@ -202,6 +202,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         saveMeeting={meetings.saveMeeting}
         onCreateMeeting={meetings.createMeetingDirect}
         queueRecording={recorder.queueRecording}
+        recordingQueue={recorder.recordingQueue}
+        activeQueueItem={recorder.activeQueueItem}
         analysisStatus={recorder.analysisStatus}
         recordingMessage={recorder.recordingMessage}
         pipelineProgressPercent={recorder.pipelineProgressPercent}

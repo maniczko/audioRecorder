@@ -44,6 +44,8 @@ export default function useRecordingPipeline({
     recordingMessage: store.recordingMessage,
     pipelineProgressPercent: store.pipelineProgressPercent,
     pipelineStageLabel: store.pipelineStageLabel,
+    setAnalysisStatus: store.setAnalysisStatus,
+    setPipelineProgress: store.setPipelineProgress,
     setRecordingMessage: store.setRecordingMessage,
     retryRecordingQueueItem: store.retryRecordingQueueItem,
     getMeetingQueue,

@@ -8,11 +8,14 @@ const {
   hydrationState,
   hardwareState,
   liveTranscriptValue,
+  saveAudioBlobMock,
 } = vi.hoisted(() => ({
   mediaServiceMode: { current: "remote" },
   pipelineState: {
     recordingQueue: [],
     getMeetingQueue: vi.fn(() => []),
+    setAnalysisStatus: vi.fn(),
+    setPipelineProgress: vi.fn(),
     setRecordingMessage: vi.fn(),
     setRecordingQueue: vi.fn(),
     recordingMessage: "",
@@ -38,6 +41,7 @@ const {
     canRecord: true,
   },
   liveTranscriptValue: { current: "" },
+  saveAudioBlobMock: vi.fn(),
 }));
 
 vi.mock("../services/mediaService", () => ({
@@ -46,6 +50,10 @@ vi.mock("../services/mediaService", () => ({
     supportsLiveTranscription: () => false,
     transcribeLiveChunk: vi.fn().mockResolvedValue(""),
   }),
+}));
+
+vi.mock("../lib/audioStore", () => ({
+  saveAudioBlob: (...args: any[]) => saveAudioBlobMock(...args),
 }));
 
 vi.mock("./useRecordingPipeline", () => ({
@@ -69,7 +77,12 @@ describe("useRecorder", () => {
     mediaServiceMode.current = "remote";
     liveTranscriptValue.current = "";
     pipelineState.getMeetingQueue.mockReturnValue([]);
+    pipelineState.setAnalysisStatus.mockReset();
+    pipelineState.setPipelineProgress.mockReset();
     pipelineState.setRecordingMessage.mockReset();
+    pipelineState.setRecordingQueue.mockReset();
+    hydrationState.registerAudioUrl.mockReset();
+    saveAudioBlobMock.mockReset();
     hardwareState.startRecording.mockReset();
     hardwareState.cleanupRecorder.mockReset();
     hardwareState.isRecording = false;
@@ -131,5 +144,34 @@ describe("useRecorder", () => {
 
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith("");
     expect(hardwareState.cleanupRecorder).toHaveBeenCalledTimes(1);
+  });
+
+  test("queues imported file immediately with persisted blob and queue status", async () => {
+    saveAudioBlobMock.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: "m1", title: "Demo import", workspaceId: "ws1" },
+        userMeetings: [{ id: "m1", title: "Demo import", workspaceId: "ws1" }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(["audio"], "demo-call.webm", { type: "audio/webm" });
+
+    await act(async () => {
+      await result.current.queueRecording("m1", file);
+    });
+
+    expect(hydrationState.registerAudioUrl).toHaveBeenCalledTimes(1);
+    expect(saveAudioBlobMock).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith("queued");
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(8, "Plik dodany do kolejki");
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      "Plik dodany do kolejki. Rozpoczynamy wgrywanie..."
+    );
   });
 });

@@ -105,6 +105,47 @@ export default function useRecorder({
   );
   const activeQueueItem = useMemo(() => getNextPendingRecordingQueueItem(pipeline.recordingQueue), [pipeline.recordingQueue]);
 
+  async function queueRecording(meetingId, file) {
+    if (!meetingId || !file) {
+      pipeline.setRecordingMessage("Nie udalo sie dodac pliku do kolejki.");
+      return null;
+    }
+
+    const rid = createId("recording");
+    const blob = file instanceof Blob ? file : new Blob([file]);
+    const meeting =
+      userMeetingsRef.current.find((item) => item.id === meetingId) ||
+      (selectedMeeting?.id === meetingId ? selectedMeeting : null);
+
+    try {
+      hydration.registerAudioUrl(rid, blob);
+      await saveAudioBlob(rid, blob);
+      pipeline.setRecordingQueue((prev) =>
+        upsertRecordingQueueItem(
+          prev,
+          createRecordingQueueItem({
+            recordingId: rid,
+            meetingId,
+            meeting,
+            mimeType: file.type || "audio/webm",
+            rawSegments: [],
+            duration: 0,
+          })
+        )
+      );
+      pipeline.setAnalysisStatus("queued");
+      pipeline.setPipelineProgress(8, "Plik dodany do kolejki");
+      pipeline.setRecordingMessage("Plik dodany do kolejki. Rozpoczynamy wgrywanie...");
+      return rid;
+    } catch (error) {
+      console.error("Queued file import failed.", error);
+      pipeline.setAnalysisStatus("error");
+      pipeline.setPipelineProgress(0, "Dodanie pliku nie powiodlo sie");
+      pipeline.setRecordingMessage("Nie udalo sie zapisac pliku do kolejki.");
+      return null;
+    }
+  }
+
   function resetRecorderState() {
     pipeline.setRecordingMessage("");
     setLiveText("");
@@ -126,6 +167,7 @@ export default function useRecorder({
     liveTranscriptEnabled,
     setLiveTranscriptEnabled: mediaService.mode === "remote" ? setLiveTranscriptEnabled : null,
     startRecording: startRecordingWrapper,
+    queueRecording,
     resetRecorderState,
   };
 }

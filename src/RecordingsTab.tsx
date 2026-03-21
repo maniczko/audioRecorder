@@ -278,6 +278,8 @@ export default function RecordingsTab(props) {
     setActiveTab,
     onCreateMeeting,
     queueRecording,
+    recordingQueue = [],
+    activeQueueItem = null,
     analysisStatus = "idle",
     recordingMessage = "",
     pipelineProgressPercent = 0,
@@ -292,6 +294,13 @@ export default function RecordingsTab(props) {
     ["queued", "uploading", "processing", "diarization", "review", "failed", "done"].includes(
       String(analysisStatus || "")
     );
+  const pendingImports = React.useMemo(
+    () =>
+      [...(Array.isArray(recordingQueue) ? recordingQueue : [])].sort(
+        (left, right) => new Date(right.createdAt || 0).valueOf() - new Date(left.createdAt || 0).valueOf()
+      ),
+    [recordingQueue]
+  );
 
   const handleMainFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -314,18 +323,17 @@ export default function RecordingsTab(props) {
           startsAt: new Date().toISOString()
         });
         
-        queueRecording(newMeeting.id, file);
+        const queuedId = await queueRecording(newMeeting.id, file);
 
+        clearInterval(progressInterval);
+        setUploadProgress(queuedId ? 100 : 0);
         setTimeout(() => {
-          clearInterval(progressInterval);
-          setUploadProgress(100);
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
+          setIsUploading(false);
+          setUploadProgress(0);
+          if (queuedId) {
             selectMeeting(newMeeting);
-            setActiveTab("studio");
-          }, 400);
-        }, 1200);
+          }
+        }, queuedId ? 350 : 0);
       }
     } catch (_) {
       setIsUploading(false);
@@ -358,7 +366,14 @@ export default function RecordingsTab(props) {
               Wgraj własne nagranie
             </button>
           )}
-          <input type="file" ref={mainFileInputRef} accept="audio/*,video/*" style={{ display: 'none' }} onChange={handleMainFileUpload} />
+          <input
+            data-testid="recordings-file-input"
+            type="file"
+            ref={mainFileInputRef}
+            accept="audio/*,video/*"
+            style={{ display: 'none' }}
+            onChange={handleMainFileUpload}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <MeetingPicker
@@ -393,6 +408,64 @@ export default function RecordingsTab(props) {
               stageLabel={pipelineStageLabel}
               errorMessage={recordingMessage}
             />
+          </div>
+        </section>
+      ) : null}
+
+      {pendingImports.length ? (
+        <section className="panel" style={{ marginBottom: "24px" }}>
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Import</div>
+              <h2>Pliki wgrywane i przetwarzane</h2>
+              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+                Nowo dodane pliki pojawiaja sie tutaj od razu, zanim trafia do finalnej listy nagran.
+              </p>
+            </div>
+          </div>
+          <div className="panel-body" style={{ display: "grid", gap: "12px" }}>
+            {pendingImports.map((item) => {
+              const isActive = activeQueueItem?.recordingId === item.recordingId;
+              const progressPercent = isActive ? pipelineProgressPercent : item.status === "queued" ? 8 : 0;
+              const progressMessage = isActive
+                ? recordingMessage
+                : item.status === "failed"
+                  ? item.errorMessage
+                  : "Oczekiwanie na rozpoczecie przetwarzania...";
+              const stageLabel = isActive ? pipelineStageLabel : "Plik dodany do kolejki";
+
+              return (
+                <div
+                  key={item.recordingId}
+                  className="pending-import-card"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: "16px",
+                    padding: "14px 16px",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(117,214,196,0.16)",
+                    background: "rgba(117,214,196,0.04)",
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>{item.meetingTitle || "Nowy import"}</div>
+                    <div style={{ color: "var(--text-3, #8f97ab)", fontSize: "0.82rem" }}>
+                      Dodano {formatDateTime(item.createdAt)}
+                    </div>
+                  </div>
+                  <RecordingPipelineStatus
+                    status={item.status}
+                    progressMessage={progressMessage}
+                    progressPercent={progressPercent}
+                    stageLabel={stageLabel}
+                    errorMessage={item.errorMessage}
+                    className="recordings-tab-pending-status"
+                  />
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : null}

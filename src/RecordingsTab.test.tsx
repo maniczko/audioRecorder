@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import RecordingsTab from "./RecordingsTab";
 
 describe("RecordingsTab", () => {
@@ -29,6 +29,16 @@ describe("RecordingsTab", () => {
     selectedRecordingId: "",
     setSelectedRecordingId: jest.fn(),
     setActiveTab: jest.fn(),
+    onCreateMeeting: jest.fn(async (draft) => ({
+      id: "meeting_import",
+      title: draft.title,
+      startsAt: draft.startsAt,
+      durationMinutes: 30,
+      recordings: [],
+    })),
+    queueRecording: jest.fn(async () => "rec_import"),
+    recordingQueue: [],
+    activeQueueItem: null,
     analysisStatus: "idle",
     recordingMessage: "",
     pipelineProgressPercent: 0,
@@ -92,5 +102,50 @@ describe("RecordingsTab", () => {
     expect(screen.getByText(/Status przetwarzania nagrania/i)).toBeInTheDocument();
     expect(screen.getByText(/Serwer przygotowuje transkrypcje \(64%\)/i)).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: /Postep przetwarzania nagrania/i })).toBeInTheDocument();
+  });
+
+  test("shows pending imported file in recordings list with queue status", () => {
+    render(
+      <RecordingsTab
+        {...defaultProps}
+        activeQueueItem={{ recordingId: "rec_pending" }}
+        pipelineProgressPercent={42}
+        pipelineStageLabel="Wgrywanie audio na serwer"
+        recordingMessage="Wgrywanie nagrania na serwer..."
+        recordingQueue={[
+          {
+            recordingId: "rec_pending",
+            meetingTitle: "Import: demo-call",
+            status: "uploading",
+            createdAt: "2026-03-21T10:00:00.000Z",
+            errorMessage: "",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText(/Pliki wgrywane i przetwarzane/i)).toBeInTheDocument();
+    expect(screen.getByText("Import: demo-call")).toBeInTheDocument();
+    expect(screen.getByText(/Wgrywanie audio na serwer \(42%\)/i)).toBeInTheDocument();
+  });
+
+  test("queues imported file immediately after selecting it", async () => {
+    render(<RecordingsTab {...defaultProps} />);
+
+    const input = screen.getByTestId("recordings-file-input");
+    const file = new File(["audio"], "demo-call.webm", { type: "audio/webm" });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(defaultProps.onCreateMeeting).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Import: demo-call",
+        })
+      );
+    });
+    await waitFor(() => {
+      expect(defaultProps.queueRecording).toHaveBeenCalledWith("meeting_import", file);
+    });
   });
 });
