@@ -1,5 +1,5 @@
 export function resolveServerPort(configLike: { VOICELOG_API_PORT?: number; PORT?: number }) {
-  return Number(configLike.VOICELOG_API_PORT || configLike.PORT) || 4000;
+  return Number(configLike.PORT || configLike.VOICELOG_API_PORT) || 4000;
 }
 
 export function buildLocalHealthUrl(configLike: { VOICELOG_API_PORT?: number; PORT?: number }) {
