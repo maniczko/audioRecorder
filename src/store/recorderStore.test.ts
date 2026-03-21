@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getAudioBlob: vi.fn(),
   analyzeMeeting: vi.fn(),
   createMediaService: vi.fn(),
+  getPreviewRuntimeStatus: vi.fn().mockReturnValue("unknown"),
 }));
 
 vi.mock("../lib/audioStore", () => ({
@@ -18,13 +19,22 @@ vi.mock("../services/mediaService", () => ({
   createMediaService: () => mocks.createMediaService(),
 }));
 
+vi.mock("../services/httpClient", () => ({
+  getPreviewRuntimeStatus: () => mocks.getPreviewRuntimeStatus(),
+}));
+
 describe("recorderStore", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(async () => {
     localStorage.clear();
     vi.useFakeTimers();
     mocks.getAudioBlob.mockReset();
     mocks.analyzeMeeting.mockReset();
     mocks.createMediaService.mockReset();
+    mocks.getPreviewRuntimeStatus.mockReset().mockReturnValue("unknown");
     const { useRecorderStore } = await import("./recorderStore");
     useRecorderStore.setState({
       recordingQueue: [],
@@ -33,6 +43,7 @@ describe("recorderStore", () => {
       pipelineProgressPercent: 0,
       pipelineStageLabel: "",
       isProcessingQueue: false,
+      lastQueueErrorKey: "",
     });
   });
 
@@ -229,6 +240,33 @@ describe("recorderStore", () => {
     expect(useRecorderStore.getState().recordingMessage).toBe(
       "Blad w kolejce: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile."
     );
+  });
+
+  test("maps failed fetch errors to a hosted preview message when preview health was healthy", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getPreviewRuntimeStatus.mockReturnValue("healthy");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage:
+        "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.",
+    });
   });
 
   test("maps 502 application-failed responses to a backend availability message", async () => {

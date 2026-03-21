@@ -46,11 +46,44 @@ describe("browserRuntime", () => {
         delete: deleteCache,
       } as any,
       reload,
+      buildId: "build-a",
     });
 
     expect(getRegistrations).toHaveBeenCalledTimes(1);
     expect(unregister).toHaveBeenCalledTimes(1);
     expect(deleteCache).toHaveBeenCalledWith("voicelog-os-v3");
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ cleaned: true, reloaded: true });
+  });
+
+  test("reloads once when the preview build id changes even without a worker controller", async () => {
+    const reload = vi.fn();
+    const sessionStorageRef = {
+      getItem: vi.fn((key: string) => {
+        if (key === "voicelog.preview-runtime-cleanup.v1") return null;
+        if (key === "voicelog.preview-runtime-build.v1") return "build-a";
+        return null;
+      }),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    } as any;
+
+    const result = await prepareHostedRuntime({
+      hostname: "preview.vercel.app",
+      sessionStorageRef,
+      serviceWorkerRef: {
+        controller: null,
+        getRegistrations: vi.fn().mockResolvedValue([]),
+      } as any,
+      cachesRef: {
+        keys: vi.fn().mockResolvedValue([]),
+        delete: vi.fn(),
+      } as any,
+      reload,
+      buildId: "build-b",
+    });
+
+    expect(sessionStorageRef.setItem).toHaveBeenCalledWith("voicelog.preview-runtime-build.v1", "build-b");
     expect(reload).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ cleaned: true, reloaded: true });
   });

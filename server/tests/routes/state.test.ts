@@ -51,6 +51,42 @@ describe("State Routes", () => {
     expect(res.status).toBe(401);
   });
 
+  it("OPTIONS /state/bootstrap - returns preview CORS headers for vercel origins", async () => {
+    const previewOrigin = "https://preview-app.vercel.app";
+    const res = await app.request("/state/bootstrap?workspaceId=w123", {
+      method: "OPTIONS",
+      headers: {
+        Origin: previewOrigin,
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id",
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Content-Type");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Workspace-Id");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Meeting-Id");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("OPTIONS");
+    expect(res.headers.get("Vary")).toContain("Origin");
+  });
+
+  it("GET /state/bootstrap - unauthorized response still keeps preview CORS headers", async () => {
+    const previewOrigin = "https://preview-app.vercel.app";
+    const res = await app.request("/state/bootstrap?workspaceId=w123", {
+      method: "GET",
+      headers: {
+        Origin: previewOrigin,
+      },
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(res.headers.get("Vary")).toContain("Origin");
+  });
+
   it("GET /state/bootstrap - success with valid token", async () => {
     mockAuthService.buildSessionPayload.mockResolvedValue({ user: { id: "u123" }, workspaces: [] });
 

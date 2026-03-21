@@ -11,6 +11,7 @@ import {
 import { getAudioBlob } from "../lib/audioStore";
 import { analyzeMeeting } from "../lib/analysis";
 import { createMediaService } from "../services/mediaService";
+import { getPreviewRuntimeStatus } from "../services/httpClient";
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -112,6 +113,9 @@ function toUserFacingQueueError(error: any) {
     errorMessage.includes("Bad Gateway") ||
     errorMessage.includes("HTTP 502")
   ) {
+    if (getPreviewRuntimeStatus() === "healthy" && errorMessage.includes("Failed to fetch")) {
+      return "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+    }
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
 
@@ -131,6 +135,7 @@ export const useRecorderStore = create<any>()(
       pipelineProgressPercent: 0,
       pipelineStageLabel: "",
       isProcessingQueue: false,
+      lastQueueErrorKey: "",
 
       setRecordingQueue: (updater) =>
         set((state) => ({
@@ -160,6 +165,7 @@ export const useRecorderStore = create<any>()(
         get().updateQueueItem(recordingId, { status: "queued", uploaded: false, errorMessage: "" });
         const snapshot = getPipelineSnapshot("queued", 8, "Ponawiamy wgrywanie nagrania");
         set({
+          lastQueueErrorKey: "",
           recordingMessage: "Ponawiamy nagranie z kolejki.",
           analysisStatus: "queued",
           pipelineProgressPercent: snapshot.progressPercent,
@@ -397,6 +403,7 @@ export const useRecorderStore = create<any>()(
           get().removeQueueItem(nextItem.recordingId);
           const doneSnapshot = getPipelineSnapshot("done");
           set({
+            lastQueueErrorKey: "",
             analysisStatus: "done",
             pipelineProgressPercent: doneSnapshot.progressPercent,
             pipelineStageLabel: doneSnapshot.stageLabel,
@@ -407,8 +414,12 @@ export const useRecorderStore = create<any>()(
               : "Nagranie zostalo przetworzone.",
           });
         } catch (error) {
-          console.error("Recording queue item failed.", error);
           const userFacingMessage = toUserFacingQueueError(error);
+          const errorKey = `${nextItem.recordingId}:${userFacingMessage}`;
+          if (get().lastQueueErrorKey !== errorKey) {
+            console.error("Recording queue item failed.", error);
+            set({ lastQueueErrorKey: errorKey });
+          }
           get().updateQueueItem(nextItem.recordingId, {
             status: "failed",
             errorMessage: userFacingMessage,

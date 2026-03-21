@@ -1,15 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createStateService } from "../services/stateService";
+import { probeRemoteApiHealth, setPreviewRuntimeStatus } from "../services/httpClient";
 import { migrateWorkspaceData } from "../lib/workspace";
 import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
 import { useMeetingsStore } from "../store/meetingsStore";
+import { isHostedPreviewHost } from "../runtime/browserRuntime";
 
 function serializeWorkspaceState(payload: any) {
   return JSON.stringify(payload || {});
 }
 
 const REMOTE_PULL_COOLDOWN_MS = 25000;
+const HOSTED_PREVIEW_RUNTIME_MESSAGE =
+  "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
 
 function isBackendUnavailableMessage(message = "") {
   const normalized = String(message || "").toLowerCase();
@@ -140,6 +144,22 @@ export default function useWorkspaceData() {
     remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
   }, []);
 
+  const ensureHostedPreviewConnectivity = useCallback(async () => {
+    if (typeof window === "undefined" || !isHostedPreviewHost(window.location.hostname)) {
+      return true;
+    }
+
+    try {
+      await probeRemoteApiHealth();
+      return true;
+    } catch (error) {
+      remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
+      logRemoteErrorOnce("Hosted preview health probe failed.", error);
+      pushWorkspaceMessage(HOSTED_PREVIEW_RUNTIME_MESSAGE);
+      return false;
+    }
+  }, [logRemoteErrorOnce, pushWorkspaceMessage]);
+
   useEffect(() => {
     const migration = migrateWorkspaceData({
       users,
@@ -164,12 +184,14 @@ export default function useWorkspaceData() {
 
   useEffect(() => {
     if (stateService?.mode !== "remote") {
+      setPreviewRuntimeStatus("unknown");
       hydratedWorkspaceIdRef.current = currentWorkspaceId || "";
       setIsHydratingRemoteState(false);
       return undefined;
     }
 
     if (!session?.token || !session?.userId) {
+      setPreviewRuntimeStatus("unknown");
       hydratedWorkspaceIdRef.current = "";
       setIsHydratingRemoteState(false);
       return undefined;
@@ -178,32 +200,42 @@ export default function useWorkspaceData() {
     let cancelled = false;
     setIsHydratingRemoteState(true);
 
-    stateService
-      .bootstrap(session.workspaceId)
-      .then((result) => {
-        if (cancelled || !result) {
-          return;
-        }
-        applyRemoteWorkspaceState(result);
-      })
-      .catch((error: any) => {
-        if (cancelled) {
-          return;
-        }
-        applyRemoteTransportCooldown(error);
-        logRemoteErrorOnce("Remote workspace bootstrap failed.", error);
-        pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
-      })
-      .finally(() => {
+    (async () => {
+      const canConnect = await ensureHostedPreviewConnectivity();
+      if (cancelled || !canConnect) {
         if (!cancelled) {
           setIsHydratingRemoteState(false);
         }
-      });
+        return;
+      }
+
+      stateService
+        .bootstrap(session.workspaceId)
+        .then((result) => {
+          if (cancelled || !result) {
+            return;
+          }
+          applyRemoteWorkspaceState(result);
+        })
+        .catch((error: any) => {
+          if (cancelled) {
+            return;
+          }
+          applyRemoteTransportCooldown(error);
+          logRemoteErrorOnce("Remote workspace bootstrap failed.", error);
+          pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsHydratingRemoteState(false);
+          }
+        });
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [currentWorkspaceId, applyRemoteTransportCooldown, applyRemoteWorkspaceState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, session?.userId, session?.workspaceId, stateService]);
+  }, [currentWorkspaceId, applyRemoteTransportCooldown, applyRemoteWorkspaceState, ensureHostedPreviewConnectivity, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, session?.userId, session?.workspaceId, stateService]);
 
   useEffect(() => {
     if (stateService?.mode !== "remote") {
@@ -265,34 +297,41 @@ export default function useWorkspaceData() {
         return;
       }
 
-      stateService
-        .bootstrap(currentWorkspaceId)
-        .then((result) => {
-          if (!result?.state) {
-            return;
-          }
+      void (async () => {
+        const canConnect = await ensureHostedPreviewConnectivity();
+        if (!canConnect) {
+          return;
+        }
 
-          const normalizedState = {
-            meetings: Array.isArray(result.state.meetings) ? result.state.meetings : [],
-            manualTasks: Array.isArray(result.state.manualTasks) ? result.state.manualTasks : [],
-            taskState: result.state.taskState && typeof result.state.taskState === "object" ? result.state.taskState : {},
-            taskBoards: result.state.taskBoards && typeof result.state.taskBoards === "object" ? result.state.taskBoards : {},
-            calendarMeta:
-              result.state.calendarMeta && typeof result.state.calendarMeta === "object" ? result.state.calendarMeta : {},
-            vocabulary: Array.isArray(result.state.vocabulary) ? result.state.vocabulary : [],
-          };
-          const incomingSnapshot = serializeWorkspaceState(normalizedState);
-          if (incomingSnapshot === remoteSnapshotRef.current) {
-            return;
-          }
+        stateService
+          .bootstrap(currentWorkspaceId)
+          .then((result) => {
+            if (!result?.state) {
+              return;
+            }
 
-          applyRemoteWorkspaceState(result);
-        })
-        .catch((error) => {
-          applyRemoteTransportCooldown(error);
-          logRemoteErrorOnce("Remote workspace pull failed.", error);
-          pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
-        });
+            const normalizedState = {
+              meetings: Array.isArray(result.state.meetings) ? result.state.meetings : [],
+              manualTasks: Array.isArray(result.state.manualTasks) ? result.state.manualTasks : [],
+              taskState: result.state.taskState && typeof result.state.taskState === "object" ? result.state.taskState : {},
+              taskBoards: result.state.taskBoards && typeof result.state.taskBoards === "object" ? result.state.taskBoards : {},
+              calendarMeta:
+                result.state.calendarMeta && typeof result.state.calendarMeta === "object" ? result.state.calendarMeta : {},
+              vocabulary: Array.isArray(result.state.vocabulary) ? result.state.vocabulary : [],
+            };
+            const incomingSnapshot = serializeWorkspaceState(normalizedState);
+            if (incomingSnapshot === remoteSnapshotRef.current) {
+              return;
+            }
+
+            applyRemoteWorkspaceState(result);
+          })
+          .catch((error) => {
+            applyRemoteTransportCooldown(error);
+            logRemoteErrorOnce("Remote workspace pull failed.", error);
+            pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
+          });
+      })();
     };
 
     remotePollTimerRef.current = window.setInterval(() => {
@@ -305,7 +344,7 @@ export default function useWorkspaceData() {
     return () => {
       window.clearInterval(remotePollTimerRef.current);
     };
-  }, [applyRemoteTransportCooldown, applyRemoteWorkspaceState, currentWorkspaceId, isHydratingRemoteState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, stateService]);
+  }, [applyRemoteTransportCooldown, applyRemoteWorkspaceState, currentWorkspaceId, ensureHostedPreviewConnectivity, isHydratingRemoteState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, stateService]);
 
   const userMeetings = useMemo(
     () =>

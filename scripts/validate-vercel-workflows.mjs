@@ -19,9 +19,11 @@ function assertMatch(content, relativePath, description, pattern) {
 
 const productionWorkflowPath = ".github/workflows/vercel-production.yml";
 const previewWorkflowPath = ".github/workflows/preview.yml";
+const vercelConfigPath = "vercel.json";
 
 const productionWorkflow = readFile(productionWorkflowPath);
 const previewWorkflow = readFile(previewWorkflowPath);
+const vercelConfig = readFile(vercelConfigPath);
 
 assertMatch(productionWorkflow, productionWorkflowPath, "production push trigger on main", /push:\s*\n\s*branches:\s*\[main\]/m);
 assertMatch(productionWorkflow, productionWorkflowPath, "workflow_dispatch trigger", /workflow_dispatch:/m);
@@ -44,5 +46,10 @@ assertMatch(productionWorkflow, productionWorkflowPath, "production vercel deplo
 assertMatch(previewWorkflow, previewWorkflowPath, "preview vercel pull", /vercel pull --yes --environment=preview --token="\$VERCEL_TOKEN"/m);
 assertMatch(previewWorkflow, previewWorkflowPath, "preview vercel build", /vercel build --token="\$VERCEL_TOKEN"/m);
 assertMatch(previewWorkflow, previewWorkflowPath, "preview vercel deploy", /vercel deploy --prebuilt --token="\$VERCEL_TOKEN"/m);
+
+assertMatch(vercelConfig, vercelConfigPath, "no-store header for root shell", /"source"\s*:\s*"\/"[\s\S]*?"Cache-Control"[\s\S]*?"no-store,\s*max-age=0"/m);
+assertMatch(vercelConfig, vercelConfigPath, "no-store header for index.html", /"source"\s*:\s*"\/index\.html"[\s\S]*?"Cache-Control"[\s\S]*?"no-store,\s*max-age=0"/m);
+assertMatch(vercelConfig, vercelConfigPath, "no-store header for service-worker.js", /"source"\s*:\s*"\/service-worker\.js"[\s\S]*?"Cache-Control"[\s\S]*?"no-store,\s*max-age=0"/m);
+assertMatch(vercelConfig, vercelConfigPath, "no-store header for manifest.json", /"source"\s*:\s*"\/manifest\.json"[\s\S]*?"Cache-Control"[\s\S]*?"no-store,\s*max-age=0"/m);
 
 console.log("Vercel workflow validation passed.");

@@ -155,6 +155,45 @@ describe("httpClient", () => {
     });
   });
 
+  test("classifies failed fetch as stale hosted preview runtime after a healthy probe", async () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app" },
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest, probeRemoteApiHealth } = await loadHttpClient();
+
+    await probeRemoteApiHealth(fetchMock as any);
+
+    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
+      message: "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.",
+    });
+  });
+
+  test("keeps backend unavailable message when preview health probe already failed", async () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app" },
+    });
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest, probeRemoteApiHealth } = await loadHttpClient();
+
+    await expect(probeRemoteApiHealth(fetchMock as any)).rejects.toThrow("Failed to fetch");
+    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
+      message: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
+  });
+
   test("falls back to persisted workspace store session when legacy session is empty", async () => {
     localStorage.setItem(
       "voicelog_workspace_store",

@@ -71,6 +71,28 @@ describe("Media Routes", () => {
     );
   });
 
+  it("OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins", async () => {
+    const previewOrigin = "https://preview-app.vercel.app";
+    const res = await app.request("/media/recordings/rec_new/audio", {
+      method: "OPTIONS",
+      headers: {
+        Origin: previewOrigin,
+        "Access-Control-Request-Method": "PUT",
+        "Access-Control-Request-Headers": "Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id",
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Content-Type");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Workspace-Id");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Meeting-Id");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("PUT");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("OPTIONS");
+    expect(res.headers.get("Vary")).toContain("Origin");
+  });
+
   it("POST /media/recordings/:recordingId/transcribe - queues job", async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: "rec_1", workspace_id: "ws_1", file_path: "/tmp/fake.webm", content_type: "audio/webm", size_bytes: 1024, transcription_status: "queued"
@@ -107,16 +129,20 @@ describe("Media Routes", () => {
   });
 
   it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {
+    const previewOrigin = "https://preview-app.vercel.app";
     const missingWorkspace = await app.request("/media/recordings/rec_missing/audio", {
       method: "PUT",
       headers: {
         Authorization: "Bearer fake_token",
         "Content-Type": "audio/webm",
+        Origin: previewOrigin,
       },
       body: Buffer.from("small-audio-data"),
     });
 
     expect(missingWorkspace.status).toBe(400);
+    expect(missingWorkspace.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(missingWorkspace.headers.get("Vary")).toContain("Origin");
 
     const oversize = await app.request("/media/recordings/rec_large/audio", {
       method: "PUT",
@@ -124,11 +150,14 @@ describe("Media Routes", () => {
         Authorization: "Bearer fake_token",
         "Content-Type": "audio/webm",
         "X-Workspace-Id": "ws_1",
+        Origin: previewOrigin,
       },
       body: Buffer.alloc(100 * 1024 * 1024 + 1, 1),
     });
 
     expect(oversize.status).toBe(413);
+    expect(oversize.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(oversize.headers.get("Vary")).toContain("Origin");
   });
 
   it("GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files", async () => {

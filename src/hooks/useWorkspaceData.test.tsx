@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import useWorkspaceData from "./useWorkspaceData";
 
 const {
   workspaceState,
   meetingsState,
   stateServiceMock,
+  httpClientMock,
 } = vi.hoisted(() => ({
   workspaceState: {
     currentWorkspaceId: "ws1",
@@ -36,10 +37,19 @@ const {
     bootstrap: vi.fn(),
     syncWorkspaceState: vi.fn(),
   },
+  httpClientMock: {
+    probeRemoteApiHealth: vi.fn(),
+    setPreviewRuntimeStatus: vi.fn(),
+  },
 }));
 
 vi.mock("../services/stateService", () => ({
   createStateService: () => stateServiceMock,
+}));
+
+vi.mock("../services/httpClient", () => ({
+  probeRemoteApiHealth: (...args: any[]) => httpClientMock.probeRemoteApiHealth(...args),
+  setPreviewRuntimeStatus: (...args: any[]) => httpClientMock.setPreviewRuntimeStatus(...args),
 }));
 
 vi.mock("../lib/workspace", () => ({
@@ -56,6 +66,10 @@ vi.mock("../store/meetingsStore", () => ({
 }));
 
 describe("useWorkspaceData", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     workspaceState.currentWorkspaceId = "ws1";
     workspaceState.users = [];
@@ -92,6 +106,12 @@ describe("useWorkspaceData", () => {
       },
     });
     stateServiceMock.syncWorkspaceState.mockReset().mockResolvedValue(null);
+    httpClientMock.probeRemoteApiHealth.mockReset().mockResolvedValue(true);
+    httpClientMock.setPreviewRuntimeStatus.mockReset();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "localhost" },
+    });
   });
 
   test("returns workspace-filtered meetings in local mode", () => {
@@ -219,6 +239,70 @@ describe("useWorkspaceData", () => {
     });
 
     expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith("Remote boom");
+    unmount();
+  });
+
+  test("blocks first remote bootstrap on hosted preview when health probe fails", async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = "remote";
+    workspaceState.session = { token: "token-1", userId: "u1", workspaceId: "ws1" };
+    httpClientMock.probeRemoteApiHealth.mockRejectedValue(new TypeError("Failed to fetch"));
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app" },
+    });
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(httpClientMock.probeRemoteApiHealth).toHaveBeenCalledTimes(1);
+    expect(stateServiceMock.bootstrap).not.toHaveBeenCalled();
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith(
+      "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy."
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(httpClientMock.probeRemoteApiHealth).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  test("probes health first on hosted preview and resumes normal bootstrap after probe success", async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = "remote";
+    workspaceState.session = { token: "token-1", userId: "u1", workspaceId: "ws1" };
+    httpClientMock.probeRemoteApiHealth.mockResolvedValue(true);
+    stateServiceMock.bootstrap.mockResolvedValueOnce({
+      workspaceId: "ws1",
+      state: {
+        meetings: [{ id: "m1", workspaceId: "ws1", updatedAt: "2026-03-21T10:00:00.000Z" }],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      },
+    });
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app" },
+    });
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(httpClientMock.probeRemoteApiHealth).toHaveBeenCalledTimes(1);
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledWith("ws1");
     unmount();
   });
 

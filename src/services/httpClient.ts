@@ -1,10 +1,25 @@
 import { API_BASE_URL, apiBaseUrlConfigured } from "./config";
 import { readLegacySession, readWorkspacePersistedSession } from "../lib/sessionStorage";
+import { isHostedPreviewHost } from "../runtime/browserRuntime";
 
 const unauthorizedHandlers = new Set();
+let previewRuntimeStatus = "unknown";
+
 export function onUnauthorized(handler) {
   unauthorizedHandlers.add(handler);
   return () => unauthorizedHandlers.delete(handler);
+}
+
+export function getPreviewRuntimeStatus() {
+  return previewRuntimeStatus;
+}
+
+export function setPreviewRuntimeStatus(status = "unknown") {
+  previewRuntimeStatus = String(status || "unknown");
+}
+
+export function resetPreviewRuntimeStatus() {
+  previewRuntimeStatus = "unknown";
 }
 
 function buildUrl(path) {
@@ -39,22 +54,26 @@ function readSessionToken() {
   }
 }
 
-function isBackendUnavailableMessage(message = "") {
+function isHostedPreviewRuntime() {
+  return typeof window !== "undefined" && isHostedPreviewHost(window.location.hostname);
+}
+
+function isTransportFailureMessage(message = "") {
   const normalized = String(message || "").toLowerCase();
   return (
-    normalized.includes("application failed to respond") ||
-    normalized.includes("router_external_target_connection_error") ||
-    normalized.includes("bad gateway") ||
-    normalized.includes("target connection error") ||
     normalized.includes("upstream") ||
     normalized.includes("failed to fetch") ||
     normalized.includes("networkerror") ||
-    normalized.includes("load failed")
+    normalized.includes("load failed") ||
+    normalized.includes("bad gateway") ||
+    normalized.includes("target connection error") ||
+    normalized.includes("application failed to respond") ||
+    normalized.includes("router_external_target_connection_error")
   );
 }
 
 function normalizeApiErrorMessage(message = "", status?: number) {
-  if (status === 502 || isBackendUnavailableMessage(message)) {
+  if (status === 502) {
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
 
@@ -62,7 +81,36 @@ function normalizeApiErrorMessage(message = "", status?: number) {
     return "Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.";
   }
 
+  if (isTransportFailureMessage(message)) {
+    if (isHostedPreviewRuntime() && previewRuntimeStatus === "healthy") {
+      return "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+    }
+    return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
+  }
+
   return String(message || "");
+}
+
+export async function probeRemoteApiHealth(fetchImpl = fetch) {
+  try {
+    const response = await fetchImpl(buildUrl("/health"), {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      setPreviewRuntimeStatus("backend_unreachable");
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    setPreviewRuntimeStatus("healthy");
+    return true;
+  } catch (error) {
+    setPreviewRuntimeStatus("backend_unreachable");
+    throw error;
+  }
 }
 
 export async function apiRequest(path, options = {}) {
