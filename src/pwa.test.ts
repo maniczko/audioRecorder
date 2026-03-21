@@ -70,4 +70,44 @@ describe("registerServiceWorker", () => {
     expect(registration.update).toHaveBeenCalledTimes(1);
     expect(reload).toHaveBeenCalledTimes(1);
   });
+
+  test("does not register service worker on ephemeral vercel previews and clears stale caches", async () => {
+    const unregister = vi.fn().mockResolvedValue(true);
+    const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
+    const register = vi.fn();
+    const deleteCache = vi.fn().mockResolvedValue(true);
+    const keys = vi.fn().mockResolvedValue(["voicelog-os-v2", "other-cache"]);
+
+    Object.defineProperty(window, "navigator", {
+      configurable: true,
+      value: {
+        serviceWorker: {
+          controller: {},
+          register,
+          getRegistrations,
+          addEventListener: vi.fn(),
+        },
+      },
+    });
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app", reload: vi.fn() },
+    });
+    Object.defineProperty(window, "caches", {
+      configurable: true,
+      value: {
+        keys,
+        delete: deleteCache,
+      },
+    });
+
+    registerServiceWorker();
+    window.dispatchEvent(new Event("load"));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(getRegistrations).toHaveBeenCalled();
+    expect(unregister).toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
+  });
 });
