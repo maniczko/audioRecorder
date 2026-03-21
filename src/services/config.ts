@@ -21,23 +21,6 @@ function readMode(value, fallback = "local") {
   return normalized === "remote" ? "remote" : fallback;
 }
 
-function isLocalhostHost(hostname = "") {
-  return /^(localhost|127\.0\.0\.1)$/i.test(String(hostname || "").trim());
-}
-
-function shouldUseSameOriginApiProxy(rawApiBaseUrl: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const hostname = String(window.location?.hostname || "").trim();
-  if (!hostname || isLocalhostHost(hostname)) {
-    return false;
-  }
-
-  return /^https?:\/\//i.test(String(rawApiBaseUrl || "").trim());
-}
-
 export const APP_DATA_PROVIDER = readMode(
   readEnv("VITE_DATA_PROVIDER") || readEnv("REACT_APP_DATA_PROVIDER") || "local",
   "local"
@@ -52,7 +35,7 @@ const RAW_API_BASE_URL = String(
   readEnv("VITE_API_BASE_URL") || readEnv("REACT_APP_API_BASE_URL") || "http://localhost:4000"
 ).trim();
 
-export const API_BASE_URL = shouldUseSameOriginApiProxy(RAW_API_BASE_URL) ? "/api" : RAW_API_BASE_URL;
+export const API_BASE_URL = RAW_API_BASE_URL;
 
 export function apiBaseUrlConfigured() {
   return Boolean(API_BASE_URL);

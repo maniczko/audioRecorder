@@ -39,6 +39,32 @@ function readSessionToken() {
   }
 }
 
+function isBackendUnavailableMessage(message = "") {
+  const normalized = String(message || "").toLowerCase();
+  return (
+    normalized.includes("application failed to respond") ||
+    normalized.includes("router_external_target_connection_error") ||
+    normalized.includes("bad gateway") ||
+    normalized.includes("target connection error") ||
+    normalized.includes("upstream") ||
+    normalized.includes("failed to fetch") ||
+    normalized.includes("networkerror") ||
+    normalized.includes("load failed")
+  );
+}
+
+function normalizeApiErrorMessage(message = "", status?: number) {
+  if (status === 502 || isBackendUnavailableMessage(message)) {
+    return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
+  }
+
+  if (status === 401 && String(message).includes("Brak tokenu autoryzacyjnego")) {
+    return "Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.";
+  }
+
+  return String(message || "");
+}
+
 export async function apiRequest(path, options = {}) {
   const { body, headers, parseAs = "json", ...rest } = options;
   const token = readSessionToken();
@@ -55,7 +81,15 @@ export async function apiRequest(path, options = {}) {
     requestInit.body = body instanceof Blob || typeof body === "string" ? body : JSON.stringify(body);
   }
 
-  const response = await fetch(buildUrl(path), requestInit);
+  let response;
+  try {
+    response = await fetch(buildUrl(path), requestInit);
+  } catch (error: any) {
+    const normalizedMessage = normalizeApiErrorMessage(error?.message || "Failed to fetch");
+    const normalizedError = new Error(normalizedMessage);
+    (normalizedError as any).cause = error;
+    throw normalizedError;
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -71,10 +105,7 @@ export async function apiRequest(path, options = {}) {
     } catch (_) {
       // ignore parse errors
     }
-    if (response.status === 401 && message.includes("Brak tokenu autoryzacyjnego")) {
-      message = "Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.";
-    }
-    const error = new Error(message);
+    const error = new Error(normalizeApiErrorMessage(message, response.status));
     error.status = response.status;
     throw error;
   }

@@ -113,6 +113,48 @@ describe("httpClient", () => {
     });
   });
 
+  test("normalizes 502 plain-text upstream failures into a stable backend message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("Application failed to respond", {
+        status: 502,
+        headers: { "content-type": "text/plain" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest } = await loadHttpClient();
+
+    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
+      message: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+      status: 502,
+    });
+  });
+
+  test("normalizes Vercel router proxy errors into a stable backend message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("ROUTER_EXTERNAL_TARGET_CONNECTION_ERROR_CD8", {
+        status: 502,
+        headers: { "content-type": "text/plain" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest } = await loadHttpClient();
+
+    await expect(apiRequest("/media/recordings/rec1/audio")).rejects.toMatchObject({
+      message: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+      status: 502,
+    });
+  });
+
+  test("normalizes network fetch rejections into a stable backend message", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest } = await loadHttpClient();
+
+    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
+      message: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
+  });
+
   test("falls back to persisted workspace store session when legacy session is empty", async () => {
     localStorage.setItem(
       "voicelog_workspace_store",

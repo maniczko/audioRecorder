@@ -9,6 +9,24 @@ function serializeWorkspaceState(payload: any) {
   return JSON.stringify(payload || {});
 }
 
+const REMOTE_PULL_COOLDOWN_MS = 25000;
+
+function isBackendUnavailableMessage(message = "") {
+  const normalized = String(message || "").toLowerCase();
+  return (
+    normalized.includes("backend jest chwilowo niedostepny") ||
+    normalized.includes("application failed to respond") ||
+    normalized.includes("router_external_target_connection_error") ||
+    normalized.includes("bad gateway") ||
+    normalized.includes("target connection error") ||
+    normalized.includes("upstream") ||
+    normalized.includes("failed to fetch") ||
+    normalized.includes("networkerror") ||
+    normalized.includes("load failed") ||
+    normalized.includes("http 502")
+  );
+}
+
 export default function useWorkspaceData() {
   const { currentWorkspaceId } = useWorkspaceSelectors();
   const { users, setUsers, workspaces, setWorkspaces, session, setSession } = useWorkspaceStore();
@@ -33,6 +51,9 @@ export default function useWorkspaceData() {
   const remotePollTimerRef = useRef<number | null>(null);
   const hydratedWorkspaceIdRef = useRef("");
   const remoteSnapshotRef = useRef("");
+  const remotePullCooldownUntilRef = useRef(0);
+  const lastWorkspaceMessageRef = useRef("");
+  const lastLoggedRemoteErrorRef = useRef("");
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === "remote" && Boolean(session?.token)
@@ -71,6 +92,9 @@ export default function useWorkspaceData() {
       setCalendarMeta(normalizedState.calendarMeta);
       setVocabulary(normalizedState.vocabulary);
       remoteSnapshotRef.current = nextSnapshot;
+      remotePullCooldownUntilRef.current = 0;
+      lastWorkspaceMessageRef.current = "";
+      lastLoggedRemoteErrorRef.current = "";
 
       hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || "";
       if (result.workspaceId && result.workspaceId !== session?.workspaceId) {
@@ -86,6 +110,35 @@ export default function useWorkspaceData() {
     },
     [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces, setVocabulary]
   );
+
+  const pushWorkspaceMessage = useCallback(
+    (message: string) => {
+      const normalizedMessage = String(message || "").trim();
+      if (!normalizedMessage || normalizedMessage === lastWorkspaceMessageRef.current) {
+        return;
+      }
+      lastWorkspaceMessageRef.current = normalizedMessage;
+      setWorkspaceMessage(normalizedMessage);
+    },
+    [setWorkspaceMessage]
+  );
+
+  const logRemoteErrorOnce = useCallback((scope: string, error: any) => {
+    const message = String(error?.message || "Unknown remote error");
+    const key = `${scope}:${message}`;
+    if (key === lastLoggedRemoteErrorRef.current) {
+      return;
+    }
+    lastLoggedRemoteErrorRef.current = key;
+    console.error(scope, error);
+  }, []);
+
+  const applyRemoteTransportCooldown = useCallback((error: any) => {
+    if (!isBackendUnavailableMessage(error?.message || "")) {
+      return;
+    }
+    remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
+  }, []);
 
   useEffect(() => {
     const migration = migrateWorkspaceData({
@@ -137,8 +190,9 @@ export default function useWorkspaceData() {
         if (cancelled) {
           return;
         }
-        console.error("Remote workspace bootstrap failed.", error);
-        setWorkspaceMessage(error.message || "Nie udalo sie pobrac danych workspace z backendu.");
+        applyRemoteTransportCooldown(error);
+        logRemoteErrorOnce("Remote workspace bootstrap failed.", error);
+        pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
       })
       .finally(() => {
         if (!cancelled) {
@@ -149,7 +203,7 @@ export default function useWorkspaceData() {
     return () => {
       cancelled = true;
     };
-  }, [currentWorkspaceId, applyRemoteWorkspaceState, session?.token, session?.userId, session?.workspaceId, stateService]);
+  }, [currentWorkspaceId, applyRemoteTransportCooldown, applyRemoteWorkspaceState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, session?.userId, session?.workspaceId, stateService]);
 
   useEffect(() => {
     if (stateService?.mode !== "remote") {
@@ -184,8 +238,9 @@ export default function useWorkspaceData() {
           remoteSnapshotRef.current = nextSnapshot;
         })
         .catch((error: any) => {
-          console.error("Remote workspace sync failed.", error);
-          setWorkspaceMessage(error.message || "Nie udalo sie zapisac workspace na backendzie.");
+          applyRemoteTransportCooldown(error);
+          logRemoteErrorOnce("Remote workspace sync failed.", error);
+          pushWorkspaceMessage(error?.message || "Nie udalo sie zapisac workspace na backendzie.");
         });
     }, 350);
 
@@ -194,7 +249,7 @@ export default function useWorkspaceData() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [calendarMeta, vocabulary, currentWorkspaceId, isHydratingRemoteState, manualTasks, meetings, session?.token, stateService, taskBoards, taskState]);
+  }, [applyRemoteTransportCooldown, calendarMeta, vocabulary, currentWorkspaceId, isHydratingRemoteState, logRemoteErrorOnce, manualTasks, meetings, pushWorkspaceMessage, session?.token, stateService, taskBoards, taskState]);
 
   useEffect(() => {
     if (stateService?.mode !== "remote") {
@@ -206,6 +261,10 @@ export default function useWorkspaceData() {
     }
 
     const pullRemoteWorkspaceState = () => {
+      if (Date.now() < remotePullCooldownUntilRef.current) {
+        return;
+      }
+
       stateService
         .bootstrap(currentWorkspaceId)
         .then((result) => {
@@ -230,7 +289,9 @@ export default function useWorkspaceData() {
           applyRemoteWorkspaceState(result);
         })
         .catch((error) => {
-          console.error("Remote workspace pull failed.", error);
+          applyRemoteTransportCooldown(error);
+          logRemoteErrorOnce("Remote workspace pull failed.", error);
+          pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
         });
     };
 
@@ -244,7 +305,7 @@ export default function useWorkspaceData() {
     return () => {
       window.clearInterval(remotePollTimerRef.current);
     };
-  }, [applyRemoteWorkspaceState, currentWorkspaceId, isHydratingRemoteState, session?.token, stateService]);
+  }, [applyRemoteTransportCooldown, applyRemoteWorkspaceState, currentWorkspaceId, isHydratingRemoteState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, stateService]);
 
   const userMeetings = useMemo(
     () =>

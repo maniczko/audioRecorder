@@ -224,12 +224,88 @@ describe("recorderStore", () => {
 
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
       status: "failed",
-      errorMessage:
-        "Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile.",
+      errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
     });
     expect(useRecorderStore.getState().recordingMessage).toBe(
-      "Blad w kolejce: Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile."
+      "Blad w kolejce: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile."
     );
+  });
+
+  test("maps 502 application-failed responses to a backend availability message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi.fn().mockRejectedValue(new Error("Application failed to respond")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
+  });
+
+  test("maps Vercel router target errors to a backend availability message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi
+        .fn()
+        .mockRejectedValue(new Error("ROUTER_EXTERNAL_TARGET_CONNECTION_ERROR_CD8")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
+  });
+
+  test("maps explicit HTTP 502 errors to a backend availability message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi.fn().mockRejectedValue(new Error("HTTP 502")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
   });
 
   test("maps empty-stt-output failures to a recording quality message", async () => {

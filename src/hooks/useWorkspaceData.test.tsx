@@ -221,4 +221,88 @@ describe("useWorkspaceData", () => {
     expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith("Remote boom");
     unmount();
   });
+
+  test("applies cooldown after transport bootstrap errors and avoids poll spam", async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = "remote";
+    workspaceState.session = { token: "token-1", userId: "u1", workspaceId: "ws1" };
+    stateServiceMock.bootstrap.mockRejectedValue(new Error("Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile."));
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(25000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(2);
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  test("resets transport cooldown after a successful remote pull", async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = "remote";
+    workspaceState.session = { token: "token-1", userId: "u1", workspaceId: "ws1" };
+    stateServiceMock.bootstrap
+      .mockRejectedValueOnce(new Error("Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile."))
+      .mockResolvedValueOnce({
+        workspaceId: "ws1",
+        state: {
+          meetings: [{ id: "m2", workspaceId: "ws1", updatedAt: "2026-03-22T10:00:00.000Z" }],
+          manualTasks: [],
+          taskState: {},
+          taskBoards: {},
+          calendarMeta: {},
+          vocabulary: [],
+        },
+      })
+      .mockResolvedValue({
+        workspaceId: "ws1",
+        state: {
+          meetings: [{ id: "m3", workspaceId: "ws1", updatedAt: "2026-03-23T10:00:00.000Z" }],
+          manualTasks: [],
+          taskState: {},
+          taskBoards: {},
+          calendarMeta: {},
+          vocabulary: [],
+        },
+      });
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(25000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(3);
+    unmount();
+  });
 });

@@ -106,9 +106,13 @@ function toUserFacingQueueError(error: any) {
     errorMessage.includes("Failed to fetch") ||
     errorMessage.includes("NetworkError") ||
     errorMessage.includes("Load failed") ||
-    errorMessage.includes("ERR_FAILED")
+    errorMessage.includes("ERR_FAILED") ||
+    errorMessage.includes("Application failed to respond") ||
+    errorMessage.includes("ROUTER_EXTERNAL_TARGET_CONNECTION_ERROR") ||
+    errorMessage.includes("Bad Gateway") ||
+    errorMessage.includes("HTTP 502")
   ) {
-    return "Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile.";
+    return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
 
   if (errorMessage.includes("Model STT nie zwrocil zadnych segmentow transkrypcji")) {

@@ -12,9 +12,13 @@ describe("ProfileTab auth integration", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.unstubAllGlobals();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "audiorecorder-preview.vercel.app" },
+    });
   });
 
-  test("loads voice profiles with Authorization header when only workspace store session is persisted", async () => {
+  test("loads voice profiles directly from the absolute api base url on hosted previews", async () => {
     localStorage.setItem(
       "voicelog_workspace_store",
       JSON.stringify({

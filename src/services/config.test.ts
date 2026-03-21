@@ -26,7 +26,7 @@ describe("services/config", () => {
     expect(config.API_BASE_URL).toBe("http://localhost:4000");
   });
 
-  test("switches hosted deployments to same-origin api proxy when remote url is absolute", async () => {
+  test("keeps explicit absolute railway url on hosted vercel previews", async () => {
     process.env.VITE_API_BASE_URL = "https://audiorecorder-production.up.railway.app";
     Object.defineProperty(window, "location", {
       configurable: true,
@@ -35,6 +35,18 @@ describe("services/config", () => {
 
     const config = await import("./config");
 
-    expect(config.API_BASE_URL).toBe("/api");
+    expect(config.API_BASE_URL).toBe("https://audiorecorder-production.up.railway.app");
+  });
+
+  test("keeps explicit absolute railway url on hosted production domains", async () => {
+    process.env.VITE_API_BASE_URL = "https://audiorecorder-production.up.railway.app";
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "audiorecorder.example.com" },
+    });
+
+    const config = await import("./config");
+
+    expect(config.API_BASE_URL).toBe("https://audiorecorder-production.up.railway.app");
   });
 });
