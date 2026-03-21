@@ -717,6 +717,7 @@ export class Database {
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            transcriptionDiagnostics: result.transcriptionDiagnostics || null,
             ...pipelineMetadata,
           }
         : {
@@ -724,6 +725,7 @@ export class Database {
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            transcriptionDiagnostics: result.transcriptionDiagnostics || null,
             ...pipelineMetadata,
           };
     await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
@@ -737,6 +739,7 @@ export class Database {
     await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [
       JSON.stringify({
         errorMessage: this._clean(errorMessage),
+        transcriptionDiagnostics: null,
         ...this._buildPipelineMetadata(),
       }),
       this.nowIso(),

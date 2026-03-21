@@ -44,6 +44,7 @@ describe("RecordingsTab", () => {
     pipelineProgressPercent: 0,
     pipelineStageLabel: "",
     retryRecordingQueueItem: jest.fn(),
+    retryStoredRecording: jest.fn(),
   };
 
   test("renders empty state when no meetings are provided", () => {
@@ -93,6 +94,31 @@ describe("RecordingsTab", () => {
     
     expect(defaultProps.selectMeeting).toHaveBeenCalledWith(mockMeetings[1]);
     expect(defaultProps.setActiveTab).toHaveBeenCalledWith("studio");
+  });
+
+  test("shows retry action for selected meeting with empty transcript", () => {
+    const selectedMeeting = {
+      ...mockMeetings[0],
+      latestRecordingId: "rec_1",
+      recordings: [
+        {
+          id: "rec_1",
+          createdAt: "2026-03-18T10:00:00Z",
+          duration: 2700,
+          speakerCount: 2,
+          transcript: [],
+          transcriptOutcome: "empty",
+          emptyReason: "no_segments_from_stt",
+          transcriptionDiagnostics: { chunksWithText: 0, chunksAttempted: 2 },
+        },
+      ],
+    };
+
+    render(<RecordingsTab {...defaultProps} selectedMeeting={selectedMeeting} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Ponow transkrypcje/i }));
+    expect(defaultProps.retryStoredRecording).toHaveBeenCalledWith(selectedMeeting, selectedMeeting.recordings[0]);
+    expect(screen.getByText(/Chunki z tekstem: 0\/2/i)).toBeInTheDocument();
   });
 
   test("opens meeting picker and filters results", () => {

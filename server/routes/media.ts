@@ -27,6 +27,10 @@ function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStat
     pipelineVersion: diarization?.pipelineVersion || "",
     pipelineGitSha: diarization?.pipelineGitSha || "",
     pipelineBuildTime: diarization?.pipelineBuildTime || "",
+    transcriptionDiagnostics:
+      diarization?.transcriptionDiagnostics && typeof diarization.transcriptionDiagnostics === "object"
+        ? diarization.transcriptionDiagnostics
+        : null,
     segments: Array.isArray(segments) ? segments : [],
     diarization: diarization && typeof diarization === "object" ? diarization : {},
     speakerNames: diarization?.speakerNames || {},

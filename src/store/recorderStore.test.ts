@@ -68,6 +68,29 @@ describe("recorderStore", () => {
     expect(useRecorderStore.getState().pipelineProgressPercent).toBe(8);
   });
 
+  test("queues stored recording for retry without reupload", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    const recordingId = useRecorderStore.getState().retryStoredRecording(
+      { id: "m1", workspaceId: "ws1", title: "Weekly" },
+      { id: "rec_existing", duration: 18, contentType: "audio/mpeg" }
+    );
+
+    expect(recordingId).toBe("rec_existing");
+    expect(useRecorderStore.getState().recordingQueue).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          recordingId: "rec_existing",
+          meetingId: "m1",
+          workspaceId: "ws1",
+          uploaded: true,
+          status: "queued",
+        }),
+      ])
+    );
+    expect(useRecorderStore.getState().recordingMessage).toContain("Ponawiamy transkrypcje");
+    expect(useRecorderStore.getState().analysisStatus).toBe("queued");
+  });
+
   test("retries failed remote item without requiring local audio re-upload", async () => {
     const { useRecorderStore } = await import("./recorderStore");
     mocks.getAudioBlob.mockResolvedValue(null);

@@ -554,7 +554,10 @@ function buildVerificationResult(diarizedSegments: any[], verificationSegments: 
   };
 }
 
-function buildEmptyTranscriptResult(reason: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations") {
+function buildEmptyTranscriptResult(
+  reason: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations",
+  transcriptionDiagnostics: any = {}
+) {
   return {
     providerId: "openai-audio-pipeline",
     providerLabel: "OpenAI STT + diarization",
@@ -562,6 +565,7 @@ function buildEmptyTranscriptResult(reason: "no_segments_from_stt" | "segments_r
     transcriptOutcome: "empty" as const,
     emptyReason: reason,
     userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    transcriptionDiagnostics,
     diarization: {
       speakerNames: {},
       speakerCount: 0,
@@ -570,6 +574,7 @@ function buildEmptyTranscriptResult(reason: "no_segments_from_stt" | "segments_r
       transcriptOutcome: "empty",
       emptyReason: reason,
       userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      transcriptionDiagnostics,
     },
     segments: [],
     speakerNames: {},
@@ -774,8 +779,9 @@ function extractAudioSegmentMemory(filePath: string, start: number, duration: nu
  * Merges verbose_json payloads from multiple chunks into one,
  * adjusting segment timestamps by chunkOffset.
  */
-function mergeChunkedPayloads(payloads: any[]) {
-  const allSegments = payloads.flatMap(({ payload, offsetSeconds }) => {
+function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
+  const safePayloads = Array.isArray(payloads) ? payloads.filter(Boolean) : [];
+  const allSegments = safePayloads.flatMap(({ payload, offsetSeconds }) => {
     const segs = Array.isArray(payload?.segments) ? payload.segments : [];
     return segs.map((s) => ({
       ...s,
@@ -783,7 +789,7 @@ function mergeChunkedPayloads(payloads: any[]) {
       end: Number(s.end || 0) + offsetSeconds,
     }));
   });
-  const allWords = payloads.flatMap(({ payload, offsetSeconds }) => {
+  const allWords = safePayloads.flatMap(({ payload, offsetSeconds }) => {
     const words = getRawWords(payload);
     return words.map((word) => ({
       ...word,
@@ -791,8 +797,25 @@ function mergeChunkedPayloads(payloads: any[]) {
       end: Number(word?.end ?? word?.end_time ?? word?.offset_end ?? word?.start ?? 0) + offsetSeconds,
     }));
   });
-  const fullText = payloads.map(({ payload }) => payload?.text || "").join(" ").trim();
-  return { segments: allSegments, words: allWords, text: fullText };
+  const fullText = safePayloads.map(({ payload }) => payload?.text || "").join(" ").trim();
+  return {
+    segments: allSegments,
+    words: allWords,
+    text: fullText,
+    transcriptionDiagnostics: {
+      usedChunking: true,
+      fileSizeBytes,
+      chunksAttempted: safePayloads.length,
+      chunksTranscribed: safePayloads.filter(({ diagnostics }) => diagnostics?.sentToStt !== false).length,
+      chunksWithSegments: safePayloads.filter(({ diagnostics }) => diagnostics?.hasSegments).length,
+      chunksWithWords: safePayloads.filter(({ diagnostics }) => diagnostics?.hasWords).length,
+      chunksWithText: safePayloads.filter(({ diagnostics }) => diagnostics?.hasText).length,
+      chunksFlaggedSilentByVad: safePayloads.filter(({ diagnostics }) => diagnostics?.vadFlaggedSilent).length,
+      mergedSegmentsCount: allSegments.length,
+      mergedWordsCount: allWords.length,
+      mergedTextLength: fullText.length,
+    },
+  };
 }
 
 
@@ -833,11 +856,6 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
           try { fs.unlinkSync(tmpVad); } catch (_) {}
         }
 
-        if (chunkSpeech && chunkSpeech.length === 0) {
-          if (DEBUG) console.log(`[audioPipeline] Skipping silent chunk at offset: ${currentOffset}s`);
-          return { payload: { segments: [], text: "" }, offsetSeconds: currentOffset };
-        }
-
         const payload = await requestAudioTranscription({
           buffer,
           filename: `chunk_${currentOffset}.wav`,
@@ -845,7 +863,17 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
           fields,
           signal: options.signal,
         });
-        return { payload, offsetSeconds: currentOffset };
+        return {
+          payload,
+          offsetSeconds: currentOffset,
+          diagnostics: {
+            sentToStt: true,
+            vadFlaggedSilent: Boolean(chunkSpeech && chunkSpeech.length === 0),
+            hasSegments: Array.isArray(payload?.segments) && payload.segments.length > 0,
+            hasWords: getRawWords(payload).length > 0,
+            hasText: Boolean(clean(payload?.text || payload?.transcript || payload?.results?.text)),
+          },
+        };
       })());
     }
 
@@ -1051,6 +1079,19 @@ async function transcribeRecording(asset: any, options: any = {}) {
   try {
   const fileSize = fs.statSync(transcribeFilePath).size;
   const isLargeFile = fileSize > MAX_FILE_SIZE_BYTES;
+  let transcriptionDiagnostics: any = {
+    usedChunking: isLargeFile,
+    fileSizeBytes: fileSize,
+    chunksAttempted: 0,
+    chunksTranscribed: 0,
+    chunksWithSegments: 0,
+    chunksWithWords: 0,
+    chunksWithText: 0,
+    chunksFlaggedSilentByVad: 0,
+    mergedSegmentsCount: 0,
+    mergedWordsCount: 0,
+    mergedTextLength: 0,
+  };
   if (isLargeFile) {
     console.log(`[audioPipeline] File size ${(fileSize / 1024 / 1024).toFixed(1)} MB > limit — will process in chunks.`);
   }
@@ -1066,7 +1107,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
     model: VERIFICATION_MODEL,
     language: options.language || AUDIO_LANGUAGE,
     response_format: "verbose_json",
-    timestamp_granularities: ["segment"],
+    timestamp_granularities: ["segment", "word"],
     prompt: contextPrompt,
     temperature: 0,
   };
@@ -1087,7 +1128,11 @@ async function transcribeRecording(asset: any, options: any = {}) {
     try {
       if (isLargeFile) {
         const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields, options);
-        whisperPayload = mergeChunkedPayloads(chunkPayloads);
+        whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
+        transcriptionDiagnostics = {
+          ...transcriptionDiagnostics,
+          ...(whisperPayload?.transcriptionDiagnostics || {}),
+        };
       } else {
         whisperPayload = await requestAudioTranscription({
           filePath: transcribeFilePath,
@@ -1095,6 +1140,17 @@ async function transcribeRecording(asset: any, options: any = {}) {
           fields,
           signal: options.signal,
         });
+        transcriptionDiagnostics = {
+          ...transcriptionDiagnostics,
+          chunksAttempted: 1,
+          chunksTranscribed: 1,
+          chunksWithSegments: Array.isArray(whisperPayload?.segments) && whisperPayload.segments.length > 0 ? 1 : 0,
+          chunksWithWords: getRawWords(whisperPayload).length > 0 ? 1 : 0,
+          chunksWithText: clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text) ? 1 : 0,
+          mergedSegmentsCount: Array.isArray(whisperPayload?.segments) ? whisperPayload.segments.length : 0,
+          mergedWordsCount: getRawWords(whisperPayload).length,
+          mergedTextLength: clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text).length,
+        };
       }
       if (DEBUG) console.log(`[audioPipeline] Transcription succeeded with model: ${model}`);
       break; // success — stop trying fallbacks
@@ -1157,7 +1213,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   });
 
   if (!diarization.segments.length) {
-    return buildEmptyTranscriptResult("no_segments_from_stt");
+    return buildEmptyTranscriptResult("no_segments_from_stt", transcriptionDiagnostics);
   }
 
   // ── Hallucination Filter (VAD-based) ──
@@ -1175,7 +1231,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       console.log(`[audioPipeline] VAD filter removed ${originalCount - diarization.segments.length} hallucinated segment(s).`);
     }
     if (!diarization.segments.length) {
-      return buildEmptyTranscriptResult("segments_removed_by_vad");
+      return buildEmptyTranscriptResult("segments_removed_by_vad", transcriptionDiagnostics);
     }
   }
 
@@ -1244,7 +1300,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       console.log(`[audioPipeline] Hallucination filter removed ${verificationResult.verifiedSegments.length - withoutHallucinations.length} segment(s).`);
     }
     if (!withoutHallucinations.length) {
-      return buildEmptyTranscriptResult("segments_removed_as_hallucinations").segments;
+      return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics).segments;
     }
     const merged = mergeShortSegments(withoutHallucinations);
     const corrected = await correctTranscriptWithLLM(merged, options);
@@ -1252,7 +1308,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   })();
 
   if (!processedSegments.length) {
-    return buildEmptyTranscriptResult("segments_removed_as_hallucinations");
+    return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics);
   }
 
   return {
@@ -1262,6 +1318,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
     transcriptOutcome: "normal",
     emptyReason: "",
     userMessage: "",
+    transcriptionDiagnostics,
     diarization: {
       speakerNames: identifiedNames,
       speakerCount: diarization.speakerCount,
@@ -1270,6 +1327,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       transcriptOutcome: "normal",
       emptyReason: "",
       userMessage: "",
+      transcriptionDiagnostics,
     },
     // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
     segments: processedSegments,

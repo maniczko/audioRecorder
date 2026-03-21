@@ -12,9 +12,23 @@ function formatPipelineDiagnostics(item) {
   const transcriptOutcome = String(item?.transcriptOutcome || "").trim();
   const gitSha = String(item?.pipelineGitSha || "").trim();
   const version = String(item?.pipelineVersion || "").trim();
+  const emptyReason = String(item?.emptyReason || "").trim();
+  const diagnostics = item?.transcriptionDiagnostics && typeof item.transcriptionDiagnostics === "object"
+    ? item.transcriptionDiagnostics
+    : null;
 
   if (transcriptOutcome === "empty") {
     details.push("Pipeline: empty transcript");
+  }
+  if (emptyReason) {
+    details.push(`Reason: ${emptyReason}`);
+  }
+  if (
+    diagnostics &&
+    Number.isFinite(Number(diagnostics.chunksWithText)) &&
+    Number.isFinite(Number(diagnostics.chunksAttempted))
+  ) {
+    details.push(`Chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
   }
   if (gitSha) {
     details.push(`Build: ${gitSha.slice(0, 7)}`);
@@ -31,6 +45,12 @@ function getSelectedMeetingDiagnostics(selectedMeeting) {
   const latest =
     recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) || recordings[0] || null;
   return formatPipelineDiagnostics(latest);
+}
+
+function getLatestRecording(selectedMeeting) {
+  if (!selectedMeeting) return null;
+  const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
+  return recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) || recordings[0] || null;
 }
 
 function RAGSearchPanel({ currentWorkspace }) {
@@ -317,6 +337,7 @@ export default function RecordingsTab(props) {
     pipelineProgressPercent = 0,
     pipelineStageLabel = "",
     retryRecordingQueueItem,
+    retryStoredRecording,
   } = props;
 
   const [isUploading, setIsUploading] = React.useState(false);
@@ -338,6 +359,29 @@ export default function RecordingsTab(props) {
     () => formatPipelineDiagnostics(activeQueueItem),
     [activeQueueItem]
   );
+  const latestSelectedRecording = React.useMemo(
+    () => getLatestRecording(selectedMeeting),
+    [selectedMeeting]
+  );
+  const selectedMeetingHasEmptyTranscript = latestSelectedRecording?.transcriptOutcome === "empty";
+  const selectedMeetingEmptyDiagnostics = React.useMemo(() => {
+    if (!selectedMeetingHasEmptyTranscript) return "";
+    const diagnostics = latestSelectedRecording?.transcriptionDiagnostics || {};
+    const parts = [];
+    if (latestSelectedRecording?.emptyReason) {
+      parts.push(`Powod: ${latestSelectedRecording.emptyReason}`);
+    }
+    if (
+      Number.isFinite(Number(diagnostics.chunksWithText)) &&
+      Number.isFinite(Number(diagnostics.chunksAttempted))
+    ) {
+      parts.push(`Chunki z tekstem: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
+    }
+    if (latestSelectedRecording?.pipelineGitSha) {
+      parts.push(`Build: ${String(latestSelectedRecording.pipelineGitSha).slice(0, 7)}`);
+    }
+    return parts.join(" · ");
+  }, [latestSelectedRecording, selectedMeetingHasEmptyTranscript]);
 
   const handleMainFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -454,6 +498,36 @@ export default function RecordingsTab(props) {
                 }}
               >
                 {activeDiagnostics}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {selectedMeetingHasEmptyTranscript ? (
+        <section className="panel" style={{ marginBottom: "24px", padding: "18px 20px" }}>
+          <div className="panel-header compact" style={{ borderBottom: "none", paddingBottom: 0 }}>
+            <div>
+              <div className="eyebrow">Diagnostyka</div>
+              <h2>Brak wykrytej mowy</h2>
+              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+                Nie wykryto wypowiedzi w nagraniu. Sprawdz audio albo ponow transkrypcje dla wybranego pliku.
+              </p>
+            </div>
+          </div>
+          <div className="panel-body" style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+            {retryStoredRecording ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => retryStoredRecording(selectedMeeting, latestSelectedRecording)}
+              >
+                Ponow transkrypcje
+              </button>
+            ) : null}
+            {selectedMeetingEmptyDiagnostics ? (
+              <div style={{ color: "var(--text-3, #8f97ab)", fontSize: "0.8rem" }}>
+                {selectedMeetingEmptyDiagnostics}
               </div>
             ) : null}
           </div>

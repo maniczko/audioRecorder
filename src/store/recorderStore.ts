@@ -192,6 +192,41 @@ export const useRecorderStore = create<any>()(
         });
       },
 
+      retryStoredRecording: (meeting, recording) => {
+        if (!meeting?.id || !recording?.id) return null;
+        const createdAt = recording.createdAt || new Date().toISOString();
+        const queueItem = {
+          id: recording.id,
+          recordingId: recording.id,
+          meetingId: meeting.id,
+          workspaceId: meeting.workspaceId || "",
+          meetingTitle: meeting.title || "Spotkanie",
+          meetingSnapshot: meeting,
+          mimeType: recording.contentType || recording.mimeType || "audio/mpeg",
+          rawSegments: [],
+          duration: Number(recording.duration) || 0,
+          status: "queued",
+          uploaded: true,
+          attempts: 0,
+          errorMessage: "",
+          createdAt,
+          updatedAt: createdAt,
+          pipelineGitSha: "",
+          pipelineVersion: "",
+          pipelineBuildTime: "",
+          transcriptionDiagnostics: null,
+        };
+        set((state) => ({
+          recordingQueue: updateRecordingQueueItem([...state.recordingQueue, queueItem], recording.id, queueItem),
+          lastQueueErrorKey: "",
+          recordingMessage: "Ponawiamy transkrypcje dla wybranego nagrania.",
+          analysisStatus: "queued",
+          pipelineProgressPercent: 8,
+          pipelineStageLabel: "Ponawiamy transkrypcje z pliku zapisanego na serwerze",
+        }));
+        return recording.id;
+      },
+
       processQueue: async (resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments) => {
         const state = get();
         if (state.isProcessingQueue) return;
@@ -307,6 +342,7 @@ export const useRecorderStore = create<any>()(
             pipelineGitSha: started?.pipelineGitSha || "",
             pipelineVersion: started?.pipelineVersion || "",
             pipelineBuildTime: started?.pipelineBuildTime || "",
+            transcriptionDiagnostics: started?.transcriptionDiagnostics || null,
           });
 
           const startStatus = normalizeRecordingPipelineStatus(started?.pipelineStatus);
@@ -347,6 +383,7 @@ export const useRecorderStore = create<any>()(
                   pipelineGitSha: result?.pipelineGitSha || "",
                   pipelineVersion: result?.pipelineVersion || "",
                   pipelineBuildTime: result?.pipelineBuildTime || "",
+                  transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
                 });
                 const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
                 if (status === "done") {
@@ -356,7 +393,11 @@ export const useRecorderStore = create<any>()(
                 if (status === "failed") {
                   throw new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
                 }
-                get().updateQueueItem(nextItem.recordingId, { status, errorMessage: "" });
+                get().updateQueueItem(nextItem.recordingId, {
+                  status,
+                  errorMessage: "",
+                  transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
+                });
                 const pollingSnapshot = getPipelineSnapshot(status);
                 set({
                   pipelineProgressPercent: pollingSnapshot.progressPercent,
@@ -405,6 +446,7 @@ export const useRecorderStore = create<any>()(
               pipelineGitSha: transcription.pipelineGitSha || "",
               pipelineVersion: transcription.pipelineVersion || "",
               pipelineBuildTime: transcription.pipelineBuildTime || "",
+              transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
               speakerNames: transcription.diarization?.speakerNames || {},
               speakerCount: transcription.diarization?.speakerCount || 0,
               diarizationConfidence: transcription.diarization?.confidence || 0,
@@ -475,6 +517,7 @@ export const useRecorderStore = create<any>()(
             pipelineGitSha: transcription.pipelineGitSha || "",
             pipelineVersion: transcription.pipelineVersion || "",
             pipelineBuildTime: transcription.pipelineBuildTime || "",
+            transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
             storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
             analysis,
           };

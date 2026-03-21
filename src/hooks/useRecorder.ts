@@ -41,6 +41,13 @@ export default function useRecorder({
     userMeetings,
   });
 
+  useEffect(() => {
+    const recordingId = selectedMeeting?.latestRecordingId || selectedMeeting?.recordings?.[0]?.id;
+    if (!recordingId) return;
+    if (hydration.audioUrls?.[recordingId]) return;
+    hydration.hydrateRecordingAudio(recordingId, { priority: true }).catch(() => {});
+  }, [hydration, selectedMeeting]);
+
   // 3. Hardware & Recording Control
   const hardware = useAudioHardware({
     mediaService,
@@ -154,6 +161,10 @@ export default function useRecorder({
     setRecordingMeetingId(null);
   }
 
+  function retryStoredRecording(meeting, recording) {
+    return pipeline.retryStoredRecording?.(meeting, recording);
+  }
+
   return {
     ...hardware,
     ...hydration,
@@ -168,6 +179,7 @@ export default function useRecorder({
     setLiveTranscriptEnabled: mediaService.mode === "remote" ? setLiveTranscriptEnabled : null,
     startRecording: startRecordingWrapper,
     queueRecording,
+    retryStoredRecording,
     resetRecorderState,
   };
 }

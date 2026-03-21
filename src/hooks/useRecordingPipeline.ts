@@ -48,6 +48,7 @@ export default function useRecordingPipeline({
     setPipelineProgress: store.setPipelineProgress,
     setRecordingMessage: store.setRecordingMessage,
     retryRecordingQueueItem: store.retryRecordingQueueItem,
+    retryStoredRecording: store.retryStoredRecording,
     getMeetingQueue,
     updateQueueItem: store.updateQueueItem,
     removeQueueItem: store.removeQueueItem,

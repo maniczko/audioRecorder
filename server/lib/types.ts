@@ -59,6 +59,20 @@ export interface MediaAsset {
   updated_at: string;
 }
 
+export interface TranscriptionDiagnostics {
+  usedChunking?: boolean;
+  fileSizeBytes?: number;
+  chunksAttempted?: number;
+  chunksTranscribed?: number;
+  chunksWithSegments?: number;
+  chunksWithWords?: number;
+  chunksWithText?: number;
+  chunksFlaggedSilentByVad?: number;
+  mergedSegmentsCount?: number;
+  mergedWordsCount?: number;
+  mergedTextLength?: number;
+}
+
 export interface TranscriptionResult {
   pipelineStatus?: string;
   transcriptOutcome?: "normal" | "empty";
@@ -67,6 +81,7 @@ export interface TranscriptionResult {
   pipelineVersion?: string;
   pipelineGitSha?: string;
   pipelineBuildTime?: string;
+  transcriptionDiagnostics?: TranscriptionDiagnostics;
   segments?: any[];
   diarization?: any;
   reviewSummary?: string | null;

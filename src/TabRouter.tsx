@@ -209,6 +209,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         pipelineProgressPercent={recorder.pipelineProgressPercent}
         pipelineStageLabel={recorder.pipelineStageLabel}
         retryRecordingQueueItem={recorder.retryRecordingQueueItem}
+        retryStoredRecording={recorder.retryStoredRecording}
       />
     ) : (
       <StudioTab
@@ -252,10 +253,14 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         pipelineProgressPercent={recorder.pipelineProgressPercent}
         pipelineStageLabel={recorder.pipelineStageLabel}
         setRecordingMessage={recorder.setRecordingMessage}
+        retryStoredRecording={recorder.retryStoredRecording}
         selectedRecording={meetings.selectedRecording}
         displaySpeakerNames={ui.displaySpeakerNames}
         selectedRecordingAudioUrl={ui.selectedRecordingAudioUrl}
         selectedRecordingAudioError={ui.selectedRecordingAudioError}
+        selectedRecordingAudioStatus={ui.selectedRecordingAudioStatus}
+        hydrateRecordingAudio={ui.hydrateRecordingAudio}
+        clearAudioHydrationError={ui.clearAudioHydrationError}
         updateTranscriptSegment={meetings.updateTranscriptSegment}
         assignSpeakerToTranscriptSegments={meetings.assignSpeakerToTranscriptSegments}
         mergeTranscriptSegments={meetings.mergeTranscriptSegments}

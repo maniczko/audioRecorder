@@ -31,6 +31,20 @@ export interface DiarizationResult {
   segments: TranscriptSegment[];
 }
 
+export interface TranscriptionDiagnostics {
+  usedChunking?: boolean;
+  fileSizeBytes?: number;
+  chunksAttempted?: number;
+  chunksTranscribed?: number;
+  chunksWithSegments?: number;
+  chunksWithWords?: number;
+  chunksWithText?: number;
+  chunksFlaggedSilentByVad?: number;
+  mergedSegmentsCount?: number;
+  mergedWordsCount?: number;
+  mergedTextLength?: number;
+}
+
 export interface TranscriptionStatusPayload {
   recordingId: string;
   pipelineStatus: "uploading" | "queued" | "processing" | "diarization" | "review" | "done" | "failed";
@@ -40,6 +54,7 @@ export interface TranscriptionStatusPayload {
   pipelineVersion?: string;
   pipelineGitSha?: string;
   pipelineBuildTime?: string;
+  transcriptionDiagnostics?: TranscriptionDiagnostics;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;

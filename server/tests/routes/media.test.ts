@@ -217,6 +217,55 @@ describe("Media Routes", () => {
     expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
   });
 
+  it("POST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript", async () => {
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: "rec_empty_retry",
+        workspace_id: "ws_1",
+        meeting_id: "m_1",
+        file_path: "/tmp/retry.webm",
+        content_type: "audio/webm",
+        transcription_status: "completed",
+        diarization_json: JSON.stringify({
+          transcriptOutcome: "empty",
+          emptyReason: "no_segments_from_stt",
+          transcriptionDiagnostics: { chunksWithText: 0, chunksAttempted: 2 },
+        }),
+        transcript_json: "[]",
+      })
+      .mockResolvedValueOnce({
+        id: "rec_empty_retry",
+        workspace_id: "ws_1",
+        meeting_id: "m_1",
+        file_path: "/tmp/retry.webm",
+        content_type: "audio/webm",
+        transcription_status: "queued",
+        diarization_json: JSON.stringify({
+          transcriptOutcome: "empty",
+          emptyReason: "no_segments_from_stt",
+          transcriptionDiagnostics: { chunksWithText: 0, chunksAttempted: 2 },
+        }),
+        transcript_json: "[]",
+      });
+    fs.existsSync = vi.fn().mockReturnValue(true) as any;
+
+    const res = await app.request("/media/recordings/rec_empty_retry/retry-transcribe", {
+      method: "POST",
+      headers: { Authorization: "Bearer fake_token" },
+    });
+
+    expect(res.status).toBe(202);
+    const payload = await res.json();
+    expect(payload.transcriptionDiagnostics).toMatchObject({ chunksWithText: 0, chunksAttempted: 2 });
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
+      "rec_empty_retry",
+      expect.objectContaining({
+        workspaceId: "ws_1",
+        meetingId: "m_1",
+      })
+    );
+  });
+
   it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {
     const previewOrigin = "https://preview-app.vercel.app";
     const missingWorkspace = await app.request("/media/recordings/rec_missing/audio", {

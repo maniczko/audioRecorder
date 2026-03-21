@@ -353,6 +353,125 @@ describe("audioPipeline exports", () => {
     });
   });
 
+  it("still sends chunked audio to STT when chunk-level VAD reports silence", async () => {
+    const { EventEmitter } = await import("node:events");
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
+        VERIFICATION_MODEL: "gpt-4o-transcribe",
+        AUDIO_LANGUAGE: "pl",
+        AUDIO_PREPROCESS: false,
+        TRANSCRIPT_CORRECTION: false,
+        FFMPEG_BINARY: "ffmpeg",
+        HF_TOKEN: "",
+        HUGGINGFACE_TOKEN: "",
+        PYTHON_BINARY: "python",
+        VAD_ENABLED: true,
+        WHISPER_PROMPT: "Prompt testowy",
+        DIARIZATION_MODEL: "model",
+        SPEAKER_IDENTIFICATION_MODEL: "model",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../speakerEmbedder.ts", () => ({
+      matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync: vi.fn(() => true),
+          statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+          readFileSync: vi.fn(() => Buffer.from("audio")),
+          writeFileSync: vi.fn(),
+          unlinkSync: vi.fn(),
+        },
+        existsSync: vi.fn(() => true),
+        statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+        writeFileSync: vi.fn(),
+        unlinkSync: vi.fn(),
+      };
+    });
+    vi.doMock("node:child_process", () => {
+      const spawn = vi.fn((command, args) => {
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stdout.setEncoding = vi.fn();
+        const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
+        const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
+        queueMicrotask(() => {
+          if (String(command).includes("python")) {
+            const audioPath = Array.isArray(args) ? String(args[1] || "") : "";
+            if (audioPath.includes("vadsilero_")) {
+              child.stdout.emit("data", "[]");
+            } else {
+              child.stdout.emit("data", JSON.stringify([{ start: 0, end: 2 }]));
+            }
+            child.emit("close", 0);
+            return;
+          }
+          if (offsetValue === 0) {
+            child.stdout.emit("data", Buffer.alloc(1600, 1));
+          } else {
+            child.stdout.emit("data", Buffer.alloc(0));
+          }
+          child.emit("close", 0);
+        });
+        return child;
+      });
+      return { spawn, exec: vi.fn() };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({
+            text: "To jest rozmowa testowa",
+            words: [
+              { word: "To", start: 0, end: 0.2 },
+              { word: "jest", start: 0.21, end: 0.45 },
+              { word: "rozmowa", start: 0.46, end: 0.9 },
+              { word: "testowa", start: 0.91, end: 1.3 },
+            ],
+          })
+        ),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: JSON.stringify({ segments: [] }) } }],
+        }),
+      });
+
+    const result = await pipeline.transcribeRecording({
+      id: "rec_large_vad",
+      file_path: "/tmp/audio-large.wav",
+      content_type: "audio/wav",
+    });
+
+    expect((global.fetch as any).mock.calls[0][0]).toContain("/audio/transcriptions");
+    expect(result.pipelineStatus).toBe("completed");
+    expect(result.transcriptOutcome).toBe("normal");
+    expect(result.segments.length).toBeGreaterThan(0);
+    expect(result.transcriptionDiagnostics).toMatchObject({
+      usedChunking: true,
+      chunksFlaggedSilentByVad: 1,
+      chunksAttempted: 1,
+      chunksWithWords: 1,
+    });
+  });
+
   it("extracts speaker audio clips, normalizes audio and generates voice coaching with mocked exec/fs", async () => {
     const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => callback?.(null, "", ""));
     const renameSync = vi.fn();

@@ -77,6 +77,9 @@ export default function useUI() {
   const selectedRecordingAudioError = meetings.selectedRecording
     ? recorder.audioHydrationErrors[meetings.selectedRecording.id]
     : "";
+  const selectedRecordingAudioStatus = meetings.selectedRecording
+    ? recorder.audioHydrationStatusByRecordingId?.[meetings.selectedRecording.id] || "idle"
+    : "idle";
 
   const calendarTasks = useMemo(
     () => meetings.meetingTasks.filter((task: any) => Boolean(task.dueDate)),
@@ -240,6 +243,7 @@ export default function useUI() {
     studioAnalysis,
     selectedRecordingAudioUrl,
     selectedRecordingAudioError,
+    selectedRecordingAudioStatus,
     calendarTasks,
     calendarEntries,
     upcomingReminders,
@@ -256,5 +260,7 @@ export default function useUI() {
     activateNotification,
     switchWorkspace,
     logout,
+    hydrateRecordingAudio: recorder.hydrateRecordingAudio,
+    clearAudioHydrationError: recorder.clearAudioHydrationError,
   };
 }

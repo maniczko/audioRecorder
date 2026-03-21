@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import StudioMeetingView from "./StudioMeetingView";
 import React from "react";
 import { vi } from "vitest";
@@ -41,6 +41,9 @@ describe("StudioMeetingView", () => {
     displaySpeakerNames: {},
     selectedRecordingAudioUrl: null,
     selectedRecordingAudioError: "",
+    selectedRecordingAudioStatus: "idle",
+    hydrateRecordingAudio: vi.fn(() => Promise.resolve(null)),
+    clearAudioHydrationError: vi.fn(),
     selectedRecordingId: null,
     setSelectedRecordingId: vi.fn(),
     exportTranscript: vi.fn(),
@@ -62,6 +65,7 @@ describe("StudioMeetingView", () => {
     saveMeeting: vi.fn(),
     renameSpeaker: vi.fn(),
     updateTranscriptSegment: vi.fn(),
+    retryStoredRecording: vi.fn(),
     briefOpen: true,
     setBriefOpen: vi.fn(),
     setActiveTab: vi.fn(),
@@ -76,6 +80,67 @@ describe("StudioMeetingView", () => {
     const props = { ...defaultProps, recordingMessage: "Test Message", analysisStatus: "error" };
     render(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
+  });
+
+  test("renders player shell while selected recording audio is loading", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+        selectedRecordingAudioStatus="loading"
+      />
+    );
+
+    expect(screen.getByTestId("player-loading-audio")).toBeInTheDocument();
+    expect(screen.getByText(/Ladowanie audio/i)).toBeInTheDocument();
+  });
+
+  test("shows empty transcript banner and retry action", () => {
+    const retryStoredRecording = vi.fn();
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{
+          id: "rec-empty",
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: "empty",
+          emptyReason: "no_segments_from_stt",
+          pipelineGitSha: "abcdef1",
+          transcriptionDiagnostics: {
+            usedChunking: true,
+            chunksWithText: 0,
+            chunksAttempted: 2,
+          },
+        }}
+        retryStoredRecording={retryStoredRecording}
+      />
+    );
+
+    expect(screen.getByTestId("empty-transcript-banner")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: /Ponow transkrypcje/i })[0]);
+    expect(retryStoredRecording).toHaveBeenCalled();
+    expect(screen.getByText(/Build: abcdef1/i)).toBeInTheDocument();
+  });
+
+  test("shows summary fallback for empty transcript", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        studioAnalysis={{ summary: "", decisions: [], actionItems: [] }}
+        selectedRecording={{
+          id: "rec-empty",
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: "empty",
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Podsumowanie spotkania/i })[0]);
+    expect(
+      screen.getByText(/Nie wykryto wypowiedzi w nagraniu\. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem\./i)
+    ).toBeInTheDocument();
   });
 
   test("renders empty state when no meeting selected", () => {

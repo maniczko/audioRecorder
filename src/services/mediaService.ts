@@ -134,6 +134,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        transcriptionDiagnostics:
+          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
+            ? response.transcriptionDiagnostics
+            : null,
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };
@@ -155,6 +159,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        transcriptionDiagnostics:
+          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
+            ? response.transcriptionDiagnostics
+            : null,
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };
@@ -176,6 +184,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        transcriptionDiagnostics:
+          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
+            ? response.transcriptionDiagnostics
+            : null,
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };

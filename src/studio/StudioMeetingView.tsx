@@ -206,6 +206,27 @@ VoiceSpeakerStats.propTypes = {
   recordingId: PropTypes.string,
 };
 
+function formatEmptyTranscriptDiagnostics(recording) {
+  if (!recording || recording.transcriptOutcome !== "empty") return "";
+  const details = [];
+  const diagnostics = recording.transcriptionDiagnostics || {};
+
+  if (recording.pipelineGitSha) {
+    details.push(`Build: ${String(recording.pipelineGitSha).slice(0, 7)}`);
+  }
+  if (diagnostics.usedChunking) {
+    details.push("Chunking: tak");
+  }
+  if (Number.isFinite(Number(diagnostics.chunksWithText)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
+    details.push(`STT chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
+  }
+  if (recording.emptyReason) {
+    details.push(`Reason: ${recording.emptyReason}`);
+  }
+
+  return details.join(" · ");
+}
+
 export default function StudioMeetingView({
   selectedMeeting,
   displayRecording,
@@ -231,6 +252,9 @@ export default function StudioMeetingView({
   displaySpeakerNames,
   selectedRecordingAudioUrl,
   selectedRecordingAudioError,
+  selectedRecordingAudioStatus,
+  hydrateRecordingAudio,
+  clearAudioHydrationError,
   selectedRecordingId,
   setSelectedRecordingId,
   exportTranscript,
@@ -252,6 +276,7 @@ export default function StudioMeetingView({
   saveMeeting,
   renameSpeaker,
   updateTranscriptSegment,
+  retryStoredRecording,
   briefOpen,
   setBriefOpen,
   setActiveTab,
@@ -290,6 +315,11 @@ export default function StudioMeetingView({
 
   const analysisStatus = selectedMeetingQueue?.status;
   const isQueued = ["queued", "uploading", "processing"].includes(analysisStatus) && !isRecording;
+  const isEmptyTranscript = selectedRecording?.transcriptOutcome === "empty";
+  const emptyTranscriptDiagnostics = useMemo(
+    () => formatEmptyTranscriptDiagnostics(selectedRecording),
+    [selectedRecording]
+  );
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
     : "Nagranie w kolejce…";
@@ -408,6 +438,34 @@ export default function StudioMeetingView({
       audio.removeEventListener("ended", onPlayPause);
     };
   }, [selectedRecordingAudioUrl]);
+
+  useEffect(() => {
+    if (!selectedRecording?.id || !hydrateRecordingAudio) return;
+    if (selectedRecordingAudioUrl) return;
+    if (selectedRecordingAudioStatus === "loading") return;
+    hydrateRecordingAudio(selectedRecording.id, { priority: true }).catch(() => {});
+  }, [
+    hydrateRecordingAudio,
+    selectedRecording?.id,
+    selectedRecordingAudioStatus,
+    selectedRecordingAudioUrl,
+  ]);
+
+  const shouldShowPlayerBar =
+    isRecording ||
+    Boolean(selectedRecording) ||
+    isQueued ||
+    analysisStatus === "error" ||
+    analysisStatus === "failed";
+  const playerState = isRecording
+    ? "recording"
+    : selectedRecording && !selectedRecordingAudioUrl
+      ? selectedRecordingAudioStatus === "error"
+        ? "audio-error"
+        : "loading-audio"
+      : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl
+        ? "queued"
+        : "playback-ready";
 
 
 
@@ -694,6 +752,25 @@ export default function StudioMeetingView({
       ) : null}
 
       {/* ── Brief panels ── */}
+      {isEmptyTranscript ? (
+        <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span>Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz audio w odtwarzaczu.</span>
+            {emptyTranscriptDiagnostics ? (
+              <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{emptyTranscriptDiagnostics}</span>
+            ) : null}
+          </div>
+          {retryStoredRecording && selectedMeeting && selectedRecording ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+            >
+              Ponow transkrypcje
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="ff-panels">
         {studioAnalysisTab === 'summary' && (
           <section className="panel studio-analysis-summary-panel">
@@ -728,6 +805,23 @@ export default function StudioMeetingView({
                     </ul>
                   </div>
                 )}
+              </div>
+            ) : isEmptyTranscript ? (
+              <div className="panel-body">
+                <div className="analysis-summary-text">
+                  Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.
+                </div>
+                {retryStoredRecording && selectedMeeting && selectedRecording ? (
+                  <div style={{ marginTop: "16px" }}>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+                    >
+                      Ponow transkrypcje
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="panel-body">
@@ -1189,9 +1283,9 @@ export default function StudioMeetingView({
       {/* ═══════════════════════════════════════════
            PLAYER BAR — ALWAYS visible — at bottom
           ═══════════════════════════════════════════ */}
-      {(isRecording || selectedRecordingAudioUrl || isQueued || analysisStatus === "error" || analysisStatus === "failed") && (
+      {shouldShowPlayerBar && (
         <div className="ff-player-bar">
-          {isRecording ? (
+          {playerState === "recording" ? (
             <>
               <div className="ff-rec-mini-bars">
                 {visualBars.slice(-14).map((h, i) => (
@@ -1200,7 +1294,7 @@ export default function StudioMeetingView({
               </div>
               <span className="ff-player-time">{formatDuration(elapsed)}</span>
             </>
-          ) : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl ? (
+          ) : playerState === "queued" ? (
             <div className="ff-player-status-wrap">
               <RecordingPipelineStatus 
                 status={analysisStatus === "error" || analysisStatus === "failed" || activeQueueItem?.status === "failed" ? "failed" : (activeQueueItem?.status || "processing")}
@@ -1210,6 +1304,29 @@ export default function StudioMeetingView({
                 progressPercent={pipelineProgressPercent}
                 stageLabel={pipelineStageLabel}
               />
+            </div>
+          ) : playerState === "loading-audio" ? (
+            <div className="ff-player-status-wrap" data-testid="player-loading-audio">
+              <span className="ff-player-time">Ladowanie audio...</span>
+            </div>
+          ) : playerState === "audio-error" ? (
+            <div className="ff-player-status-wrap" data-testid="player-audio-error">
+              <span className="ff-player-time">Nie udalo sie zaladowac audio.</span>
+              {selectedRecordingAudioError ? (
+                <span className="soft-copy" style={{ fontSize: "0.8rem" }}>{selectedRecordingAudioError}</span>
+              ) : null}
+              {selectedRecording?.id && hydrateRecordingAudio ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => {
+                    clearAudioHydrationError?.(selectedRecording.id);
+                    hydrateRecordingAudio(selectedRecording.id, { force: true, priority: true }).catch(() => {});
+                  }}
+                >
+                  Sprobuj ponownie
+                </button>
+              ) : null}
             </div>
           ) : (
             <>
@@ -1299,6 +1416,9 @@ StudioMeetingView.propTypes = {
   displaySpeakerNames: PropTypes.object,
   selectedRecordingAudioUrl: PropTypes.string,
   selectedRecordingAudioError: PropTypes.string,
+  selectedRecordingAudioStatus: PropTypes.string,
+  hydrateRecordingAudio: PropTypes.func,
+  clearAudioHydrationError: PropTypes.func,
   selectedRecordingId: PropTypes.string,
   setSelectedRecordingId: PropTypes.func,
   exportTranscript: PropTypes.func,
@@ -1318,5 +1438,6 @@ StudioMeetingView.propTypes = {
   meetingDraft: PropTypes.object,
   renameSpeaker: PropTypes.func,
   updateTranscriptSegment: PropTypes.func,
+  retryStoredRecording: PropTypes.func,
   setActiveTab: PropTypes.func,
 };
