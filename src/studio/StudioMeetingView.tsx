@@ -264,7 +264,7 @@ export default function StudioMeetingView({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState("");
 
-  const [studioAnalysisTab, setStudioAnalysisTab] = useState("summary"); // default to summary based on user preference
+  const [studioAnalysisTab, setStudioAnalysisTab] = useState("tasks"); // default to tasks based on user preference
 
   const [transcriptSearch, setTranscriptSearch] = useState("");
   // Speaker picker dropdown — tracks which segment's dropdown is open

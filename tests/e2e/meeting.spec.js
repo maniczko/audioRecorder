@@ -68,4 +68,34 @@ test.describe("Studio — tworzenie i edycja spotkania", () => {
 
     await expect(titleInput).toHaveValue("");
   });
+  // ── Create meeting — verify form closes on cancel ─────────────────────────
+  test("klikniecie Anuluj zamyka boczny formularz", async ({ page }) => {
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+
+    // The sidebar meeting form should be visible
+    await expect(page.locator(".workspace-sidebar")).toBeVisible();
+
+    // Click cancel
+    await page.getByRole('button', { name: 'Anuluj' }).click();
+
+    // The sidebar meeting form should be hidden
+    await expect(page.locator(".workspace-sidebar")).toBeHidden();
+  });
+
+  // ── Create meeting — verify form closes on save ─────────────────────────
+  test("zapisanie spotkania zamyka boczny formularz", async ({ page }) => {
+    const meetingTitle = `E2E Pomyślne Zamknięcie ${Date.now()}`;
+
+    await page.getByRole('button', { name: 'Przygotuj brief' }).click();
+    await expect(page.locator(".workspace-sidebar")).toBeVisible();
+
+    await page.locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']").fill(meetingTitle);
+    
+    // Save
+    await page.locator(".brief-actions .primary-button").click();
+
+    // Form should hide and header text should appear
+    await expect(page.locator(".workspace-sidebar")).toBeHidden();
+    await expect(page.locator(".ff-header-title")).toHaveText(meetingTitle);
+  });
 });
