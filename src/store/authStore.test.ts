@@ -1,10 +1,43 @@
-import { beforeEach, describe, expect, test } from "vitest";
-import { useAuthStore } from "./authStore";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { STORAGE_KEYS } from "../lib/storage";
 
-const initialState = useAuthStore.getState();
+const mocks = vi.hoisted(() => ({
+  registerMock: vi.fn(),
+  loginMock: vi.fn(),
+}));
+
+async function loadStores() {
+  vi.resetModules();
+  vi.doMock("../services/authService", () => ({
+    createAuthService: () => ({
+      register: mocks.registerMock,
+      login: mocks.loginMock,
+      requestPasswordReset: vi.fn(),
+      resetPassword: vi.fn(),
+      updateProfile: vi.fn(),
+      changePassword: vi.fn(),
+      signInWithGoogle: vi.fn(),
+    }),
+  }));
+
+  const [{ useAuthStore }, { useWorkspaceStore }] = await Promise.all([
+    import("./authStore"),
+    import("./workspaceStore"),
+  ]);
+
+  return { useAuthStore, useWorkspaceStore };
+}
 
 describe("authStore", () => {
   beforeEach(() => {
+    localStorage.clear();
+    mocks.registerMock.mockReset();
+    mocks.loginMock.mockReset();
+  });
+
+  test("setAuthDraft supports updater functions without losing previous fields", async () => {
+    const { useAuthStore } = await loadStores();
+    const initialState = useAuthStore.getState();
     useAuthStore.setState({
       ...initialState,
       authDraft: {
@@ -24,9 +57,6 @@ describe("authStore", () => {
         confirmPassword: "",
       },
     });
-  });
-
-  test("setAuthDraft supports updater functions without losing previous fields", () => {
     const { setAuthDraft } = useAuthStore.getState();
 
     setAuthDraft((previous) => ({ ...previous, email: "anna@example.com" }));
@@ -39,7 +69,28 @@ describe("authStore", () => {
     });
   });
 
-  test("setResetDraft supports updater functions", () => {
+  test("setResetDraft supports updater functions", async () => {
+    const { useAuthStore } = await loadStores();
+    const initialState = useAuthStore.getState();
+    useAuthStore.setState({
+      ...initialState,
+      authDraft: {
+        name: "",
+        role: "",
+        company: "",
+        email: "",
+        password: "",
+        workspaceMode: "create",
+        workspaceName: "",
+        workspaceCode: "",
+      },
+      resetDraft: {
+        email: "",
+        code: "",
+        newPassword: "",
+        confirmPassword: "",
+      },
+    });
     const { setResetDraft } = useAuthStore.getState();
 
     setResetDraft((previous) => ({ ...previous, email: "anna@example.com" }));
@@ -50,6 +101,56 @@ describe("authStore", () => {
       code: "123456",
       newPassword: "",
       confirmPassword: "",
+    });
+  });
+
+  test("submitAuth persists the remote session token for follow-up api requests", async () => {
+    const { useAuthStore, useWorkspaceStore } = await loadStores();
+    const initialState = useAuthStore.getState();
+    useAuthStore.setState({
+      ...initialState,
+      authMode: "login",
+      authDraft: {
+        name: "",
+        role: "",
+        company: "",
+        email: "iwo@example.com",
+        password: "secret-123",
+        workspaceMode: "create",
+        workspaceName: "",
+        workspaceCode: "",
+      },
+      resetDraft: {
+        email: "",
+        code: "",
+        newPassword: "",
+        confirmPassword: "",
+      },
+    });
+    useWorkspaceStore.setState({
+      users: [],
+      workspaces: [],
+      session: null,
+      isHydratingSession: false,
+      sessionError: "",
+    });
+    mocks.loginMock.mockResolvedValue({
+      user: { id: "u1", email: "iwo@example.com" },
+      workspaceId: "ws1",
+      token: "token-remote-1",
+    });
+
+    await useAuthStore.getState().submitAuth();
+
+    expect(useWorkspaceStore.getState().session).toEqual({
+      userId: "u1",
+      workspaceId: "ws1",
+      token: "token-remote-1",
+    });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toEqual({
+      userId: "u1",
+      workspaceId: "ws1",
+      token: "token-remote-1",
     });
   });
 });
