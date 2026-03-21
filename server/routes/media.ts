@@ -27,6 +27,10 @@ function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStat
     pipelineVersion: diarization?.pipelineVersion || "",
     pipelineGitSha: diarization?.pipelineGitSha || "",
     pipelineBuildTime: diarization?.pipelineBuildTime || "",
+    audioQuality:
+      diarization?.audioQuality && typeof diarization.audioQuality === "object"
+        ? diarization.audioQuality
+        : null,
     transcriptionDiagnostics:
       diarization?.transcriptionDiagnostics && typeof diarization.transcriptionDiagnostics === "object"
         ? diarization.transcriptionDiagnostics
@@ -68,6 +72,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         buffer: Buffer.from(buffer),
         createdByUserId: session.user_id,
     });
+    let audioQuality = null;
+    try {
+      audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
+        contentType: asset.content_type,
+        signal: c.req.raw.signal,
+      });
+      await transcriptionService.saveAudioQualityDiagnostics(recordingId, audioQuality);
+    } catch (error: any) {
+      console.warn(`[mediaRoutes] Audio quality analysis failed for ${recordingId}:`, error?.message || error);
+    }
     
     // R04 Metrics
     const { logger } = await import("../logger.ts");
@@ -78,7 +92,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
        durationMs: (performance.now() - uploadStart).toFixed(2)
     });
 
-    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes }, 200);
+    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality }, 200);
   });
 
   router.get("/recordings/:recordingId/audio", async (c) => {

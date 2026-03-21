@@ -1116,7 +1116,13 @@ export default function TranscriptPanel({
         ) : (
           <div className="empty-panel large">
             <strong>Brak transkrypcji</strong>
-            <span>Uruchom nagrywanie, aby przypiac pierwsza rozmowe.</span>
+            <span>
+              {selectedRecording?.transcriptOutcome === "empty"
+                ? "Nie wykryto wypowiedzi w tym nagraniu."
+                : selectedRecording?.pipelineStatus === "failed"
+                  ? "Transkrypcja nie powiodla sie dla tego nagrania."
+                  : "Uruchom nagrywanie, aby przypiac pierwsza rozmowe."}
+            </span>
           </div>
         )}
       </div>

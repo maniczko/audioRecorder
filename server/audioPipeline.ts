@@ -19,7 +19,9 @@ const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
 const VERIFICATION_MODEL = config.VERIFICATION_MODEL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
-const CHUNK_DURATION_SECONDS = 1200; // 20-minute chunks for large-file splitting
+const PCM_BYTES_PER_SECOND = 16000 * 1 * 2;
+const SAFE_STT_CHUNK_TARGET_BYTES = 18 * 1024 * 1024;
+const CHUNK_DURATION_SECONDS = 540; // ~17.3 MB wav@16k mono, keeps chunks below the STT limit
 
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
@@ -77,6 +79,21 @@ function average(values) {
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function deriveFfprobeBinary() {
+  if (/ffmpeg(?:\.exe)?$/i.test(String(FFMPEG_BINARY || ""))) {
+    return String(FFMPEG_BINARY).replace(/ffmpeg((?:\.exe)?)$/i, "ffprobe$1");
+  }
+  return "ffprobe";
+}
+
+function parseDbNumber(raw, fallback = 0) {
+  if (raw == null || raw === "") return fallback;
+  const match = String(raw).match(/-?\d+(?:\.\d+)?/);
+  if (!match) return fallback;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function normalizeText(value) {
@@ -560,7 +577,8 @@ function buildEmptyTranscriptResult(
     | "segments_removed_by_vad"
     | "segments_removed_as_hallucinations"
     | "all_chunks_discarded_as_too_small",
-  transcriptionDiagnostics: any = {}
+  transcriptionDiagnostics: any = {},
+  audioQuality: any = null
 ) {
   return {
     providerId: "openai-audio-pipeline",
@@ -569,6 +587,7 @@ function buildEmptyTranscriptResult(
     transcriptOutcome: "empty" as const,
     emptyReason: reason,
     userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+    audioQuality,
     transcriptionDiagnostics,
     diarization: {
       speakerNames: {},
@@ -578,6 +597,7 @@ function buildEmptyTranscriptResult(
       transcriptOutcome: "empty",
       emptyReason: reason,
       userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      audioQuality,
       transcriptionDiagnostics,
     },
     segments: [],
@@ -851,7 +871,7 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
   const payloads = [];
-  const CONCURRENCY_LIMIT = 4;
+  const CONCURRENCY_LIMIT = 2;
   let offsetSeconds = 0;
   let hasMore = true;
 
@@ -928,7 +948,10 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
     const results = await Promise.all(batchPromises);
     payloads.push(...results.filter(Boolean));
     
-    notify(Math.min(60, 40 + payloads.length * 5), `OpenAI Batch AI — pobrano ${payloads.length} paczek audio (20 min każda)...`);
+    notify(
+      Math.min(60, 40 + payloads.length * 5),
+      `OpenAI Batch AI — pobrano ${payloads.length} paczek audio (${Math.round(CHUNK_DURATION_SECONDS / 60)} min każda)...`
+    );
 
     // Jeśli FFmpeg zwrócił paczkę mniejszą od limitu (null), przerywamy pętlę.
     if (results.some((result) => result?.diagnostics?.discardedAsTooSmall)) {
@@ -939,17 +962,129 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
   return payloads;
 }
 
-async function preprocessAudio(filePath: string, signal: any) {
+function resolveStoredAudioQuality(asset: any) {
+  try {
+    const payload = JSON.parse(asset?.diarization_json || "{}");
+    return payload?.audioQuality && typeof payload.audioQuality === "object" ? payload.audioQuality : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function analyzeAudioQuality(filePath: string, options: any = {}) {
+  const ffprobeBinary = deriveFfprobeBinary();
+  let codec = "";
+  let sampleRateHz = 0;
+  let channels = 0;
+  let bitrateKbps = 0;
+  let durationSeconds = 0;
+  let meanVolumeDb = -60;
+  let maxVolumeDb = -60;
+  let silenceRatio = 1;
+
+  try {
+    const { stdout } = await execPromise(
+      `"${ffprobeBinary}" -v quiet -print_format json -show_streams -show_format "${filePath}"`,
+      { timeout: 30000, signal: options.signal }
+    );
+    const parsed = JSON.parse(String(stdout || "{}"));
+    const audioStream =
+      (Array.isArray(parsed?.streams) ? parsed.streams : []).find((stream) => stream?.codec_type === "audio")
+      || (Array.isArray(parsed?.streams) ? parsed.streams[0] : null)
+      || {};
+    codec = clean(audioStream?.codec_name || parsed?.format?.format_name || "");
+    sampleRateHz = parseDbNumber(audioStream?.sample_rate, 0);
+    channels = parseDbNumber(audioStream?.channels, 0);
+    bitrateKbps = Math.round(parseDbNumber(audioStream?.bit_rate || parsed?.format?.bit_rate, 0) / 1000);
+    durationSeconds = parseDbNumber(audioStream?.duration || parsed?.format?.duration, 0);
+  } catch (error: any) {
+    if (!options.signal?.aborted) {
+      console.warn("[audioPipeline] ffprobe audio analysis failed:", error?.message || error);
+    }
+  }
+
+  try {
+    const { stderr } = await execPromise(
+      `"${FFMPEG_BINARY}" -i "${filePath}" -af "volumedetect" -f null -`,
+      { timeout: 45000, signal: options.signal }
+    );
+    meanVolumeDb = parseDbNumber(String(stderr || "").match(/mean_volume:\s*([-\d.]+)\s*dB/i)?.[1], meanVolumeDb);
+    maxVolumeDb = parseDbNumber(String(stderr || "").match(/max_volume:\s*([-\d.]+)\s*dB/i)?.[1], maxVolumeDb);
+  } catch (error: any) {
+    if (!options.signal?.aborted) {
+      console.warn("[audioPipeline] volumedetect analysis failed:", error?.message || error);
+    }
+  }
+
+  try {
+    const { stderr } = await execPromise(
+      `"${FFMPEG_BINARY}" -i "${filePath}" -af "silencedetect=noise=-35dB:d=0.5" -f null -`,
+      { timeout: 45000, signal: options.signal }
+    );
+    const silenceDurations = String(stderr || "").match(/silence_duration:\s*([0-9.]+)/gi) || [];
+    const totalSilence = silenceDurations.reduce((sum, entry) => sum + parseDbNumber(entry, 0), 0);
+    silenceRatio =
+      durationSeconds > 0
+        ? clamp(totalSilence / durationSeconds, 0, 1)
+        : silenceRatio;
+  } catch (error: any) {
+    if (!options.signal?.aborted) {
+      console.warn("[audioPipeline] silencedetect analysis failed:", error?.message || error);
+    }
+  }
+
+  let qualityScore = 100;
+  if (sampleRateHz > 0 && sampleRateHz < 16000) qualityScore -= 25;
+  if (meanVolumeDb < -32) qualityScore -= 25;
+  else if (meanVolumeDb < -24) qualityScore -= 15;
+  if (silenceRatio > 0.75) qualityScore -= 25;
+  else if (silenceRatio > 0.5) qualityScore -= 15;
+  qualityScore = clamp(Math.round(qualityScore), 0, 100);
+
+  let qualityLabel: "good" | "fair" | "poor" = "good";
+  if ((sampleRateHz > 0 && sampleRateHz < 12000) || meanVolumeDb < -32 || silenceRatio > 0.75) {
+    qualityLabel = "poor";
+  } else if ((sampleRateHz > 0 && sampleRateHz < 16000) || meanVolumeDb < -24 || silenceRatio > 0.5) {
+    qualityLabel = "fair";
+  }
+
+  const contentType = String(options.contentType || "").toLowerCase();
+  const enhancementRecommended =
+    qualityLabel !== "good" ||
+    ["audio/mpeg", "audio/mp4", "audio/ogg"].includes(contentType);
+
+  return {
+    codec,
+    sampleRateHz: sampleRateHz || undefined,
+    channels: channels || undefined,
+    bitrateKbps: bitrateKbps || undefined,
+    durationSeconds: durationSeconds || undefined,
+    meanVolumeDb,
+    maxVolumeDb,
+    silenceRatio,
+    qualityScore,
+    qualityLabel,
+    enhancementRecommended,
+    enhancementApplied: false,
+    enhancementProfile: "none",
+  };
+}
+
+async function preprocessAudio(filePath: string, signal: any, profile: "standard" | "enhanced" = "standard") {
   if (!AUDIO_PREPROCESS) return null;
   const tmpPath = `${filePath}.prep.wav`;
+  const filter =
+    profile === "enhanced"
+      ? "highpass=f=80,lowpass=f=8000,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1"
+      : "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr";
   try {
     await execPromise(
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr" -ar 16000 -ac 1 "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "${filter}" -ar 16000 -ac 1 "${tmpPath}"`,
       { timeout: 180000, signal }
     );
     return tmpPath;
   } catch (err) {
-    if (!signal?.aborted) console.warn("[audioPipeline] Audio pre-processing failed, using original file.", err.message);
+    if (!signal?.aborted) console.warn(`[audioPipeline] Audio pre-processing failed for profile ${profile}, using original file.`, err.message);
     try { fs.unlinkSync(tmpPath); } catch (_) {}
     return null;
   }
@@ -1109,13 +1244,44 @@ async function diarizeFromTranscript(segments: any[]) {
   }
 }
 
-async function transcribeRecording(asset: any, options: any = {}) {
+function buildAudioQualityForAttempt(audioQuality: any, profile: "standard" | "enhanced", enhancementApplied = false) {
+  if (!audioQuality || typeof audioQuality !== "object") {
+    return null;
+  }
+
+  return {
+    ...audioQuality,
+    enhancementApplied,
+    enhancementProfile: enhancementApplied ? profile : "none",
+  };
+}
+
+function shouldRetryWithEnhancedProfile(profile: "standard" | "enhanced", attemptCount: number, outcome: any) {
+  if (profile !== "standard" || attemptCount >= 2) {
+    return false;
+  }
+
+  if (outcome?.transcriptOutcome === "empty") {
+    return true;
+  }
+
+  return Number(outcome?.transcriptionDiagnostics?.chunksFailedAtStt || 0) > 0;
+}
+
+async function runTranscriptionAttempt(
+  asset: any,
+  options: any = {},
+  baseAudioQuality: any = null,
+  profile: "standard" | "enhanced" = "standard",
+  attemptCount: 1 | 2 = 1
+) {
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
   notify(10, "Wyciąganie audio do pamięci podręcznej...");
-  const prepPath = await preprocessAudio(asset.file_path, options.signal);
+  const prepPath = await preprocessAudio(asset.file_path, options.signal, profile);
   const transcribeFilePath = prepPath || asset.file_path;
   const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
+  const attemptAudioQuality = buildAudioQualityForAttempt(baseAudioQuality, profile, Boolean(prepPath));
 
   notify(30, "Silero VAD - optymalizacja ciszy...");
   const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
@@ -1123,10 +1289,31 @@ async function transcribeRecording(asset: any, options: any = {}) {
     console.log(`[audioPipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
   }
 
+  let transcriptionDiagnostics: any = {
+    usedChunking: false,
+    fileSizeBytes: 0,
+    chunksAttempted: 0,
+    chunksExtracted: 0,
+    chunksDiscardedAsTooSmall: 0,
+    chunksSentToStt: 0,
+    chunksFailedAtStt: 0,
+    chunksReturnedEmptyPayload: 0,
+    chunksWithSegments: 0,
+    chunksWithWords: 0,
+    chunksWithText: 0,
+    chunksFlaggedSilentByVad: 0,
+    mergedSegmentsCount: 0,
+    mergedWordsCount: 0,
+    mergedTextLength: 0,
+    lastChunkErrorMessage: "",
+    transcriptionProfileUsed: profile,
+    transcriptionAttemptCount: attemptCount,
+  };
+
   try {
   const fileSize = fs.statSync(transcribeFilePath).size;
   const isLargeFile = fileSize > MAX_FILE_SIZE_BYTES;
-  let transcriptionDiagnostics: any = {
+  transcriptionDiagnostics = {
     usedChunking: isLargeFile,
     fileSizeBytes: fileSize,
     chunksAttempted: 0,
@@ -1143,6 +1330,8 @@ async function transcribeRecording(asset: any, options: any = {}) {
     mergedWordsCount: 0,
     mergedTextLength: 0,
     lastChunkErrorMessage: "",
+    transcriptionProfileUsed: profile,
+    transcriptionAttemptCount: attemptCount,
   };
   if (isLargeFile) {
     console.log(`[audioPipeline] File size ${(fileSize / 1024 / 1024).toFixed(1)} MB > limit — will process in chunks.`);
@@ -1191,6 +1380,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
         if (sentToStt > 0 && failedAtStt === sentToStt) {
           const error: any = new Error("Transkrypcja STT nie powiodla sie dla zadnego modelu.");
           error.transcriptionDiagnostics = transcriptionDiagnostics;
+          error.audioQuality = attemptAudioQuality;
           throw error;
         }
       } else {
@@ -1249,6 +1439,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
         ? lastTranscriptionError
         : new Error("Transkrypcja STT nie powiodla sie dla zadnego modelu.");
     error.transcriptionDiagnostics = transcriptionDiagnostics;
+    error.audioQuality = attemptAudioQuality;
     throw error;
   }
   
@@ -1309,9 +1500,9 @@ async function transcribeRecording(asset: any, options: any = {}) {
       Number(transcriptionDiagnostics.chunksDiscardedAsTooSmall || 0) > 0 &&
       Number(transcriptionDiagnostics.chunksSentToStt || 0) === 0
     ) {
-      return buildEmptyTranscriptResult("all_chunks_discarded_as_too_small", transcriptionDiagnostics);
+      return buildEmptyTranscriptResult("all_chunks_discarded_as_too_small", transcriptionDiagnostics, attemptAudioQuality);
     }
-    return buildEmptyTranscriptResult("no_segments_from_stt", transcriptionDiagnostics);
+    return buildEmptyTranscriptResult("no_segments_from_stt", transcriptionDiagnostics, attemptAudioQuality);
   }
 
   // ── Hallucination Filter (VAD-based) ──
@@ -1329,7 +1520,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       console.log(`[audioPipeline] VAD filter removed ${originalCount - diarization.segments.length} hallucinated segment(s).`);
     }
     if (!diarization.segments.length) {
-      return buildEmptyTranscriptResult("segments_removed_by_vad", transcriptionDiagnostics);
+      return buildEmptyTranscriptResult("segments_removed_by_vad", transcriptionDiagnostics, attemptAudioQuality);
     }
   }
 
@@ -1398,7 +1589,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       console.log(`[audioPipeline] Hallucination filter removed ${verificationResult.verifiedSegments.length - withoutHallucinations.length} segment(s).`);
     }
     if (!withoutHallucinations.length) {
-      return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics).segments;
+      return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics, attemptAudioQuality).segments;
     }
     const merged = mergeShortSegments(withoutHallucinations);
     const corrected = await correctTranscriptWithLLM(merged, options);
@@ -1406,7 +1597,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
   })();
 
   if (!processedSegments.length) {
-    return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics);
+    return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics, attemptAudioQuality);
   }
 
   return {
@@ -1416,6 +1607,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
     transcriptOutcome: "normal",
     emptyReason: "",
     userMessage: "",
+    audioQuality: attemptAudioQuality,
     transcriptionDiagnostics,
     diarization: {
       speakerNames: identifiedNames,
@@ -1425,6 +1617,7 @@ async function transcribeRecording(asset: any, options: any = {}) {
       transcriptOutcome: "normal",
       emptyReason: "",
       userMessage: "",
+      audioQuality: attemptAudioQuality,
       transcriptionDiagnostics,
     },
     // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
@@ -1437,9 +1630,91 @@ async function transcribeRecording(asset: any, options: any = {}) {
       approved: processedSegments.filter((segment) => segment.verificationStatus === "verified").length,
     },
   };
+  } catch (error: any) {
+    error.audioQuality = error?.audioQuality || attemptAudioQuality;
+    error.transcriptionDiagnostics = {
+      ...(transcriptionDiagnostics || {}),
+      ...(error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === "object"
+        ? error.transcriptionDiagnostics
+        : {}),
+      transcriptionProfileUsed: profile,
+      transcriptionAttemptCount: attemptCount,
+    };
+    throw error;
   } finally {
     if (prepPath) { try { fs.unlinkSync(prepPath); } catch (_) {} }
   }
+}
+
+async function transcribeRecording(asset: any, options: any = {}) {
+  let audioQuality = resolveStoredAudioQuality(asset);
+
+  if (!audioQuality) {
+    try {
+      audioQuality = await Promise.race([
+        analyzeAudioQuality(asset.file_path, {
+          contentType: asset.content_type,
+          signal: options.signal,
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(null), 250)),
+      ]);
+    } catch (error: any) {
+      if (!options.signal?.aborted) {
+        console.warn("[audioPipeline] Audio quality analysis fallback failed:", error?.message || error);
+      }
+      audioQuality = null;
+    }
+  }
+
+  const initialProfile: "standard" | "enhanced" =
+    audioQuality?.enhancementRecommended ? "enhanced" : "standard";
+  const attemptProfiles: Array<"standard" | "enhanced"> =
+    initialProfile === "standard" ? ["standard", "enhanced"] : ["enhanced"];
+
+  let lastError: any = null;
+  let lastResult: any = null;
+
+  for (let index = 0; index < attemptProfiles.length; index += 1) {
+    const profile = attemptProfiles[index];
+    const attemptCount = Math.min(index + 1, 2) as 1 | 2;
+
+    try {
+      const result = await runTranscriptionAttempt(asset, options, audioQuality, profile, attemptCount);
+      lastResult = result;
+      if (shouldRetryWithEnhancedProfile(profile, attemptCount, result) && attemptProfiles[index + 1] === "enhanced") {
+        if (DEBUG) {
+          console.log("[audioPipeline] Retrying transcription with enhanced preprocessing profile.");
+        }
+        continue;
+      }
+      return result;
+    } catch (error: any) {
+      lastError = error;
+      if (shouldRetryWithEnhancedProfile(profile, attemptCount, error) && attemptProfiles[index + 1] === "enhanced") {
+        if (DEBUG) {
+          console.warn("[audioPipeline] STT failed on standard profile, retrying with enhanced preprocessing.");
+        }
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  return (
+    lastResult ||
+    buildEmptyTranscriptResult(
+      "no_segments_from_stt",
+      {
+        transcriptionProfileUsed: initialProfile,
+        transcriptionAttemptCount: Math.min(attemptProfiles.length, 2) as 1 | 2,
+      },
+      buildAudioQualityForAttempt(audioQuality, initialProfile, false)
+    )
+  );
 }
 
 async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
@@ -1735,6 +2010,7 @@ async function embedTextChunks(texts: string[]) {
 
 export {
   transcribeRecording,
+  analyzeAudioQuality,
   normalizeRecording,
   extractSpeakerAudioClip,
   transcribeLiveChunk,

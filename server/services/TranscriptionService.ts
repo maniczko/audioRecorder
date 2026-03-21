@@ -45,6 +45,10 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.getMediaAsset(recordingId);
   }
 
+  async saveAudioQualityDiagnostics(recordingId: string, audioQuality: any) {
+    return await this.db.saveAudioQualityDiagnostics(recordingId, audioQuality);
+  }
+
   async queueTranscription(recordingId: string, updates: any) {
     return await this.db.queueTranscription(recordingId, updates);
   }
@@ -57,8 +61,13 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.saveTranscriptionResult(recordingId, result);
   }
 
-  async markTranscriptionFailure(recordingId: string, errorMessage: string, transcriptionDiagnostics: any = null) {
-    return await this.db.markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics);
+  async markTranscriptionFailure(
+    recordingId: string,
+    errorMessage: string,
+    transcriptionDiagnostics: any = null,
+    audioQuality: any = null
+  ) {
+    return await this.db.markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics, audioQuality);
   }
 
   async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
@@ -125,6 +134,9 @@ export default class TranscriptionService extends EventEmitter {
           error.message,
           error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === "object"
             ? error.transcriptionDiagnostics
+            : null,
+          error?.audioQuality && typeof error.audioQuality === "object"
+            ? error.audioQuality
             : null
         );
       })
@@ -137,6 +149,13 @@ export default class TranscriptionService extends EventEmitter {
 
   async normalizeRecording(filePath: string, options = {}) {
     return this.pipeline.normalizeRecording(filePath, options);
+  }
+
+  async analyzeAudioQuality(filePath: string, options = {}) {
+    if (typeof this.pipeline.analyzeAudioQuality !== "function") {
+      throw new Error("Audio pipeline nie wspiera analizy jakosci audio.");
+    }
+    return this.pipeline.analyzeAudioQuality(filePath, options);
   }
 
   async generateVoiceCoaching(asset: any, speakerId: string, segments: any[], options = {}) {

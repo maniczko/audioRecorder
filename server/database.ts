@@ -12,6 +12,7 @@ import {
   UserDraft, 
   MeetingUpdates, 
   MediaAsset, 
+  AudioQualityDiagnostics,
   TranscriptionResult, 
   WorkspaceState 
 } from "./lib/types.ts";
@@ -697,12 +698,33 @@ export class Database {
     return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]) as Promise<MediaAsset | null>;
   }
 
+  async saveAudioQualityDiagnostics(recordingId: string, audioQuality: AudioQualityDiagnostics | null) {
+    const asset = await this.getMediaAsset(recordingId);
+    if (!asset) return null;
+    const diarization = this._safeJsonParse(asset.diarization_json, {});
+    const nextPayload =
+      audioQuality && typeof audioQuality === "object"
+        ? {
+            ...diarization,
+            audioQuality,
+          }
+        : { ...diarization };
+    await this._execute("UPDATE media_assets SET diarization_json = ?, updated_at = ? WHERE id = ?", [
+      JSON.stringify(nextPayload),
+      this.nowIso(),
+      recordingId,
+    ]);
+    return this.getMediaAsset(recordingId);
+  }
+
   async markTranscriptionProcessing(recordingId) {
     await this._execute("UPDATE media_assets SET transcription_status = 'processing', updated_at = ? WHERE id = ?", [this.nowIso(), recordingId]);
     return this.getMediaAsset(recordingId);
   }
 
   async saveTranscriptionResult(recordingId: string, result: TranscriptionResult = {}): Promise<MediaAsset | null> {
+    const existing = await this.getMediaAsset(recordingId);
+    const existingDiarization = this._safeJsonParse(existing?.diarization_json, {});
     const defaultPipelineMetadata = this._buildPipelineMetadata();
     const pipelineMetadata = {
       pipelineVersion: result.pipelineVersion || defaultPipelineMetadata.pipelineVersion,
@@ -717,6 +739,7 @@ export class Database {
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            audioQuality: result.audioQuality || existingDiarization.audioQuality || null,
             transcriptionDiagnostics: result.transcriptionDiagnostics || null,
             ...pipelineMetadata,
           }
@@ -725,6 +748,7 @@ export class Database {
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            audioQuality: result.audioQuality || existingDiarization.audioQuality || null,
             transcriptionDiagnostics: result.transcriptionDiagnostics || null,
             ...pipelineMetadata,
           };
@@ -735,10 +759,13 @@ export class Database {
     return this.getMediaAsset(recordingId);
   }
 
-  async markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics = null) {
+  async markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics = null, audioQuality: AudioQualityDiagnostics | null = null) {
+    const existing = await this.getMediaAsset(recordingId);
+    const existingDiarization = this._safeJsonParse(existing?.diarization_json, {});
     await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [
       JSON.stringify({
         errorMessage: this._clean(errorMessage),
+        audioQuality: audioQuality || existingDiarization.audioQuality || null,
         transcriptionDiagnostics: transcriptionDiagnostics || null,
         ...this._buildPipelineMetadata(),
       }),
@@ -751,7 +778,19 @@ export class Database {
   async queueTranscription(recordingId: string, updates: MeetingUpdates = {}): Promise<any> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset) throw new Error("Nie znaleziono nagrania.");
-    await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = '{}', updated_at = ? WHERE id = ?", [this._clean(updates.workspaceId) || asset.workspace_id, this._clean(updates.meetingId) || asset.meeting_id, this._clean(updates.contentType) || asset.content_type, this.nowIso(), recordingId]);
+    const existingDiarization = this._safeJsonParse(asset.diarization_json, {});
+    const preservedDiarization =
+      existingDiarization?.audioQuality && typeof existingDiarization.audioQuality === "object"
+        ? { audioQuality: existingDiarization.audioQuality }
+        : {};
+    await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = ?, updated_at = ? WHERE id = ?", [
+      this._clean(updates.workspaceId) || asset.workspace_id,
+      this._clean(updates.meetingId) || asset.meeting_id,
+      this._clean(updates.contentType) || asset.content_type,
+      JSON.stringify(preservedDiarization),
+      this.nowIso(),
+      recordingId,
+    ]);
     return { diarization: { segments: [], speakerNames: {}, speakerCount: 0, confidence: 0 }, segments: [], speakerNames: {}, speakerCount: 0, confidence: 0, pipelineStatus: "queued" };
   }
 

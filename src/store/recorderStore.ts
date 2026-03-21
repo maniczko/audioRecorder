@@ -116,6 +116,9 @@ function toUserFacingQueueError(error: any) {
     errorMessage.includes("Bad Gateway") ||
     errorMessage.includes("HTTP 502")
   ) {
+    if (getPreviewRuntimeStatus() === "stale_runtime") {
+      return "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.";
+    }
     if (getPreviewRuntimeStatus() === "healthy" && errorMessage.includes("Failed to fetch")) {
       return "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
     }
@@ -179,6 +182,7 @@ export const useRecorderStore = create<any>()(
           pipelineGitSha: "",
           pipelineVersion: "",
           pipelineBuildTime: "",
+          audioQuality: existing?.audioQuality || null,
         });
         const snapshot = getPipelineSnapshot("queued", 8, "Ponawiamy wgrywanie nagrania");
         set({
@@ -214,6 +218,7 @@ export const useRecorderStore = create<any>()(
           pipelineGitSha: "",
           pipelineVersion: "",
           pipelineBuildTime: "",
+          audioQuality: recording.audioQuality || null,
           transcriptionDiagnostics: null,
         };
         set((state) => ({
@@ -303,9 +308,12 @@ export const useRecorderStore = create<any>()(
               attempts: (nextItem.attempts || 0) + 1,
               errorMessage: "",
             });
-            await mediaService.persistRecordingAudio(nextItem.recordingId, localBlob, {
+            const uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, localBlob, {
               workspaceId: target.workspaceId || nextItem.workspaceId || "",
               meetingId: target.id,
+            });
+            get().updateQueueItem(nextItem.recordingId, {
+              audioQuality: uploadResult?.audioQuality || nextItem.audioQuality || null,
             });
           }
 
@@ -342,6 +350,7 @@ export const useRecorderStore = create<any>()(
             pipelineGitSha: started?.pipelineGitSha || "",
             pipelineVersion: started?.pipelineVersion || "",
             pipelineBuildTime: started?.pipelineBuildTime || "",
+            audioQuality: started?.audioQuality || nextItem.audioQuality || null,
             transcriptionDiagnostics: started?.transcriptionDiagnostics || null,
           });
 
@@ -383,6 +392,7 @@ export const useRecorderStore = create<any>()(
                   pipelineGitSha: result?.pipelineGitSha || "",
                   pipelineVersion: result?.pipelineVersion || "",
                   pipelineBuildTime: result?.pipelineBuildTime || "",
+                  audioQuality: result?.audioQuality || nextItem.audioQuality || null,
                   transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
                 });
                 const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
@@ -391,11 +401,19 @@ export const useRecorderStore = create<any>()(
                   break;
                 }
                 if (status === "failed") {
-                  throw new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
+                  get().updateQueueItem(nextItem.recordingId, {
+                    audioQuality: result?.audioQuality || nextItem.audioQuality || null,
+                    transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
+                  });
+                  const failedError: any = new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
+                  failedError.audioQuality = result?.audioQuality || null;
+                  failedError.transcriptionDiagnostics = result?.transcriptionDiagnostics || null;
+                  throw failedError;
                 }
                 get().updateQueueItem(nextItem.recordingId, {
                   status,
                   errorMessage: "",
+                  audioQuality: result?.audioQuality || nextItem.audioQuality || null,
                   transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
                 });
                 const pollingSnapshot = getPipelineSnapshot(status);
@@ -446,6 +464,7 @@ export const useRecorderStore = create<any>()(
               pipelineGitSha: transcription.pipelineGitSha || "",
               pipelineVersion: transcription.pipelineVersion || "",
               pipelineBuildTime: transcription.pipelineBuildTime || "",
+              audioQuality: transcription.audioQuality || nextItem.audioQuality || null,
               transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
               speakerNames: transcription.diarization?.speakerNames || {},
               speakerCount: transcription.diarization?.speakerCount || 0,
@@ -517,6 +536,7 @@ export const useRecorderStore = create<any>()(
             pipelineGitSha: transcription.pipelineGitSha || "",
             pipelineVersion: transcription.pipelineVersion || "",
             pipelineBuildTime: transcription.pipelineBuildTime || "",
+            audioQuality: transcription.audioQuality || nextItem.audioQuality || null,
             transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
             storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
             analysis,

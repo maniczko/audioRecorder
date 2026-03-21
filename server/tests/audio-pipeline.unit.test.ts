@@ -425,9 +425,9 @@ describe("audioPipeline exports", () => {
     });
     expect(result.transcriptionDiagnostics).toMatchObject({
       usedChunking: true,
-      chunksAttempted: 4,
+      chunksAttempted: 2,
       chunksExtracted: 0,
-      chunksDiscardedAsTooSmall: 4,
+      chunksDiscardedAsTooSmall: 2,
       chunksSentToStt: 0,
     });
     expect(global.fetch).not.toHaveBeenCalled();
@@ -640,7 +640,7 @@ describe("audioPipeline exports", () => {
     expect(result.transcriptionDiagnostics).toMatchObject({
       usedChunking: true,
       chunksFlaggedSilentByVad: 1,
-      chunksAttempted: 4,
+      chunksAttempted: 2,
       chunksWithWords: 1,
     });
   });

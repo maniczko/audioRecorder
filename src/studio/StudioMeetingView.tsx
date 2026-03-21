@@ -210,9 +210,13 @@ function formatEmptyTranscriptDiagnostics(recording) {
   if (!recording || recording.transcriptOutcome !== "empty") return "";
   const details = [];
   const diagnostics = recording.transcriptionDiagnostics || {};
+  const audioQuality = recording.audioQuality || null;
 
   if (recording.pipelineGitSha) {
     details.push(`Build: ${String(recording.pipelineGitSha).slice(0, 7)}`);
+  }
+  if (diagnostics.transcriptionProfileUsed) {
+    details.push(`Profil STT: ${diagnostics.transcriptionProfileUsed}`);
   }
   if (diagnostics.usedChunking) {
     details.push("Chunking: tak");
@@ -229,8 +233,28 @@ function formatEmptyTranscriptDiagnostics(recording) {
   if (recording.emptyReason) {
     details.push(`Reason: ${recording.emptyReason}`);
   }
+  if (audioQuality?.qualityLabel) {
+    details.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
+  }
 
   return details.join(" · ");
+}
+
+function formatAudioQualityPanel(audioQuality) {
+  if (!audioQuality || typeof audioQuality !== "object") return "";
+  const parts = [];
+
+  if (audioQuality.qualityLabel) {
+    parts.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
+  }
+  if (Number.isFinite(Number(audioQuality.meanVolumeDb))) {
+    parts.push(`Srednia glosnosc: ${Number(audioQuality.meanVolumeDb).toFixed(1)} dB`);
+  }
+  if (typeof audioQuality.enhancementApplied === "boolean") {
+    parts.push(`Uzyto poprawy audio: ${audioQuality.enhancementApplied ? "tak" : "nie"}`);
+  }
+
+  return parts.join(" | ");
 }
 
 export default function StudioMeetingView({
@@ -325,6 +349,10 @@ export default function StudioMeetingView({
   const emptyTranscriptDiagnostics = useMemo(
     () => formatEmptyTranscriptDiagnostics(selectedRecording),
     [selectedRecording]
+  );
+  const selectedRecordingAudioQualitySummary = useMemo(
+    () => formatAudioQualityPanel(selectedRecording?.audioQuality),
+    [selectedRecording?.audioQuality]
   );
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
@@ -769,6 +797,9 @@ export default function StudioMeetingView({
             {emptyTranscriptDiagnostics ? (
               <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{emptyTranscriptDiagnostics}</span>
             ) : null}
+            {selectedRecordingAudioQualitySummary ? (
+              <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{selectedRecordingAudioQualitySummary}</span>
+            ) : null}
           </div>
           {retryStoredRecording && selectedMeeting && selectedRecording ? (
             <button
@@ -821,6 +852,11 @@ export default function StudioMeetingView({
                 <div className="analysis-summary-text">
                   Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.
                 </div>
+                {selectedRecordingAudioQualitySummary ? (
+                  <div style={{ marginTop: "10px", color: "var(--text-3, #8f97ab)", fontSize: "0.84rem" }}>
+                    {selectedRecordingAudioQualitySummary}
+                  </div>
+                ) : null}
                 {retryStoredRecording && selectedMeeting && selectedRecording ? (
                   <div style={{ marginTop: "16px" }}>
                     <button

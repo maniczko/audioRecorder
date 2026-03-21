@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { STORAGE_KEYS } from "../lib/storage";
 
-async function loadHttpClient() {
+async function loadHttpClient({ buildId = "" } = {}) {
   vi.resetModules();
   vi.doMock("./config", () => ({
     API_BASE_URL: "https://api.example.test",
     apiBaseUrlConfigured: () => true,
     remoteApiEnabled: () => true,
+  }));
+  vi.doMock("../runtime/browserRuntime", () => ({
+    isHostedPreviewHost: (hostname: string) => /\.vercel\.app$/i.test(String(hostname || "")),
+    getHostedRuntimeBuildId: () => buildId,
   }));
   return import("./httpClient");
 }
@@ -17,6 +21,10 @@ async function loadHttpClientWithoutApi() {
     API_BASE_URL: "",
     apiBaseUrlConfigured: () => false,
     remoteApiEnabled: () => false,
+  }));
+  vi.doMock("../runtime/browserRuntime", () => ({
+    isHostedPreviewHost: (hostname: string) => /\.vercel\.app$/i.test(String(hostname || "")),
+    getHostedRuntimeBuildId: () => "",
   }));
   return import("./httpClient");
 }
@@ -191,6 +199,31 @@ describe("httpClient", () => {
     await expect(probeRemoteApiHealth(fetchMock as any)).rejects.toThrow("Failed to fetch");
     await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
       message: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+    });
+  });
+
+  test("classifies hosted preview as stale runtime when backend gitSha differs from frontend build", async () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { hostname: "preview-deployment.vercel.app" },
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true, gitSha: "backend-123" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { probeRemoteApiHealth, apiRequest } = await loadHttpClient({ buildId: "frontend-456" });
+
+    await expect(probeRemoteApiHealth(fetchMock as any)).rejects.toThrow(
+      "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy."
+    );
+    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
+      message: "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.",
     });
   });
 

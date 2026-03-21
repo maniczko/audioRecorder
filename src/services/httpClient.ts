@@ -1,9 +1,13 @@
 import { API_BASE_URL, apiBaseUrlConfigured } from "./config";
 import { readLegacySession, readWorkspacePersistedSession } from "../lib/sessionStorage";
-import { isHostedPreviewHost } from "../runtime/browserRuntime";
+import { getHostedRuntimeBuildId, isHostedPreviewHost } from "../runtime/browserRuntime";
 
 const unauthorizedHandlers = new Set();
 let previewRuntimeStatus = "unknown";
+const HOSTED_PREVIEW_RUNTIME_MESSAGE =
+  "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+const HOSTED_PREVIEW_STALE_MESSAGE =
+  "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.";
 
 export function onUnauthorized(handler) {
   unauthorizedHandlers.add(handler);
@@ -73,6 +77,10 @@ function isTransportFailureMessage(message = "") {
 }
 
 function normalizeApiErrorMessage(message = "", status?: number) {
+  if (previewRuntimeStatus === "stale_runtime") {
+    return HOSTED_PREVIEW_STALE_MESSAGE;
+  }
+
   if (status === 502) {
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
@@ -83,7 +91,7 @@ function normalizeApiErrorMessage(message = "", status?: number) {
 
   if (isTransportFailureMessage(message)) {
     if (isHostedPreviewRuntime() && previewRuntimeStatus === "healthy") {
-      return "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+      return HOSTED_PREVIEW_RUNTIME_MESSAGE;
     }
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
@@ -105,10 +113,27 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
       throw new Error(`HTTP ${response.status}`);
     }
 
+    const payload = await parseResponse(response);
+    const frontendBuildId = getHostedRuntimeBuildId();
+    const backendGitSha = String(payload?.gitSha || "").trim();
+    if (
+      isHostedPreviewRuntime() &&
+      frontendBuildId &&
+      backendGitSha &&
+      frontendBuildId !== backendGitSha
+    ) {
+      setPreviewRuntimeStatus("stale_runtime");
+      throw new Error(HOSTED_PREVIEW_STALE_MESSAGE);
+    }
+
     setPreviewRuntimeStatus("healthy");
-    return true;
+    return payload;
   } catch (error) {
-    setPreviewRuntimeStatus("backend_unreachable");
+    if (String(error?.message || "").includes("nieaktualny wzgledem backendu")) {
+      setPreviewRuntimeStatus("stale_runtime");
+    } else {
+      setPreviewRuntimeStatus("backend_unreachable");
+    }
     throw error;
   }
 }

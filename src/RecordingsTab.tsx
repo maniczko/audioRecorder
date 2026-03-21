@@ -16,6 +16,9 @@ function formatPipelineDiagnostics(item) {
   const diagnostics = item?.transcriptionDiagnostics && typeof item.transcriptionDiagnostics === "object"
     ? item.transcriptionDiagnostics
     : null;
+  const audioQuality = item?.audioQuality && typeof item.audioQuality === "object"
+    ? item.audioQuality
+    : null;
 
   if (transcriptOutcome === "empty") {
     details.push("Pipeline: empty transcript");
@@ -48,6 +51,9 @@ function formatPipelineDiagnostics(item) {
     details.push(`Build: ${gitSha.slice(0, 7)}`);
   } else if (version) {
     details.push(`Version: ${version}`);
+  }
+  if (audioQuality?.qualityLabel) {
+    details.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
   }
 
   return details.join(" · ");
@@ -399,6 +405,9 @@ export default function RecordingsTab(props) {
     }
     if (latestSelectedRecording?.pipelineGitSha) {
       parts.push(`Build: ${String(latestSelectedRecording.pipelineGitSha).slice(0, 7)}`);
+    }
+    if (latestSelectedRecording?.audioQuality?.qualityLabel) {
+      parts.push(`Jakosc audio: ${latestSelectedRecording.audioQuality.qualityLabel}`);
     }
     return parts.join(" · ");
   }, [latestSelectedRecording, selectedMeetingHasEmptyTranscript]);

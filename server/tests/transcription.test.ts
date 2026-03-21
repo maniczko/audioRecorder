@@ -129,7 +129,8 @@ describe("TranscriptionService", () => {
       expect.objectContaining({
         chunksFailedAtStt: 2,
         lastChunkErrorMessage: "timeout",
-      })
+      }),
+      null
     );
     expect(service.transcriptionJobs.has("rec_2")).toBe(false);
   });

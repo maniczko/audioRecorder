@@ -23,6 +23,10 @@ function readBuildId() {
   }
 }
 
+export function getHostedRuntimeBuildId() {
+  return readBuildId();
+}
+
 export async function prepareHostedRuntime({
   hostname = window.location.hostname,
   sessionStorageRef = window.sessionStorage,

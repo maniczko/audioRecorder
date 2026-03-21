@@ -57,6 +57,8 @@ jobs:
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build Project Artifacts
+        env:
+          VITE_BUILD_ID: ${{ github.sha }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy Project Artifacts to Vercel Production

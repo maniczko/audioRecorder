@@ -13,6 +13,8 @@ describe("Media Routes", () => {
   beforeEach(() => {
     mockTranscriptionService = {
       upsertMediaAsset: vi.fn(),
+      analyzeAudioQuality: vi.fn(),
+      saveAudioQualityDiagnostics: vi.fn(),
       getMediaAsset: vi.fn(),
       queueTranscription: vi.fn(),
       ensureTranscriptionJob: vi.fn(),
@@ -52,6 +54,10 @@ describe("Media Routes", () => {
     mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
       id: "rec_new", workspace_id: "ws_1", size_bytes: 512
     });
+    mockTranscriptionService.analyzeAudioQuality.mockResolvedValue({
+      qualityLabel: "fair",
+      enhancementRecommended: true,
+    });
 
     const res = await app.request("/media/recordings/rec_new/audio", {
       method: "PUT",
@@ -66,9 +72,17 @@ describe("Media Routes", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.id).toBe("rec_new");
+    expect(data.audioQuality).toEqual({
+      qualityLabel: "fair",
+      enhancementRecommended: true,
+    });
     expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledWith(
       expect.objectContaining({ recordingId: "rec_new", workspaceId: "ws_1", contentType: "audio/webm" })
     );
+    expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledWith("rec_new", {
+      qualityLabel: "fair",
+      enhancementRecommended: true,
+    });
   });
 
   it("OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins", async () => {

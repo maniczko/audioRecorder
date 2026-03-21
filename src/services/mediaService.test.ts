@@ -50,7 +50,10 @@ describe("mediaService", () => {
     expect(service.mode).toBe("local");
     expect(service.supportsLiveTranscription()).toBe(true);
     expect(service.createLiveController({ language: "pl" })).toBeTruthy();
-    await expect(service.persistRecordingAudio("rec1", new Blob(["audio"]))).resolves.toEqual({ storageMode: "indexeddb" });
+    await expect(service.persistRecordingAudio("rec1", new Blob(["audio"]))).resolves.toEqual({
+      storageMode: "indexeddb",
+      audioQuality: null,
+    });
     await expect(service.getRecordingAudioBlob("rec1")).resolves.toBeInstanceOf(Blob);
     await expect(service.startTranscriptionJob({ rawSegments: [{ text: "a" }] })).resolves.toMatchObject({
       pipelineStatus: "done",
@@ -75,7 +78,12 @@ describe("mediaService", () => {
     const { createMediaService, apiRequest } = await loadMediaService("remote");
     localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({ token: "session-token" }));
     apiRequest
-      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        audioQuality: {
+          qualityLabel: "fair",
+          enhancementRecommended: true,
+        },
+      })
       .mockResolvedValueOnce({ blob: vi.fn().mockResolvedValue(new Blob(["audio"])) })
       .mockResolvedValueOnce({
         diarization: { speakerCount: 1 },
@@ -127,7 +135,15 @@ describe("mediaService", () => {
     });
     vi.stubGlobal("EventSource", EventSourceMock as any);
 
-    await expect(service.persistRecordingAudio("rec1", new Blob(["audio"], { type: "audio/webm" }), { workspaceId: "ws1", meetingId: "m1" })).resolves.toEqual({ storageMode: "remote" });
+    await expect(
+      service.persistRecordingAudio("rec1", new Blob(["audio"], { type: "audio/webm" }), { workspaceId: "ws1", meetingId: "m1" })
+    ).resolves.toEqual({
+      storageMode: "remote",
+      audioQuality: {
+        qualityLabel: "fair",
+        enhancementRecommended: true,
+      },
+    });
     await expect(service.getRecordingAudioBlob("rec1")).resolves.toBeInstanceOf(Blob);
     await expect(service.startTranscriptionJob({ recordingId: "rec1", blob: new Blob(["audio"], { type: "audio/webm" }), meeting: { id: "m1", workspaceId: "ws1", attendees: ["Anna"], title: "Weekly", tags: ["tag"] } })).resolves.toMatchObject({
       pipelineStatus: "queued",

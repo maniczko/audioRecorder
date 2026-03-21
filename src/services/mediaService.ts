@@ -24,6 +24,7 @@ function createLocalMediaService() {
       await saveAudioBlob(recordingId, blob);
       return {
         storageMode: "indexeddb",
+        audioQuality: null,
       };
     },
     getRecordingAudioBlob(recordingId) {
@@ -86,7 +87,7 @@ function createRemoteMediaService() {
       return createBrowserTranscriptionController(options);
     },
     async persistRecordingAudio(recordingId, blob, options: any = {}) {
-      await apiRequest(`/media/recordings/${recordingId}/audio`, {
+      const response = await apiRequest(`/media/recordings/${recordingId}/audio`, {
         method: "PUT",
         body: blob,
         headers: {
@@ -97,6 +98,10 @@ function createRemoteMediaService() {
       });
       return {
         storageMode: "remote",
+        audioQuality:
+          response?.audioQuality && typeof response.audioQuality === "object"
+            ? response.audioQuality
+            : null,
       };
     },
     async getRecordingAudioBlob(recordingId) {
@@ -134,6 +139,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        audioQuality:
+          response.audioQuality && typeof response.audioQuality === "object"
+            ? response.audioQuality
+            : null,
         transcriptionDiagnostics:
           response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
             ? response.transcriptionDiagnostics
@@ -159,6 +168,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        audioQuality:
+          response.audioQuality && typeof response.audioQuality === "object"
+            ? response.audioQuality
+            : null,
         transcriptionDiagnostics:
           response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
             ? response.transcriptionDiagnostics
@@ -184,6 +197,10 @@ function createRemoteMediaService() {
         pipelineVersion: response.pipelineVersion || "",
         pipelineGitSha: response.pipelineGitSha || "",
         pipelineBuildTime: response.pipelineBuildTime || "",
+        audioQuality:
+          response.audioQuality && typeof response.audioQuality === "object"
+            ? response.audioQuality
+            : null,
         transcriptionDiagnostics:
           response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
             ? response.transcriptionDiagnostics

@@ -31,6 +31,22 @@ export interface DiarizationResult {
   segments: TranscriptSegment[];
 }
 
+export interface AudioQualityDiagnostics {
+  codec?: string;
+  sampleRateHz?: number;
+  channels?: number;
+  bitrateKbps?: number;
+  durationSeconds?: number;
+  meanVolumeDb?: number;
+  maxVolumeDb?: number;
+  silenceRatio?: number;
+  qualityScore?: number;
+  qualityLabel?: "good" | "fair" | "poor";
+  enhancementRecommended?: boolean;
+  enhancementApplied?: boolean;
+  enhancementProfile?: "none" | "standard" | "enhanced";
+}
+
 export interface TranscriptionDiagnostics {
   usedChunking?: boolean;
   fileSizeBytes?: number;
@@ -48,6 +64,8 @@ export interface TranscriptionDiagnostics {
   mergedWordsCount?: number;
   mergedTextLength?: number;
   lastChunkErrorMessage?: string;
+  transcriptionProfileUsed?: "standard" | "enhanced";
+  transcriptionAttemptCount?: 1 | 2;
 }
 
 export interface TranscriptionStatusPayload {
@@ -63,6 +81,7 @@ export interface TranscriptionStatusPayload {
   pipelineVersion?: string;
   pipelineGitSha?: string;
   pipelineBuildTime?: string;
+  audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;

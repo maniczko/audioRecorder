@@ -14,10 +14,13 @@ function serializeWorkspaceState(payload: any) {
 const REMOTE_PULL_COOLDOWN_MS = 25000;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
   "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+const HOSTED_PREVIEW_STALE_MESSAGE =
+  "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.";
 
 function isBackendUnavailableMessage(message = "") {
   const normalized = String(message || "").toLowerCase();
   return (
+    normalized.includes("nieaktualny wzgledem backendu") ||
     normalized.includes("backend jest chwilowo niedostepny") ||
     normalized.includes("application failed to respond") ||
     normalized.includes("router_external_target_connection_error") ||
@@ -134,7 +137,7 @@ export default function useWorkspaceData() {
       return;
     }
     lastLoggedRemoteErrorRef.current = key;
-    console.error(scope, error);
+    console.warn(scope, error);
   }, []);
 
   const applyRemoteTransportCooldown = useCallback((error: any) => {
@@ -155,7 +158,11 @@ export default function useWorkspaceData() {
     } catch (error) {
       remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
       logRemoteErrorOnce("Hosted preview health probe failed.", error);
-      pushWorkspaceMessage(HOSTED_PREVIEW_RUNTIME_MESSAGE);
+      pushWorkspaceMessage(
+        String(error?.message || "").includes("nieaktualny wzgledem backendu")
+          ? HOSTED_PREVIEW_STALE_MESSAGE
+          : HOSTED_PREVIEW_RUNTIME_MESSAGE
+      );
       return false;
     }
   }, [logRemoteErrorOnce, pushWorkspaceMessage]);
