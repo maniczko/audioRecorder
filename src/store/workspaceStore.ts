@@ -4,6 +4,7 @@ import { resolveWorkspaceForUser, workspaceMembers } from "../lib/workspace";
 import { getWorkspacePermissions } from "../lib/permissions";
 import { createWorkspaceService } from "../services/workspaceService";
 import { createStateService } from "../services/stateService";
+import { STORAGE_KEYS, writeStorage } from "../lib/storage";
 
 interface WorkspaceState {
   users: any[];
@@ -22,6 +23,10 @@ interface WorkspaceState {
 
 const workspaceService = createWorkspaceService() as any;
 const stateService = createStateService();
+
+function persistSessionSnapshot(session: any) {
+  writeStorage(STORAGE_KEYS.session, session || null);
+}
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
@@ -43,9 +48,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         })),
 
       setSession: (updater) =>
-        set((state) => ({
-          session: typeof updater === "function" ? updater(state.session) : updater,
-        })),
+        set((state) => {
+          const nextSession = typeof updater === "function" ? updater(state.session) : updater;
+          persistSessionSnapshot(nextSession);
+          return {
+            session: nextSession,
+          };
+        }),
 
       switchWorkspace: (workspaceId) => {
         const { session } = get();
@@ -117,6 +126,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           set(updates);
         } catch (error: any) {
           if (error.status === 401) {
+            persistSessionSnapshot(null);
             set({ session: null, users: [], workspaces: [] });
           } else {
             set({ sessionError: error.message });
@@ -127,6 +137,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
       
       logout: () => {
+        persistSessionSnapshot(null);
         set({ session: null });
       }
     }),

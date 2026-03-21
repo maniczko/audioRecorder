@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { STORAGE_KEYS } from "../lib/storage";
 
 const mocks = vi.hoisted(() => ({
   updateMemberRoleMock: vi.fn(),
@@ -49,6 +50,22 @@ describe("workspaceStore", () => {
 
     expect(useWorkspaceStore.getState().users).toEqual([{ id: "u1" }, { id: "u2" }]);
     expect(useWorkspaceStore.getState().workspaces).toEqual([{ id: "ws1" }, { id: "ws2" }]);
+  });
+
+  test("persists session token into the legacy auth storage key used by httpClient", async () => {
+    const { useWorkspaceStore } = await loadWorkspaceStore();
+
+    useWorkspaceStore.getState().setSession({ userId: "u1", workspaceId: "ws1", token: "token-1" });
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toEqual({
+      userId: "u1",
+      workspaceId: "ws1",
+      token: "token-1",
+    });
+
+    useWorkspaceStore.getState().logout();
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toBeNull();
   });
 
   test("switches workspace and updates member role locally", async () => {
@@ -107,5 +124,6 @@ describe("workspaceStore", () => {
     expect(useWorkspaceStore.getState().session).toBeNull();
     expect(useWorkspaceStore.getState().users).toEqual([]);
     expect(useWorkspaceStore.getState().workspaces).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toBeNull();
   });
 });
