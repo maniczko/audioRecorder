@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node
+RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
 
 # Prune node_modules down to only production dependencies to save space
 RUN pnpm prune --prod
@@ -62,6 +62,7 @@ RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu t
 
 # Copy production node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/server/node_modules ./server/node_modules
 COPY --from=builder /app/package.json ./
 
 # Copy compiled backend code instead of raw TS
