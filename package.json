@@ -81,7 +81,7 @@
     "lint-staged": "^16.4.0",
     "postcss": "^8.5.8",
     "postcss-selector-parser": "^7.1.1",
-    "rollup-plugin-visualizer": "^7.0.1",
+    "rollup-plugin-visualizer": "^5.11.0",
     "tsx": "^4.21.0",
     "turbo": "^2.8.20",
     "typescript": "^5.9.3",
