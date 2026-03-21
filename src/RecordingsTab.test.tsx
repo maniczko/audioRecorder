@@ -43,6 +43,7 @@ describe("RecordingsTab", () => {
     recordingMessage: "",
     pipelineProgressPercent: 0,
     pipelineStageLabel: "",
+    retryRecordingQueueItem: jest.fn(),
   };
 
   test("renders empty state when no meetings are provided", () => {
@@ -58,6 +59,31 @@ describe("RecordingsTab", () => {
     // Filters should be displayed
     const tagFilter = screen.getByText("Wszystkie tagi");
     expect(tagFilter).toBeInTheDocument();
+  });
+
+  test("shows pipeline diagnostics for selected meeting latest recording", () => {
+    render(
+      <RecordingsTab
+        {...defaultProps}
+        selectedMeeting={{
+          ...mockMeetings[0],
+          latestRecordingId: "rec_1",
+          recordings: [
+            {
+              id: "rec_1",
+              createdAt: "2026-03-18T10:00:00Z",
+              duration: 2700,
+              speakerCount: 2,
+              transcript: [{}, {}],
+              pipelineGitSha: "abc1234",
+              transcriptOutcome: "empty",
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByText(/Pipeline: empty transcript · Build: abc1234/i)).toBeInTheDocument();
   });
 
   test("calls selectMeeting and setActiveTab when a meeting is clicked in the table", () => {
@@ -119,6 +145,7 @@ describe("RecordingsTab", () => {
             status: "uploading",
             createdAt: "2026-03-21T10:00:00.000Z",
             errorMessage: "",
+            pipelineGitSha: "abc1234",
           },
         ]}
       />
@@ -127,6 +154,29 @@ describe("RecordingsTab", () => {
     expect(screen.getByText(/Pliki wgrywane i przetwarzane/i)).toBeInTheDocument();
     expect(screen.getByText("Import: demo-call")).toBeInTheDocument();
     expect(screen.getByText(/Wgrywanie audio na serwer \(42%\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Build: abc1234/i)).toBeInTheDocument();
+  });
+
+  test("shows retry action and diagnostics for failed queued item", () => {
+    render(
+      <RecordingsTab
+        {...defaultProps}
+        recordingQueue={[
+          {
+            recordingId: "rec_failed",
+            meetingTitle: "Import: failed-call",
+            status: "failed",
+            createdAt: "2026-03-21T10:00:00.000Z",
+            errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
+            pipelineGitSha: "def5678",
+          },
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Spróbuj ponownie|Sprobuj ponownie/i }));
+    expect(defaultProps.retryRecordingQueueItem).toHaveBeenCalledWith("rec_failed");
+    expect(screen.getByText(/Build: def5678/i)).toBeInTheDocument();
   });
 
   test("queues imported file immediately after selecting it", async () => {

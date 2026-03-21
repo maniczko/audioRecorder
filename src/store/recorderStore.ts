@@ -170,11 +170,22 @@ export const useRecorderStore = create<any>()(
         }),
 
       retryRecordingQueueItem: (recordingId) => {
-        get().updateQueueItem(recordingId, { status: "queued", uploaded: false, errorMessage: "" });
+        const existing = (get().recordingQueue || []).find((item) => item.recordingId === recordingId);
+        const reuseRemoteUpload = Boolean(existing?.uploaded);
+        get().updateQueueItem(recordingId, {
+          status: "queued",
+          uploaded: reuseRemoteUpload,
+          errorMessage: "",
+          pipelineGitSha: "",
+          pipelineVersion: "",
+          pipelineBuildTime: "",
+        });
         const snapshot = getPipelineSnapshot("queued", 8, "Ponawiamy wgrywanie nagrania");
         set({
           lastQueueErrorKey: "",
-          recordingMessage: "Ponawiamy nagranie z kolejki.",
+          recordingMessage: reuseRemoteUpload
+            ? "Ponawiamy transkrypcje z pliku zapisanego juz na serwerze."
+            : "Ponawiamy nagranie z kolejki.",
           analysisStatus: "queued",
           pipelineProgressPercent: snapshot.progressPercent,
           pipelineStageLabel: snapshot.stageLabel,
@@ -228,8 +239,10 @@ export const useRecorderStore = create<any>()(
             return;
           }
 
-          const localBlob = await getAudioBlob(nextItem.recordingId);
-          if (!localBlob) {
+          const mediaService = createMediaService();
+          const canReuseRemoteUpload = mediaService.mode === "remote" && nextItem.uploaded;
+          const localBlob = canReuseRemoteUpload ? null : await getAudioBlob(nextItem.recordingId);
+          if (!localBlob && !canReuseRemoteUpload) {
             get().updateQueueItem(nextItem.recordingId, {
               status: "failed",
               errorMessage: "Brakuje lokalnego audio.",
@@ -242,8 +255,6 @@ export const useRecorderStore = create<any>()(
             });
             return;
           }
-
-          const mediaService = createMediaService();
 
           if (!nextItem.uploaded) {
             const uploadSnapshot = getPipelineSnapshot("uploading", 12, "Wgrywanie audio na serwer");
@@ -283,12 +294,20 @@ export const useRecorderStore = create<any>()(
           const started =
             nextItem.uploaded && nextItem.status === "processing"
               ? await mediaService.getTranscriptionJobStatus(nextItem.recordingId)
+              : canReuseRemoteUpload && nextItem.status !== "processing" && mediaService.retryTranscriptionJob
+                ? await mediaService.retryTranscriptionJob(nextItem.recordingId)
               : await mediaService.startTranscriptionJob({
                   recordingId: nextItem.recordingId,
                   blob: localBlob,
                   meeting: target,
                   rawSegments: nextItem.rawSegments,
                 });
+
+          get().updateQueueItem(nextItem.recordingId, {
+            pipelineGitSha: started?.pipelineGitSha || "",
+            pipelineVersion: started?.pipelineVersion || "",
+            pipelineBuildTime: started?.pipelineBuildTime || "",
+          });
 
           const startStatus = normalizeRecordingPipelineStatus(started?.pipelineStatus);
           const startSnapshot = getPipelineSnapshot(startStatus, startStatus === "queued" ? 28 : null);
@@ -324,6 +343,11 @@ export const useRecorderStore = create<any>()(
               while (attempts < 120) {
                 attempts += 1;
                 const result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+                get().updateQueueItem(nextItem.recordingId, {
+                  pipelineGitSha: result?.pipelineGitSha || "",
+                  pipelineVersion: result?.pipelineVersion || "",
+                  pipelineBuildTime: result?.pipelineBuildTime || "",
+                });
                 const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
                 if (status === "done") {
                   finalTranscription = { ...result, pipelineStatus: "done" };
@@ -377,6 +401,10 @@ export const useRecorderStore = create<any>()(
               transcript: [],
               transcriptOutcome: "empty",
               emptyReason: transcription.emptyReason || "no_segments_from_stt",
+              userMessage: transcription.userMessage || "Nie wykryto wypowiedzi w nagraniu.",
+              pipelineGitSha: transcription.pipelineGitSha || "",
+              pipelineVersion: transcription.pipelineVersion || "",
+              pipelineBuildTime: transcription.pipelineBuildTime || "",
               speakerNames: transcription.diarization?.speakerNames || {},
               speakerCount: transcription.diarization?.speakerCount || 0,
               diarizationConfidence: transcription.diarization?.confidence || 0,
@@ -444,6 +472,9 @@ export const useRecorderStore = create<any>()(
             transcriptionProvider: transcription.providerId,
             transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
             pipelineStatus: "done",
+            pipelineGitSha: transcription.pipelineGitSha || "",
+            pipelineVersion: transcription.pipelineVersion || "",
+            pipelineBuildTime: transcription.pipelineBuildTime || "",
             storageMode: mediaService.mode === "remote" ? "remote" : "indexeddb",
             analysis,
           };

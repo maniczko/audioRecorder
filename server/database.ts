@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { logger } from "./logger.ts";
 import { config } from "./config.ts";
+import { resolveBuildMetadata } from "./runtime.ts";
 import { 
   UserProfile, 
   UserDraft, 
@@ -151,6 +152,15 @@ export class Database {
 
   nowIso() {
     return new Date().toISOString();
+  }
+
+  _buildPipelineMetadata() {
+    const build = resolveBuildMetadata(process.env, "0.1.0");
+    return {
+      pipelineVersion: build.appVersion,
+      pipelineGitSha: build.gitSha,
+      pipelineBuildTime: build.buildTime,
+    };
   }
 
   // --- Internal Utilities ---
@@ -693,6 +703,12 @@ export class Database {
   }
 
   async saveTranscriptionResult(recordingId: string, result: TranscriptionResult = {}): Promise<MediaAsset | null> {
+    const defaultPipelineMetadata = this._buildPipelineMetadata();
+    const pipelineMetadata = {
+      pipelineVersion: result.pipelineVersion || defaultPipelineMetadata.pipelineVersion,
+      pipelineGitSha: result.pipelineGitSha || defaultPipelineMetadata.pipelineGitSha,
+      pipelineBuildTime: result.pipelineBuildTime || defaultPipelineMetadata.pipelineBuildTime,
+    };
     const diarizationPayload =
       result.diarization && typeof result.diarization === "object"
         ? {
@@ -701,12 +717,14 @@ export class Database {
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            ...pipelineMetadata,
           }
         : {
             reviewSummary: result.reviewSummary || null,
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
             userMessage: result.userMessage || "",
+            ...pipelineMetadata,
           };
     await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
          JSON.stringify(Array.isArray(result.segments) ? result.segments : []),
@@ -716,7 +734,14 @@ export class Database {
   }
 
   async markTranscriptionFailure(recordingId, errorMessage) {
-    await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [JSON.stringify({ errorMessage: this._clean(errorMessage) }), this.nowIso(), recordingId]);
+    await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [
+      JSON.stringify({
+        errorMessage: this._clean(errorMessage),
+        ...this._buildPipelineMetadata(),
+      }),
+      this.nowIso(),
+      recordingId,
+    ]);
     return this.getMediaAsset(recordingId);
   }
 

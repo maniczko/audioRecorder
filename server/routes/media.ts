@@ -24,6 +24,9 @@ function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStat
     transcriptOutcome: diarization?.transcriptOutcome || "normal",
     emptyReason: diarization?.emptyReason || "",
     userMessage: diarization?.userMessage || "",
+    pipelineVersion: diarization?.pipelineVersion || "",
+    pipelineGitSha: diarization?.pipelineGitSha || "",
+    pipelineBuildTime: diarization?.pipelineBuildTime || "",
     segments: Array.isArray(segments) ? segments : [],
     diarization: diarization && typeof diarization === "object" ? diarization : {},
     speakerNames: diarization?.speakerNames || {},
@@ -106,6 +109,32 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       requestId: c.get("reqId")
     });
     
+    return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
+  });
+
+  router.post("/recordings/:recordingId/retry-transcribe", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+
+    if (!asset.file_path || !fs.existsSync(asset.file_path)) {
+      return c.json({ message: "Nie znaleziono pliku audio do ponownego przetworzenia." }, 409);
+    }
+
+    await transcriptionService.queueTranscription(recordingId, {
+      workspaceId: asset.workspace_id,
+      meetingId: asset.meeting_id,
+      contentType: asset.content_type,
+    });
+
+    await transcriptionService.ensureTranscriptionJob(recordingId, asset, {
+      workspaceId: asset.workspace_id,
+      meetingId: asset.meeting_id,
+      contentType: asset.content_type,
+      requestId: c.get("reqId"),
+    });
+
     return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
   });
 

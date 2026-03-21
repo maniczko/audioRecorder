@@ -7,6 +7,32 @@ import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
 
+function formatPipelineDiagnostics(item) {
+  const details = [];
+  const transcriptOutcome = String(item?.transcriptOutcome || "").trim();
+  const gitSha = String(item?.pipelineGitSha || "").trim();
+  const version = String(item?.pipelineVersion || "").trim();
+
+  if (transcriptOutcome === "empty") {
+    details.push("Pipeline: empty transcript");
+  }
+  if (gitSha) {
+    details.push(`Build: ${gitSha.slice(0, 7)}`);
+  } else if (version) {
+    details.push(`Version: ${version}`);
+  }
+
+  return details.join(" · ");
+}
+
+function getSelectedMeetingDiagnostics(selectedMeeting) {
+  if (!selectedMeeting) return "";
+  const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
+  const latest =
+    recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) || recordings[0] || null;
+  return formatPipelineDiagnostics(latest);
+}
+
 function RAGSearchPanel({ currentWorkspace }) {
   const [query, setQuery] = React.useState("");
   const [answer, setAnswer] = React.useState("");
@@ -80,6 +106,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   const filtered = query.trim()
     ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
     : sorted.slice(0, 10);
+  const meetingDiagnostics = getSelectedMeetingDiagnostics(selectedMeeting);
 
   return (
     <div className="studio-picker-header" ref={ref}>
@@ -96,6 +123,11 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
               <span>{(selectedMeeting.recordings || []).length} nagran</span>
             </div>
           )}
+          {meetingDiagnostics ? (
+            <div style={{ marginTop: "6px", color: "var(--text-3, #8f97ab)", fontSize: "0.78rem" }}>
+              {meetingDiagnostics}
+            </div>
+          ) : null}
         </div>
         <div className="studio-picker-header-actions">
           <button
@@ -284,6 +316,7 @@ export default function RecordingsTab(props) {
     recordingMessage = "",
     pipelineProgressPercent = 0,
     pipelineStageLabel = "",
+    retryRecordingQueueItem,
   } = props;
 
   const [isUploading, setIsUploading] = React.useState(false);
@@ -300,6 +333,10 @@ export default function RecordingsTab(props) {
         (left, right) => new Date(right.createdAt || 0).valueOf() - new Date(left.createdAt || 0).valueOf()
       ),
     [recordingQueue]
+  );
+  const activeDiagnostics = React.useMemo(
+    () => formatPipelineDiagnostics(activeQueueItem),
+    [activeQueueItem]
   );
 
   const handleMainFileUpload = async (e) => {
@@ -408,6 +445,17 @@ export default function RecordingsTab(props) {
               stageLabel={pipelineStageLabel}
               errorMessage={recordingMessage}
             />
+            {activeDiagnostics ? (
+              <div
+                style={{
+                  marginTop: "10px",
+                  color: "var(--text-3, #8f97ab)",
+                  fontSize: "0.78rem",
+                }}
+              >
+                {activeDiagnostics}
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -433,6 +481,7 @@ export default function RecordingsTab(props) {
                   ? item.errorMessage
                   : "Oczekiwanie na rozpoczecie przetwarzania...";
               const stageLabel = isActive ? pipelineStageLabel : "Plik dodany do kolejki";
+              const diagnostics = formatPipelineDiagnostics(item);
 
               return (
                 <div
@@ -461,8 +510,25 @@ export default function RecordingsTab(props) {
                     progressPercent={progressPercent}
                     stageLabel={stageLabel}
                     errorMessage={item.errorMessage}
+                    onRetry={
+                      item.status === "failed" && retryRecordingQueueItem
+                        ? () => retryRecordingQueueItem(item.recordingId)
+                        : undefined
+                    }
                     className="recordings-tab-pending-status"
                   />
+                  {diagnostics ? (
+                    <div
+                      style={{
+                        width: "100%",
+                        marginTop: "8px",
+                        color: "var(--text-3, #8f97ab)",
+                        fontSize: "0.76rem",
+                      }}
+                    >
+                      {diagnostics}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}

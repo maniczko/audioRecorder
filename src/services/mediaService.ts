@@ -48,6 +48,9 @@ function createLocalMediaService() {
     async getTranscriptionJobStatus() {
       return null;
     },
+    async retryTranscriptionJob() {
+      throw new Error("Ponawianie transkrypcji z serwera niedostepne w trybie lokalnym.");
+    },
     async normalizeRecordingAudio() {
       throw new Error("Normalizacja głośności niedostępna w trybie lokalnym.");
     },
@@ -128,6 +131,9 @@ function createRemoteMediaService() {
         transcriptOutcome: response.transcriptOutcome || "normal",
         emptyReason: response.emptyReason || "",
         userMessage: response.userMessage || "",
+        pipelineVersion: response.pipelineVersion || "",
+        pipelineGitSha: response.pipelineGitSha || "",
+        pipelineBuildTime: response.pipelineBuildTime || "",
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };
@@ -146,6 +152,30 @@ function createRemoteMediaService() {
         transcriptOutcome: response.transcriptOutcome || "normal",
         emptyReason: response.emptyReason || "",
         userMessage: response.userMessage || "",
+        pipelineVersion: response.pipelineVersion || "",
+        pipelineGitSha: response.pipelineGitSha || "",
+        pipelineBuildTime: response.pipelineBuildTime || "",
+        reviewSummary: response.reviewSummary || null,
+        errorMessage: response.errorMessage || "",
+      };
+    },
+    async retryTranscriptionJob(recordingId) {
+      const response = await apiRequest(`/media/recordings/${recordingId}/retry-transcribe`, {
+        method: "POST",
+      });
+
+      return {
+        diarization: response.diarization || {},
+        verifiedSegments: response.segments || [],
+        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
+        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
+        pipelineStatus: response.pipelineStatus || "queued",
+        transcriptOutcome: response.transcriptOutcome || "normal",
+        emptyReason: response.emptyReason || "",
+        userMessage: response.userMessage || "",
+        pipelineVersion: response.pipelineVersion || "",
+        pipelineGitSha: response.pipelineGitSha || "",
+        pipelineBuildTime: response.pipelineBuildTime || "",
         reviewSummary: response.reviewSummary || null,
         errorMessage: response.errorMessage || "",
       };

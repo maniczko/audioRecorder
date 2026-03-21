@@ -2,9 +2,10 @@ import { config } from "../config.ts";
 import { buildLocalHealthUrl } from "../runtime.ts";
 
 async function runSmokeTest() {
-  const url = buildLocalHealthUrl(config);
-  const maxRetries = 5;
-  const waitMs = 2000;
+  const url = process.env.SMOKE_TEST_URL || buildLocalHealthUrl(config);
+  const maxRetries = Math.max(1, Number(process.env.SMOKE_MAX_RETRIES || 5));
+  const waitMs = Math.max(250, Number(process.env.SMOKE_WAIT_MS || 2000));
+  const expectedGitSha = process.env.EXPECTED_GIT_SHA || "";
 
   console.log(`Starting smoke test against ${url}...`);
 
@@ -13,7 +14,15 @@ async function runSmokeTest() {
       const res = await fetch(url);
       if (res.ok) {
         const body = await res.json();
-        console.log(`Smoke test passed! API is healthy. Uptime: ${body.uptime}s`);
+        if (body?.status !== "ok") {
+          throw new Error(`Health endpoint returned unexpected status: ${body?.status}`);
+        }
+        if (expectedGitSha && body?.gitSha && body.gitSha !== expectedGitSha) {
+          throw new Error(`Health gitSha mismatch. Expected ${expectedGitSha}, got ${body.gitSha}`);
+        }
+        console.log(
+          `Smoke test passed! API is healthy. Uptime: ${body.uptime}s, gitSha: ${body.gitSha || "unknown"}`
+        );
         process.exit(0);
       }
     } catch (e: any) {

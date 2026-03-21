@@ -63,6 +63,7 @@ describe("mediaService", () => {
     const { createMediaService } = await loadMediaService("local");
     const service = createMediaService();
 
+    await expect(service.retryTranscriptionJob("rec1")).rejects.toThrow(/lokalnym/);
     await expect(service.normalizeRecordingAudio("rec1")).rejects.toThrow(/lokalnym/);
     await expect(service.getVoiceCoaching("rec1", "0", [])).rejects.toThrow(/serwerowego/);
     await expect(service.rediarize("rec1")).rejects.toThrow(/serwerowym/);
@@ -85,6 +86,9 @@ describe("mediaService", () => {
         transcriptOutcome: "empty",
         emptyReason: "no_segments_from_stt",
         userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        pipelineVersion: "0.1.0",
+        pipelineGitSha: "abc1234",
+        pipelineBuildTime: "2026-03-21T20:00:00.000Z",
         reviewSummary: { approved: 1 },
       })
       .mockResolvedValueOnce({
@@ -94,6 +98,17 @@ describe("mediaService", () => {
         transcriptOutcome: "empty",
         emptyReason: "segments_removed_by_vad",
         userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        pipelineVersion: "0.1.0",
+        pipelineGitSha: "def5678",
+        pipelineBuildTime: "2026-03-21T20:01:00.000Z",
+      })
+      .mockResolvedValueOnce({
+        diarization: { speakerCount: 1 },
+        segments: [{ text: "a" }],
+        pipelineStatus: "queued",
+        pipelineVersion: "0.1.0",
+        pipelineGitSha: "retry999",
+        pipelineBuildTime: "2026-03-21T20:02:00.000Z",
       })
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({ text: "live" })
@@ -119,12 +134,18 @@ describe("mediaService", () => {
       transcriptOutcome: "empty",
       emptyReason: "no_segments_from_stt",
       userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      pipelineGitSha: "abc1234",
     });
     await expect(service.getTranscriptionJobStatus("rec1")).resolves.toMatchObject({
       pipelineStatus: "done",
       transcriptOutcome: "empty",
       emptyReason: "segments_removed_by_vad",
       userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+      pipelineGitSha: "def5678",
+    });
+    await expect(service.retryTranscriptionJob("rec1")).resolves.toMatchObject({
+      pipelineStatus: "queued",
+      pipelineGitSha: "retry999",
     });
     await expect(service.normalizeRecordingAudio("rec1")).resolves.toBeUndefined();
     await expect(service.transcribeLiveChunk(new Blob(["audio"], { type: "audio/webm" }))).resolves.toBe("live");
@@ -135,6 +156,7 @@ describe("mediaService", () => {
     await expect(service.extractVoiceProfileFromSpeaker("rec1", "0", "Anna")).resolves.toEqual({ id: "vp1" });
     await expect(service.askRAG("ws1", "co?")).resolves.toEqual({ answer: "rag" });
     expect(apiRequest).toHaveBeenCalled();
+    expect(apiRequest).toHaveBeenCalledWith("/media/recordings/rec1/retry-transcribe", { method: "POST" });
     expect(EventSourceMock).toHaveBeenCalledWith(
       "https://api.example.test/media/recordings/rec1/progress?token=session-token"
     );

@@ -59,11 +59,75 @@ describe("recorderStore", () => {
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
       recordingId: "rec1",
       status: "queued",
-      uploaded: false,
+      uploaded: true,
       errorMessage: "",
     });
-    expect(useRecorderStore.getState().recordingMessage).toBe("Ponawiamy nagranie z kolejki.");
+    expect(useRecorderStore.getState().recordingMessage).toBe(
+      "Ponawiamy transkrypcje z pliku zapisanego juz na serwerze."
+    );
     expect(useRecorderStore.getState().pipelineProgressPercent).toBe(8);
+  });
+
+  test("retries failed remote item without requiring local audio re-upload", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(null);
+    const retryTranscriptionJob = vi.fn().mockResolvedValue({
+      pipelineStatus: "done",
+      diarization: { speakerNames: { "0": "Anna" }, speakerCount: 1, confidence: 0.7 },
+      verifiedSegments: [{ text: "hello", verificationStatus: "verified" }],
+      providerId: "remote",
+      providerLabel: "Remote",
+      reviewSummary: null,
+      pipelineGitSha: "retry1234",
+      pipelineVersion: "0.1.0",
+      pipelineBuildTime: "2026-03-21T21:00:00.000Z",
+    });
+    const persistRecordingAudio = vi.fn();
+    mocks.analyzeMeeting.mockResolvedValue({
+      summary: "Done",
+      decisions: [],
+      actionItems: [],
+      followUps: [],
+      needsCoverage: [],
+      speakerLabels: { "0": "Anna" },
+      speakerCount: 1,
+    });
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio,
+      retryTranscriptionJob,
+      startTranscriptionJob: vi.fn(),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    const attachCompletedRecording = vi.fn();
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: "rec1",
+          status: "queued",
+          uploaded: true,
+          createdAt: "2026-03-21T10:00:00.000Z",
+          duration: 12,
+        },
+      ],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", title: "Weekly", attendees: [] }),
+      attachCompletedRecording,
+      vi.fn()
+    );
+
+    expect(persistRecordingAudio).not.toHaveBeenCalled();
+    expect(retryTranscriptionJob).toHaveBeenCalledWith("rec1");
+    expect(attachCompletedRecording).toHaveBeenCalledWith(
+      "m1",
+      expect.objectContaining({
+        id: "rec1",
+        pipelineGitSha: "retry1234",
+        pipelineVersion: "0.1.0",
+      })
+    );
   });
 
   test("fails blocked queue item when meeting cannot be resolved", async () => {
@@ -84,6 +148,11 @@ describe("recorderStore", () => {
   test("fails queue item when local audio blob is missing", async () => {
     const { useRecorderStore } = await import("./recorderStore");
     mocks.getAudioBlob.mockResolvedValue(null);
+    mocks.createMediaService.mockReturnValue({
+      mode: "local",
+      startTranscriptionJob: vi.fn(),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
     useRecorderStore.setState({
       recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
     });

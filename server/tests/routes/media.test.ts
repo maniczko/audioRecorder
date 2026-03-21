@@ -121,6 +121,9 @@ describe("Media Routes", () => {
         transcriptOutcome: "empty",
         emptyReason: "no_segments_from_stt",
         userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        pipelineVersion: "0.1.0",
+        pipelineGitSha: "abc1234",
+        pipelineBuildTime: "2026-03-21T20:00:00.000Z",
       }),
       transcript_json: "[]"
     });
@@ -138,6 +141,80 @@ describe("Media Routes", () => {
     expect(data.transcriptOutcome).toBe("empty");
     expect(data.emptyReason).toBe("no_segments_from_stt");
     expect(data.userMessage).toBe("Nie wykryto wypowiedzi w nagraniu.");
+    expect(data.pipelineVersion).toBe("0.1.0");
+    expect(data.pipelineGitSha).toBe("abc1234");
+    expect(data.pipelineBuildTime).toBe("2026-03-21T20:00:00.000Z");
+  });
+
+  it("POST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload", async () => {
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: "rec_retry",
+        workspace_id: "ws_1",
+        meeting_id: "m_1",
+        file_path: "/tmp/retry.webm",
+        content_type: "audio/webm",
+        transcription_status: "failed",
+        diarization_json: JSON.stringify({ errorMessage: "old failure" }),
+        transcript_json: "[]",
+      })
+      .mockResolvedValueOnce({
+        id: "rec_retry",
+        workspace_id: "ws_1",
+        meeting_id: "m_1",
+        file_path: "/tmp/retry.webm",
+        content_type: "audio/webm",
+        transcription_status: "queued",
+        diarization_json: "{}",
+        transcript_json: "[]",
+      });
+    fs.existsSync = vi.fn().mockReturnValue(true) as any;
+
+    const res = await app.request("/media/recordings/rec_retry/retry-transcribe", {
+      method: "POST",
+      headers: { Authorization: "Bearer fake_token" },
+    });
+
+    expect(res.status).toBe(202);
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
+      "rec_retry",
+      expect.objectContaining({
+        workspaceId: "ws_1",
+        meetingId: "m_1",
+        contentType: "audio/webm",
+      })
+    );
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledWith(
+      "rec_retry",
+      expect.objectContaining({ id: "rec_retry" }),
+      expect.objectContaining({
+        workspaceId: "ws_1",
+        meetingId: "m_1",
+        contentType: "audio/webm",
+      })
+    );
+  });
+
+  it("POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing", async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: "rec_retry_missing",
+      workspace_id: "ws_1",
+      meeting_id: "m_1",
+      file_path: "/tmp/missing.webm",
+      content_type: "audio/webm",
+      transcription_status: "failed",
+      diarization_json: "{}",
+      transcript_json: "[]",
+    });
+    fs.existsSync = vi.fn().mockReturnValue(false) as any;
+
+    const res = await app.request("/media/recordings/rec_retry_missing/retry-transcribe", {
+      method: "POST",
+      headers: { Authorization: "Bearer fake_token" },
+    });
+
+    expect(res.status).toBe(409);
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
   });
 
   it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {

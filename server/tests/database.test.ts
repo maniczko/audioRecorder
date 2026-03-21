@@ -64,4 +64,94 @@ describe("Database (Async Worker SQLite)", () => {
     
     newDb.worker.terminate();
   });
+
+  test("should persist pipeline metadata on successful transcription results", async () => {
+    const previousSha = process.env.GITHUB_SHA;
+    const previousVersion = process.env.APP_VERSION;
+    const previousBuildTime = process.env.BUILD_TIME;
+    process.env.GITHUB_SHA = "dbsave123";
+    process.env.APP_VERSION = "3.1.4";
+    process.env.BUILD_TIME = "2026-03-21T20:40:00.000Z";
+
+    try {
+      await db.upsertMediaAsset({
+        recordingId: "rec_meta_success",
+        workspaceId: "ws_meta",
+        meetingId: "m_meta",
+        contentType: "audio/webm",
+        buffer: Buffer.from("audio"),
+        createdByUserId: "user_meta",
+      });
+
+      await db.saveTranscriptionResult("rec_meta_success", {
+        pipelineStatus: "completed",
+        transcriptOutcome: "empty",
+        emptyReason: "no_segments_from_stt",
+        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        segments: [],
+        diarization: { speakerNames: {}, speakerCount: 0, confidence: 0 },
+        reviewSummary: { needsReview: 0, approved: 0 },
+      });
+
+      const saved = await db.getMediaAsset("rec_meta_success");
+      const diarization = JSON.parse(saved.diarization_json);
+      expect(diarization.pipelineGitSha).toBe("dbsave123");
+      expect(diarization.pipelineVersion).toBe("3.1.4");
+      expect(diarization.pipelineBuildTime).toBe("2026-03-21T20:40:00.000Z");
+      expect(diarization.transcriptOutcome).toBe("empty");
+    } finally {
+      if (previousSha === undefined) delete process.env.GITHUB_SHA;
+      else process.env.GITHUB_SHA = previousSha;
+      if (previousVersion === undefined) delete process.env.APP_VERSION;
+      else process.env.APP_VERSION = previousVersion;
+      if (previousBuildTime === undefined) delete process.env.BUILD_TIME;
+      else process.env.BUILD_TIME = previousBuildTime;
+    }
+  });
+
+  test("should persist pipeline metadata on failures and clear old errors when re-queueing", async () => {
+    const previousSha = process.env.GITHUB_SHA;
+    const previousVersion = process.env.APP_VERSION;
+    const previousBuildTime = process.env.BUILD_TIME;
+    process.env.GITHUB_SHA = "dbfail123";
+    process.env.APP_VERSION = "3.1.5";
+    process.env.BUILD_TIME = "2026-03-21T20:45:00.000Z";
+
+    try {
+      await db.upsertMediaAsset({
+        recordingId: "rec_meta_failed",
+        workspaceId: "ws_meta",
+        meetingId: "m_meta",
+        contentType: "audio/webm",
+        buffer: Buffer.from("audio"),
+        createdByUserId: "user_meta",
+      });
+
+      await db.markTranscriptionFailure("rec_meta_failed", "old failure");
+      let failed = await db.getMediaAsset("rec_meta_failed");
+      let diarization = JSON.parse(failed.diarization_json);
+      expect(failed.transcription_status).toBe("failed");
+      expect(diarization.errorMessage).toBe("old failure");
+      expect(diarization.pipelineGitSha).toBe("dbfail123");
+
+      await db.queueTranscription("rec_meta_failed", {
+        workspaceId: "ws_meta",
+        meetingId: "m_meta",
+        contentType: "audio/webm",
+      });
+
+      const queued = await db.getMediaAsset("rec_meta_failed");
+      diarization = JSON.parse(queued.diarization_json);
+      expect(queued.transcription_status).toBe("queued");
+      expect(diarization).toEqual({});
+      expect(JSON.parse(queued.transcript_json)).toEqual([]);
+    } finally {
+      if (previousSha === undefined) delete process.env.GITHUB_SHA;
+      else process.env.GITHUB_SHA = previousSha;
+      if (previousVersion === undefined) delete process.env.APP_VERSION;
+      else process.env.APP_VERSION = previousVersion;
+      if (previousBuildTime === undefined) delete process.env.BUILD_TIME;
+      else process.env.BUILD_TIME = previousBuildTime;
+    }
+  });
 });

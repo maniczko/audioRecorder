@@ -37,6 +37,9 @@ export interface TranscriptionStatusPayload {
   transcriptOutcome?: "normal" | "empty";
   emptyReason?: "no_segments_from_stt" | "segments_removed_by_vad" | "segments_removed_as_hallucinations";
   userMessage?: string;
+  pipelineVersion?: string;
+  pipelineGitSha?: string;
+  pipelineBuildTime?: string;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;
