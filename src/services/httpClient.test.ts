@@ -97,6 +97,50 @@ describe("httpClient", () => {
     expect(unauthorized).toHaveBeenCalledTimes(1);
   });
 
+  test("normalizes missing-token 401 into a session recovery message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: "Brak tokenu autoryzacyjnego." }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest } = await loadHttpClient();
+
+    await expect(apiRequest("/voice-profiles")).rejects.toMatchObject({
+      message: "Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.",
+      status: 401,
+    });
+  });
+
+  test("falls back to persisted workspace store session when legacy session is empty", async () => {
+    localStorage.setItem(
+      "voicelog_workspace_store",
+      JSON.stringify({
+        state: {
+          session: { userId: "u1", workspaceId: "ws1", token: "workspace-token" },
+        },
+        version: 0,
+      })
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiRequest } = await loadHttpClient();
+
+    await apiRequest("/state/bootstrap");
+
+    expect(fetchMock).toHaveBeenCalledWith("https://api.example.test/state/bootstrap", {
+      headers: {
+        Authorization: "Bearer workspace-token",
+      },
+    });
+  });
+
   test("throws a clear error when backend api base url is missing", async () => {
     const { apiRequest } = await loadHttpClientWithoutApi();
 

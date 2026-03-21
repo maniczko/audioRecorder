@@ -4,17 +4,21 @@ import { resolveWorkspaceForUser, workspaceMembers } from "../lib/workspace";
 import { getWorkspacePermissions } from "../lib/permissions";
 import { createWorkspaceService } from "../services/workspaceService";
 import { createStateService } from "../services/stateService";
-import { STORAGE_KEYS, writeStorage } from "../lib/storage";
+import {
+  clearPersistedSession,
+  syncLegacySessionFromWorkspaceSession,
+  type WorkspaceSession,
+} from "../lib/sessionStorage";
 
 interface WorkspaceState {
   users: any[];
   workspaces: any[];
-  session: any | null;
+  session: WorkspaceSession | null;
   isHydratingSession: boolean;
   sessionError: string;
   setUsers: (users: any[] | ((prev: any[]) => any[])) => void;
   setWorkspaces: (workspaces: any[] | ((prev: any[]) => any[])) => void;
-  setSession: (session: any | ((prev: any) => any)) => void;
+  setSession: (session: WorkspaceSession | null | ((prev: WorkspaceSession | null) => WorkspaceSession | null)) => void;
   switchWorkspace: (workspaceId: string) => void;
   updateWorkspaceMemberRole: (targetUserId: string, memberRole: string) => Promise<void>;
   bootstrapSession: () => Promise<void>;
@@ -24,8 +28,8 @@ interface WorkspaceState {
 const workspaceService = createWorkspaceService() as any;
 const stateService = createStateService();
 
-function persistSessionSnapshot(session: any) {
-  writeStorage(STORAGE_KEYS.session, session || null);
+function persistSessionSnapshot(session: WorkspaceSession | null) {
+  return syncLegacySessionFromWorkspaceSession(session);
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -59,7 +63,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       switchWorkspace: (workspaceId) => {
         const { session } = get();
         if (!workspaceId || workspaceId === session?.workspaceId) return;
-        set({ session: { ...session, workspaceId } });
+        const nextSession = persistSessionSnapshot({ ...session, workspaceId });
+        set({ session: nextSession });
       },
 
       updateWorkspaceMemberRole: async (targetUserId, memberRole) => {
@@ -121,12 +126,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (Array.isArray(result.users)) updates.users = result.users;
           if (Array.isArray(result.workspaces)) updates.workspaces = result.workspaces;
           if (result.workspaceId && result.workspaceId !== session.workspaceId) {
-            updates.session = { ...session, workspaceId: result.workspaceId };
+            updates.session = persistSessionSnapshot({ ...session, workspaceId: result.workspaceId });
           }
           set(updates);
         } catch (error: any) {
           if (error.status === 401) {
-            persistSessionSnapshot(null);
+            clearPersistedSession();
             set({ session: null, users: [], workspaces: [] });
           } else {
             set({ sessionError: error.message });
@@ -137,7 +142,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
       
       logout: () => {
-        persistSessionSnapshot(null);
+        clearPersistedSession();
         set({ session: null });
       }
     }),
@@ -148,6 +153,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         workspaces: state.workspaces,
         session: state.session,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state?.session?.token) {
+          clearPersistedSession();
+          return;
+        }
+
+        syncLegacySessionFromWorkspaceSession(state.session);
+      },
     }
   )
 );

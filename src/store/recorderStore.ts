@@ -381,17 +381,22 @@ export const useRecorderStore = create<any>()(
           });
         } catch (error) {
           console.error("Recording queue item failed.", error);
+          const errorMessage = String(error?.message || "Blad przetwarzania.");
+          const userFacingMessage =
+            errorMessage.includes("Brak tokenu autoryzacyjnego") || errorMessage.includes("Sesja wygasla")
+              ? "Brak autoryzacji do backendu. Zaloguj sie ponownie."
+              : errorMessage;
           get().updateQueueItem(nextItem.recordingId, {
             status: "failed",
-            errorMessage: error.message || "Blad przetwarzania.",
+            errorMessage: userFacingMessage,
           });
-          const failedSnapshot = getPipelineSnapshot("failed", 0, error.message || "Blad przetwarzania");
+          const failedSnapshot = getPipelineSnapshot("failed", 0, userFacingMessage);
           set({
             analysisStatus: "error",
             pipelineProgressPercent: failedSnapshot.progressPercent,
             pipelineStageLabel: failedSnapshot.stageLabel,
-            recordingMessage: error.message
-              ? `Blad w kolejce: ${error.message}`
+            recordingMessage: userFacingMessage
+              ? `Blad w kolejce: ${userFacingMessage}`
               : "Blad w kolejce. Sprobuj ponownie.",
           });
         } finally {

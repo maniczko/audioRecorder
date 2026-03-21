@@ -1,5 +1,5 @@
 import { API_BASE_URL, apiBaseUrlConfigured } from "./config";
-import { STORAGE_KEYS } from "../lib/storage";
+import { readLegacySession, readWorkspacePersistedSession } from "../lib/sessionStorage";
 
 const unauthorizedHandlers = new Set();
 export function onUnauthorized(handler) {
@@ -31,11 +31,7 @@ function readSessionToken() {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEYS.session);
-    if (!raw) {
-      return "";
-    }
-    const session = JSON.parse(raw);
+    const session = readLegacySession() || readWorkspacePersistedSession();
     return String(session?.token || "");
   } catch (error) {
     console.error("Unable to read auth token from storage.", error);
@@ -74,6 +70,9 @@ export async function apiRequest(path, options = {}) {
         message;
     } catch (_) {
       // ignore parse errors
+    }
+    if (response.status === 401 && message.includes("Brak tokenu autoryzacyjnego")) {
+      message = "Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.";
     }
     const error = new Error(message);
     error.status = response.status;

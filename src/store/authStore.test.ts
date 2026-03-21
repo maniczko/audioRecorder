@@ -153,4 +153,53 @@ describe("authStore", () => {
       token: "token-remote-1",
     });
   });
+
+  test("subsequent login overwrites stale legacy token", async () => {
+    localStorage.setItem(
+      STORAGE_KEYS.session,
+      JSON.stringify({ userId: "legacy", workspaceId: "legacy-ws", token: "stale-token" })
+    );
+    const { useAuthStore, useWorkspaceStore } = await loadStores();
+    const initialState = useAuthStore.getState();
+    useAuthStore.setState({
+      ...initialState,
+      authMode: "login",
+      authDraft: {
+        name: "",
+        role: "",
+        company: "",
+        email: "next@example.com",
+        password: "secret-456",
+        workspaceMode: "create",
+        workspaceName: "",
+        workspaceCode: "",
+      },
+      resetDraft: {
+        email: "",
+        code: "",
+        newPassword: "",
+        confirmPassword: "",
+      },
+    });
+    useWorkspaceStore.setState({
+      users: [],
+      workspaces: [],
+      session: null,
+      isHydratingSession: false,
+      sessionError: "",
+    });
+    mocks.loginMock.mockResolvedValue({
+      user: { id: "u2", email: "next@example.com" },
+      workspaceId: "ws2",
+      token: "token-remote-2",
+    });
+
+    await useAuthStore.getState().submitAuth();
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toEqual({
+      userId: "u2",
+      workspaceId: "ws2",
+      token: "token-remote-2",
+    });
+  });
 });

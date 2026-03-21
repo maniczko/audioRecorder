@@ -68,6 +68,55 @@ describe("workspaceStore", () => {
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toBeNull();
   });
 
+  test("rehydrates persisted workspace session into legacy auth storage", async () => {
+    localStorage.setItem(
+      "voicelog_workspace_store",
+      JSON.stringify({
+        state: {
+          users: [],
+          workspaces: [],
+          session: { userId: "u1", workspaceId: "ws1", token: "token-from-workspace" },
+        },
+        version: 0,
+      })
+    );
+    const { useWorkspaceStore } = await loadWorkspaceStore();
+
+    await useWorkspaceStore.persist.rehydrate();
+
+    expect(useWorkspaceStore.getState().session).toEqual({
+      userId: "u1",
+      workspaceId: "ws1",
+      token: "token-from-workspace",
+    });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toEqual({
+      userId: "u1",
+      workspaceId: "ws1",
+      token: "token-from-workspace",
+    });
+  });
+
+  test("clears legacy session when rehydrated workspace store has no session", async () => {
+    localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({ userId: "u1", workspaceId: "ws1", token: "stale" }));
+    localStorage.setItem(
+      "voicelog_workspace_store",
+      JSON.stringify({
+        state: {
+          users: [],
+          workspaces: [],
+          session: null,
+        },
+        version: 0,
+      })
+    );
+    const { useWorkspaceStore } = await loadWorkspaceStore();
+
+    await useWorkspaceStore.persist.rehydrate();
+
+    expect(useWorkspaceStore.getState().session).toBeNull();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toBeNull();
+  });
+
   test("switches workspace and updates member role locally", async () => {
     const { useWorkspaceStore } = await loadWorkspaceStore();
     useWorkspaceStore.setState({
@@ -86,6 +135,11 @@ describe("workspaceStore", () => {
     await useWorkspaceStore.getState().updateWorkspaceMemberRole("u2", "admin");
 
     expect(useWorkspaceStore.getState().session?.workspaceId).toBe("ws2");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null")).toEqual({
+      userId: "u1",
+      workspaceId: "ws2",
+      token: "token-1",
+    });
     expect(mocks.updateMemberRoleMock).toHaveBeenCalledWith({
       workspaces: [{ id: "ws1", memberIds: ["u1", "u2"], memberRoles: { u1: "owner", u2: "member" } }],
       workspaceId: "ws1",
