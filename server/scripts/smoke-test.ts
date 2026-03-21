@@ -1,8 +1,8 @@
 import { config } from "../config.ts";
+import { buildLocalHealthUrl } from "../runtime.ts";
 
 async function runSmokeTest() {
-  const port = config.VOICELOG_API_PORT || 4000;
-  const url = `http://127.0.0.1:${port}/health`;
+  const url = buildLocalHealthUrl(config);
   const maxRetries = 5;
   const waitMs = 2000;
 

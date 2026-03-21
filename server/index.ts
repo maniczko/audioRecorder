@@ -10,6 +10,7 @@ import WorkspaceService from "./services/WorkspaceService.ts";
 import TranscriptionService from "./services/TranscriptionService.ts";
 import * as audioPipeline from "./audioPipeline.ts";
 import * as speakerEmbedder from "./speakerEmbedder.ts";
+import { resolveServerPort } from "./runtime.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 // __dirname is not used in this file but kept for reference if needed elsewhere
@@ -25,7 +26,7 @@ process.on("unhandledRejection", (reason) => {
   logger.error("FATAL UNHANDLED REJECTION:", reason instanceof Error ? reason : new Error(String(reason)));
 });
 
-const PORT = Number(config.VOICELOG_API_PORT || config.PORT) || 4000;
+const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || "0.0.0.0";
 
 export async function bootstrap() {
