@@ -32,6 +32,24 @@ jobs:
       - name: Run ESLint
         run: pnpm exec eslint src --max-warnings=0
 
+  validate-workflows:
+    name: Validate Workflow Guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Validate Vercel workflows
+        run: pnpm run test:workflows
+
   test-frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -216,12 +234,15 @@ jobs:
     name: CI Passed
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint, test-frontend, test-server, build, security, e2e-smoke]
+    needs: [lint, validate-workflows, test-frontend, test-server, build, security, e2e-smoke]
     steps:
       - name: Check all jobs
         run: |
           if [ "${{ needs.lint.result }}" != "success" ]; then
             echo "Lint failed"; exit 1
+          fi
+          if [ "${{ needs.validate-workflows.result }}" != "success" ]; then
+            echo "Workflow validation failed"; exit 1
           fi
           if [ "${{ needs.test-frontend.result }}" != "success" ]; then
             echo "Frontend tests failed"; exit 1

@@ -53,6 +53,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:server": "vitest run -c server/vitest.config.ts",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
+    "test:workflows": "node scripts/validate-vercel-workflows.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"

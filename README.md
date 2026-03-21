@@ -146,3 +146,28 @@ npm run test:smoke
 
 4. **Krzyczące importy (na Czerwono) przez TypeScript w edytorze VSCode**
    - Interfejs często zaimplementowano z wspólnymi umowami Typów z `src/shared/types.ts`. Po zmianach między branchami TypeScript potrafi zgubić orientacje co jest "współdzielone". By naprawić edytor by nie krzyczał, włącz u góry `Command Palette` (np. przez klawisz F1) i wybierz operację: **"Restart TS Server"**.
+---
+
+## Vercel Deploy z GitHub Actions
+
+Workflowy Vercela wymagaja trzech sekretow GitHub Actions:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Skad je wziac:
+
+- `VERCEL_TOKEN`: z konta Vercel
+- `VERCEL_ORG_ID` i `VERCEL_PROJECT_ID`: po lokalnym `vercel link`, z pliku `.vercel/project.json`
+
+Typowy objaw braku sekretow:
+
+- w logu pojawia sie `No existing credentials found`
+- polecenie ma postac `vercel pull --yes --environment=production --token=`
+
+Repo ma guard workflowow Vercela. Lokalnie sprawdzisz go poleceniem:
+
+```bash
+pnpm run test:workflows
+```
