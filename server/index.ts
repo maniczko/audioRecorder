@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import http from "node:http";
+import { getRequestListener } from "@hono/node-server";
 import { logger } from "./logger.ts";
 import { getDatabase } from "./database.ts";
 import { createApp } from "./app.ts";
@@ -37,7 +38,8 @@ export async function bootstrap() {
   logger.info(`[Bootstrap] Initializing TranscriptionService with audioPipeline (${typeof audioPipeline}, keys: ${Object.keys(audioPipeline).join(", ")})`);
   const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
 
-  const handler = createApp({
+
+  const app = createApp({
     authService,
     workspaceService,
     transcriptionService,
@@ -48,6 +50,7 @@ export async function bootstrap() {
     }
   });
 
+  const handler = getRequestListener(app.fetch);
   const server = http.createServer(handler);
 
   return { server, db, authService, workspaceService, transcriptionService };

@@ -1296,7 +1296,7 @@ async function normalizeRecording(filePath: string, options: any = {}) {
   const tmpPath = `${filePath}.norm.tmp`;
   try {
     await execPromise(
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af loudnorm=I=-16:TP=-1.5:LRA=11 "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "highpass=f=80,afftdn,loudnorm=I=-16:TP=-1.5:LRA=11" "${tmpPath}"`,
       { timeout: 120000, signal: options.signal }
     );
     fs.renameSync(tmpPath, filePath);
