@@ -5,6 +5,8 @@ interface RecordingPipelineStatusProps {
   status: string;
   errorMessage?: string;
   progressMessage?: string;
+  progressPercent?: number;
+  stageLabel?: string;
   onRetry?: () => void;
   className?: string;
 }
@@ -23,6 +25,8 @@ export function RecordingPipelineStatus({
   status,
   errorMessage,
   progressMessage,
+  progressPercent = 0,
+  stageLabel = "",
   onRetry,
   className = "",
 }: RecordingPipelineStatusProps) {
@@ -44,7 +48,24 @@ export function RecordingPipelineStatus({
       </span>
       
       {progressMessage && inProgress && (
-        <span className="pipeline-progress-text">{progressMessage}</span>
+        <div className="pipeline-progress-block">
+          <span className="pipeline-progress-text">
+            {stageLabel ? `${stageLabel} (${Math.max(0, Math.min(100, Math.round(progressPercent)))}%)` : progressMessage}
+          </span>
+          <div
+            className="pipeline-progress-meter"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.max(0, Math.min(100, Math.round(progressPercent)))}
+            aria-label="Postep przetwarzania nagrania"
+          >
+            <span style={{ width: `${Math.max(4, Math.min(100, Math.round(progressPercent)))}%` }} />
+          </div>
+          {stageLabel && progressMessage && stageLabel !== progressMessage ? (
+            <span className="pipeline-progress-subtext">{progressMessage}</span>
+          ) : null}
+        </div>
       )}
 
       {isFailed && (

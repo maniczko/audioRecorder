@@ -7,6 +7,8 @@ const { mockStore } = vi.hoisted(() => ({
     recordingQueue: [],
     analysisStatus: "idle",
     recordingMessage: "",
+    pipelineProgressPercent: 0,
+    pipelineStageLabel: "",
     isProcessingQueue: false,
     processQueue: vi.fn(),
     setRecordingMessage: vi.fn(),
@@ -31,6 +33,8 @@ describe("useRecordingPipeline", () => {
     mockStore.recordingQueue = [];
     mockStore.analysisStatus = "idle";
     mockStore.recordingMessage = "";
+    mockStore.pipelineProgressPercent = 0;
+    mockStore.pipelineStageLabel = "";
     mockStore.isProcessingQueue = false;
     mockStore.processQueue.mockReset();
   });
@@ -86,5 +90,7 @@ describe("useRecordingPipeline", () => {
 
     expect(result.current.queueSummary).toEqual({ total: 2 });
     expect(result.current.getMeetingQueue("m1")).toEqual([{ recordingId: "r1", meetingId: "m1" }]);
+    expect(result.current.pipelineProgressPercent).toBe(0);
+    expect(result.current.pipelineStageLabel).toBe("");
   });
 });

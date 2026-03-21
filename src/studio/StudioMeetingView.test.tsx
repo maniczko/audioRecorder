@@ -34,6 +34,8 @@ describe("StudioMeetingView", () => {
     liveTranscriptEnabled: false,
     setLiveTranscriptEnabled: vi.fn(),
     recordingMessage: "",
+    pipelineProgressPercent: 0,
+    pipelineStageLabel: "",
     setRecordingMessage: vi.fn(),
     selectedRecording: null,
     displaySpeakerNames: {},

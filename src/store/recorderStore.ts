@@ -16,6 +16,73 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function clampProgress(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.max(0, Math.min(100, Math.round(numeric)));
+}
+
+function getPipelineSnapshot(status, upstreamProgress = null, upstreamMessage = "") {
+  const message = String(upstreamMessage || "").trim();
+  const normalizedStatus = String(status || "queued");
+
+  if (normalizedStatus === "uploading") {
+    return {
+      progressPercent: clampProgress(upstreamProgress ?? 12),
+      stageLabel: message || "Wgrywanie audio na serwer",
+    };
+  }
+
+  if (normalizedStatus === "queued") {
+    return {
+      progressPercent: clampProgress(upstreamProgress ?? 24),
+      stageLabel: message || "Nagranie czeka na rozpoczecie przetwarzania",
+    };
+  }
+
+  if (normalizedStatus === "processing") {
+    const mapped = upstreamProgress == null ? 56 : 25 + clampProgress(upstreamProgress) * 0.6;
+    return {
+      progressPercent: clampProgress(mapped),
+      stageLabel: message || "Serwer przygotowuje transkrypcje",
+    };
+  }
+
+  if (normalizedStatus === "diarization") {
+    const mapped = upstreamProgress == null ? 78 : 55 + clampProgress(upstreamProgress) * 0.35;
+    return {
+      progressPercent: clampProgress(mapped),
+      stageLabel: message || "Rozpoznawanie mowcow i porzadkowanie segmentow",
+    };
+  }
+
+  if (normalizedStatus === "review") {
+    return {
+      progressPercent: clampProgress(upstreamProgress ?? 92),
+      stageLabel: message || "Finalne sprawdzenie transkrypcji",
+    };
+  }
+
+  if (normalizedStatus === "done") {
+    return {
+      progressPercent: 100,
+      stageLabel: message || "Nagranie przetworzone",
+    };
+  }
+
+  if (normalizedStatus === "failed") {
+    return {
+      progressPercent: clampProgress(upstreamProgress ?? 0),
+      stageLabel: message || "Przetwarzanie nie powiodlo sie",
+    };
+  }
+
+  return {
+    progressPercent: clampProgress(upstreamProgress ?? 0),
+    stageLabel: message,
+  };
+}
+
 function buildFallbackAnalysis(message, diarization) {
   return {
     summary: message,
@@ -34,6 +101,8 @@ export const useRecorderStore = create<any>()(
       recordingQueue: [],
       analysisStatus: "idle",
       recordingMessage: "",
+      pipelineProgressPercent: 0,
+      pipelineStageLabel: "",
       isProcessingQueue: false,
 
       setRecordingQueue: (updater) =>
@@ -54,11 +123,21 @@ export const useRecorderStore = create<any>()(
 
       setAnalysisStatus: (status) => set({ analysisStatus: status }),
       setRecordingMessage: (message) => set({ recordingMessage: message }),
+      setPipelineProgress: (progressPercent, stageLabel = "") =>
+        set({
+          pipelineProgressPercent: clampProgress(progressPercent),
+          pipelineStageLabel: String(stageLabel || ""),
+        }),
 
       retryRecordingQueueItem: (recordingId) => {
         get().updateQueueItem(recordingId, { status: "queued", uploaded: false, errorMessage: "" });
-        set({ recordingMessage: "Ponawiamy nagranie z kolejki.", analysisStatus: "queued" });
-        // We could trigger queue processing here, but usually a component effect triggers it.
+        const snapshot = getPipelineSnapshot("queued", 8, "Ponawiamy wgrywanie nagrania");
+        set({
+          recordingMessage: "Ponawiamy nagranie z kolejki.",
+          analysisStatus: "queued",
+          pipelineProgressPercent: snapshot.progressPercent,
+          pipelineStageLabel: snapshot.stageLabel,
+        });
       },
 
       processQueue: async (resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments) => {
@@ -73,12 +152,22 @@ export const useRecorderStore = create<any>()(
         if (!nextItem) {
           const blocked = getNextPendingRecordingQueueItem(state.recordingQueue);
           if (blocked && !resolveMeetingForQueueItem(blocked)?.id) {
-            get().updateQueueItem(blocked.recordingId, { status: "failed", errorMessage: "Nie znaleziono spotkania." });
-            set({ analysisStatus: "error", recordingMessage: "Zablokowany wpis w kolejce." });
+            get().updateQueueItem(blocked.recordingId, {
+              status: "failed",
+              errorMessage: "Nie znaleziono spotkania.",
+            });
+            const snapshot = getPipelineSnapshot("failed", 0, "Nie znaleziono spotkania dla wpisu w kolejce");
+            set({
+              analysisStatus: "error",
+              recordingMessage: "Zablokowany wpis w kolejce.",
+              pipelineProgressPercent: snapshot.progressPercent,
+              pipelineStageLabel: snapshot.stageLabel,
+            });
           }
           return;
         }
 
+        const statusSnapshot = getPipelineSnapshot(nextItem.status);
         set({
           isProcessingQueue: true,
           analysisStatus:
@@ -87,6 +176,8 @@ export const useRecorderStore = create<any>()(
               : nextItem.status === "processing"
               ? "processing"
               : "queued",
+          pipelineProgressPercent: statusSnapshot.progressPercent,
+          pipelineStageLabel: statusSnapshot.stageLabel,
         });
 
         try {
@@ -102,13 +193,24 @@ export const useRecorderStore = create<any>()(
               status: "failed",
               errorMessage: "Brakuje lokalnego audio.",
             });
-            set({ isProcessingQueue: false });
+            const snapshot = getPipelineSnapshot("failed", 0, "Brakuje lokalnego audio");
+            set({
+              isProcessingQueue: false,
+              pipelineProgressPercent: snapshot.progressPercent,
+              pipelineStageLabel: snapshot.stageLabel,
+            });
             return;
           }
 
           const mediaService = createMediaService();
 
           if (!nextItem.uploaded) {
+            const uploadSnapshot = getPipelineSnapshot("uploading", 12, "Wgrywanie audio na serwer");
+            set({
+              pipelineProgressPercent: uploadSnapshot.progressPercent,
+              pipelineStageLabel: uploadSnapshot.stageLabel,
+              recordingMessage: "Wgrywanie nagrania na serwer...",
+            });
             get().updateQueueItem(nextItem.recordingId, {
               status: "uploading",
               attempts: (nextItem.attempts || 0) + 1,
@@ -126,6 +228,17 @@ export const useRecorderStore = create<any>()(
             errorMessage: "",
           });
 
+          const processingSnapshot = getPipelineSnapshot(
+            "processing",
+            24,
+            "Plik zapisany. Oczekiwanie na start transkrypcji"
+          );
+          set({
+            pipelineProgressPercent: processingSnapshot.progressPercent,
+            pipelineStageLabel: processingSnapshot.stageLabel,
+            recordingMessage: "Audio przeslane. Oczekiwanie na przetwarzanie...",
+          });
+
           const started =
             nextItem.uploaded && nextItem.status === "processing"
               ? await mediaService.getTranscriptionJobStatus(nextItem.recordingId)
@@ -137,39 +250,66 @@ export const useRecorderStore = create<any>()(
                 });
 
           const startStatus = normalizeRecordingPipelineStatus(started?.pipelineStatus);
-
-          const unsubscribeProgress = mediaService.subscribeToTranscriptionProgress?.(nextItem.recordingId, (payload) => {
-            if (payload && payload.message) {
-               set({ recordingMessage: `⏳ ${payload.progress}%: ${payload.message}` });
-            }
+          const startSnapshot = getPipelineSnapshot(startStatus, startStatus === "queued" ? 28 : null);
+          set({
+            pipelineProgressPercent: startSnapshot.progressPercent,
+            pipelineStageLabel: startSnapshot.stageLabel,
           });
+
+          const unsubscribeProgress = mediaService.subscribeToTranscriptionProgress?.(
+            nextItem.recordingId,
+            (payload) => {
+              if (!payload || !payload.message) return;
+              const progressSnapshot = getPipelineSnapshot(
+                payload?.status || "processing",
+                payload?.progress,
+                payload?.message
+              );
+              set({
+                recordingMessage: `⏳ ${clampProgress(payload.progress)}%: ${payload.message}`,
+                pipelineProgressPercent: progressSnapshot.progressPercent,
+                pipelineStageLabel: progressSnapshot.stageLabel,
+              });
+            }
+          );
 
           let transcription;
           try {
             if (startStatus === "done") {
-            transcription = { ...started, pipelineStatus: "done" };
-          } else {
-            let attempts = 0;
-            let finalTranscription = null;
-            while (attempts < 120) {
-              attempts += 1;
-              const result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
-              const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
-              if (status === "done") {
-                finalTranscription = { ...result, pipelineStatus: "done" };
-                break;
+              transcription = { ...started, pipelineStatus: "done" };
+            } else {
+              let attempts = 0;
+              let finalTranscription = null;
+              while (attempts < 120) {
+                attempts += 1;
+                const result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+                const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
+                if (status === "done") {
+                  finalTranscription = { ...result, pipelineStatus: "done" };
+                  break;
+                }
+                if (status === "failed") {
+                  throw new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
+                }
+                get().updateQueueItem(nextItem.recordingId, { status, errorMessage: "" });
+                const pollingSnapshot = getPipelineSnapshot(status);
+                set({
+                  pipelineProgressPercent: pollingSnapshot.progressPercent,
+                  pipelineStageLabel: pollingSnapshot.stageLabel,
+                  recordingMessage:
+                    status === "queued"
+                      ? "Nagranie czeka na wolny slot przetwarzania..."
+                      : status === "diarization"
+                      ? "Rozpoznawanie mowcow i porzadkowanie wypowiedzi..."
+                      : "Serwer przetwarza nagranie...",
+                });
+                await sleep(1500);
               }
-              if (status === "failed") {
-                throw new Error(result?.errorMessage || "Serwer nie zakonczyl transkrypcji.");
+              if (!finalTranscription) {
+                throw new Error("Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.");
               }
-              get().updateQueueItem(nextItem.recordingId, { status, errorMessage: "" });
-              await sleep(1500);
+              transcription = finalTranscription;
             }
-            if (!finalTranscription) {
-              throw new Error("Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.");
-            }
-            transcription = finalTranscription;
-          }
           } finally {
             if (unsubscribeProgress) unsubscribeProgress();
           }
@@ -178,7 +318,18 @@ export const useRecorderStore = create<any>()(
             ? transcription.verifiedSegments
             : [];
           if (setCurrentSegments) setCurrentSegments(verifiedSegments);
-          set({ analysisStatus: "processing" });
+
+          const reviewSnapshot = getPipelineSnapshot(
+            "review",
+            92,
+            "Tworzenie podsumowania i finalizacja wyniku"
+          );
+          set({
+            analysisStatus: "processing",
+            pipelineProgressPercent: reviewSnapshot.progressPercent,
+            pipelineStageLabel: reviewSnapshot.stageLabel,
+            recordingMessage: "Tworzenie podsumowania spotkania...",
+          });
 
           let analysis;
           try {
@@ -217,29 +368,34 @@ export const useRecorderStore = create<any>()(
 
           attachCompletedRecording(target.id, recording);
           get().removeQueueItem(nextItem.recordingId);
+          const doneSnapshot = getPipelineSnapshot("done");
           set({
             analysisStatus: "done",
+            pipelineProgressPercent: doneSnapshot.progressPercent,
+            pipelineStageLabel: doneSnapshot.stageLabel,
             recordingMessage: recording.transcript.some(
               (s) => s.verificationStatus === "review"
             )
               ? "Nagranie czeka czesciowo na review."
-              : "",
+              : "Nagranie zostalo przetworzone.",
           });
         } catch (error) {
           console.error("Recording queue item failed.", error);
           get().updateQueueItem(nextItem.recordingId, {
             status: "failed",
-            errorMessage: error.message || "Błąd przetwarzania.",
+            errorMessage: error.message || "Blad przetwarzania.",
           });
+          const failedSnapshot = getPipelineSnapshot("failed", 0, error.message || "Blad przetwarzania");
           set({
             analysisStatus: "error",
+            pipelineProgressPercent: failedSnapshot.progressPercent,
+            pipelineStageLabel: failedSnapshot.stageLabel,
             recordingMessage: error.message
-              ? `Błąd w kolejce: ${error.message}`
-              : "Błąd w kolejce. Sprobuj ponownie.",
+              ? `Blad w kolejce: ${error.message}`
+              : "Blad w kolejce. Sprobuj ponownie.",
           });
         } finally {
           set({ isProcessingQueue: false });
-          // Recursively call to process the next item if it exists
           get().processQueue(resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments);
         }
       },

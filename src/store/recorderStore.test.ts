@@ -30,6 +30,8 @@ describe("recorderStore", () => {
       recordingQueue: [],
       analysisStatus: "idle",
       recordingMessage: "",
+      pipelineProgressPercent: 0,
+      pipelineStageLabel: "",
       isProcessingQueue: false,
     });
   });
@@ -49,6 +51,7 @@ describe("recorderStore", () => {
       errorMessage: "",
     });
     expect(useRecorderStore.getState().recordingMessage).toBe("Ponawiamy nagranie z kolejki.");
+    expect(useRecorderStore.getState().pipelineProgressPercent).toBe(8);
   });
 
   test("fails blocked queue item when meeting cannot be resolved", async () => {
@@ -143,6 +146,7 @@ describe("recorderStore", () => {
     );
     expect(useRecorderStore.getState().recordingQueue).toEqual([]);
     expect(useRecorderStore.getState().recordingMessage).toBe("Nagranie czeka czesciowo na review.");
+    expect(useRecorderStore.getState().pipelineProgressPercent).toBe(100);
   });
 
   test("marks item as failed when remote transcription throws", async () => {

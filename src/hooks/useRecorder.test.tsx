@@ -17,6 +17,8 @@ const {
     setRecordingQueue: vi.fn(),
     recordingMessage: "",
     analysisStatus: "idle",
+    pipelineProgressPercent: 0,
+    pipelineStageLabel: "",
     retryRecordingQueueItem: vi.fn(),
     updateQueueItem: vi.fn(),
     removeQueueItem: vi.fn(),

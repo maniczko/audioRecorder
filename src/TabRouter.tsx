@@ -242,6 +242,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         liveTranscriptEnabled={recorder.liveTranscriptEnabled}
         setLiveTranscriptEnabled={recorder.setLiveTranscriptEnabled}
         recordingMessage={recorder.recordingMessage}
+        pipelineProgressPercent={recorder.pipelineProgressPercent}
+        pipelineStageLabel={recorder.pipelineStageLabel}
         setRecordingMessage={recorder.setRecordingMessage}
         selectedRecording={meetings.selectedRecording}
         displaySpeakerNames={ui.displaySpeakerNames}

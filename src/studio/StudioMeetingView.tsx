@@ -224,6 +224,8 @@ export default function StudioMeetingView({
   liveTranscriptEnabled,
   setLiveTranscriptEnabled,
   recordingMessage,
+  pipelineProgressPercent,
+  pipelineStageLabel,
   setRecordingMessage,
   selectedRecording,
   displaySpeakerNames,
@@ -1205,6 +1207,8 @@ export default function StudioMeetingView({
                 errorMessage={activeQueueItem?.errorMessage || (analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : undefined)}
                 onRetry={activeQueueItem ? () => retryRecordingQueueItem(activeQueueItem.recordingId) : undefined}
                 progressMessage={queueLabel}
+                progressPercent={pipelineProgressPercent}
+                stageLabel={pipelineStageLabel}
               />
             </div>
           ) : (
@@ -1289,6 +1293,8 @@ StudioMeetingView.propTypes = {
   liveTranscriptEnabled: PropTypes.bool,
   setLiveTranscriptEnabled: PropTypes.func,
   recordingMessage: PropTypes.string,
+  pipelineProgressPercent: PropTypes.number,
+  pipelineStageLabel: PropTypes.string,
   selectedRecording: PropTypes.object,
   displaySpeakerNames: PropTypes.object,
   selectedRecordingAudioUrl: PropTypes.string,
@@ -1314,4 +1320,3 @@ StudioMeetingView.propTypes = {
   updateTranscriptSegment: PropTypes.func,
   setActiveTab: PropTypes.func,
 };
-
