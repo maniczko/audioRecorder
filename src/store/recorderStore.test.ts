@@ -202,4 +202,33 @@ describe("recorderStore", () => {
       "Blad w kolejce: Brak autoryzacji do backendu. Zaloguj sie ponownie."
     );
   });
+
+  test("maps failed fetch errors to a backend availability message", async () => {
+    const { useRecorderStore } = await import("./recorderStore");
+    mocks.getAudioBlob.mockResolvedValue(new Blob(["audio"], { type: "audio/webm" }));
+    mocks.createMediaService.mockReturnValue({
+      mode: "remote",
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+      subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+    });
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+    });
+
+    await useRecorderStore.getState().processQueue(
+      () => ({ id: "m1", workspaceId: "ws1", attendees: [] }),
+      vi.fn(),
+      vi.fn()
+    );
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: "failed",
+      errorMessage:
+        "Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile.",
+    });
+    expect(useRecorderStore.getState().recordingMessage).toBe(
+      "Blad w kolejce: Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile."
+    );
+  });
 });

@@ -95,6 +95,25 @@ function buildFallbackAnalysis(message, diarization) {
   };
 }
 
+function toUserFacingQueueError(error: any) {
+  const errorMessage = String(error?.message || "Blad przetwarzania.");
+
+  if (errorMessage.includes("Brak tokenu autoryzacyjnego") || errorMessage.includes("Sesja wygasla")) {
+    return "Brak autoryzacji do backendu. Zaloguj sie ponownie.";
+  }
+
+  if (
+    errorMessage.includes("Failed to fetch") ||
+    errorMessage.includes("NetworkError") ||
+    errorMessage.includes("Load failed") ||
+    errorMessage.includes("ERR_FAILED")
+  ) {
+    return "Backend jest chwilowo niedostepny albo odpowiedz zostala zablokowana przez przegladarke. Sprobuj ponownie za chwile.";
+  }
+
+  return errorMessage;
+}
+
 export const useRecorderStore = create<any>()(
   persist(
     (set, get: any) => ({
@@ -381,11 +400,7 @@ export const useRecorderStore = create<any>()(
           });
         } catch (error) {
           console.error("Recording queue item failed.", error);
-          const errorMessage = String(error?.message || "Blad przetwarzania.");
-          const userFacingMessage =
-            errorMessage.includes("Brak tokenu autoryzacyjnego") || errorMessage.includes("Sesja wygasla")
-              ? "Brak autoryzacji do backendu. Zaloguj sie ponownie."
-              : errorMessage;
+          const userFacingMessage = toUserFacingQueueError(error);
           get().updateQueueItem(nextItem.recordingId, {
             status: "failed",
             errorMessage: userFacingMessage,
