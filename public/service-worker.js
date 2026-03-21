@@ -1,4 +1,4 @@
-const CACHE_NAME = "voicelog-os-v2";
+const CACHE_NAME = "voicelog-os-v3";
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/favicon.ico", "/logo192.png", "/logo512.png"];
 
 function isHttpRequest(url) {
@@ -6,7 +6,9 @@ function isHttpRequest(url) {
 }
 
 function shouldSkipRequest(requestUrl) {
+  const appOrigin = self.location?.origin;
   return (
+    (appOrigin && requestUrl.origin !== appOrigin) ||
     requestUrl.pathname.startsWith("/api/") ||
     requestUrl.port === "4000" ||
     requestUrl.port === "4001"

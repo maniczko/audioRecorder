@@ -27,6 +27,7 @@ function loadServiceWorkerHarness() {
     }),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn().mockResolvedValue(undefined) },
+    location: { origin: "https://app.example.test" },
   };
   const source = fs.readFileSync(path.resolve("public/service-worker.js"), "utf8");
 
@@ -71,5 +72,21 @@ describe("service-worker", () => {
     const response = await respondWith.mock.calls[0][0];
     expect(response).toBe(networkResponse);
     expect(cachePut).toHaveBeenCalledTimes(1);
+  });
+
+  test("skips cross-origin api requests so the worker does not intercept remote backend calls", () => {
+    const { listeners } = loadServiceWorkerHarness();
+    const respondWith = vi.fn();
+
+    listeners.fetch({
+      request: {
+        method: "GET",
+        url: "https://audiorecorder-production.up.railway.app/voice-profiles",
+        mode: "cors",
+      },
+      respondWith,
+    });
+
+    expect(respondWith).not.toHaveBeenCalled();
   });
 });
