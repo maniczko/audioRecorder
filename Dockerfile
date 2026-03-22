@@ -33,9 +33,13 @@ FROM node:22.12-bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-# Install Python, ffmpeg and dependencies
+# Copy static ffmpeg/ffprobe binaries from official Docker image (no download, no OOM)
+COPY --from=mwader/static-ffmpeg:latest /ffmpeg /usr/local/bin/ffmpeg
+COPY --from=mwader/static-ffmpeg:latest /ffprobe /usr/local/bin/ffprobe
+
+# Install Python and runtime dependencies (no ffmpeg package needed)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-venv ffmpeg xz-utils bash ca-certificates libgomp1 libsndfile1 && \
+    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
     rm -rf /var/lib/apt/lists/*
 
 # Install uv (astronomically fast API from Astral) to build python modules 100x faster
