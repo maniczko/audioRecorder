@@ -392,6 +392,7 @@ export default function StudioMeetingView({
   renameSpeaker,
   updateTranscriptSegment,
   retryStoredRecording,
+  onOpenTask,
   briefOpen,
   setBriefOpen,
   setActiveTab,
@@ -624,6 +625,24 @@ export default function StudioMeetingView({
         return right - left;
       });
   }, [meetingTasks, selectedMeeting?.id, selectedRecording?.id]);
+
+  function openMeetingTaskDetails(taskId) {
+    if (!taskId || typeof onOpenTask !== "function") {
+      return;
+    }
+
+    onOpenTask(taskId);
+  }
+
+  function goToTasksTab(taskId) {
+    if (typeof setActiveTab === "function") {
+      setActiveTab("tasks");
+    }
+
+    if (taskId && typeof onOpenTask === "function") {
+      onOpenTask(taskId);
+    }
+  }
   const summaryBullets = useMemo(() => {
     const bullets = [];
 
@@ -1902,17 +1921,27 @@ export default function StudioMeetingView({
                   <ul className="meeting-task-list">
                     {meetingTaskEntries.map((task) => (
                       <li key={task.id} className="meeting-task-item">
-                        <div className="meeting-task-title-row">
-                          <strong>{task.title}</strong>
-                          <span className="task-flag neutral">
-                            {task.priority === "high" ? "Wysoki" : task.priority === "low" ? "Niski" : "Sredni"}
-                          </span>
-                        </div>
-                        {task.description ? <p>{task.description}</p> : null}
-                        <div className="meeting-task-meta">
-                          {task.owner ? <span>@{task.owner}</span> : null}
-                          {task.dueDate ? <span>{task.dueDate}</span> : null}
-                          {task.tags?.length ? <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
+                        <div className="meeting-task-open">
+                          <div className="meeting-task-title-row">
+                            <strong>{task.title}</strong>
+                            <span className="task-flag neutral">
+                              {task.priority === "high" ? "Wysoki" : task.priority === "low" ? "Niski" : "Sredni"}
+                            </span>
+                          </div>
+                          {task.description ? <p>{task.description}</p> : null}
+                          <div className="meeting-task-meta">
+                            {task.owner ? <span>@{task.owner}</span> : null}
+                            {task.dueDate ? <span>{task.dueDate}</span> : null}
+                            {task.tags?.length ? <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
+                          </div>
+                          <div className="meeting-task-actions">
+                            <button type="button" className="meeting-task-link" onClick={() => goToTasksTab(task.id)}>
+                              Przejdź do zadań
+                            </button>
+                            <button type="button" className="meeting-task-link secondary" onClick={() => openMeetingTaskDetails(task.id)}>
+                              Otwórz szczegóły
+                            </button>
+                          </div>
                         </div>
                       </li>
                     ))}
@@ -1973,6 +2002,37 @@ export default function StudioMeetingView({
           </div>
 
           {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
+
+          {/* Voice analytics panel — collapsible, shown only when transcript is available */}
+          {transcript.length > 0 ? (
+            <div className="ff-voice-analytics ff-voice-analytics-top">
+              <button
+                type="button"
+                className="ff-voice-analytics-toggle"
+                onClick={() => setVoiceStatsOpen((p) => !p)}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <rect x="1" y="4" width="2" height="7" rx="1" fill="currentColor" />
+                  <rect x="5" y="2" width="2" height="9" rx="1" fill="currentColor" />
+                  <rect x="9" y="5" width="2" height="6" rx="1" fill="currentColor" />
+                </svg>
+                Voice analytics
+                <svg
+                  className={voiceStatsOpen ? "ff-chevron open" : "ff-chevron"}
+                  width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
+                >
+                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              </button>
+              {voiceStatsOpen ? (
+                <VoiceSpeakerStats
+                  transcript={transcript}
+                  displaySpeakerNames={displaySpeakerNames}
+                  recordingId={selectedRecording?.id}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Segments list */}
           <div className="transcript-list" style={{ flex: 1, minHeight: 0 }}>
@@ -2117,37 +2177,6 @@ export default function StudioMeetingView({
               </svg>
               Sync with audio
             </button>
-          ) : null}
-
-          {/* Voice analytics panel — collapsible, shown only when transcript is available */}
-          {transcript.length > 0 ? (
-            <div className="ff-voice-analytics">
-              <button
-                type="button"
-                className="ff-voice-analytics-toggle"
-                onClick={() => setVoiceStatsOpen((p) => !p)}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <rect x="1" y="4" width="2" height="7" rx="1" fill="currentColor" />
-                  <rect x="5" y="2" width="2" height="9" rx="1" fill="currentColor" />
-                  <rect x="9" y="5" width="2" height="6" rx="1" fill="currentColor" />
-                </svg>
-                Voice analytics
-                <svg
-                  className={voiceStatsOpen ? "ff-chevron open" : "ff-chevron"}
-                  width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
-                >
-                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-              </button>
-              {voiceStatsOpen ? (
-                <VoiceSpeakerStats
-                  transcript={transcript}
-                  displaySpeakerNames={displaySpeakerNames}
-                  recordingId={selectedRecording?.id}
-                />
-              ) : null}
-            </div>
           ) : null}
 
       </div>{/* /ff-studio-right-col */}

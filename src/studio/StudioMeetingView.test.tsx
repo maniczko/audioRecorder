@@ -88,6 +88,7 @@ describe("StudioMeetingView", () => {
     renameSpeaker: vi.fn(),
     updateTranscriptSegment: vi.fn(),
     retryStoredRecording: vi.fn(),
+    onOpenTask: vi.fn(),
     briefOpen: true,
     setBriefOpen: vi.fn(),
     setActiveTab: vi.fn(),
@@ -292,6 +293,44 @@ describe("StudioMeetingView", () => {
     expect(screen.getByText("Przygotuj follow-up")).toBeInTheDocument();
     expect(screen.getByText("@Anna Nowak")).toBeInTheDocument();
     expect(screen.getByText("Wysoki")).toBeInTheDocument();
+  });
+
+  test("task actions can navigate to tasks and open task details", () => {
+    const onOpenTask = vi.fn();
+    const setActiveTab = vi.fn();
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        onOpenTask={onOpenTask}
+        setActiveTab={setActiveTab}
+        meetingTasks={[
+          {
+            id: "task_1",
+            title: "Przygotuj follow-up",
+            description: "Wyslij podsumowanie po rozmowie",
+            owner: "Anna Nowak",
+            dueDate: "2026-03-23T10:00:00.000Z",
+            priority: "high",
+            tags: ["follow-up"],
+            sourceType: "meeting",
+            sourceMeetingId: "m1",
+            sourceMeetingTitle: "Test Meeting",
+            sourceMeetingDate: "2026-03-22T09:00:00.000Z",
+            sourceRecordingId: "rec1",
+            sourceQuote: "",
+            createdAt: "2026-03-22T09:10:00.000Z",
+            updatedAt: "2026-03-22T09:10:00.000Z",
+          },
+        ]}
+        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Przejdź do zadań/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Otwórz szczegóły/i }));
+
+    expect(setActiveTab).toHaveBeenCalledWith("tasks");
+    expect(onOpenTask).toHaveBeenCalledWith("task_1");
   });
 
   test("renders participants as a list", () => {

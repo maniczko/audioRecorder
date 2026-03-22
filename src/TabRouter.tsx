@@ -235,6 +235,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         selectedMeeting={meetings.selectedMeeting}
         displayRecording={ui.displayRecording}
         studioAnalysis={ui.studioAnalysis}
+        onOpenTask={ui.openTaskFromCalendar}
         isRecording={recorder.isRecording}
         analysisStatus={recorder.analysisStatus}
         activeQueueItem={recorder.activeQueueItem}
