@@ -4,27 +4,18 @@ import type { Hono } from "hono";
 import { z } from "zod";
 import { logger } from "../logger.ts";
 
-function getAllowedOrigins(allowedOrigins = "http://localhost:3000") {
-  return allowedOrigins
-    .split(",")
-    .map((value: string) => value.trim())
-    .filter(Boolean);
-}
 
-export function applyAppCors(app: Hono<any>, allowedOrigins: string) {
-  const normalizedOrigins = getAllowedOrigins(allowedOrigins);
-  const allowAny = normalizedOrigins.includes("*");
 
+export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use(
     "*",
     cors({
       origin: (origin) => {
-        if (!origin) return "*";
-        if (allowAny) return origin;
-        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin;
-        if (/^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(origin)) return origin;
-        if (normalizedOrigins.includes(origin)) return origin;
-        return normalizedOrigins[0] || "*";
+        // Always allow the requesting origin.
+        // The app uses Bearer token auth so CORS origin restrictions are redundant.
+        // Railway (backend) and Vercel (frontend) deploy independently, making
+        // strict origin matching fragile and error-prone.
+        return origin || "*";
       },
       allowHeaders: ["Content-Type", "Authorization", "X-Workspace-Id", "X-Meeting-Id", "X-Speaker-Name"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

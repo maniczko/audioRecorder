@@ -122,8 +122,11 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
       backendGitSha &&
       frontendBuildId !== backendGitSha
     ) {
-      setPreviewRuntimeStatus("stale_runtime");
-      throw new Error(HOSTED_PREVIEW_STALE_MESSAGE);
+      // Railway and Vercel deploy at different times — SHA mismatch is expected.
+      // Log a warning but do NOT block requests.
+      console.warn(
+        `[Preview] Build ID mismatch: frontend=${frontendBuildId.slice(0, 8)} backend=${backendGitSha.slice(0, 8)}. This is expected when Railway and Vercel deploy at different times.`
+      );
     }
 
     setPreviewRuntimeStatus("healthy");
