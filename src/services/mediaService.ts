@@ -71,6 +71,9 @@ function createLocalMediaService() {
       if (!question) return "Zadaj konkretne pytanie.";
       return "Funkcja przeszukiwania baz danych dostępna tylko przez zdalne API.";
     },
+    async deleteRecording(_recordingId: string) {
+      // Local mode: recordings are in IndexedDB, no server-side cleanup needed
+    },
   };
 }
 
@@ -256,6 +259,9 @@ function createRemoteMediaService() {
         method: "POST",
         body: { question }
       });
+    },
+    async deleteRecording(recordingId: string) {
+      await apiRequest(`/media/recordings/${recordingId}`, { method: "DELETE" });
     },
   };
 }

@@ -674,28 +674,49 @@ export class Database {
     const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
     if (!safeRecordingId) throw new Error("Nieprawidłowy identyfikator nagrania.");
     const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
-    const filePath = path.resolve(this.uploadDir, `${safeRecordingId}${extension}`);
-    if (!filePath.startsWith(path.resolve(this.uploadDir) + path.sep)) throw new Error("Nieprawidłowa ścieżka pliku nagrania.");
-    fs.writeFileSync(filePath, buffer);
+    
+    // Import upload helper
+    const { uploadAudioToStorage } = await import("./lib/supabaseStorage.ts");
+    
+    // Upload to Supabase Storage instead of local fs
+    const storagePath = await uploadAudioToStorage(safeRecordingId, buffer, contentType, extension);
 
     const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);
     const timestamp = this.nowIso();
 
     if (existing) {
-      await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?", [workspaceId, meetingId, filePath, contentType, buffer.byteLength, timestamp, recordingId]);
+      // NOTE: We're reusing the file_path column to store the storage path for simplicity,
+      // as it avoids a schema migration just for a column renaming.
+      await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?", [workspaceId, meetingId, storagePath, contentType, buffer.byteLength, timestamp, recordingId]);
     } else {
       await this._execute(`
         INSERT INTO media_assets (
           id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
           size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`, [recordingId, workspaceId, meetingId, createdByUserId, filePath, contentType || "application/octet-stream", buffer.byteLength, timestamp, timestamp]);
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`, [recordingId, workspaceId, meetingId, createdByUserId, storagePath, contentType || "application/octet-stream", buffer.byteLength, timestamp, timestamp]);
     }
     return this.getMediaAsset(recordingId);
   }
 
   async getMediaAsset(recordingId: string): Promise<MediaAsset | null> {
     return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]) as Promise<MediaAsset | null>;
+  }
+
+  async deleteMediaAsset(recordingId: string, workspaceId: string): Promise<void> {
+    const asset = await this.getMediaAsset(recordingId);
+    if (!asset || asset.workspace_id !== workspaceId) return;
+
+    if (asset.file_path && !asset.file_path.includes(path.sep)) {
+      // If it has no path separator, it's a Supabase storage path
+      const { deleteAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      await deleteAudioFromStorage(asset.file_path);
+    } else if (asset.file_path) {
+      // Legacy local file path cleanup
+      try { fs.unlinkSync(asset.file_path); } catch (_) {}
+    }
+
+    await this._execute("DELETE FROM media_assets WHERE id = ? AND workspace_id = ?", [recordingId, workspaceId]);
   }
 
   async saveAudioQualityDiagnostics(recordingId: string, audioQuality: AudioQualityDiagnostics | null) {

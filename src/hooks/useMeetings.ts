@@ -4,6 +4,7 @@ import useMeetingLifecycle from "./useMeetingLifecycle";
 import useTaskOperations from "./useTaskOperations";
 import usePeopleProfiles from "./usePeopleProfiles";
 import useRecordingActions from "./useRecordingActions";
+import { createMediaService } from "../services/mediaService";
 
 import {
   buildTaskColumns,
@@ -359,6 +360,20 @@ export default function useMeetings() {
     updateMeeting,
     deleteMeeting,
     createManualNote,
+    deleteRecordingAndMeeting: async (meetingId: string) => {
+      const meeting = userMeetings.find((m) => m.id === meetingId);
+      if (!meeting) return;
+      const media = createMediaService();
+      const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
+      for (const rec of recordings) {
+        try {
+          if (media.deleteRecording) await media.deleteRecording(rec.id || rec.recordingId);
+        } catch (e) {
+          console.warn("Delete recording failed:", e);
+        }
+      }
+      deleteMeeting(meetingId);
+    },
   };
 }
 

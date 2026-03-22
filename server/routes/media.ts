@@ -100,16 +100,49 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
-    if (!fs.existsSync(asset.file_path)) return c.json({ message: "Plik audio nie istnieje na serwerze." }, 404);
 
     const ALLOWED = new Set(["audio/webm", "audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/flac", "application/octet-stream"]);
     const safeType = ALLOWED.has(String(asset.content_type || "").toLowerCase()) ? asset.content_type : "application/octet-stream";
 
-    const stream = fs.createReadStream(asset.file_path);
-    c.header("Content-Type", safeType);
-    c.header("Content-Length", String(fs.statSync(asset.file_path).size));
-    c.header("Content-Disposition", "attachment");
-    return c.body(stream as any, 200);
+    // Depending on file_path format (legacy local vs remote Supabase)
+    if (asset.file_path && !asset.file_path.includes(path.sep)) {
+      try {
+        const { downloadAudioFromStorage } = await import("../lib/supabaseStorage.ts");
+        const arrayBuffer = await downloadAudioFromStorage(asset.file_path);
+        
+        c.header("Content-Type", safeType);
+        c.header("Content-Length", String(arrayBuffer.byteLength));
+        c.header("Content-Disposition", "attachment");
+        return c.body(arrayBuffer as any, 200);
+      } catch (err: any) {
+        return c.json({ message: "Błąd podczas pobierania nagrania z remote storage.", error: err.message }, 500);
+      }
+    } else {
+      // Legacy local file stream
+      if (!fs.existsSync(asset.file_path)) return c.json({ message: "Plik audio nie istnieje." }, 404);
+      const stream = fs.createReadStream(asset.file_path);
+      c.header("Content-Type", safeType);
+      c.header("Content-Length", String(fs.statSync(asset.file_path).size));
+      c.header("Content-Disposition", "attachment");
+      return c.body(stream as any, 200);
+    }
+  });
+
+  router.delete("/recordings/:recordingId", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    
+    // Ensure the user has rights to delete from this workspace
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    
+    try {
+      // Note: transcriptionService is Database instance here
+      await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id);
+      return c.json({ success: true }, 200);
+    } catch (err: any) {
+      return c.json({ message: "Błąd podczas usuwania nagrania.", error: err.message }, 500);
+    }
   });
 
   router.post("/recordings/:recordingId/transcribe", async (c) => {
@@ -136,8 +169,12 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
-    if (!asset.file_path || !fs.existsSync(asset.file_path)) {
-      return c.json({ message: "Nie znaleziono pliku audio do ponownego przetworzenia." }, 409);
+    if (!asset.file_path) {
+      return c.json({ message: "Brak ścieżki pliku do ponownego przetworzenia." }, 409);
+    }
+    
+    if (asset.file_path.includes(path.sep) && !fs.existsSync(asset.file_path)) {
+      return c.json({ message: "Lokalny plik audio nie istnieje." }, 409);
     }
 
     await transcriptionService.queueTranscription(recordingId, {

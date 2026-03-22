@@ -225,7 +225,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   );
 }
 
-function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiveTab }) {
+function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiveTab, onDeleteMeeting }) {
   const [dateFilter, setDateFilter] = React.useState("");
   const [tagFilter, setTagFilter] = React.useState("");
 
@@ -297,6 +297,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
               <th>Czas trwania</th>
               <th>Nagrania</th>
               <th>Tagi</th>
+              <th style={{ width: '50px' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -328,6 +329,23 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
                     })}
                   </div>
                 </td>
+                <td>
+                  <button
+                    type="button"
+                    title="Usuń spotkanie i nagrania"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Czy na pewno chcesz usunąć "${m.title}" i wszystkie powiązane nagrania?`)) {
+                        onDeleteMeeting?.(m.id);
+                      }
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '0.85rem', opacity: 0.6, transition: 'opacity 0.2s' }}
+                    onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.opacity = '0.6'; }}
+                  >
+                    🗑️
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -358,6 +376,7 @@ export default function RecordingsTab(props) {
     pipelineStageLabel = "",
     retryRecordingQueueItem,
     retryStoredRecording,
+    deleteRecordingAndMeeting,
   } = props;
 
   const [isUploading, setIsUploading] = React.useState(false);
@@ -646,6 +665,7 @@ export default function RecordingsTab(props) {
           selectedMeeting={selectedMeeting}
           selectMeeting={selectMeeting}
           setActiveTab={setActiveTab}
+          onDeleteMeeting={deleteRecordingAndMeeting}
         />
       </main>
     </div>

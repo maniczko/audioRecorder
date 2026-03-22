@@ -6,7 +6,7 @@ export default defineConfig({
     include: ['server/tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: './coverage/server',
       include: ['server/**/*.{ts,js}'],
       exclude: [
@@ -16,6 +16,7 @@ export default defineConfig({
         'server/jest.config.js',
         'server/debug_users.ts',
         'server/test_scrypt.ts',
+        'server/**/*.d.ts',
       ],
       thresholds: {
         lines: 20,
@@ -23,6 +24,10 @@ export default defineConfig({
         statements: 20,
         branches: 16,
       },
+      // Generate coverage even on test failures
+      reportOnFailure: true,
+      // Skip files that are only type definitions or setup
+      skipFull: false,
     },
   },
 })

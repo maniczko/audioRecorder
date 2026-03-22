@@ -972,6 +972,24 @@ function resolveStoredAudioQuality(asset: any) {
 }
 
 async function analyzeAudioQuality(filePath: string, options: any = {}) {
+  if (options.signal?.aborted) return { error: "Aborted" };
+
+  let tempFilePath = "";
+  try {
+    // If filePath is a Supabase Storage path (no path separators), download to temp
+    if (filePath && !filePath.includes(path.sep) && !filePath.includes("/")) {
+      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      const buffer = await downloadAudioFromStorage(filePath);
+      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(options.contentType || "").toLowerCase()] || ".bin";
+      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+      tempFilePath = path.join(uploadDir, `temp_analyze_${crypto.randomUUID()}${ext}`);
+      fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
+      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+      filePath = tempFilePath;
+    }
+
+    if (!fs.existsSync(filePath)) return { error: "File not found" };
+
   const ffprobeBinary = deriveFfprobeBinary();
   let codec = "";
   let sampleRateHz = 0;
@@ -1022,7 +1040,7 @@ async function analyzeAudioQuality(filePath: string, options: any = {}) {
       { timeout: 45000, signal: options.signal }
     );
     const silenceDurations = String(stderr || "").match(/silence_duration:\s*([0-9.]+)/gi) || [];
-    const totalSilence = silenceDurations.reduce((sum, entry) => sum + parseDbNumber(entry, 0), 0);
+    const totalSilence = silenceDurations.reduce((sum: number, entry: string) => sum + parseDbNumber(entry, 0), 0);
     silenceRatio =
       durationSeconds > 0
         ? clamp(totalSilence / durationSeconds, 0, 1)
@@ -1068,6 +1086,11 @@ async function analyzeAudioQuality(filePath: string, options: any = {}) {
     enhancementApplied: false,
     enhancementProfile: "none",
   };
+  } finally {
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try { fs.unlinkSync(tempFilePath); } catch (_) {}
+    }
+  }
 }
 
 async function preprocessAudio(filePath: string, signal: any, profile: "standard" | "enhanced" = "standard") {
@@ -1277,10 +1300,32 @@ async function runTranscriptionAttempt(
 ) {
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
-  notify(10, "Wyciąganie audio do pamięci podręcznej...");
-  const prepPath = await preprocessAudio(asset.file_path, options.signal, profile);
-  const transcribeFilePath = prepPath || asset.file_path;
-  const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
+  let tempFilePath = "";
+  let workingFilePath = asset.file_path;
+  
+  try {
+    // If file_path is a Supabase Storage path (no path separators), download to temp
+    if (asset.file_path && !asset.file_path.includes(path.sep) && !asset.file_path.includes("/")) {
+      notify(10, "Pobieranie nagrania z bazy danych...");
+      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      const buffer = await downloadAudioFromStorage(asset.file_path);
+      
+      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";
+      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+      tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
+      fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
+      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+      workingFilePath = tempFilePath;
+    }
+
+    if (!fs.existsSync(workingFilePath)) {
+      throw new Error("Lokalny plik audio nie istnieje i nie mogl byc pobrany.");
+    }
+  
+    notify(10, "Wyciąganie audio do pamięci podręcznej...");
+    const prepPath = await preprocessAudio(workingFilePath, options.signal, profile);
+    const transcribeFilePath = prepPath || workingFilePath;
+    const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
   const attemptAudioQuality = buildAudioQualityForAttempt(baseAudioQuality, profile, Boolean(prepPath));
 
   notify(30, "Silero VAD - optymalizacja ciszy...");
@@ -1643,6 +1688,12 @@ async function runTranscriptionAttempt(
     throw error;
   } finally {
     if (prepPath) { try { fs.unlinkSync(prepPath); } catch (_) {} }
+  }
+  } finally {
+    // Clean up temp file downloaded from Supabase Storage
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try { fs.unlinkSync(tempFilePath); } catch (_) {}
+    }
   }
 }
 

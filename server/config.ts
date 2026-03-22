@@ -23,6 +23,9 @@ const envSchema = z.object({
   VOICELOG_UPLOAD_DIR: z.string().optional(),
   VOICELOG_SESSION_TTL_HOURS: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()),
   
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  
   SENTRY_DSN: z.string().optional(),
   
   OPENAI_API_KEY: z.string().optional(),

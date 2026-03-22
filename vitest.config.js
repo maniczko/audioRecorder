@@ -9,16 +9,25 @@ export default defineConfig({
     exclude: ['src/App.integration.test.tsx'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: './coverage/frontend',
       include: ['src/**/*.{js,jsx,ts,tsx}'],
-      exclude: ['src/setupTests.ts', 'src/**/*.test.{js,jsx,ts,tsx}', 'src/App.integration.test.tsx'],
+      exclude: [
+        'src/setupTests.ts',
+        'src/**/*.test.{js,jsx,ts,tsx}',
+        'src/App.integration.test.tsx',
+        'src/**/*.d.ts',
+      ],
       thresholds: {
         lines: 28,
         functions: 30,
         statements: 28,
         branches: 22,
       },
+      // Generate coverage even on test failures
+      reportOnFailure: true,
+      // Skip files that are only type definitions or setup
+      skipFull: false,
     },
   },
 });

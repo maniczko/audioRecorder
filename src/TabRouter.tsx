@@ -210,6 +210,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         pipelineStageLabel={recorder.pipelineStageLabel}
         retryRecordingQueueItem={recorder.retryRecordingQueueItem}
         retryStoredRecording={recorder.retryStoredRecording}
+        deleteRecordingAndMeeting={meetings.deleteRecordingAndMeeting}
       />
     ) : (
       <StudioTab
