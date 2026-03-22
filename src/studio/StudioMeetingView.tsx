@@ -257,6 +257,25 @@ function formatAudioQualityPanel(audioQuality) {
   return parts.join(" | ");
 }
 
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeAnalysisTask(task) {
+  if (!task) return null;
+  const title = String(task.title || task.text || task.sourceQuote || "").trim();
+  if (!title) return null;
+  return {
+    title,
+    description: String(task.description || task.sourceQuote || "").trim(),
+    owner: String(task.owner || task.assignee || "").trim(),
+    dueDate: String(task.dueDate || "").trim(),
+    priority: String(task.priority || "medium").trim() || "medium",
+    tags: safeArray(task.tags).map((tag) => String(tag).trim()).filter(Boolean),
+    sourceQuote: String(task.sourceQuote || task.text || title).trim(),
+  };
+}
+
 export default function StudioMeetingView({
   selectedMeeting,
   displayRecording,
@@ -333,6 +352,7 @@ export default function StudioMeetingView({
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
+  const autoTaskSyncKeyRef = useRef("");
 
   const audioRef = useRef(null);
   const virtuosoRef = useRef(null);
@@ -354,6 +374,89 @@ export default function StudioMeetingView({
     () => formatAudioQualityPanel(selectedRecording?.audioQuality),
     [selectedRecording?.audioQuality]
   );
+  const autoTaskDrafts = useMemo(() => {
+    const analysisTasks = safeArray(studioAnalysis?.tasks).map(normalizeAnalysisTask).filter(Boolean);
+    if (analysisTasks.length) {
+      return analysisTasks;
+    }
+
+    return safeArray(studioAnalysis?.actionItems)
+      .map((item) => normalizeAnalysisTask({ title: item, sourceQuote: item }))
+      .filter(Boolean);
+  }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
+
+  const summaryMetrics = useMemo(() => {
+    const decisionsCount = safeArray(studioAnalysis?.decisions).length;
+    const actionCount = autoTaskDrafts.length || safeArray(studioAnalysis?.actionItems).length;
+    const questionsCount = safeArray(studioAnalysis?.openQuestions).length;
+    const riskCount = safeArray(studioAnalysis?.risks).length + safeArray(studioAnalysis?.blockers).length;
+    const participantCount = safeArray(studioAnalysis?.participantInsights).length || Object.keys(studioAnalysis?.speakerLabels || {}).length;
+
+    return [
+      { label: "Decyzje", value: decisionsCount, tone: "teal" },
+      { label: "Action items", value: actionCount, tone: "blue" },
+      { label: "Pytania", value: questionsCount, tone: "neutral" },
+      { label: "Ryzyka", value: riskCount, tone: "warning" },
+      { label: "Uczestnicy", value: participantCount, tone: "neutral" },
+    ];
+  }, [autoTaskDrafts.length, studioAnalysis?.actionItems, studioAnalysis?.blockers, studioAnalysis?.decisions, studioAnalysis?.openQuestions, studioAnalysis?.participantInsights, studioAnalysis?.risks, studioAnalysis?.speakerLabels]);
+
+  const topTags = useMemo(() => safeArray(studioAnalysis?.suggestedTags).slice(0, 6), [studioAnalysis?.suggestedTags]);
+  const keyQuotes = useMemo(() => safeArray(studioAnalysis?.keyQuotes).slice(0, 3), [studioAnalysis?.keyQuotes]);
+  const followUps = useMemo(() => safeArray(studioAnalysis?.followUps).slice(0, 4), [studioAnalysis?.followUps]);
+  const openQuestions = useMemo(() => safeArray(studioAnalysis?.openQuestions).slice(0, 4), [studioAnalysis?.openQuestions]);
+  const risks = useMemo(() => safeArray(studioAnalysis?.risks).slice(0, 3), [studioAnalysis?.risks]);
+  const blockers = useMemo(() => safeArray(studioAnalysis?.blockers).slice(0, 3), [studioAnalysis?.blockers]);
+  const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
+  const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
+  const terminology = useMemo(() => safeArray(studioAnalysis?.terminology).slice(0, 6), [studioAnalysis?.terminology]);
+  const suggestedAgenda = useMemo(() => safeArray(studioAnalysis?.suggestedAgenda).slice(0, 5), [studioAnalysis?.suggestedAgenda]);
+  const contextLinks = useMemo(() => safeArray(studioAnalysis?.contextLinks).slice(0, 4), [studioAnalysis?.contextLinks]);
+  const coachingTip = String(studioAnalysis?.coachingTip || "").trim();
+
+  useEffect(() => {
+    if (!selectedRecording?.id || typeof onCreateTask !== "function" || !autoTaskDrafts.length) {
+      return;
+    }
+
+    const batchKey = [
+      selectedRecording.id,
+      autoTaskDrafts
+        .map((task) => [task.title, task.owner, task.dueDate, task.priority, task.tags.join(","), task.sourceQuote].join("|"))
+        .join("||"),
+    ].join("::");
+
+    if (autoTaskSyncKeyRef.current === batchKey) {
+      return;
+    }
+
+    const existing = new Set(
+      safeArray(meetingTasks)
+        .filter((task) => task.sourceRecordingId === selectedRecording.id || task.sourceMeetingId === selectedMeeting?.id)
+        .map((task) => `${String(task.title || "").trim().toLowerCase()}|${String(task.sourceQuote || "").trim().toLowerCase()}`)
+    );
+
+    autoTaskDrafts.forEach((task) => {
+      const key = `${task.title.trim().toLowerCase()}|${task.sourceQuote.trim().toLowerCase()}`;
+      if (!task.title || existing.has(key)) {
+        return;
+      }
+
+      onCreateTask({
+        title: task.title,
+        description: task.description,
+        owner: task.owner,
+        assignedTo: task.owner ? [task.owner] : [],
+        dueDate: task.dueDate,
+        priority: task.priority,
+        tags: task.tags,
+        notes: task.sourceQuote,
+      });
+      existing.add(key);
+    });
+
+    autoTaskSyncKeyRef.current = batchKey;
+  }, [autoTaskDrafts, meetingTasks, onCreateTask, selectedMeeting?.id, selectedRecording?.id]);
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
     : "Nagranie w kolejce…";
@@ -817,35 +920,244 @@ export default function StudioMeetingView({
           <section className="panel studio-analysis-summary-panel">
             <div className="panel-header compact">
               <div>
-                <div className="eyebrow">AI — podsumowanie</div>
+                <div className="eyebrow">AI ? podsumowanie</div>
                 <h2>Podsumowanie spotkania</h2>
+              </div>
+              <div className="summary-pill-row">
+                {studioAnalysis?.meetingType ? <span className="summary-pill">{studioAnalysis.meetingType}</span> : null}
+                {studioAnalysis?.energyLevel ? <span className="summary-pill">{studioAnalysis.energyLevel}</span> : null}
+                <span className="summary-pill accent">{autoTaskDrafts.length} taski</span>
               </div>
             </div>
             {studioAnalysis?.summary ? (
-              <div className="panel-body">
-                <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+              <div className="panel-body ff-summary-layout">
+                <div className="summary-metrics">
+                  {summaryMetrics.map((metric) => (
+                    <article key={metric.label} className={`summary-metric ${metric.tone}`}>
+                      <span>{metric.label}</span>
+                      <strong>{metric.value}</strong>
+                    </article>
+                  ))}
+                </div>
 
-                {studioAnalysis.decisions?.length > 0 && (
-                  <div className="analysis-section">
-                    <h3>Decyzje</h3>
-                    <ul className="analysis-list">
-                      {studioAnalysis.decisions.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
+                <div className="summary-hero">
+                  <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+                  <div className="summary-tags">
+                    {topTags.length ? topTags.map((tag) => (
+                      <span key={tag} className="summary-tag">#{tag}</span>
+                    )) : <span className="soft-copy">Brak sugerowanych tagow</span>}
                   </div>
-                )}
+                </div>
 
-                {studioAnalysis.actionItems?.length > 0 && (
-                  <div className="analysis-section">
-                    <h3>Action Items</h3>
-                    <ul className="analysis-list">
-                      {studioAnalysis.actionItems.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="summary-grid">
+                  <section className="summary-card summary-card-wide">
+                    <div className="summary-card-head">
+                      <h3>Sugerowana agenda</h3>
+                      <span>{suggestedAgenda.length}</span>
+                    </div>
+                    {suggestedAgenda.length ? (
+                      <div className="summary-agenda">
+                        {suggestedAgenda.map((item, i) => (
+                          <div key={`${item}-${i}`} className="summary-agenda-item">
+                            <span className="summary-step-index">{String(i + 1).padStart(2, "0")}</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak wygenerowanej agendy.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Terminologia i kontekst</h3>
+                      <span>{terminology.length + contextLinks.length}</span>
+                    </div>
+                    {terminology.length || contextLinks.length ? (
+                      <div className="summary-stack">
+                        {terminology.length ? (
+                          <div className="summary-chip-cloud">
+                            {terminology.map((term, i) => (
+                              <span key={`${term}-${i}`} className="summary-chip">{term}</span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {contextLinks.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {contextLinks.map((item, i) => (
+                              <li key={`${item}-${i}`}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak słownika i linków kontekstowych.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Wskazówka AI</h3>
+                      <span>{coachingTip ? 1 : 0}</span>
+                    </div>
+                    {coachingTip ? (
+                      <article className="summary-pill-card accent">
+                        {coachingTip}
+                      </article>
+                    ) : (
+                      <p className="soft-copy">Brak dodatkowej wskazówki.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card summary-card-wide">
+                    <div className="summary-card-head">
+                      <h3>Automatycznie utworzone zadania</h3>
+                      <span>{autoTaskDrafts.length}</span>
+                    </div>
+                    {autoTaskDrafts.length ? (
+                      <div className="summary-task-list">
+                        {autoTaskDrafts.map((task, index) => (
+                          <article key={`${task.title}-${index}`} className="summary-task-card">
+                            <div className="summary-task-head">
+                              <strong>{task.title}</strong>
+                              <span className="task-flag neutral">AI</span>
+                            </div>
+                            {task.description ? <p>{task.description}</p> : null}
+                            <div className="summary-task-meta">
+                              {task.owner ? <span>@{task.owner}</span> : null}
+                              {task.dueDate ? <span>{task.dueDate}</span> : null}
+                              {task.priority ? <span>{task.priority}</span> : null}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak action items do utworzenia jako zadania.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Decyzje</h3>
+                      <span>{safeArray(studioAnalysis.decisions).length}</span>
+                    </div>
+                    {safeArray(studioAnalysis.decisions).length ? (
+                      <ul className="analysis-list summary-list-tight">
+                        {studioAnalysis.decisions.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="soft-copy">Brak wykrytych decyzji.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Nastepne kroki</h3>
+                      <span>{followUps.length}</span>
+                    </div>
+                    {followUps.length ? (
+                      <ul className="analysis-list summary-list-tight">
+                        {followUps.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="soft-copy">Brak dodatkowych krokow.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Otwarte pytania</h3>
+                      <span>{openQuestions.length}</span>
+                    </div>
+                    {openQuestions.length ? (
+                      <ul className="analysis-list summary-list-tight">
+                        {openQuestions.map((item, i) => (
+                          <li key={i}>
+                            <strong>{item.askedBy || "Kto?"}:</strong> {item.question}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="soft-copy">Brak otwartych pytan.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Ryzyka i blokery</h3>
+                      <span>{risks.length + blockers.length + tensions.length}</span>
+                    </div>
+                    {risks.length || blockers.length || tensions.length ? (
+                      <div className="summary-stack">
+                        {risks.map((item, i) => (
+                          <article key={`risk-${i}`} className="summary-pill-card danger">
+                            {item.risk}
+                          </article>
+                        ))}
+                        {blockers.map((item, i) => (
+                          <article key={`blocker-${i}`} className="summary-pill-card warning">
+                            {item}
+                          </article>
+                        ))}
+                        {tensions.map((item, i) => (
+                          <article key={`tension-${i}`} className="summary-pill-card">
+                            {item.topic ? <strong>{item.topic}</strong> : null}
+                            <span>
+                              {Array.isArray(item.between) && item.between.length ? item.between.join(" vs ") : "Sprawa do wyjaśnienia"}
+                              {item.resolved ? " - rozwiązane" : " - otwarte"}
+                            </span>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak ryzyk i blokad.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Najwazniejsze cytaty</h3>
+                      <span>{keyQuotes.length}</span>
+                    </div>
+                    {keyQuotes.length ? (
+                      <div className="summary-quotes">
+                        {keyQuotes.map((item, i) => (
+                          <article key={`quote-${i}`} className="summary-quote">
+                            <p>{item.quote}</p>
+                            <small>{item.speaker}{item.why ? ` ? ${item.why}` : ""}</small>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak wyraznych cytatow.</p>
+                    )}
+                  </section>
+
+                  <section className="summary-card">
+                    <div className="summary-card-head">
+                      <h3>Uczestnicy</h3>
+                      <span>{participantInsights.length}</span>
+                    </div>
+                    {participantInsights.length ? (
+                      <div className="summary-participants">
+                        {participantInsights.map((insight, i) => (
+                          <article key={`${insight.speaker}-${i}`} className="summary-participant">
+                            <strong>{insight.speaker}</strong>
+                            {insight.mainTopic ? <span>{insight.mainTopic}</span> : <span className="soft-copy">Brak glownego tematu</span>}
+                            {insight.stance ? <small>{insight.stance}</small> : null}
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="soft-copy">Brak danych o uczestnikach.</p>
+                    )}
+                  </section>
+                </div>
               </div>
             ) : isEmptyTranscript ? (
               <div className="panel-body">
@@ -871,12 +1183,11 @@ export default function StudioMeetingView({
               </div>
             ) : (
               <div className="panel-body">
-                <p className="soft-copy">Automatyczne podsumowanie AI pojawi się po zakończeniu analizy.</p>
+                <p className="soft-copy">Automatyczne podsumowanie AI pojawi sie po zakonczeniu analizy.</p>
               </div>
             )}
           </section>
         )}
-
         {studioAnalysisTab === 'needs' && (
           <section className="panel">
             <div className="panel-header compact">
