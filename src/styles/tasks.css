@@ -3096,8 +3096,8 @@
 }
 
 .tasks-layout.ms-todo .todo-detail-card {
-  position: sticky;
-  top: 96px;
+  position: relative;
+  top: auto;
   align-self: start;
   background:
     radial-gradient(circle at top right, rgba(91, 179, 220, 0.14), transparent 32%),
@@ -5545,7 +5545,7 @@
 }
 
 .tasks-layout.ms-todo .todo-detail-card {
-  z-index: 10;
+  z-index: auto;
 }
 
 .kanban-board {

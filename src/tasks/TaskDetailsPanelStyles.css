@@ -1,5 +1,24 @@
 
 
+.tasks-layout.ms-todo .todo-detail-card {
+  position: relative;
+  z-index: auto;
+}
+
+.tasks-layout.ms-todo .todo-detail-form {
+  grid-template-columns: 1fr;
+  overflow: visible;
+}
+
+.tasks-layout.ms-todo .todo-detail-stack {
+  grid-column: 1 / -1;
+}
+
+.tasks-layout.ms-todo .todo-detail-row,
+.tasks-layout.ms-todo .todo-detail-row * {
+  pointer-events: auto;
+}
+
 .todo-history-toggle {
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.07);
