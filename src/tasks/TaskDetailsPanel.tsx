@@ -179,7 +179,12 @@ export default function TaskDetailsPanel({
               >
                 {selectedTask.completed ? "✓" : ""}
               </button>
-              <h2>{selectedTask.title}</h2>
+              <input
+                className="todo-detail-title-input"
+                value={selectedTask.title}
+                onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })}
+                aria-label="Tytuł zadania"
+              />
             </div>
             <div className="todo-detail-badges" />
           </div>
@@ -271,42 +276,37 @@ export default function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
-            <button type="button" className="todo-detail-row add-step" onClick={() => onUpdateTask(selectedTask.id, { notes: selectedTask.notes || "" })}>
-              <span className="todo-row-icon">+</span>
-              <span>Dodaj krok</span>
-            </button>
-
             <button type="button" className={selectedTask.myDay ? "todo-detail-row active" : "todo-detail-row"} onClick={() => onUpdateTask(selectedTask.id, { myDay: !selectedTask.myDay })}>
-              <span className="todo-row-icon">?</span>
+              <span className="todo-row-icon" aria-hidden="true">☀</span>
               <span>{selectedTask.myDay ? "Dodano do My Day" : "Dodaj do My Day"}</span>
             </button>
 
             <label className="todo-detail-row field-row">
-              <span className="todo-row-icon">??</span>
+              <span className="todo-row-icon" aria-hidden="true">⏰</span>
               <span className="todo-row-label">Przypomnienie</span>
               <input type="datetime-local" value={toInputDateTime(selectedTask.reminderAt)} onChange={(event) => onUpdateTask(selectedTask.id, { reminderAt: event.target.value })} />
             </label>
 
             <label className="todo-detail-row field-row">
-              <span className="todo-row-icon">??</span>
+              <span className="todo-row-icon" aria-hidden="true">📅</span>
               <span className="todo-row-label">Termin</span>
               <input type="datetime-local" value={toInputDateTime(selectedTask.dueDate)} onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })} />
             </label>
 
             <button type="button" className="todo-detail-row muted" disabled>
-              <span className="todo-row-icon">?</span>
+              <span className="todo-row-icon" aria-hidden="true">↻</span>
               <span>Powtarzanie</span>
             </button>
 
             <label className="todo-detail-row field-row">
-              <span className="todo-row-icon">??</span>
+              <span className="todo-row-icon" aria-hidden="true">🏷</span>
               <span className="todo-row-label">Kategoria</span>
               <div className="todo-tag-editor">
                 <div className="todo-tag-chip-list">
                   {selectedTags.map((tag) => (
-                    <button key={tag} type="button" className="todo-tag-chip" onClick={() => updateTags(selectedTags.filter((item) => item !== tag))} title="Usu? tag">
+                    <button key={tag} type="button" className="todo-tag-chip" onClick={() => updateTags(selectedTags.filter((item) => item !== tag))} title="Usuń tag">
                       <span>{tag}</span>
-                      <span aria-hidden="true">?</span>
+                      <span aria-hidden="true">×</span>
                     </button>
                   ))}
                   <input
@@ -335,7 +335,7 @@ export default function TaskDetailsPanel({
                     ))}
                     {canCreateTag && !tagSuggestions.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()) ? (
                       <button type="button" className="todo-tag-option create" onMouseDown={(event) => { event.preventDefault(); addTag(normalizedTagDraft); }}>
-                        Dodaj tag "${normalizedTagDraft}"
+                        Dodaj tag "{normalizedTagDraft}"
                       </button>
                     ) : null}
                   </div>
@@ -343,7 +343,7 @@ export default function TaskDetailsPanel({
                 {showTagSuggestions && !tagSuggestions.length && canCreateTag ? (
                   <div className="todo-tag-dropdown">
                     <button type="button" className="todo-tag-option create" onMouseDown={(event) => { event.preventDefault(); addTag(normalizedTagDraft); }}>
-                      Dodaj tag "${normalizedTagDraft}"
+                      Dodaj tag "{normalizedTagDraft}"
                     </button>
                   </div>
                 ) : null}
@@ -351,16 +351,16 @@ export default function TaskDetailsPanel({
             </label>
 
             <label className="todo-detail-row note-row">
-              <span className="todo-row-icon">📝</span>
+              <span className="todo-row-icon" aria-hidden="true">📝</span>
               <span className="todo-row-label">Notatka</span>
-              <textarea rows="5" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} placeholder="Dodaj notatk?" />
+              <textarea rows="5" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} placeholder="Dodaj notatkę..." />
             </label>
           </div>
         </div>
 
         <section className="todo-detail-section">
           <div className="todo-section-head">
-            <strong>Komentarze</strong>
+            <strong><span className="todo-section-icon" aria-hidden="true">💬</span>Komentarze</strong>
             <span>{(selectedTask.comments || []).length}</span>
           </div>
           <div className="todo-comment-create" style={{ position: "relative" }}>
@@ -403,7 +403,7 @@ export default function TaskDetailsPanel({
 
         <section className="todo-detail-section">
           <div className="todo-section-head">
-            <strong>Historia zmian</strong>
+            <strong><span className="todo-section-icon" aria-hidden="true">🕘</span>Historia zmian</strong>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span>{(selectedTask.history || []).length}</span>
               {(selectedTask.history || []).length > 0 && (

@@ -183,6 +183,25 @@
   line-height: 1.1;
 }
 
+.todo-detail-title-input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  box-shadow: none;
+}
+
+.todo-detail-title-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .todo-task-checkbox {
   width: 24px;
   height: 24px;
@@ -291,6 +310,17 @@
 .todo-comment-create {
   display: grid;
   gap: 12px;
+}
+
+.todo-section-head strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-section-icon {
+  color: var(--muted);
+  font-size: 0.95em;
 }
 
 .todo-comment-list {
