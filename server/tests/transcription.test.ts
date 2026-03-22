@@ -215,10 +215,19 @@ describe("TranscriptionService", () => {
   });
 
   it("lazy-loads speaker embedder when missing", async () => {
+    // vi.doMock doesn't work with dynamic imports, so we need to mock the module directly
+    // by setting it up before any imports happen
     vi.resetModules();
+
+    // Create the mock first
+    const mockComputeEmbedding = vi.fn().mockResolvedValue([0.9, 0.8]);
+
+    // Mock speakerEmbedder module
     vi.doMock("../speakerEmbedder.ts", () => ({
-      computeEmbedding: vi.fn().mockResolvedValue([0.9, 0.8]),
+      computeEmbedding: mockComputeEmbedding,
     }));
+
+    // Mock fs and child_process to prevent actual file operations
     vi.doMock("node:fs", () => ({
       default: {
         existsSync: vi.fn(() => true),
@@ -227,10 +236,14 @@ describe("TranscriptionService", () => {
       existsSync: vi.fn(() => true),
       readFileSync: vi.fn(() => Buffer.from("audio")),
     }));
+
     vi.doMock("node:child_process", () => ({
       execSync: vi.fn(() => Buffer.from("audio")),
     }));
-    const { default: DynamicTranscriptionService } = await import("../services/TranscriptionService.ts");
+
+    // Import AFTER doMock is set up
+    const TranscriptionServiceModule = await import("../services/TranscriptionService.ts");
+    const DynamicTranscriptionService = TranscriptionServiceModule.default;
     const service = new DynamicTranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, null);
 
     await expect(service.computeEmbedding("/tmp/audio.wav")).resolves.toEqual([0.9, 0.8]);

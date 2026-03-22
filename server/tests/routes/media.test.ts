@@ -1,4 +1,24 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
+
+// Mock node:fs BEFORE any other imports
+vi.mock('node:fs', () => {
+  const mockFs = {
+    existsSync: vi.fn(() => (global as any).__TEST_FS_STATE__?.existsSync ?? true),
+    createReadStream: vi.fn(() => ({ pipe: vi.fn() })),
+    statSync: vi.fn(() => ({ size: (global as any).__TEST_FS_STATE__?.statSyncSize ?? 1234 })),
+    readFileSync: vi.fn(() => Buffer.from('mocked')),
+    writeFileSync: vi.fn(),
+    unlinkSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    renameSync: vi.fn(),
+  };
+  // Initialize global state
+  if (!(global as any).__TEST_FS_STATE__) {
+    (global as any).__TEST_FS_STATE__ = { existsSync: true, statSyncSize: 1234 };
+  }
+  return { ...mockFs, default: mockFs };
+});
+
 import { createApp } from "../../app.ts";
 
 // Helper to control fs mock state between tests

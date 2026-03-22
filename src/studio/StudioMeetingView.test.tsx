@@ -178,7 +178,7 @@ describe("StudioMeetingView", () => {
     const slider = screen.getByRole("slider", { name: /Pozycja odtwarzania/i });
     expect(slider).toBeInTheDocument();
     fireEvent.change(slider, { target: { value: "42" } });
-    expect(screen.getByText("00:42")).toBeInTheDocument();
+    expect(screen.getByText("00:42 / 02:00")).toBeInTheDocument();
   });
 
   test("renders empty state when no meeting selected", () => {

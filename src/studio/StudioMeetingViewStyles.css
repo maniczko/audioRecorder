@@ -465,8 +465,8 @@
   display: flex;
   align-items: center;
   justify-content: stretch;
-  padding: 0 24px;
-  height: 88px;
+  padding: 16px 32px;
+  height: 120px;
   background: var(--bg-panel-strong, rgba(7, 17, 27, 0.94));
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -482,7 +482,7 @@
   max-width: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .ff-player-progress-row {

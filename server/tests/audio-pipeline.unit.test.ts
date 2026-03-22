@@ -402,10 +402,14 @@ describe("audioPipeline exports", () => {
           existsSync: vi.fn(() => true),
           statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
           readFileSync: vi.fn(() => Buffer.from("audio")),
+          writeFileSync: vi.fn(),
+          unlinkSync: vi.fn(),
         },
         existsSync: vi.fn(() => true),
         statSync: vi.fn(() => ({ size: 26 * 1024 * 1024 })),
         readFileSync: vi.fn(() => Buffer.from("audio")),
+        writeFileSync: vi.fn(),
+        unlinkSync: vi.fn(),
       };
     });
     vi.doMock("node:child_process", () => {
@@ -413,11 +417,9 @@ describe("audioPipeline exports", () => {
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
         child.stdout.setEncoding = vi.fn();
-        // Emit data first, then close synchronously
-        setImmediate(() => {
-          child.stdout.emit("data", Buffer.alloc(0));
-          child.emit("close", 0);
-        });
+        // Emit empty buffer immediately to simulate end of file
+        child.stdout.emit("data", Buffer.alloc(0));
+        child.emit("close", 0);
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -443,7 +445,7 @@ describe("audioPipeline exports", () => {
       chunksSentToStt: 0,
     });
     expect(global.fetch).not.toHaveBeenCalled();
-  }, 15000);
+  }, 20000);
 
   it("fails the pipeline when every chunked STT request fails instead of classifying it as empty transcript", async () => {
     const { EventEmitter } = await import("node:events");

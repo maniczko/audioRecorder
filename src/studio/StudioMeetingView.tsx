@@ -428,6 +428,8 @@ export default function StudioMeetingView({
 
 
   const [currentTime, setCurrentTime] = useState(0);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverPos, setHoverPos] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -2102,30 +2104,60 @@ export default function StudioMeetingView({
             <>
               <div className="ff-player-main">
                 <div className="ff-player-progress-row">
-                  <span className="ff-player-time ff-player-time-current">
-                    {formatDuration(Math.floor(currentTime))}
-                  </span>
-                  <input
-                    type="range"
-                    className="ff-player-scrubber"
-                    aria-label="Pozycja odtwarzania"
-                    min={0}
-                    max={scrubberMax}
-                    step={0.1}
-                    value={scrubberValue}
-                    onChange={(event) => {
-                      const nextValue = Number(event.target.value || 0);
-                      setCurrentTime(nextValue);
-                      if (audioRef.current) {
-                        audioRef.current.currentTime = nextValue;
-                      }
-                    }}
-                    style={{ "--ff-player-progress": `${scrubberProgress}%` }}
-                  />
-                  <span className="ff-player-time ff-player-time-total">
-                    {formatDuration(Math.floor(playbackDuration))}
+                  <div className="ff-player-scrubber-container" style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                    {hoverTime !== null && (
+                      <div 
+                        style={{ 
+                          position: 'absolute', 
+                          left: `${hoverPos}px`, 
+                          bottom: '100%', 
+                          transform: 'translateX(-50%)',
+                          marginBottom: '10px',
+                          background: '#111827',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          pointerEvents: 'none',
+                          zIndex: 2000,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        {formatDuration(Math.floor(hoverTime))}
+                      </div>
+                    )}
+                    <input
+                      type="range"
+                      className="ff-player-scrubber"
+                      aria-label="Pozycja odtwarzania"
+                      min={0}
+                      max={scrubberMax}
+                      step={0.1}
+                      value={scrubberValue}
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const percent = x / rect.width;
+                        setHoverTime(percent * playbackDuration);
+                        setHoverPos(x);
+                      }}
+                      onMouseLeave={() => setHoverTime(null)}
+                      onChange={(event) => {
+                        const nextValue = Number(event.target.value || 0);
+                        setCurrentTime(nextValue);
+                        if (audioRef.current) {
+                          audioRef.current.currentTime = nextValue;
+                        }
+                      }}
+                      style={{ "--ff-player-progress": `${scrubberProgress}%` }}
+                    />
+                  </div>
+                  <span className="ff-player-time ff-player-time-total" style={{ minWidth: "120px", marginLeft: "16px", textAlign: "right" }}>
+                    {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(playbackDuration))}
                   </span>
                 </div>
+              </div>
               <div className="ff-player-controls">
                 <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }} title="-15s">
@@ -2175,7 +2207,6 @@ export default function StudioMeetingView({
                     <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
                 </a>
-              </div>
               </div>
             </>
           )}
