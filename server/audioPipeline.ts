@@ -978,7 +978,7 @@ async function analyzeAudioQuality(filePath: string, options: any = {}) {
   try {
     // If filePath is a Supabase Storage path (no path separators), download to temp
     if (filePath && !filePath.includes(path.sep) && !filePath.includes("/")) {
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
       const buffer = await downloadAudioFromStorage(filePath);
       const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(options.contentType || "").toLowerCase()] || ".bin";
       const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
@@ -1307,7 +1307,7 @@ async function runTranscriptionAttempt(
     // If file_path is a Supabase Storage path (no path separators), download to temp
     if (asset.file_path && !asset.file_path.includes(path.sep) && !asset.file_path.includes("/")) {
       notify(10, "Pobieranie nagrania z bazy danych...");
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
       const buffer = await downloadAudioFromStorage(asset.file_path);
       
       const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";

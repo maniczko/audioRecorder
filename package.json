@@ -55,6 +55,7 @@
     "coverage:report": "scripts\\generate-coverage-report.bat",
     "coverage:open": "start coverage\\server\\index.html",
     "coverage:open:frontend": "start coverage\\frontend\\index.html",
+    "coverage:summary": "node scripts/coverage-summary.cjs",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.js",
     "test:e2e:ui": "playwright test --ui",
@@ -106,6 +107,9 @@
     "server/**/*.{js,ts}": [
       "vitest related --run"
     ]
+  },
+  "coverage": {
+    "summary": "npm run test:coverage:server && node scripts/coverage-summary.cjs"
   },
   "browserslist": {
     "production": [

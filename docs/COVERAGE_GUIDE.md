@@ -155,7 +155,42 @@ Raport jest generowany nawet przy padających testach dzięki `reportOnFailure: 
 | Functions | 50.85% | 🟡 |
 | Lines | 47.4% | 🟡 |
 
+## 📊 Aktualny status (2026-03-22)
+
+### Server Coverage
+| Metryka | Coverage | Status |
+|---------|----------|--------|
+| Statements | 47.19% | 🔴 |
+| Branches | 35.5% | 🔴 |
+| Functions | 50.85% | 🟡 |
+| Lines | 47.4% | 🔴 |
+
+### Jakość testów wg kategorii
+
+```
+Kategoria                 │   Plików │   Testów │   Pass Rate │      Ocena
+────────────────────────────────────────────────────────────────────────────────
+Backend (server/)         │       18 │      ~50 │         95% │ 🟢 9/10
+Frontend Components       │       15 │      ~60 │         85% │ 🟡 7/10
+Hooks                     │       12 │      ~50 │         60% │ 🔴 5/10
+Services                  │        6 │      ~30 │         50% │ 🔴 4/10
+Stores (Zustand)          │        5 │      ~30 │         70% │ 🟡 6/10
+Lib (pure functions)      │       15 │      ~50 │         98% │ 🟢 9/10
+Context Providers         │        2 │      ~10 │         50% │ 🔴 5/10
+Integration/E2E           │        2 │      ~15 │         70% │ 🟡 6/10
+```
+
 ### Najważniejsze pliki do poprawy
 - `audioPipeline.ts` - 22% coverage 🔴
 - `sqliteWorker.ts` - 0% coverage 🔴
 - `supabaseStorage.ts` - 26% coverage 🔴
+
+### Priorytety napraw
+
+| Priorytet | Kategoria | Działanie |
+|-----------|-----------|-----------|
+| 🔴 P0 | Hooks | Naprawić testy z brakującymi providerami |
+| 🔴 P0 | Services | Naprawić mocki fetch/API |
+| 🔴 P0 | Context Providers | Dodać wrappery z providerami |
+| 🟡 P1 | Frontend Components | Naprawić testy integracyjne |
+| 🟡 P1 | Stores | Naprawić testy z async state |

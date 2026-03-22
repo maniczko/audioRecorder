@@ -675,18 +675,35 @@ export class Database {
     if (!safeRecordingId) throw new Error("Nieprawidłowy identyfikator nagrania.");
     const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
     
-    // Import upload helper
-    const { uploadAudioToStorage } = await import("./lib/supabaseStorage.ts");
-    
-    // Upload to Supabase Storage instead of local fs
-    const storagePath = await uploadAudioToStorage(safeRecordingId, buffer, contentType, extension);
+    let storagePath: string;
+
+    // Try Supabase Storage first, fall back to local fs
+    try {
+      const { uploadAudioToStorage } = await import("./lib/supabaseStorage");
+      const result = await uploadAudioToStorage(safeRecordingId, buffer, contentType, extension);
+      if (result) {
+        storagePath = result;
+      } else {
+        // Supabase not configured — save locally
+        const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+        fs.mkdirSync(uploadDir, { recursive: true });
+        const localPath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+        fs.writeFileSync(localPath, buffer);
+        storagePath = localPath;
+      }
+    } catch (err: any) {
+      console.warn("[database] Supabase upload failed, falling back to local:", err.message);
+      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+      fs.mkdirSync(uploadDir, { recursive: true });
+      const localPath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+      fs.writeFileSync(localPath, buffer);
+      storagePath = localPath;
+    }
 
     const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);
     const timestamp = this.nowIso();
 
     if (existing) {
-      // NOTE: We're reusing the file_path column to store the storage path for simplicity,
-      // as it avoids a schema migration just for a column renaming.
       await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?", [workspaceId, meetingId, storagePath, contentType, buffer.byteLength, timestamp, recordingId]);
     } else {
       await this._execute(`
@@ -709,7 +726,7 @@ export class Database {
 
     if (asset.file_path && !asset.file_path.includes(path.sep)) {
       // If it has no path separator, it's a Supabase storage path
-      const { deleteAudioFromStorage } = await import("./lib/supabaseStorage.ts");
+      const { deleteAudioFromStorage } = await import("./lib/supabaseStorage");
       await deleteAudioFromStorage(asset.file_path);
     } else if (asset.file_path) {
       // Legacy local file path cleanup

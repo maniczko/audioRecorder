@@ -28,10 +28,11 @@ async function ensureBucket() {
 
 /**
  * Uploads a buffer to Supabase Storage.
+ * Returns null if Supabase is not configured (caller should fall back to local).
  */
-export async function uploadAudioToStorage(recordingId: string, buffer: Buffer, contentType: string, extension: string): Promise<string> {
+export async function uploadAudioToStorage(recordingId: string, buffer: Buffer, contentType: string, extension: string): Promise<string | null> {
   if (!supabase) {
-    throw new Error("Supabase credentials not configured check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+    return null; // Supabase not configured — caller falls back to local fs
   }
   
   await ensureBucket();
