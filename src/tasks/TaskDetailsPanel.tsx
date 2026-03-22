@@ -191,7 +191,7 @@ export default function TaskDetailsPanel({
           <div className="todo-detail-header-actions">
             {selectedTask.sourceMeetingId ? (
               <button type="button" className="todo-command-button" onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}>
-                Otworz spotkanie
+                Otwórz spotkanie
               </button>
             ) : null}
           </div>
@@ -227,7 +227,7 @@ export default function TaskDetailsPanel({
               <article className="todo-conflict-panel editable">
                 <span className="todo-card-eyebrow">Finalna wersja</span>
                 <label>
-                  <span>Tytul</span>
+                  <span>Tytuł</span>
                   <input
                     value={conflictDraft.title}
                     onChange={(event) => setConflictDraft((previous) => ({ ...previous, title: event.target.value }))}
@@ -250,7 +250,7 @@ export default function TaskDetailsPanel({
                   />
                 </label>
                 <label className="todo-inline-check">
-                  <span>Zakonczone</span>
+                  <span>Zakończone</span>
                   <input
                     type="checkbox"
                     checked={conflictDraft.completed}
@@ -268,7 +268,7 @@ export default function TaskDetailsPanel({
                 Zachowaj lokalne
               </button>
               <button type="button" className="todo-command-button primary" onClick={() => resolveConflict("merge")}>
-                Zapisz finalna wersje
+                Zapisz finalną wersję
               </button>
             </div>
           </section>
@@ -411,7 +411,7 @@ export default function TaskDetailsPanel({
                   type="button"
                   className="todo-history-toggle"
                   onClick={() => setHistoryExpanded((v) => !v)}
-                  title={historyExpanded ? "Ukryj historię" : "Pokaż historię"}
+                    title={historyExpanded ? "Ukryj historię" : "Pokaż historię"}
                 >
                   {historyExpanded ? "▲" : "▼"}
                 </button>
