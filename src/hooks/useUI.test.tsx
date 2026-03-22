@@ -162,6 +162,17 @@ describe("useUI", () => {
     expect(state.uiState.setActiveTab).toHaveBeenCalledWith("studio");
   });
 
+  test("opens a fresh studio draft when requested", () => {
+    const { result } = renderHook(() => useUI());
+
+    act(() => {
+      result.current.openStudio();
+    });
+
+    expect(state.meetings.startNewMeetingDraft).toHaveBeenCalledTimes(1);
+    expect(state.uiState.setActiveTab).toHaveBeenCalledWith("studio");
+  });
+
   test("routes task, person and workspace actions through shared UI state", () => {
     const { result } = renderHook(() => useUI());
 

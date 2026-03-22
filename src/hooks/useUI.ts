@@ -157,6 +157,11 @@ export default function useUI() {
     setActiveTab("studio");
   }, [meetings, setActiveTab]);
 
+  const openStudio = useCallback(() => {
+    meetings.startNewMeetingDraft();
+    setActiveTab("studio");
+  }, [meetings, setActiveTab]);
+
   const openGoogleCalendarForMeeting = useCallback((meetingId: string) => {
     const meeting = meetings.userMeetings.find((item: any) => item.id === meetingId);
     if (!meeting) return;
@@ -233,6 +238,7 @@ export default function useUI() {
 
   return {
     ...uiState,
+    canGoBack: (uiState.tabHistory || []).length > 0,
     commandPaletteItems,
     notificationItems,
     unreadNotificationCount,
@@ -251,6 +257,7 @@ export default function useUI() {
     exportMeetingNotes,
     exportMeetingPdfFile,
     openMeetingFromCalendar,
+    openStudio,
     openGoogleCalendarForMeeting,
     openTaskFromCalendar,
     createTaskForPerson,

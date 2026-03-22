@@ -52,6 +52,11 @@
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+.tab-back-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
 .settings-button {
   border: 1px solid var(--surface-stroke);
   background: var(--surface-panel-muted);

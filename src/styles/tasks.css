@@ -4363,41 +4363,23 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .tasks-layout.ms-todo .todo-view-button,
 .tasks-layout.ms-todo .todo-command-button,
 .tasks-layout.ms-todo .todo-icon-button {
   min-height: 42px;
+  box-sizing: border-box;
   padding: 10px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-.tasks-layout.ms-todo .todo-view-button,
-.tasks-layout.ms-todo .todo-command-button,
-.tasks-layout.ms-todo .todo-icon-button {
-  min-height: 42px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-}
-
-.tasks-layout.ms-todo .todo-view-button,
-.tasks-layout.ms-todo .todo-command-button,
-.tasks-layout.ms-todo .todo-icon-button {
-  min-height: 42px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  line-height: 1;
+  flex: 0 0 auto;
   transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
 }
 
@@ -4406,29 +4388,6 @@
 .tasks-layout.ms-todo .todo-icon-button:hover {
   transform: translateY(-1px);
   border-color: rgba(117, 214, 196, 0.26);
-}
-
-.tasks-layout.ms-todo .todo-view-button:hover,
-.tasks-layout.ms-todo .todo-command-button:hover,
-.tasks-layout.ms-todo .todo-icon-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(117, 214, 196, 0.26);
-}
-
-.tasks-layout.ms-todo .todo-view-button:hover,
-.tasks-layout.ms-todo .todo-command-button:hover,
-.tasks-layout.ms-todo .todo-icon-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(117, 214, 196, 0.26);
-}
-
-.tasks-layout.ms-todo .todo-view-button.active,
-.tasks-layout.ms-todo .todo-command-button.primary {
-  background: linear-gradient(135deg, rgba(117, 214, 196, 0.95) 0%, rgba(91, 179, 220, 0.92) 100%);
-  color: #03222a;
-  border-color: transparent;
-  box-shadow: none;
-  font-weight: 600;
 }
 
 .tasks-layout.ms-todo .todo-view-button.active,
@@ -5661,19 +5620,15 @@
   color: #2564ea;
 }
 
-.tasks-layout.ms-todo .todo-col-sort-btn:hover,
-.tasks-layout.ms-todo .todo-col-sort-btn.active {
-  color: #2564ea;
-}
-
 /* Fix CSS jump for Tabs */
 .tasks-layout.ms-todo .todo-view-button {
-  box-sizing: border-box;
   height: 42px;
   line-height: normal;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .tasks-layout.ms-todo .todo-view-button.active {

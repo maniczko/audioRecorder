@@ -20,18 +20,17 @@ export default function Topbar() {
           <h1>Meeting intelligence studio</h1>
         </div>
         <Cluster className="tab-switcher" gap="sm">
-          {ui.canGoBack ? (
-            <button
-              type="button"
-              className="tab-back-btn"
-              onClick={ui.navigateBack}
-              title="Cofnij"
-              aria-label="Wroc do poprzedniej zakladki"
-            >
-              ←
-            </button>
-          ) : null}
-          <button type="button" className={ui.activeTab === "studio" ? "tab-pill active" : "tab-pill"} onClick={() => ui.setActiveTab("studio")} aria-label="Tab Studio">
+          <button
+            type="button"
+            className="tab-back-btn"
+            onClick={ui.navigateBack}
+            title="Cofnij"
+            aria-label="Wroc do poprzedniego obiektu"
+            disabled={!ui.canGoBack}
+          >
+            ←
+          </button>
+          <button type="button" className={ui.activeTab === "studio" ? "tab-pill active" : "tab-pill"} onClick={ui.openStudio} aria-label="Tab Studio">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
             <span>Studio</span>
           </button>
