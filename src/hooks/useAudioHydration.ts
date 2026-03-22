@@ -56,7 +56,7 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
       setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "ready" }));
       return nextUrl;
     } catch (error) {
-      console.error(`Audio hydration failed for ${recordingId}.`, error);
+      console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
       setAudioHydrationErrors((prev) => ({
         ...prev,
         [recordingId]: error.message || "Blad ladowania audio",
@@ -84,6 +84,8 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
       for (const rid of recordingIds) {
         if (cancelled || audioUrlsRef.current[rid]) continue;
         if (audioHydrationStatusRef.current[rid] === "loading") continue;
+        // Skip recordings that already failed — prevents 404 error spam for deleted files
+        if (audioHydrationStatusRef.current[rid] === "error") continue;
         await hydrateRecordingAudio(rid);
       }
 
