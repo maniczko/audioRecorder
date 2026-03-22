@@ -1075,7 +1075,7 @@ async function runTranscriptionAttempt(
     if (DEBUG) console.log("[audioPipeline] Pyannote unavailable — using GPT-4o-mini transcript diarization.");
     notify(80, "Analiza semantyczna GPT-4o-mini celem wyizolowania rozmówców...");
     try {
-      diarization = await diarizeFromTranscript(verificationSegments);
+      diarization = await diarizeFromTranscript(verificationSegments, { participants: options.participants });
       if (DEBUG && diarization) {
         console.log(`[audioPipeline] Transcript diarization: ${diarization.segments.length} segs, ${diarization.speakerCount} speaker(s): ${JSON.stringify(diarization.speakerNames)}`);
       }
