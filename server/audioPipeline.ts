@@ -43,6 +43,7 @@ import {
 
   // Constants
   CHUNK_DURATION_SECONDS,
+  CHUNK_OVERLAP_SECONDS,
   MAX_FILE_SIZE_BYTES,
 
   // Helpers
@@ -401,8 +402,12 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
     const batchPromises = [];
     for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
       const currentOffset = offsetSeconds;
-      offsetSeconds += CHUNK_DURATION_SECONDS;
-      
+      const isFirstChunk = currentOffset === 0;
+      // Advance by duration minus overlap so consecutive chunks share CHUNK_OVERLAP_SECONDS of audio.
+      // The overlap gives Whisper context across boundaries; segments from the overlap zone
+      // are stripped during mergeChunkedPayloads to avoid duplication.
+      offsetSeconds += CHUNK_DURATION_SECONDS - CHUNK_OVERLAP_SECONDS;
+
       batchPromises.push((async () => {
         const diagnostics = {
           extracted: false,
