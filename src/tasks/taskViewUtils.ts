@@ -52,12 +52,6 @@ export function dueTone(value) {
 
 export function buildSidebarLists(tasks, boardColumns) {
   const baseLists = [
-    {
-      id: "smart:my_day",
-      label: "My Day",
-      icon: "☀️",
-      count: tasks.filter((task) => task.myDay && !task.completed).length,
-    },
     { id: "smart:important", label: "Important", icon: "⭐", count: tasks.filter((task) => task.important).length },
     { id: "smart:planned", label: "Planned", icon: "📅", count: tasks.filter((task) => task.dueDate).length },
     { id: "smart:overdue", label: "Overdue", icon: "⚠️", count: tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()).length },

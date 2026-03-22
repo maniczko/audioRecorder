@@ -27,7 +27,6 @@ function NotificationStrip({ notifications = [] }) {
       {notifications.slice(0, 4).map(({ task, sla, dependencies }) => (
         <article key={task.id} className={`todo-notification-card ${sla.tone}`}>
           <strong>{task.title}</strong>
-          <span>{sla.label}</span>
           {dependencies.blocking ? <small>Blokuje: {dependencies.unresolved[0]?.title}</small> : null}
         </article>
       ))}
@@ -380,16 +379,6 @@ export default function TasksWorkspaceView({
                     }
                   />
                   <span>Wazne</span>
-                </label>
-                <label className="todo-inline-check">
-                  <input
-                    type="checkbox"
-                    checked={quickDraft.myDay}
-                    onChange={(event) =>
-                      setQuickDraft((previous) => ({ ...previous, myDay: event.target.checked }))
-                    }
-                  />
-                  <span>My Day</span>
                 </label>
               </div>
             ) : null}

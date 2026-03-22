@@ -1,3 +1,11 @@
+/**
+ * audioPipeline.ts
+ *
+ * Główny pipeline transkrypcji audio z wykorzystaniem Whisper API.
+ * Ten plik zawiera funkcje nieczyste (IO, network, filesystem).
+ * Czyste funkcje zostały wydzielone do audioPipeline.utils.ts
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import { File } from "node:buffer";
@@ -9,20 +17,62 @@ import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 import { config } from "./config.ts";
 import { logger } from "./logger.ts";
 
+// Import czystych funkcji z audioPipeline.utils.ts
+import {
+  // Text utilities
+  clean,
+  normalizeText,
+  tokenize,
+  textSimilarity,
+  hasRepeatedPhrase,
+  isHallucination,
+
+  // Math utilities
+  clamp,
+  average,
+  parseDbNumber,
+
+  // Segment utilities
+  mergeShortSegments,
+  estimateQualityScore,
+  parseJsonResponse,
+  normalizeSpeakerLabel,
+  getRawWords,
+  synthesizeSegmentsFromWords,
+  normalizeDiarizedSegments,
+  normalizeVerificationSegments,
+  overlapSeconds,
+  evaluateAgainstVerificationPass,
+  buildVerificationResult,
+  buildEmptyTranscriptResult,
+
+  // Prompt building
+  buildWhisperPrompt,
+  DEFAULT_WHISPER_PROMPT,
+
+  // Constants
+  HALLUCINATION_PATTERNS,
+  VERIFY_CONFIDENCE_THRESHOLD,
+  VERIFY_SCORE_THRESHOLD,
+  CHUNK_DURATION_SECONDS,
+  MAX_FILE_SIZE_BYTES,
+
+  // Helpers
+  cryptoRandomId,
+  deriveFfprobeBinary,
+} from "./audioPipeline.utils.ts";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const execPromise = promisify(exec);
 
+// Konfiguracja API
 const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || "";
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
-
 const VERIFICATION_MODEL = config.VERIFICATION_MODEL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
-const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB — 1 MB below API limit for safety
-const PCM_BYTES_PER_SECOND = 16000 * 1 * 2;
-const SAFE_STT_CHUNK_TARGET_BYTES = 18 * 1024 * 1024;
-const CHUNK_DURATION_SECONDS = 540; // ~17.3 MB wav@16k mono, keeps chunks below the STT limit
 
+// Konfiguracja preprocessingu
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
@@ -31,216 +81,9 @@ const PYTHON_BINARY = config.PYTHON_BINARY;
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
 const VAD_ENABLED = config.VAD_ENABLED;
-// Whisper prompt primes the model toward Polish business vocabulary.
-// Override with VOICELOG_WHISPER_PROMPT env var if needed.
-const WHISPER_PROMPT = config.WHISPER_PROMPT
-  || "Transkrypcja spotkania biznesowego w języku polskim.";
 
-
-/**
- * Builds a context-aware Whisper initial_prompt from meeting metadata.
- * Falls back to the global WHISPER_PROMPT when no metadata is provided.
- * Stays within Whisper's ~224-token prompt limit (~900 safe chars).
- *
- * @param {{ meetingTitle?: string, participants?: string[], tags?: string[], vocabulary?: string }} opts
- */
-function buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary }: any = {}) {
-  const parts = [WHISPER_PROMPT];
-  if (meetingTitle) parts.push(`Spotkanie: ${String(meetingTitle).trim().slice(0, 80)}.`);
-  if (Array.isArray(participants) && participants.length) {
-    const names = participants.slice(0, 8).map((p) => String(p).trim()).filter(Boolean).join(", ");
-    if (names) parts.push(`Uczestnicy: ${names}.`);
-  }
-  if (Array.isArray(tags) && tags.length) {
-    const tagList = tags.slice(0, 6).map((t) => String(t).trim()).filter(Boolean).join(", ");
-    if (tagList) parts.push(`Tematy: ${tagList}.`);
-  }
-  if (vocabulary) parts.push(String(vocabulary).trim().slice(0, 200));
-  return parts.join(" ").slice(0, 900);
-}
-// Verification thresholds — tuned for Polish (lower than English defaults).
-// Polish has heavier inflection which produces systematically lower logprob.
-const VERIFY_CONFIDENCE_THRESHOLD = Number(process.env.VOICELOG_VERIFY_CONFIDENCE) || 0.52;
-const VERIFY_SCORE_THRESHOLD = Number(process.env.VOICELOG_VERIFY_SCORE) || 0.65;
 // Enable verbose pipeline logging with VOICELOG_DEBUG=true
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function average(values) {
-  if (!values.length) {
-    return 0;
-  }
-
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function clean(value) {
-  return String(value || "").trim();
-}
-
-function deriveFfprobeBinary() {
-  if (/ffmpeg(?:\.exe)?$/i.test(String(FFMPEG_BINARY || ""))) {
-    return String(FFMPEG_BINARY).replace(/ffmpeg((?:\.exe)?)$/i, "ffprobe$1");
-  }
-  return "ffprobe";
-}
-
-function parseDbNumber(raw, fallback = 0) {
-  if (raw == null || raw === "") return fallback;
-  const match = String(raw).match(/-?\d+(?:\.\d+)?/);
-  if (!match) return fallback;
-  const parsed = Number(match[0]);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function normalizeText(value) {
-  return clean(value)
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function tokenize(value) {
-  return normalizeText(value)
-    .split(" ")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function textSimilarity(left, right) {
-  const leftTokens = tokenize(left);
-  const rightTokens = tokenize(right);
-  if (!leftTokens.length || !rightTokens.length) {
-    return 0;
-  }
-
-  const leftSet = new Set(leftTokens);
-  const rightSet = new Set(rightTokens);
-  const intersection = [...leftSet].filter((token) => rightSet.has(token)).length;
-  const denominator = Math.max(leftSet.size, rightSet.size, 1);
-  return clamp(intersection / denominator, 0, 1);
-}
-
-function hasRepeatedPhrase(text) {
-  const tokens = tokenize(text);
-  if (tokens.length < 4) {
-    return false;
-  }
-
-  return new Set(tokens).size <= Math.ceil(tokens.length / 2.4);
-}
-
-// Common Whisper hallucinations produced on silence, music, or room noise.
-// Whisper is often overconfident on these — they bypass logprob filtering.
-const HALLUCINATION_PATTERNS = [
-  // English filler phrases Whisper produces on silence for non-English audio
-  /^(thank you\.?|thanks for watching\.?|thanks for watching!|please like and subscribe\.?|see you next time\.?|don't forget to like and subscribe\.?)$/i,
-  /^(goodbye\.?|bye\.?|bye bye\.?|good bye\.?|see you\.?|ciao\.?)$/i,
-  /^(okay\.?|ok\.?|alright\.?|all right\.?)$/i,
-  /^(yes\.?|no\.?|sure\.?|right\.?|correct\.?)$/i,
-  // Polish hallucinations
-  /^(dziękuję\.?|dziękuję ci\.?|dziękuję za obejrzenie\.?|do widzenia\.?|na razie\.?|hej\.?)$/i,
-  /^(tak\.?|nie\.?|dobrze\.?|okej\.?|okej\.?)$/i,
-  // Music / non-speech markers
-  /\[music\]|\[applause\]|\[laughter\]|\[noise\]|\[silence\]|\[inaudible\]/i,
-  /^♪|♪$/,
-  // Only punctuation / ellipsis
-  /^[.…,;!?]+$/,
-  // Very common Whisper repetition artifact on silence
-  /^(mm+|hmm+|uhh+|ahh+|ehh+)\.?$/i,
-];
-
-/**
- * Returns true when the text matches a known Whisper hallucination pattern.
- * Used to remove confident-but-fabricated segments from the final output.
- */
-function isHallucination(text) {
-  const t = clean(text);
-  if (!t || t.length < 2) return true;
-  return HALLUCINATION_PATTERNS.some((pattern) => pattern.test(t));
-}
-
-/**
- * Merges consecutive segments that are too short to stand alone (< minDuration s)
- * with their same-speaker neighbour. Short segments are usually sentence fragments
- * produced when Whisper splits on very brief pauses — merging them produces
- * more natural, readable transcript blocks.
- *
- * @param {object[]} segments  — already verified segments with speakerId
- * @param {number}   minDuration  — min seconds a segment must cover (default 1.2)
- */
-function mergeShortSegments(segments, minDuration = 1.2) {
-  if (segments.length < 2) return segments;
-  const result = [];
-  let pending = null;
-
-  for (const seg of segments) {
-    const duration = (seg.endTimestamp || seg.timestamp) - seg.timestamp;
-    if (!pending) {
-      pending = { ...seg };
-      continue;
-    }
-    // Merge if: current segment is short AND same speaker as pending
-    if (duration < minDuration && seg.speakerId === pending.speakerId) {
-      pending = {
-        ...pending,
-        text: `${pending.text} ${seg.text}`.trim(),
-        endTimestamp: seg.endTimestamp,
-        // Keep the lower verification score to preserve review flags
-        verificationScore: Math.min(pending.verificationScore ?? 1, seg.verificationScore ?? 1),
-        verificationStatus: [pending.verificationStatus, seg.verificationStatus].includes("review") ? "review" : "verified",
-      };
-    } else {
-      result.push(pending);
-      pending = { ...seg };
-    }
-  }
-  if (pending) result.push(pending);
-  return result;
-}
-
-function estimateQualityScore(text) {
-  const normalizedText = clean(text);
-  let score = 0.82;
-
-  if (!normalizedText) {
-    return 0.15;
-  }
-
-  if (normalizedText.length < 8) {
-    score -= 0.16;
-  }
-
-  if (/^(yyy+|eee+|mmm+|hmm+|aaa+)$/i.test(normalizedText)) {
-    score -= 0.2;
-  }
-
-  if (hasRepeatedPhrase(normalizedText)) {
-    score -= 0.12;
-  }
-
-  if (/[?]{2,}/.test(normalizedText)) {
-    score -= 0.08;
-  }
-
-  return clamp(score, 0, 1);
-}
-
-function parseJsonResponse(raw) {
-  if (!raw) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    return {};
-  }
-}
 
 async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
   if (!OPENAI_API_KEY) {

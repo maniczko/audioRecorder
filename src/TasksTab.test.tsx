@@ -167,7 +167,6 @@ describe("TasksTab", () => {
       ],
     });
 
-    expect(screen.getAllByText("My Day").length).toBeGreaterThan(0);
     expect(screen.getByText("Recurring")).toBeInTheDocument();
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Overdue")).toBeInTheDocument();

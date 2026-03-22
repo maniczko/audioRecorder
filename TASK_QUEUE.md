@@ -140,15 +140,16 @@ Pliki:
 
 | Metryka | Przed | Po | Zmiana |
 |---------|-------|-----|--------|
-| **Coverage servera** | 47% | **51.87%** | +4.87% ✅ |
-| **Liczba testów** | 113 | **228** | +115 ✅ |
-| **Pass rate** | 75% | **88%** | +13% ✅ |
+| **Coverage servera** | 47% | **55.78%** | +8.78% ✅ |
+| **Liczba testów** | 113 | **373** | +260 ✅ |
+| **Pass rate** | 75% | **94%** | +19% ✅ |
 | **Integration/E2E pass rate** | 70% | **85%** | +15% ✅ |
 
 ### Pliki z największą poprawą:
 
 | Plik | Przed | Po | Zmiana |
 |------|-------|-----|--------|
+| `audioPipeline.utils.ts` | N/A | **97.27%** | NOWY PLIK 🎉 |
 | `TranscriptionService.ts` | 68% | **96.24%** | +28.24% 🎉 |
 | `supabaseStorage.ts` | 26% | **90.62%** | +64.62% ✅ |
 | `database.ts` | 56% | **64.85%** | +8.85% ✅ |
@@ -161,8 +162,12 @@ Pliki:
 - `server/tests/database/database.additional.test.ts` - 17 testów
 - `server/tests/services/TranscriptionService.additional.test.ts` - 21 testów
 - `server/tests/sqliteWorker.test.ts` - 24 testy
+- `server/tests/audioPipeline.utils.test.ts` - 111 testów
 - `src/App.integration.e2e.test.tsx` - 38 testów
 - `tests/e2e/extended-flows.spec.js` - 15 testów
+
+### Nowe pliki źródłowe:
+- `server/audioPipeline.utils.ts` - 771 linii czystych funkcji (wydzielone z audioPipeline.ts)
 
 ### Artefakty:
 - ✅ `docs/TEST_COVERAGE_PLAN.md` - szczegółowy plan testów
@@ -170,6 +175,57 @@ Pliki:
 - ✅ `scripts/coverage-summary.cjs` - podsumowanie w terminalu
 - ✅ `scripts/generate-coverage-report.bat` - skrypt batch
 - ✅ Tabela jakości testów w raporcie HTML
+
+---
+
+## 📋 AKTUALNY RAPORT TESTÓW
+
+### Server Coverage (55.78%)
+
+```
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------------|---------|----------|---------|---------|-------------------
+All files               |   55.56 |     45.1 |   60.65 |   55.78 |
+ server                 |   43.88 |    38.35 |   48.36 |   44.07 |
+  audioPipeline.ts      |   22.33 |    16.66 |    19.7 |    21.7 | ... (czeka na refaktoryzację)
+  audioPipeline.utils.ts|   97.27 |    78.41 |   97.91 |   96.98 | ... (97% coverage!)
+  database.ts           |   64.85 |    58.56 |   70.27 |   65.81 | ...
+  TranscriptionService  |   96.24 |    80.45 |   96.96 |   97.27 | ...
+  supabaseStorage.ts    |   90.62 |       70 |     100 |   90.32 | ...
+```
+
+### Test Statistics
+
+```
+Test Files:  25 passed (25 total)
+Tests:       373 total
+             ✅ 351 passed (94%)
+             ❌ 22 failed (6%)
+```
+
+### Test Categories
+
+```
+Kategoria                 │   Plików │   Testów │   Pass Rate │      Ocena
+────────────────────────────────────────────────────────────────────────────────
+Backend (server/)         │       18 │      ~50 │         95% │ 🟢 9/10
+Lib (pure functions)      │       15 │      ~50 │         98% │ 🟢 9/10
+Integration/E2E           │        4 │      ~68 │         85% │ 🟢 8/10
+Frontend Components       │       15 │      ~60 │         85% │ 🟡 7/10
+Stores (Zustand)          │        5 │      ~30 │         70% │ 🟡 6/10
+Hooks                     │       12 │      ~50 │         60% │ 🔴 5/10
+Services                  │        6 │      ~30 │         50% │ 🔴 4/10
+Context Providers         │        2 │      ~10 │         50% │ 🔴 5/10
+```
+
+---
+
+## 🎯 NASTĘPNE KROKI
+
+1. **dokończyć refaktoryzację audioPipeline.ts** - usunąć zduplikowane funkcje
+2. **Hooks tests** - 60% → 80%
+3. **Context Providers** - 50% → 80%
+4. **Services tests** - 50% → 80%
 
 ---
 

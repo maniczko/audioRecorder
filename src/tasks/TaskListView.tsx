@@ -142,7 +142,6 @@ export default function TaskListView({
                         <small>
                           {assigneeSummary}
                           {hasMoreAssignees ? " | zespolowe" : ""}
-                          {task.myDay ? " | My Day" : ""}
                           {task.reminderAt ? " | przypomnienie" : ""}
                         </small>
                       </span>

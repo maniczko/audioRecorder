@@ -276,11 +276,6 @@ export default function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
-            <button type="button" className={selectedTask.myDay ? "todo-detail-row active" : "todo-detail-row"} onClick={() => onUpdateTask(selectedTask.id, { myDay: !selectedTask.myDay })}>
-              <span className="todo-row-icon" aria-hidden="true">☀</span>
-              <span>{selectedTask.myDay ? "Dodano do My Day" : "Dodaj do My Day"}</span>
-            </button>
-
             <label className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true">⏰</span>
               <span className="todo-row-label">Przypomnienie</span>
@@ -292,11 +287,6 @@ export default function TaskDetailsPanel({
               <span className="todo-row-label">Termin</span>
               <input type="datetime-local" value={toInputDateTime(selectedTask.dueDate)} onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })} />
             </label>
-
-            <button type="button" className="todo-detail-row muted" disabled>
-              <span className="todo-row-icon" aria-hidden="true">↻</span>
-              <span>Powtarzanie</span>
-            </button>
 
             <label className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true">🏷</span>
