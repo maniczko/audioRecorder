@@ -1718,6 +1718,14 @@
   background: #ffffff;
   color: #20334d;
   box-shadow: none;
+  cursor: text;
+}
+
+.tasks-layout.ms-todo .todo-shell select,
+.tasks-layout.ms-todo .todo-detail-card select,
+.tasks-layout.ms-todo .todo-google-card select,
+.tasks-layout.ms-todo input[type="datetime-local"] {
+  cursor: pointer;
 }
 
 .tasks-layout.ms-todo .todo-shell input,

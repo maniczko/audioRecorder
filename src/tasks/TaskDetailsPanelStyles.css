@@ -19,6 +19,15 @@
   pointer-events: auto;
 }
 
+.tasks-layout.ms-todo .todo-tag-editor input {
+  cursor: text;
+}
+
+.tasks-layout.ms-todo .todo-tag-dropdown,
+.tasks-layout.ms-todo .todo-mention-dropdown {
+  z-index: 9999;
+}
+
 .todo-history-toggle {
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.07);
@@ -277,6 +286,32 @@
   max-width: none;
   margin-left: 0;
   min-height: 96px;
+}
+
+.todo-comment-create {
+  display: grid;
+  gap: 12px;
+}
+
+.todo-comment-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.todo-comment-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 18, 28, 0.92);
+}
+
+.todo-comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
 .todo-tag-chip-list {
