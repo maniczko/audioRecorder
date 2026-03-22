@@ -390,6 +390,7 @@ export default function StudioMeetingView({
   setMeetingDraft,
   saveMeeting,
   renameSpeaker,
+  autoCreateVoiceProfile,
   updateTranscriptSegment,
   retryStoredRecording,
   onOpenTask,
@@ -500,6 +501,7 @@ export default function StudioMeetingView({
   // Rename flow (triggered from within the dropdown)
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
+  const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
@@ -631,16 +633,17 @@ export default function StudioMeetingView({
       return;
     }
 
-    onOpenTask(taskId);
+    onOpenTask({ taskId, mode: "detail" });
   }
 
   function goToTasksTab(taskId) {
-    if (typeof setActiveTab === "function") {
-      setActiveTab("tasks");
+    if (typeof onOpenTask === "function") {
+      onOpenTask({ taskId, mode: "tab" });
+      return;
     }
 
-    if (taskId && typeof onOpenTask === "function") {
-      onOpenTask(taskId);
+    if (typeof setActiveTab === "function") {
+      setActiveTab("tasks");
     }
   }
   const summaryBullets = useMemo(() => {
@@ -2003,6 +2006,10 @@ export default function StudioMeetingView({
 
           {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
 
+          {voiceProfileToast ? (
+            <p className="ff-voice-profile-toast">✓ Profil głosowy zapisany dla <strong>{voiceProfileToast}</strong></p>
+          ) : null}
+
           {/* Voice analytics panel — collapsible, shown only when transcript is available */}
           {transcript.length > 0 ? (
             <div className="ff-voice-analytics ff-voice-analytics-top">
@@ -2064,7 +2071,18 @@ export default function StudioMeetingView({
                                 value={renameValue}
                                 onChange={(e) => setRenameValue(e.target.value)}
                                 onBlur={() => {
-                                  if (renameValue.trim() && renameSpeaker) renameSpeaker(seg.speakerId, renameValue.trim());
+                                  const name = renameValue.trim();
+                                  if (name && renameSpeaker) {
+                                    renameSpeaker(seg.speakerId, name);
+                                    if (autoCreateVoiceProfile) {
+                                      autoCreateVoiceProfile(seg.speakerId, name).then((ok) => {
+                                        if (ok) {
+                                          setVoiceProfileToast(name);
+                                          setTimeout(() => setVoiceProfileToast(null), 3500);
+                                        }
+                                      });
+                                    }
+                                  }
                                   setRenamingSpeakerId(null);
                                 }}
                                 onKeyDown={(e) => {
@@ -2495,6 +2513,7 @@ StudioMeetingView.propTypes = {
   currentUserName: PropTypes.string,
   meetingDraft: PropTypes.object,
   renameSpeaker: PropTypes.func,
+  autoCreateVoiceProfile: PropTypes.func,
   updateTranscriptSegment: PropTypes.func,
   retryStoredRecording: PropTypes.func,
   setActiveTab: PropTypes.func,

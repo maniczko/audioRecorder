@@ -73,7 +73,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         rescheduleGoogleCalendarEntry={google.rescheduleGoogleCalendarEntry}
         openMeetingFromCalendar={ui.openMeetingFromCalendar}
         openGoogleCalendarForMeeting={ui.openGoogleCalendarForMeeting}
-        openTaskFromCalendar={ui.openTaskFromCalendar}
+        openTask={ui.openTask}
         googleCalendarEnabled={google.googleEnabled}
         googleCalendarWritable={google.googleCalendarWritable}
         onRescheduleMeeting={meetings.rescheduleMeeting}
@@ -136,7 +136,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
       <PeopleTab
         profiles={meetings.peopleProfiles}
         onOpenMeeting={ui.openMeetingFromCalendar}
-        onOpenTask={ui.openTaskFromCalendar}
+        onOpenTask={ui.openTask}
         onCreateTask={ui.createTaskForPerson}
         onCreateMeeting={ui.createMeetingForPerson}
         onUpdatePersonNotes={meetings.updatePersonNotes}
@@ -235,7 +235,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         selectedMeeting={meetings.selectedMeeting}
         displayRecording={ui.displayRecording}
         studioAnalysis={ui.studioAnalysis}
-        onOpenTask={ui.openTaskFromCalendar}
+        onOpenTask={ui.openTask}
         isRecording={recorder.isRecording}
         analysisStatus={recorder.analysisStatus}
         activeQueueItem={recorder.activeQueueItem}
@@ -271,6 +271,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
         updateRecordingMarker={meetings.updateRecordingMarker}
         deleteRecordingMarker={meetings.deleteRecordingMarker}
         renameSpeaker={meetings.renameSpeaker}
+        autoCreateVoiceProfile={meetings.autoCreateVoiceProfile}
         selectedRecordingId={meetings.selectedRecordingId}
         setSelectedRecordingId={meetings.setSelectedRecordingId}
         exportTranscript={ui.exportTranscript}

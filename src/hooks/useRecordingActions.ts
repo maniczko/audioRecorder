@@ -1,5 +1,7 @@
 import { createId } from "../lib/storage";
 import { attachRecording } from "../lib/meeting";
+import { apiRequest } from "../services/httpClient";
+import { remoteApiEnabled } from "../services/config";
 
 export default function useRecordingActions({
   currentUser,
@@ -281,8 +283,24 @@ export default function useRecordingActions({
     setManualTasks((prev) => prev.map((t) => ({ ...t, tags: (t.tags || []).filter((existing) => existing !== tag) })));
   }
 
+  async function autoCreateVoiceProfile(speakerId: string | number, speakerName: string): Promise<boolean> {
+    if (!selectedRecording?.id || !remoteApiEnabled()) return false;
+    // Don't create profile for generic auto-labels like "Speaker 1"
+    if (/^speaker\s*\d+$/i.test(speakerName.trim())) return false;
+    try {
+      await apiRequest(`/media/recordings/${selectedRecording.id}/voice-profiles/from-speaker`, {
+        method: "POST",
+        body: { speakerId: String(speakerId), speakerName: speakerName.trim() },
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   return {
     renameSpeaker,
+    autoCreateVoiceProfile,
     updateTranscriptSegment,
     assignSpeakerToTranscriptSegments,
     mergeTranscriptSegments,
