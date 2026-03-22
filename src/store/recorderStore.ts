@@ -145,6 +145,21 @@ function isExpectedDomainFailure(error: any) {
   return errorMessage.includes("Model STT nie zwrocil zadnych segmentow transkrypcji.");
 }
 
+function isTransientNetworkError(error: any) {
+  const msg = String(error?.message || "").toLowerCase();
+  return (
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed") ||
+    msg.includes("bad gateway") ||
+    msg.includes("http 502") ||
+    msg.includes("hostowany preview nie moze")
+  );
+}
+
+const MAX_AUTO_RETRIES = 3;
+const AUTO_RETRY_DELAY_MS = 5000;
+
 export const useRecorderStore = create<any>()(
   persist(
     (set, get: any) => ({
@@ -565,6 +580,19 @@ export const useRecorderStore = create<any>()(
               : "Nagranie zostalo przetworzone.",
           });
         } catch (error) {
+          const attempts = (nextItem.attempts || 0);
+          if (isTransientNetworkError(error) && attempts < MAX_AUTO_RETRIES) {
+            console.warn(`[queue] Transient network error (attempt ${attempts}/${MAX_AUTO_RETRIES}), retrying in ${AUTO_RETRY_DELAY_MS}ms...`, error?.message);
+            get().updateQueueItem(nextItem.recordingId, {
+              status: "queued",
+              errorMessage: "",
+            });
+            set({ isProcessingQueue: false });
+            await sleep(AUTO_RETRY_DELAY_MS);
+            get().processQueue(resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments);
+            return;
+          }
+
           const userFacingMessage = toUserFacingQueueError(error);
           const errorKey = `${nextItem.recordingId}:${userFacingMessage}`;
           if (get().lastQueueErrorKey !== errorKey) {

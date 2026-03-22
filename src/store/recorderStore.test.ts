@@ -317,7 +317,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
@@ -346,7 +347,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
@@ -424,7 +426,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false }],
+      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
