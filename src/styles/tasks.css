@@ -5736,6 +5736,8 @@
 }
 
 .tasks-layout.ms-todo .todo-filter-row {
+  grid-template-columns: minmax(320px, 1.6fr) minmax(180px, 0.85fr) minmax(180px, 0.85fr);
+  align-items: end;
   gap: 12px;
   padding-top: 2px;
 }
@@ -5743,6 +5745,14 @@
 .tasks-layout.ms-todo .todo-filter-search,
 .tasks-layout.ms-todo .todo-filter-item {
   gap: 6px;
+}
+
+.tasks-layout.ms-todo .todo-filter-search {
+  min-width: 0;
+}
+
+.tasks-layout.ms-todo .todo-filter-item {
+  min-width: 0;
 }
 
 .tasks-layout.ms-todo .todo-filter-search input,
@@ -5754,6 +5764,10 @@
   background: rgba(8, 18, 28, 0.88);
   border-color: rgba(255, 255, 255, 0.08);
   color: var(--task-text);
+}
+
+.tasks-layout.ms-todo .todo-filter-item select {
+  width: 100%;
 }
 
 .tasks-layout.ms-todo .todo-filter-search input::placeholder {
