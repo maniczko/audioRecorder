@@ -1703,6 +1703,7 @@
   gap: 12px;
   padding: 18px 20px;
   min-height: 78vh;
+  align-content: start;
 }
 
 .tasks-layout.ms-todo .todo-shell input,
@@ -2188,52 +2189,10 @@
 .tasks-layout.ms-todo .todo-date input,
 .tasks-layout.ms-todo .todo-status-cell select,
 .tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
-}
-
-.tasks-layout.ms-todo .todo-title-cell input,
-.tasks-layout.ms-todo .todo-title-cell select,
-.tasks-layout.ms-todo .todo-group-cell input,
-.tasks-layout.ms-todo .todo-date input,
-.tasks-layout.ms-todo .todo-status-cell select,
-.tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
-}
-
-.tasks-layout.ms-todo .todo-title-cell input,
-.tasks-layout.ms-todo .todo-title-cell select,
-.tasks-layout.ms-todo .todo-group-cell input,
-.tasks-layout.ms-todo .todo-date input,
-.tasks-layout.ms-todo .todo-status-cell select,
-.tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
-}
-
-.tasks-layout.ms-todo .todo-title-cell input,
-.tasks-layout.ms-todo .todo-title-cell select,
-.tasks-layout.ms-todo .todo-group-cell input,
-.tasks-layout.ms-todo .todo-date input,
-.tasks-layout.ms-todo .todo-status-cell select,
-.tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
-}
-
-.tasks-layout.ms-todo .todo-title-cell input,
-.tasks-layout.ms-todo .todo-title-cell select,
-.tasks-layout.ms-todo .todo-group-cell input,
-.tasks-layout.ms-todo .todo-date input,
-.tasks-layout.ms-todo .todo-status-cell select,
-.tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
-}
-
-.tasks-layout.ms-todo .todo-title-cell input,
-.tasks-layout.ms-todo .todo-title-cell select,
-.tasks-layout.ms-todo .todo-group-cell input,
-.tasks-layout.ms-todo .todo-date input,
-.tasks-layout.ms-todo .todo-status-cell select,
-.tasks-layout.ms-todo .todo-priority-cell select {
-  min-height: 38px;
+  min-height: 40px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  line-height: 1.15;
 }
 
 .tasks-layout.ms-todo .todo-title-cell strong {
@@ -2550,14 +2509,7 @@
   min-width: 0;
   box-sizing: border-box;
   max-width: 100%;
-}
-
-.tasks-layout.ms-todo .todo-detail-form label input,
-.tasks-layout.ms-todo .todo-detail-form label select {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  max-width: 100%;
+  min-height: 44px;
 }
 
 .tasks-layout.ms-todo select,
@@ -4264,10 +4216,18 @@
   min-height: 120px;
 }
 
-.tasks-layout.ms-todo .todo-toolbar-panel,
-.tasks-layout.ms-todo .todo-create-card {
-  display: grid;
-  gap: 14px;
+.tasks-layout.ms-todo .todo-toolbar-panel.summary {
+  min-height: 0;
+  align-content: start;
+  justify-content: start;
+}
+
+.tasks-layout.ms-todo .todo-toolbar-panel.summary .todo-commandbar {
+  align-self: start;
+}
+
+.tasks-layout.ms-todo .todo-toolbar-panel .todo-commandbar {
+  min-height: 48px;
 }
 
 .tasks-layout.ms-todo .todo-toolbar-panel,
@@ -4277,10 +4237,13 @@
 }
 
 .tasks-layout.ms-todo .todo-commandbar {
+  align-items: center;
   justify-content: space-between;
+  gap: 18px;
 }
 
 .tasks-layout.ms-todo .todo-view-switch {
+  min-height: 52px;
   padding: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -4295,7 +4258,7 @@
 .tasks-layout.ms-todo .todo-icon-button {
   min-height: 42px;
   box-sizing: border-box;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
@@ -5748,13 +5711,17 @@
   gap: 14px;
 }
 
+.tasks-layout.ms-todo .todo-commandbar-right {
+  align-items: center;
+}
+
 .tasks-layout.ms-todo .todo-view-switch {
   gap: 4px;
 }
 
 .tasks-layout.ms-todo .todo-view-button {
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 16px;
   border: 1px solid var(--task-border);
   background: rgba(255, 255, 255, 0.03);
@@ -5765,6 +5732,7 @@
   background: rgba(117, 214, 196, 0.14);
   border-color: rgba(117, 214, 196, 0.28);
   color: var(--task-text);
+  box-shadow: inset 0 0 0 1px rgba(117, 214, 196, 0.14);
 }
 
 .tasks-layout.ms-todo .todo-filter-row {
@@ -5780,6 +5748,8 @@
 .tasks-layout.ms-todo .todo-filter-search input,
 .tasks-layout.ms-todo .todo-filter-item select {
   min-height: 46px;
+  padding-top: 11px;
+  padding-bottom: 11px;
   border-radius: 14px;
   background: rgba(8, 18, 28, 0.88);
   border-color: rgba(255, 255, 255, 0.08);

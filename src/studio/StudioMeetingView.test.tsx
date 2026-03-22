@@ -15,6 +15,28 @@ vi.mock("../services/config", () => ({
 }));
 
 describe("StudioMeetingView", () => {
+  const sampleFeedback = {
+    overallScore: 8,
+    summary: "Spotkanie było konkretne i dobrze prowadzone.",
+    strengths: ["Były decyzje", "Był konkretny kierunek", "Atmosfera była spokojna"],
+    improvementAreas: ["Mocniej domykaj ownera i termin"],
+    perceptionNotes: ["Możesz być odbierany jako konkretny i zadaniowy"],
+    communicationTips: ["Skracaj wstępy", "Po decyzji podsumuj ownera i termin"],
+    nextSteps: ["Spisz ustalenia", "Przypisz właścicieli", "Ustal termin follow-upu"],
+    whatWentWell: ["Rozmowa prowadziła do ustaleń", "Było miejsce na pytania"],
+    whatCouldBeBetter: ["Domknij więcej tematów jednym zdaniem"],
+    categoryScores: [
+      { key: "facilitation", label: "Prowadzenie spotkania", score: 8, observation: "Było konkretnie", improvementTip: "Domykaj tematy szybciej" },
+      { key: "expertise", label: "Wiedza merytoryczna", score: 7, observation: "Było merytorycznie", improvementTip: "Podawaj więcej przykładów" },
+      { key: "clarity", label: "Jasność wypowiedzi", score: 9, observation: "Przekaz był czytelny", improvementTip: "Zostawaj przy krótszych blokach" },
+      { key: "structure", label: "Struktura i organizacja", score: 8, observation: "Struktura była widoczna", improvementTip: "Dopisz ownera do każdej decyzji" },
+      { key: "listening", label: "Słuchanie i reagowanie", score: 7, observation: "Było miejsce na odpowiedzi", improvementTip: "Częściej parafrazuj" },
+      { key: "closing", label: "Domykanie ustaleń", score: 8, observation: "Ustalenia były domykane", improvementTip: "Zapisuj terminy od razu" },
+      { key: "pace", label: "Tempo i zarządzanie czasem", score: 7, observation: "Tempo było w porządku", improvementTip: "Pilnuj krótszych podsumowań" },
+      { key: "collaboration", label: "Współpraca i atmosfera", score: 8, observation: "Atmosfera była dobra", improvementTip: "Oddawaj częściej głos" },
+    ],
+  };
+
   const defaultProps = {
     selectedMeeting: { id: "m1", title: "Test Meeting", tags: [], needs: [], concerns: [] },
     displayRecording: { transcript: [], duration: 60 },
@@ -171,7 +193,58 @@ describe("StudioMeetingView", () => {
     expect(screen.getAllByText(/Podsumowanie spotkania/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Potrzeby i obawy/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Profil psychologiczny/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Twój feedback/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/feedback/i).length).toBeGreaterThan(0);
+  });
+
+
+  test("renders detailed feedback cards and category scores", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        studioAnalysis={{ summary: "Spotkanie konkretne", decisions: [], actionItems: [], feedback: sampleFeedback }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+
+    expect(screen.getByLabelText(/Ocena spotkania 8 na 10/i)).toBeInTheDocument();
+    expect(screen.getByText(/Co można poprawić/i)).toBeInTheDocument();
+    expect(screen.getByText(/Prowadzenie spotkania/i)).toBeInTheDocument();
+    expect(screen.getByText(/Następne kroki/i)).toBeInTheDocument();
+  });
+
+  test("builds fallback feedback for older analyses without feedback", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          transcript: [
+            { text: "Ustalmy plan działania.", speakerId: 0, timestamp: 0, endTimestamp: 4 },
+            { text: "Potrzebujemy decyzji do jutra.", speakerId: 1, timestamp: 5, endTimestamp: 9 },
+            { text: "Przypiszmy właściciela i termin.", speakerId: 0, timestamp: 10, endTimestamp: 14 },
+          ],
+          duration: 60,
+        }}
+        studioAnalysis={{
+          summary: "Rozmowa o planie działania i decyzjach.",
+          decisions: ["Decyzja o planie"],
+          actionItems: ["Przypisać właściciela"],
+          tasks: [],
+          followUps: ["Sprawdzić postęp"],
+          participantInsights: [{ speaker: "Alice", mainTopic: "Plan", stance: "proactive" }],
+          risks: [],
+          blockers: [],
+          tensions: [],
+          keyQuotes: [],
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+
+    expect(screen.getByText(/Oceny 1-10/i)).toBeInTheDocument();
+    expect(screen.getByText(/Prowadzenie spotkania/i)).toBeInTheDocument();
+    expect(screen.getByText(/Jak możesz być odbierany/i)).toBeInTheDocument();
   });
 
   test("renders toolbar buttons", () => {
@@ -186,5 +259,57 @@ describe("StudioMeetingView", () => {
     render(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Stop/i)).toBeInTheDocument();
     expect(screen.getByText(/● REC/i)).toBeInTheDocument();
+  });
+  test("shows meeting tasks in the tasks tab", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        meetingTasks={[
+          {
+            id: "task_1",
+            title: "Przygotuj follow-up",
+            description: "Wyslij podsumowanie po rozmowie",
+            owner: "Anna Nowak",
+            dueDate: "2026-03-23T10:00:00.000Z",
+            priority: "high",
+            tags: ["follow-up"],
+            sourceType: "meeting",
+            sourceMeetingId: "m1",
+            sourceMeetingTitle: "Test Meeting",
+            sourceMeetingDate: "2026-03-22T09:00:00.000Z",
+            sourceRecordingId: "rec1",
+            sourceQuote: "",
+            createdAt: "2026-03-22T09:10:00.000Z",
+            updatedAt: "2026-03-22T09:10:00.000Z",
+          },
+        ]}
+        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Zadania/i }));
+
+    expect(screen.getByText("Przygotuj follow-up")).toBeInTheDocument();
+    expect(screen.getByText("@Anna Nowak")).toBeInTheDocument();
+    expect(screen.getByText("Wysoki")).toBeInTheDocument();
+  });
+
+  test("renders participants as a list", () => {
+    render(
+      <StudioMeetingView
+        {...defaultProps}
+        studioAnalysis={{
+          summary: "Podsumowanie spotkania",
+          decisions: [],
+          actionItems: [],
+          participantInsights: [{ speaker: "Alice", mainTopic: "Budzet", stance: "ostrozna" }],
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Podsumowanie spotkania/i }));
+
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getAllByRole("list").some((item) => item.className.includes("summary-participants-list"))).toBe(true);
   });
 });

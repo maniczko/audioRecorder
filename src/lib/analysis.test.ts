@@ -1,4 +1,5 @@
 import { analyzePersonProfile, analyzeMeeting } from "./analysis";
+import { MEETING_FEEDBACK_CATEGORIES } from "../shared/meetingFeedback";
 
 jest.mock("../services/httpClient", () => ({
   apiRequest: jest.fn().mockRejectedValue(new Error("Network error")),
@@ -62,6 +63,9 @@ describe("analysis", () => {
     expect(result.tasks.length).toBeDefined();
     expect(result.speakerCount).toBe(2);
     expect(result.risks.length).toBeGreaterThan(0);
+    expect(result.feedback).toBeDefined();
+    expect(result.feedback.categoryScores).toHaveLength(MEETING_FEEDBACK_CATEGORIES.length);
+    expect(result.feedback.overallScore).toBeGreaterThanOrEqual(1);
   });
 
   test("runs analyzeMeeting with no segments", async () => {

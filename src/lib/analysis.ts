@@ -1,6 +1,12 @@
 import type {
   MeetingAnalysis,
 } from "../shared/types";
+import { analyzeSpeakingStyle } from "./speakerAnalysis";
+import {
+  buildMeetingFeedbackFallback,
+  buildMeetingFeedbackSchemaExample,
+  normalizeMeetingFeedback,
+} from "../shared/meetingFeedback";
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
@@ -139,6 +145,7 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
 
 function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }): MeetingAnalysis {
   const transcript = safeArray(segments);
+  const speakerStats = analyzeSpeakingStyle(transcript, speakerNames);
   const importantPhrases = transcript
     .map((segment) => segment.text)
     .join(" ")
@@ -180,6 +187,27 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
   });
 
   const rich = buildFallbackRichFields({ transcript, speakerNames });
+  const followUps = dedupeList(
+    safeArray(meeting?.desiredOutputs).map(
+      (item) => `Zweryfikuj po spotkaniu: ${item}`
+    )
+  ).slice(0, 4);
+  const feedback = buildMeetingFeedbackFallback({
+    summary,
+    decisions,
+    actionItems,
+    tasks,
+    followUps,
+    answersToNeeds,
+    risks: rich.risks,
+    blockers: rich.blockers,
+    participantInsights: rich.participantInsights,
+    tensions: rich.tensions,
+    keyQuotes: rich.keyQuotes,
+    speakerStats,
+    transcriptLength: transcript.length,
+    meetingTitle: meeting?.title,
+  });
 
   return {
     mode: API_KEY ? "fallback-after-api-error" : "local-fallback",
@@ -189,13 +217,10 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     decisions,
     actionItems,
     tasks,
-    followUps: dedupeList(
-      safeArray(meeting?.desiredOutputs).map(
-        (item) => `Zweryfikuj po spotkaniu: ${item}`
-      )
-    ).slice(0, 4),
+    followUps,
     answersToNeeds,
     ...rich,
+    feedback,
   };
 }
 
@@ -341,7 +366,29 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
   if (API_BASE_URL) {
     try {
       const result = await analyzeMeetingViaServer({ meeting, segments, speakerNames });
-      if (result && result.summary) return result;
+      if (result && result.summary) {
+        const speakerStats = analyzeSpeakingStyle(segments, speakerNames);
+        const richFallback = buildFallbackRichFields({ transcript: segments, speakerNames });
+        return {
+          ...result,
+          feedback: normalizeMeetingFeedback(result.feedback, {
+            summary: result.summary || fallback.summary,
+            decisions: safeArray(result.decisions).length ? result.decisions : fallback.decisions,
+            actionItems: safeArray(result.actionItems).length ? result.actionItems : fallback.actionItems,
+            tasks: safeArray(result.tasks).length ? result.tasks : fallback.tasks,
+            followUps: safeArray(result.followUps).length ? result.followUps : fallback.followUps,
+            answersToNeeds: safeArray(result.answersToNeeds).length ? result.answersToNeeds : fallback.answersToNeeds,
+            risks: safeArray(result.risks).length ? result.risks : richFallback.risks,
+            blockers: safeArray(result.blockers).length ? result.blockers : richFallback.blockers,
+            participantInsights: safeArray(result.participantInsights).length ? result.participantInsights : richFallback.participantInsights,
+            tensions: safeArray(result.tensions).length ? result.tensions : richFallback.tensions,
+            keyQuotes: safeArray(result.keyQuotes).length ? result.keyQuotes : richFallback.keyQuotes,
+            speakerStats,
+            transcriptLength: segments.length,
+            meetingTitle: meeting?.title,
+          }),
+        };
+      }
     } catch (error) {
       console.error("Server meeting analysis failed, falling back.", error);
     }
@@ -361,6 +408,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     "3. Summarize the meeting in Polish.",
     "4. Extract decisions, action items, tasks, follow-ups, answers to needs.",
     "5. Classify the meeting and extract rich intelligence fields.",
+    "6. Add a developmental feedback block for the whole meeting only. Do not score individual participants.",
     "",
     `Meeting title: ${meeting.title}`,
     `Context: ${meeting.context || "None."}`,
@@ -368,7 +416,39 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "None."}`,
     "",
     "Return JSON in this exact shape (all Polish text fields in Polish):",
-    '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"Adam","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["budzet","roadmap"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"tensions":[{"topic":"...","between":["A","B"],"resolved":false}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}],"suggestedAgenda":["..."]}',
+    JSON.stringify({
+      speakerCount: 2,
+      speakerLabels: { 0: "Adam", 1: "Marcin" },
+      summary: "...",
+      decisions: ["..."],
+      actionItems: ["..."],
+      tasks: [
+        { title: "...", owner: "Adam", sourceQuote: "...", priority: "medium", tags: [] },
+      ],
+      followUps: ["..."],
+      answersToNeeds: [{ need: "...", answer: "..." }],
+      suggestedTags: ["budzet", "roadmap"],
+      meetingType: "planning",
+      energyLevel: "medium",
+      risks: [{ risk: "...", severity: "high" }],
+      blockers: ["..."],
+      participantInsights: [
+        {
+          speaker: "Adam",
+          mainTopic: "...",
+          stance: "proactive",
+          talkRatio: 0.6,
+          personality: { D: 70, I: 50, S: 40, C: 80 },
+          needs: ["..."],
+          concerns: ["..."],
+          sentimentScore: 85,
+        },
+      ],
+      tensions: [{ topic: "...", between: ["A", "B"], resolved: false }],
+      keyQuotes: [{ quote: "...", speaker: "Host", why: "..." }],
+      suggestedAgenda: ["..."],
+      feedback: buildMeetingFeedbackSchemaExample(),
+    }),
     "",
     transcriptText(segments, speakerNames),
   ].join("\n");
@@ -398,6 +478,25 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     const parsed = parseAiResponse(content);
 
     const richFallback = buildFallbackRichFields({ transcript: segments, speakerNames });
+    const speakerStats = analyzeSpeakingStyle(segments, speakerNames);
+    const feedback = normalizeMeetingFeedback(parsed.feedback, {
+      summary: parsed.summary || fallback.summary,
+      decisions: dedupeList(parsed.decisions).slice(0, 5),
+      actionItems: dedupeList(parsed.actionItems).slice(0, 6),
+      tasks: safeArray(parsed.tasks)
+        .map((task, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames))
+        .filter(Boolean),
+      followUps: dedupeList(parsed.followUps).slice(0, 5),
+      answersToNeeds: safeArray(parsed.answersToNeeds).length ? parsed.answersToNeeds : fallback.answersToNeeds,
+      risks: safeArray(parsed.risks).slice(0, 4),
+      blockers: dedupeList(parsed.blockers).slice(0, 3),
+      participantInsights: safeArray(parsed.participantInsights).length ? parsed.participantInsights : richFallback.participantInsights,
+      tensions: safeArray(parsed.tensions).slice(0, 3),
+      keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
+      speakerStats,
+      transcriptLength: segments.length,
+      meetingTitle: meeting?.title,
+    });
 
     return {
       mode: "anthropic",
@@ -420,6 +519,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
       tensions: safeArray(parsed.tensions).slice(0, 3),
       keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
       suggestedAgenda: dedupeList(parsed.suggestedAgenda).slice(0, 5),
+      feedback,
     };
   } catch (error) {
     console.error("AI meeting analysis failed, falling back to local summary.", error);

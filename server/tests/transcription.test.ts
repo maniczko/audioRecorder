@@ -219,6 +219,17 @@ describe("TranscriptionService", () => {
     vi.doMock("../speakerEmbedder.ts", () => ({
       computeEmbedding: vi.fn().mockResolvedValue([0.9, 0.8]),
     }));
+    vi.doMock("node:fs", () => ({
+      default: {
+        existsSync: vi.fn(() => true),
+        readFileSync: vi.fn(() => Buffer.from("audio")),
+      },
+      existsSync: vi.fn(() => true),
+      readFileSync: vi.fn(() => Buffer.from("audio")),
+    }));
+    vi.doMock("node:child_process", () => ({
+      execSync: vi.fn(() => Buffer.from("audio")),
+    }));
     const { default: DynamicTranscriptionService } = await import("../services/TranscriptionService.ts");
     const service = new DynamicTranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, null);
 

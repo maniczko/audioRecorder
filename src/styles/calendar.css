@@ -110,16 +110,6 @@
   gap: 12px;
 }
 
-.calendar-board-header,
-.calendar-board-actions,
-.mini-calendar-header,
-.agenda-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .calendar-nav-button {
   width: 40px;
   height: 40px;
@@ -145,24 +135,6 @@
 .calendar-filter-stack {
   flex-direction: column;
   align-items: stretch;
-}
-
-.calendar-filter-chip,
-.calendar-view-button,
-.calendar-reminder-chip {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.calendar-filter-chip,
-.calendar-view-button,
-.calendar-reminder-chip {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  cursor: pointer;
 }
 
 .calendar-filter-chip,
@@ -216,21 +188,25 @@
 }
 
 .calendar-view-button {
-  padding: 8px 14px;
+  min-height: 42px;
+  padding: 8px 16px;
   border-radius: 999px;
+}
+
+.calendar-filter-chip,
+.calendar-reminder-chip {
+  min-height: 44px;
+}
+
+.calendar-filter-chip,
+.calendar-reminder-chip {
+  padding: 10px 14px;
 }
 
 .calendar-sync-card p {
   margin: 0;
   color: var(--muted);
   line-height: 1.65;
-}
-
-.calendar-weekdays,
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 1px;
 }
 
 .calendar-weekdays,

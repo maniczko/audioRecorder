@@ -22,7 +22,7 @@ export default function AppShell({ calendarMonth, setCalendarMonth }) {
   const { commandPaletteOpen, setCommandPaletteOpen, commandPaletteItems, handleCommandPaletteSelect } = useUI();
   const google = useGoogleCtx();
 
-  if (workspace.isHydratingSession) {
+  if (workspace.isHydratingSession && !workspace.currentUser) {
     return (
       <PageShell as="div" className="app-shell app-shell-loading">
         <Panel as="div" className="topbar">

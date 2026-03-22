@@ -131,7 +131,7 @@ export default function TasksWorkspaceView({
   return (
     <section className="todo-main">
       <div className="todo-shell">
-        <section className="todo-toolbar-panel">
+        <section className={isSummary ? "todo-toolbar-panel summary" : "todo-toolbar-panel"}>
           <div className="todo-commandbar">
             <div className="todo-commandbar-left">
               <div className="todo-view-switch" role="tablist" aria-label="Widok zadan">

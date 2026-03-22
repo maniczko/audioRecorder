@@ -25,7 +25,11 @@
       "Bash(npx vitest:*)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(npx jest:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(grep -r participantInsights /c/Users/user/new/audioRecorder/src /c/Users/user/new/audioRecorder/server --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"import.*from.*recharts\\\\|import.*d3\\\\|import.*chart\\\\|<BarChart\\\\|<LineChart\\\\|<PieChart\" /c/Users/user/new/audioRecorder/src --include=*.tsx --include=*.ts)",
+      "Bash(ls \"c:/Users/user/new/audioRecorder\"/.env*)",
+      "Bash(curl -s -I -X OPTIONS \"https://audiorecorder-production.up.railway.app/state/bootstrap\" -H \"Origin: https://audiorecorder-a821wsxn-iwoczajka-2703s-projects.vercel.app\" -H \"Access-Control-Request-Method: GET\" -H \"Access-Control-Request-Headers: authorization,content-type\")"
     ]
   }
 }

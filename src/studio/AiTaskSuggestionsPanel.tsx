@@ -64,6 +64,9 @@ export default function AiTaskSuggestionsPanel({
       priority: suggestion.priority || "medium",
       tags: Array.isArray(suggestion.tags) ? suggestion.tags : [],
       sourceType: "ai-suggestion",
+      sourceMeetingId: selectedRecording?.meetingId || "",
+      sourceRecordingId: selectedRecording?.id || "",
+      sourceMeetingTitle: selectedRecording?.meetingTitle || "Spotkanie",
     });
 
     setSuggestions((previous) => previous.filter((s) => s._id !== suggestion._id));

@@ -103,7 +103,7 @@ describe("TasksTab", () => {
     expect(props.onReorderTask).toHaveBeenCalledWith("task_1", expect.objectContaining({ status: "done" }));
   });
 
-  test("creates a task inside the selected custom group", async () => {
+  test("creates a task with the group from advanced fields", async () => {
     const createdTask = {
       id: "task_2",
       title: "Nowe zadanie",
@@ -115,13 +115,9 @@ describe("TasksTab", () => {
       onCreateTask: jest.fn().mockReturnValue(createdTask),
     });
 
-    await userEvent.click(
-      screen
-        .getAllByText("Sprint 14")
-        .find((element) => element.closest(".todo-side-link"))
-        .closest(".todo-side-link")
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Szczegoly" }));
     await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowe zadanie");
+    await userEvent.type(screen.getByLabelText("Grupa"), "Sprint 14");
     await userEvent.click(screen.getByRole("button", { name: "Dodaj zadanie" }));
 
     expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie", group: "Sprint 14" }));

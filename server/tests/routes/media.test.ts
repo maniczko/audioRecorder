@@ -1,16 +1,26 @@
-import fs from "node:fs";
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { createApp } from "../../app.ts";
+
+// Helper to control fs mock state between tests
+function setFsState(overrides?: {
+  existsSync?: boolean;
+  statSyncSize?: number;
+}) {
+  (global as any).__TEST_FS_STATE__ = {
+    existsSync: overrides?.existsSync ?? true,
+    statSyncSize: overrides?.statSyncSize ?? 1234,
+  };
+}
 
 describe("Media Routes", () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: any;
   let mockWorkspaceService: any;
-  const originalExistsSync = fs.existsSync;
-  const originalCreateReadStream = fs.createReadStream;
-  const originalStatSync = fs.statSync;
 
   beforeEach(() => {
+    // Reset fs state to default
+    setFsState();
+
     mockTranscriptionService = {
       upsertMediaAsset: vi.fn(),
       analyzeAudioQuality: vi.fn(),
@@ -44,10 +54,10 @@ describe("Media Routes", () => {
   });
 
   afterEach(() => {
-    fs.existsSync = originalExistsSync;
-    fs.createReadStream = originalCreateReadStream;
-    fs.statSync = originalStatSync;
     vi.restoreAllMocks();
+    vi.clearAllMocks();
+    // Reset fs state to default after each test
+    setFsState();
   });
 
   it("PUT /media/recordings/:recordingId/audio - upload success", async () => {
@@ -61,10 +71,10 @@ describe("Media Routes", () => {
 
     const res = await app.request("/media/recordings/rec_new/audio", {
       method: "PUT",
-      headers: { 
-        "Authorization": "Bearer fake_token", 
+      headers: {
+        "Authorization": "Bearer fake_token",
         "Content-Type": "audio/webm",
-        "X-Workspace-Id": "ws_1" 
+        "X-Workspace-Id": "ws_1"
       },
       body: Buffer.from("small-audio-data")
     });
@@ -150,7 +160,7 @@ describe("Media Routes", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.recordingId).toBe("rec_2");
-    expect(data.pipelineStatus).toBe("done"); 
+    expect(data.pipelineStatus).toBe("done");
     expect(data.diarization.speakerCount).toBe(2);
     expect(data.transcriptOutcome).toBe("empty");
     expect(data.emptyReason).toBe("no_segments_from_stt");
@@ -182,7 +192,6 @@ describe("Media Routes", () => {
         diarization_json: "{}",
         transcript_json: "[]",
       });
-    fs.existsSync = vi.fn().mockReturnValue(true) as any;
 
     const res = await app.request("/media/recordings/rec_retry/retry-transcribe", {
       method: "POST",
@@ -220,20 +229,15 @@ describe("Media Routes", () => {
       diarization_json: "{}",
       transcript_json: "[]",
     });
-    const originalExistsSync = fs.existsSync;
-    fs.existsSync = vi.fn().mockImplementation((path) => {
-      if (String(path).includes("/tmp/missing.webm")) {
-        return false;
-      }
-      return originalExistsSync(path);
-    }) as any;
+
+    // Set fs.exists to return false for this specific test
+    setFsState({ existsSync: false });
 
     const res = await app.request("/media/recordings/rec_retry_missing/retry-transcribe", {
       method: "POST",
       headers: { Authorization: "Bearer fake_token" },
     });
 
-    fs.existsSync = originalExistsSync;
     expect(res.status).toBe(409);
     expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
   });
@@ -268,7 +272,6 @@ describe("Media Routes", () => {
         }),
         transcript_json: "[]",
       });
-    fs.existsSync = vi.fn().mockReturnValue(true) as any;
 
     const res = await app.request("/media/recordings/rec_empty_retry/retry-transcribe", {
       method: "POST",
@@ -333,20 +336,15 @@ describe("Media Routes", () => {
       file_path: "/tmp/missing.webm",
       content_type: "audio/webm",
     });
-    const originalExistsSync = fs.existsSync;
-    fs.existsSync = vi.fn().mockImplementation((path) => {
-      if (String(path).includes("/tmp/missing.webm")) {
-        return false;
-      }
-      return originalExistsSync(path);
-    }) as any;
+
+    // Set fs.exists to return false for this test
+    setFsState({ existsSync: false });
 
     const missingFile = await app.request("/media/recordings/rec_file/audio", {
       method: "GET",
       headers: { Authorization: "Bearer fake_token" },
     });
 
-    fs.existsSync = originalExistsSync;
     expect(missingFile.status).toBe(404);
   });
 
@@ -357,36 +355,15 @@ describe("Media Routes", () => {
       file_path: "/tmp/audio.webm",
       content_type: "text/html",
     });
-    const originalExistsSync = fs.existsSync;
-    const originalStatSync = fs.statSync;
-    const originalCreateReadStream = fs.createReadStream;
-    fs.existsSync = vi.fn().mockImplementation((path) => {
-      if (String(path).includes("/tmp/audio.webm")) {
-        return true;
-      }
-      return originalExistsSync(path);
-    }) as any;
-    fs.statSync = vi.fn().mockImplementation((path) => {
-      if (String(path).includes("/tmp/audio.webm")) {
-        return { size: 1234 };
-      }
-      return originalStatSync(path);
-    }) as any;
-    fs.createReadStream = vi.fn().mockImplementation((path) => {
-      if (String(path).includes("/tmp/audio.webm")) {
-        return { pipe: vi.fn() } as any;
-      }
-      return originalCreateReadStream(path);
-    }) as any;
+
+    // Set fs.exists to return true and statSync to return size
+    setFsState({ existsSync: true, statSyncSize: 1234 });
 
     const res = await app.request("/media/recordings/rec_stream/audio", {
       method: "GET",
       headers: { Authorization: "Bearer fake_token" },
     });
 
-    fs.existsSync = originalExistsSync;
-    fs.statSync = originalStatSync;
-    fs.createReadStream = originalCreateReadStream;
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
     expect(res.headers.get("Content-Length")).toBe("1234");

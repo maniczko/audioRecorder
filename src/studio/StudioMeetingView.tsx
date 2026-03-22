@@ -7,6 +7,7 @@ import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
 import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
+import { normalizeMeetingFeedback } from "../shared/meetingFeedback";
 import { apiRequest } from "../services/httpClient";
 import { remoteApiEnabled } from "../services/config";
 import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
@@ -460,6 +461,57 @@ export default function StudioMeetingView({
   const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
   const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
   const suggestedAgenda = useMemo(() => safeArray(studioAnalysis?.suggestedAgenda).slice(0, 5), [studioAnalysis?.suggestedAgenda]);
+  const feedbackTranscript = useMemo(() => {
+    if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
+      return displayRecording.transcript;
+    }
+    return safeArray(selectedRecording?.transcript);
+  }, [displayRecording?.transcript, selectedRecording?.transcript]);
+  const feedbackSpeakerStats = useMemo(
+    () => analyzeSpeakingStyle(feedbackTranscript, displaySpeakerNames),
+    [feedbackTranscript, displaySpeakerNames]
+  );
+  const feedbackView = useMemo(
+    () =>
+      normalizeMeetingFeedback(studioAnalysis?.feedback, {
+        summary: studioAnalysis?.summary,
+        decisions: studioAnalysis?.decisions,
+        actionItems: studioAnalysis?.actionItems,
+        tasks: studioAnalysis?.tasks,
+        followUps: studioAnalysis?.followUps,
+        answersToNeeds: studioAnalysis?.answersToNeeds,
+        risks: studioAnalysis?.risks,
+        blockers: studioAnalysis?.blockers,
+        participantInsights: studioAnalysis?.participantInsights,
+        tensions: studioAnalysis?.tensions,
+        keyQuotes: studioAnalysis?.keyQuotes,
+        speakerStats: feedbackSpeakerStats,
+        transcriptLength: feedbackTranscript.length,
+        meetingTitle: selectedMeeting?.title,
+      }),
+    [
+      feedbackSpeakerStats,
+      feedbackTranscript.length,
+      selectedMeeting?.title,
+      studioAnalysis?.actionItems,
+      studioAnalysis?.answersToNeeds,
+      studioAnalysis?.blockers,
+      studioAnalysis?.decisions,
+      studioAnalysis?.feedback,
+      studioAnalysis?.followUps,
+      studioAnalysis?.keyQuotes,
+      studioAnalysis?.participantInsights,
+      studioAnalysis?.risks,
+      studioAnalysis?.summary,
+      studioAnalysis?.tasks,
+      studioAnalysis?.tensions,
+    ]
+  );
+  const feedbackIsSparse =
+    feedbackTranscript.length < 5 ||
+    (!safeArray(studioAnalysis?.decisions).length &&
+      !safeArray(studioAnalysis?.tasks).length &&
+      !safeArray(studioAnalysis?.participantInsights).length);
   const meetingTaskEntries = useMemo(() => {
     const meetingId = String(selectedMeeting?.id || "").trim();
     const recordingId = String(selectedRecording?.id || "").trim();
@@ -1585,15 +1637,126 @@ export default function StudioMeetingView({
                 <div className="eyebrow">AI — feedback</div>
                 <h2>Twój feedback</h2>
               </div>
-            </div>
-            {studioAnalysis ? (
-              <div className="panel-body">
-                <p className="soft-copy">W tej zakładce zostają tylko ogólne uwagi. Szczegóły są już pokazane w podsumowaniu i zadaniach.</p>
+              <div className="feedback-score-badge" aria-label={`Ocena spotkania ${feedbackView.overallScore} na 10`}>
+                {feedbackView.overallScore}/10
               </div>
-            ) : null}
+            </div>
+            <div className="panel-body feedback-panel-body">
+              <div className="feedback-hero">
+                <div className="feedback-score-card">
+                  <div className="feedback-score-ring">
+                    <span>{feedbackView.overallScore}</span>
+                    <small>/10</small>
+                  </div>
+                  <div className="feedback-score-copy">
+                    <div className="feedback-score-kicker">Ocena całego spotkania</div>
+                    <strong>{feedbackView.summary}</strong>
+                    {feedbackIsSparse ? (
+                      <p className="feedback-sparse-note">Za mało danych, aby ocenić dokładniej. Oceny są orientacyjne.</p>
+                    ) : null}
+                    {feedbackView.strengths?.length ? (
+                      <p className="feedback-mini-note">
+                        Najmocniejsze strony: <strong>{feedbackView.strengths.slice(0, 2).join(" · ")}</strong>
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="feedback-highlight-card">
+                  <div className="feedback-highlight-label">Najlepsza rzecz do poprawy</div>
+                  <p>{feedbackView.improvementAreas[0] || feedbackView.whatCouldBeBetter[0] || "Mocniej domykaj decyzje, ownera i termin po każdym ważnym wątku."}</p>
+                </div>
+              </div>
+
+              <div className="feedback-grid">
+                <article className="feedback-card feedback-card-good">
+                  <div className="feedback-card-head">
+                    <span className="feedback-card-icon success">✓</span>
+                    <h3>Co poszło dobrze</h3>
+                  </div>
+                  <ul className="feedback-list">
+                    {feedbackView.whatWentWell.map((item, index) => (
+                      <li key={`went-${index}`}><strong>{item}</strong></li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="feedback-card feedback-card-better">
+                  <div className="feedback-card-head">
+                    <span className="feedback-card-icon warning">↗</span>
+                    <h3>Co można poprawić</h3>
+                  </div>
+                  <ul className="feedback-list">
+                    {feedbackView.whatCouldBeBetter.map((item, index) => (
+                      <li key={`better-${index}`}><strong>{item}</strong></li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="feedback-card feedback-card-perception">
+                  <div className="feedback-card-head">
+                    <span className="feedback-card-icon info">👀</span>
+                    <h3>Jak możesz być odbierany</h3>
+                  </div>
+                  <ul className="feedback-list">
+                    {feedbackView.perceptionNotes.map((item, index) => (
+                      <li key={`perception-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="feedback-card feedback-card-communication">
+                  <div className="feedback-card-head">
+                    <span className="feedback-card-icon accent">🗣</span>
+                    <h3>Jak przekazywać lepiej</h3>
+                  </div>
+                  <ul className="feedback-list">
+                    {feedbackView.communicationTips.map((item, index) => (
+                      <li key={`tip-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+
+              <div className="feedback-category-block">
+                <div className="feedback-category-head">
+                  <h3>Oceny 1-10</h3>
+                  <span>Całe spotkanie, nie pojedyncze osoby</span>
+                </div>
+                <div className="feedback-category-grid">
+                  {feedbackView.categoryScores.map((category) => (
+                    <article key={category.key} className="feedback-category-card">
+                      <div className="feedback-category-top">
+                        <div>
+                          <div className="feedback-category-label">{category.label}</div>
+                          <div className="feedback-category-observation">{category.observation}</div>
+                        </div>
+                        <div className="feedback-category-score">{category.score}/10</div>
+                      </div>
+                      <div className="feedback-category-tip">
+                        <strong>Co poprawić:</strong> {category.improvementTip}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="feedback-grid feedback-grid-bottom">
+                <article className="feedback-card feedback-card-next">
+                  <div className="feedback-card-head">
+                    <span className="feedback-card-icon neutral">→</span>
+                    <h3>Następne kroki</h3>
+                  </div>
+                  <ul className="feedback-list">
+                    {feedbackView.nextSteps.map((item, index) => (
+                      <li key={`next-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+            </div>
           </section>
         )}
-
         {studioAnalysisTab === 'tasks' && (
           <section className="panel studio-tasks-panel">
             <div className="panel-header compact">

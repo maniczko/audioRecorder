@@ -165,6 +165,27 @@ export interface MeetingQuote {
   why?: string;
 }
 
+export interface MeetingFeedbackCategoryScore {
+  key: string;
+  label: string;
+  score: number;
+  observation: string;
+  improvementTip: string;
+}
+
+export interface MeetingFeedback {
+  overallScore: number;
+  summary: string;
+  strengths: string[];
+  improvementAreas: string[];
+  perceptionNotes: string[];
+  communicationTips: string[];
+  nextSteps: string[];
+  whatWentWell: string[];
+  whatCouldBeBetter: string[];
+  categoryScores: MeetingFeedbackCategoryScore[];
+}
+
 export interface MeetingParticipantInsight {
   speaker: string;
   mainTopic?: string;
@@ -208,4 +229,5 @@ export interface MeetingAnalysis {
   tensions: MeetingTension[];
   keyQuotes: MeetingQuote[];
   suggestedAgenda: string[];
+  feedback?: MeetingFeedback;
 }

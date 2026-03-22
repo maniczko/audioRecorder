@@ -16,6 +16,7 @@ import { spawn, exec } from "node:child_process";
 import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 import { config } from "./config.ts";
 import { logger } from "./logger.ts";
+import { buildMeetingFeedbackSchemaExample } from "../src/shared/meetingFeedback.ts";
 
 // Import czystych funkcji z audioPipeline.utils.ts
 import {
@@ -1539,12 +1540,50 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     return `${m}:${String(sec).padStart(2, "0")}`;
   };
 
-  const transcriptText = segments.map((seg) => {
-    const speaker = speakerNames?.[String(seg.speakerId)] || `Speaker ${(seg.speakerId || 0) + 1}`;
-    return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
-  }).join("\n");
+  const transcriptText = segments
+    .map((seg) => {
+      const speaker = speakerNames?.[String(seg.speakerId)] || `Speaker ${(seg.speakerId || 0) + 1}`;
+      return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
+    })
+    .join("\n");
 
-  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85,"discStyle":"DC — dominujący analityk","discDescription":"Adam koncentruje się na wynikach i analizie, działając szybko i metodycznie.","communicationStyle":"analytical","decisionStyle":"data-driven","stressResponse":"Staje się bardziej dyrektywny i zamknięty na inne opinie.","workingWithTips":["Przedstawiaj fakty i dane","Dawaj czas na analizę","Unikaj emocjonalnych argumentów"],"meetingRole":"ekspert","keyMoment":"..."}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
+  const schema = JSON.stringify({
+    speakerCount: 2,
+    speakerLabels: { 0: "Adam", 1: "Marcin" },
+    summary: "...",
+    decisions: ["..."],
+    actionItems: ["..."],
+    tasks: [{ title: "...", owner: "...", sourceQuote: "...", priority: "medium", tags: [] }],
+    followUps: ["..."],
+    answersToNeeds: [{ need: "...", answer: "..." }],
+    suggestedTags: ["tag1"],
+    meetingType: "planning",
+    energyLevel: "medium",
+    risks: [{ risk: "...", severity: "high" }],
+    blockers: ["..."],
+    participantInsights: [{
+      speaker: "Adam",
+      mainTopic: "...",
+      stance: "proactive",
+      talkRatio: 0.6,
+      personality: { D: 70, I: 50, S: 40, C: 80 },
+      needs: ["..."],
+      concerns: ["..."],
+      sentimentScore: 85,
+      discStyle: "DC — dominujący analityk",
+      discDescription: "Adam koncentruje się na wynikach i analizie, działając szybko i metodycznie.",
+      communicationStyle: "analytical",
+      decisionStyle: "data-driven",
+      stressResponse: "Staje się bardziej dyrektywny i zamknięty na inne opinie.",
+      workingWithTips: ["Przedstawiaj fakty i dane", "Dawaj czas na analizę", "Unikaj emocjonalnych argumentów"],
+      meetingRole: "ekspert",
+      keyMoment: "...",
+    }],
+    tensions: [{ topic: "...", between: ["A", "B"], resolved: false }],
+    keyQuotes: [{ quote: "...", speaker: "Adam", why: "..." }],
+    suggestedAgenda: ["..."],
+    feedback: buildMeetingFeedbackSchemaExample(),
+  });
 
   const prompt = [
     "Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.",
@@ -1588,20 +1627,19 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
     const json = await resp.json();
     const content = json.choices?.[0]?.message?.content || "{}";
-    
+
     logger.info(`[Metrics] LLM Meeting Analysis Complete`, {
       requestId: reqId,
       durationMs: (performance.now() - startAnalyze).toFixed(2),
-      transcriptLength: transcriptText.length
+      transcriptLength: transcriptText.length,
     });
-    
+
     return JSON.parse(content);
   } catch (err) {
     console.warn("[audioPipeline] analyzeMeetingWithOpenAI failed:", err.message);
     return null;
   }
 }
-
 async function embedTextChunks(texts: string[]) {
   if (!OPENAI_API_KEY || !texts.length) return [];
   try {

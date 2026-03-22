@@ -23,6 +23,20 @@ async function loadAudioPipeline({
   vi.doMock("../speakerEmbedder.ts", () => ({
     matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
   }));
+  vi.doMock("node:child_process", () => ({
+    exec: vi.fn((cmd, opts, callback) => {
+      if (callback) callback(null, "", "");
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    }),
+    spawn: vi.fn(() => {
+      const { EventEmitter } = require('events');
+      const child = new EventEmitter();
+      child.stdout = new EventEmitter();
+      child.stdout.setEncoding = vi.fn();
+      setImmediate(() => child.emit('close', 0));
+      return child;
+    }),
+  }));
 
   return import("../audioPipeline.ts");
 }
@@ -42,6 +56,7 @@ describe("audioPipeline exports", () => {
   afterEach(() => {
     global.fetch = originalFetch;
     vi.restoreAllMocks();
+    vi.clearAllMocks();
     // Restore original env vars
     process.env.VOICELOG_OPENAI_API_KEY = originalEnv.VOICELOG_OPENAI_API_KEY;
     process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY;
@@ -126,7 +141,27 @@ describe("audioPipeline exports", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          choices: [{ message: { content: JSON.stringify({ summary: "Spotkanie zakonczone." }) } }],
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                summary: "Spotkanie zakonczone.",
+                feedback: {
+                  overallScore: 8,
+                  summary: "Konkretne spotkanie.",
+                  strengths: ["Dobra struktura"],
+                  improvementAreas: ["Mocniejsze domknięcie"],
+                  perceptionNotes: ["Możesz być odbierany jako konkretny"],
+                  communicationTips: ["Skracaj wstępy"],
+                  nextSteps: ["Spisz decyzje"],
+                  whatWentWell: ["Były ustalenia"],
+                  whatCouldBeBetter: ["Dopnij ownera"],
+                  categoryScores: [
+                    { key: "facilitation", label: "Prowadzenie spotkania", score: 8, observation: "Dobrze prowadzone", improvementTip: "Domykaj szybciej" },
+                  ],
+                },
+              }),
+            },
+          }],
         }),
       })
       .mockResolvedValueOnce({
@@ -143,12 +178,19 @@ describe("audioPipeline exports", () => {
     });
     const embeddings = await pipeline.embedTextChunks(["pierwszy", "drugi"]);
 
-    expect(analysis).toEqual({ summary: "Spotkanie zakonczone." });
+    expect(analysis).toMatchObject({
+      summary: "Spotkanie zakonczone.",
+      feedback: expect.objectContaining({
+        overallScore: 8,
+      }),
+    });
     expect(embeddings).toEqual([
       [0.1, 0.2],
       [0.3, 0.4],
     ]);
     expect((global.fetch as any).mock.calls[0][0]).toContain("/chat/completions");
+    expect(String((global.fetch as any).mock.calls[0][1].body)).toContain("feedback");
+    expect(String((global.fetch as any).mock.calls[0][1].body)).toContain("Prowadzenie spotkania");
     expect((global.fetch as any).mock.calls[1][0]).toContain("/embeddings");
   });
 
@@ -371,9 +413,11 @@ describe("audioPipeline exports", () => {
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
         child.stdout.setEncoding = vi.fn();
-        // Emit events synchronously to avoid timing issues
-        child.stdout.emit("data", Buffer.alloc(0));
-        child.emit("close", 0);
+        // Emit data first, then close synchronously
+        setImmediate(() => {
+          child.stdout.emit("data", Buffer.alloc(0));
+          child.emit("close", 0);
+        });
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -439,13 +483,15 @@ describe("audioPipeline exports", () => {
         child.stdout.setEncoding = vi.fn();
         const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
         const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
-        // Emit events synchronously
-        if (offsetValue === 0) {
-          child.stdout.emit("data", Buffer.alloc(1600, 1));
-        } else {
-          child.stdout.emit("data", Buffer.alloc(0));
-        }
-        child.emit("close", 0);
+        // Emit events asynchronously to allow proper stream handling
+        setImmediate(() => {
+          if (offsetValue === 0) {
+            child.stdout.emit("data", Buffer.alloc(1600, 1));
+          } else {
+            child.stdout.emit("data", Buffer.alloc(0));
+          }
+          child.emit("close", 0);
+        });
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -522,23 +568,24 @@ describe("audioPipeline exports", () => {
         child.stdout.setEncoding = vi.fn();
         const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
         const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
-        // Emit events synchronously
-        if (String(command).includes("python")) {
-          const audioPath = Array.isArray(args) ? String(args[1] || "") : "";
-          if (audioPath.includes("vadsilero_")) {
-            child.stdout.emit("data", "[]");
+        // Emit events asynchronously to allow proper stream handling
+        setImmediate(() => {
+          if (String(command).includes("python")) {
+            const audioPath = Array.isArray(args) ? String(args[1] || "") : "";
+            if (audioPath.includes("vadsilero_")) {
+              child.stdout.emit("data", "[]");
+            } else {
+              child.stdout.emit("data", JSON.stringify([{ start: 0, end: 2 }]));
+            }
           } else {
-            child.stdout.emit("data", JSON.stringify([{ start: 0, end: 2 }]));
+            if (offsetValue === 0) {
+              child.stdout.emit("data", Buffer.alloc(1600, 1));
+            } else {
+              child.stdout.emit("data", Buffer.alloc(0));
+            }
           }
           child.emit("close", 0);
-          return;
-        }
-        if (offsetValue === 0) {
-          child.stdout.emit("data", Buffer.alloc(1600, 1));
-        } else {
-          child.stdout.emit("data", Buffer.alloc(0));
-        }
-        child.emit("close", 0);
+        });
         return child;
       });
       return { spawn, exec: vi.fn() };
