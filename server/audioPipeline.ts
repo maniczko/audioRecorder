@@ -325,25 +325,49 @@ function extractAudioSegmentMemory(filePath: string, start: number, duration: nu
 /**
  * Merges verbose_json payloads from multiple chunks into one,
  * adjusting segment timestamps by chunkOffset.
+ *
+ * Chunks overlap by CHUNK_OVERLAP_SECONDS seconds to give Whisper context
+ * across boundaries. To avoid duplicate segments, we track the highest
+ * absolute end-time already committed and skip any segment that starts
+ * before it (i.e., falls entirely within a previously processed region).
  */
 function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
   const attempts = Array.isArray(payloads) ? payloads.filter(Boolean) : [];
   const safePayloads = attempts.filter(({ payload }) => payload);
+
+  // High-water mark: absolute end-time of the last committed segment.
+  // Segments from overlap zones (start < highWater) are skipped.
+  let highWater = 0;
+
   const allSegments = safePayloads.flatMap(({ payload, offsetSeconds }) => {
     const segs = Array.isArray(payload?.segments) ? payload.segments : [];
-    return segs.map((s) => ({
+    const adjusted = segs.map((s) => ({
       ...s,
       start: Number(s.start || 0) + offsetSeconds,
       end: Number(s.end || 0) + offsetSeconds,
     }));
+    // Keep only segments that start at or after the high-water mark
+    const deduped = adjusted.filter((s) => s.start >= highWater - 0.1);
+    if (deduped.length > 0) {
+      highWater = Math.max(highWater, deduped[deduped.length - 1].end);
+    }
+    return deduped;
   });
+
+  // Same deduplication for words — reset and replay
+  let wordHighWater = 0;
   const allWords = safePayloads.flatMap(({ payload, offsetSeconds }) => {
     const words = getRawWords(payload);
-    return words.map((word) => ({
+    const adjusted = words.map((word) => ({
       ...word,
       start: Number(word?.start ?? word?.start_time ?? word?.offset ?? 0) + offsetSeconds,
       end: Number(word?.end ?? word?.end_time ?? word?.offset_end ?? word?.start ?? 0) + offsetSeconds,
     }));
+    const deduped = adjusted.filter((w) => w.start >= wordHighWater - 0.1);
+    if (deduped.length > 0) {
+      wordHighWater = Math.max(wordHighWater, deduped[deduped.length - 1].end);
+    }
+    return deduped;
   });
   const fullText = safePayloads.map(({ payload }) => payload?.text || "").join(" ").trim();
   return {
