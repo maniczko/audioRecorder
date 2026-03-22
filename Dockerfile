@@ -8,16 +8,15 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
-# Install wget and xz-utils for ffmpeg download
-RUN apt-get update && apt-get install -y --no-install-recommends wget xz-utils && rm -rf /var/lib/apt/lists/*
-
-# Download static ffmpeg in builder stage (retries handle transient failures)
-RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
-    https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
-    tar xf ffmpeg-release-amd64-static.tar.xz && \
-    cp ffmpeg-*-amd64-static/ffmpeg /tmp/ffmpeg && \
-    cp ffmpeg-*-amd64-static/ffprobe /tmp/ffprobe && \
-    rm -rf ffmpeg-*
+# Download static ffmpeg via curl (follows GitHub redirects; johnvansickle.com blocked on Railway)
+RUN apt-get update && apt-get install -y --no-install-recommends curl xz-utils && rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL --retry 3 --retry-delay 10 -L \
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" \
+        -o /tmp/ffmpeg.tar.xz && \
+    tar xJf /tmp/ffmpeg.tar.xz -C /tmp && \
+    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /tmp/ffmpeg && \
+    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /tmp/ffprobe && \
+    rm -rf /tmp/ffmpeg-master-latest-linux64-gpl /tmp/ffmpeg.tar.xz
 
 # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
