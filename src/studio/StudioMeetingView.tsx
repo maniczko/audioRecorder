@@ -276,6 +276,71 @@ function normalizeAnalysisTask(task) {
   };
 }
 
+// ── DISC Radar Chart ─────────────────────────────────────────────────────────
+const DISC_AXES = [
+  { key: 'D' as const, label: 'D', angle: -90, color: '#f17d72' },
+  { key: 'I' as const, label: 'I', angle:   0, color: '#f3ca72' },
+  { key: 'S' as const, label: 'S', angle:  90, color: '#67d59f' },
+  { key: 'C' as const, label: 'C', angle: 180, color: '#8db4ff' },
+];
+
+function DiscRadarChart({ D = 0, I = 0, S = 0, C = 0 }: { D?: number; I?: number; S?: number; C?: number }) {
+  const cx = 60, cy = 60, maxR = 44;
+  const vals: Record<string, number> = { D, I, S, C };
+  const pt = (angle: number, val: number) => {
+    const r = (val / 100) * maxR;
+    const rad = (angle * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  };
+  const polygon = DISC_AXES.map((ax, i) => {
+    const p = pt(ax.angle, vals[ax.key]);
+    return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ') + ' Z';
+  const gridPath = (pct: number) => DISC_AXES.map((ax, i) => {
+    const p = pt(ax.angle, pct * 100);
+    return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ') + ' Z';
+  return (
+    <svg viewBox="0 0 120 120" width="120" height="120" className="disc-radar-svg" aria-label="DISC Radar">
+      {[0.25, 0.5, 0.75, 1].map((p) => (
+        <path key={p} d={gridPath(p)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      ))}
+      {DISC_AXES.map((ax) => {
+        const tip = pt(ax.angle, 100);
+        return <line key={ax.key} x1={cx} y1={cy} x2={tip.x} y2={tip.y} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />;
+      })}
+      <path d={polygon} fill="rgba(117,214,196,0.15)" stroke="rgba(117,214,196,0.6)" strokeWidth="1.5" />
+      {DISC_AXES.map((ax) => {
+        const p = pt(ax.angle, vals[ax.key]);
+        return <circle key={ax.key} cx={p.x} cy={p.y} r="3" fill={ax.color} />;
+      })}
+      {DISC_AXES.map((ax) => {
+        const p = pt(ax.angle, 110);
+        return (
+          <text key={ax.key} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
+            fill={ax.color} fontSize="11" fontWeight="700">
+            {ax.label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+const COMM_LABELS: Record<string, string> = {
+  analytical: 'analityczny', expressive: 'ekspresyjny',
+  diplomatic: 'dyplomatyczny', direct: 'bezpośredni',
+};
+const DECISION_LABELS: Record<string, string> = {
+  'data-driven': 'oparty na danych', intuitive: 'intuicyjny',
+  consensual: 'konsensualny', authoritative: 'autorytatywny',
+};
+const DISC_COLORS: Record<string, string> = { D: '#f17d72', I: '#f3ca72', S: '#67d59f', C: '#8db4ff' };
+void DiscRadarChart;
+void COMM_LABELS;
+void DECISION_LABELS;
+void DISC_COLORS;
+
 export default function StudioMeetingView({
   selectedMeeting,
   displayRecording,
@@ -352,6 +417,9 @@ export default function StudioMeetingView({
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
+  const [sketchnoteUrl, setSketchnoteUrl] = useState("");
+  const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
+  const [sketchnoteError, setSketchnoteError] = useState("");
   const autoTaskSyncKeyRef = useRef("");
 
   const audioRef = useRef(null);
@@ -392,6 +460,32 @@ export default function StudioMeetingView({
   const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
   const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
   const suggestedAgenda = useMemo(() => safeArray(studioAnalysis?.suggestedAgenda).slice(0, 5), [studioAnalysis?.suggestedAgenda]);
+  const meetingTaskEntries = useMemo(() => {
+    const meetingId = String(selectedMeeting?.id || "").trim();
+    const recordingId = String(selectedRecording?.id || "").trim();
+
+    if (!meetingId && !recordingId) {
+      return [];
+    }
+
+    return safeArray(meetingTasks)
+      .filter((task) => {
+        const taskMeetingId = String(task?.sourceMeetingId || "").trim();
+        const taskRecordingId = String(task?.sourceRecordingId || "").trim();
+        const taskSourceType = String(task?.sourceType || "").trim();
+
+        return Boolean(
+          (meetingId && taskMeetingId === meetingId) ||
+          (recordingId && taskRecordingId === recordingId) ||
+          (meetingId && taskSourceType === "meeting" && !taskMeetingId)
+        );
+      })
+      .sort((a, b) => {
+        const left = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+        const right = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+        return right - left;
+      });
+  }, [meetingTasks, selectedMeeting?.id, selectedRecording?.id]);
   const summaryBullets = useMemo(() => {
     const bullets = [];
 
@@ -480,12 +574,17 @@ export default function StudioMeetingView({
         priority: task.priority,
         tags: task.tags,
         notes: task.sourceQuote,
+        sourceType: "meeting",
+        sourceMeetingId: selectedMeeting?.id || "",
+        sourceMeetingTitle: selectedMeeting?.title || "",
+        sourceMeetingDate: selectedMeeting?.startsAt || selectedMeeting?.createdAt || "",
+        sourceRecordingId: selectedRecording?.id || "",
       });
       existing.add(key);
     });
 
     autoTaskSyncKeyRef.current = batchKey;
-  }, [autoTaskDrafts, meetingTasks, onCreateTask, selectedMeeting?.id, selectedRecording?.id]);
+  }, [autoTaskDrafts, meetingTasks, onCreateTask, selectedMeeting?.createdAt, selectedMeeting?.id, selectedMeeting?.startsAt, selectedMeeting?.title, selectedRecording?.id]);
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
     : "Nagranie w kolejce…";
@@ -542,6 +641,32 @@ export default function StudioMeetingView({
     }
   }, [selectedRecording?.id, updateTranscriptSegment]);
 
+  const handleGenerateSketchnote = useCallback(async () => {
+    if (!selectedRecording?.id || !remoteApiEnabled()) return;
+    setIsGeneratingSketchnote(true);
+    setSketchnoteError("");
+    try {
+      const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, { method: "POST" });
+      if (res?.sketchnoteUrl) {
+        setSketchnoteUrl(res.sketchnoteUrl);
+      } else {
+        setSketchnoteError("Nie udało się wygenerować sketchnotki.");
+      }
+    } catch (err) {
+      setSketchnoteError(err.message || "Błąd podczas generowania sketchnotki.");
+    } finally {
+      setIsGeneratingSketchnote(false);
+    }
+  }, [selectedRecording?.id]);
+
+  useEffect(() => {
+    if (displayRecording?.diarization?.sketchnoteUrl) {
+      setSketchnoteUrl(displayRecording.diarization.sketchnoteUrl);
+    } else {
+      setSketchnoteUrl("");
+    }
+  }, [displayRecording?.diarization?.sketchnoteUrl, displayRecording?.id]);
+
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
     const nums = uniqueSpeakers
@@ -550,6 +675,7 @@ export default function StudioMeetingView({
     const max = nums.length ? Math.max(...nums) : 0;
     return String(max + 1);
   }, [uniqueSpeakers]);
+  void handleGenerateSketchnote;
 
 
   function togglePlay() {
@@ -974,6 +1100,47 @@ export default function StudioMeetingView({
                       ))}
                     </ul>
                   ) : null}
+                  <div className="sketchnote-section" style={{ marginTop: '32px', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        🎨 Sketchnotka AI
+                      </h3>
+                      {!sketchnoteUrl && (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={handleGenerateSketchnote}
+                          disabled={isGeneratingSketchnote || !remoteApiEnabled()}
+                        >
+                          {isGeneratingSketchnote ? "Generowanie..." : "Wygeneruj sketchnotkę AI"}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {sketchnoteError && <div className="inline-alert error">{sketchnoteError}</div>}
+                    
+                    {sketchnoteUrl ? (
+                      <div className="sketchnote-image-container" style={{ textAlign: 'center', background: '#fff', padding: '12px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                        <img 
+                          src={sketchnoteUrl} 
+                          alt="AI Generated Sketchnote" 
+                          style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} 
+                        />
+                        <button 
+                          className="ghost-button" 
+                          style={{ marginTop: '12px' }}
+                          onClick={handleGenerateSketchnote}
+                          disabled={isGeneratingSketchnote}
+                        >
+                          {isGeneratingSketchnote ? "Generowanie..." : "Generuj ponownie"}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="soft-copy" style={{ margin: 0 }}>
+                        Wygeneruj wizualną notatkę podsumowującą to spotkanie za pomocą DALL-E 3. Obraz będzie zawierał najważniejsze punkty spotkania ubrane w radosną grafikę.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="summary-grid">
@@ -1112,15 +1279,15 @@ export default function StudioMeetingView({
                       <span>{participantInsights.length}</span>
                     </div>
                     {participantInsights.length ? (
-                      <div className="summary-participants">
+                      <ul className="summary-participants-list">
                         {participantInsights.map((insight, i) => (
-                          <article key={`${insight.speaker}-${i}`} className="summary-participant">
+                          <li key={`${insight.speaker}-${i}`} className="summary-participant">
                             <strong>{insight.speaker}</strong>
                             {insight.mainTopic ? <span>{insight.mainTopic}</span> : <span className="soft-copy">Brak glownego tematu</span>}
                             {insight.stance ? <small>{insight.stance}</small> : null}
-                          </article>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     ) : (
                       <p className="soft-copy">Brak danych o uczestnikach.</p>
                     )}
@@ -1271,21 +1438,136 @@ export default function StudioMeetingView({
             </div>
             {studioAnalysis?.participantInsights?.length > 0 ? (
               <div className="panel-body">
-                <div className="insights-grid">
-                  {studioAnalysis.participantInsights.map((insight, i) => (
-                    <div key={i} className="insight-card">
-                      <h3>{insight.speaker}</h3>
-                      <div className="insight-topic">
-                        <strong>Główny temat:</strong> {insight.mainTopic}
-                      </div>
-                      <div className="insight-stance">
-                        <strong>Nastawienie:</strong> {insight.stance}
-                      </div>
-                      <div className="insight-ratio">
-                        <strong>Udział w rozmowie:</strong> {(insight.talkRatio * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                  ))}
+                <div className="insights-grid-v2">
+                  {studioAnalysis.participantInsights.map((insight, i) => {
+                    const disc = insight.personality ?? {};
+                    const sentiment = insight.sentimentScore ?? 0;
+                    const sentColor = sentiment >= 70 ? '#67d59f' : sentiment >= 40 ? '#f3ca72' : '#f17d72';
+                    return (
+                      <article key={i} className="insight-card-v2">
+
+                        {/* Header */}
+                        <div className="icard-header">
+                          <div className="icard-identity">
+                            <h3 className="icard-name">{insight.speaker}</h3>
+                            {insight.meetingRole && (
+                              <span className="icard-role-badge">{insight.meetingRole}</span>
+                            )}
+                          </div>
+                          {insight.sentimentScore != null && (
+                            <div className="icard-sentiment" title={`Zaangażowanie: ${sentiment}/100`}>
+                              <span className="icard-sentiment-dot" style={{ background: sentColor }} />
+                              <span className="icard-sentiment-val" style={{ color: sentColor }}>{sentiment}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* DISC radar + bars */}
+                        {(disc.D != null || disc.I != null || disc.S != null || disc.C != null) && (
+                          <div className="icard-disc-row">
+                            <DiscRadarChart D={disc.D} I={disc.I} S={disc.S} C={disc.C} />
+                            <div className="icard-disc-info">
+                              {insight.discStyle && <div className="icard-disc-style">{insight.discStyle}</div>}
+                              {insight.discDescription && <p className="icard-disc-desc">{insight.discDescription}</p>}
+                              <div className="icard-disc-bars">
+                                {(['D', 'I', 'S', 'C'] as const).map((k) => {
+                                  const v = disc[k] ?? 0;
+                                  return (
+                                    <div key={k} className="icard-disc-bar-row">
+                                      <span className="icard-disc-bar-label" style={{ color: DISC_COLORS[k] }}>{k}</span>
+                                      <div className="icard-disc-bar-track">
+                                        <div className="icard-disc-bar-fill" style={{ width: `${v}%`, background: DISC_COLORS[k] }} />
+                                      </div>
+                                      <span className="icard-disc-bar-val">{v}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Podejście */}
+                        {(insight.communicationStyle || insight.decisionStyle) && (
+                          <div className="icard-section">
+                            <div className="icard-section-label">Podejście</div>
+                            <div className="icard-approach-grid">
+                              {insight.communicationStyle && (
+                                <div className="icard-approach-item">
+                                  <span className="icard-approach-key">Komunikacja</span>
+                                  <span className="icard-approach-val">{COMM_LABELS[insight.communicationStyle] ?? insight.communicationStyle}</span>
+                                </div>
+                              )}
+                              {insight.decisionStyle && (
+                                <div className="icard-approach-item">
+                                  <span className="icard-approach-key">Decyzje</span>
+                                  <span className="icard-approach-val">{DECISION_LABELS[insight.decisionStyle] ?? insight.decisionStyle}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Pod presją */}
+                        {insight.stressResponse && (
+                          <div className="icard-section">
+                            <div className="icard-section-label">Pod presją</div>
+                            <p className="icard-section-body">{insight.stressResponse}</p>
+                          </div>
+                        )}
+
+                        {/* Jak pracować */}
+                        {(insight.workingWithTips?.length ?? 0) > 0 && (
+                          <div className="icard-section">
+                            <div className="icard-section-label">Jak pracować z tą osobą</div>
+                            <ul className="icard-tips-list">
+                              {insight.workingWithTips!.map((tip, j) => <li key={j}>{tip}</li>)}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* W tym spotkaniu */}
+                        <div className="icard-section">
+                          <div className="icard-section-label">W tym spotkaniu</div>
+                          <div className="icard-meeting-row">
+                            {insight.talkRatio != null && (
+                              <div className="icard-talk-ratio">
+                                <span className="icard-talk-pct">{(insight.talkRatio * 100).toFixed(0)}%</span>
+                                <span className="icard-talk-label">głosu</span>
+                              </div>
+                            )}
+                            <div className="icard-meeting-text">
+                              {insight.mainTopic && <div className="icard-main-topic">{insight.mainTopic}</div>}
+                              {insight.stance && (
+                                <div className="icard-stance">Nastawienie: <strong>{insight.stance}</strong></div>
+                              )}
+                            </div>
+                          </div>
+                          {insight.keyMoment && (
+                            <blockquote className="icard-key-moment">„{insight.keyMoment}"</blockquote>
+                          )}
+                        </div>
+
+                        {/* Potrzeby i obawy */}
+                        {((insight.needs?.length ?? 0) > 0 || (insight.concerns?.length ?? 0) > 0) && (
+                          <div className="icard-section">
+                            <div className="icard-section-label">Potrzeby i obawy</div>
+                            {(insight.needs?.length ?? 0) > 0 && (
+                              <div className="icard-chips">
+                                {insight.needs!.map((n, j) => <span key={j} className="icard-chip icard-chip--need">{n}</span>)}
+                              </div>
+                            )}
+                            {(insight.concerns?.length ?? 0) > 0 && (
+                              <div className="icard-chips icard-chips--concerns">
+                                {insight.concerns!.map((c, j) => <span key={j} className="icard-chip icard-chip--concern">{c}</span>)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                      </article>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -1313,13 +1595,52 @@ export default function StudioMeetingView({
         )}
 
         {studioAnalysisTab === 'tasks' && (
-          <AiTaskSuggestionsPanel
-            selectedRecording={selectedRecording}
-            displaySpeakerNames={displaySpeakerNames}
-            peopleProfiles={peopleProfiles}
-            onCreateTask={onCreateTask}
-            canEdit={currentWorkspacePermissions?.canEditWorkspace}
-          />
+          <section className="panel studio-tasks-panel">
+            <div className="panel-header compact">
+              <div>
+                <h2>Zadania po spotkaniu</h2>
+              </div>
+            </div>
+
+            <div className="panel-body">
+              <section className="summary-card summary-card-wide studio-meeting-task-card">
+                <div className="summary-card-head">
+                  <h3>Zadania utworzone z tego spotkania</h3>
+                  <span>{meetingTaskEntries.length}</span>
+                </div>
+                    {meetingTaskEntries.length ? (
+                  <ul className="meeting-task-list">
+                    {meetingTaskEntries.map((task) => (
+                      <li key={task.id} className="meeting-task-item">
+                        <div className="meeting-task-title-row">
+                          <strong>{task.title}</strong>
+                          <span className="task-flag neutral">
+                            {task.priority === "high" ? "Wysoki" : task.priority === "low" ? "Niski" : "Sredni"}
+                          </span>
+                        </div>
+                        {task.description ? <p>{task.description}</p> : null}
+                        <div className="meeting-task-meta">
+                          {task.owner ? <span>@{task.owner}</span> : null}
+                          {task.dueDate ? <span>{task.dueDate}</span> : null}
+                          {task.tags?.length ? <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="soft-copy">Brak zapisanych zadan z tego spotkania.</p>
+                )}
+              </section>
+            </div>
+
+            <AiTaskSuggestionsPanel
+              selectedRecording={selectedRecording}
+              displaySpeakerNames={displaySpeakerNames}
+              peopleProfiles={peopleProfiles}
+              onCreateTask={onCreateTask}
+              canEdit={currentWorkspacePermissions?.canEditWorkspace}
+            />
+          </section>
         )}
 
           </div>{/* /ff-panels */}

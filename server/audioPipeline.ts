@@ -1544,7 +1544,7 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
   }).join("\n");
 
-  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
+  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85,"discStyle":"DC — dominujący analityk","discDescription":"Adam koncentruje się na wynikach i analizie, działając szybko i metodycznie.","communicationStyle":"analytical","decisionStyle":"data-driven","stressResponse":"Staje się bardziej dyrektywny i zamknięty na inne opinie.","workingWithTips":["Przedstawiaj fakty i dane","Dawaj czas na analizę","Unikaj emocjonalnych argumentów"],"meetingRole":"ekspert","keyMoment":"..."}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
 
   const prompt = [
     "Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.",
@@ -1553,6 +1553,7 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     "ZADANIE A: Zidentyfikuj i uzupełnij prawdziwe imiona we właściwości 'speakerLabels' (np. gdy ktoś mówi 'Cześć Adam', zamień 'Speaker 1' na 'Adam') i używaj tylko tych konkretnych imion wokół całego pliku (szczególnie klucza 'owner' przy zadaniach).",
     "ZADANIE B: Dla każdej rozpoznanej osoby w sekcji 'participantInsights' wypełnij obiekt 'personality' oszacowując od 0 do 100 psychologię DISC.",
     "ZADANIE C: Dla każdej osoby oszacuj jej 'sentimentScore' od 1 (niedostępny/zły/wycofany/zimny) do 100 (gorący/entuzjastyczny/bardzo zaangażowany w relację).",
+    "ZADANIE D: Dla każdej osoby wypełnij: discStyle (krótka etykieta stylu DISC po polsku, np. 'DC — dominujący analityk'), discDescription (1-2 zdania opisujące dominujący styl), communicationStyle (analytical/expressive/diplomatic/direct), decisionStyle (data-driven/intuitive/consensual/authoritative), stressResponse (jak zachowuje się pod presją, po polsku), workingWithTips (tablica 2-3 praktycznych wskazówek po polsku), meetingRole (lider/ekspert/mediator/sceptyk/wykonawca) oraz keyMoment (dosłowny cytat najważniejszej wypowiedzi tej osoby z transkryptu).",
     "",
     `Tytuł spotkania: ${meeting?.title || "Nieznany"}`,
     `Kontekst: ${meeting?.context || "Brak"}`,
@@ -1578,7 +1579,7 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 2400,
+        max_tokens: 4000,
         temperature: 0.2,
         response_format: { type: "json_object" },
       }),

@@ -179,6 +179,14 @@ export interface MeetingParticipantInsight {
   needs?: string[];
   concerns?: string[];
   sentimentScore?: number;
+  discStyle?: string;
+  discDescription?: string;
+  communicationStyle?: string;
+  decisionStyle?: string;
+  stressResponse?: string;
+  workingWithTips?: string[];
+  meetingRole?: string;
+  keyMoment?: string;
 }
 
 export interface MeetingAnalysis {
