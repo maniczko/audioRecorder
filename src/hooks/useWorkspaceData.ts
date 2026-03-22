@@ -363,9 +363,14 @@ export default function useWorkspaceData() {
     [currentWorkspaceId, meetings]
   );
 
+  const pauseRemotePull = useCallback((durationMs = 3000) => {
+    remotePullCooldownUntilRef.current = Date.now() + durationMs;
+  }, []);
+
   return {
     userMeetings,
     isHydratingRemoteState,
     applyRemoteWorkspaceState,
+    pauseRemotePull,
   };
 }

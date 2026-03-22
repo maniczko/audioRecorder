@@ -28,7 +28,7 @@ export default function useMeetings() {
   const { currentUser, currentUserId, currentWorkspaceId, currentWorkspaceMembers } = useWorkspaceSelectors();
 
   // 1. Core State & Sync
-  const { userMeetings, isHydratingRemoteState } = useWorkspaceData();
+  const { userMeetings, isHydratingRemoteState, pauseRemotePull } = useWorkspaceData();
 
   const {
     setMeetings,
@@ -363,16 +363,27 @@ export default function useMeetings() {
     deleteRecordingAndMeeting: async (meetingId: string) => {
       const meeting = userMeetings.find((m) => m.id === meetingId);
       if (!meeting) return;
-      const media = createMediaService();
-      const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
-      for (const rec of recordings) {
-        try {
-          if (media.deleteRecording) await media.deleteRecording(rec.id || rec.recordingId);
-        } catch (e) {
-          console.warn("Delete recording failed:", e);
-        }
-      }
+
+      // 1. Pause remote polling to prevent race condition
+      pauseRemotePull(3000);
+
+      // 2. Remove from local state IMMEDIATELY so sync push happens fast
       deleteMeeting(meetingId);
+
+      // 2. Fire-and-forget: clean up server-side recording data
+      const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
+      if (recordings.length > 0) {
+        const media = createMediaService();
+        Promise.allSettled(
+          recordings.map((rec) =>
+            media.deleteRecording
+              ? media.deleteRecording(rec.id || rec.recordingId).catch((e) =>
+                  console.warn("Delete recording failed:", e)
+                )
+              : Promise.resolve()
+          )
+        ).catch(() => {});
+      }
     },
   };
 }

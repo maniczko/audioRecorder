@@ -5,6 +5,93 @@ Zadania zakonczone → TASK_DONE.md
 
 ---
 
+## PRIORYTET P0 — TEST COVERAGE (aktualny sprint)
+
+---
+
+### 100. [TESTS] audioPipeline.ts — pokrycie testami do 80%
+Status: `in_progress`
+Priorytet: `P0`
+Cel: `audioPipeline.ts` ma 22% coverage (797 linii, 173 pokryte). To krytyczny plik dla transkrypcji audio.
+Postęp:
+- ✅ Uruchomiono coverage report (49.37% servera, audioPipeline 22%)
+- ✅ Stworzono plan testów w `docs/TEST_COVERAGE_PLAN.md`
+- ✅ Dodano tabelę jakości testów do raportu HTML (`npm run coverage:summary`)
+- ❌ 10 padających testów w `audio-pipeline.unit.test.ts` (problemy z mockowaniem)
+Następne kroki:
+- wydzielić czyste funkcje do `audioPipeline.utils.ts` i wyeksportować
+- naprawić mocki `fetch`, `fs`, `child_process` w istniejących testach
+- dodać testy dla: `buildWhisperPrompt()`, `isHallucination()`, `textSimilarity()`, `mergeShortSegments()`
+- przetestować `transcribeRecording()` — małe pliki, chunking, error handling
+Pliki:
+- `server/audioPipeline.ts` — główny plik do testowania
+- `server/tests/audio-pipeline.unit.test.ts` — istniejące testy do naprawy
+- `docs/TEST_COVERAGE_PLAN.md` — szczegółowy plan
+- `scripts/coverage-summary.cjs` — skrypt podsumowujący
+Komendy:
+- `npm run test:server:coverage` — testy servera z coverage
+- `npm run coverage:summary` — podsumowanie w terminalu
+- `npm run coverage:open` — otwórz raport HTML
+
+---
+
+### 101. [TESTS] database.ts — pokrycie testami do 80%
+Status: `in_progress`
+Priorytet: `P0`
+Cel: `database.ts` ma 62% coverage (337 linii). Brakuje testów dla `upsertMediaAsset()`, `getRecordingWithTranscript()`.
+Postęp:
+- ✅ Dodano 17 nowych testów w `database.additional.test.ts`
+- ✅ `upsertMediaAsset()` - insert, update, różne formaty audio, sanitization ID
+- ✅ `getMediaAsset()` - returns asset, returns null for nonexistent
+- ✅ `deleteMediaAsset()` - delete with cleanup, workspace check
+- ✅ `saveAudioQualityDiagnostics()` - save metrics, handle null
+- ✅ Helper functions - `_generateId()`, `_generateInviteCode()`, `_safeJsonParse()`, `_pickProfileDraft()`
+- 📈 Coverage wzrosło z 62% → 64.85% (+2.85%)
+Następne kroki:
+- kontynuować z TranscriptionService.ts
+Pliki:
+- `server/database.ts`
+- `server/tests/database.test.ts` (istniejące)
+- `server/tests/database/database.additional.test.ts` (nowe)
+
+---
+
+### 102. [TESTS] TranscriptionService.ts — pokrycie testami do 85%
+Status: `todo`
+Priorytet: `P0`
+Cel: `TranscriptionService.ts` ma 68% coverage. Brakuje testów dla `analyzeAudioQuality()`, `createVoiceProfileFromSpeaker()`.
+Następne kroki:
+- dodać testy dla `analyzeAudioQuality()` — z pipeline, bez pipeline
+- dodać testy dla `createVoiceProfileFromSpeaker()` — sukces, cleanup temp files
+- przetestować deduplikację jobów transkrypcji
+Pliki:
+- `server/services/TranscriptionService.ts`
+- `server/tests/transcription.test.ts`
+
+---
+
+### 103. [TESTS] sqliteWorker.ts — pokrycie testami do 70%
+Status: `todo`
+Priorytet: `P0`
+Cel: `sqliteWorker.ts` ma 0% coverage (30 linii). To krytyczny plik dla bazy danych.
+Następne kroki:
+- dodać testy dla inicjalizacji worker thread
+- przetestować komunikację z głównym wątkiem
+- dodać testy dla obsługi błędów
+Pliki:
+- `server/sqliteWorker.ts`
+
+---
+
+### 104. [TESTS] supabaseStorage.ts — utrzymanie 90% coverage
+Status: `done`
+Priorytet: `P0`
+Cel: `supabaseStorage.ts` ma 91% coverage — utrzymanie poziomu.
+Pliki:
+- `server/lib/supabaseStorage.ts`
+
+---
+
 ## PRIORYTET P1 — krytyczne dla bezpieczenstwa i uzytecznosci
 
 ---

@@ -75,13 +75,16 @@ export default function TaskDetailsPanel({
   }
 
   const selectedTags = Array.isArray(selectedTask.tags) ? selectedTask.tags : [];
-  const tagSuggestions = tagOptions.filter((tag) => {
-    const query = tagDraft.trim().toLowerCase();
-    if (!query) return true;
-    if (selectedTags.some((item) => item.toLowerCase() === tag.toLowerCase())) return false;
-    return tag.toLowerCase().includes(query);
-  });
   const normalizedTagDraft = tagDraft.trim().replace(/,$/, "");
+  const tagQuery = normalizedTagDraft.toLowerCase();
+  const tagSuggestions = tagOptions
+    .filter((tag) => !selectedTags.some((item) => item.toLowerCase() === tag.toLowerCase()))
+    .filter((tag) => {
+      if (!tagQuery) return true;
+      const normalizedTag = tag.toLowerCase();
+      return normalizedTag.startsWith(tagQuery) || normalizedTag.includes(tagQuery);
+    })
+    .slice(0, 8);
   const canCreateTag = Boolean(normalizedTagDraft) && !selectedTags.some((item) => item.toLowerCase() === normalizedTagDraft.toLowerCase());
 
   function updateTags(nextTags) {
@@ -380,6 +383,7 @@ export default function TaskDetailsPanel({
                   placeholder={selectedTags.length ? "" : "Dodaj tag..."}
                 />
               </div>
+              <small className="todo-tag-hint">Wpisz tag, wybierz z listy albo dodaj nowy.</small>
             {showTagSuggestions && tagSuggestions.length > 0 ? (
               <div className="todo-tag-dropdown">
                 {tagSuggestions.map((tag) => (

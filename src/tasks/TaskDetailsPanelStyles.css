@@ -54,6 +54,12 @@
   gap: 8px;
 }
 
+.todo-tag-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: -2px;
+}
+
 .todo-tag-chip-list {
   display: flex;
   flex-wrap: wrap;
