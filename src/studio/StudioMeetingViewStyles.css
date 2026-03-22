@@ -2242,8 +2242,9 @@
 
 .ff-player-time-display {
   position: absolute;
-  right: 48px;
-  bottom: 8px;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
   font-variant-numeric: tabular-nums;
   opacity: 0.8;
   font-size: 0.85rem;
@@ -2251,3 +2252,270 @@
   pointer-events: none;
   color: var(--text-muted, #94a3b8);
 }
+
+/* ── Download Modal ── */
+.ff-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: ffFadeIn 0.2s ease;
+}
+
+.ff-modal-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: ffScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ffFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ffScaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.ff-modal-header {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ff-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: #fff;
+}
+
+.ff-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.ff-modal-close:hover { color: #fff; }
+
+.ff-modal-tabs {
+  padding: 0 24px;
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ff-modal-tab-btn {
+  background: none;
+  border: none;
+  padding: 16px 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.ff-modal-tab-btn:hover { color: rgba(255, 255, 255, 0.8); }
+.ff-modal-tab-btn.active { color: #9333ea; }
+.ff-modal-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #9333ea;
+}
+
+.ff-modal-body {
+  padding: 24px;
+}
+
+.ff-modal-format-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.ff-modal-format-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ff-modal-format-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.ff-modal-format-btn.active {
+  background: #fff;
+  color: #1e293b;
+  border-color: #fff;
+}
+
+.ff-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ff-modal-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ff-modal-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  accent-color: #9333ea;
+  cursor: pointer;
+}
+
+.ff-modal-footer {
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ff-modal-download-btn {
+  background: #9333ea;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ff-modal-download-btn:hover { opacity: 0.9; }
+.ff-modal-download-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Share of Voice ── */
+.ff-sov-card {
+  margin: 16px 24px 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.ff-sov-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.ff-sov-card-head h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #75d6c4;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.ff-sov-card-head span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ff-sov-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ff-sov-bar-track {
+  display: flex;
+  height: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.ff-sov-bar-segment {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ff-sov-bar-segment:last-child {
+  border-right: none;
+}
+
+.ff-sov-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding-top: 4px;
+}
+
+.ff-sov-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ff-sov-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.ff-sov-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.ff-sov-time {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+}
+
+.ff-sov-percent {
+  color: #75d6c4;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-left: 4px;
+}
+
+

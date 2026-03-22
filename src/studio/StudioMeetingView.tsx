@@ -408,6 +408,90 @@ export default function StudioMeetingView({
   const [titleDraftValue, setTitleDraftValue] = useState("");
 
   const [studioAnalysisTab, setStudioAnalysisTab] = useState("tasks"); // default to tasks based on user preference
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [downloadTab, setDownloadTab] = useState('transcript'); // 'transcript', 'summary', 'audio'
+  const [downloadFormat, setDownloadFormat] = useState('PDF');
+  const [includeTimestamp, setIncludeTimestamp] = useState(true);
+  const [showSpeakerName, setShowSpeakerName] = useState(true);
+  const [removeBranding, setRemoveBranding] = useState(false);
+
+  const handleDownload = () => {
+    const toSrtTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        const ms = Math.floor((seconds % 1) * 1000).toString().padStart(3, '0');
+        return `${h}:${m}:${s},${ms}`;
+    };
+
+    if (downloadTab === 'audio') {
+      if (!selectedRecordingAudioUrl) return;
+      fetch(selectedRecordingAudioUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          const safeTitle = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+          a.download = `${safeTitle}.mp3`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        });
+      setIsDownloadModalOpen(false);
+      return;
+    }
+
+    if (downloadFormat === 'PDF' && exportMeetingPdfFile) {
+        exportMeetingPdfFile();
+        setIsDownloadModalOpen(false);
+        return;
+    }
+
+    let content = "";
+    let filename = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+    const fullTranscript = displayRecording?.transcript || selectedMeeting?.transcript || [];
+    
+    if (downloadTab === 'transcript') {
+        if (downloadFormat === 'SRT') {
+            content = fullTranscript.map((s, i) => {
+                const start = toSrtTime(s.timestamp);
+                const end = toSrtTime(s.endTimestamp || s.timestamp + 2);
+                let text = s.text;
+                if (showSpeakerName) text = `${labelSpeaker(displaySpeakerNames, s.speakerId)}: ${text}`;
+                return `${i + 1}\n${start} --> ${end}\n${text}\n`;
+            }).join('\n');
+        } else {
+            content = fullTranscript.map(s => {
+                let line = "";
+                if (includeTimestamp) line += `[${formatDuration(Math.floor(s.timestamp))}] `;
+                if (showSpeakerName) line += `${labelSpeaker(displaySpeakerNames, s.speakerId)}: `;
+                line += s.text;
+                return line;
+            }).join('\n');
+        }
+        filename += "_transcript";
+    } else {
+        content = selectedMeeting?.summary || "Brak podsumowania.";
+        filename += "_summary";
+    }
+
+    const blobType = (downloadFormat === 'JSON') ? 'application/json' : 'text/plain;charset=utf-8';
+    const ext = downloadFormat.toLowerCase();
+    const finalContent = downloadFormat === 'JSON' ? JSON.stringify({ title: filename, content }, null, 2) : content;
+
+    const blob = new Blob([finalContent], { type: blobType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    setIsDownloadModalOpen(false);
+  };
 
   const [transcriptSearch, setTranscriptSearch] = useState("");
   // Speaker picker dropdown — tracks which segment's dropdown is open
@@ -644,6 +728,16 @@ export default function StudioMeetingView({
     : "Nagranie w kolejce…";
 
   const transcript = useMemo(() => displayRecording?.transcript || [], [displayRecording?.transcript]);
+
+  const speakerStats = useMemo(
+    () => analyzeSpeakingStyle(transcript, displaySpeakerNames),
+    [transcript, displaySpeakerNames]
+  );
+
+  const totalSpeakingSeconds = useMemo(
+    () => speakerStats.reduce((acc, s) => acc + s.speakingSeconds, 0),
+    [speakerStats]
+  );
 
   const activeSeg = useMemo(() => (
     transcript.length && currentTime > 0
@@ -992,14 +1086,14 @@ export default function StudioMeetingView({
       <div className="ff-toolbar" data-testid="studio-toolbar">
 
         {/* ── Grupa 1: Zakładki/Eksport (zawsze widoczne) ── */}
-        <button type="button" className="ff-tb-btn" onClick={exportMeetingNotes}
+        <button type="button" className="ff-tb-btn" onClick={() => { setDownloadTab('summary'); setIsDownloadModalOpen(true); }}
           disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
           <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Notatki
         </button>
-        <button type="button" className="ff-tb-btn" onClick={exportTranscript}
+        <button type="button" className="ff-tb-btn" onClick={() => { setDownloadTab('transcript'); setIsDownloadModalOpen(true); }}
           disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
           <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
@@ -1132,12 +1226,43 @@ export default function StudioMeetingView({
                 <div className="eyebrow">AI ? podsumowanie</div>
                 <h2>Podsumowanie spotkania</h2>
               </div>
-              <div className="summary-pill-row">
-                {studioAnalysis?.meetingType ? <span className="summary-pill">{studioAnalysis.meetingType}</span> : null}
-                {studioAnalysis?.energyLevel ? <span className="summary-pill">{studioAnalysis.energyLevel}</span> : null}
-                <span className="summary-pill accent">{autoTaskDrafts.length} taski</span>
-              </div>
             </div>
+
+            {/* Share of Voice Visualizer */}
+            {speakerStats.length > 0 && (
+              <div className="ff-sov-card">
+                <div className="ff-sov-card-head">
+                  <h3>Udział w rozmowie (Share of Voice)</h3>
+                  <span>{speakerStats.length} uczestników</span>
+                </div>
+                <div className="ff-sov-visual">
+                  <div className="ff-sov-bar-track">
+                    {speakerStats.map((s) => (
+                      <div 
+                        key={s.speakerId} 
+                        className="ff-sov-bar-segment"
+                        style={{ 
+                          width: `${(s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100}%`,
+                          backgroundColor: getSpeakerColor(s.speakerId)
+                        }}
+                        title={`${s.speakerName}: ${Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%`}
+                      />
+                    ))}
+                  </div>
+                  <div className="ff-sov-legend">
+                    {speakerStats.map((s) => (
+                      <div key={s.speakerId} className="ff-sov-legend-item">
+                        <span className="ff-sov-dot" style={{ backgroundColor: getSpeakerColor(s.speakerId) }} />
+                        <span className="ff-sov-name">{s.speakerName}</span>
+                        <span className="ff-sov-time">{formatDuration(s.speakingSeconds)}</span>
+                        <span className="ff-sov-percent">{Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {studioAnalysis?.summary ? (
               <div className="panel-body ff-summary-layout">
                 <div className="summary-hero">
@@ -2203,13 +2328,92 @@ export default function StudioMeetingView({
                       <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
                   </a>
-                </div>
-                <span className="ff-player-time-display">
+                  <span className="ff-player-time-display">
                     {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(playbackDuration))}
-                </span>
+                  </span>
+                </div>
               </div>
             </>
           )}
+        </div>
+      )}
+      {isDownloadModalOpen && (
+        <div className="ff-modal-overlay" onClick={() => setIsDownloadModalOpen(false)}>
+          <div className="ff-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="ff-modal-header">
+              <h2 className="ff-modal-title">Download Meeting</h2>
+              <button className="ff-modal-close" onClick={() => setIsDownloadModalOpen(false)}>×</button>
+            </div>
+            
+            <div className="ff-modal-tabs">
+              <button 
+                className={`ff-modal-tab-btn ${downloadTab === 'transcript' ? 'active' : ''}`}
+                onClick={() => setDownloadTab('transcript')}
+              >Transcript</button>
+              <button 
+                className={`ff-modal-tab-btn ${downloadTab === 'summary' ? 'active' : ''}`}
+                onClick={() => setDownloadTab('summary')}
+              >Summary</button>
+              <button 
+                className={`ff-modal-tab-btn ${downloadTab === 'audio' ? 'active' : ''}`}
+                onClick={() => setDownloadTab('audio')}
+              >Audio</button>
+            </div>
+
+            <div className="ff-modal-body">
+              {downloadTab !== 'audio' && (
+                <div className="ff-modal-format-grid">
+                  {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map(f => (
+                    <button 
+                      key={f}
+                      className={`ff-modal-format-btn ${downloadFormat === f ? 'active' : ''}`}
+                      onClick={() => setDownloadFormat(f)}
+                    >{f}</button>
+                  ))}
+                </div>
+              )}
+
+              <div className="ff-modal-options">
+                {downloadTab === 'transcript' && (
+                  <>
+                    <label className="ff-modal-label">
+                      <input 
+                        type="checkbox" 
+                        className="ff-modal-checkbox" 
+                        checked={includeTimestamp} 
+                        onChange={(e) => setIncludeTimestamp(e.target.checked)} 
+                      />
+                      Include timestamp
+                    </label>
+                    <label className="ff-modal-label">
+                      <input 
+                        type="checkbox" 
+                        className="ff-modal-checkbox" 
+                        checked={showSpeakerName} 
+                        onChange={(e) => setShowSpeakerName(e.target.checked)} 
+                      />
+                      Show speaker name
+                    </label>
+                  </>
+                )}
+                <label className="ff-modal-label">
+                  <input 
+                    type="checkbox" 
+                    className="ff-modal-checkbox" 
+                    checked={removeBranding} 
+                    onChange={(e) => setRemoveBranding(e.target.checked)} 
+                  />
+                  Remove Antigravity Branding
+                </label>
+              </div>
+            </div>
+
+            <div className="ff-modal-footer">
+              <button className="ff-modal-download-btn" onClick={handleDownload} disabled={downloadTab === 'audio' && !selectedRecordingAudioUrl}>
+                Download
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

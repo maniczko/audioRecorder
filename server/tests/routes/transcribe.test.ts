@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import fs from "node:fs";
 import { createApp } from "../../app.ts";
+import { __mockFs } from "../../tests/setup";
 
 describe("Transcribe Routes", () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: any;
-  const originalWriteFileSync = fs.writeFileSync;
-  const originalUnlinkSync = fs.unlinkSync;
 
   beforeEach(() => {
+    __mockFs.writeFileSync.mockClear();
+    __mockFs.unlinkSync.mockClear();
+
     mockTranscriptionService = {
       transcribeLiveChunk: vi.fn().mockResolvedValue("hello live"),
     };
@@ -23,14 +24,10 @@ describe("Transcribe Routes", () => {
       transcriptionService: mockTranscriptionService,
       config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
     });
-
-    fs.writeFileSync = vi.fn() as any;
-    fs.unlinkSync = vi.fn() as any;
   });
 
   afterEach(() => {
-    fs.writeFileSync = originalWriteFileSync;
-    fs.unlinkSync = originalUnlinkSync;
+    vi.clearAllMocks();
   });
 
   it("returns empty text for too-small live chunks", async () => {
@@ -65,8 +62,8 @@ describe("Transcribe Routes", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ text: "hello live" });
-    expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
+    expect(__mockFs.writeFileSync).toHaveBeenCalledTimes(1);
     expect(mockTranscriptionService.transcribeLiveChunk).toHaveBeenCalledTimes(1);
-    expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
+    expect(__mockFs.unlinkSync).toHaveBeenCalledTimes(1);
   });
 });

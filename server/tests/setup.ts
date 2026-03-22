@@ -1,5 +1,6 @@
 // Global test setup - runs before all tests
 import { vi } from 'vitest';
+import path from 'node:path';
 
 // Global state for controlling fs mocks
 global.__TEST_FS_STATE__ = {
@@ -7,18 +8,69 @@ global.__TEST_FS_STATE__ = {
   statSyncSize: 1234,
 };
 
+// Store original fs functions for database operations
+let originalFs: any = null;
+
 // Create mock functions that read from global state
-const existsSyncMock = vi.fn(() => global.__TEST_FS_STATE__?.existsSync ?? true);
-const statSyncMock = vi.fn(() => ({ size: global.__TEST_FS_STATE__?.statSyncSize ?? 1234 }));
+const existsSyncMock = vi.fn((filePath?: string) => {
+  // Allow database files to be checked
+  if (filePath && (filePath.endsWith('.sqlite') || filePath.endsWith('.db'))) {
+    return originalFs?.existsSync(filePath) ?? true;
+  }
+  return global.__TEST_FS_STATE__?.existsSync ?? true;
+});
+
+const statSyncMock = vi.fn((filePath?: string) => {
+  if (filePath && (filePath.endsWith('.sqlite') || filePath.endsWith('.db'))) {
+    return originalFs?.statSync(filePath) ?? { size: 1234 };
+  }
+  return { size: global.__TEST_FS_STATE__?.statSyncSize ?? 1234 };
+});
+
 const createReadStreamMock = vi.fn(() => ({ pipe: vi.fn() }));
-const readFileSyncMock = vi.fn(() => Buffer.from('mocked'));
+
+const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
+  // Allow reading migration files and database
+  if (filePath && (filePath.endsWith('.sql') || filePath.endsWith('.sqlite') || filePath.endsWith('.db'))) {
+    return originalFs?.readFileSync(filePath, options) ?? Buffer.from('mocked');
+  }
+  // If encoding is 'utf8' or options has encoding utf8, return string
+  const encoding = typeof options === 'string' ? options : options?.encoding;
+  if (encoding === 'utf8') {
+    return 'mocked content';
+  }
+  return Buffer.from('mocked');
+});
+
 const writeFileSyncMock = vi.fn();
 const unlinkSyncMock = vi.fn();
-const mkdirSyncMock = vi.fn();
+const mkdirSyncMock = vi.fn((dirPath: string, options?: any) => {
+  // Allow creating database directories
+  try {
+    return originalFs?.mkdirSync(dirPath, options);
+  } catch {
+    // Ignore errors in tests
+  }
+});
+
 const renameSyncMock = vi.fn();
+const readdirSyncMock = vi.fn((dirPath?: string, options?: any) => {
+  // Allow reading migration directories
+  if (dirPath && dirPath.includes('migrations')) {
+    try {
+      const result = originalFs?.readdirSync(dirPath, options)?.filter((f: string) => f.endsWith('.sql')) ?? [];
+      return result;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+});
+
+const rmSyncMock = vi.fn();
 
 // Expose mocks globally for test manipulation
-(global as any).__mockFs = {
+export const __mockFs = {
   existsSync: existsSyncMock,
   statSync: statSyncMock,
   createReadStream: createReadStreamMock,
@@ -27,10 +79,17 @@ const renameSyncMock = vi.fn();
   unlinkSync: unlinkSyncMock,
   mkdirSync: mkdirSyncMock,
   renameSync: renameSyncMock,
+  readdirSync: readdirSyncMock,
+  rmSync: rmSyncMock,
 };
 
+(global as any).__mockFs = __mockFs;
+
 // Mock node:fs globally before any test files are loaded
-vi.mock('node:fs', () => {
+vi.mock('node:fs', async () => {
+  const actualFs = await vi.importActual('node:fs');
+  originalFs = actualFs;
+
   const mockFs = {
     existsSync: existsSyncMock,
     createReadStream: createReadStreamMock,
@@ -40,6 +99,8 @@ vi.mock('node:fs', () => {
     unlinkSync: unlinkSyncMock,
     mkdirSync: mkdirSyncMock,
     renameSync: renameSyncMock,
+    readdirSync: readdirSyncMock,
+    rmSync: rmSyncMock,
   };
   // Also expose as default for compatibility with `import fs from 'node:fs'`
   return {
