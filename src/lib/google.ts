@@ -4,7 +4,15 @@ const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 let googleScriptPromise = null;
 
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+function getEnv(key: string): string {
+  if (typeof process !== "undefined" && process.env && process.env[key]) return process.env[key];
+  // @ts-ignore
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) return import.meta.env[key];
+  return "";
+}
+
+export const GOOGLE_CLIENT_ID = getEnv("VITE_GOOGLE_CLIENT_ID") || getEnv("REACT_APP_GOOGLE_CLIENT_ID") || "";
+export const IS_GOOGLE_DEMO_MODE = GOOGLE_CLIENT_ID === "demo";
 
 function loadGoogleScript() {
   if (typeof window === "undefined") {
@@ -49,11 +57,30 @@ function decodeJwtPayload(token) {
 
 export async function renderGoogleSignInButton(container, callback) {
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error("Missing REACT_APP_GOOGLE_CLIENT_ID.");
+    throw new Error("Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).");
   }
 
   if (!container) {
     throw new Error("Missing Google button container.");
+  }
+
+  if (IS_GOOGLE_DEMO_MODE) {
+    container.innerHTML = `
+      <button type="button" class="google-demo-button">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.84 2.07-1.79 2.7l2.78 2.16c1.63-1.5 2.57-3.7 2.57-6.3z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.78-2.16c-.77.52-1.76.83-2.93.83-2.25 0-4.16-1.52-4.84-3.58H1.58v2.24C3.06 16.17 5.8 18 9 18z"/><path fill="#FBBC05" d="M4.16 10.91c-.17-.52-.27-1.07-.27-1.66s.1-1.14.27-1.66V5.35H1.58C1.04 6.44.75 7.68.75 9s.29 2.56.83 3.65l2.58-2.09z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.88 11.43 0 9 0 5.8 0 3.06 1.83 1.58 4.76L4.16 7c.68-2.06 2.59-3.58 4.84-3.58z"/></svg>
+        <span>Continue with Demo Google</span>
+      </button>
+    `;
+    const btn = container.querySelector(".google-demo-button");
+    btn.onclick = () => {
+      callback({
+        email: "demo.user@example.com",
+        name: "Demo User",
+        picture: "https://ui-avatars.com/api/?name=Demo+User&background=random",
+        sub: "demo-123",
+      }, { credential: "mock-credential" });
+    };
+    return;
   }
 
   const google = await loadGoogleScript();
@@ -88,7 +115,16 @@ export async function requestGoogleCalendarAccess({ loginHint } = {}) {
 
 async function requestGoogleAccess({ loginHint, scope }) {
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error("Missing REACT_APP_GOOGLE_CLIENT_ID.");
+    throw new Error("Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).");
+  }
+
+  if (IS_GOOGLE_DEMO_MODE) {
+    return Promise.resolve({
+      access_token: "mock-google-token",
+      expires_in: 3600,
+      scope,
+      token_type: "Bearer",
+    });
   }
 
   const google = await loadGoogleScript();

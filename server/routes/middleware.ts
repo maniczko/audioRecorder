@@ -25,6 +25,11 @@ export function createMiddlewares(services: AppServices) {
   };
 
   const authMiddleware = async (c: any, next: any) => {
+    // Pass OPTIONS preflight requests through — cors middleware handles them.
+    if (c.req.method === "OPTIONS") {
+      await next();
+      return;
+    }
     const authHeader = c.req.header("Authorization") || "";
     const queryToken = String(c.req.query?.("token") || "").trim();
     const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";

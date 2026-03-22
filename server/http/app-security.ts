@@ -53,9 +53,30 @@ export function applySecurityHeaders(app: Hono<any>) {
   });
 }
 
+export function registerNotFoundHandler(app: Hono<any>) {
+  app.notFound((c) => {
+    const requestOrigin = c.req.header("origin");
+    if (requestOrigin) {
+      c.header("Access-Control-Allow-Origin", requestOrigin);
+      c.header("Access-Control-Allow-Credentials", "true");
+    }
+    return c.json({ message: "Not found." }, 404);
+  });
+}
+
 export function registerAppErrorHandler(app: Hono<any>) {
   app.onError((err: any, c) => {
     console.error("APP ERROR STACK", err.stack);
+
+    // Ensure CORS headers are always present on error responses.
+    // app.onError creates a new response that may bypass the cors middleware's
+    // post-next() header injection, so we set them explicitly here.
+    const requestOrigin = c.req.header("origin");
+    if (requestOrigin) {
+      c.header("Access-Control-Allow-Origin", requestOrigin);
+      c.header("Access-Control-Allow-Credentials", "true");
+    }
+
     if (err.name === "ContextError" || err instanceof z.ZodError || err?.statusCode === 422) {
       return c.json({ message: "Invalid payload.", errors: err?.errors || err.message }, 422);
     }

@@ -5,6 +5,7 @@ import {
   applyRequestMetadata,
   applySecurityHeaders,
   registerAppErrorHandler,
+  registerNotFoundHandler,
 } from "./http/app-security.ts";
 import { registerAppRoutes } from "./http/app-routes.ts";
 
@@ -16,6 +17,7 @@ export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewa
   applyRequestMetadata(app);
   applySecurityHeaders(app);
   registerAppErrorHandler(app);
+  registerNotFoundHandler(app);
 
   const middlewares = mockedMiddlewares || createMiddlewares(services);
   registerAppRoutes(app, services, middlewares);

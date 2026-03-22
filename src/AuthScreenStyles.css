@@ -45,3 +45,34 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+.google-demo-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+  height: 46px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.google-demo-button:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.google-demo-button svg {
+  flex-shrink: 0;
+}

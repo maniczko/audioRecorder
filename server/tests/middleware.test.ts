@@ -70,6 +70,26 @@ describe("route middleware", () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
+  it("authMiddleware passes OPTIONS requests through without auth check", async () => {
+    const services = {
+      authService: { getSession: vi.fn() },
+      workspaceService: { getMembership: vi.fn() },
+      config: { trustProxy: false },
+    } as any;
+    const { authMiddleware } = createMiddlewares(services);
+    const next = vi.fn();
+    const ctx: any = {
+      req: { method: "OPTIONS", header: vi.fn().mockReturnValue("") },
+      json: vi.fn(),
+      set: vi.fn(),
+    };
+
+    await authMiddleware(ctx, next);
+
+    expect(services.authService.getSession).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
   it("ensureWorkspaceAccess throws 403 when membership is missing", async () => {
     const { ensureWorkspaceAccess } = createMiddlewares({
       authService: {},
