@@ -8,6 +8,14 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
+# Download static ffmpeg in builder stage (retries handle transient failures)
+RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
+    https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
+    tar xf ffmpeg-release-amd64-static.tar.xz && \
+    cp ffmpeg-*-amd64-static/ffmpeg /tmp/ffmpeg && \
+    cp ffmpeg-*-amd64-static/ffprobe /tmp/ffprobe && \
+    rm -rf ffmpeg-*
+
 # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/package*.json ./server/
@@ -33,11 +41,11 @@ FROM node:22.12-bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-# Copy static ffmpeg/ffprobe binaries from official Docker image (no download, no OOM)
-COPY --from=mwader/static-ffmpeg:latest /ffmpeg /usr/local/bin/ffmpeg
-COPY --from=mwader/static-ffmpeg:latest /ffprobe /usr/local/bin/ffprobe
+# Copy static ffmpeg binaries from builder (avoids re-download and OOM)
+COPY --from=builder /tmp/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
 
-# Install Python and runtime dependencies (no ffmpeg package needed)
+# Install Python and runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
     rm -rf /var/lib/apt/lists/*
