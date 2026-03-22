@@ -2129,19 +2129,19 @@ export default function StudioMeetingView({
               <div className="ff-player-controls">
                 <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }} title="-15s">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
                   </svg>
                 </button>
                 <button type="button" className="ff-player-play" onClick={togglePlay} aria-label={isPlaying ? "Pauza" : "Odtwórz"}>
                   {isPlaying
-                    ? <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="4" height="12" rx="1" /><rect x="9" y="2" width="4" height="12" rx="1" /></svg>
-                    : <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2l10 6-10 6z" /></svg>
+                    ? <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="4" height="12" rx="1.5" /><rect x="9" y="2" width="4" height="12" rx="1.5" /></svg>
+                    : <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2l10 6-10 6z" /></svg>
                   }
                 </button>
                 <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15); }} title="+15s">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     <text x="4.2" y="12.5" fontSize="5" fill="currentColor" fontFamily="sans-serif" fontWeight="600">15</text>
                   </svg>
@@ -2171,7 +2171,7 @@ export default function StudioMeetingView({
                   }}
                   title="Pobierz MP3"
                 >
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
                 </a>
