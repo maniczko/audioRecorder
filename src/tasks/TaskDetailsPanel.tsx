@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
-import {
-  createTaskComment,
-  TASK_PRIORITIES,
-} from "../lib/tasks";
+import { createTaskComment } from "../lib/tasks";
 import { toInputDateTime } from "./taskViewUtils";
 import './TaskDetailsPanelStyles.css';
 
@@ -276,167 +273,95 @@ export default function TaskDetailsPanel({
         ) : null}
 
         <div className="todo-detail-form">
-          <label className="full">
-            <span>Tytul</span>
-            <input value={selectedTask.title} onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })} />
-          </label>
-          <label>
-            <span>Osoba odpowiedzialna</span>
-            <select
-              value={selectedTask.owner || ""}
-              onChange={(event) => {
-                const owner = event.target.value;
-                onUpdateTask(selectedTask.id, {
-                  owner,
-                  assignedTo: owner ? [owner] : [],
-                });
-              }}
-            >
-              <option value="">Nieprzypisane</option>
-              {peopleOptions.map((person) => (
-                <option key={person} value={person}>
-                  {person}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="todo-detail-stack">
+            <button type="button" className="todo-detail-row add-step" onClick={() => onUpdateTask(selectedTask.id, { notes: selectedTask.notes || "" })}>
+              <span className="todo-row-icon">+</span>
+              <span>Dodaj krok</span>
+            </button>
 
-          <label>
-            <span>Status</span>
-            <select value={selectedTask.status} onChange={(event) => onMoveTaskToColumn(selectedTask.id, event.target.value)}>
-              {boardColumns.map((column) => (
-                <option key={column.id} value={column.id}>
-                  {column.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Termin</span>
-            <input
-              type="datetime-local"
-              value={toInputDateTime(selectedTask.dueDate)}
-              onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
-            />
-          </label>
-          <label>
-            <span>Priorytet</span>
-            <select value={selectedTask.priority} onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}>
-              {TASK_PRIORITIES.map((priority) => (
-                <option key={priority.id} value={priority.id}>
-                  {priority.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Przypomnienie</span>
-            <input
-              type="datetime-local"
-              value={toInputDateTime(selectedTask.reminderAt)}
-              onChange={(event) => onUpdateTask(selectedTask.id, { reminderAt: event.target.value })}
-            />
-          </label>
-          <label className="todo-inline-check">
-            <span>My Day</span>
-            <input
-              type="checkbox"
-              checked={Boolean(selectedTask.myDay)}
-              onChange={(event) => onUpdateTask(selectedTask.id, { myDay: event.target.checked })}
-            />
-          </label>
-          <label className="full">
-            <span>Tagi</span>
-            <div className="todo-tag-editor">
-              <div className="todo-tag-chip-list">
-                {selectedTags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className="todo-tag-chip"
-                    onClick={() => updateTags(selectedTags.filter((item) => item !== tag))}
-                    title="Usuń tag"
-                  >
-                    <span>{tag}</span>
-                    <span aria-hidden="true">×</span>
-                  </button>
-                ))}
-                <input
-                  ref={tagInputRef}
-                  value={tagDraft}
-                  onChange={(event) => {
-                    setTagDraft(event.target.value);
-                    setShowTagSuggestions(true);
-                  }}
-                  onFocus={() => setShowTagSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowTagSuggestions(false), 120)}
-                  onKeyDown={(event) => {
-                    if ((event.key === "Enter" || event.key === ",") && tagDraft.trim()) {
-                      event.preventDefault();
-                      addTag(tagDraft);
-                    } else if (event.key === "Backspace" && !tagDraft && selectedTags.length) {
-                      updateTags(selectedTags.slice(0, -1));
-                    } else if (event.key === "Escape") {
-                      setShowTagSuggestions(false);
-                    }
-                  }}
-                  placeholder={selectedTags.length ? "" : "Dodaj tag..."}
-                />
-              </div>
-              <small className="todo-tag-hint">Wpisz tag, wybierz z listy albo dodaj nowy.</small>
-            {showTagSuggestions && tagSuggestions.length > 0 ? (
-              <div className="todo-tag-dropdown">
-                {tagSuggestions.map((tag) => (
-                  <button
-                    key={tag}
-                      type="button"
-                      className="todo-tag-option"
-                      onMouseDown={(event) => {
-                        event.preventDefault();
-                        addTag(tag);
-                      }}
-                    >
-                      {tag}
+            <button type="button" className={selectedTask.myDay ? "todo-detail-row active" : "todo-detail-row"} onClick={() => onUpdateTask(selectedTask.id, { myDay: !selectedTask.myDay })}>
+              <span className="todo-row-icon">?</span>
+              <span>{selectedTask.myDay ? "Dodano do My Day" : "Dodaj do My Day"}</span>
+            </button>
+
+            <label className="todo-detail-row field-row">
+              <span className="todo-row-icon">??</span>
+              <span className="todo-row-label">Przypomnienie</span>
+              <input type="datetime-local" value={toInputDateTime(selectedTask.reminderAt)} onChange={(event) => onUpdateTask(selectedTask.id, { reminderAt: event.target.value })} />
+            </label>
+
+            <label className="todo-detail-row field-row">
+              <span className="todo-row-icon">??</span>
+              <span className="todo-row-label">Termin</span>
+              <input type="datetime-local" value={toInputDateTime(selectedTask.dueDate)} onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })} />
+            </label>
+
+            <button type="button" className="todo-detail-row muted" disabled>
+              <span className="todo-row-icon">?</span>
+              <span>Powtarzanie</span>
+            </button>
+
+            <label className="todo-detail-row field-row">
+              <span className="todo-row-icon">??</span>
+              <span className="todo-row-label">Kategoria</span>
+              <div className="todo-tag-editor">
+                <div className="todo-tag-chip-list">
+                  {selectedTags.map((tag) => (
+                    <button key={tag} type="button" className="todo-tag-chip" onClick={() => updateTags(selectedTags.filter((item) => item !== tag))} title="Usu? tag">
+                      <span>{tag}</span>
+                      <span aria-hidden="true">?</span>
                     </button>
                   ))}
-                {canCreateTag && !tagSuggestions.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()) ? (
-                  <button
-                    type="button"
-                    className="todo-tag-option create"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      addTag(normalizedTagDraft);
+                  <input
+                    ref={tagInputRef}
+                    value={tagDraft}
+                    onChange={(event) => { setTagDraft(event.target.value); setShowTagSuggestions(true); }}
+                    onFocus={() => setShowTagSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 120)}
+                    onKeyDown={(event) => {
+                      if ((event.key === "Enter" || event.key === ",") && tagDraft.trim()) { event.preventDefault(); addTag(tagDraft); }
+                      else if (event.key === "Backspace" && !tagDraft && selectedTags.length) { updateTags(selectedTags.slice(0, -1)); }
+                      else if (event.key === "Escape") { setShowTagSuggestions(false); }
                     }}
-                  >
-                    Dodaj tag "{normalizedTagDraft}"
-                  </button>
+                    placeholder={selectedTags.length ? "" : "Dodaj tag..."}
+                  />
+                </div>
+                <small className="todo-tag-hint">Wpisz tag, wybierz z listy albo dodaj nowy.</small>
+                {showTagSuggestions && tagSuggestions.length > 0 ? (
+                  <div className="todo-tag-dropdown">
+                    {tagSuggestions.map((tag) => (
+                      <button key={tag} type="button" className="todo-tag-option" onMouseDown={(event) => { event.preventDefault(); addTag(tag); }}>
+                        {tag}
+                      </button>
+                    ))}
+                    {canCreateTag && !tagSuggestions.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()) ? (
+                      <button type="button" className="todo-tag-option create" onMouseDown={(event) => { event.preventDefault(); addTag(normalizedTagDraft); }}>
+                        Dodaj tag "${normalizedTagDraft}"
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {showTagSuggestions && !tagSuggestions.length && canCreateTag ? (
+                  <div className="todo-tag-dropdown">
+                    <button type="button" className="todo-tag-option create" onMouseDown={(event) => { event.preventDefault(); addTag(normalizedTagDraft); }}>
+                      Dodaj tag "${normalizedTagDraft}"
+                    </button>
+                  </div>
                 ) : null}
               </div>
-            ) : null}
-            {showTagSuggestions && !tagSuggestions.length && canCreateTag ? (
-              <div className="todo-tag-dropdown">
-                <button
-                  type="button"
-                  className="todo-tag-option create"
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    addTag(normalizedTagDraft);
-                  }}
-                >
-                  Dodaj tag "{normalizedTagDraft}"
-                </button>
-              </div>
-            ) : null}
+            </label>
+
+            <button type="button" className="todo-detail-row muted" disabled>
+              <span className="todo-row-icon">??</span>
+              <span>Dodaj plik</span>
+            </button>
+
+            <label className="todo-detail-row note-row">
+              <span className="todo-row-icon">??</span>
+              <span className="todo-row-label">Notatka</span>
+              <textarea rows="5" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} placeholder="Dodaj notatk?" />
+            </label>
           </div>
-        </label>
-          <label className="full">
-            <span>Opis</span>
-            <textarea rows="3" value={selectedTask.description || ""} onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })} />
-          </label>
-          <label className="full">
-            <span>Notatki</span>
-            <textarea rows="5" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} />
-          </label>
         </div>
 
         <section className="todo-detail-section">
