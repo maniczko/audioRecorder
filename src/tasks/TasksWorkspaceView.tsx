@@ -241,8 +241,6 @@ export default function TasksWorkspaceView({
               </button>
             </form>
 
-            {message ? <div className="todo-helper inline">{message}</div> : null}
-
             {showAdvancedCreate ? (
               <div className="todo-add-advanced">
                 <label>

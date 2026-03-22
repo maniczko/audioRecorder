@@ -24,6 +24,9 @@ export default defineConfig(async () => {
   const apiBaseUrl =
     readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') ||
     (productionRemoteFallback ? 'https://audiorecorder-production.up.railway.app' : '');
+  const googleClientId =
+    readClientEnv('VITE_GOOGLE_CLIENT_ID', 'REACT_APP_GOOGLE_CLIENT_ID') ||
+    (productionRemoteFallback ? 'demo' : '');
 
   return {
     plugins,
@@ -85,6 +88,8 @@ export default defineConfig(async () => {
       'import.meta.env.VITE_DATA_PROVIDER': JSON.stringify(dataProvider),
       'import.meta.env.VITE_MEDIA_PROVIDER': JSON.stringify(mediaProvider),
       'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      'import.meta.env.VITE_GOOGLE_CLIENT_ID': JSON.stringify(googleClientId),
+      'process.env.REACT_APP_GOOGLE_CLIENT_ID': JSON.stringify(googleClientId),
     },
   };
 });
