@@ -96,6 +96,7 @@ export default function AuthScreen({
           </div>
         </div>
 
+        {/* 
         <div className="google-auth-block">
           <div>
             <div className="eyebrow">Google</div>
@@ -110,6 +111,7 @@ export default function AuthScreen({
           )}
           {googleAuthMessage ? <div className="inline-alert info">{googleAuthMessage}</div> : null}
         </div>
+        */}
 
         <div className="auth-divider">
           <span>albo klasycznie</span>
@@ -148,9 +150,9 @@ export default function AuthScreen({
             <label>
               <span>Kod resetu</span>
               <input
+                type="text"
                 value={resetValues.code}
                 onChange={(event) => setResetDraft((previous) => ({ ...previous, code: event.target.value }))}
-                placeholder="6-cyfrowy kod"
               />
             </label>
             <label>
@@ -159,131 +161,114 @@ export default function AuthScreen({
                 type="password"
                 value={resetValues.newPassword}
                 onChange={(event) => setResetDraft((previous) => ({ ...previous, newPassword: event.target.value }))}
-                placeholder="minimum 6 znakow"
               />
             </label>
             <label>
-              <span>Powtorz nowe haslo</span>
+              <span>Potwierdz haslo</span>
               <input
                 type="password"
                 value={resetValues.confirmPassword}
-                onChange={(event) =>
-                  setResetDraft((previous) => ({ ...previous, confirmPassword: event.target.value }))
-                }
-                placeholder="powtorz haslo"
+                onChange={(event) => setResetDraft((previous) => ({ ...previous, confirmPassword: event.target.value }))}
               />
             </label>
-            {resetMessage ? <div className="inline-alert info">{resetMessage}</div> : null}
-            {authError ? <div className="inline-alert error">{authError}</div> : null}
-            <button type="button" className="secondary-button" onClick={completeReset}>
-              Ustaw nowe haslo
+
+            <button type="button" className="primary-button" onClick={completeReset}>
+              Zmien haslo
             </button>
+
+            {resetMessage ? <div className="inline-alert info">{resetMessage}</div> : null}
           </div>
         ) : (
           <form className="auth-form" onSubmit={internalSubmit}>
             {isRegister ? (
               <>
-                <label htmlFor="auth-name">
-                  <span>Imię i nazwisko</span>
+                <label>
+                  <span>Imie i nazwisko</span>
                   <input
-                    id="auth-name"
                     value={authValues.name}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
-                    placeholder="np. Anna Nowak"
                   />
                 </label>
-                <label>
-                  <span>Rola</span>
-                  <input
-                    value={authValues.role}
-                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
-                    placeholder="np. Product Manager"
-                  />
-                </label>
-                <label>
-                  <span>Firma</span>
-                  <input
-                    value={authValues.company}
-                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
-                    placeholder="np. VoiceLog"
-                  />
-                </label>
+                <div className="grid-2">
+                  <label>
+                    <span>Rola</span>
+                    <input
+                      value={authValues.role}
+                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span>Firma</span>
+                    <input
+                      value={authValues.company}
+                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
+                    />
+                  </label>
+                </div>
+              </>
+            ) : null}
 
-                <div className="mode-switch split">
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                value={authValues.email}
+                onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
+              />
+            </label>
+            <label>
+              <span>Haslo</span>
+              <input
+                type="password"
+                value={authValues.password}
+                onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
+              />
+            </label>
+
+            {isRegister ? (
+              <>
+                <div className="workspace-choice">
                   <button
                     type="button"
-                    className={authValues.workspaceMode === "join" ? "pill" : "pill active"}
+                    className={authValues.workspaceMode === "create" ? "choice-btn active" : "choice-btn"}
                     onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "create" }))}
                   >
-                    Nowy workspace
+                    Stworz workspace
                   </button>
                   <button
                     type="button"
-                    className={authValues.workspaceMode === "join" ? "pill active" : "pill"}
+                    className={authValues.workspaceMode === "join" ? "choice-btn active" : "choice-btn"}
                     onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "join" }))}
                   >
-                    Dolacz po kodzie
+                    Dolacz kodem
                   </button>
                 </div>
 
-                {authValues.workspaceMode === "join" ? (
-                  <label>
-                    <span>Kod workspace</span>
-                    <input
-                      value={authValues.workspaceCode}
-                      onChange={(event) =>
-                        setAuthDraft((previous) => ({ ...previous, workspaceCode: event.target.value }))
-                      }
-                      placeholder="np. AB12CD"
-                    />
-                  </label>
-                ) : (
+                {authValues.workspaceMode === "create" ? (
                   <label>
                     <span>Nazwa workspace</span>
                     <input
                       value={authValues.workspaceName}
-                      onChange={(event) =>
-                        setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))
-                      }
-                      placeholder="np. Zespol sprzedazy"
+                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))}
+                    />
+                  </label>
+                ) : (
+                  <label>
+                    <span>Kod zaproszenia</span>
+                    <input
+                      value={authValues.workspaceCode}
+                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, workspaceCode: event.target.value }))}
                     />
                   </label>
                 )}
               </>
             ) : null}
 
-            <label htmlFor="auth-email">
-              <span>Email</span>
-              <input
-                id="auth-email"
-                type="email"
-                value={authValues.email}
-                onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
-                placeholder="name@company.com"
-              />
-            </label>
-            <label htmlFor="auth-password">
-              <span>Hasło</span>
-              <input
-                id="auth-password"
-                type="password"
-                value={authValues.password}
-                onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
-                placeholder="minimum 6 znakow"
-              />
-            </label>
-            {isRegister && authValues.password && authValues.password.length < 6 ? (
-                <div className="inline-alert error" style={{ marginTop: '8px' }}>Haslo musi miec co najmniej 6 znakow</div>
-            ) : null}
-            {!isRegister ? (
-              <button type="button" className="link-button" onClick={() => setAuthMode("forgot")}>
-                Zapomnialem hasla
-              </button>
-            ) : null}
-            {authError ? <div className="inline-alert error">{authError}</div> : null}
             <button type="submit" className="primary-button">
-              {isRegister ? "Wejdz do workspace" : "Zaloguj"}
+              {isRegister ? "Zaloz konto" : "Zaloguj sie"}
             </button>
+
+            {authError ? <div className="inline-alert error">{authError}</div> : null}
           </form>
         )}
       </section>

@@ -30,8 +30,8 @@ const statSyncMock = vi.fn((filePath?: string) => {
 const createReadStreamMock = vi.fn(() => ({ pipe: vi.fn() }));
 
 const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
-  // Allow reading migration files and database
-  if (filePath && (filePath.endsWith('.sql') || filePath.endsWith('.sqlite') || filePath.endsWith('.db'))) {
+  // Allow reading migration files, database, and Dockerfile
+  if (filePath && (filePath.endsWith('.sql') || filePath.endsWith('.sqlite') || filePath.endsWith('.db') || filePath.endsWith('Dockerfile'))) {
     return originalFs?.readFileSync(filePath, options) ?? Buffer.from('mocked');
   }
   // If encoding is 'utf8' or options has encoding utf8, return string
@@ -45,7 +45,7 @@ const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
 const writeFileSyncMock = vi.fn();
 const unlinkSyncMock = vi.fn();
 const mkdirSyncMock = vi.fn((dirPath: string, options?: any) => {
-  // Allow creating database directories
+  // Allow creating all directories including test uploads
   try {
     return originalFs?.mkdirSync(dirPath, options);
   } catch {
@@ -55,14 +55,13 @@ const mkdirSyncMock = vi.fn((dirPath: string, options?: any) => {
 
 const renameSyncMock = vi.fn();
 const readdirSyncMock = vi.fn((dirPath?: string, options?: any) => {
-  // Allow reading migration directories
-  if (dirPath && dirPath.includes('migrations')) {
-    try {
-      const result = originalFs?.readdirSync(dirPath, options)?.filter((f: string) => f.endsWith('.sql')) ?? [];
-      return result;
-    } catch {
-      return [];
+  // Allow reading all directories including migrations
+  try {
+    if (originalFs?.readdirSync) {
+      return originalFs.readdirSync(dirPath, options);
     }
+  } catch {
+    // Return empty array on error
   }
   return [];
 });

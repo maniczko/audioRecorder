@@ -74,6 +74,46 @@ const VAD_ENABLED = config.VAD_ENABLED;
 
 // Enable verbose pipeline logging with VOICELOG_DEBUG=true
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
+const AUDIO_PREPROCESS_CACHE_VERSION = "v1";
+
+function isRemoteAudioPath(filePath: string) {
+  return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes("/"));
+}
+
+function getUploadDir() {
+  return config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+}
+
+function getPreprocessCacheDir() {
+  return path.join(getUploadDir(), ".cache", "preprocessed");
+}
+
+function buildAudioPreprocessCacheKey(asset: any, profile: "standard" | "enhanced") {
+  const parts = [
+    AUDIO_PREPROCESS_CACHE_VERSION,
+    profile,
+    clean(asset?.id || ""),
+    clean(asset?.file_path || ""),
+    clean(asset?.updated_at || asset?.updatedAt || asset?.created_at || asset?.createdAt || ""),
+    String(asset?.size_bytes || asset?.sizeBytes || 0),
+    clean(asset?.content_type || ""),
+  ];
+
+  return crypto.createHash("sha256").update(parts.join("|")).digest("hex");
+}
+
+function getPreprocessCachePath(cacheKey: string, profile: "standard" | "enhanced") {
+  return path.join(getPreprocessCacheDir(), `${cacheKey}.${profile}.wav`);
+}
+
+function isPathInside(childPath: string, parentPath: string) {
+  const relative = path.relative(path.resolve(parentPath), path.resolve(childPath));
+  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
+function isPreprocessCacheFile(filePath: string) {
+  return Boolean(filePath && isPathInside(filePath, getPreprocessCacheDir()));
+}
 
 async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
   if (!OPENAI_API_KEY) {
@@ -646,18 +686,37 @@ async function analyzeAudioQuality(filePath: string, options: any = {}) {
   }
 }
 
-async function preprocessAudio(filePath: string, signal: any, profile: "standard" | "enhanced" = "standard") {
+async function preprocessAudio(
+  filePath: string,
+  signal: any,
+  profile: "standard" | "enhanced" = "standard",
+  options: { cacheKey?: string } = {}
+) {
   if (!AUDIO_PREPROCESS) return null;
-  const tmpPath = `${filePath}.prep.wav`;
+  const cachePath = options.cacheKey ? getPreprocessCachePath(options.cacheKey, profile) : `${filePath}.prep.wav`;
+  const tmpPath = options.cacheKey ? `${cachePath}.tmp-${crypto.randomUUID()}.wav` : cachePath;
   const filter =
     profile === "enhanced"
       ? "highpass=f=80,lowpass=f=10000,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1"
       : "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr";
   try {
+    if (options.cacheKey && fs.existsSync(cachePath)) {
+      return cachePath;
+    }
+
+    fs.mkdirSync(path.dirname(cachePath), { recursive: true });
     await execPromise(
       `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "${filter}" -ar 16000 -ac 1 "${tmpPath}"`,
       { timeout: 180000, signal }
     );
+    if (options.cacheKey) {
+      if (!fs.existsSync(cachePath)) {
+        fs.renameSync(tmpPath, cachePath);
+      } else {
+        try { fs.unlinkSync(tmpPath); } catch (_) {}
+      }
+      return cachePath;
+    }
     return tmpPath;
   } catch (err) {
     if (!signal?.aborted) console.warn(`[audioPipeline] Audio pre-processing failed for profile ${profile}, using original file.`, err.message);
@@ -859,17 +918,23 @@ async function runTranscriptionAttempt(
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
   let tempFilePath = "";
-  let workingFilePath = asset.file_path;
+  let workingFilePath = options.workingFilePath || asset.file_path;
+  let prepPath = options.preprocessedFilePath || "";
+  const preprocessCacheKey = options.preprocessCacheKey || "";
   
   try {
-    // If file_path is a Supabase Storage path (no path separators), download to temp
-    if (asset.file_path && !asset.file_path.includes(path.sep) && !asset.file_path.includes("/")) {
+    if (!workingFilePath) {
+      throw new Error("Brak ścieżki do pliku audio.");
+    }
+
+    // If the caller did not already materialize a local file, download remote storage once.
+    if (!options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
       notify(10, "Pobieranie nagrania z bazy danych...");
       const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
-      const buffer = await downloadAudioFromStorage(asset.file_path);
+      const buffer = await downloadAudioFromStorage(workingFilePath);
       
       const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";
-      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+      const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
       fs.writeFileSync(tempFilePath, Buffer.from(buffer));
@@ -881,10 +946,12 @@ async function runTranscriptionAttempt(
     }
   
     notify(10, "Wyciąganie audio do pamięci podręcznej...");
-    const prepPath = await preprocessAudio(workingFilePath, options.signal, profile);
+    if (!prepPath) {
+      prepPath = await preprocessAudio(workingFilePath, options.signal, profile, { cacheKey: preprocessCacheKey });
+    }
     const transcribeFilePath = prepPath || workingFilePath;
-    const transcribeContentType = prepPath ? "audio/wav" : asset.content_type;
-  const attemptAudioQuality = buildAudioQualityForAttempt(baseAudioQuality, profile, Boolean(prepPath));
+    const transcribeContentType = prepPath ? "audio/wav" : options.workingContentType || asset.content_type;
+    const attemptAudioQuality = buildAudioQualityForAttempt(baseAudioQuality, profile, Boolean(prepPath));
 
   notify(30, "Silero VAD - optymalizacja ciszy...");
   const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
@@ -1256,7 +1323,7 @@ async function runTranscriptionAttempt(
     };
     throw error;
   } finally {
-    if (prepPath) { try { fs.unlinkSync(prepPath); } catch (_) {} }
+    if (prepPath && !isPreprocessCacheFile(prepPath)) { try { fs.unlinkSync(prepPath); } catch (_) {} }
   }
   } finally {
     // Clean up temp file downloaded from Supabase Storage
@@ -1290,51 +1357,98 @@ async function transcribeRecording(asset: any, options: any = {}) {
     audioQuality?.enhancementRecommended ? "enhanced" : "standard";
   const attemptProfiles: Array<"standard" | "enhanced"> =
     initialProfile === "standard" ? ["standard", "enhanced"] : ["enhanced"];
+  const preprocessPlan = new Map(
+    attemptProfiles.map((profile) => {
+      const cacheKey = buildAudioPreprocessCacheKey(asset, profile);
+      return [profile, { cacheKey, cachePath: getPreprocessCachePath(cacheKey, profile) }];
+    })
+  );
 
-  let lastError: any = null;
-  let lastResult: any = null;
+  let sourceTempPath = "";
+  let sourceFilePath = asset.file_path;
+  const remoteSource = isRemoteAudioPath(asset.file_path);
+  const needsSourceMaterialization =
+    remoteSource &&
+    (!AUDIO_PREPROCESS ||
+      !attemptProfiles.every((profile) => fs.existsSync(preprocessPlan.get(profile)?.cachePath || "")));
 
-  for (let index = 0; index < attemptProfiles.length; index += 1) {
-    const profile = attemptProfiles[index];
-    const attemptCount = Math.min(index + 1, 2) as 1 | 2;
-
+  if (needsSourceMaterialization && remoteSource) {
     try {
-      const result = await runTranscriptionAttempt(asset, options, audioQuality, profile, attemptCount);
-      lastResult = result;
-      if (shouldRetryWithEnhancedProfile(profile, attemptCount, result) && attemptProfiles[index + 1] === "enhanced") {
-        if (DEBUG) {
-          console.log("[audioPipeline] Retrying transcription with enhanced preprocessing profile.");
-        }
-        continue;
-      }
-      return result;
+      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
+      const buffer = await downloadAudioFromStorage(asset.file_path);
+      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";
+      const uploadDir = getUploadDir();
+      sourceTempPath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
+      fs.mkdirSync(path.dirname(sourceTempPath), { recursive: true });
+      fs.writeFileSync(sourceTempPath, Buffer.from(buffer));
+      sourceFilePath = sourceTempPath;
     } catch (error: any) {
-      lastError = error;
-      if (shouldRetryWithEnhancedProfile(profile, attemptCount, error) && attemptProfiles[index + 1] === "enhanced") {
-        if (DEBUG) {
-          console.warn("[audioPipeline] STT failed on standard profile, retrying with enhanced preprocessing.");
-        }
-        continue;
+      if (!options.signal?.aborted) {
+        console.warn("[audioPipeline] Failed to materialize remote audio source:", error?.message || error);
       }
       throw error;
     }
   }
 
-  if (lastError) {
-    throw lastError;
-  }
+  let lastError: any = null;
+  let lastResult: any = null;
 
-  return (
-    lastResult ||
-    buildEmptyTranscriptResult(
-      "no_segments_from_stt",
-      {
-        transcriptionProfileUsed: initialProfile,
-        transcriptionAttemptCount: Math.min(attemptProfiles.length, 2) as 1 | 2,
-      },
-      buildAudioQualityForAttempt(audioQuality, initialProfile, false)
-    )
-  );
+  try {
+    for (let index = 0; index < attemptProfiles.length; index += 1) {
+      const profile = attemptProfiles[index];
+      const attemptCount = Math.min(index + 1, 2) as 1 | 2;
+      const plan = preprocessPlan.get(profile);
+      const profileWorkingFilePath = plan?.cachePath && fs.existsSync(plan.cachePath) ? plan.cachePath : sourceFilePath;
+      const profileOptions = {
+        ...options,
+        workingFilePath: profileWorkingFilePath,
+        workingContentType: profileWorkingFilePath === plan?.cachePath ? "audio/wav" : asset.content_type,
+        preprocessedFilePath: profileWorkingFilePath === plan?.cachePath ? plan.cachePath : "",
+        preprocessCacheKey: plan?.cacheKey || "",
+      };
+
+      try {
+        const result = await runTranscriptionAttempt(asset, profileOptions, audioQuality, profile, attemptCount);
+        lastResult = result;
+        if (shouldRetryWithEnhancedProfile(profile, attemptCount, result) && attemptProfiles[index + 1] === "enhanced") {
+          if (DEBUG) {
+            console.log("[audioPipeline] Retrying transcription with enhanced preprocessing profile.");
+          }
+          continue;
+        }
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        if (shouldRetryWithEnhancedProfile(profile, attemptCount, error) && attemptProfiles[index + 1] === "enhanced") {
+          if (DEBUG) {
+            console.warn("[audioPipeline] STT failed on standard profile, retrying with enhanced preprocessing.");
+          }
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (lastError) {
+      throw lastError;
+    }
+
+    return (
+      lastResult ||
+      buildEmptyTranscriptResult(
+        "no_segments_from_stt",
+        {
+          transcriptionProfileUsed: initialProfile,
+          transcriptionAttemptCount: Math.min(attemptProfiles.length, 2) as 1 | 2,
+        },
+        buildAudioQualityForAttempt(audioQuality, initialProfile, false)
+      )
+    );
+  } finally {
+    if (sourceTempPath && fs.existsSync(sourceTempPath)) {
+      try { fs.unlinkSync(sourceTempPath); } catch (_) {}
+    }
+  }
 }
 
 async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
@@ -1674,6 +1788,7 @@ async function embedTextChunks(texts: string[]) {
 export {
   transcribeRecording,
   analyzeAudioQuality,
+  preprocessAudio,
   normalizeRecording,
   extractSpeakerAudioClip,
   transcribeLiveChunk,
@@ -1681,4 +1796,7 @@ export {
   diarizeFromTranscript,
   analyzeMeetingWithOpenAI,
   embedTextChunks,
+  buildAudioPreprocessCacheKey,
+  getPreprocessCachePath,
+  isPreprocessCacheFile,
 };

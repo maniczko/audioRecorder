@@ -16,7 +16,8 @@ describe("audioPipeline.utils", () => {
     });
 
     it("exports DEFAULT_WHISPER_PROMPT", () => {
-      expect(utils.DEFAULT_WHISPER_PROMPT).toContain("Transkrypcja spotkania biznesowego");
+      expect(utils.DEFAULT_WHISPER_PROMPT).toContain("język polski");
+      expect(utils.DEFAULT_WHISPER_PROMPT).toContain("spotkanie");
     });
 
     it("exports VERIFY_CONFIDENCE_THRESHOLD", () => {
@@ -632,8 +633,8 @@ describe("audioPipeline.utils", () => {
   describe("buildWhisperPrompt()", () => {
     it("returns default prompt when no metadata provided", () => {
       const prompt = utils.buildWhisperPrompt({});
-      expect(prompt).toContain("Transkrypcja spotkania biznesowego");
-      expect(prompt).toContain("języku polskim");
+      expect(prompt).toContain("język polski");
+      expect(prompt).toContain("spotkanie");
     });
 
     it("includes meeting title when provided", () => {
@@ -708,7 +709,7 @@ describe("audioPipeline.utils", () => {
         tags: ["Q4", "review"],
         vocabulary: "KPI, OKR, revenue",
       });
-      expect(prompt).toContain("Transkrypcja spotkania biznesowego");
+      expect(prompt).toContain("język polski");
       expect(prompt).toContain("Spotkanie: Quarterly Review");
       expect(prompt).toContain("Uczestnicy: Alice, Bob");
       expect(prompt).toContain("Tematy: Q4, review");
@@ -771,6 +772,26 @@ describe("audioPipeline.utils", () => {
     it("returns default ffprobe for non-ffmpeg input", () => {
       expect(utils.deriveFfprobeBinary("")).toBe("ffprobe");
       expect(utils.deriveFfprobeBinary(null as any)).toBe("ffprobe");
+    });
+  });
+
+  // ==================== DIARIZATION UTILITIES ====================
+
+  describe("diarization utilities", () => {
+    it("extracts words from different payload formats", () => {
+      const { getRawWords } = utils;
+
+      // From words array
+      expect(getRawWords({ words: [{ word: "hello" }, { word: "world" }] })).toHaveLength(2);
+
+      // From transcript.words
+      expect(getRawWords({ transcript: { words: [{ word: "test" }] } })).toHaveLength(1);
+
+      // From results.words
+      expect(getRawWords({ results: { words: [{ word: "a" }, { word: "b" }, { word: "c" }] } })).toHaveLength(3);
+
+      // Empty for unknown format
+      expect(getRawWords({ text: "hello" })).toHaveLength(0);
     });
   });
 });

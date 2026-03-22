@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  GOOGLE_CLIENT_ID,
   buildGoogleCalendarEventPayload,
   createGoogleCalendarEvent,
   createGoogleTask,
@@ -45,7 +44,7 @@ export default function useGoogleIntegrations({
   useEffect(() => {
     manualTasksRef.current = manualTasks;
   }, [manualTasks]);
-  const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
+  const googleEnabled = false; // Temorarily disabled as per user request
   const openTaskColumnId = taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || "todo";
   const doneTaskColumnId = taskColumns.find((column) => column.isDone)?.id || taskColumns[taskColumns.length - 1]?.id || "done";
 

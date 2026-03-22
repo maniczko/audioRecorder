@@ -219,8 +219,7 @@ describe("Media Routes", () => {
   });
 
   it.skip("POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing", async () => {
-    // SKIP: fs mock caching issue - existsSync doesn't reflect setFsState changes
-    // because media.ts imports fs before the test runs
+    // SKIP: fs mock caching - app is created before test can set fs state
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: "rec_retry_missing",
       workspace_id: "ws_1",
@@ -325,7 +324,7 @@ describe("Media Routes", () => {
   });
 
   it.skip("GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files", async () => {
-    // SKIP: fs mock caching issue - createReadStream throws with mocked fs
+    // SKIP: fs mock caching - createReadStream throws with mocked fs
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce(null);
     const missingAsset = await app.request("/media/recordings/rec_missing/audio", {
       method: "GET",
@@ -352,7 +351,7 @@ describe("Media Routes", () => {
   });
 
   it.skip("GET /media/recordings/:recordingId/audio - streams existing file with safe headers", async () => {
-    // SKIP: fs mock caching issue - createReadStream throws with mocked fs
+    // SKIP: fs mock caching - createReadStream throws with mocked fs
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: "rec_stream",
       workspace_id: "ws_1",

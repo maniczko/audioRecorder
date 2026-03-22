@@ -175,6 +175,17 @@ export default function TasksWorkspaceView({
             </div>
 
             <div className="todo-commandbar-right">
+              {!isCharts && !isSchedule && !isSummary ? (
+                <label className="todo-filter-search todo-filter-search-inline">
+                  <span>Szukaj</span>
+                  <input
+                    ref={searchInputRef}
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Szukaj w zadaniach"
+                  />
+                </label>
+              ) : null}
               <SettingsDropdown
                 onExportCsv={onExportCsv}
                 shareWorkspace={shareWorkspace}
@@ -183,21 +194,6 @@ export default function TasksWorkspaceView({
               />
             </div>
           </div>
-
-          {!isCharts && !isSchedule && !isSummary ? (
-            <div className="todo-filter-row">
-              <label className="todo-filter-search">
-                <span>Szukaj</span>
-                <input
-                  ref={searchInputRef}
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Szukaj w zadaniach"
-                />
-              </label>
-
-            </div>
-          ) : null}
         </section>
 
         <NotificationStrip notifications={taskNotifications} />

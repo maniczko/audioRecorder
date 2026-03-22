@@ -51,11 +51,11 @@ export default function StudioTab(props) {
           />
         ) : undefined}
         main={
-          <main className={briefOpen ? "workspace-main" : ""} style={{ width: "100%" }}>
-            <StudioMeetingView {...props} briefOpen={briefOpen} setBriefOpen={setBriefOpen} />
-          </main>
-        }
-      />
-    </PageShell>
+        <main className={briefOpen ? "workspace-main" : ""} style={{ width: "100%" }}>
+          <StudioMeetingView {...props} briefOpen={briefOpen} setBriefOpen={setBriefOpen} />
+        </main>
+      }
+    />
+  </PageShell>
   );
 }

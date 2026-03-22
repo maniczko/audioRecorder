@@ -1658,6 +1658,7 @@
   display: flex;
   flex-direction: column;
   padding: 0 20px 24px;
+  overflow-x: hidden;
 }
 
 
@@ -1710,7 +1711,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
   height: 24px;
+  min-height: 24px;
 }
 
 .fireflies-speaker {
@@ -1744,6 +1747,7 @@
   padding: 0;
   font-variant-numeric: tabular-nums;
   transition: color 0.15s;
+  white-space: nowrap;
 }
 
 .fireflies-time:hover {
@@ -1757,6 +1761,7 @@
 
 .fireflies-text-area {
   position: relative;
+  min-width: 0;
 }
 
 .fireflies-textarea {
@@ -1872,4 +1877,3 @@
   color: #27ae60;
   border-left-color: #27ae60;
 }
-

@@ -136,7 +136,7 @@ export default function CalendarTab({
   rescheduleGoogleCalendarEntry,
   openMeetingFromCalendar,
   openGoogleCalendarForMeeting,
-  openTaskFromCalendar,
+  openTask,
   googleCalendarWritable,
   onRescheduleMeeting,
   onRescheduleTask,
@@ -522,7 +522,7 @@ export default function CalendarTab({
           <div className="agenda-list">
             {upcomingTasks.length ? (
               upcomingTasks.map((task) => (
-                <button key={task.id} type="button" className="agenda-card" onClick={() => openTaskFromCalendar(task.id)}>
+                <button key={task.id} type="button" className="agenda-card" onClick={() => openTask({ taskId: task.id, mode: "detail" })}>
                   <strong>{task.title}</strong>
                   <span>{formatDateTime(task.dueDate)}</span>
                 </button>

@@ -168,10 +168,38 @@ export default function useUI() {
     window.open(buildGoogleCalendarUrl(meeting), "_blank", "noopener,noreferrer");
   }, [meetings]);
 
-  const openTaskFromCalendar = useCallback((taskId: string) => {
-    setPendingTaskId(taskId);
-    setActiveTab("tasks");
-  }, [setActiveTab, setPendingTaskId]);
+  const openTask = useCallback(
+    (
+      input:
+        | string
+        | { taskId?: string; mode?: "tab" | "detail" }
+        | undefined = {}
+    ) => {
+      const taskId = typeof input === "string" ? input : input?.taskId;
+      const mode = typeof input === "string" ? "detail" : input?.mode || "detail";
+      const normalizedTaskId = String(taskId || "").trim();
+      if (!normalizedTaskId) {
+        return;
+      }
+
+      if (mode === "tab") {
+        setPendingTaskId("");
+        setActiveTab("tasks");
+        return;
+      }
+
+      setPendingTaskId(normalizedTaskId);
+      setActiveTab("tasks");
+    },
+    [setActiveTab, setPendingTaskId]
+  );
+
+  const openTaskFromCalendar = useCallback(
+    (taskId: string) => {
+      openTask({ taskId, mode: "detail" });
+    },
+    [openTask]
+  );
 
   const createTaskForPerson = useCallback((prefill: any = {}) => {
     const created = meetings.createTaskFromComposer({ title: "", ...prefill });
@@ -194,10 +222,10 @@ export default function useUI() {
     if (!item) return;
     if (item.type === "tab") setActiveTab(item.payload.tabId);
     else if (item.type === "meeting") openMeetingFromCalendar(item.payload.meetingId);
-    else if (item.type === "task") openTaskFromCalendar(item.payload.taskId);
+    else if (item.type === "task") openTask({ taskId: item.payload.taskId, mode: "detail" });
     else if (item.type === "person") openPersonFromPalette(item.payload.personId);
     setCommandPaletteOpen(false);
-  }, [openMeetingFromCalendar, openPersonFromPalette, openTaskFromCalendar, setActiveTab, setCommandPaletteOpen]);
+  }, [openMeetingFromCalendar, openPersonFromPalette, openTask, setActiveTab, setCommandPaletteOpen]);
 
   const activateNotification = useCallback((item: any) => {
     if (!item?.action) {
@@ -206,12 +234,12 @@ export default function useUI() {
       return;
     }
     if (item.action.type === "meeting") openMeetingFromCalendar(item.action.id);
-    else if (item.action.type === "task") openTaskFromCalendar(item.action.id);
+    else if (item.action.type === "task") openTask({ taskId: item.action.id, mode: "detail" });
     else setActiveTab("calendar");
 
     dismissNotification(item.id);
     setNotificationCenterOpen(false);
-  }, [dismissNotification, openMeetingFromCalendar, openTaskFromCalendar, setActiveTab, setNotificationCenterOpen]);
+  }, [dismissNotification, openMeetingFromCalendar, openTask, setActiveTab, setNotificationCenterOpen]);
 
   const switchWorkspace = useCallback((workspaceId: string) => {
     workspace.switchWorkspace(workspaceId);
@@ -259,6 +287,7 @@ export default function useUI() {
     openMeetingFromCalendar,
     openStudio,
     openGoogleCalendarForMeeting,
+    openTask,
     openTaskFromCalendar,
     createTaskForPerson,
     createMeetingForPerson,

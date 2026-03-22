@@ -329,8 +329,8 @@ describe("StudioMeetingView", () => {
     fireEvent.click(screen.getByRole("button", { name: /Przejdź do zadań/i }));
     fireEvent.click(screen.getByRole("button", { name: /Otwórz szczegóły/i }));
 
-    expect(setActiveTab).toHaveBeenCalledWith("tasks");
-    expect(onOpenTask).toHaveBeenCalledWith("task_1");
+    expect(onOpenTask).toHaveBeenCalledWith({ taskId: "task_1", mode: "tab" });
+    expect(onOpenTask).toHaveBeenCalledWith({ taskId: "task_1", mode: "detail" });
   });
 
   test("renders participants as a list", () => {

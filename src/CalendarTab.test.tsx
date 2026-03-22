@@ -51,7 +51,7 @@ function renderCalendarTab(overrides = {}) {
     rescheduleGoogleCalendarEntry: vi.fn(),
     openMeetingFromCalendar: vi.fn(),
     openGoogleCalendarForMeeting: vi.fn(),
-    openTaskFromCalendar: vi.fn(),
+    openTask: vi.fn(),
     googleCalendarWritable: true,
     onRescheduleMeeting: vi.fn(),
     onRescheduleTask: vi.fn(),

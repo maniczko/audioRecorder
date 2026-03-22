@@ -319,6 +319,7 @@ function integrationStatusLabel(status, connectedCount) {
   return "Kalendarz nie jest jeszcze podpiety";
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ChangelogSection() {
   const [expandedVersion, setExpandedVersion] = useState("v1.6.0");
   
@@ -459,9 +460,9 @@ export default function ProfileTab({
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
-    { id: 'integrations', label: 'Integracje', icon: '🔗' },
+    // { id: 'integrations', label: 'Integracje', icon: '🔗' },
     { id: 'tools', label: 'Narzędzia AI', icon: '🛠️' },
-    { id: 'system', label: 'Aplikacja i System', icon: '⚙️' }
+    // { id: 'system', label: 'Aplikacja i System', icon: '⚙️' }
   ];
 
     return (
@@ -648,6 +649,7 @@ export default function ProfileTab({
 
         {activeCategory === 'system' && (
           <div className="profile-category-view">
+         {/* 
             <div className="profile-grid">
               <section className="panel">
                 <div className="panel-header compact">
@@ -689,6 +691,7 @@ export default function ProfileTab({
                 <ChangelogSection />
               </section>
             </div>
+        */}
           </div>
         )}
       </main>

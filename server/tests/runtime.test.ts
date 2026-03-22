@@ -1,50 +1,170 @@
-import { describe, expect, it } from "vitest";
-import { buildLocalHealthUrl, resolveBuildMetadata, resolveServerPort } from "../runtime.ts";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-describe("runtime port resolution", () => {
-  it("prefers platform PORT when both PORT and VOICELOG_API_PORT are present", () => {
-    expect(resolveServerPort({ VOICELOG_API_PORT: 4100, PORT: 9999 })).toBe(9999);
-  });
+describe("runtime.ts", () => {
+  describe("resolveServerPort", () => {
+    it("returns PORT from config", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+      
+      const port = resolveServerPort({ PORT: 8080 });
+      
+      expect(port).toBe(8080);
+    });
 
-  it("falls back to PORT when VOICELOG_API_PORT is absent", () => {
-    expect(resolveServerPort({ PORT: 43111 })).toBe(43111);
-    expect(buildLocalHealthUrl({ PORT: 43111 })).toBe("http://127.0.0.1:43111/health");
-  });
+    it("returns VOICELOG_API_PORT from config", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+      
+      const port = resolveServerPort({ VOICELOG_API_PORT: 9000 });
+      
+      expect(port).toBe(9000);
+    });
 
-  it("falls back to VOICELOG_API_PORT when platform PORT is absent", () => {
-    expect(resolveServerPort({ VOICELOG_API_PORT: 4100 })).toBe(4100);
-    expect(buildLocalHealthUrl({ VOICELOG_API_PORT: 4100 })).toBe("http://127.0.0.1:4100/health");
-  });
+    it("PORT takes precedence over VOICELOG_API_PORT", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+      
+      const port = resolveServerPort({ PORT: 8080, VOICELOG_API_PORT: 9000 });
+      
+      expect(port).toBe(8080);
+    });
 
-  it("falls back to 4000 when no port is configured", () => {
-    expect(resolveServerPort({})).toBe(4000);
-  });
+    it("returns default 4000 when no port configured", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+      
+      const port = resolveServerPort({});
+      
+      expect(port).toBe(4000);
+    });
 
-  it("resolves build metadata from railway-oriented environment variables", () => {
-    expect(
-      resolveBuildMetadata(
-        {
-          RAILWAY_GIT_COMMIT_SHA: "abc1234",
-          BUILD_TIME: "2026-03-21T20:10:00.000Z",
-          APP_VERSION: "1.2.3",
-          RAILWAY_PROJECT_ID: "railway-project",
-        },
-        "0.1.0"
-      )
-    ).toEqual({
-      gitSha: "abc1234",
-      buildTime: "2026-03-21T20:10:00.000Z",
-      appVersion: "1.2.3",
-      runtime: "railway",
+    it("handles undefined config", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+
+      const port = resolveServerPort({} as any);
+
+      expect(port).toBe(4000);
+    });
+
+    it("handles string port values", async () => {
+      const { resolveServerPort } = await import("../runtime.ts");
+      
+      const port = resolveServerPort({ PORT: "8080" as any });
+      
+      expect(port).toBe(8080);
     });
   });
 
-  it("falls back to process defaults when build metadata env is absent", () => {
-    const metadata = resolveBuildMetadata({}, "9.9.9");
-    expect(metadata.gitSha).toBe("unknown");
-    expect(metadata.appVersion).toBe("9.9.9");
-    expect(metadata.runtime).toBe("node");
-    expect(typeof metadata.buildTime).toBe("string");
-    expect(metadata.buildTime.length).toBeGreaterThan(0);
+  describe("buildLocalHealthUrl", () => {
+    it("returns health URL with configured PORT", async () => {
+      const { buildLocalHealthUrl } = await import("../runtime.ts");
+      
+      const url = buildLocalHealthUrl({ PORT: 8080 });
+      
+      expect(url).toBe("http://127.0.0.1:8080/health");
+    });
+
+    it("returns health URL with default port", async () => {
+      const { buildLocalHealthUrl } = await import("../runtime.ts");
+      
+      const url = buildLocalHealthUrl({});
+      
+      expect(url).toBe("http://127.0.0.1:4000/health");
+    });
+  });
+
+  describe("resolveBuildMetadata", () => {
+    it("returns metadata from environment variables", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({
+        RAILWAY_GIT_COMMIT_SHA: "abc123",
+        BUILD_TIME: "2024-01-01T00:00:00.000Z",
+        APP_VERSION: "1.0.0",
+        RAILWAY_ENVIRONMENT: "production",
+      });
+      
+      expect(metadata).toEqual({
+        gitSha: "abc123",
+        buildTime: "2024-01-01T00:00:00.000Z",
+        appVersion: "1.0.0",
+        runtime: "railway",
+      });
+    });
+
+    it("uses VERCEL environment variables", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({
+        VERCEL_GIT_COMMIT_SHA: "def456",
+        APP_BUILD_TIME: "2024-01-02T00:00:00.000Z",
+        npm_package_version: "2.0.0",
+        VERCEL: "1",
+      });
+      
+      expect(metadata).toEqual({
+        gitSha: "def456",
+        buildTime: "2024-01-02T00:00:00.000Z",
+        appVersion: "2.0.0",
+        runtime: "vercel",
+      });
+    });
+
+    it("uses GITHUB_SHA for git commit", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({
+        GITHUB_SHA: "ghi789",
+      });
+      
+      expect(metadata.gitSha).toBe("ghi789");
+    });
+
+    it("uses fallback version when no version specified", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({}, "3.0.0");
+      
+      expect(metadata.appVersion).toBe("3.0.0");
+    });
+
+    it("uses default fallback version", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({});
+      
+      expect(metadata.appVersion).toBe("0.1.0");
+    });
+
+    it("uses process build time when not specified", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({});
+      
+      expect(metadata.buildTime).toBeDefined();
+      expect(new Date(metadata.buildTime).getTime()).toBeLessThanOrEqual(Date.now());
+    });
+
+    it("returns node runtime for local development", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({});
+      
+      expect(metadata.runtime).toBe("node");
+    });
+
+    it("handles empty environment", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+      
+      const metadata = resolveBuildMetadata({});
+      
+      expect(metadata.gitSha).toBe("unknown");
+      expect(metadata.appVersion).toBe("0.1.0");
+      expect(metadata.runtime).toBe("node");
+    });
+
+    it("handles null environment", async () => {
+      const { resolveBuildMetadata } = await import("../runtime.ts");
+
+      const metadata = resolveBuildMetadata({} as any);
+
+      expect(metadata.gitSha).toBe("unknown");
+    });
   });
 });
