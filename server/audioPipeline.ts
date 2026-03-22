@@ -21,44 +21,31 @@ import { logger } from "./logger.ts";
 import {
   // Text utilities
   clean,
-  normalizeText,
   tokenize,
-  textSimilarity,
-  hasRepeatedPhrase,
   isHallucination,
 
   // Math utilities
   clamp,
-  average,
   parseDbNumber,
 
   // Segment utilities
   mergeShortSegments,
-  estimateQualityScore,
   parseJsonResponse,
   normalizeSpeakerLabel,
   getRawWords,
-  synthesizeSegmentsFromWords,
   normalizeDiarizedSegments,
   normalizeVerificationSegments,
-  overlapSeconds,
-  evaluateAgainstVerificationPass,
   buildVerificationResult,
   buildEmptyTranscriptResult,
 
   // Prompt building
   buildWhisperPrompt,
-  DEFAULT_WHISPER_PROMPT,
 
   // Constants
-  HALLUCINATION_PATTERNS,
-  VERIFY_CONFIDENCE_THRESHOLD,
-  VERIFY_SCORE_THRESHOLD,
   CHUNK_DURATION_SECONDS,
   MAX_FILE_SIZE_BYTES,
 
   // Helpers
-  cryptoRandomId,
   deriveFfprobeBinary,
 } from "./audioPipeline.utils.ts";
 
@@ -134,325 +121,17 @@ async function requestAudioTranscription({ filePath, buffer, filename, contentTy
   return parseJsonResponse(rawBody);
 }
 
-function normalizeSpeakerLabel(label, index) {
-  const safeLabel = clean(label);
-  if (!safeLabel || /^[A-Z]$/i.test(safeLabel) || /^speaker[_ -]?\w*$/i.test(safeLabel)) {
-    return `Speaker ${index + 1}`;
-  }
 
-  return safeLabel;
-}
 
-function getRawWords(payload) {
-  if (Array.isArray(payload?.words)) return payload.words;
-  if (Array.isArray(payload?.transcript?.words)) return payload.transcript.words;
-  if (Array.isArray(payload?.results?.words)) return payload.results.words;
-  return [];
-}
 
-function synthesizeSegmentsFromWords(payload) {
-  const words = getRawWords(payload)
-    .map((word, index) => {
-      const text = clean(word?.word || word?.text || word?.token || word?.content);
-      if (!text) return null;
-      const start = Number(word?.start ?? word?.start_time ?? word?.offset ?? 0);
-      const end = Number(word?.end ?? word?.end_time ?? word?.offset_end ?? start);
-      return {
-        text,
-        start: Number.isFinite(start) ? start : 0,
-        end: Number.isFinite(end) && end > start ? end : start + 0.45,
-        index,
-      };
-    })
-    .filter(Boolean);
 
-  if (words.length) {
-    const segments = [];
-    let current = null;
 
-    const flushCurrent = () => {
-      if (!current || !current.words.length) return;
-      const joinedText = current.words.map((word) => word.text).join(" ").trim();
-      if (!joinedText) return;
-      const start = current.words[0].start;
-      const lastWord = current.words[current.words.length - 1];
-      const end = Math.max(start + 0.8, lastWord.end);
-      segments.push({
-        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
-        text: joinedText,
-        timestamp: start,
-        endTimestamp: end,
-        speakerId: 0,
-        rawSpeakerLabel: "speaker_0",
-      });
-    };
 
-    for (const word of words) {
-      if (!current) {
-        current = { words: [word] };
-        continue;
-      }
 
-      const previousWord = current.words[current.words.length - 1];
-      const gap = Math.max(0, word.start - previousWord.end);
-      const punctuationBreak = /[.!?…:]$/.test(previousWord.text);
-      const maxWordCount = current.words.length >= 18;
-      const maxDuration = word.end - current.words[0].start >= 12;
 
-      if (gap > 1.2 || punctuationBreak || maxWordCount || maxDuration) {
-        flushCurrent();
-        current = { words: [word] };
-      } else {
-        current.words.push(word);
-      }
-    }
 
-    flushCurrent();
 
-    return {
-      segments,
-      text: segments.map((segment) => segment.text).join(" ").trim(),
-    };
-  }
 
-  const rawText = clean(payload?.text || payload?.transcript || payload?.results?.text);
-  if (!rawText) {
-    return { segments: [], text: "" };
-  }
-
-  const estimatedDuration = Math.max(1.5, tokenize(rawText).length * 0.42);
-  return {
-    segments: [
-      {
-        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
-        text: rawText,
-        timestamp: 0,
-        endTimestamp: estimatedDuration,
-        speakerId: 0,
-        rawSpeakerLabel: "speaker_0",
-      },
-    ],
-    text: rawText,
-  };
-}
-
-function normalizeDiarizedSegments(payload) {
-  const rawSegments = Array.isArray(payload?.segments)
-    ? payload.segments
-    : Array.isArray(payload?.transcript?.segments)
-      ? payload.transcript.segments
-      : Array.isArray(payload?.utterances)
-        ? payload.utterances
-          : Array.isArray(payload?.transcript?.utterances)
-            ? payload.transcript.utterances
-            : [];
-  const synthesized = !rawSegments.length ? synthesizeSegmentsFromWords(payload) : null;
-  const speakerOrder = new Map();
-  const speakerNames = {};
-
-  const segments = (rawSegments.length ? rawSegments : (synthesized?.segments || []))
-    .map((segment, index) => {
-      const text = clean(segment.text || segment.transcript || segment.content);
-      if (!text) {
-        return null;
-      }
-
-      // NOTE: segment.speaker can be numeric 0 which is falsy — must use explicit null check
-      const rawSpeakerLabel = clean(
-        (segment.speaker !== undefined && segment.speaker !== null ? String(segment.speaker) : null)
-        || (segment.speaker_label !== undefined && segment.speaker_label !== null ? String(segment.speaker_label) : null)
-        || (segment.speakerId !== undefined && segment.speakerId !== null ? String(segment.speakerId) : null)
-        || (segment.speaker_id !== undefined && segment.speaker_id !== null ? String(segment.speaker_id) : null)
-        || `speaker_${index}`
-      );
-
-      if (!speakerOrder.has(rawSpeakerLabel)) {
-        const nextSpeakerId = speakerOrder.size;
-        speakerOrder.set(rawSpeakerLabel, nextSpeakerId);
-        speakerNames[String(nextSpeakerId)] = normalizeSpeakerLabel(rawSpeakerLabel, nextSpeakerId);
-      }
-
-      const speakerId = speakerOrder.get(rawSpeakerLabel);
-      const start = Number(segment.start ?? segment.start_time ?? segment.offset ?? 0) || 0;
-      const providedEnd = Number(segment.end ?? segment.end_time ?? start) || start;
-      const estimatedDuration = Math.max(1.5, tokenize(text).length * 0.42);
-      const end = providedEnd > start ? providedEnd : start + estimatedDuration;
-
-      return {
-        id: clean(segment.id) || `seg_${crypto.randomUUID().replace(/-/g, "")}`,
-        text,
-        timestamp: start,
-        endTimestamp: Math.max(start, end),
-        speakerId,
-        rawSpeakerLabel,
-      };
-    })
-    .filter(Boolean);
-
-  return {
-    segments,
-    speakerNames,
-    speakerCount: Object.keys(speakerNames).length,
-    text: clean(payload?.text || payload?.transcript || synthesized?.text || segments.map((segment) => segment.text).join(" ")),
-  };
-}
-
-function normalizeVerificationSegments(payload: any) {
-  const rawSegments = Array.isArray(payload?.segments) ? payload.segments : [];
-  if (!rawSegments.length) {
-    return (synthesizeSegmentsFromWords(payload)?.segments || []).map((segment) => ({
-      text: segment.text,
-      start: segment.timestamp,
-      end: segment.endTimestamp,
-      avgLogprob: null,
-      noSpeechProb: null,
-    }));
-  }
-  return rawSegments
-    .map((segment) => ({
-      text: clean(segment.text || segment.transcript),
-      start: Number(segment.start ?? segment.start_time ?? 0) || 0,
-      end: Number(segment.end ?? segment.end_time ?? 0) || 0,
-      avgLogprob: Number.isFinite(Number(segment.avg_logprob)) ? Number(segment.avg_logprob) : null,
-      noSpeechProb: Number.isFinite(Number(segment.no_speech_prob)) ? Number(segment.no_speech_prob) : null,
-    }))
-    .filter((segment) => segment.text);
-}
-
-function overlapSeconds(left, right) {
-  return Math.max(0, Math.min(left.endTimestamp, right.end) - Math.max(left.timestamp, right.start));
-}
-
-function evaluateAgainstVerificationPass(segment, verificationSegments) {
-  const overlaps = verificationSegments.filter((candidate) => overlapSeconds(segment, candidate) > 0.08);
-  if (!overlaps.length) {
-    return {
-      whisperConfidence: 0.42,
-      alignmentScore: 0.34,
-      comparisonText: "",
-      reasons: ["brak nakladajacego sie fragmentu w przebiegu weryfikujacym"],
-    };
-  }
-
-  const weightedLogprobParts = overlaps
-    .filter((candidate) => Number.isFinite(candidate.avgLogprob))
-    .map((candidate) => {
-      const overlap = overlapSeconds(segment, candidate) || 1;
-      return {
-        overlap,
-        weighted: Math.exp(Math.min(0, candidate.avgLogprob)) * overlap,
-      };
-    });
-  const totalOverlap = weightedLogprobParts.reduce((sum, item) => sum + item.overlap, 0);
-  const whisperConfidence = totalOverlap
-    ? clamp(weightedLogprobParts.reduce((sum, item) => sum + item.weighted, 0) / totalOverlap, 0, 1)
-    : 0.68;
-  const comparisonText = overlaps.map((candidate) => candidate.text).join(" ");
-  const alignmentScore = textSimilarity(segment.text, comparisonText);
-  const reasons = [];
-
-  if (whisperConfidence < VERIFY_CONFIDENCE_THRESHOLD) {
-    reasons.push("niska pewnosc ASR w przebiegu weryfikujacym");
-  }
-  if (alignmentScore < 0.45) {
-    reasons.push("tekst rozni sie od przebiegu weryfikujacego");
-  }
-  if (overlaps.some((candidate) => Number(candidate.noSpeechProb || 0) > 0.55)) {
-    reasons.push("fragment przypomina cisze lub szum");
-  }
-
-  return {
-    whisperConfidence,
-    alignmentScore,
-    comparisonText,
-    reasons,
-  };
-}
-
-function buildVerificationResult(diarizedSegments: any[], verificationSegments: any[]) {
-  const verifiedSegments = diarizedSegments.map((segment, index) => {
-    const qualityScore = estimateQualityScore(segment.text);
-    const verification = evaluateAgainstVerificationPass(segment, verificationSegments);
-    const previousSegment = diarizedSegments[index - 1];
-    const reasons = [...verification.reasons];
-
-    if (previousSegment && normalizeText(previousSegment.text) === normalizeText(segment.text)) {
-      reasons.push("duplikat poprzedniego fragmentu");
-    }
-
-    if (segment.text.length < 8) {
-      reasons.push("bardzo krotki fragment");
-    }
-
-    if (hasRepeatedPhrase(segment.text)) {
-      reasons.push("powtarzajace sie slowa");
-    }
-
-    const verificationScore = clamp(
-      qualityScore * 0.22 + verification.whisperConfidence * 0.38 + verification.alignmentScore * 0.4,
-      0,
-      1
-    );
-
-    return {
-      ...segment,
-      rawConfidence: verification.whisperConfidence,
-      verificationScore,
-      verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? "verified" : "review",
-      verificationReasons: [...new Set(reasons)],
-      verificationEvidence: {
-        alignmentScore: verification.alignmentScore,
-        whisperConfidence: verification.whisperConfidence,
-        comparisonText: verification.comparisonText,
-      },
-    };
-  });
-
-  return {
-    verifiedSegments,
-    confidence: average(verifiedSegments.map((segment) => segment.verificationScore)),
-  };
-}
-
-function buildEmptyTranscriptResult(
-  reason:
-    | "no_segments_from_stt"
-    | "segments_removed_by_vad"
-    | "segments_removed_as_hallucinations"
-    | "all_chunks_discarded_as_too_small",
-  transcriptionDiagnostics: any = {},
-  audioQuality: any = null
-) {
-  return {
-    providerId: "openai-audio-pipeline",
-    providerLabel: "OpenAI STT + diarization",
-    pipelineStatus: "completed",
-    transcriptOutcome: "empty" as const,
-    emptyReason: reason,
-    userMessage: "Nie wykryto wypowiedzi w nagraniu.",
-    audioQuality,
-    transcriptionDiagnostics,
-    diarization: {
-      speakerNames: {},
-      speakerCount: 0,
-      confidence: 0,
-      text: "",
-      transcriptOutcome: "empty",
-      emptyReason: reason,
-      userMessage: "Nie wykryto wypowiedzi w nagraniu.",
-      audioQuality,
-      transcriptionDiagnostics,
-    },
-    segments: [],
-    speakerNames: {},
-    speakerCount: 0,
-    confidence: 0,
-    reviewSummary: {
-      needsReview: 0,
-      approved: 0,
-    },
-  };
-}
 
 /**
  * Runs pyannote.audio speaker diarization via Python subprocess.

@@ -20,6 +20,47 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const ENOSPC_MESSAGE = "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.";
+
+function _cleanupOldLocalFiles(uploadDir: string): void {
+  try {
+    const files = fs.readdirSync(uploadDir)
+      .map((f) => ({ name: f, mtime: fs.statSync(path.join(uploadDir, f)).mtimeMs }))
+      .sort((a, b) => a.mtime - b.mtime);
+    const toDelete = files.slice(0, Math.max(1, Math.floor(files.length * 0.2)));
+    for (const file of toDelete) {
+      try { fs.unlinkSync(path.join(uploadDir, file.name)); } catch (_) {}
+    }
+    logger.warn(`[database] Zwolniono miejsce: usunieto ${toDelete.length} starych plikow audio.`);
+  } catch (_) {}
+}
+
+function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffer): string {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  const localPath = path.join(uploadDir, filename);
+  try {
+    fs.writeFileSync(localPath, buffer);
+    return localPath;
+  } catch (err: any) {
+    if (err.code === "ENOSPC") {
+      logger.warn("[database] ENOSPC przy zapisie audio — probuje zwolnic miejsce i ponowic.");
+      _cleanupOldLocalFiles(uploadDir);
+      try {
+        fs.writeFileSync(localPath, buffer);
+        return localPath;
+      } catch (retryErr: any) {
+        if (retryErr.code === "ENOSPC") {
+          const noSpaceErr = new Error(ENOSPC_MESSAGE);
+          (noSpaceErr as any).code = "ENOSPC";
+          throw noSpaceErr;
+        }
+        throw retryErr;
+      }
+    }
+    throw err;
+  }
+}
+
 export class Database {
   type: string;
   uploadDir: string;
@@ -674,7 +715,7 @@ export class Database {
     const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
     if (!safeRecordingId) throw new Error("Nieprawidłowy identyfikator nagrania.");
     const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
-    
+
     let storagePath: string;
 
     // Try Supabase Storage first, fall back to local fs
@@ -686,18 +727,15 @@ export class Database {
       } else {
         // Supabase not configured — save locally
         const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-        fs.mkdirSync(uploadDir, { recursive: true });
-        const localPath = path.join(uploadDir, `${safeRecordingId}${extension}`);
-        fs.writeFileSync(localPath, buffer);
-        storagePath = localPath;
+        storagePath = _writeLocalAudioFile(uploadDir, `${safeRecordingId}${extension}`, buffer);
       }
     } catch (err: any) {
-      console.warn("[database] Supabase upload failed, falling back to local:", err.message);
+      if ((err as any).code === "ENOSPC" || String(err.message).includes("Brak miejsca na dysku")) {
+        throw err;
+      }
+      logger.warn("[database] Supabase upload failed, falling back to local:", { message: err.message });
       const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-      fs.mkdirSync(uploadDir, { recursive: true });
-      const localPath = path.join(uploadDir, `${safeRecordingId}${extension}`);
-      fs.writeFileSync(localPath, buffer);
-      storagePath = localPath;
+      storagePath = _writeLocalAudioFile(uploadDir, `${safeRecordingId}${extension}`, buffer);
     }
 
     const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);

@@ -81,6 +81,10 @@ function normalizeApiErrorMessage(message = "", status?: number) {
     return HOSTED_PREVIEW_STALE_MESSAGE;
   }
 
+  if (status === 507) {
+    return "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.";
+  }
+
   if (status === 502) {
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
@@ -141,10 +145,15 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
   }
 }
 
-export async function apiRequest(path, options = {}) {
+interface ApiOptions extends RequestInit {
+  body?: any;
+  parseAs?: "json" | "text" | "raw";
+}
+
+export async function apiRequest(path: string, options: ApiOptions = {}) {
   const { body, headers, parseAs = "json", ...rest } = options;
   const token = readSessionToken();
-  const requestInit = {
+  const requestInit: RequestInit = {
     ...rest,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -157,7 +166,7 @@ export async function apiRequest(path, options = {}) {
     requestInit.body = body instanceof Blob || typeof body === "string" ? body : JSON.stringify(body);
   }
 
-  let response;
+  let response: Response;
   try {
     response = await fetch(buildUrl(path), requestInit);
   } catch (error: any) {
@@ -169,7 +178,7 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401) {
-      unauthorizedHandlers.forEach((h) => h());
+      unauthorizedHandlers.forEach((h: any) => h());
     }
     let message = `HTTP ${response.status}`;
     try {
@@ -181,7 +190,7 @@ export async function apiRequest(path, options = {}) {
     } catch (_) {
       // ignore parse errors
     }
-    const error = new Error(normalizeApiErrorMessage(message, response.status));
+    const error = new Error(normalizeApiErrorMessage(message, response.status)) as Error & { status?: number };
     error.status = response.status;
     throw error;
   }

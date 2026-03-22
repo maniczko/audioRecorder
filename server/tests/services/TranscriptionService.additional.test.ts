@@ -22,7 +22,6 @@ describe("TranscriptionService - Additional Coverage", () => {
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
       saveRagChunk: vi.fn(),
-      getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: [] }),
       getAllRagChunksForWorkspace: vi.fn().mockResolvedValue([]),
       upsertMediaAsset: vi.fn(),
       getMediaAsset: vi.fn(),

@@ -11,7 +11,14 @@
       "Bash(find /c/Users/user/AudoiRecorder/audioRecorder/public -type f \\\\\\(-name *.js -o -name *.json -o -name *.html \\\\\\))",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(wmic logicaldisk:*)",
+      "Bash(node -e \":*)",
+      "Bash(du -sh c:/Users/user/new/audioRecorder/server/data/uploads/*)"
     ]
   }
 }

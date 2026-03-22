@@ -129,6 +129,14 @@ function toUserFacingQueueError(error: any) {
     return EMPTY_TRANSCRIPT_MESSAGE;
   }
 
+  if (
+    error?.status === 507 ||
+    errorMessage.includes("Brak miejsca na dysku") ||
+    errorMessage.includes("ENOSPC")
+  ) {
+    return "Serwer nie ma miejsca na dysku. Skontaktuj sie z administratorem lub poczekaj na zwolnienie miejsca.";
+  }
+
   return errorMessage;
 }
 

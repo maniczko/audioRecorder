@@ -384,3 +384,75 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+.tasks-layout.ms-todo {
+  --task-text: #eef4fb;
+  --task-muted: #8c99ad;
+  --task-surface: rgba(8, 18, 28, 0.88);
+  --task-surface-soft: rgba(255, 255, 255, 0.04);
+  --task-border: rgba(255, 255, 255, 0.08);
+  --task-accent: #75d6c4;
+}
+
+.tasks-layout.ms-todo .todo-detail-card,
+.tasks-layout.ms-todo .todo-comment-card,
+.tasks-layout.ms-todo .todo-history-row {
+  background: var(--task-surface);
+  border-color: var(--task-border);
+  color: var(--task-text);
+}
+
+.tasks-layout.ms-todo .todo-detail-card h2,
+.tasks-layout.ms-todo .todo-detail-title-input,
+.tasks-layout.ms-todo .todo-section-head strong {
+  color: var(--task-text);
+}
+
+.tasks-layout.ms-todo .todo-row-label,
+.tasks-layout.ms-todo .todo-tag-hint,
+.tasks-layout.ms-todo .todo-section-empty,
+.tasks-layout.ms-todo .todo-comment-meta small,
+.tasks-layout.ms-todo .todo-history-row small {
+  color: var(--task-muted);
+}
+
+.tasks-layout.ms-todo .todo-history-toggle {
+  background: var(--task-surface-soft);
+  border-color: var(--task-border);
+  color: var(--task-muted);
+}
+
+.tasks-layout.ms-todo .todo-history-toggle:hover {
+  background: rgba(117, 214, 196, 0.12);
+  color: var(--task-text);
+}
+
+.tasks-layout.ms-todo .todo-mention-dropdown,
+.tasks-layout.ms-todo .todo-tag-dropdown {
+  background: rgba(8, 18, 28, 0.98);
+  border-color: var(--task-border);
+}
+
+.tasks-layout.ms-todo .todo-mention-option:hover,
+.tasks-layout.ms-todo .todo-tag-option:hover {
+  background: rgba(117, 214, 196, 0.12);
+  color: var(--task-accent);
+}
+
+.tasks-layout.ms-todo .todo-tag-chip-list {
+  background: var(--task-surface-soft);
+  border-color: var(--task-border);
+}
+
+.tasks-layout.ms-todo .todo-tag-chip {
+  background: rgba(117, 214, 196, 0.08);
+}
+
+.tasks-layout.ms-todo .todo-tag-chip:hover {
+  background: rgba(117, 214, 196, 0.14);
+}
+
+.tasks-layout.ms-todo .todo-delete-button:hover {
+  border-color: rgba(255, 122, 122, 0.42);
+  background: rgba(255, 122, 122, 0.08);
+}

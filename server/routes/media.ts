@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
 import type { MeetingAsset, TranscriptionStatusPayload } from "../../src/shared/types.ts";
+import type { MediaAsset } from "../lib/types.ts";
 
 function normalizePipelineStatus(value: string): TranscriptionStatusPayload["pipelineStatus"] {
   if (value === "completed") return "done";
@@ -66,12 +67,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const buffer = await c.req.arrayBuffer();
     if (buffer.byteLength > 100 * 1024 * 1024) return c.json({ message: "Przesłany plik przekracza maksymalny rozmiar." }, 413);
 
-    const asset = await transcriptionService.upsertMediaAsset({
+    let asset: MediaAsset;
+    try {
+      asset = await transcriptionService.upsertMediaAsset({
         recordingId, workspaceId, meetingId,
         contentType: c.req.header("content-type") || "application/octet-stream",
         buffer: Buffer.from(buffer),
         createdByUserId: session.user_id,
-    });
+      });
+    } catch (uploadErr: any) {
+      if ((uploadErr as any).code === "ENOSPC" || String(uploadErr.message).includes("Brak miejsca na dysku")) {
+        return c.json({ message: "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem." }, 507);
+      }
+      throw uploadErr;
+    }
     let audioQuality = null;
     try {
       audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {

@@ -552,9 +552,9 @@ export function evaluateAgainstVerificationPass(
       };
     });
   
-  const totalOverlap = weightedLogprobParts.reduce((sum, item) => sum + item.overlap, 0);
+  const totalOverlap = weightedLogprobParts.reduce((sum: number, item: any) => sum + item.overlap, 0);
   const whisperConfidence = totalOverlap
-    ? clamp(weightedLogprobParts.reduce((sum, item) => sum + item.weighted, 0) / totalOverlap, 0, 1)
+    ? clamp(weightedLogprobParts.reduce((sum: number, item: any) => sum + item.weighted, 0) / totalOverlap, 0, 1)
     : 0.68;
   
   const comparisonText = overlaps.map((candidate) => candidate.text).join(" ");

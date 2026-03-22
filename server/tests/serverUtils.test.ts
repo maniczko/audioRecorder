@@ -51,12 +51,15 @@ describe("serverUtils", () => {
     checkRateLimit("127.0.0.1", "auth", 2);
 
     expect(() => checkRateLimit("127.0.0.1", "auth", 2)).toThrowError(/Zbyt wiele prob/);
+    let caughtError: any;
     try {
       checkRateLimit("127.0.0.1", "upload", 0);
     } catch (error: any) {
-      expect(error.statusCode).toBe(429);
-      expect(error.retryAfter).toBeGreaterThan(0);
+      caughtError = error;
     }
+    expect(caughtError).toBeDefined();
+    expect(caughtError.statusCode).toBe(429);
+    expect(caughtError.retryAfter).toBeGreaterThan(0);
   });
 
   it("reads JSON body and handles invalid or oversized payloads", async () => {
