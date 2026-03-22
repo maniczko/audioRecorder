@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
-import { createTaskComment } from "../lib/tasks";
 import { toInputDateTime } from "./taskViewUtils";
 import './TaskDetailsPanelStyles.css';
 
@@ -37,22 +36,16 @@ export default function TaskDetailsPanel({
   currentUserName,
   onResolveGoogleTaskConflict,
 }) {
-  const [commentDraft, setCommentDraft] = useState("");
-  const [mentionQuery, setMentionQuery] = useState("");
-  const [showMentions, setShowMentions] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
-  const commentTextareaRef = useRef(null);
   const tagInputRef = useRef(null);
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
-  const [historyExpanded, setHistoryExpanded] = useState(false);
   const tagOptions = useMemo(
     () => [...new Set((tasks || []).flatMap((t) => t.tags || []))].filter(Boolean).sort(),
     [tasks]
   );
 
   useEffect(() => {
-    setCommentDraft("");
     setTagDraft("");
     setShowTagSuggestions(false);
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
@@ -95,53 +88,6 @@ export default function TaskDetailsPanel({
     setTagDraft("");
     setShowTagSuggestions(false);
     tagInputRef.current?.focus?.();
-  }
-
-  function handleCommentChange(event) {
-    const val = event.target.value;
-    setCommentDraft(val);
-    const cursorPos = event.target.selectionStart;
-    const textBeforeCursor = val.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
-    if (atMatch) {
-      setMentionQuery(atMatch[1]);
-      setShowMentions(true);
-    } else {
-      setShowMentions(false);
-      setMentionQuery("");
-    }
-  }
-
-  function insertMention(person) {
-    const textarea = commentTextareaRef.current;
-    if (!textarea) return;
-    const val = commentDraft;
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = val.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
-    if (!atMatch) return;
-    const atStart = cursorPos - atMatch[0].length;
-    const newVal = val.slice(0, atStart) + `@${person} ` + val.slice(cursorPos);
-    setCommentDraft(newVal);
-    setShowMentions(false);
-    setMentionQuery("");
-    setTimeout(() => {
-      textarea.focus();
-      const newPos = atStart + person.length + 2;
-      textarea.setSelectionRange(newPos, newPos);
-    }, 0);
-  }
-
-  function addComment() {
-    if (!commentDraft.trim()) {
-      return;
-    }
-
-    onUpdateTask(selectedTask.id, {
-      comments: [...(selectedTask.comments || []), createTaskComment(commentDraft, currentUserName || "Ty")],
-    });
-    setCommentDraft("");
-    setShowMentions(false);
   }
 
   async function resolveConflict(mode) {
@@ -363,94 +309,6 @@ export default function TaskDetailsPanel({
             </label>
           </div>
         </div>
-
-        <section className="todo-detail-section">
-          <div className="todo-section-head">
-            <strong>Osoba przypisana</strong>
-            <span>{selectedTask.owner ? 1 : 0}</span>
-          </div>
-          <div className="todo-assignee-single">
-            <strong>{selectedTask.owner || "Nieprzypisane"}</strong>
-          </div>
-        </section>
-
-        <section className="todo-detail-section">
-          <div className="todo-section-head">
-            <strong>Komentarze</strong>
-            <span>{(selectedTask.comments || []).length}</span>
-          </div>
-          <div className="todo-comment-create" style={{ position: "relative" }}>
-            <textarea
-              ref={commentTextareaRef}
-              rows="3"
-              value={commentDraft}
-              onChange={handleCommentChange}
-              placeholder="Dodaj komentarz... wpisz @ aby wspomnieć osobę"
-            />
-            {showMentions && (
-              <div className="todo-mention-dropdown">
-                {peopleOptions
-                  .filter((p) => p.toLowerCase().startsWith(mentionQuery.toLowerCase()))
-                  .map((person) => (
-                    <button key={person} type="button" className="todo-mention-option" onMouseDown={() => insertMention(person)}>
-                      @{person}
-                    </button>
-                  ))}
-              </div>
-            )}
-            <button type="button" className="todo-command-button primary" onClick={addComment}>
-              Dodaj komentarz
-            </button>
-          </div>
-          <div className="todo-comment-list">
-            {(selectedTask.comments || []).length ? (
-              [...selectedTask.comments].reverse().map((comment) => (
-                <article key={comment.id} className="todo-comment-card">
-                  <div className="todo-comment-meta">
-                    <strong>{comment.author || "Ty"}</strong>
-                    <small>{formatDateTime(comment.createdAt)}</small>
-                  </div>
-                  <p>{comment.text}</p>
-                </article>
-              ))
-            ) : (
-              null
-            )}
-          </div>
-        </section>
-
-        <section className="todo-detail-section">
-          <div className="todo-section-head">
-            <strong>Historia zmian</strong>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>{(selectedTask.history || []).length}</span>
-              {(selectedTask.history || []).length > 0 && (
-                <button
-                  type="button"
-                  className="todo-history-toggle"
-                  onClick={() => setHistoryExpanded((v) => !v)}
-                  title={historyExpanded ? "Ukryj historię" : "Pokaż historię"}
-                >
-                  {historyExpanded ? "▲" : "▼"}
-                </button>
-              )}
-            </div>
-          </div>
-          {historyExpanded && (
-            <div className="todo-history-list">
-              {[...selectedTask.history].reverse().map((entry) => (
-                <article key={entry.id} className="todo-history-row">
-                  <strong>{entry.actor || "System"}</strong>
-                  <p>{entry.message}</p>
-                  <small>{formatDateTime(entry.createdAt)}</small>
-                </article>
-              ))}
-            </div>
-          )}
-          {!historyExpanded && (selectedTask.history || []).length === 0 && (
-            <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
-          )}
-        </section>
 
         <div className="todo-detail-footer">
           <button
