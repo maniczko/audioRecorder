@@ -5851,3 +5851,60 @@
 .tasks-layout.ms-todo .todo-inline-actions {
   gap: 6px;
 }
+
+.tasks-layout.ms-todo .todo-filter-row {
+  align-items: end;
+}
+
+.tasks-layout.ms-todo .todo-filter-row > * {
+  min-width: 0;
+}
+
+.tasks-layout.ms-todo .todo-table-head {
+  margin-top: 2px;
+  border-radius: 18px;
+  background: rgba(8, 18, 28, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tasks-layout.ms-todo .todo-table-head span,
+.tasks-layout.ms-todo .todo-table-head button {
+  color: var(--task-muted);
+}
+
+.tasks-layout.ms-todo .todo-table-group {
+  background: rgba(8, 18, 28, 0.78);
+}
+
+.tasks-layout.ms-todo .todo-table-row {
+  padding: 12px 16px;
+}
+
+.tasks-layout.ms-todo .todo-title-cell strong {
+  letter-spacing: -0.01em;
+}
+
+.tasks-layout.ms-todo .todo-title-cell small {
+  opacity: 0.9;
+}
+
+.tasks-layout.ms-todo .todo-status-badge {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tasks-layout.ms-todo .todo-detail-card {
+  background: rgba(8, 18, 28, 0.84);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tasks-layout.ms-todo .todo-detail-card h2 {
+  letter-spacing: -0.02em;
+}
+
+.tasks-layout.ms-todo .todo-commandbar {
+  align-items: flex-end;
+}
+
+.tasks-layout.ms-todo .todo-view-button {
+  box-shadow: none;
+}

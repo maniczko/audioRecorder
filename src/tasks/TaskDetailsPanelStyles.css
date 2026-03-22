@@ -456,3 +456,36 @@
   border-color: rgba(255, 122, 122, 0.42);
   background: rgba(255, 122, 122, 0.08);
 }
+
+.tasks-layout.ms-todo .todo-detail-card {
+  padding: 20px;
+  gap: 14px;
+}
+
+.tasks-layout.ms-todo .todo-detail-header {
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.tasks-layout.ms-todo .todo-detail-form {
+  gap: 10px;
+}
+
+.tasks-layout.ms-todo .todo-detail-stack {
+  border-radius: 18px;
+  background: rgba(8, 18, 28, 0.82);
+}
+
+.tasks-layout.ms-todo .todo-detail-row {
+  min-height: 50px;
+  padding: 0 16px;
+}
+
+.tasks-layout.ms-todo .todo-section-head {
+  padding-bottom: 6px;
+}
+
+.tasks-layout.ms-todo .todo-comment-card,
+.tasks-layout.ms-todo .todo-history-row {
+  background: rgba(255, 255, 255, 0.03);
+}
