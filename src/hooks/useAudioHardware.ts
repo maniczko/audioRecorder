@@ -133,7 +133,9 @@ export default function useAudioHardware({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: { ideal: 1 }, sampleRate: { ideal: 48000 } },
+        // 16 kHz matches the Whisper/VAD pipeline — avoids expensive server-side resampling.
+        // Browsers that don't support 16 kHz fall back to their native rate automatically.
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: { ideal: 1 }, sampleRate: { ideal: 16000 } },
       });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) throw new Error("AudioContext unavailable");
