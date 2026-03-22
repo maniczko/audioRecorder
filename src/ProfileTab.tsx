@@ -321,7 +321,7 @@ function integrationStatusLabel(status, connectedCount) {
 }
 
 function ChangelogSection() {
-  const [expandedVersion, setExpandedVersion] = useState("v1.5.0");
+  const [expandedVersion, setExpandedVersion] = useState("v1.6.0");
   
   const changelogData = [
     {
