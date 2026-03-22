@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import { existsSync, createReadStream, statSync } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { Hono } from "hono";
@@ -128,10 +128,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       }
     } else {
       // Legacy local file stream
-      if (!fs.existsSync(asset.file_path)) return c.json({ message: "Plik audio nie istnieje." }, 404);
-      const stream = fs.createReadStream(asset.file_path);
+      if (!existsSync(asset.file_path)) return c.json({ message: "Plik audio nie istnieje." }, 404);
+      const stream = createReadStream(asset.file_path);
       c.header("Content-Type", safeType);
-      c.header("Content-Length", String(fs.statSync(asset.file_path).size));
+      c.header("Content-Length", String(statSync(asset.file_path).size));
       c.header("Content-Disposition", "attachment");
       return c.body(stream as any, 200);
     }
@@ -181,8 +181,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset.file_path) {
       return c.json({ message: "Brak ścieżki pliku do ponownego przetworzenia." }, 409);
     }
-    
-    if (asset.file_path.includes(path.sep) && !fs.existsSync(asset.file_path)) {
+
+    if (asset.file_path.includes(path.sep) && !existsSync(asset.file_path)) {
       return c.json({ message: "Lokalny plik audio nie istnieje." }, 409);
     }
 

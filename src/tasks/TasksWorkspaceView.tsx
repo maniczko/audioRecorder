@@ -196,19 +196,6 @@ export default function TasksWorkspaceView({
                 />
               </label>
 
-              {!isKanban ? (
-                <label className="todo-filter-item">
-                  <span>Grupowanie</span>
-                  <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
-                    <option value="none">Brak</option>
-                    <option value="status">Kolumna</option>
-                    <option value="group">Grupa wlasna</option>
-                    <option value="owner">Osoba</option>
-                    <option value="priority">Priorytet</option>
-                    <option value="source">Zrodlo</option>
-                  </select>
-                </label>
-              ) : null}
               <label className="todo-filter-item">
                 <span>Osoba</span>
                 <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
@@ -275,6 +262,8 @@ export default function TasksWorkspaceView({
                 Dodaj zadanie
               </button>
             </form>
+
+            {message ? <div className="todo-helper inline">{message}</div> : null}
 
             {showAdvancedCreate ? (
               <div className="todo-add-advanced">
@@ -373,8 +362,6 @@ export default function TasksWorkspaceView({
             <option key={group} value={group} />
           ))}
         </datalist>
-
-        {message ? <div className="todo-helper banner">{message}</div> : null}
 
         <section className="todo-view-panel">
           {isSummary ? (
