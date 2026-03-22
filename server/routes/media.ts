@@ -1,4 +1,4 @@
-import { existsSync, createReadStream, statSync } from "node:fs";
+import { existsSync, createReadStream, statSync, writeFileSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { Hono } from "hono";
@@ -392,11 +392,11 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
     const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
     const tmpPath = path.join(config.uploadDir, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
     try {
-      fs.writeFileSync(tmpPath, buffer);
+      writeFileSync(tmpPath, buffer);
       const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, {});
       return c.json({ text }, 200);
     } finally {
-      try { fs.unlinkSync(tmpPath); } catch (_) {}
+      try { unlinkSync(tmpPath); } catch (_) {}
     }
   });
 
