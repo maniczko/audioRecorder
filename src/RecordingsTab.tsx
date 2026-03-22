@@ -472,7 +472,7 @@ export default function RecordingsTab(props) {
   };
 
   return (
-    <div className="recordings-tab-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="recordings-tab-container" style={{ padding: '24px', width: '100%', maxWidth: 'none', margin: '0' }}>
       <header className="recordings-tab-header" style={{ marginBottom: '32px', display: 'flex', gap: '24px' }}>
         <div className="recordings-tab-upload-box" style={{ flex: '0 0 240px' }}>
           {isUploading ? (

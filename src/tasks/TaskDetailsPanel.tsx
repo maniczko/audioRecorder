@@ -44,7 +44,10 @@ export default function TaskDetailsPanel({
   const [commentDraft, setCommentDraft] = useState("");
   const [mentionQuery, setMentionQuery] = useState("");
   const [showMentions, setShowMentions] = useState(false);
+  const [assigneeDraft, setAssigneeDraft] = useState("");
+  const [showAssigneeSuggestions, setShowAssigneeSuggestions] = useState(false);
   const commentTextareaRef = useRef(null);
+  const assigneeInputRef = useRef(null);
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const tagOptions = useMemo(
@@ -54,6 +57,8 @@ export default function TaskDetailsPanel({
 
   useEffect(() => {
     setCommentDraft("");
+    setAssigneeDraft("");
+    setShowAssigneeSuggestions(false);
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
@@ -79,6 +84,21 @@ export default function TaskDetailsPanel({
       owner: nextAssignees[0] || "",
     });
   }
+
+  function addAssignee(person) {
+    if (!person) return;
+    updateAssignees(toggleItem(assignedPeople, person));
+    setAssigneeDraft("");
+    setShowAssigneeSuggestions(false);
+    assigneeInputRef.current?.focus?.();
+  }
+
+  const assigneeSuggestions = peopleOptions.filter((person) => {
+    const query = assigneeDraft.trim().toLowerCase();
+    if (!query) return true;
+    if (assignedPeople.some((item) => item.toLowerCase() === person.toLowerCase())) return false;
+    return person.toLowerCase().includes(query);
+  });
 
   function handleCommentChange(event) {
     const val = event.target.value;
@@ -150,33 +170,33 @@ export default function TaskDetailsPanel({
     <aside className="todo-details">
       <div className="todo-detail-card">
         <div className="todo-detail-header">
-          <div>
+          <div className="todo-detail-title-block">
             {selectedTask.sourceType === "meeting" || selectedTask.sourceType === "google" ? (
               <span className="todo-detail-eyebrow">
                 {selectedTask.sourceType === "meeting" ? "Spotkanie" : "Google Tasks"}
               </span>
             ) : null}
-            <h2>{selectedTask.title}</h2>
+            <div className="todo-detail-title-row">
+              <button
+                type="button"
+                className={selectedTask.completed ? "todo-task-checkbox checked" : "todo-task-checkbox"}
+                aria-label={selectedTask.completed ? "Oznacz jako nieukończone" : "Oznacz jako ukończone"}
+                onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}
+              >
+                {selectedTask.completed ? "✓" : ""}
+              </button>
+              <h2>{selectedTask.title}</h2>
+            </div>
             <div className="todo-detail-badges">
               {selectedTask.dueDate ? <span className={`todo-sla-pill ${slaState.tone}`}>{slaState.label}</span> : null}
             </div>
           </div>
           <div className="todo-detail-header-actions">
-            <button
-              type="button"
-              className="todo-command-button primary"
-              onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })}
-            >
-              {selectedTask.completed ? "Otworz ponownie" : "Oznacz jako zrobione"}
-            </button>
             {selectedTask.sourceMeetingId ? (
               <button type="button" className="todo-command-button" onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}>
                 Otworz spotkanie
               </button>
             ) : null}
-            <button type="button" className="todo-icon-button danger" onClick={() => onDeleteTask(selectedTask.id)}>
-              {selectedTask.sourceType === "meeting" ? "Ukryj" : "Usun"}
-            </button>
           </div>
         </div>
 
@@ -361,6 +381,44 @@ export default function TaskDetailsPanel({
                 </button>
               );
             })}
+          </div>
+          <div className="todo-assignee-picker">
+            <input
+              ref={assigneeInputRef}
+              value={assigneeDraft}
+              onChange={(event) => {
+                setAssigneeDraft(event.target.value);
+                setShowAssigneeSuggestions(true);
+              }}
+              onFocus={() => setShowAssigneeSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowAssigneeSuggestions(false), 120)}
+              onKeyDown={(event) => {
+                if ((event.key === "Enter" || event.key === ",") && assigneeDraft.trim()) {
+                  event.preventDefault();
+                  addAssignee(assigneeDraft.trim().replace(/,$/, ""));
+                } else if (event.key === "Escape") {
+                  setShowAssigneeSuggestions(false);
+                }
+              }}
+              placeholder="Dodaj osobe..."
+            />
+            {showAssigneeSuggestions && assigneeSuggestions.length > 0 ? (
+              <div className="todo-assignee-dropdown">
+                {assigneeSuggestions.map((person) => (
+                  <button
+                    key={person}
+                    type="button"
+                    className="todo-assignee-option"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      addAssignee(person);
+                    }}
+                  >
+                    {person}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </section>
 
