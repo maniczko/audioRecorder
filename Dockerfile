@@ -8,16 +8,6 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
-# Download static ffmpeg via curl (follows GitHub redirects; johnvansickle.com blocked on Railway)
-RUN apt-get update && apt-get install -y --no-install-recommends curl xz-utils && rm -rf /var/lib/apt/lists/* && \
-    curl -fsSL --retry 3 --retry-delay 10 -L \
-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" \
-        -o /tmp/ffmpeg.tar.xz && \
-    tar xJf /tmp/ffmpeg.tar.xz -C /tmp && \
-    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /tmp/ffmpeg && \
-    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /tmp/ffprobe && \
-    rm -rf /tmp/ffmpeg-master-latest-linux64-gpl /tmp/ffmpeg.tar.xz
-
 # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/package*.json ./server/
@@ -30,6 +20,16 @@ COPY server/ ./server/
 
 # Transpile TS -> JS using esbuild into dist-server/
 RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+
+# Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
+RUN node -e " \
+  const fs=require('fs'); \
+  const ffmpeg=require('ffmpeg-static'); \
+  const ffprobe=require('ffprobe-static').path; \
+  fs.copyFileSync(ffmpeg,'/tmp/ffmpeg'); \
+  fs.copyFileSync(ffprobe,'/tmp/ffprobe'); \
+  fs.chmodSync('/tmp/ffmpeg',0o755); \
+  fs.chmodSync('/tmp/ffprobe',0o755);"
 
 # Prune node_modules down to only production dependencies to save space
 RUN pnpm prune --prod
