@@ -77,6 +77,19 @@ def diarize(audio_path: str, hf_token: str | None = None) -> list[dict]:
     except Exception as e:
         raise RuntimeError(f"Nie można załadować modelu pyannote: {e}") from e
 
+    # Dostrajamy próg klastrowania — domyślne 0.7 jest zbyt luźne i scala różnych mówców.
+    # 0.55 daje wyraźniejsze rozróżnienie przy podobnych głosach (np. dwóch mężczyzn).
+    try:
+        pipeline.instantiate({
+            "clustering": {"threshold": 0.55},
+            "segmentation": {
+                "min_duration_on": 0.3,
+                "min_duration_off": 0.3,
+            },
+        })
+    except Exception:
+        pass  # Starsza wersja pyannote może nie obsługiwać instantiate — pomijamy
+
     # GPU jeśli dostępne, inaczej CPU
     device_name = "cuda" if torch.cuda.is_available() else "cpu"
     pipeline.to(torch.device(device_name))
