@@ -38,12 +38,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates libgomp1 libsndfile1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install static FFmpeg build directly
-RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
-    tar xf ffmpeg-release-amd64-static.tar.xz && \
-    mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
-    mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
-    rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
+# Install static FFmpeg build from GitHub (more reliable than johnvansickle.com)
+RUN wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz && \
+    tar xf ffmpeg-master-latest-linux64-gpl.tar.xz && \
+    mv ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ && \
+    mv ffmpeg-master-latest-linux64-gpl/bin/ffprobe /usr/local/bin/ && \
+    rm -rf ffmpeg-master-latest-linux64-gpl* ffmpeg-master-latest-linux64-gpl.tar.xz
 
 # Install uv (astronomically fast API from Astral) to build python modules 100x faster
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
