@@ -196,28 +196,6 @@ export default function TasksWorkspaceView({
                 />
               </label>
 
-              <label className="todo-filter-item">
-                <span>Osoba</span>
-                <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>
-                  <option value="all">Wszystkie</option>
-                  {peopleOptions.map((person) => (
-                    <option key={person} value={person}>
-                      {person}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="todo-filter-item">
-                <span>Tag</span>
-                <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-                  <option value="all">Wszystkie</option>
-                  {tagOptions.map((tag) => (
-                    <option key={tag} value={tag}>
-                      #{tag}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
           ) : null}
         </section>
