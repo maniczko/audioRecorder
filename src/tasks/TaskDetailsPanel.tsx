@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTime } from "../lib/storage";
 import {
   createTaskComment,
-  getTaskSlaState,
   TASK_PRIORITIES,
 } from "../lib/tasks";
 import { toInputDateTime } from "./taskViewUtils";
@@ -44,12 +43,9 @@ export default function TaskDetailsPanel({
   const [commentDraft, setCommentDraft] = useState("");
   const [mentionQuery, setMentionQuery] = useState("");
   const [showMentions, setShowMentions] = useState(false);
-  const [assigneeDraft, setAssigneeDraft] = useState("");
-  const [showAssigneeSuggestions, setShowAssigneeSuggestions] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const commentTextareaRef = useRef(null);
-  const assigneeInputRef = useRef(null);
   const tagInputRef = useRef(null);
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
   const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -60,8 +56,6 @@ export default function TaskDetailsPanel({
 
   useEffect(() => {
     setCommentDraft("");
-    setAssigneeDraft("");
-    setShowAssigneeSuggestions(false);
     setTagDraft("");
     setShowTagSuggestions(false);
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
@@ -80,8 +74,6 @@ export default function TaskDetailsPanel({
     );
   }
 
-  const assignedPeople = selectedTask.assignedTo || [];
-  const slaState = getTaskSlaState(selectedTask);
   const selectedTags = Array.isArray(selectedTask.tags) ? selectedTask.tags : [];
   const tagSuggestions = tagOptions.filter((tag) => {
     const query = tagDraft.trim().toLowerCase();
@@ -89,28 +81,8 @@ export default function TaskDetailsPanel({
     if (selectedTags.some((item) => item.toLowerCase() === tag.toLowerCase())) return false;
     return tag.toLowerCase().includes(query);
   });
-
-  function updateAssignees(nextAssignees) {
-    onUpdateTask(selectedTask.id, {
-      assignedTo: nextAssignees,
-      owner: nextAssignees[0] || "",
-    });
-  }
-
-  function addAssignee(person) {
-    if (!person) return;
-    updateAssignees(toggleItem(assignedPeople, person));
-    setAssigneeDraft("");
-    setShowAssigneeSuggestions(false);
-    assigneeInputRef.current?.focus?.();
-  }
-
-  const assigneeSuggestions = peopleOptions.filter((person) => {
-    const query = assigneeDraft.trim().toLowerCase();
-    if (!query) return true;
-    if (assignedPeople.some((item) => item.toLowerCase() === person.toLowerCase())) return false;
-    return person.toLowerCase().includes(query);
-  });
+  const normalizedTagDraft = tagDraft.trim().replace(/,$/, "");
+  const canCreateTag = Boolean(normalizedTagDraft) && !selectedTags.some((item) => item.toLowerCase() === normalizedTagDraft.toLowerCase());
 
   function updateTags(nextTags) {
     onUpdateTask(selectedTask.id, { tags: nextTags });
@@ -212,9 +184,7 @@ export default function TaskDetailsPanel({
               </button>
               <h2>{selectedTask.title}</h2>
             </div>
-            <div className="todo-detail-badges">
-              {selectedTask.dueDate ? <span className={`todo-sla-pill ${slaState.tone}`}>{slaState.label}</span> : null}
-            </div>
+            <div className="todo-detail-badges" />
           </div>
           <div className="todo-detail-header-actions">
             {selectedTask.sourceMeetingId ? (
@@ -309,7 +279,16 @@ export default function TaskDetailsPanel({
           </label>
           <label>
             <span>Osoba odpowiedzialna</span>
-            <select value={selectedTask.owner} onChange={(event) => onUpdateTask(selectedTask.id, { owner: event.target.value })}>
+            <select
+              value={selectedTask.owner || ""}
+              onChange={(event) => {
+                const owner = event.target.value;
+                onUpdateTask(selectedTask.id, {
+                  owner,
+                  assignedTo: owner ? [owner] : [],
+                });
+              }}
+            >
               <option value="">Nieprzypisane</option>
               {peopleOptions.map((person) => (
                 <option key={person} value={person}>
@@ -401,11 +380,11 @@ export default function TaskDetailsPanel({
                   placeholder={selectedTags.length ? "" : "Dodaj tag..."}
                 />
               </div>
-              {showTagSuggestions && tagSuggestions.length > 0 ? (
-                <div className="todo-tag-dropdown">
-                  {tagSuggestions.map((tag) => (
-                    <button
-                      key={tag}
+            {showTagSuggestions && tagSuggestions.length > 0 ? (
+              <div className="todo-tag-dropdown">
+                {tagSuggestions.map((tag) => (
+                  <button
+                    key={tag}
                       type="button"
                       className="todo-tag-option"
                       onMouseDown={(event) => {
@@ -416,10 +395,36 @@ export default function TaskDetailsPanel({
                       {tag}
                     </button>
                   ))}
-                </div>
-              ) : null}
-            </div>
-          </label>
+                {canCreateTag && !tagSuggestions.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()) ? (
+                  <button
+                    type="button"
+                    className="todo-tag-option create"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      addTag(normalizedTagDraft);
+                    }}
+                  >
+                    Dodaj tag "{normalizedTagDraft}"
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {showTagSuggestions && !tagSuggestions.length && canCreateTag ? (
+              <div className="todo-tag-dropdown">
+                <button
+                  type="button"
+                  className="todo-tag-option create"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    addTag(normalizedTagDraft);
+                  }}
+                >
+                  Dodaj tag "{normalizedTagDraft}"
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </label>
           <label className="full">
             <span>Opis</span>
             <textarea rows="3" value={selectedTask.description || ""} onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })} />
@@ -432,54 +437,12 @@ export default function TaskDetailsPanel({
 
         <section className="todo-detail-section">
           <div className="todo-section-head">
-            <strong>Przypisane osoby</strong>
-            <span>{assignedPeople.length || 0}</span>
+            <strong>Osoba przypisana</strong>
+            <span>{selectedTask.owner ? 1 : 0}</span>
           </div>
-          <div className="todo-assignee-picker">
-            <input
-              ref={assigneeInputRef}
-              value={assigneeDraft}
-              onChange={(event) => {
-                setAssigneeDraft(event.target.value);
-                setShowAssigneeSuggestions(true);
-              }}
-              onFocus={() => setShowAssigneeSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowAssigneeSuggestions(false), 120)}
-              onKeyDown={(event) => {
-                if ((event.key === "Enter" || event.key === ",") && assigneeDraft.trim()) {
-                  event.preventDefault();
-                  addAssignee(assigneeDraft.trim().replace(/,$/, ""));
-                } else if (event.key === "Escape") {
-                  setShowAssigneeSuggestions(false);
-                }
-              }}
-              placeholder="Dodaj osobe..."
-            />
-            {showAssigneeSuggestions && assigneeSuggestions.length > 0 ? (
-              <div className="todo-assignee-dropdown">
-                {assigneeSuggestions.map((person) => (
-                  <button
-                    key={person}
-                    type="button"
-                    className="todo-assignee-option"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      addAssignee(person);
-                    }}
-                  >
-                    {person}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+          <div className="todo-assignee-single">
+            <strong>{selectedTask.owner || "Nieprzypisane"}</strong>
           </div>
-          {assignedPeople.length ? (
-            <div className="todo-assignee-summary">
-              {assignedPeople.map((person) => (
-                <span key={person} className="todo-assignee-pill">{person}</span>
-              ))}
-            </div>
-          ) : null}
         </section>
 
         <section className="todo-detail-section">
@@ -559,6 +522,22 @@ export default function TaskDetailsPanel({
             <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
           )}
         </section>
+
+        <div className="todo-detail-footer">
+          <button
+            type="button"
+            className="todo-delete-button"
+            onClick={() => {
+              if (window.confirm("Usunac to zadanie?")) {
+                onDeleteTask?.(selectedTask.id);
+              }
+            }}
+            aria-label="Usun zadanie"
+            title="Usun zadanie"
+          >
+            {"🗑"}
+          </button>
+        </div>
 
       </div>
     </aside>

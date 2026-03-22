@@ -1,12 +1,11 @@
 import PropTypes from "prop-types";
 import {
   canDrop,
-  dueTone,
   formatListDueDate,
   handleCardKeyDown,
   writeDragTask,
 } from "./taskViewUtils";
-import { getTaskAssigneeSummary, getTaskSlaState } from "../lib/tasks";
+import { getTaskAssigneeSummary } from "../lib/tasks";
 
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
@@ -97,7 +96,6 @@ export default function TaskListView({
                 const nextTaskId = group.tasks[index].id;
                 const assigneeSummary = getTaskAssigneeSummary(task);
                 const hasMoreAssignees = (task.assignedTo || []).length > 1;
-                const slaState = getTaskSlaState(task);
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -149,10 +147,8 @@ export default function TaskListView({
                         </small>
                       </span>
 
-                      <span className={dueTone(task.dueDate) === "danger" ? "todo-date danger" : "todo-date"}>
-                        <span className={`todo-sla-pill ${slaState.tone}`}>
-                          {formatListDueDate(task.dueDate) || "Brak terminu"} {task.dueDate ? `- ${slaState.label}` : ""}
-                        </span>
+                      <span className="todo-date">
+                        {formatListDueDate(task.dueDate) || "Brak terminu"}
                       </span>
 
                       <span className="todo-status-cell">

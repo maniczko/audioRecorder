@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getTaskDependencyDetails, getTaskSlaState } from "../lib/tasks";
+import { getTaskDependencyDetails } from "../lib/tasks";
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from "./taskViewUtils";
 import { getTaskLastActivity } from "../lib/activityFeed";
 import './TaskKanbanViewStyles.css';
@@ -134,7 +134,6 @@ function KanbanCard({
   allTasks,
 }) {
   const dependencyState = getTaskDependencyDetails(task, allTasks);
-  const slaState = getTaskSlaState(task);
   const lastActivity = getTaskLastActivity(task);
   const subtasks = task.subtasks || [];
   const assignees = task.assignedTo?.length ? task.assignedTo : task.owner ? [task.owner] : [];
@@ -236,7 +235,7 @@ function KanbanCard({
 
           <div className="kanban-card-flags">
             {task.dueDate ? (
-              <span className={`kanban-due-date tone-${slaState.tone}`}>
+              <span className="kanban-due-date">
                 {formatListDueDate(task.dueDate)}
               </span>
             ) : null}

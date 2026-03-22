@@ -87,16 +87,6 @@ export default function TasksSidebar({
       </div>
 
       <div className="todo-sidebar-footer">
-        {taskNotifications.length ? (
-          <div className="todo-notification-stack">
-            {taskNotifications.slice(0, 3).map(({ task, sla }) => (
-              <div key={task.id} className={`todo-helper tone-${sla.tone}`}>
-                {task.title}: {sla.label}
-              </div>
-            ))}
-          </div>
-        ) : null}
-
         {conflictTasks.length ? (
           <div className="todo-conflict-card">
             <div className="todo-card-head">

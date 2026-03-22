@@ -12,8 +12,6 @@ function statCards(stats, visibleStats) {
     { id: "today", label: "Na dzisiaj", value: visibleStats.dueToday, tone: "info" },
     { id: "week", label: "Ten tydzien", value: visibleStats.dueThisWeek, tone: "info" },
     { id: "overdue", label: "Po terminie", value: visibleStats.overdue, tone: "danger" },
-    { id: "sla-risk", label: "SLA zagrozone", value: visibleStats.slaAtRisk + visibleStats.slaCritical, tone: "warning" },
-    { id: "sla-breached", label: "SLA naruszone", value: visibleStats.slaBreached, tone: "danger" },
     { id: "blocked", label: "Zalezne", value: visibleStats.blocked, tone: "warning" },
     { id: "progress", label: "Ukonczone", value: `${stats.progress}%`, tone: "success" },
   ];
