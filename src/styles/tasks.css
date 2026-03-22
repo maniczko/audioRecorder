@@ -2002,83 +2002,6 @@
   background: #fff9f9;
 }
 
-.tasks-layout.ms-todo .todo-filter-item,
-.tasks-layout.ms-todo .todo-filter-search,
-.tasks-layout.ms-todo .todo-add-advanced label,
-.tasks-layout.ms-todo .todo-detail-form label {
-  display: grid;
-  gap: 6px;
-}
-
-.tasks-layout.ms-todo .todo-filter-item,
-.tasks-layout.ms-todo .todo-filter-search,
-.tasks-layout.ms-todo .todo-add-advanced label,
-.tasks-layout.ms-todo .todo-detail-form label {
-  display: grid;
-  gap: 6px;
-}
-
-.tasks-layout.ms-todo .todo-filter-item,
-.tasks-layout.ms-todo .todo-filter-search,
-.tasks-layout.ms-todo .todo-add-advanced label,
-.tasks-layout.ms-todo .todo-detail-form label {
-  display: grid;
-  gap: 6px;
-}
-
-.tasks-layout.ms-todo .todo-filter-item,
-.tasks-layout.ms-todo .todo-filter-search,
-.tasks-layout.ms-todo .todo-add-advanced label,
-.tasks-layout.ms-todo .todo-detail-form label {
-  display: grid;
-  gap: 6px;
-}
-
-.tasks-layout.ms-todo .todo-filter-item span,
-.tasks-layout.ms-todo .todo-filter-search span,
-.tasks-layout.ms-todo .todo-add-advanced label span,
-.tasks-layout.ms-todo .todo-detail-form label span,
-.tasks-layout.ms-todo .todo-detail-eyebrow {
-  color: #677a97;
-  font-size: 0.8rem;
-}
-
-.tasks-layout.ms-todo .todo-filter-item span,
-.tasks-layout.ms-todo .todo-filter-search span,
-.tasks-layout.ms-todo .todo-add-advanced label span,
-.tasks-layout.ms-todo .todo-detail-form label span,
-.tasks-layout.ms-todo .todo-detail-eyebrow {
-  color: #677a97;
-  font-size: 0.8rem;
-}
-
-.tasks-layout.ms-todo .todo-filter-item span,
-.tasks-layout.ms-todo .todo-filter-search span,
-.tasks-layout.ms-todo .todo-add-advanced label span,
-.tasks-layout.ms-todo .todo-detail-form label span,
-.tasks-layout.ms-todo .todo-detail-eyebrow {
-  color: #677a97;
-  font-size: 0.8rem;
-}
-
-.tasks-layout.ms-todo .todo-filter-item span,
-.tasks-layout.ms-todo .todo-filter-search span,
-.tasks-layout.ms-todo .todo-add-advanced label span,
-.tasks-layout.ms-todo .todo-detail-form label span,
-.tasks-layout.ms-todo .todo-detail-eyebrow {
-  color: #677a97;
-  font-size: 0.8rem;
-}
-
-.tasks-layout.ms-todo .todo-filter-item span,
-.tasks-layout.ms-todo .todo-filter-search span,
-.tasks-layout.ms-todo .todo-add-advanced label span,
-.tasks-layout.ms-todo .todo-detail-form label span,
-.tasks-layout.ms-todo .todo-detail-eyebrow {
-  color: #677a97;
-  font-size: 0.8rem;
-}
-
 .tasks-layout.ms-todo .todo-filter-row {
   display: grid;
   grid-template-columns: minmax(220px, 1.2fr) repeat(2, minmax(140px, 0.5fr));
@@ -2089,15 +2012,6 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
-}
-
-.tasks-layout.ms-todo .todo-stat-card {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid #e4ebf6;
-  background: #fbfcff;
 }
 
 .tasks-layout.ms-todo .todo-stat-card span {
