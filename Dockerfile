@@ -15,8 +15,9 @@ COPY server/package*.json ./server/
 # Install everything including dev dependencies so we get esbuild/typescript
 RUN pnpm install --frozen-lockfile
 
-# Copy server code
+# Copy server code and shared types used by server imports
 COPY server/ ./server/
+COPY src/shared/ ./src/shared/
 
 # Transpile TS -> JS using esbuild into dist-server/
 RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
