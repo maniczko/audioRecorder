@@ -8,6 +8,9 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
+# Install wget and xz-utils for ffmpeg download
+RUN apt-get update && apt-get install -y --no-install-recommends wget xz-utils && rm -rf /var/lib/apt/lists/*
+
 # Download static ffmpeg in builder stage (retries handle transient failures)
 RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
     https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
