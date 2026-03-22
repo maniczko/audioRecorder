@@ -46,8 +46,11 @@ export default function TaskDetailsPanel({
   const [showMentions, setShowMentions] = useState(false);
   const [assigneeDraft, setAssigneeDraft] = useState("");
   const [showAssigneeSuggestions, setShowAssigneeSuggestions] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const commentTextareaRef = useRef(null);
   const assigneeInputRef = useRef(null);
+  const tagInputRef = useRef(null);
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(selectedTask?.googleSyncConflict));
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const tagOptions = useMemo(
@@ -59,6 +62,8 @@ export default function TaskDetailsPanel({
     setCommentDraft("");
     setAssigneeDraft("");
     setShowAssigneeSuggestions(false);
+    setTagDraft("");
+    setShowTagSuggestions(false);
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
@@ -77,6 +82,13 @@ export default function TaskDetailsPanel({
 
   const assignedPeople = selectedTask.assignedTo || [];
   const slaState = getTaskSlaState(selectedTask);
+  const selectedTags = Array.isArray(selectedTask.tags) ? selectedTask.tags : [];
+  const tagSuggestions = tagOptions.filter((tag) => {
+    const query = tagDraft.trim().toLowerCase();
+    if (!query) return true;
+    if (selectedTags.some((item) => item.toLowerCase() === tag.toLowerCase())) return false;
+    return tag.toLowerCase().includes(query);
+  });
 
   function updateAssignees(nextAssignees) {
     onUpdateTask(selectedTask.id, {
@@ -99,6 +111,19 @@ export default function TaskDetailsPanel({
     if (assignedPeople.some((item) => item.toLowerCase() === person.toLowerCase())) return false;
     return person.toLowerCase().includes(query);
   });
+
+  function updateTags(nextTags) {
+    onUpdateTask(selectedTask.id, { tags: nextTags });
+  }
+
+  function addTag(tag) {
+    const normalized = String(tag || "").trim().replace(/,$/, "");
+    if (!normalized) return;
+    updateTags(toggleItem(selectedTags, normalized));
+    setTagDraft("");
+    setShowTagSuggestions(false);
+    tagInputRef.current?.focus?.();
+  }
 
   function handleCommentChange(event) {
     const val = event.target.value;
@@ -340,17 +365,60 @@ export default function TaskDetailsPanel({
           </label>
           <label className="full">
             <span>Tagi</span>
-            <input
-              list="task-detail-tags-list"
-              value={(selectedTask.tags || []).join(", ")}
-              onChange={(event) => onUpdateTask(selectedTask.id, { tags: event.target.value })}
-              placeholder="np. klient, budzet"
-            />
-            <datalist id="task-detail-tags-list">
-              {tagOptions.map((tag) => (
-                <option key={tag} value={tag} />
-              ))}
-            </datalist>
+            <div className="todo-tag-editor">
+              <div className="todo-tag-chip-list">
+                {selectedTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="todo-tag-chip"
+                    onClick={() => updateTags(selectedTags.filter((item) => item !== tag))}
+                    title="Usuń tag"
+                  >
+                    <span>{tag}</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                ))}
+                <input
+                  ref={tagInputRef}
+                  value={tagDraft}
+                  onChange={(event) => {
+                    setTagDraft(event.target.value);
+                    setShowTagSuggestions(true);
+                  }}
+                  onFocus={() => setShowTagSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowTagSuggestions(false), 120)}
+                  onKeyDown={(event) => {
+                    if ((event.key === "Enter" || event.key === ",") && tagDraft.trim()) {
+                      event.preventDefault();
+                      addTag(tagDraft);
+                    } else if (event.key === "Backspace" && !tagDraft && selectedTags.length) {
+                      updateTags(selectedTags.slice(0, -1));
+                    } else if (event.key === "Escape") {
+                      setShowTagSuggestions(false);
+                    }
+                  }}
+                  placeholder={selectedTags.length ? "" : "Dodaj tag..."}
+                />
+              </div>
+              {showTagSuggestions && tagSuggestions.length > 0 ? (
+                <div className="todo-tag-dropdown">
+                  {tagSuggestions.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="todo-tag-option"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        addTag(tag);
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </label>
           <label className="full">
             <span>Opis</span>
@@ -366,21 +434,6 @@ export default function TaskDetailsPanel({
           <div className="todo-section-head">
             <strong>Przypisane osoby</strong>
             <span>{assignedPeople.length || 0}</span>
-          </div>
-          <div className="todo-chip-grid">
-            {peopleOptions.map((person) => {
-              const active = assignedPeople.some((item) => item.toLowerCase() === person.toLowerCase());
-              return (
-                <button
-                  key={person}
-                  type="button"
-                  className={active ? "todo-chip active" : "todo-chip"}
-                  onClick={() => updateAssignees(toggleItem(assignedPeople, person))}
-                >
-                  {person}
-                </button>
-              );
-            })}
           </div>
           <div className="todo-assignee-picker">
             <input
@@ -420,6 +473,13 @@ export default function TaskDetailsPanel({
               </div>
             ) : null}
           </div>
+          {assignedPeople.length ? (
+            <div className="todo-assignee-summary">
+              {assignedPeople.map((person) => (
+                <span key={person} className="todo-assignee-pill">{person}</span>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="todo-detail-section">

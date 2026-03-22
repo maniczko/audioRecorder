@@ -18,13 +18,13 @@
 
 .todo-mention-dropdown {
   position: absolute;
-  bottom: calc(100% - 4rem);
+  top: calc(100% + 6px);
   left: 0;
   z-index: 200;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  background: rgba(8, 22, 36, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.42);
   min-width: 180px;
   max-height: 180px;
   overflow-y: auto;
@@ -48,9 +48,87 @@
   color: var(--accent);
 }
 
+.todo-tag-editor {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.todo-tag-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.todo-tag-chip-list input {
+  flex: 1 1 140px;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+  box-shadow: none;
+}
+
+.todo-tag-chip-list input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.todo-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(117, 214, 196, 0.22);
+  background: rgba(117, 214, 196, 0.10);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.todo-tag-chip:hover {
+  border-color: rgba(117, 214, 196, 0.42);
+  background: rgba(117, 214, 196, 0.16);
+}
+
+.todo-tag-dropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 250;
+  min-width: 240px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 22, 36, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.42);
+}
+
+.todo-tag-option {
+  padding: 9px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.todo-tag-option:hover {
+  background: rgba(117, 214, 196, 0.10);
+  color: var(--accent);
+}
+
 .todo-assignee-picker {
   position: relative;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .todo-assignee-picker input {
@@ -61,16 +139,16 @@
   position: absolute;
   left: 0;
   top: calc(100% + 6px);
-  z-index: 200;
+  z-index: 250;
   min-width: 220px;
   max-height: 220px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+  background: rgba(8, 22, 36, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.42);
 }
 
 .todo-assignee-option {
@@ -129,6 +207,24 @@
   background: linear-gradient(135deg, rgba(117, 214, 196, 0.95) 0%, rgba(91, 179, 220, 0.92) 100%);
   color: #03222a;
   border-color: transparent;
+}
+
+.todo-assignee-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.todo-assignee-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--text);
+  font-size: 0.84rem;
 }
 
 .todo-command-button:disabled,
