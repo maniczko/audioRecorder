@@ -158,7 +158,6 @@ describe("TasksTab", () => {
           comments: [],
           history: [],
           dependencies: [],
-          recurrence: { frequency: "weekly", interval: 1 },
           subtasks: [],
           links: [],
           order: -100,
@@ -167,7 +166,6 @@ describe("TasksTab", () => {
       ],
     });
 
-    expect(screen.getByText("Recurring")).toBeInTheDocument();
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Overdue")).toBeInTheDocument();
   });

@@ -55,7 +55,6 @@ export function buildSidebarLists(tasks, boardColumns) {
     { id: "smart:important", label: "Important", icon: "⭐", count: tasks.filter((task) => task.important).length },
     { id: "smart:planned", label: "Planned", icon: "📅", count: tasks.filter((task) => task.dueDate).length },
     { id: "smart:overdue", label: "Overdue", icon: "⚠️", count: tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()).length },
-    { id: "smart:recurring", label: "Recurring", icon: "🔁", count: tasks.filter((task) => Boolean(task.recurrence)).length },
     { id: "smart:completed", label: "Completed", icon: "✓", count: tasks.filter((task) => task.completed).length },
     { id: "smart:assigned", label: "Assigned to me", icon: "👤", count: tasks.filter((task) => task.assignedToMe).length },
     { id: "smart:all", label: "Tasks", icon: "✦", count: tasks.length },
@@ -98,10 +97,6 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
 
   if (mainListId === "smart:overdue") {
     return tasks.filter((task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now());
-  }
-
-  if (mainListId === "smart:recurring") {
-    return tasks.filter((task) => Boolean(task.recurrence));
   }
 
   if (mainListId === "smart:completed") {

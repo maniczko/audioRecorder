@@ -62,7 +62,6 @@ export default function TasksTab({
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [sortBy, setSortBy] = useState("manual");
   const [groupBy, setGroupBy] = useState("none");
-  const [swimlaneGroupBy, setSwimlaneGroupBy] = useState("none");
   const [query, setQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("all");
@@ -653,8 +652,6 @@ export default function TasksTab({
             setSortBy={setSortBy}
             groupBy={groupBy}
             setGroupBy={setGroupBy}
-            swimlaneGroupBy={swimlaneGroupBy}
-            setSwimlaneGroupBy={setSwimlaneGroupBy}
             shareWorkspace={shareWorkspace}
             onExportCsv={handleExportCsv}
             submitQuickTask={submitQuickTask}

@@ -80,8 +80,6 @@ export default function TasksWorkspaceView({
   setSortBy,
   groupBy,
   setGroupBy,
-  swimlaneGroupBy,
-  setSwimlaneGroupBy,
   shareWorkspace,
   onExportCsv,
   submitQuickTask,
@@ -174,21 +172,6 @@ export default function TasksWorkspaceView({
                 </button>
               </div>
 
-              {isKanban ? (
-                <label className="todo-filter-item compact">
-                  <span>Swimlanes</span>
-                  <select
-                    value={swimlaneGroupBy || "none"}
-                    onChange={(event) => setSwimlaneGroupBy?.(event.target.value)}
-                  >
-                    <option value="none">Brak</option>
-                    <option value="person">Osoba</option>
-                    <option value="priority">Priorytet</option>
-                    <option value="label">Etykieta</option>
-                    <option value="due">Termin</option>
-                  </select>
-                </label>
-              ) : null}
             </div>
 
             <div className="todo-commandbar-right">
@@ -449,7 +432,6 @@ export default function TasksWorkspaceView({
               setDragTaskId={setDragTaskId}
               onUpdateTask={onUpdateTask}
               onMoveTaskToColumn={onMoveTaskToColumn}
-              swimlaneGroupBy={swimlaneGroupBy}
               onQuickAddToColumn={onQuickAddToColumn}
               onReorderColumns={onReorderColumns}
               sortBy={sortBy}
