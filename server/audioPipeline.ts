@@ -31,6 +31,7 @@ import {
 
   // Segment utilities
   mergeShortSegments,
+  removeConsecutiveDuplicates,
   parseJsonResponse,
   normalizeSpeakerLabel,
   getRawWords,
@@ -1197,7 +1198,14 @@ async function runTranscriptionAttempt(
     if (!withoutHallucinations.length) {
       return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics, attemptAudioQuality).segments;
     }
-    const merged = mergeShortSegments(withoutHallucinations);
+    const deduplicated = removeConsecutiveDuplicates(withoutHallucinations);
+    if (DEBUG && deduplicated.length < withoutHallucinations.length) {
+      console.log(`[audioPipeline] Cross-segment dedup removed ${withoutHallucinations.length - deduplicated.length} repeated segment(s).`);
+    }
+    if (!deduplicated.length) {
+      return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics, attemptAudioQuality).segments;
+    }
+    const merged = mergeShortSegments(deduplicated);
     const corrected = await correctTranscriptWithLLM(merged, options);
     return corrected;
   })();

@@ -35,7 +35,9 @@ export const HALLUCINATION_PATTERNS = [
  * Default Whisper prompt for Polish business meetings.
  * Override with VOICELOG_WHISPER_PROMPT env var if needed.
  */
-export const DEFAULT_WHISPER_PROMPT = "Transkrypcja spotkania biznesowego w języku polskim.";
+// Intentionally a comma-separated keyword list, NOT a full sentence.
+// Full sentences get echoed by Whisper on silence ("prompt bleeding").
+export const DEFAULT_WHISPER_PROMPT = "język polski, spotkanie, dyskusja, pytania, odpowiedzi,";
 
 /**
  * Verification thresholds — tuned for Polish (lower than English defaults).
@@ -146,6 +148,22 @@ export function isHallucination(text: string): boolean {
   // Whisper repetition loop: single word/phrase repeated many times (≥4 tokens, ≥58% duplicates)
   if (hasRepeatedPhrase(t)) return true;
   return false;
+}
+
+/**
+ * Removes consecutive near-duplicate segments (Whisper prompt-bleed hallucinations).
+ * When Whisper has nothing to transcribe it echoes the prompt text repeatedly —
+ * each echo is a short unique-looking segment that passes per-segment checks.
+ * This filter removes a segment whose text is ≥85% similar to any of the 3 preceding segments.
+ */
+export function removeConsecutiveDuplicates<T extends { text: string }>(segments: T[]): T[] {
+  const result: T[] = [];
+  for (const seg of segments) {
+    const t = clean(seg.text);
+    const isDup = result.slice(-3).some((prev) => textSimilarity(clean(prev.text), t) >= 0.85);
+    if (!isDup) result.push(seg);
+  }
+  return result;
 }
 
 // ==================== MATH UTILITIES ====================
