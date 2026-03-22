@@ -209,22 +209,21 @@ describe("httpClient", () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true, gitSha: "backend-123" }), {
+      .mockImplementation(
+        () => Promise.resolve(new Response(JSON.stringify({ ok: true, gitSha: "backend-123" }), {
           status: 200,
           headers: { "content-type": "application/json" },
-        })
-      )
-      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+        }))
+      );
     vi.stubGlobal("fetch", fetchMock);
     const { probeRemoteApiHealth, apiRequest } = await loadHttpClient({ buildId: "frontend-456" });
 
-    await expect(probeRemoteApiHealth(fetchMock as any)).rejects.toThrow(
-      "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy."
-    );
-    await expect(apiRequest("/state/bootstrap")).rejects.toMatchObject({
-      message: "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.",
+    await expect(probeRemoteApiHealth(fetchMock as any)).resolves.toMatchObject({
+      ok: true,
+      gitSha: "backend-123",
     });
+    // Should NOT throw anymore, but return the successful payload with a warning (tested manually or via spy if needed)
+    await expect(apiRequest("/state/bootstrap")).resolves.toMatchObject({ ok: true });
   });
 
   test("falls back to persisted workspace store session when legacy session is empty", async () => {

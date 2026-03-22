@@ -65,7 +65,7 @@ export default function TaskDetailsPanel({
       <aside className="todo-details">
         <div className="todo-detail-card empty">
           <h2>Wybierz zadanie</h2>
-          <p>Tutaj zobaczysz szczegoly zadania, ownera, status, grupe i notatki.</p>
+          <p>Tutaj zobaczysz szczegoly zadania, status, grupe i notatki.</p>
         </div>
       </aside>
     );

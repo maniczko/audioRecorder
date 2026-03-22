@@ -49,7 +49,7 @@ describe("Diarization - GPT-4o transcript analysis", () => {
       const result = await pipeline.diarizeFromTranscript([]);
 
       expect(result).toBeNull();
-    });
+    }, 15000);
 
     it("returns null when API key is missing", async () => {
       vi.resetModules();

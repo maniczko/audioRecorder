@@ -5483,16 +5483,6 @@
   align-items: center;
 }
 
-.kanban-move-select {
-  font-size: 0.7rem;
-  padding: 2px 4px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-1, #e0e0f0);
-  cursor: pointer;
-}
-
 .kanban-col-add-btn {
   width: 100%;
   text-align: left;

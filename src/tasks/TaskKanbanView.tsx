@@ -260,24 +260,6 @@ function KanbanCard({
           </small>
         ) : null}
 
-        <div className="kanban-hover-actions">
-          <select
-            className="kanban-move-select"
-            value={task.status}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => {
-              e.stopPropagation();
-              onMoveTaskToColumn(task.id, e.target.value);
-            }}
-            title="Przenieś do kolumny"
-          >
-            {boardColumns.map((col) => (
-              <option key={col.id} value={col.id}>
-                {col.label}
-              </option>
-            ))}
-          </select>
-        </div>
       </article>
 
       <DropSlot
