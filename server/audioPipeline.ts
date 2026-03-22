@@ -675,7 +675,7 @@ async function preprocessAudio(filePath: string, signal: any, profile: "standard
  * @param {Array<{text: string, start: number, end: number}>} segments  verbose_json segments
  * @returns {Promise<object|null>}  diarization result ({segments, speakerNames, speakerCount, text})
  */
-async function diarizeFromTranscript(segments: any[]) {
+async function diarizeFromTranscript(segments: any[], options: { participants?: string[] } = {}) {
   if (!OPENAI_API_KEY || !segments.length) return null;
 
   const CHUNK_SIZE = 180;
@@ -705,10 +705,15 @@ async function diarizeFromTranscript(segments: any[]) {
     "You MUST produce output for every segment — no skipping. " +
     "Return ONLY valid JSON, no explanation.";
 
+  const knownParticipants = (options.participants || []).filter(Boolean);
+  const participantHint = knownParticipants.length >= 2
+    ? `\nZnani uczestnicy spotkania: ${knownParticipants.slice(0, 8).join(", ")}.\nLitery A, B, C… odpowiadają kolejnym mówcom w kolejności ich pierwszego wystąpienia. Spróbuj przypisać tyle różnych liter ile jest znanych uczestników.\n`
+    : "";
+
   const userPrompt = [
     "Nagranie rozmowy między WIELOMA osobami (co najmniej 2). To NIE jest monolog.",
     "Każda zmiana osoby mówiącej musi być oznaczona inną literą (A, B, C…).",
-    "",
+    participantHint,
     "SILNE SYGNAŁY ZMIANY MÓWCY:",
     "• [cisza ≥ 0.5s] przed segmentem → prawie zawsze zmiana mówcy",
     "• [cisza ≥ 2s] → na pewno zmiana mówcy — ZAWSZE przypisz inną literę",
@@ -940,13 +945,17 @@ async function runTranscriptionAttempt(
     vocabulary: options.vocabulary,
   });
 
+  // temperature=0 maximises determinism for poor/noisy audio (prevents hallucination loops).
+  // For clean audio a slight temperature allows more natural transcription.
+  const whisperTemperature = attemptAudioQuality?.qualityLabel === "poor" ? 0 : 0.1;
+
   const whisperFields = {
     model: VERIFICATION_MODEL,
     language: options.language || AUDIO_LANGUAGE,
     response_format: "verbose_json",
     timestamp_granularities: ["segment", "word"],
     prompt: contextPrompt,
-    temperature: 0,
+    temperature: whisperTemperature,
   };
 
   notify(40, "Transkrypcja AI rozkłada pętle paczek...");
