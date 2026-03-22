@@ -134,7 +134,10 @@ export function hasRepeatedPhrase(text: string): boolean {
 export function isHallucination(text: string): boolean {
   const t = clean(text);
   if (!t || t.length < 2) return true;
-  return HALLUCINATION_PATTERNS.some((pattern) => pattern.test(t));
+  if (HALLUCINATION_PATTERNS.some((pattern) => pattern.test(t))) return true;
+  // Whisper repetition loop: single word/phrase repeated many times (≥4 tokens, ≥58% duplicates)
+  if (hasRepeatedPhrase(t)) return true;
+  return false;
 }
 
 // ==================== MATH UTILITIES ====================

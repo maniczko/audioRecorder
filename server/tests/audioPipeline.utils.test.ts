@@ -207,6 +207,16 @@ describe("audioPipeline.utils", () => {
       expect(utils.isHallucination("THANK YOU.")).toBe(true);
       expect(utils.isHallucination("[MUSIC]")).toBe(true);
     });
+
+    it("detects Whisper repetition loops", () => {
+      expect(utils.isHallucination("Cześć! Cześć! Cześć! Cześć! Cześć! Cześć! Cześć! Cześć! Cześć! Cześć!")).toBe(true);
+      expect(utils.isHallucination("hello hello hello hello")).toBe(true);
+      expect(utils.isHallucination("test test test test test")).toBe(true);
+    });
+
+    it("does not filter short repeated greetings (≤3 tokens)", () => {
+      expect(utils.isHallucination("Cześć! Cześć!")).toBe(false);
+    });
   });
 
   // ==================== MATH UTILITIES ====================

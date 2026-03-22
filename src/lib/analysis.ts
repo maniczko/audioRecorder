@@ -1,3 +1,7 @@
+import type {
+  MeetingAnalysis,
+} from "../shared/types";
+
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -91,16 +95,6 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
     .slice(0, 5)
     .map(([w]) => w);
 
-  const openQuestions = dedupeList(
-    transcript.filter((s) => s.text.includes("?")).map((s) => {
-      const speaker = speakerNames?.[String(s.speakerId)] || `Speaker ${s.speakerId + 1}`;
-      return JSON.stringify({ question: s.text.trim(), askedBy: speaker });
-    })
-  )
-    .slice(0, 5)
-    .map((j) => { try { return JSON.parse(j); } catch { return null; } })
-    .filter(Boolean);
-
   const risks = dedupeList(
     transcript
       .filter((s) => /ryzyko|problem|obawa|trudne|zagrożen|blokuje|nie uda|martwi|niepewn/i.test(s.text))
@@ -140,10 +134,10 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
       why: "Znacząca wypowiedź.",
     }));
 
-  return { suggestedTags, openQuestions, risks, blockers, participantInsights, keyQuotes, tensions: [], terminology: [], contextLinks: [], suggestedAgenda: [], coachingTip: "", meetingType: "other", energyLevel: "medium" };
+  return { suggestedTags, risks, blockers, participantInsights, keyQuotes, tensions: [], suggestedAgenda: [], meetingType: "other", energyLevel: "medium" };
 }
 
-function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }) {
+function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }): MeetingAnalysis {
   const transcript = safeArray(segments);
   const importantPhrases = transcript
     .map((segment) => segment.text)
@@ -337,7 +331,7 @@ async function analyzeMeetingViaServer({ meeting, segments, speakerNames }) {
   });
 }
 
-export async function analyzeMeeting({ meeting, segments, speakerNames, diarization }) {
+export async function analyzeMeeting({ meeting, segments, speakerNames, diarization }): Promise<MeetingAnalysis> {
   const fallback = buildFallbackAnalysis({ meeting, segments, speakerNames, diarization });
 
   if (!segments.length) {
@@ -374,7 +368,7 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
     `Desired outputs: ${safeArray(meeting.desiredOutputs).join(" | ") || "None."}`,
     "",
     "Return JSON in this exact shape (all Polish text fields in Polish):",
-    '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"Adam","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["budzet","roadmap"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"tensions":[{"topic":"...","between":["A","B"],"resolved":false}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}],"terminology":["CRO","sprint velocity"],"contextLinks":["Q1 review"],"suggestedAgenda":["..."],"coachingTip":"..."}',
+    '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"Adam","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["budzet","roadmap"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"tensions":[{"topic":"...","between":["A","B"],"resolved":false}],"keyQuotes":[{"quote":"...","speaker":"Host","why":"..."}],"suggestedAgenda":["..."]}',
     "",
     transcriptText(segments, speakerNames),
   ].join("\n");
@@ -420,16 +414,12 @@ export async function analyzeMeeting({ meeting, segments, speakerNames, diarizat
       suggestedTags: dedupeList(parsed.suggestedTags).slice(0, 6).map((t) => String(t).toLowerCase().trim()),
       meetingType: parsed.meetingType || "other",
       energyLevel: parsed.energyLevel || "medium",
-      openQuestions: safeArray(parsed.openQuestions).slice(0, 5),
       risks: safeArray(parsed.risks).slice(0, 4),
       blockers: dedupeList(parsed.blockers).slice(0, 3),
       participantInsights: safeArray(parsed.participantInsights).length ? parsed.participantInsights : richFallback.participantInsights,
       tensions: safeArray(parsed.tensions).slice(0, 3),
       keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
-      terminology: dedupeList(parsed.terminology).slice(0, 6),
-      contextLinks: dedupeList(parsed.contextLinks).slice(0, 4),
       suggestedAgenda: dedupeList(parsed.suggestedAgenda).slice(0, 5),
-      coachingTip: parsed.coachingTip || "",
     };
   } catch (error) {
     console.error("AI meeting analysis failed, falling back to local summary.", error);

@@ -61,7 +61,6 @@ describe("analysis", () => {
     expect(result.actionItems.length).toBeDefined();
     expect(result.tasks.length).toBeDefined();
     expect(result.speakerCount).toBe(2);
-    expect(result.openQuestions.length).toBeGreaterThan(0);
     expect(result.risks.length).toBeGreaterThan(0);
   });
 

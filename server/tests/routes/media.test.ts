@@ -220,13 +220,20 @@ describe("Media Routes", () => {
       diarization_json: "{}",
       transcript_json: "[]",
     });
-    fs.existsSync = vi.fn().mockReturnValue(false) as any;
+    const originalExistsSync = fs.existsSync;
+    fs.existsSync = vi.fn().mockImplementation((path) => {
+      if (String(path).includes("/tmp/missing.webm")) {
+        return false;
+      }
+      return originalExistsSync(path);
+    }) as any;
 
     const res = await app.request("/media/recordings/rec_retry_missing/retry-transcribe", {
       method: "POST",
       headers: { Authorization: "Bearer fake_token" },
     });
 
+    fs.existsSync = originalExistsSync;
     expect(res.status).toBe(409);
     expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
   });
@@ -326,13 +333,20 @@ describe("Media Routes", () => {
       file_path: "/tmp/missing.webm",
       content_type: "audio/webm",
     });
-    fs.existsSync = vi.fn().mockReturnValue(false) as any;
+    const originalExistsSync = fs.existsSync;
+    fs.existsSync = vi.fn().mockImplementation((path) => {
+      if (String(path).includes("/tmp/missing.webm")) {
+        return false;
+      }
+      return originalExistsSync(path);
+    }) as any;
 
     const missingFile = await app.request("/media/recordings/rec_file/audio", {
       method: "GET",
       headers: { Authorization: "Bearer fake_token" },
     });
 
+    fs.existsSync = originalExistsSync;
     expect(missingFile.status).toBe(404);
   });
 
@@ -343,15 +357,36 @@ describe("Media Routes", () => {
       file_path: "/tmp/audio.webm",
       content_type: "text/html",
     });
-    fs.existsSync = vi.fn().mockReturnValue(true) as any;
-    fs.statSync = vi.fn().mockReturnValue({ size: 1234 }) as any;
-    fs.createReadStream = vi.fn().mockReturnValue(Buffer.from("audio")) as any;
+    const originalExistsSync = fs.existsSync;
+    const originalStatSync = fs.statSync;
+    const originalCreateReadStream = fs.createReadStream;
+    fs.existsSync = vi.fn().mockImplementation((path) => {
+      if (String(path).includes("/tmp/audio.webm")) {
+        return true;
+      }
+      return originalExistsSync(path);
+    }) as any;
+    fs.statSync = vi.fn().mockImplementation((path) => {
+      if (String(path).includes("/tmp/audio.webm")) {
+        return { size: 1234 };
+      }
+      return originalStatSync(path);
+    }) as any;
+    fs.createReadStream = vi.fn().mockImplementation((path) => {
+      if (String(path).includes("/tmp/audio.webm")) {
+        return { pipe: vi.fn() } as any;
+      }
+      return originalCreateReadStream(path);
+    }) as any;
 
     const res = await app.request("/media/recordings/rec_stream/audio", {
       method: "GET",
       headers: { Authorization: "Bearer fake_token" },
     });
 
+    fs.existsSync = originalExistsSync;
+    fs.statSync = originalStatSync;
+    fs.createReadStream = originalCreateReadStream;
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
     expect(res.headers.get("Content-Length")).toBe("1234");

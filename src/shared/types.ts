@@ -132,3 +132,72 @@ export interface AiTask {
   sourceType?: string;
   status?: string;
 }
+
+export interface MeetingTask {
+  title: string;
+  description?: string;
+  owner?: string;
+  dueDate?: string;
+  priority?: "high" | "medium" | "low";
+  tags?: string[];
+  sourceQuote?: string;
+}
+
+export interface MeetingNeedAnswer {
+  need: string;
+  answer: string;
+}
+
+export interface MeetingRisk {
+  risk: string;
+  severity?: "high" | "medium" | "low";
+}
+
+export interface MeetingTension {
+  topic?: string;
+  between?: string[];
+  resolved?: boolean;
+}
+
+export interface MeetingQuote {
+  quote: string;
+  speaker?: string;
+  why?: string;
+}
+
+export interface MeetingParticipantInsight {
+  speaker: string;
+  mainTopic?: string;
+  stance?: string;
+  talkRatio?: number;
+  personality?: {
+    D?: number;
+    I?: number;
+    S?: number;
+    C?: number;
+  };
+  needs?: string[];
+  concerns?: string[];
+  sentimentScore?: number;
+}
+
+export interface MeetingAnalysis {
+  mode?: string;
+  speakerCount?: number;
+  speakerLabels?: Record<string, string>;
+  summary: string;
+  decisions: string[];
+  actionItems: string[];
+  tasks: MeetingTask[];
+  followUps: string[];
+  answersToNeeds: MeetingNeedAnswer[];
+  suggestedTags: string[];
+  meetingType: string;
+  energyLevel: string;
+  risks: MeetingRisk[];
+  blockers: string[];
+  participantInsights: MeetingParticipantInsight[];
+  tensions: MeetingTension[];
+  keyQuotes: MeetingQuote[];
+  suggestedAgenda: string[];
+}

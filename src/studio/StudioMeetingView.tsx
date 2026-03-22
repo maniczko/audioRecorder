@@ -385,34 +385,63 @@ export default function StudioMeetingView({
       .filter(Boolean);
   }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
 
-  const summaryMetrics = useMemo(() => {
-    const decisionsCount = safeArray(studioAnalysis?.decisions).length;
-    const actionCount = autoTaskDrafts.length || safeArray(studioAnalysis?.actionItems).length;
-    const questionsCount = safeArray(studioAnalysis?.openQuestions).length;
-    const riskCount = safeArray(studioAnalysis?.risks).length + safeArray(studioAnalysis?.blockers).length;
-    const participantCount = safeArray(studioAnalysis?.participantInsights).length || Object.keys(studioAnalysis?.speakerLabels || {}).length;
-
-    return [
-      { label: "Decyzje", value: decisionsCount, tone: "teal" },
-      { label: "Action items", value: actionCount, tone: "blue" },
-      { label: "Pytania", value: questionsCount, tone: "neutral" },
-      { label: "Ryzyka", value: riskCount, tone: "warning" },
-      { label: "Uczestnicy", value: participantCount, tone: "neutral" },
-    ];
-  }, [autoTaskDrafts.length, studioAnalysis?.actionItems, studioAnalysis?.blockers, studioAnalysis?.decisions, studioAnalysis?.openQuestions, studioAnalysis?.participantInsights, studioAnalysis?.risks, studioAnalysis?.speakerLabels]);
-
-  const topTags = useMemo(() => safeArray(studioAnalysis?.suggestedTags).slice(0, 6), [studioAnalysis?.suggestedTags]);
   const keyQuotes = useMemo(() => safeArray(studioAnalysis?.keyQuotes).slice(0, 3), [studioAnalysis?.keyQuotes]);
   const followUps = useMemo(() => safeArray(studioAnalysis?.followUps).slice(0, 4), [studioAnalysis?.followUps]);
-  const openQuestions = useMemo(() => safeArray(studioAnalysis?.openQuestions).slice(0, 4), [studioAnalysis?.openQuestions]);
   const risks = useMemo(() => safeArray(studioAnalysis?.risks).slice(0, 3), [studioAnalysis?.risks]);
   const blockers = useMemo(() => safeArray(studioAnalysis?.blockers).slice(0, 3), [studioAnalysis?.blockers]);
   const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
   const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
-  const terminology = useMemo(() => safeArray(studioAnalysis?.terminology).slice(0, 6), [studioAnalysis?.terminology]);
   const suggestedAgenda = useMemo(() => safeArray(studioAnalysis?.suggestedAgenda).slice(0, 5), [studioAnalysis?.suggestedAgenda]);
-  const contextLinks = useMemo(() => safeArray(studioAnalysis?.contextLinks).slice(0, 4), [studioAnalysis?.contextLinks]);
-  const coachingTip = String(studioAnalysis?.coachingTip || "").trim();
+  const summaryBullets = useMemo(() => {
+    const bullets = [];
+
+    const summaryText = String(studioAnalysis?.summary || "").trim();
+    if (summaryText) {
+      bullets.push({
+        icon: "🧾",
+        label: "Podsumowanie",
+        value: summaryText,
+      });
+    }
+
+    const decisionsText = safeArray(studioAnalysis?.decisions).slice(0, 3);
+    if (decisionsText.length) {
+      bullets.push({
+        icon: "✅",
+        label: "Decyzje",
+        value: decisionsText.length === 1 ? decisionsText[0] : decisionsText.join("; "),
+      });
+    }
+
+    const actionText = autoTaskDrafts.slice(0, 3).map((task) => task.title);
+    if (actionText.length) {
+      bullets.push({
+        icon: "📌",
+        label: "Action items",
+        value: actionText.length === 1 ? actionText[0] : actionText.join("; "),
+      });
+    }
+
+    const followUpText = followUps.slice(0, 3);
+    if (followUpText.length) {
+      bullets.push({
+        icon: "➡️",
+        label: "Następne kroki",
+        value: followUpText.length === 1 ? followUpText[0] : followUpText.join("; "),
+      });
+    }
+
+    const riskItems = [...risks.map((item) => item.risk), ...blockers];
+    if (riskItems.length) {
+      bullets.push({
+        icon: "⚠️",
+        label: "Ryzyka / blokery",
+        value: riskItems.slice(0, 3).join("; "),
+      });
+    }
+
+    return bullets.slice(0, 5);
+  }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions, studioAnalysis?.summary]);
 
   useEffect(() => {
     if (!selectedRecording?.id || typeof onCreateTask !== "function" || !autoTaskDrafts.length) {
@@ -931,22 +960,20 @@ export default function StudioMeetingView({
             </div>
             {studioAnalysis?.summary ? (
               <div className="panel-body ff-summary-layout">
-                <div className="summary-metrics">
-                  {summaryMetrics.map((metric) => (
-                    <article key={metric.label} className={`summary-metric ${metric.tone}`}>
-                      <span>{metric.label}</span>
-                      <strong>{metric.value}</strong>
-                    </article>
-                  ))}
-                </div>
-
                 <div className="summary-hero">
                   <div className="analysis-summary-text">{studioAnalysis.summary}</div>
-                  <div className="summary-tags">
-                    {topTags.length ? topTags.map((tag) => (
-                      <span key={tag} className="summary-tag">#{tag}</span>
-                    )) : <span className="soft-copy">Brak sugerowanych tagow</span>}
-                  </div>
+                  {summaryBullets.length ? (
+                    <ul className="summary-highlights">
+                      {summaryBullets.map((item) => (
+                        <li key={item.label} className="summary-highlight">
+                          <span className="summary-highlight-icon" aria-hidden="true">{item.icon}</span>
+                          <div className="summary-highlight-body">
+                            <strong>{item.label}:</strong> <span>{item.value}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
 
                 <div className="summary-grid">
@@ -966,47 +993,6 @@ export default function StudioMeetingView({
                       </div>
                     ) : (
                       <p className="soft-copy">Brak wygenerowanej agendy.</p>
-                    )}
-                  </section>
-
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Terminologia i kontekst</h3>
-                      <span>{terminology.length + contextLinks.length}</span>
-                    </div>
-                    {terminology.length || contextLinks.length ? (
-                      <div className="summary-stack">
-                        {terminology.length ? (
-                          <div className="summary-chip-cloud">
-                            {terminology.map((term, i) => (
-                              <span key={`${term}-${i}`} className="summary-chip">{term}</span>
-                            ))}
-                          </div>
-                        ) : null}
-                        {contextLinks.length ? (
-                          <ul className="analysis-list summary-list-tight">
-                            {contextLinks.map((item, i) => (
-                              <li key={`${item}-${i}`}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <p className="soft-copy">Brak słownika i linków kontekstowych.</p>
-                    )}
-                  </section>
-
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Wskazówka AI</h3>
-                      <span>{coachingTip ? 1 : 0}</span>
-                    </div>
-                    {coachingTip ? (
-                      <article className="summary-pill-card accent">
-                        {coachingTip}
-                      </article>
-                    ) : (
-                      <p className="soft-copy">Brak dodatkowej wskazówki.</p>
                     )}
                   </section>
 
@@ -1066,24 +1052,6 @@ export default function StudioMeetingView({
                       </ul>
                     ) : (
                       <p className="soft-copy">Brak dodatkowych krokow.</p>
-                    )}
-                  </section>
-
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Otwarte pytania</h3>
-                      <span>{openQuestions.length}</span>
-                    </div>
-                    {openQuestions.length ? (
-                      <ul className="analysis-list summary-list-tight">
-                        {openQuestions.map((item, i) => (
-                          <li key={i}>
-                            <strong>{item.askedBy || "Kto?"}:</strong> {item.question}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="soft-copy">Brak otwartych pytan.</p>
                     )}
                   </section>
 
@@ -1338,48 +1306,9 @@ export default function StudioMeetingView({
             </div>
             {studioAnalysis ? (
               <div className="panel-body">
-                <div className="feedback-meta">
-                  <div className="meta-item">
-                    <strong>Poziom energii</strong>
-                    {studioAnalysis.energyLevel || "N/A"}
-                  </div>
-                  <div className="meta-item">
-                    <strong>Typ spotkania</strong>
-                    {studioAnalysis.meetingType || "N/A"}
-                  </div>
-                </div>
-
-                {studioAnalysis.openQuestions?.length > 0 && (
-                  <div className="analysis-section">
-                    <h3>Otwarte pytania</h3>
-                    <ul className="analysis-list">
-                      {studioAnalysis.openQuestions.map((q, i) => (
-                        <li key={i}>
-                          <strong>{q.askedBy}:</strong> {q.question}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {studioAnalysis.risks?.length > 0 && (
-                  <div className="analysis-section">
-                    <h3>Ryzyka</h3>
-                    <div className="risks-list" style={{ marginTop: '12px' }}>
-                      {studioAnalysis.risks.map((r, i) => (
-                        <div key={i} className={`risk-item severity-${r.severity || "medium"}`}>
-                          {r.risk}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <p className="soft-copy">W tej zakładce zostają tylko ogólne uwagi. Szczegóły są już pokazane w podsumowaniu i zadaniach.</p>
               </div>
-            ) : (
-              <div className="panel-body">
-                <p className="soft-copy">Tutaj znajdziesz analizę zwrotną dotyczącą jakości spotkania.</p>
-              </div>
-            )}
+            ) : null}
           </section>
         )}
 

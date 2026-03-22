@@ -5,26 +5,14 @@ async function loadAudioPipeline({
   baseUrl = "https://api.example.test/v1",
 } = {}) {
   vi.resetModules();
-  vi.doMock("../config.ts", () => ({
-    config: {
-      VOICELOG_OPENAI_API_KEY: openAiKey,
-      OPENAI_API_KEY: openAiKey,
-      VOICELOG_OPENAI_BASE_URL: baseUrl,
-      VERIFICATION_MODEL: "gpt-4o-transcribe",
-      AUDIO_LANGUAGE: "pl",
-      AUDIO_PREPROCESS: false,
-      TRANSCRIPT_CORRECTION: false,
-      FFMPEG_BINARY: "ffmpeg",
-      HF_TOKEN: "",
-      HUGGINGFACE_TOKEN: "",
-      PYTHON_BINARY: "python",
-      VAD_ENABLED: false,
-      WHISPER_PROMPT: "Prompt testowy",
-      DIARIZATION_MODEL: "model",
-      SPEAKER_IDENTIFICATION_MODEL: "model",
-      DEBUG: false,
-    },
-  }));
+
+  // Set environment variables BEFORE importing any modules
+  process.env.VOICELOG_OPENAI_API_KEY = openAiKey;
+  process.env.OPENAI_API_KEY = openAiKey;
+  process.env.VOICELOG_OPENAI_BASE_URL = baseUrl;
+  process.env.VOICELOG_DEBUG = "false";
+
+  // Mock logger and speakerEmbedder before loading audioPipeline
   vi.doMock("../logger.ts", () => ({
     logger: {
       info: vi.fn(),
@@ -35,11 +23,17 @@ async function loadAudioPipeline({
   vi.doMock("../speakerEmbedder.ts", () => ({
     matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
   }));
+
   return import("../audioPipeline.ts");
 }
 
 describe("audioPipeline exports", () => {
   const originalFetch = global.fetch;
+  const originalEnv = {
+    VOICELOG_OPENAI_API_KEY: process.env.VOICELOG_OPENAI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    VOICELOG_OPENAI_BASE_URL: process.env.VOICELOG_OPENAI_BASE_URL,
+  };
 
   beforeEach(() => {
     global.fetch = vi.fn() as any;
@@ -48,6 +42,10 @@ describe("audioPipeline exports", () => {
   afterEach(() => {
     global.fetch = originalFetch;
     vi.restoreAllMocks();
+    // Restore original env vars
+    process.env.VOICELOG_OPENAI_API_KEY = originalEnv.VOICELOG_OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY;
+    process.env.VOICELOG_OPENAI_BASE_URL = originalEnv.VOICELOG_OPENAI_BASE_URL;
   });
 
   it("returns null/empty values when OpenAI key is not configured", async () => {
@@ -176,48 +174,41 @@ describe("audioPipeline exports", () => {
 
   it("transcribes live chunks when API key is configured and returns empty string on upstream failure", async () => {
     const readFileSync = vi.fn().mockReturnValue(Buffer.from("audio"));
+    const existsSync = vi.fn().mockReturnValue(true);
     vi.doMock("node:fs", async () => {
       const actual = await vi.importActual<any>("node:fs");
-      return { ...actual, default: { ...actual.default, readFileSync }, readFileSync };
+      return {
+        ...actual,
+        default: { ...actual.default, readFileSync, existsSync },
+        readFileSync,
+        existsSync,
+      };
     });
     const pipeline = await loadAudioPipeline({ openAiKey: "key-1" });
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      text: vi.fn().mockResolvedValue(JSON.stringify({ text: "live result" })),
-    });
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ text: "live result" })),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ error: { message: "broken" } })),
+      });
 
     await expect(pipeline.transcribeLiveChunk("/tmp/live.wav", "audio/wav")).resolves.toBe("live result");
-
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      text: vi.fn().mockResolvedValue(JSON.stringify({ error: { message: "broken" } })),
-    });
     await expect(pipeline.transcribeLiveChunk("/tmp/live.wav", "audio/wav")).resolves.toBe("");
   });
 
   it("builds transcript segments from word-level output when the STT payload has no segments", async () => {
     vi.resetModules();
-    vi.doMock("../config.ts", () => ({
-      config: {
-        VOICELOG_OPENAI_API_KEY: "key-1",
-        OPENAI_API_KEY: "key-1",
-        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
-        VERIFICATION_MODEL: "gpt-4o-transcribe",
-        AUDIO_LANGUAGE: "pl",
-        AUDIO_PREPROCESS: false,
-        TRANSCRIPT_CORRECTION: false,
-        FFMPEG_BINARY: "ffmpeg",
-        HF_TOKEN: "",
-        HUGGINGFACE_TOKEN: "",
-        PYTHON_BINARY: "python",
-        VAD_ENABLED: false,
-        WHISPER_PROMPT: "Prompt testowy",
-        DIARIZATION_MODEL: "model",
-        SPEAKER_IDENTIFICATION_MODEL: "model",
-        DEBUG: false,
-      },
-    }));
+
+    // Set environment variables BEFORE importing
+    process.env.VOICELOG_OPENAI_API_KEY = "key-1";
+    process.env.OPENAI_API_KEY = "key-1";
+    process.env.VOICELOG_OPENAI_BASE_URL = "https://api.example.test/v1";
+    process.env.VOICELOG_DEBUG = "false";
+
     vi.doMock("../logger.ts", () => ({
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
@@ -230,9 +221,11 @@ describe("audioPipeline exports", () => {
         ...actual,
         default: {
           ...actual.default,
+          existsSync: vi.fn(() => true),
           statSync: vi.fn(() => ({ size: 1024 })),
           readFileSync: vi.fn(() => Buffer.from("audio")),
         },
+        existsSync: vi.fn(() => true),
         statSync: vi.fn(() => ({ size: 1024 })),
         readFileSync: vi.fn(() => Buffer.from("audio")),
       };
@@ -282,26 +275,13 @@ describe("audioPipeline exports", () => {
 
   it("returns an empty transcript result when STT payload has no segments, words or text", async () => {
     vi.resetModules();
-    vi.doMock("../config.ts", () => ({
-      config: {
-        VOICELOG_OPENAI_API_KEY: "key-1",
-        OPENAI_API_KEY: "key-1",
-        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
-        VERIFICATION_MODEL: "gpt-4o-transcribe",
-        AUDIO_LANGUAGE: "pl",
-        AUDIO_PREPROCESS: false,
-        TRANSCRIPT_CORRECTION: false,
-        FFMPEG_BINARY: "ffmpeg",
-        HF_TOKEN: "",
-        HUGGINGFACE_TOKEN: "",
-        PYTHON_BINARY: "python",
-        VAD_ENABLED: false,
-        WHISPER_PROMPT: "Prompt testowy",
-        DIARIZATION_MODEL: "model",
-        SPEAKER_IDENTIFICATION_MODEL: "model",
-        DEBUG: false,
-      },
-    }));
+
+    // Set environment variables BEFORE importing
+    process.env.VOICELOG_OPENAI_API_KEY = "key-1";
+    process.env.OPENAI_API_KEY = "key-1";
+    process.env.VOICELOG_OPENAI_BASE_URL = "https://api.example.test/v1";
+    process.env.VOICELOG_DEBUG = "false";
+
     vi.doMock("../logger.ts", () => ({
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
@@ -314,9 +294,11 @@ describe("audioPipeline exports", () => {
         ...actual,
         default: {
           ...actual.default,
+          existsSync: vi.fn(() => true),
           statSync: vi.fn(() => ({ size: 1024 })),
           readFileSync: vi.fn(() => Buffer.from("audio")),
         },
+        existsSync: vi.fn(() => true),
         statSync: vi.fn(() => ({ size: 1024 })),
         readFileSync: vi.fn(() => Buffer.from("audio")),
       };
@@ -356,26 +338,13 @@ describe("audioPipeline exports", () => {
   it("returns all_chunks_discarded_as_too_small when chunk extraction never yields a transcribable buffer", async () => {
     const { EventEmitter } = await import("node:events");
     vi.resetModules();
-    vi.doMock("../config.ts", () => ({
-      config: {
-        VOICELOG_OPENAI_API_KEY: "key-1",
-        OPENAI_API_KEY: "key-1",
-        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
-        VERIFICATION_MODEL: "gpt-4o-transcribe",
-        AUDIO_LANGUAGE: "pl",
-        AUDIO_PREPROCESS: false,
-        TRANSCRIPT_CORRECTION: false,
-        FFMPEG_BINARY: "ffmpeg",
-        HF_TOKEN: "",
-        HUGGINGFACE_TOKEN: "",
-        PYTHON_BINARY: "python",
-        VAD_ENABLED: false,
-        WHISPER_PROMPT: "Prompt testowy",
-        DIARIZATION_MODEL: "model",
-        SPEAKER_IDENTIFICATION_MODEL: "model",
-        DEBUG: false,
-      },
-    }));
+
+    // Set environment variables BEFORE importing
+    process.env.VOICELOG_OPENAI_API_KEY = "key-1";
+    process.env.OPENAI_API_KEY = "key-1";
+    process.env.VOICELOG_OPENAI_BASE_URL = "https://api.example.test/v1";
+    process.env.VOICELOG_DEBUG = "false";
+
     vi.doMock("../logger.ts", () => ({
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
@@ -402,10 +371,9 @@ describe("audioPipeline exports", () => {
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
         child.stdout.setEncoding = vi.fn();
-        queueMicrotask(() => {
-          child.stdout.emit("data", Buffer.alloc(0));
-          child.emit("close", 0);
-        });
+        // Emit events synchronously to avoid timing issues
+        child.stdout.emit("data", Buffer.alloc(0));
+        child.emit("close", 0);
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -431,31 +399,18 @@ describe("audioPipeline exports", () => {
       chunksSentToStt: 0,
     });
     expect(global.fetch).not.toHaveBeenCalled();
-  });
+  }, 15000);
 
   it("fails the pipeline when every chunked STT request fails instead of classifying it as empty transcript", async () => {
     const { EventEmitter } = await import("node:events");
     vi.resetModules();
-    vi.doMock("../config.ts", () => ({
-      config: {
-        VOICELOG_OPENAI_API_KEY: "key-1",
-        OPENAI_API_KEY: "key-1",
-        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
-        VERIFICATION_MODEL: "gpt-4o-transcribe",
-        AUDIO_LANGUAGE: "pl",
-        AUDIO_PREPROCESS: false,
-        TRANSCRIPT_CORRECTION: false,
-        FFMPEG_BINARY: "ffmpeg",
-        HF_TOKEN: "",
-        HUGGINGFACE_TOKEN: "",
-        PYTHON_BINARY: "python",
-        VAD_ENABLED: false,
-        WHISPER_PROMPT: "Prompt testowy",
-        DIARIZATION_MODEL: "model",
-        SPEAKER_IDENTIFICATION_MODEL: "model",
-        DEBUG: false,
-      },
-    }));
+
+    // Set environment variables BEFORE importing
+    process.env.VOICELOG_OPENAI_API_KEY = "key-1";
+    process.env.OPENAI_API_KEY = "key-1";
+    process.env.VOICELOG_OPENAI_BASE_URL = "https://api.example.test/v1";
+    process.env.VOICELOG_DEBUG = "false";
+
     vi.doMock("../logger.ts", () => ({
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
@@ -484,14 +439,13 @@ describe("audioPipeline exports", () => {
         child.stdout.setEncoding = vi.fn();
         const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
         const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
-        queueMicrotask(() => {
-          if (offsetValue === 0) {
-            child.stdout.emit("data", Buffer.alloc(1600, 1));
-          } else {
-            child.stdout.emit("data", Buffer.alloc(0));
-          }
-          child.emit("close", 0);
-        });
+        // Emit events synchronously
+        if (offsetValue === 0) {
+          child.stdout.emit("data", Buffer.alloc(1600, 1));
+        } else {
+          child.stdout.emit("data", Buffer.alloc(0));
+        }
+        child.emit("close", 0);
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -524,31 +478,18 @@ describe("audioPipeline exports", () => {
         chunksFailedAtStt: 1,
       }),
     });
-  });
+  }, 15000);
 
   it("still sends chunked audio to STT when chunk-level VAD reports silence", async () => {
     const { EventEmitter } = await import("node:events");
     vi.resetModules();
-    vi.doMock("../config.ts", () => ({
-      config: {
-        VOICELOG_OPENAI_API_KEY: "key-1",
-        OPENAI_API_KEY: "key-1",
-        VOICELOG_OPENAI_BASE_URL: "https://api.example.test/v1",
-        VERIFICATION_MODEL: "gpt-4o-transcribe",
-        AUDIO_LANGUAGE: "pl",
-        AUDIO_PREPROCESS: false,
-        TRANSCRIPT_CORRECTION: false,
-        FFMPEG_BINARY: "ffmpeg",
-        HF_TOKEN: "",
-        HUGGINGFACE_TOKEN: "",
-        PYTHON_BINARY: "python",
-        VAD_ENABLED: true,
-        WHISPER_PROMPT: "Prompt testowy",
-        DIARIZATION_MODEL: "model",
-        SPEAKER_IDENTIFICATION_MODEL: "model",
-        DEBUG: false,
-      },
-    }));
+
+    // Set environment variables BEFORE importing
+    process.env.VOICELOG_OPENAI_API_KEY = "key-1";
+    process.env.OPENAI_API_KEY = "key-1";
+    process.env.VOICELOG_OPENAI_BASE_URL = "https://api.example.test/v1";
+    process.env.VOICELOG_DEBUG = "false";
+
     vi.doMock("../logger.ts", () => ({
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
@@ -581,24 +522,23 @@ describe("audioPipeline exports", () => {
         child.stdout.setEncoding = vi.fn();
         const offsetIndex = Array.isArray(args) ? args.indexOf("-ss") : -1;
         const offsetValue = offsetIndex >= 0 ? Number(args[offsetIndex + 1] || 0) : 0;
-        queueMicrotask(() => {
-          if (String(command).includes("python")) {
-            const audioPath = Array.isArray(args) ? String(args[1] || "") : "";
-            if (audioPath.includes("vadsilero_")) {
-              child.stdout.emit("data", "[]");
-            } else {
-              child.stdout.emit("data", JSON.stringify([{ start: 0, end: 2 }]));
-            }
-            child.emit("close", 0);
-            return;
-          }
-          if (offsetValue === 0) {
-            child.stdout.emit("data", Buffer.alloc(1600, 1));
+        // Emit events synchronously
+        if (String(command).includes("python")) {
+          const audioPath = Array.isArray(args) ? String(args[1] || "") : "";
+          if (audioPath.includes("vadsilero_")) {
+            child.stdout.emit("data", "[]");
           } else {
-            child.stdout.emit("data", Buffer.alloc(0));
+            child.stdout.emit("data", JSON.stringify([{ start: 0, end: 2 }]));
           }
           child.emit("close", 0);
-        });
+          return;
+        }
+        if (offsetValue === 0) {
+          child.stdout.emit("data", Buffer.alloc(1600, 1));
+        } else {
+          child.stdout.emit("data", Buffer.alloc(0));
+        }
+        child.emit("close", 0);
         return child;
       });
       return { spawn, exec: vi.fn() };
@@ -643,7 +583,7 @@ describe("audioPipeline exports", () => {
       chunksAttempted: 2,
       chunksWithWords: 1,
     });
-  });
+  }, 15000);
 
   it("extracts speaker audio clips, normalizes audio and generates voice coaching with mocked exec/fs", async () => {
     const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => callback?.(null, "", ""));

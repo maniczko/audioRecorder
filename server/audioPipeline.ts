@@ -1339,7 +1339,12 @@ async function transcribeLiveChunk(filePath: string, contentType: string, option
         model: VERIFICATION_MODEL,
         language: AUDIO_LANGUAGE,
         response_format: "json",
-        prompt: WHISPER_PROMPT,
+        prompt: buildWhisperPrompt({
+          meetingTitle: options.meetingTitle,
+          participants: options.participants,
+          tags: options.tags,
+          vocabulary: options.vocabulary,
+        }),
         temperature: 0,
       },
       signal: options.signal,
@@ -1501,7 +1506,7 @@ async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any
     return `[${fmt(seg.timestamp ?? 0)}] ${speaker}: ${seg.text}`;
   }).join("\n");
 
-  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","openQuestions":[{"question":"...","askedBy":"Speaker X"}],"risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
+  const schema = '{"speakerCount":2,"speakerLabels":{"0":"Adam","1":"Marcin"},"summary":"...","decisions":["..."],"actionItems":["..."],"tasks":[{"title":"...","owner":"...","sourceQuote":"...","priority":"medium","tags":[]}],"followUps":["..."],"answersToNeeds":[{"need":"...","answer":"..."}],"suggestedTags":["tag1"],"meetingType":"planning","energyLevel":"medium","risks":[{"risk":"...","severity":"high"}],"blockers":["..."],"participantInsights":[{"speaker":"Adam","mainTopic":"...","stance":"proactive","talkRatio":0.6,"personality":{"D":70,"I":50,"S":40,"C":80},"needs":["..."],"concerns":["..."],"sentimentScore":85}],"keyQuotes":[{"quote":"...","speaker":"Adam","why":"..."}]}';
 
   const prompt = [
     "Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.",

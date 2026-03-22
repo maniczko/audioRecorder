@@ -22,7 +22,10 @@
       "Bash(find /c/Users/user/new/audioRecorder -type f -name .env*)",
       "Bash(grep -r \"\\\\.mn1\\\\|recording_gk51xxs3\\\\|trailing dot\\\\|URL.*\\\\.$\" /c/Users/user/new/audioRecorder/src --include=*.ts --include=*.tsx)",
       "Bash(grep -r \"processQueue\\\\|getTranscriptionJobStatus\" /c/Users/user/new/audioRecorder/src --include=*.ts --include=*.tsx -A 2)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npx jest:*)",
+      "Bash(npm test:*)"
     ]
   }
 }
