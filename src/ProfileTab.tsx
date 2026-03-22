@@ -325,6 +325,19 @@ function ChangelogSection() {
   
   const changelogData = [
     {
+      version: "v1.6.0",
+      date: "22 marca 2026",
+      title: "Stabilizacja i Poprawki Krytyczne",
+      changes: [
+        "Naprawiono błędy CORS blokujące komunikację między frontendem (Vercel) a backendem (Railway)",
+        "Zmieniono weryfikację wersji (Build ID mismatch) na nieblokujące ostrzeżenie – eliminuje błąd 'nieaktualny preview'",
+        "Wyeliminowano race conditions przy usuwaniu spotkań poprzez mechanizm wstrzymywania odświeżania (pauseRemotePull)",
+        "Oczyszczono osierocone dane w bazie Supabase (media_assets i workspace_state) przywracając spójność",
+        "Poprawiono obsługę błędów audio hydration w celu wyeliminowania błędów 404 w konsoli dla starych nagrań",
+        "Refaktoryzacja backendu: wydzielenie czystych funkcji do audioPipeline.utils.ts i optymalizacja pipeline'u"
+      ]
+    },
+    {
       version: "v1.5.0",
       date: "20 marca 2026",
       title: "Uporządkowanie Nagrań i Filtrowanie",
