@@ -4,14 +4,13 @@ const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 let googleScriptPromise = null;
 
-function getEnv(key: string): string {
-  if (typeof process !== "undefined" && process.env && process.env[key]) return process.env[key];
-  // @ts-ignore
-  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) return import.meta.env[key];
-  return "";
-}
-
-export const GOOGLE_CLIENT_ID = getEnv("VITE_GOOGLE_CLIENT_ID") || getEnv("REACT_APP_GOOGLE_CLIENT_ID") || "";
+// Vite replaces import.meta.env.* statically at build time — dynamic access
+// (import.meta.env[key]) is NOT replaced in production bundles, so we read
+// the known variable names directly.
+export const GOOGLE_CLIENT_ID: string =
+  (import.meta.env?.VITE_GOOGLE_CLIENT_ID as string) ||
+  (typeof process !== "undefined" ? (process.env?.REACT_APP_GOOGLE_CLIENT_ID ?? "") : "") ||
+  "";
 export const IS_GOOGLE_DEMO_MODE = GOOGLE_CLIENT_ID === "demo";
 
 function loadGoogleScript() {
