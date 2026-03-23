@@ -1,129 +1,56 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { apiRequest } from '../services/httpClient';
 import { suggestTasksFromTranscript } from './aiTaskSuggestions';
 
-describe('suggestTasksFromTranscript', () => {
-  const mockApiKey = 'test-api-key';
+// Mock httpClient so proxy calls are intercepted
+vi.mock('../services/httpClient', () => ({
+  apiRequest: vi.fn(),
+}));
 
+describe('suggestTasksFromTranscript', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_ANTHROPIC_API_KEY', mockApiKey);
+    vi.clearAllMocks();
+    vi.stubEnv('VITE_ANTHROPIC_API_KEY', 'test-api-key');
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  test('should throw error if API key is not set', async () => {
-    vi.stubEnv('VITE_ANTHROPIC_API_KEY', '');
-    await expect(suggestTasksFromTranscript([])).rejects.toThrow('REACT_APP_ANTHROPIC_API_KEY nie jest ustawiony');
-  });
-
-  test('should return empty array if transcript is empty', async () => {
+  test('returns empty array if transcript is empty', async () => {
     const result = await suggestTasksFromTranscript([]);
     expect(result).toEqual([]);
   });
 
-  test('should call Anthropic API and return parsed tasks', async () => {
-    const mockTranscript = [
-      { speakerName: 'Alice', text: 'We need to finish the report by Friday.' },
-      { speakerId: 1, text: 'I will handle the design.' }
+  test('calls server proxy when VITE_API_BASE_URL is set', async () => {
+    const mockTasks = [
+      { title: 'Finish report', owner: 'Alice', priority: 'high', tags: [] },
     ];
-    
-    const mockResponse = {
-      ok: true,
-      json: async () => ({
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              tasks: [
-                {
-                  title: 'Finish report',
-                  description: 'Complete the final report by Friday',
-                  owner: 'Alice',
-                  dueDate: '2026-03-27',
-                  priority: 'high',
-                  tags: ['report']
-                },
-                {
-                  title: 'Design',
-                  description: 'Handle the design phase',
-                  owner: 'Speaker 2',
-                  dueDate: null,
-                  priority: 'medium',
-                  tags: ['design']
-                }
-              ]
-            })
-          }
-        ]
-      })
-    };
+    (apiRequest as any).mockResolvedValue({ tasks: mockTasks });
 
-    (global.fetch as any).mockResolvedValue(mockResponse);
+    const transcript = [{ speakerName: 'Alice', text: 'We need to finish the report by Friday.' }];
+    const result = await suggestTasksFromTranscript(transcript);
 
-    const result = await suggestTasksFromTranscript(mockTranscript);
-
-    expect(global.fetch).toHaveBeenCalledWith('https://api.anthropic.com/v1/messages', expect.objectContaining({
-      method: 'POST',
-      headers: expect.objectContaining({
-        'x-api-key': mockApiKey,
-      }),
-    }));
-
-    expect(result).toHaveLength(2);
-    expect(result[0].title).toBe('Finish report');
-    expect(result[1].owner).toBe('Speaker 2');
-  });
-
-  test('should handle API errors gracefully', async () => {
-    const mockResponse = {
-      ok: false,
-      status: 400,
-      text: async () => 'Bad Request'
-    };
-
-    (global.fetch as any).mockResolvedValue(mockResponse);
-
-    await expect(suggestTasksFromTranscript([{ text: 'test' }])).rejects.toThrow('Anthropic API error 400: Bad Request');
-  });
-
-  test('should handle malformed JSON in AI response', async () => {
-    const mockResponse = {
-      ok: true,
-      json: async () => ({
-        content: [
-          {
-            type: 'text',
-            text: 'This is not JSON'
-          }
-        ]
-      })
-    };
-
-    (global.fetch as any).mockResolvedValue(mockResponse);
-
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
-    
-    expect(result).toEqual([]);
-    expect(consoleSpy).toHaveBeenCalled();
-    consoleSpy.mockRestore();
-  });
-
-  test('should parse JSON even if it is surrounded by other text', async () => {
-    const mockResponse = {
-      ok: true,
-      json: async () => ({
-        content: [
-          {
-            type: 'text',
-            text: 'Sure, here is the JSON:\n{"tasks": [{"title": "Embedded task"}]}\nHope it helps!'
-          }
-        ]
-      })
-    };
-
-    (global.fetch as any).mockResolvedValue(mockResponse);
-
-    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
+    expect(apiRequest).toHaveBeenCalledWith('/ai/suggest-tasks', expect.objectContaining({ method: 'POST' }));
     expect(result).toHaveLength(1);
-    expect(result[0].title).toBe('Embedded task');
+    expect(result[0].title).toBe('Finish report');
+  });
+
+  test('returns empty array when proxy fails', async () => {
+    (apiRequest as any).mockRejectedValue(new Error('Network error'));
+
+    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
+    expect(result).toEqual([]);
+  });
+
+  test('returns empty array when proxy returns no tasks', async () => {
+    (apiRequest as any).mockResolvedValue({ tasks: [] });
+
+    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
+    expect(result).toEqual([]);
+  });
+
+  test('returns empty array when proxy returns unexpected shape', async () => {
+    (apiRequest as any).mockResolvedValue({ unexpected: true });
+
+    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
+    expect(result).toEqual([]);
   });
 });

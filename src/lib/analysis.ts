@@ -265,7 +265,44 @@ function buildFallbackPsychProfile({ personName, allSegments }) {
 export async function analyzePersonProfile({ personName, meetings, allSegments }) {
   const fallback = buildFallbackPsychProfile({ personName, allSegments });
 
-  if (!API_KEY || allSegments.length < 5) {
+  if (allSegments.length < 5) {
+    return { ...fallback, meetingsAnalyzed: meetings.length };
+  }
+
+  // Prefer server-side proxy when available (keeps API key out of browser)
+  if (API_BASE_URL) {
+    try {
+      const apiRequest = await getApiRequest();
+      const result = await apiRequest("/ai/person-profile", {
+        method: "POST",
+        body: { personName, meetings, allSegments },
+      });
+      if (result && result.mode === "anthropic") {
+        const clamp100 = (v) => Math.min(100, Math.max(0, Number(v) || 50));
+        return {
+          ...result,
+          disc: {
+            D: clamp100(result.disc?.D),
+            I: clamp100(result.disc?.I),
+            S: clamp100(result.disc?.S),
+            C: clamp100(result.disc?.C),
+          },
+          values: safeArray(result.values).slice(0, 5),
+          workingWithTips: dedupeList(result.workingWithTips).slice(0, 4),
+          communicationDos: dedupeList(result.communicationDos).slice(0, 3),
+          communicationDonts: dedupeList(result.communicationDonts).slice(0, 3),
+          redFlags: dedupeList(result.redFlags).slice(0, 2),
+          meetingsAnalyzed: meetings.length,
+        };
+      }
+    } catch (error) {
+      console.error("Server person-profile failed, trying direct fallback.", error);
+    }
+    return { ...fallback, meetingsAnalyzed: meetings.length };
+  }
+
+  // Local demo mode: call Anthropic directly if key is available in env
+  if (!API_KEY) {
     return { ...fallback, meetingsAnalyzed: meetings.length };
   }
 

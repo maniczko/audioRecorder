@@ -1,9 +1,36 @@
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Import lazily to avoid circular deps
+let _apiRequest: ((path: string, opts?: any) => Promise<any>) | null = null;
+async function getApiRequest() {
+  if (!_apiRequest) {
+    const mod = await import("../services/httpClient");
+    _apiRequest = mod.apiRequest;
+  }
+  return _apiRequest;
+}
 
 export async function suggestTasksFromTranscript(transcript, people = []) {
+  // Prefer server-side proxy (keeps API key out of browser bundle)
+  if (API_BASE_URL) {
+    try {
+      const apiRequest = await getApiRequest();
+      const result = await apiRequest("/ai/suggest-tasks", {
+        method: "POST",
+        body: { transcript, people },
+      });
+      return Array.isArray(result?.tasks) ? result.tasks : [];
+    } catch (err) {
+      console.error("Server suggest-tasks failed:", err);
+      return [];
+    }
+  }
+
+  // Local demo mode fallback: call Anthropic directly if env key is present
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new Error("REACT_APP_ANTHROPIC_API_KEY nie jest ustawiony");
+    return [];
   }
 
   const transcriptText = (Array.isArray(transcript) ? transcript : [])

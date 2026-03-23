@@ -31,6 +31,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   VOICELOG_OPENAI_API_KEY: z.string().optional(),
   VOICELOG_OPENAI_BASE_URL: z.string().default("https://api.openai.com/v1"),
+
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().default("claude-3-5-haiku-latest"),
   
   HF_TOKEN: z.string().optional(),
   HUGGINGFACE_TOKEN: z.string().optional(),

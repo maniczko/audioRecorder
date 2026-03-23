@@ -46,13 +46,11 @@ describe("TranscriptionService", () => {
     const service = new TranscriptionService(mockDb, mockWorkspaceService, mockAudioPipeline, mockSpeakerEmbedder);
     const asset = { id: "asset_1", file_path: "test.wav", workspace_id: "ws_1" };
 
-    // Call ensureTranscriptionJob which starts the job
+    // Start the job and await the stored promise directly
     service.ensureTranscriptionJob("rec_1", asset, { language: "pl" });
+    const job = service.transcriptionJobs.get("rec_1");
+    await job;
 
-    // Wait for the job to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Check the job was called
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalled();
   }, 30000);
 
