@@ -393,7 +393,7 @@ describe("Media Routes", () => {
 
     expect(normalizeRes.status).toBe(200);
     expect(await normalizeRes.json()).toEqual({ ok: true });
-    expect(mockTranscriptionService.normalizeRecording).toHaveBeenCalledWith("/tmp/audio.webm", {});
+    expect(mockTranscriptionService.normalizeRecording).toHaveBeenCalledWith("/tmp/audio.webm", expect.objectContaining({ signal: expect.any(Object) }));
 
     expect(coachingRes.status).toBe(200);
     expect(await coachingRes.json()).toEqual({ coaching: "Mow wolniej." });

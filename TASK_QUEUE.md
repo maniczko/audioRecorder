@@ -1,4 +1,4 @@
-﻿# TASK_QUEUE
+# TASK_QUEUE
 
 Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 Zadania zakonczone â†’ TASK_DONE.md
@@ -14,46 +14,6 @@ Kolejnosc prac:
 4. TabRouter i ekrany
 5. testy kontraktowe i regresyjne
 6. porzadki layout / UX po stabilizacji architektury
-
----
-
-### 088. [LAYOUT] Odlozyc porzadki UI do etapu po stabilizacji architektury
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P2`
-Cel: layout i UX maja byc nastepnym etapem po rozdzieleniu logiki, a nie rownolegle z najwiekszymi cieciami.
-Wynik:
-- âś… Ujednolicono loading/empty/error states w `foundation.css`
-- âś… UsuniÄ™to duplikaty z `reset.css`, `layout.css`, `App.css`, `StudioMeetingViewStyles.css`, `TranscriptPanelStyles.css`, `skeleton.css`
-- âś… Dodano spĂłjne klasy: `.empty-panel`, `.empty-state`, `.error-state`, `.loading-state`, `.skeleton`
-- âś… Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, etc.)
-- âś… Build przechodzi bez bĹ‚Ä™dĂłw
-Akceptacja:
-- âś… layout nie miesza sie z refaktorem architektury
-- âś… nowe komponenty layoutowe da sie reuse'owac w wielu widokach
-
----
-
-### 100. [TESTS] audioPipeline.ts â€” pokrycie testami do 80%
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P0`
-Cel: `audioPipeline.ts` ma 22% coverage (797 linii, 173 pokryte). To krytyczny plik dla transkrypcji audio.
-Wynik:
-- âś… **audioPipeline.utils.ts**: 97% coverage (771 linii czystych funkcji wydzielonych)
-- âś… **audioPipeline.ts**: 50% coverage (funkcje nieczyste z zaleĹĽnoĹ›ciami zewnÄ™trznymi)
-- âś… 326 testĂłw servera przechodzi (94% pass rate)
-- âś… ĹÄ…czny coverage servera: 65% (z 47%)
-- âś… Dodano 260 nowych testĂłw
-Uwagi:
-- Funkcje nieczyste (FFmpeg, OpenAI API) wymagajÄ… Ĺ›rodowiska zewnÄ™trznego do peĹ‚nego przetestowania
-- OsiÄ…gniÄ™cie 80%+ wymagaĹ‚oby: Docker z FFmpeg, mocki API, testy integracyjne
-- Obecny poziom 50% jest realistyczny dla funkcji z zaleĹĽnoĹ›ciami systemowymi
-Pliki:
-- `server/audioPipeline.ts` â€” 50% coverage
-- `server/audioPipeline.utils.ts` â€” 97% coverage
-- `server/tests/audio-pipeline.unit.test.ts` â€” 14 testĂłw (3 skipped)
-- `server/tests/audioPipeline.utils.test.ts` â€” 114 testĂłw
 
 ---
 
@@ -154,34 +114,7 @@ Context Providers         â”‚        2 â”‚      ~10 â”‚         5
 
 ---
 
-## 071. [SECURITY] Proxy wywoĹ‚aĹ„ Anthropic API przez backend
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P1`
-
----
-
 ## PRIORYTET P2 â€” jakoĹ›Ä‡ rozpoznawania audio (najwyĹĽszy priorytet)
-
----
-
-## 075. [AUDIO] Groq â€” whisper-large-v3 zamiast whisper-1/gpt-4o-transcribe
-Status: `todo`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: Groq oferuje `whisper-large-v3` (model 3Ă— lepszy od whisper-1 dla polskiego) z opĂłĹşnieniem ~0.3s dla pliku 60 min â€” 216Ă— realtime. Koszt ~$0.111/h vs ~$0.6/h OpenAI. To najszybszy, najtaĹ„szy i najdokĹ‚adniejszy model Whisper dostÄ™pny przez API.
-Akceptacja:
-- konfigurowalny dostawca: `VOICELOG_STT_PROVIDER=groq` lub `openai` (default: openai).
-- przy Groq: model `whisper-large-v3`, endpoint `https://api.groq.com/openai/v1`.
-- czas transkrypcji 60 min nagrania < 10s.
-- dokĹ‚adnoĹ›Ä‡ polskich nazw wĹ‚asnych wyraĹşnie lepsza niĹĽ whisper-1.
-- fallback do OpenAI gdy Groq niedostÄ™pne lub brak `GROQ_API_KEY`.
-Techniczne wskazĂłwki:
-- `server/audioPipeline.js`: `GROQ_API_KEY = process.env.GROQ_API_KEY || ""`.
-- gdy `GROQ_API_KEY`: `OPENAI_BASE_URL = "https://api.groq.com/openai/v1"`, `VERIFICATION_MODEL = "whisper-large-v3"`.
-- Groq API jest OpenAI-compatible â€” `requestAudioTranscription` dziaĹ‚a bez zmian.
-- `response_format: "verbose_json"` dziaĹ‚a w Groq; `diarized_json` niedostÄ™pne â†’ uĹĽyj pyannote.
-- limit pliku Groq: 25 MB (taki sam jak OpenAI) â€” chunking bez zmian.
 
 ---
 
@@ -203,7 +136,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 077. [AUDIO] Server-side VAD â€” ffmpeg silence removal przed transkrypcjÄ…
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: Whisper halucynuje ("Thank you.", tekst po angielsku, powtarzajÄ…ce siÄ™ frazy) na ciszy. UsuniÄ™cie ciszy ffmpeg po stronie serwera eliminuje te halucynacje bez potrzeby instalacji bibliotek klienckich.
@@ -421,22 +354,6 @@ Techniczne wskazĂłwki:
 
 ---
 
-## 035. Delta sync zamiast peĹ‚nego PUT stanu workspace
-Status: `todo`
-Wykonawca: `gpt`
-Priorytet: `P2`
-Cel: `stateService.syncWorkspaceState` wysyĹ‚a caĹ‚y state za kaĹĽdym razem â€” wolne przy 50+ spotkaniach.
-Akceptacja:
-- server przyjmuje `PATCH /state/workspaces/{id}` z deltatem.
-- payload synca przy edycji jednego taska < 5kB zamiast 500kB.
-- full sync pozostaje jako fallback (GET /state/bootstrap).
-Techniczne wskazĂłwki:
-- dirty flag w `useMeetings`: gdy zmieni siÄ™ konkretne meeting/task â†’ dodaj do `dirtySet`.
-- PATCH przyjmuje `{ meetings?: [...], tasks?: [...] }`.
-- server: merge patch z istniejÄ…cym state.
-
----
-
 ## 036. Backup i restore danych workspace (JSON export/import)
 Status: `todo`
 Wykonawca: `gpt`
@@ -503,64 +420,6 @@ Techniczne wskazĂłwki:
 - `src/lib/aiSearch.js`: `semanticSearch(query, meetings, tasks)` â†’ proxy przez `/ai/search`.
 - przekazywaÄ‡ tylko tytuĹ‚y i streszczenia (nie peĹ‚ne transkrypty).
 - cache wynikĂłw w Map przez sesjÄ™.
-
----
-
-## 041. PodziaĹ‚ App.css na moduĹ‚y CSS
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P3`
-Cel: App.css przekroczyĹ‚ 3500 linii i jest trudny w utrzymaniu.
-Wynik:
-- âś… Struktura `/src/styles/` istnieje z 12 plikami moduĹ‚owymi
-- âś… `variables.css` - zmienne CSS (:root)
-- âś… `foundation.css` - bazowe komponenty UI
-- âś… `layout.css` - layouty i struktura
-- âś… `reset.css` - reset i utility klasy
-- âś… `animations.css` - animacje
-- âś… `auth.css`, `calendar.css`, `people.css`, `profile.css`, `recordings.css`, `studio.css`, `tasks.css` - style specyficzne dla widokĂłw
-- âś… App.css zmniejszony z ~3500 do ~1700 linii
-Akceptacja:
-- âś… kaĹĽdy plik < 500 linii (poza App.css ktĂłry czeka na dalszy podziaĹ‚)
-- âś… build przechodzi bez ostrzeĹĽeĹ„
-
----
-
-## 042. [LAYOUT] Standaryzacja stylĂłw CSS i kolorystyki
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P3`
-Cel: Ujednolicenie palety kolorĂłw, odstÄ™pĂłw, typografii i stylĂłw komponentĂłw w caĹ‚ej aplikacji, tak aby interfejs byĹ‚ estetyczny i przewidywalny.
-Wynik:
-- âś… Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
-- âś… UsuniÄ™to duplikaty empty/error/loading states z 6 plikĂłw
-- âś… Ujednolicono przyciski (primary, secondary, ghost, danger) z wspĂłlnymi stanami
-- âś… Standaryzacja komponentĂłw: segmented-control, markdown-toolbar, analysis-block
-- âś… SpĂłjne odstÄ™py z skalÄ… 4px (var(--space-1) do var(--space-9))
-Akceptacja:
-- ✅ Aplikacja używa globalnych zmiennych CSS dla kolorów i typografii bez lokalnych nadpisań
-- ✅ Interfejs widocznie zyskuje na estetyce i spójności
-- ✅ Wszystkie przyciski interaktywne na stronie głównej oraz formularze zachowują się jednakowo w całej aplikacji
-
----
-
-## 200. [TESTS] Naprawa 78 padających testów frontend - priorytet P0
-Status: `todo`
-Wykonawca: `qwen`
-Priorytet: `P0`
-Cel: Podnieść pass rate testów frontend z 73% do 95%+.
-Zakres:
-- Naprawić 15 testów z brakującymi kontekstami (StudioMeetingView, useUI, useRecordingPipeline)
-- Naprawić 8 testów httpClient z nieaktualnymi mockami
-- Naprawić 12 testów integracyjnych (uruchamiać z mock server lub izolować)
-- Naprawić 10 testów Zustand store (useMeetings, useWorkspace, recorderStore)
-- Naprawić 6 testów Google API integration (dodać mocki)
-- Zoptymalizować pamięć testów (uniknąć crashu OOM po 150s)
-Akceptacja:
-- Wszystkie testy frontend przechodzą (95%+ pass rate)
-- Coverage frontend > 65%
-- Czas wykonania testów < 120s
-- Brak memory leaków
 
 ---
 

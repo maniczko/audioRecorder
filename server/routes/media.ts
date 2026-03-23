@@ -4,55 +4,24 @@ import crypto from "node:crypto";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
-import type { MeetingAsset, TranscriptionStatusPayload } from "../../src/shared/types.ts";
+import { normalizeTranscriptionStatusPayload } from "../../src/shared/contracts.ts";
 import type { MediaAsset } from "../lib/types.ts";
-
-function normalizePipelineStatus(value: string): TranscriptionStatusPayload["pipelineStatus"] {
-  if (value === "completed") return "done";
-  if (value === "queued" || value === "processing" || value === "failed" || value === "done") return value;
-  return "queued";
-}
-
-function buildTranscriptionStatusPayload(asset: MeetingAsset): TranscriptionStatusPayload {
-  let diarization = {} as any;
-  let segments = [];
-  try { diarization = JSON.parse(asset?.diarization_json || "{}"); } catch (_) {}
-  try { segments = JSON.parse(asset?.transcript_json || "[]"); } catch (_) {}
-
-  return {
-    recordingId: asset?.id || "",
-    pipelineStatus: normalizePipelineStatus(asset?.transcription_status),
-    transcriptOutcome: diarization?.transcriptOutcome || "normal",
-    emptyReason: diarization?.emptyReason || "",
-    userMessage: diarization?.userMessage || "",
-    pipelineVersion: diarization?.pipelineVersion || "",
-    pipelineGitSha: diarization?.pipelineGitSha || "",
-    pipelineBuildTime: diarization?.pipelineBuildTime || "",
-    audioQuality:
-      diarization?.audioQuality && typeof diarization.audioQuality === "object"
-        ? diarization.audioQuality
-        : null,
-    transcriptionDiagnostics:
-      diarization?.transcriptionDiagnostics && typeof diarization.transcriptionDiagnostics === "object"
-        ? diarization.transcriptionDiagnostics
-        : null,
-    segments: Array.isArray(segments) ? segments : [],
-    diarization: diarization && typeof diarization === "object" ? diarization : {},
-    speakerNames: diarization?.speakerNames || {},
-    speakerCount: diarization?.speakerCount || 0,
-    confidence: diarization?.confidence || 0,
-    reviewSummary: diarization?.reviewSummary || null,
-    errorMessage: diarization?.errorMessage || "",
-    updatedAt: asset?.updated_at || "",
-  };
-}
 
 export function createMediaRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
   const { transcriptionService } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
+  const startTranscriptionPipeline =
+    typeof transcriptionService.startTranscriptionPipeline === "function"
+      ? transcriptionService.startTranscriptionPipeline.bind(transcriptionService)
+      : async (recordingId: string, asset: any, options: any) => {
+          await transcriptionService.queueTranscription(recordingId, options);
+          await transcriptionService.ensureTranscriptionJob(recordingId, asset, options);
+          return transcriptionService.getMediaAsset(recordingId);
+        };
 
   // --- Media & Processing ---
+  router.use("/recordings", authMiddleware);
   router.use("/recordings/*", authMiddleware);
   router.put("/recordings/:recordingId/audio", async (c) => {
     const uploadStart = performance.now();
@@ -137,18 +106,26 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   });
 
+  router.get("/recordings", async (c) => {
+    const workspaceId = c.req.query("workspaceId");
+    if (!workspaceId) return c.json({ message: "Brakuje workspaceId." }, 400);
+    await ensureWorkspaceAccess(c, workspaceId);
+    const recordings = await transcriptionService.getMediaRecordings(workspaceId);
+    return c.json({ recordings: recordings || [] }, 200);
+  });
+
   router.delete("/recordings/:recordingId", async (c) => {
     const recordingId = c.req.param("recordingId");
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
-    
+
     // Ensure the user has rights to delete from this workspace
     await ensureWorkspaceAccess(c, asset.workspace_id);
-    
+
     try {
       // Note: transcriptionService is Database instance here
       await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id);
-      return c.json({ success: true }, 200);
+      return c.body(null, 204);
     } catch (err: any) {
       return c.json({ message: "Błąd podczas usuwania nagrania.", error: err.message }, 500);
     }
@@ -161,15 +138,12 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
-    await transcriptionService.queueTranscription(recordingId, body);
-    
-    // Przekazanie requestId do jobów asynchronicznych (metryki/observability)
-    await transcriptionService.ensureTranscriptionJob(recordingId, asset, {
+    const result = await startTranscriptionPipeline(recordingId, asset, {
       ...body,
-      requestId: c.get("reqId")
+      requestId: c.get("reqId"),
     });
-    
-    return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
+
+    return c.json(normalizeTranscriptionStatusPayload(result), 202);
   });
 
   router.post("/recordings/:recordingId/retry-transcribe", async (c) => {
@@ -186,20 +160,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: "Lokalny plik audio nie istnieje." }, 409);
     }
 
-    await transcriptionService.queueTranscription(recordingId, {
-      workspaceId: asset.workspace_id,
-      meetingId: asset.meeting_id,
-      contentType: asset.content_type,
-    });
-
-    await transcriptionService.ensureTranscriptionJob(recordingId, asset, {
+    const result = await startTranscriptionPipeline(recordingId, asset, {
       workspaceId: asset.workspace_id,
       meetingId: asset.meeting_id,
       contentType: asset.content_type,
       requestId: c.get("reqId"),
     });
 
-    return c.json(buildTranscriptionStatusPayload(await transcriptionService.getMediaAsset(recordingId)), 202);
+    return c.json(normalizeTranscriptionStatusPayload(result), 202);
   });
 
   router.get("/recordings/:recordingId/transcribe", async (c) => {
@@ -207,7 +175,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
-    return c.json(buildTranscriptionStatusPayload(asset), 200);
+    return c.json(normalizeTranscriptionStatusPayload(asset), 200);
   });
 
   router.get("/recordings/:recordingId/progress", async (c) => {
@@ -247,7 +215,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
-    await transcriptionService.normalizeRecording(asset.file_path, {});
+    await transcriptionService.normalizeRecording(asset.file_path, { signal: c.req.raw.signal });
     return c.json({ ok: true }, 200);
   });
 
@@ -272,10 +240,11 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   router.post("/recordings/:recordingId/voice-coaching", async (c) => {
     const recordingId = c.req.param("recordingId");
     const body = await c.req.json().catch(() => ({}));
+    if (body.speakerId === undefined || body.speakerId === null) return c.json({ message: "Brakuje speakerId." }, 400);
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
-    const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body?.speakerId || ""), body?.segments || [], {});
+    const coaching = await transcriptionService.generateVoiceCoaching(asset, String(body.speakerId), body?.segments || [], {});
     return c.json({ coaching }, 200);
   });
 

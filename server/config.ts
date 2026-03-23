@@ -49,6 +49,7 @@ const envSchema = z.object({
   
   AUDIO_LANGUAGE: z.string().default("pl"),
   AUDIO_PREPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
+  VOICELOG_SILENCE_REMOVE: z.preprocess((val) => val !== "false", z.boolean()).default(true),
   TRANSCRIPT_CORRECTION: z.preprocess((val) => val === "true", z.boolean()).default(false),
   VAD_ENABLED: z.preprocess((val) => val !== "false", z.boolean()).default(true),
   WHISPER_PROMPT: z.string().optional(),

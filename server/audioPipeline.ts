@@ -71,6 +71,7 @@ const VERIFICATION_MODEL = _sttUseGroq ? "whisper-large-v3" : config.VERIFICATIO
 
 // Konfiguracja preprocessingu
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
+const SILENCE_REMOVE = config.VOICELOG_SILENCE_REMOVE;
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
 const HF_TOKEN = config.HF_TOKEN || config.HUGGINGFACE_TOKEN || "";
@@ -702,18 +703,38 @@ async function preprocessAudio(
   filePath: string,
   signal: any,
   profile: "standard" | "enhanced" = "standard",
-  options: { cacheKey?: string } = {}
+  options: { cacheKey?: string; silenceRemove?: boolean } = {}
 ) {
   if (!AUDIO_PREPROCESS) return null;
   const cachePath = options.cacheKey ? getPreprocessCachePath(options.cacheKey, profile) : `${filePath}.prep.wav`;
   const tmpPath = options.cacheKey ? `${cachePath}.tmp-${crypto.randomUUID()}.wav` : cachePath;
-  const filter =
+  let filter =
     profile === "enhanced"
       ? "highpass=f=80,lowpass=f=10000,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1"
       : "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr";
+
+  // Silence removal: strips pauses >0.5s / <-35dB to reduce Whisper hallucinations.
+  // Safe only for Whisper-only pipeline — pyannote needs original timestamps so it's
+  // excluded at the call site (enabled only when HF_TOKEN is not set).
+  if (options.silenceRemove) {
+    filter += ",silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-35dB";
+  }
+
   try {
     if (options.cacheKey && fs.existsSync(cachePath)) {
       return cachePath;
+    }
+
+    let durationBefore = 0;
+    if (DEBUG && options.silenceRemove) {
+      try {
+        const ffprobeBinary = deriveFfprobeBinary();
+        const { stdout } = await execPromise(
+          `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
+          { timeout: 10000 }
+        );
+        durationBefore = parseFloat(String(stdout || "0").trim()) || 0;
+      } catch (_) {}
     }
 
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
@@ -721,6 +742,20 @@ async function preprocessAudio(
       `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "${filter}" -ar 16000 -ac 1 "${tmpPath}"`,
       { timeout: 180000, signal }
     );
+
+    if (DEBUG && options.silenceRemove && durationBefore > 0) {
+      try {
+        const ffprobeBinary = deriveFfprobeBinary();
+        const { stdout } = await execPromise(
+          `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tmpPath}"`,
+          { timeout: 10000 }
+        );
+        const durationAfter = parseFloat(String(stdout || "0").trim()) || 0;
+        const removed = durationBefore - durationAfter;
+        console.log(`[audioPipeline] Silence removal: ${durationBefore.toFixed(1)}s → ${durationAfter.toFixed(1)}s (removed ${removed.toFixed(1)}s, ${durationBefore > 0 ? ((removed / durationBefore) * 100).toFixed(0) : 0}%)`);
+      } catch (_) {}
+    }
+
     if (options.cacheKey) {
       if (!fs.existsSync(cachePath)) {
         fs.renameSync(tmpPath, cachePath);
@@ -959,7 +994,11 @@ async function runTranscriptionAttempt(
   
     notify(10, "Wyciąganie audio do pamięci podręcznej...");
     if (!prepPath) {
-      prepPath = await preprocessAudio(workingFilePath, options.signal, profile, { cacheKey: preprocessCacheKey });
+      // silenceRemove is safe only for Whisper-only pipeline; pyannote needs original timestamps
+      prepPath = await preprocessAudio(workingFilePath, options.signal, profile, {
+        cacheKey: preprocessCacheKey,
+        silenceRemove: SILENCE_REMOVE && !HF_TOKEN,
+      });
     }
     const transcribeFilePath = prepPath || workingFilePath;
     const transcribeContentType = prepPath ? "audio/wav" : options.workingContentType || asset.content_type;
