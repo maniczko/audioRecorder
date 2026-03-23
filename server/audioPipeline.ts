@@ -8,6 +8,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { File } from "node:buffer";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -80,6 +81,7 @@ const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
 const VAD_ENABLED = config.VAD_ENABLED;
 const VOICELOG_DIARIZER = config.VOICELOG_DIARIZER || "auto";
+const PER_SPEAKER_NORM = config.VOICELOG_PER_SPEAKER_NORM;
 
 // Enable verbose pipeline logging with VOICELOG_DEBUG=true
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
@@ -1060,6 +1062,79 @@ function shouldRetryWithEnhancedProfile(profile: "standard" | "enhanced", attemp
   return Number(outcome?.transcriptionDiagnostics?.chunksFailedAtStt || 0) > 0;
 }
 
+/**
+ * Applies per-speaker loudness normalization to an audio file.
+ * Measures the average loudness of each speaker's audio using ffmpeg volumedetect,
+ * then applies per-speaker gain corrections using the ffmpeg `volume` filter.
+ * Returns the path to the normalized file, or null if normalization failed/was not needed.
+ * Only applied when speakerCount > 1.
+ */
+async function applyPerSpeakerNorm(inputPath: string, pyannoteSegs: any[]): Promise<string | null> {
+  if (!pyannoteSegs || pyannoteSegs.length === 0) return null;
+
+  // Group segments by speaker
+  const bySpeaker: Record<string, { start: number; end: number }[]> = {};
+  for (const seg of pyannoteSegs) {
+    if (!bySpeaker[seg.speaker]) bySpeaker[seg.speaker] = [];
+    bySpeaker[seg.speaker].push({ start: seg.start, end: seg.end });
+  }
+  const speakers = Object.keys(bySpeaker);
+  if (speakers.length <= 1) return null;
+
+  // For each speaker, measure their average loudness
+  const speakerGainDb: Record<string, number> = {};
+  for (const speaker of speakers) {
+    const segs = bySpeaker[speaker];
+    const selectExpr = segs.map((s) => `between(t,${s.start.toFixed(3)},${s.end.toFixed(3)})`).join("+");
+    try {
+      const { stderr } = await execPromise(
+        `"${FFMPEG_BINARY}" -y -i "${inputPath}" -af "aselect='${selectExpr}',asetpts=N/SR/TB,volumedetect" -f null -`,
+        { timeout: 60000 }
+      );
+      const match = String(stderr || "").match(/mean_volume:\s*([-\d.]+)\s*dB/i);
+      if (match) {
+        const meanDb = parseFloat(match[1]);
+        const gainDb = -16.0 - meanDb;
+        // Clamp gain to avoid extreme amplification or attenuation
+        speakerGainDb[speaker] = Math.max(-12, Math.min(24, gainDb));
+        if (DEBUG) console.log(`[audioPipeline] PerSpeakerNorm: ${speaker} mean=${meanDb.toFixed(1)}dB → gain=${speakerGainDb[speaker].toFixed(1)}dB`);
+      }
+    } catch (err: any) {
+      if (DEBUG) console.warn(`[audioPipeline] PerSpeakerNorm: volumedetect for ${speaker} failed:`, err.message?.slice(0, 100));
+    }
+  }
+
+  // Build ffmpeg volume filter: nested if-expression applying per-speaker gains
+  const allSegs = [...pyannoteSegs].sort((a, b) => a.start - b.start);
+  let expr = "1.0";
+  for (let i = allSegs.length - 1; i >= 0; i--) {
+    const seg = allSegs[i];
+    const gainDb = speakerGainDb[seg.speaker];
+    if (gainDb === undefined || Math.abs(gainDb) < 0.5) continue;
+    const gainLinear = Math.pow(10, gainDb / 20);
+    expr = `if(between(t,${seg.start.toFixed(3)},${seg.end.toFixed(3)}),${gainLinear.toFixed(4)},${expr})`;
+  }
+  if (expr === "1.0") return null; // All speakers at similar loudness
+
+  const outputPath = path.join(os.tmpdir(), `spknorm_${Date.now()}.wav`);
+  try {
+    await execPromise(
+      `"${FFMPEG_BINARY}" -y -i "${inputPath}" -af "volume='${expr}'" -ar 16000 -ac 1 "${outputPath}"`,
+      { timeout: 300000 }
+    );
+    if (DEBUG) {
+      const origSize = fs.statSync(inputPath).size;
+      const normSize = fs.statSync(outputPath).size;
+      console.log(`[audioPipeline] PerSpeakerNorm: ${speakers.join(",")} — ${(origSize/1e6).toFixed(1)}MB → ${(normSize/1e6).toFixed(1)}MB`);
+    }
+    return outputPath;
+  } catch (err: any) {
+    console.warn("[audioPipeline] PerSpeakerNorm: volume apply failed:", err.message?.slice(0, 100));
+    try { fs.unlinkSync(outputPath); } catch (_) {}
+    return null;
+  }
+}
+
 async function runTranscriptionAttempt(
   asset: any,
   options: any = {},
@@ -1105,9 +1180,39 @@ async function runTranscriptionAttempt(
         silenceRemove: SILENCE_REMOVE && !HF_TOKEN,
       });
     }
-    const transcribeFilePath = prepPath || workingFilePath;
+    let transcribeFilePath = prepPath || workingFilePath;
     const transcribeContentType = prepPath ? "audio/wav" : options.workingContentType || asset.content_type;
     const attemptAudioQuality = buildAudioQualityForAttempt(baseAudioQuality, profile, Boolean(prepPath));
+
+  // ── Early pyannote diarization for per-speaker loudness normalization ──
+  // Runs pyannote BEFORE Whisper so we can normalize volume per speaker,
+  // which improves Whisper's accuracy for quiet speakers.
+  // Results are cached and reused in the main diarization step below.
+  let earlyPyannoteSegments: any[] | null = null;
+  let normFilePath = "";
+  const usePyannote = VOICELOG_DIARIZER !== "openai" && HF_TOKEN;
+  if (usePyannote && PER_SPEAKER_NORM) {
+    try {
+      notify(25, "Wstępna diaryzacja mówców (normalizacja głośności)...");
+      const earlySegs = await runPyannoteDiarization(transcribeFilePath, options.signal);
+      if (earlySegs && earlySegs.length > 0) {
+        earlyPyannoteSegments = earlySegs as any[];
+        const uniqueSpeakers = new Set(earlyPyannoteSegments.map((s) => s.speaker));
+        if (uniqueSpeakers.size > 1) {
+          notify(28, `Normalizacja głośności per mówca (${uniqueSpeakers.size} mówców)...`);
+          const normalized = await applyPerSpeakerNorm(transcribeFilePath, earlyPyannoteSegments);
+          if (normalized) {
+            normFilePath = normalized;
+            transcribeFilePath = normalized;
+            if (DEBUG) console.log(`[audioPipeline] Per-speaker norm applied: ${normalized}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      if (DEBUG) console.warn("[audioPipeline] Early pyannote/norm failed:", err.message);
+      earlyPyannoteSegments = null;
+    }
+  }
 
   notify(30, "Silero VAD - optymalizacja ciszy...");
   const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
@@ -1332,10 +1437,10 @@ async function runTranscriptionAttempt(
   // "openai" = skip pyannote, always use GPT-4o-mini transcript diarization
   let diarization = null;
   const startDiarize = performance.now();
-  const usePyannote = VOICELOG_DIARIZER !== "openai" && HF_TOKEN;
   if (usePyannote) {
     notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
-    const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
+    // Reuse early pyannote result if per-speaker normalization already ran it; otherwise run now.
+    const pyannoteSegments = earlyPyannoteSegments ?? await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
       // Prefer word-level diarization when Whisper returned per-word timestamps
       const rawWhisperSegments = Array.isArray(whisperPayload?.segments) ? whisperPayload.segments : [];
@@ -1539,6 +1644,7 @@ async function runTranscriptionAttempt(
     throw error;
   } finally {
     if (prepPath && !isPreprocessCacheFile(prepPath)) { try { fs.unlinkSync(prepPath); } catch (_) {} }
+    if (normFilePath) { try { fs.unlinkSync(normFilePath); } catch (_) {} }
   }
   } finally {
     // Clean up temp file downloaded from Supabase Storage

@@ -207,7 +207,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 074. [AUDIO] Adaptacyjna normalizacja gĹ‚oĹ›noĹ›ci per mĂłwca
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: gdy jeden mĂłwca jest znacznie gĹ‚oĹ›niejszy od drugiego, Whisper czÄ™Ĺ›ciej myli gĹ‚oĹ›niejszego â€” normalizacja per speaker wyrĂłwnuje szanse i poprawia rozpoznawanie.

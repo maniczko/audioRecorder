@@ -4,6 +4,14 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 074. [AUDIO] Adaptacyjna normalizacja głośności per mówca
+Status: `done`
+Completed by: Claude
+Result: Per-speaker loudness normalization przed Whisper. Pyannote uruchamiane wcześnie (przed transkrypcją). Dla >1 mówcy: volumedetect per speaker → gain do -16 dBFS → volume filter z if(between(t,...)) per segment. Normalizowany plik przekazywany do Whisper. Pyannote cache'owane i reużywane. Wyłączalne: VOICELOG_PER_SPEAKER_NORM=false.
+Zmiany: server/config.ts, server/audioPipeline.ts (os import, PER_SPEAKER_NORM, applyPerSpeakerNorm(), early pyannote block, reuse earlyPyannoteSegments).
+
+---
+
 ## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
 Status: `done`
 Completed by: Claude
