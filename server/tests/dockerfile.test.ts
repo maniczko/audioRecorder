@@ -83,3 +83,23 @@ describe("Dockerfile has no inline external registry COPY --from", () => {
     expect(dockerfile).not.toMatch(externalRegistryPattern);
   });
 });
+
+describe("All server source files are tracked in git", () => {
+  it("no untracked files in server/ or src/shared/ that would break Railway esbuild", () => {
+    const { execSync } = require("node:child_process");
+    let untracked = "";
+    try {
+      untracked = execSync(
+        "git ls-files --others --exclude-standard server/ src/shared/",
+        { cwd: ROOT, encoding: "utf8" }
+      ).trim();
+    } catch (_) {
+      // git not available — skip silently
+      return;
+    }
+    expect(
+      untracked,
+      `Untracked files found — Railway esbuild will fail with "Could not resolve":\n${untracked}`
+    ).toBe("");
+  });
+});
