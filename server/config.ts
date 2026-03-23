@@ -9,6 +9,12 @@ const __dirname = path.dirname(__filename);
 // Load .env relative to server root
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+function optionalEnumValue(val: unknown) {
+  if (val == null) return undefined;
+  const normalized = String(val).trim().toLowerCase();
+  return normalized ? normalized : undefined;
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test", "staging"]).default("development"),
   PORT: z.preprocess((val) => Number(val), z.number()).default(4000),
@@ -33,8 +39,14 @@ const envSchema = z.object({
   VOICELOG_OPENAI_BASE_URL: z.string().default("https://api.openai.com/v1"),
 
   GROQ_API_KEY: z.string().optional(),
-  VOICELOG_STT_PROVIDER: z.enum(["openai", "groq"]).default("openai"),
-  VOICELOG_STT_FALLBACK_PROVIDER: z.enum(["openai", "groq", "none"]).default("none"),
+  VOICELOG_STT_PROVIDER: z.preprocess(
+    optionalEnumValue,
+    z.enum(["openai", "groq"]).default("openai")
+  ),
+  VOICELOG_STT_FALLBACK_PROVIDER: z.preprocess(
+    optionalEnumValue,
+    z.enum(["openai", "groq", "none"]).default("none")
+  ),
   STT_CONCURRENCY_LIMIT: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()),
   VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(["fast", "full"]).default("fast"),
   VOICELOG_CHUNK_OVERLAP_SECONDS: z.preprocess((val) => val ? Number(val) : undefined, z.number().int().min(0).optional()).default(5),

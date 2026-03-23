@@ -101,6 +101,17 @@ describe("config", () => {
     expect(config.HUGGINGFACE_TOKEN).toBe("test-hf-token-alias");
   });
 
+  it("falls back to defaults when STT provider env vars are blank", async () => {
+    process.env.NODE_ENV = "test";
+    process.env.VOICELOG_STT_PROVIDER = "";
+    process.env.VOICELOG_STT_FALLBACK_PROVIDER = "";
+
+    const { config } = await import("../config.ts");
+
+    expect(config.VOICELOG_STT_PROVIDER).toBe("openai");
+    expect(config.VOICELOG_STT_FALLBACK_PROVIDER).toBe("none");
+  });
+
   it("exits with error on invalid NODE_ENV", async () => {
     const originalExit = process.exit;
     const originalError = console.error;
