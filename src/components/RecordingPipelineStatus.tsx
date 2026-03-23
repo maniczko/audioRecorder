@@ -12,13 +12,13 @@ interface RecordingPipelineStatusProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  uploading: "WysyĹ‚anie...",
+  uploading: "Wysyłanie...",
   queued: "W kolejce",
   processing: "Przetwarzanie...",
-  diarization: "Rozpoznawanie mĂłwcĂłw...",
-  review: "Oczekuje na weryfikacjÄ™",
+  diarization: "Rozpoznawanie mówców...",
+  review: "Oczekuje na weryfikację",
   done: "Transkrypcja gotowa",
-  failed: "BĹ‚Ä…d przetwarzania",
+  failed: "Błąd przetwarzania",
 };
 
 export function RecordingPipelineStatus({
@@ -70,12 +70,14 @@ export function RecordingPipelineStatus({
 
       {isFailed && (
         <div className="pipeline-error-box">
+          <svg className="pipeline-error-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span className="pipeline-error-text" title={errorMessage}>
-            {errorMessage || "WystÄ…piĹ‚ nieoczekiwany bĹ‚Ä…d."}
+            {errorMessage || "Wystąpił nieoczekiwany błąd."}
           </span>
           {onRetry && (
             <button type="button" className="pipeline-retry-btn" onClick={(e) => { e.stopPropagation(); onRetry(); }}>
-              đź”„ SprĂłbuj ponownie
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Spróbuj ponownie
             </button>
           )}
         </div>

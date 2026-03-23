@@ -1,11 +1,80 @@
-import { existsSync, createReadStream, statSync, writeFileSync, unlinkSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, createReadStream, createWriteStream, statSync, mkdirSync } from "node:fs";
+import { unlink, writeFile, stat } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import { finished } from "node:stream/promises";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
 import { normalizeTranscriptionStatusPayload } from "../../src/shared/contracts.ts";
 import type { MediaAsset } from "../lib/types.ts";
+
+/**
+ * Checks available disk space and returns true if there's enough space.
+ * Returns false if disk space is critically low (<100MB free).
+ */
+function checkDiskSpace(minBytes: number = 100 * 1024 * 1024): { ok: boolean; freeBytes?: number } {
+  try {
+    const uploadDir = process.env.VOICELOG_UPLOAD_DIR || "./server/data/uploads";
+    const fs = require("node:fs");
+    const stats = fs.statfsSync ? fs.statfsSync(uploadDir) : null;
+
+    if (stats) {
+      const freeBytes = stats.bavail * stats.bsize;
+      return { ok: freeBytes >= minBytes, freeBytes };
+    }
+
+    // Fallback: assume OK if we can't check
+    return { ok: true };
+  } catch (error) {
+    console.warn("[checkDiskSpace] Unable to check disk space:", error);
+    return { ok: true };
+  }
+}
+
+/**
+ * Cleans up old chunk files older than maxAgeHours.
+ * Returns number of files deleted and bytes freed.
+ */
+async function cleanupOldChunks(maxAgeHours: number = 24): Promise<{ deleted: number; bytesFreed: number }> {
+  const uploadDir = process.env.VOICELOG_UPLOAD_DIR || "./server/data/uploads";
+  const chunksDir = path.join(uploadDir, "chunks");
+
+  if (!existsSync(chunksDir)) {
+    return { deleted: 0, bytesFreed: 0 };
+  }
+
+  const now = Date.now();
+  const maxAge = maxAgeHours * 60 * 60 * 1000;
+  let deleted = 0;
+  let bytesFreed = 0;
+
+  try {
+    const files = require("node:fs").readdirSync(chunksDir);
+    for (const file of files) {
+      if (!file.endsWith(".chunk")) continue;
+
+      const filePath = path.join(chunksDir, file);
+      const stats = statSync(filePath);
+      const age = now - stats.mtimeMs;
+
+      if (age > maxAge) {
+        bytesFreed += stats.size;
+        await unlink(filePath);
+        deleted++;
+      }
+    }
+
+    if (deleted > 0) {
+      const { logger } = await import("../logger.ts");
+      logger.info(`[Cleanup] Deleted ${deleted} old chunk files, freed ${bytesFreed} bytes`);
+    }
+  } catch (error) {
+    console.warn("[cleanupOldChunks] Error:", error);
+  }
+
+  return { deleted, bytesFreed };
+}
 
 export function createMediaRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
@@ -19,6 +88,56 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           await transcriptionService.ensureTranscriptionJob(recordingId, asset, options);
           return transcriptionService.getMediaAsset(recordingId);
         };
+
+  function resolveProcessingMode(input: any) {
+    return input === "full" || input === "fast"
+      ? input
+      : (config.VOICELOG_PROCESSING_MODE_DEFAULT || "fast");
+  }
+
+  function scheduleAudioQuality(recordingId: string, asset: MediaAsset) {
+    Promise.resolve()
+      .then(async () => {
+        const audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
+          contentType: asset.content_type,
+        });
+        await transcriptionService.saveAudioQualityDiagnostics(recordingId, audioQuality);
+      })
+      .catch((error: any) => {
+        console.warn(`[mediaRoutes] Audio quality analysis failed for ${recordingId}:`, error?.message || error);
+      });
+  }
+
+  async function assembleChunksToTempFile(chunksDir: string, safeId: string, total: number) {
+    const tempPath = path.join(chunksDir, `${safeId}_assembled_${crypto.randomUUID()}.bin`);
+    mkdirSync(path.dirname(tempPath), { recursive: true });
+    const output = createWriteStream(tempPath);
+
+    try {
+      for (let i = 0; i < total; i += 1) {
+        const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
+        if (!existsSync(chunkPath)) {
+          throw new Error(`Brakuje chunka ${i} z ${total}.`);
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          const input = createReadStream(chunkPath);
+          input.on("error", reject);
+          output.on("error", reject);
+          input.on("end", resolve);
+          input.pipe(output, { end: false });
+        });
+      }
+
+      output.end();
+      await finished(output);
+      return tempPath;
+    } catch (error) {
+      output.destroy();
+      try { await unlink(tempPath); } catch (_) {}
+      throw error;
+    }
+  }
 
   // --- Media & Processing ---
   router.use("/recordings", authMiddleware);
@@ -50,16 +169,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       }
       throw uploadErr;
     }
-    let audioQuality = null;
-    try {
-      audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
-        contentType: asset.content_type,
-        signal: c.req.raw.signal,
-      });
-      await transcriptionService.saveAudioQualityDiagnostics(recordingId, audioQuality);
-    } catch (error: any) {
-      console.warn(`[mediaRoutes] Audio quality analysis failed for ${recordingId}:`, error?.message || error);
-    }
+    scheduleAudioQuality(recordingId, asset);
     
     // R04 Metrics
     const { logger } = await import("../logger.ts");
@@ -70,7 +180,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
        durationMs: (performance.now() - uploadStart).toFixed(2)
     });
 
-    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality }, 200);
+    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality: null }, 200);
   });
 
   router.get("/recordings/:recordingId/audio", async (c) => {
@@ -140,6 +250,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
     const result = await startTranscriptionPipeline(recordingId, asset, {
       ...body,
+      processingMode: resolveProcessingMode(body.processingMode),
       requestId: c.get("reqId"),
     });
 
@@ -148,6 +259,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
   router.post("/recordings/:recordingId/retry-transcribe", async (c) => {
     const recordingId = c.req.param("recordingId");
+    const body = await c.req.json().catch(() => ({}));
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
@@ -164,6 +276,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       workspaceId: asset.workspace_id,
       meetingId: asset.meeting_id,
       contentType: asset.content_type,
+      processingMode: resolveProcessingMode(body.processingMode),
       requestId: c.get("reqId"),
     });
 
@@ -434,12 +547,35 @@ Important:
     const buffer = await c.req.arrayBuffer();
     if (buffer.byteLength > 3 * 1024 * 1024) return c.json({ message: "Chunk jest zbyt duży (max 3MB)." }, 413);
 
+    // Check disk space before writing
+    const diskSpace = checkDiskSpace(50 * 1024 * 1024); // 50MB minimum
+    if (!diskSpace.ok) {
+      const { logger } = await import("../logger.ts");
+      logger.error(`[ENOSPC] Disk space critically low: ${diskSpace.freeBytes} bytes free`);
+      return c.json({
+        message: "Brak miejsca na dysku serwera. Zwolnij miejsce lub skontaktuj z administratorem.",
+        freeBytes: diskSpace.freeBytes
+      }, 507);
+    }
+
     const chunksDir = path.join(config.uploadDir, "chunks");
     mkdirSync(chunksDir, { recursive: true });
 
     const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, "_");
     const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
-    writeFileSync(chunkPath, Buffer.from(buffer));
+
+    try {
+      await writeFile(chunkPath, Buffer.from(buffer));
+    } catch (writeErr: any) {
+      if (writeErr.code === "ENOSPC") {
+        const { logger } = await import("../logger.ts");
+        logger.error(`[ENOSPC] Failed to write chunk ${index}/${total} for recording ${recordingId}`);
+        // Cleanup partial write
+        try { await unlink(chunkPath); } catch (_) {}
+        return c.json({ message: "Brak miejsca na dysku podczas zapisu chunka." }, 507);
+      }
+      throw writeErr;
+    }
 
     return c.json({ index, total }, 200);
   });
@@ -461,27 +597,29 @@ Important:
     const chunksDir = path.join(config.uploadDir, "chunks");
     const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, "_");
 
-    const parts: Buffer[] = [];
-    for (let i = 0; i < total; i++) {
-      const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
-      if (!existsSync(chunkPath)) return c.json({ message: `Brakuje chunka ${i} z ${total}.` }, 400);
-      parts.push(readFileSync(chunkPath));
+    let assembledPath = "";
+    try {
+      assembledPath = await assembleChunksToTempFile(chunksDir, safeId, total);
+    } catch (error: any) {
+      return c.json({ message: error?.message || "Nie udalo sie zlozyc chunkow." }, 400);
     }
 
-    const fullBuffer = Buffer.concat(parts);
-    if (fullBuffer.byteLength > 100 * 1024 * 1024) {
+    const fullStats = await stat(assembledPath);
+    if (fullStats.size > 100 * 1024 * 1024) {
+      try { await unlink(assembledPath); } catch (_) {}
       return c.json({ message: "Złożony plik przekracza maksymalny rozmiar 100MB." }, 413);
     }
 
     let asset: MediaAsset;
     try {
-      asset = await transcriptionService.upsertMediaAsset({
+      asset = await transcriptionService.upsertMediaAssetFromPath({
         recordingId, workspaceId, meetingId,
         contentType,
-        buffer: fullBuffer,
+        filePath: assembledPath,
         createdByUserId: session.user_id,
       });
     } catch (err: any) {
+      try { await unlink(assembledPath); } catch (_) {}
       if ((err as any).code === "ENOSPC" || String(err.message).includes("Brak miejsca na dysku")) {
         return c.json({ message: "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem." }, 507);
       }
@@ -490,21 +628,42 @@ Important:
 
     // Cleanup chunks after successful assembly
     for (let i = 0; i < total; i++) {
-      try { unlinkSync(path.join(chunksDir, `${safeId}_${i}.chunk`)); } catch (_) {}
+      try { await unlink(path.join(chunksDir, `${safeId}_${i}.chunk`)); } catch (_) {}
+    }
+    try { await unlink(assembledPath); } catch (_) {}
+
+    scheduleAudioQuality(recordingId, asset);
+
+    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality: null }, 200);
+  });
+
+  // Disk space management endpoints
+  router.get("/disk-space/status", async (c) => {
+    const diskSpace = checkDiskSpace(0); // Check without minimum
+    return c.json({
+      ok: diskSpace.ok,
+      freeBytes: diskSpace.freeBytes || null,
+      freeMB: diskSpace.freeBytes ? Math.round(diskSpace.freeBytes / 1024 / 1024) : null,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  router.post("/disk-space/cleanup", async (c) => {
+    const session = c.get("session") as any;
+    // Only allow admin users
+    if (!session || session.role !== "admin") {
+      return c.json({ message: "Wymagane uprawnienia administratora." }, 403);
     }
 
-    let audioQuality = null;
-    try {
-      audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
-        contentType: asset.content_type,
-        signal: c.req.raw.signal,
-      });
-      await transcriptionService.saveAudioQualityDiagnostics(recordingId, audioQuality);
-    } catch (error: any) {
-      console.warn(`[mediaRoutes] Audio quality analysis failed for ${recordingId}:`, error?.message || error);
-    }
+    const maxAgeHours = parseInt(c.req.query("maxAge") || "24", 10);
+    const result = await cleanupOldChunks(Math.min(maxAgeHours, 168)); // Max 1 week
 
-    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality }, 200);
+    return c.json({
+      success: true,
+      deleted: result.deleted,
+      bytesFreed: result.bytesFreed,
+      mbFreed: Math.round(result.bytesFreed / 1024 / 1024),
+    });
   });
 
   return router;
@@ -525,11 +684,11 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
     const ext = contentType.includes("mp4") ? ".m4a" : contentType.includes("wav") ? ".wav" : ".webm";
     const tmpPath = path.join(config.uploadDir, `live_${crypto.randomUUID().replace(/-/g, "")}${ext}`);
     try {
-      writeFileSync(tmpPath, buffer);
+      await writeFile(tmpPath, buffer);
       const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, {});
       return c.json({ text }, 200);
     } finally {
-      try { unlinkSync(tmpPath); } catch (_) {}
+      try { await unlink(tmpPath); } catch (_) {}
     }
   });
 

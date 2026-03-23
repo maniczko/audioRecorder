@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StudioMeetingView from "./studio/StudioMeetingView";
 import StudioSidebar from "./studio/StudioSidebar";
 import { PageShell, SplitPane } from "./ui/LayoutPrimitives";
@@ -17,12 +17,20 @@ export default function StudioTab(props) {
     isDetachedMeetingDraft,
     peopleProfiles = [],
     userMeetings = [],
+    defaultToNewStudio = false,
   } = props;
 
   const [briefOpen, setBriefOpen] = useState(false);
+  const initializedDefaultStudioRef = useRef(false);
 
   const peopleOptions = [...new Set(peopleProfiles.map((p) => p.name).filter(Boolean))];
   const tagOptions = [...new Set(userMeetings.flatMap((m) => m.tags || []).filter(Boolean))];
+
+  useEffect(() => {
+    if (!defaultToNewStudio || initializedDefaultStudioRef.current) return;
+    initializedDefaultStudioRef.current = true;
+    startNewMeetingDraft();
+  }, [defaultToNewStudio, startNewMeetingDraft]);
 
   return (
     <PageShell className="studio-page-shell">

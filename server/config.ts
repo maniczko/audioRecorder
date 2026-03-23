@@ -35,6 +35,11 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   VOICELOG_STT_PROVIDER: z.enum(["openai", "groq"]).default("openai"),
   VOICELOG_STT_FALLBACK_PROVIDER: z.enum(["openai", "groq", "none"]).default("none"),
+  STT_CONCURRENCY_LIMIT: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()),
+  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(["fast", "full"]).default("fast"),
+  VOICELOG_CHUNK_OVERLAP_SECONDS: z.preprocess((val) => val ? Number(val) : undefined, z.number().int().min(0).optional()).default(5),
+  VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === "true", z.boolean()).default(false),
+  VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
 
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-3-5-haiku-latest"),

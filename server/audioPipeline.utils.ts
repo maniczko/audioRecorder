@@ -7,6 +7,8 @@
  * Coverage target: 90%+
  */
 
+import { config } from "./config.ts";
+
 // ==================== CONSTANTS ====================
 
 /**
@@ -58,7 +60,7 @@ export const CHUNK_DURATION_SECONDS = 540;
  * across the seam. Segments from the overlap zone of chunk N+1 are
  * dropped during merge (they were already transcribed by chunk N).
  */
-export const CHUNK_OVERLAP_SECONDS = 15;
+export const CHUNK_OVERLAP_SECONDS = Math.max(0, Number(config.VOICELOG_CHUNK_OVERLAP_SECONDS || 5));
 
 /**
  * Maximum file size for STT API (24 MB — 1 MB below API limit for safety).

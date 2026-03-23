@@ -121,6 +121,8 @@ export interface TranscriptionQualityMetrics {
 
 export interface TranscriptionResult {
   pipelineStatus?: string;
+  enhancementsPending?: boolean;
+  postprocessStage?: "queued" | "running" | "done" | "failed" | "";
   transcriptOutcome?: "normal" | "empty";
   emptyReason?:
     | "no_segments_from_stt"

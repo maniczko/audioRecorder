@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from "path";
 
 function readClientEnv(...keys) {
   for (const key of keys) {
@@ -30,6 +31,11 @@ export default defineConfig(async () => {
 
   return {
     plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
     esbuild: {
       loader: 'tsx',
       include: /src\/.*\.[tj]sx?$/,

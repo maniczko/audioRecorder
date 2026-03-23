@@ -322,6 +322,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             isDetachedMeetingDraft={meetings.isDetachedMeetingDraft}
             addMeetingComment={meetings.addMeetingComment}
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
+            defaultToNewStudio={ui.tabHistory.length === 1}
           />
         );
     }

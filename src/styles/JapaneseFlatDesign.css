@@ -1,0 +1,576 @@
+/**
+ * Japanese Flat Design - Profile Theme Styles
+ * Modern, minimalist design inspired by Japanese aesthetics
+ */
+
+/* ============================================
+   CSS Custom Properties (Theme Variables)
+   ============================================ */
+
+:root {
+  /* Default theme: Sakura */
+  --jp-primary: #F8B4D9;
+  --jp-primary-dark: #E88BB8;
+  --jp-secondary: #FFD7E8;
+  --jp-accent: #7FBF7F;
+  --jp-background: #FFFBFE;
+  --jp-surface: #FFFFFF;
+  --jp-text: #4A4A4A;
+  --jp-text-muted: #8B8B8B;
+  --jp-border: #F0E6EA;
+  --jp-error: #D46A6A;
+  --jp-success: #7FBF7F;
+  --jp-warning: #F4B942;
+  
+  /* Spacing - based on traditional Japanese measurements */
+  --jp-space-xs: 4px;
+  --jp-space-sm: 8px;
+  --jp-space-md: 16px;
+  --jp-space-lg: 24px;
+  --jp-space-xl: 32px;
+  --jp-space-2xl: 48px;
+  
+  /* Typography */
+  --jp-font-sans: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  --jp-font-serif: 'Noto Serif JP', Georgia, serif;
+  
+  /* Border Radius - subtle, minimal */
+  --jp-radius-sm: 4px;
+  --jp-radius-md: 8px;
+  --jp-radius-lg: 12px;
+  --jp-radius-full: 9999px;
+  
+  /* Shadows - extremely subtle for flat design */
+  --jp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --jp-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --jp-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.08);
+  
+  /* Transitions */
+  --jp-transition-fast: 150ms ease;
+  --jp-transition-normal: 250ms ease;
+  --jp-transition-slow: 400ms ease;
+}
+
+/* ============================================
+   Theme Classes
+   ============================================ */
+
+.theme-sakura {
+  --jp-primary: #F8B4D9;
+  --jp-primary-dark: #E88BB8;
+  --jp-secondary: #FFD7E8;
+  --jp-accent: #7FBF7F;
+  --jp-background: #FFFBFE;
+  --jp-surface: #FFFFFF;
+  --jp-text: #4A4A4A;
+  --jp-text-muted: #8B8B8B;
+  --jp-border: #F0E6EA;
+}
+
+.theme-matcha {
+  --jp-primary: #7CB342;
+  --jp-primary-dark: #558B2F;
+  --jp-secondary: #DCEDC8;
+  --jp-accent: #FFB74D;
+  --jp-background: #F9FBF7;
+  --jp-surface: #FFFFFF;
+  --jp-text: #3D4035;
+  --jp-text-muted: #7D8075;
+  --jp-border: #E8ECE5;
+}
+
+.theme-indigo {
+  --jp-primary: #3F51B5;
+  --jp-primary-dark: #303F9F;
+  --jp-secondary: #9FA8DA;
+  --jp-accent: #FF7043;
+  --jp-background: #F5F7FA;
+  --jp-surface: #FFFFFF;
+  --jp-text: #2C3E50;
+  --jp-text-muted: #6C7A89;
+  --jp-border: #E1E8F0;
+}
+
+.theme-sumi {
+  --jp-primary: #2C2C2C;
+  --jp-primary-dark: #1A1A1A;
+  --jp-secondary: #5A5A5A;
+  --jp-accent: #C41E3A;
+  --jp-background: #FAFAFA;
+  --jp-surface: #FFFFFF;
+  --jp-text: #1A1A1A;
+  --jp-text-muted: #666666;
+  --jp-border: #E0E0E0;
+}
+
+.theme-momiji {
+  --jp-primary: #D84315;
+  --jp-primary-dark: #BF360C;
+  --jp-secondary: #FFAB91;
+  --jp-accent: #FFD54F;
+  --jp-background: #FEF9F7;
+  --jp-surface: #FFFFFF;
+  --jp-text: #3E2723;
+  --jp-text-muted: #795548;
+  --jp-border: #F5E6E0;
+}
+
+.theme-wabi-sabi {
+  --jp-primary: #8D6E63;
+  --jp-primary-dark: #6D4C41;
+  --jp-secondary: #D7CCC8;
+  --jp-accent: #78909C;
+  --jp-background: #F5F0EB;
+  --jp-surface: #FAF8F5;
+  --jp-text: #4E342E;
+  --jp-text-muted: #8D6E63;
+  --jp-border: #E6DED8;
+}
+
+.theme-koi {
+  --jp-primary: #FF7043;
+  --jp-primary-dark: #E64A19;
+  --jp-secondary: #FFCCBC;
+  --jp-accent: #4DB6AC;
+  --jp-background: #E8F5F4;
+  --jp-surface: #FFFFFF;
+  --jp-text: #263238;
+  --jp-text-muted: #546E7A;
+  --jp-border: #B2DFDB;
+}
+
+.theme-miyabi {
+  --jp-primary: #9C27B0;
+  --jp-primary-dark: #7B1FA2;
+  --jp-secondary: #CE93D8;
+  --jp-accent: #FFD700;
+  --jp-background: #FDF7FF;
+  --jp-surface: #FFFFFF;
+  --jp-text: #4A148C;
+  --jp-text-muted: #7B1FA2;
+  --jp-border: #E1BEE7;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+.jp-profile-layout {
+  font-family: var(--jp-font-sans);
+  background: var(--jp-background);
+  color: var(--jp-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ============================================
+   Profile Container
+   ============================================ */
+
+.jp-profile-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--jp-space-xl);
+}
+
+.jp-profile-header {
+  margin-bottom: var(--jp-space-2xl);
+}
+
+.jp-profile-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--jp-text);
+  margin-bottom: var(--jp-space-xs);
+  letter-spacing: -0.02em;
+}
+
+.jp-profile-subtitle {
+  font-size: 0.95rem;
+  color: var(--jp-text-muted);
+  font-weight: 400;
+}
+
+/* ============================================
+   Theme Selector Grid
+   ============================================ */
+
+.jp-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--jp-space-lg);
+  margin-bottom: var(--jp-space-2xl);
+}
+
+.jp-theme-card {
+  background: var(--jp-surface);
+  border: 2px solid var(--jp-border);
+  border-radius: var(--jp-radius-lg);
+  padding: var(--jp-space-lg);
+  cursor: pointer;
+  transition: all var(--jp-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.jp-theme-card:hover {
+  border-color: var(--jp-primary);
+  box-shadow: var(--jp-shadow-md);
+  transform: translateY(-2px);
+}
+
+.jp-theme-card.active {
+  border-color: var(--jp-primary);
+  background: var(--jp-secondary);
+}
+
+.jp-theme-card.active::after {
+  content: '✓';
+  position: absolute;
+  top: var(--jp-space-md);
+  right: var(--jp-space-md);
+  width: 24px;
+  height: 24px;
+  background: var(--jp-primary);
+  color: white;
+  border-radius: var(--jp-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.jp-theme-preview {
+  display: flex;
+  gap: var(--jp-space-xs);
+  margin-bottom: var(--jp-space-md);
+  height: 48px;
+  border-radius: var(--jp-radius-md);
+  overflow: hidden;
+}
+
+.jp-theme-color {
+  flex: 1;
+  border-radius: var(--jp-radius-sm);
+}
+
+.jp-theme-info {
+  margin-bottom: var(--jp-space-sm);
+}
+
+.jp-theme-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--jp-text);
+  margin-bottom: 2px;
+}
+
+.jp-theme-desc {
+  font-size: 0.85rem;
+  color: var(--jp-text-muted);
+}
+
+/* ============================================
+   Profile Settings Sections
+   ============================================ */
+
+.jp-section {
+  background: var(--jp-surface);
+  border: 1px solid var(--jp-border);
+  border-radius: var(--jp-radius-lg);
+  padding: var(--jp-space-xl);
+  margin-bottom: var(--jp-space-lg);
+}
+
+.jp-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--jp-space-md);
+  margin-bottom: var(--jp-space-lg);
+  padding-bottom: var(--jp-space-md);
+  border-bottom: 2px solid var(--jp-border);
+}
+
+.jp-section-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--jp-primary);
+  border-radius: var(--jp-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.jp-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--jp-text);
+}
+
+/* ============================================
+   Form Elements - Flat Design
+   ============================================ */
+
+.jp-form-group {
+  margin-bottom: var(--jp-space-lg);
+}
+
+.jp-form-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--jp-text);
+  margin-bottom: var(--jp-space-xs);
+}
+
+.jp-form-input {
+  width: 100%;
+  padding: var(--jp-space-md);
+  font-size: 1rem;
+  font-family: var(--jp-font-sans);
+  color: var(--jp-text);
+  background: var(--jp-background);
+  border: 2px solid var(--jp-border);
+  border-radius: var(--jp-radius-md);
+  transition: all var(--jp-transition-fast);
+}
+
+.jp-form-input:focus {
+  outline: none;
+  border-color: var(--jp-primary);
+  box-shadow: 0 0 0 3px var(--jp-secondary);
+}
+
+.jp-form-input::placeholder {
+  color: var(--jp-text-muted);
+}
+
+/* ============================================
+   Buttons - Flat Design
+   ============================================ */
+
+.jp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jp-space-sm);
+  padding: var(--jp-space-md) var(--jp-space-xl);
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: var(--jp-font-sans);
+  border: none;
+  border-radius: var(--jp-radius-md);
+  cursor: pointer;
+  transition: all var(--jp-transition-fast);
+  text-decoration: none;
+}
+
+.jp-button-primary {
+  background: var(--jp-primary);
+  color: white;
+}
+
+.jp-button-primary:hover {
+  background: var(--jp-primary-dark);
+  transform: translateY(-1px);
+}
+
+.jp-button-secondary {
+  background: var(--jp-background);
+  color: var(--jp-text);
+  border: 2px solid var(--jp-border);
+}
+
+.jp-button-secondary:hover {
+  border-color: var(--jp-primary);
+  background: var(--jp-secondary);
+}
+
+.jp-button-ghost {
+  background: transparent;
+  color: var(--jp-text-muted);
+}
+
+.jp-button-ghost:hover {
+  color: var(--jp-text);
+  background: var(--jp-background);
+}
+
+/* ============================================
+   Toggle Cards
+   ============================================ */
+
+.jp-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--jp-space-md);
+}
+
+.jp-toggle-card {
+  background: var(--jp-background);
+  border: 2px solid var(--jp-border);
+  border-radius: var(--jp-radius-md);
+  padding: var(--jp-space-lg);
+  cursor: pointer;
+  transition: all var(--jp-transition-fast);
+}
+
+.jp-toggle-card:hover {
+  border-color: var(--jp-primary);
+}
+
+.jp-toggle-card.active {
+  border-color: var(--jp-primary);
+  background: var(--jp-secondary);
+}
+
+.jp-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--jp-space-md);
+  cursor: pointer;
+}
+
+.jp-toggle-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--jp-primary);
+}
+
+.jp-toggle-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--jp-text);
+  margin-bottom: 2px;
+}
+
+.jp-toggle-text span {
+  font-size: 0.85rem;
+  color: var(--jp-text-muted);
+}
+
+/* ============================================
+   Color Swatches
+   ============================================ */
+
+.jp-color-swatch {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--jp-radius-full);
+  border: 2px solid var(--jp-border);
+  cursor: pointer;
+  transition: transform var(--jp-transition-fast);
+}
+
+.jp-color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.jp-color-swatch.active {
+  border-color: var(--jp-text);
+  box-shadow: 0 0 0 2px var(--jp-secondary);
+}
+
+/* ============================================
+   Status Messages
+   ============================================ */
+
+.jp-alert {
+  padding: var(--jp-space-md) var(--jp-space-lg);
+  border-radius: var(--jp-radius-md);
+  margin-bottom: var(--jp-space-lg);
+  font-size: 0.9rem;
+}
+
+.jp-alert-success {
+  background: var(--jp-secondary);
+  border-left: 4px solid var(--jp-success);
+  color: var(--jp-text);
+}
+
+.jp-alert-error {
+  background: #FFEBEE;
+  border-left: 4px solid var(--jp-error);
+  color: var(--jp-text);
+}
+
+.jp-alert-warning {
+  background: #FFF8E1;
+  border-left: 4px solid var(--jp-warning);
+  color: var(--jp-text);
+}
+
+/* ============================================
+   Divider
+   ============================================ */
+
+.jp-divider {
+  height: 2px;
+  background: var(--jp-border);
+  border: none;
+  margin: var(--jp-space-xl) 0;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .jp-profile-container {
+    padding: var(--jp-space-md);
+  }
+  
+  .jp-profile-title {
+    font-size: 1.5rem;
+  }
+  
+  .jp-theme-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .jp-section {
+    padding: var(--jp-space-lg);
+  }
+  
+  .jp-toggle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes jp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.jp-animate-in {
+  animation: jp-fade-in var(--jp-transition-slow) ease-out;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.jp-text-center { text-align: center; }
+.jp-text-right { text-align: right; }
+.jp-mt-lg { margin-top: var(--jp-space-lg); }
+.jp-mb-lg { margin-bottom: var(--jp-space-lg); }
+.jp-flex { display: flex; }
+.jp-flex-between { justify-content: space-between; }
+.jp-flex-center { align-items: center; justify-content: center; }
+.jp-gap-md { gap: var(--jp-space-md); }
+.jp-hidden { display: none; }
+.jp-visible { display: block; }

@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { config } from "../config.ts";
 
 export default class TranscriptionService extends EventEmitter {
   db: any;
@@ -17,21 +18,20 @@ export default class TranscriptionService extends EventEmitter {
   }
 
   get pipeline() {
-    if (this.audioPipeline && typeof this.audioPipeline.transcribeRecording === 'function') {
+    if (this.audioPipeline && typeof this.audioPipeline.transcribeRecording === "function") {
       return this.audioPipeline;
     }
-    
-    // Safety fallback: if injection failed but we are in a context where we can try to recover
+
     if (this.audioPipeline && Object.keys(this.audioPipeline).length === 0) {
-       console.warn("[TranscriptionService] audioPipeline looks like an empty object (circular dep?).");
+      console.warn("[TranscriptionService] audioPipeline looks like an empty object (circular dep?).");
     }
 
     if (!this.audioPipeline) {
-       throw new Error("Critical: TranscriptionService.audioPipeline is null or undefined. Check bootstrap injection.");
+      throw new Error("Critical: TranscriptionService.audioPipeline is null or undefined. Check bootstrap injection.");
     }
-    
-    if (typeof this.audioPipeline.transcribeRecording !== 'function') {
-       throw new Error(`Critical: TranscriptionService.audioPipeline is missing 'transcribeRecording'. Found: ${typeof this.audioPipeline.transcribeRecording}`);
+
+    if (typeof this.audioPipeline.transcribeRecording !== "function") {
+      throw new Error(`Critical: TranscriptionService.audioPipeline is missing 'transcribeRecording'. Found: ${typeof this.audioPipeline.transcribeRecording}`);
     }
 
     return this.audioPipeline;
@@ -39,6 +39,18 @@ export default class TranscriptionService extends EventEmitter {
 
   async upsertMediaAsset(data: any) {
     return await this.db.upsertMediaAsset(data);
+  }
+
+  async upsertMediaAssetFromPath(data: any) {
+    if (typeof this.db.upsertMediaAssetFromPath === "function") {
+      return await this.db.upsertMediaAssetFromPath(data);
+    }
+
+    const fs = await import("node:fs/promises");
+    return await this.db.upsertMediaAsset({
+      ...data,
+      buffer: await fs.readFile(data.filePath),
+    });
   }
 
   async getMediaAsset(recordingId: string) {
@@ -51,6 +63,13 @@ export default class TranscriptionService extends EventEmitter {
 
   async saveAudioQualityDiagnostics(recordingId: string, audioQuality: any) {
     return await this.db.saveAudioQualityDiagnostics(recordingId, audioQuality);
+  }
+
+  async updateTranscriptionMetadata(recordingId: string, updates: Record<string, unknown>) {
+    if (typeof this.db.updateTranscriptionMetadata !== "function") {
+      return null;
+    }
+    return await this.db.updateTranscriptionMetadata(recordingId, updates);
   }
 
   async queueTranscription(recordingId: string, updates: any) {
@@ -90,33 +109,66 @@ export default class TranscriptionService extends EventEmitter {
         const startSTT = performance.now();
         const reqId = options.requestId || "internal-stt";
         const { logger } = await import("../logger.ts");
+        const processingMode =
+          options.processingMode === "full" || options.processingMode === "fast"
+            ? options.processingMode
+            : config.VOICELOG_PROCESSING_MODE_DEFAULT;
+        const shouldRunPostprocess = processingMode === "fast" && config.VOICELOG_ENABLE_POSTPROCESS;
+        let localSourcePath = "";
+        let cleanupLocalSource = async () => {};
 
-        logger.info(`[Pipeline] Rozpoczynam transkrypcję i analizę audio.`, { requestId: reqId, recordingId });
-        await this.markTranscriptionProcessing(recordingId);
-        
-        const wsState = await this.db.getWorkspaceState(asset.workspace_id);
-        const result = await this.pipeline.transcribeRecording(asset, {
+        logger.info("[Pipeline] Starting transcription job.", { requestId: reqId, recordingId, processingMode });
+
+        const markProcessingPromise = this.markTranscriptionProcessing(recordingId);
+        const [wsState, memberNames, voiceProfiles] = await Promise.all([
+          this.db.getWorkspaceState(asset.workspace_id),
+          this.workspaceService.getWorkspaceMemberNames(asset.workspace_id),
+          this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
+        ]);
+        await markProcessingPromise;
+
+        if (typeof this.pipeline.materializeAssetToLocal === "function") {
+          const materialized = await this.pipeline.materializeAssetToLocal(asset, { signal: options.signal });
+          localSourcePath = materialized?.localPath || "";
+          cleanupLocalSource =
+            typeof materialized?.cleanup === "function"
+              ? materialized.cleanup
+              : cleanupLocalSource;
+        }
+
+        const sharedOptions = {
           ...options,
-          onProgress: (payload) => {
-            this.emit(`progress-${recordingId}`, payload);
-          },
+          processingMode,
+          localSourcePath,
           participants: [
             ...(options.participants || []),
-            ...(await this.workspaceService.getWorkspaceMemberNames(asset.workspace_id))
+            ...memberNames,
           ],
           vocabulary: [
             ...(options.vocabulary ? [options.vocabulary] : []),
-            ...(wsState.vocabulary || [])
+            ...(wsState.vocabulary || []),
           ].join(", "),
-          voiceProfiles: await this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
+          voiceProfiles,
+          onProgress: (payload: any) => {
+            this.emit(`progress-${recordingId}`, payload);
+          },
+        };
+
+        const result = await this.pipeline.transcribeRecording(asset, {
+          ...sharedOptions,
+          skipEarlyPyannote: processingMode !== "full",
+          skipChunkVAD: processingMode !== "full" || !config.VOICELOG_ENABLE_CHUNK_VAD,
+          skipVoiceProfileMatch: processingMode !== "full",
         });
-        
+
         const isEmptyTranscript = result?.transcriptOutcome === "empty";
         this.emit(`progress-${recordingId}`, {
           progress: 100,
+          enhancementsPending: Boolean(result?.enhancementsPending),
+          postprocessStage: result?.postprocessStage || "",
           message: isEmptyTranscript
             ? (result?.userMessage || "Nie wykryto wypowiedzi w nagraniu.")
-            : "Trener wymowy gotowy! (Zakończono)",
+            : "Trener wymowy gotowy! (Zakonczono)",
         });
 
         await this.saveTranscriptionResult(recordingId, {
@@ -124,16 +176,31 @@ export default class TranscriptionService extends EventEmitter {
           pipelineStatus: "completed",
         });
 
-        logger.info(`[Metrics] Całkowity Pipeline Czas Zakończony (Transkrypcja + LLM = Sukces)`, { 
-          requestId: reqId, 
-          recordingId: recordingId,
+        if (shouldRunPostprocess && !isEmptyTranscript) {
+          this.runEnhancementPostProcess(
+            recordingId,
+            asset,
+            {
+              ...sharedOptions,
+              processingMode: "full",
+            },
+            cleanupLocalSource
+          ).catch((err: any) => {
+            console.error("[Pipeline] Background post-process failed:", err?.message || err);
+          });
+        } else {
+          await cleanupLocalSource();
+        }
+
+        logger.info("[Metrics] Pipeline completed successfully.", {
+          requestId: reqId,
+          recordingId,
           durationMs: (performance.now() - startSTT).toFixed(2),
           confidence: result.diarization?.confidence || 0,
         });
 
-        // Wectorize for RAG in the background without blocking the UI updates
         if (!isEmptyTranscript && result.segments && result.segments.length > 0) {
-          this.vectorizeTranscriptionResultToRAG(asset.workspace_id, recordingId, result.segments).catch(err => {
+          this.vectorizeTranscriptionResultToRAG(asset.workspace_id, recordingId, result.segments).catch((err) => {
             console.error("[RAG] Background vectorization failed:", err);
           });
         }
@@ -157,6 +224,68 @@ export default class TranscriptionService extends EventEmitter {
     this.transcriptionJobs.set(recordingId, jobPromise);
   }
 
+  async runEnhancementPostProcess(
+    recordingId: string,
+    asset: any,
+    options: any,
+    cleanupLocalSource: () => Promise<void>
+  ) {
+    const reqId = options.requestId || "internal-stt";
+    const { logger } = await import("../logger.ts");
+
+    try {
+      await this.updateTranscriptionMetadata(recordingId, {
+        enhancementsPending: true,
+        postprocessStage: "running",
+      });
+      this.emit(`progress-${recordingId}`, {
+        progress: 100,
+        enhancementsPending: true,
+        postprocessStage: "running",
+        message: "Trwa dopinanie diarization i dopasowania glosow...",
+      });
+
+      const fullResult = await this.pipeline.transcribeRecording(asset, {
+        ...options,
+        processingMode: "full",
+        skipEarlyPyannote: false,
+        skipChunkVAD: !config.VOICELOG_ENABLE_CHUNK_VAD,
+        skipVoiceProfileMatch: false,
+      });
+
+      await this.saveTranscriptionResult(recordingId, {
+        ...fullResult,
+        pipelineStatus: "completed",
+        enhancementsPending: false,
+        postprocessStage: "done",
+      });
+
+      this.emit(`progress-${recordingId}`, {
+        progress: 100,
+        enhancementsPending: false,
+        postprocessStage: "done",
+        message: "Dodatkowe przetwarzanie zakonczone.",
+      });
+
+      logger.info("[Pipeline] Background post-process completed.", {
+        requestId: reqId,
+        recordingId,
+      });
+    } catch (error: any) {
+      await this.updateTranscriptionMetadata(recordingId, {
+        enhancementsPending: false,
+        postprocessStage: "failed",
+      });
+      logger.warn("[Pipeline] Background post-process failed.", {
+        requestId: reqId,
+        recordingId,
+        message: error?.message || String(error),
+      });
+    } finally {
+      await cleanupLocalSource();
+    }
+  }
+
   async normalizeRecording(filePath: string, options = {}) {
     return this.pipeline.normalizeRecording(filePath, options);
   }
@@ -177,7 +306,7 @@ export default class TranscriptionService extends EventEmitter {
       throw new Error("Audio pipeline nie wspiera metryk akustycznych.");
     }
 
-    const fs = await import("node:fs");
+    const fs = await import("node:fs/promises");
 
     let segments = [];
     let diarization = {};
@@ -187,27 +316,35 @@ export default class TranscriptionService extends EventEmitter {
 
     const speakerNames = typeof diarization === "object" && diarization ? (diarization as any).speakerNames || {} : {};
     const uniqueSpeakerIds = [...new Set(segments.map((segment: any) => String(segment?.speakerId ?? "")).filter(Boolean))];
+    const speakers = new Array(uniqueSpeakerIds.length);
+    const concurrency = Math.min(3, Math.max(1, uniqueSpeakerIds.length));
+    let cursor = 0;
 
-    const speakers = [];
-    for (const speakerId of uniqueSpeakerIds) {
-      const clipPath = await this.pipeline.extractSpeakerAudioClip(asset, speakerId, segments, options);
-      try {
-        const metrics = await this.pipeline.analyzeAcousticFeatures(clipPath, options);
-        speakers.push({
-          speakerId,
-          speakerName: String(
-            speakerNames?.[speakerId] ||
-            segments.find((segment: any) => String(segment?.speakerId ?? "") === speakerId)?.speakerName ||
-            `Speaker ${Number(speakerId) + 1}`
-          ),
-          ...metrics,
-        });
-      } finally {
-        try { fs.unlinkSync(clipPath); } catch (_) {}
+    const workers = Array.from({ length: concurrency }, async () => {
+      while (cursor < uniqueSpeakerIds.length) {
+        const index = cursor;
+        cursor += 1;
+        const speakerId = uniqueSpeakerIds[index];
+        const clipPath = await this.pipeline.extractSpeakerAudioClip(asset, speakerId, segments, options);
+        try {
+          const metrics = await this.pipeline.analyzeAcousticFeatures(clipPath, options);
+          speakers[index] = {
+            speakerId,
+            speakerName: String(
+              speakerNames?.[speakerId] ||
+              segments.find((segment: any) => String(segment?.speakerId ?? "") === speakerId)?.speakerName ||
+              `Speaker ${Number(speakerId) + 1}`
+            ),
+            ...metrics,
+          };
+        } finally {
+          try { await fs.unlink(clipPath); } catch (_) {}
+        }
       }
-    }
+    });
 
-    return { speakers };
+    await Promise.all(workers);
+    return { speakers: speakers.filter(Boolean) };
   }
 
   async createVoiceProfileFromSpeaker(asset: any, speakerId: string, speakerName: string, userId: string, options = {}) {
@@ -220,16 +357,20 @@ export default class TranscriptionService extends EventEmitter {
     if (!segments.length) throw new Error("Brak transkrypcji w bazie.");
 
     const clipPath = await this.pipeline.extractSpeakerAudioClip(asset, speakerId, segments, options);
-    
+
     try {
       const embedding = await this.computeEmbedding(clipPath);
       const profileId = `vp_${crypto.randomUUID().replace(/-/g, "")}`;
       const newPath = path.join(this.db.uploadDir, `${profileId}.wav`);
-      
+
       fs.renameSync(clipPath, newPath);
       const profile = await this.workspaceService.saveVoiceProfile({
-        id: profileId, userId, workspaceId: asset.workspace_id,
-        speakerName, audioPath: newPath, embedding: embedding || []
+        id: profileId,
+        userId,
+        workspaceId: asset.workspace_id,
+        speakerName,
+        audioPath: newPath,
+        embedding: embedding || [],
       });
       return profile;
     } finally {
@@ -251,20 +392,16 @@ export default class TranscriptionService extends EventEmitter {
 
   async computeEmbedding(audioPath: string) {
     if (!this.speakerEmbedder) {
-      // Lazy load speakerEmbedder if needed
-      const { computeEmbedding } = await import('../speakerEmbedder.ts');
+      const { computeEmbedding } = await import("../speakerEmbedder.ts");
       this.speakerEmbedder = { computeEmbedding };
     }
     return this.speakerEmbedder.computeEmbedding(audioPath);
   }
 
-  // --- RAG Subsystem ---
-
   async vectorizeTranscriptionResultToRAG(workspaceId: string, recordingId: string, segments: any[]) {
     if (!this.audioPipeline?.embedTextChunks) return;
     const crypto = await import("node:crypto");
 
-    // Budujemy bloki co 3 segmenty, by zminimalizować szumy i dodać kontekst uderzeń (RAG Chunking)
     const chunks = [];
     for (let i = 0; i < segments.length; i += 3) {
       const slice = segments.slice(i, i + 3);
@@ -283,63 +420,64 @@ export default class TranscriptionService extends EventEmitter {
 
     if (!chunks.length) return;
 
-    // Przetwarzamy tekst na Embeddingi OpenAI (wszystko w jednym Batch'u)
-    const textsToEmbed = chunks.map(c => c.text);
+    const textsToEmbed = chunks.map((chunk) => chunk.text);
     const embeddings = await this.audioPipeline.embedTextChunks(textsToEmbed);
 
     if (!embeddings || embeddings.length !== chunks.length) {
-      console.warn("[RAG] Odrzucono pakiet bloków ze względu na błąd API Embeddings.");
+      console.warn("[RAG] Odrzucono pakiet blokow ze wzgledu na blad API Embeddings.");
       return;
     }
 
-    // Zapis do bazy danych
-    for (let i = 0; i < chunks.length; i++) {
-       await this.db.saveRagChunk({
-         ...chunks[i],
-         embedding: embeddings[i]
-       });
+    const payload = chunks.map((chunk, index) => ({
+      ...chunk,
+      embedding: embeddings[index],
+    }));
+
+    if (typeof this.db.saveRagChunks === "function") {
+      await this.db.saveRagChunks(payload);
+    } else {
+      for (const chunk of payload) {
+        await this.db.saveRagChunk(chunk);
+      }
     }
-    console.log(`[RAG] Pomyślnie zindeksowano ${chunks.length} wektorów na archiwum spotkania.`);
+
+    console.log(`[RAG] Pomyslnie zindeksowano ${chunks.length} wektorow na archiwum spotkania.`);
   }
 
   async queryRAG(workspaceId: string, question: string) {
     if (!this.audioPipeline?.embedTextChunks) return null;
 
-    // Bierzemy embedding pytania
     const qEmbeddings = await this.audioPipeline.embedTextChunks([question]);
     if (!qEmbeddings || !qEmbeddings[0]) return null;
     const qVec = qEmbeddings[0];
 
-    // Pobieramy wszystkie chunki wektorowe RAG z Workspace'a
     const allChunks = await this.db.getAllRagChunksForWorkspace(workspaceId);
     if (!allChunks || allChunks.length === 0) return null;
 
-    // Obliczamy Similarities czystym JS'em żeby pominąć ciężkie wdrożenia (tylko 50ms)
     function dotProduct(a: number[], b: number[]) {
       let sum = 0;
-      for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+      for (let i = 0; i < a.length; i += 1) sum += a[i] * b[i];
       return sum;
     }
+
     function magnitude(a: number[]) {
       let sum = 0;
-      for (let i = 0; i < a.length; i++) sum += a[i] * a[i];
+      for (let i = 0; i < a.length; i += 1) sum += a[i] * a[i];
       return Math.sqrt(sum);
     }
-    
-    const qMag = magnitude(qVec);
 
-    const scored = allChunks.map(chunk => {
+    const qMag = magnitude(qVec);
+    const scored = allChunks.map((chunk) => {
       let vec = [];
-      try { vec = JSON.parse(chunk.embedding_json); } catch(_) {}
+      try { vec = JSON.parse(chunk.embedding_json); } catch (_) {}
       if (!vec.length) return { chunk, score: -1 };
       const score = dotProduct(qVec, vec) / (qMag * magnitude(vec));
       return { chunk, score };
     });
 
-    // Bierzemy top 10 kawałków
     scored.sort((a, b) => b.score - a.score);
-    const topChunks = scored.slice(0, 15).filter(s => s.score > 0.1);
-    
-    return topChunks.map(s => s.chunk);
+    const topChunks = scored.slice(0, 15).filter((item) => item.score > 0.1);
+
+    return topChunks.map((item) => item.chunk);
   }
 }

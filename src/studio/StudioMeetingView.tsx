@@ -1158,7 +1158,14 @@ export default function StudioMeetingView({
           </div>
           {recordingMessage && (
             <div className={`ff-status-banner ff-status-banner-spaced${analysisStatus === "error" ? " ff-status-error" : ""}`}>
-              <span>{recordingMessage}</span>
+              <div style={{ flex: 1 }}>
+                <span>{recordingMessage}</span>
+                {pipelineProgressPercent > 0 && pipelineProgressPercent < 100 && analysisStatus !== "error" && (
+                  <div style={{ height: 4, background: "rgba(255,255,255,0.1)", marginTop: 8, borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pipelineProgressPercent}%`, background: "var(--accent, #3b82f6)", transition: "width 0.3s ease" }} />
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 className="ff-status-dismiss-btn"
@@ -1371,7 +1378,14 @@ export default function StudioMeetingView({
       {/* Recording / processing status message */}
       {recordingMessage ? (
         <div className={`ff-status-banner${analysisStatus === "error" ? " ff-status-error" : ""}`}>
-          <span>{recordingMessage}</span>
+          <div style={{ flex: 1 }}>
+            <span>{recordingMessage}</span>
+            {pipelineProgressPercent > 0 && pipelineProgressPercent < 100 && analysisStatus !== "error" && (
+              <div style={{ height: 4, background: "rgba(255,255,255,0.1)", marginTop: 8, borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pipelineProgressPercent}%`, background: "var(--accent, #3b82f6)", transition: "width 0.3s ease" }} />
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="ff-status-dismiss-btn"

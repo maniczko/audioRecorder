@@ -7,6 +7,9 @@ import './ProfileTabStyles.css';
 import useWorkspaceBackup from "./hooks/useWorkspaceBackup";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
+import { JapaneseThemeSelector } from './components/JapaneseThemeSelector';
+import { type JapaneseTheme } from './styles/japaneseThemes';
+import './styles/JapaneseFlatDesign.css';
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
@@ -664,6 +667,16 @@ export default function ProfileTab({
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
   const [activeCategory, setActiveCategory] = useState("account");
+  const [japaneseTheme, setJapaneseTheme] = useState<JapaneseTheme>(() => {
+    const saved = localStorage.getItem('profile-theme') as JapaneseTheme;
+    return saved || 'sakura';
+  });
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.className = `theme-${japaneseTheme}`;
+    localStorage.setItem('profile-theme', japaneseTheme);
+  }, [japaneseTheme]);
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
@@ -869,6 +882,20 @@ export default function ProfileTab({
         {activeCategory === 'review' && (
           <div className="profile-category-view profile-category-view-spaced">
             <div className="profile-grid">
+              {/* Japanese Flat Design Theme Selector */}
+              <section className="panel profile-grid-span-two" style={{ gridColumn: 'span 2' }}>
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">🎨 Japanese Flat Design</div>
+                    <h2>Wybierz Motyw</h2>
+                  </div>
+                </div>
+                <JapaneseThemeSelector
+                  currentTheme={japaneseTheme}
+                  onThemeChange={setJapaneseTheme}
+                />
+              </section>
+
               <section className="panel">
                 <div className="panel-header compact">
                   <div><div className="eyebrow">Settings</div><h2>Wygląd i Layout</h2></div>

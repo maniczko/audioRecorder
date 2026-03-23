@@ -18,25 +18,9 @@ function statCards(stats, visibleStats) {
   ];
 }
 
+
 
-function NotificationStrip({ notifications = [] }) {
-  if (!notifications.length) {
-    return null;
-  }
-  return (
-    <div className="todo-notification-strip">
-      {notifications.slice(0, 4).map(({ task, sla, dependencies }) => (
-        <article key={task.id} className={`todo-notification-card ${sla.tone}`}>
-          <strong>{task.title}</strong>
-          {dependencies.blocking ? <small>Blokuje: {dependencies.unresolved[0]?.title}</small> : null}
-        </article>
-      ))}
-    </div>
-  );
-}
-
-
-function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setShowColumnManager, children }) {
+function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setShowColumnManager, children = null }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="todo-settings-dropdown-wrap" style={{ position: "relative" }}>
@@ -197,7 +181,7 @@ function TasksWorkspaceView({
           </div>
         </section>
 
-        <NotificationStrip notifications={taskNotifications} />
+
 
         {!isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card">

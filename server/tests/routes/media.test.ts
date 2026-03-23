@@ -23,6 +23,7 @@ describe("Media Routes", () => {
 
     mockTranscriptionService = {
       upsertMediaAsset: vi.fn(),
+      upsertMediaAssetFromPath: vi.fn(),
       analyzeAudioQuality: vi.fn(),
       saveAudioQualityDiagnostics: vi.fn(),
       getMediaAsset: vi.fn(),
@@ -83,13 +84,11 @@ describe("Media Routes", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.id).toBe("rec_new");
-    expect(data.audioQuality).toEqual({
-      qualityLabel: "fair",
-      enhancementRecommended: true,
-    });
+    expect(data.audioQuality).toBeNull();
     expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledWith(
       expect.objectContaining({ recordingId: "rec_new", workspaceId: "ws_1", contentType: "audio/webm" })
     );
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledWith("rec_new", {
       qualityLabel: "fair",
       enhancementRecommended: true,
@@ -133,7 +132,10 @@ describe("Media Routes", () => {
     const data = await res.json();
     expect(data.recordingId).toBe("rec_1");
     expect(data.pipelineStatus).toBe("queued");
-    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith("rec_1", expect.any(Object));
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
+      "rec_1",
+      expect.objectContaining({ processingMode: "fast" })
+    );
   });
 
   it("GET /media/recordings/:recordingId/transcribe - returns payload", async () => {
@@ -206,6 +208,7 @@ describe("Media Routes", () => {
         workspaceId: "ws_1",
         meetingId: "m_1",
         contentType: "audio/webm",
+        processingMode: "fast",
       })
     );
     expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledWith(

@@ -22,6 +22,7 @@ describe("TranscriptionService - Additional Coverage", () => {
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
       saveRagChunk: vi.fn(),
+      saveRagChunks: vi.fn(),
       getAllRagChunksForWorkspace: vi.fn().mockResolvedValue([]),
       upsertMediaAsset: vi.fn(),
       getMediaAsset: vi.fn(),
@@ -311,7 +312,7 @@ describe("TranscriptionService - Additional Coverage", () => {
       await service.vectorizeTranscriptionResultToRAG("ws1", "rec1", segments);
 
       expect(mockAudioPipeline.embedTextChunks).toHaveBeenCalled();
-      expect(mockDb.saveRagChunk).toHaveBeenCalled();
+      expect(mockDb.saveRagChunks).toHaveBeenCalledTimes(1);
     });
 
     test("skips chunks that are too short", async () => {
@@ -346,7 +347,7 @@ describe("TranscriptionService - Additional Coverage", () => {
       await service.vectorizeTranscriptionResultToRAG("ws1", "rec1", []);
 
       expect(mockAudioPipeline.embedTextChunks).not.toHaveBeenCalled();
-      expect(mockDb.saveRagChunk).not.toHaveBeenCalled();
+      expect(mockDb.saveRagChunks).not.toHaveBeenCalled();
     });
 
     test("handles pipeline without embedTextChunks gracefully", async () => {

@@ -15,8 +15,10 @@ describe("TranscriptionService", () => {
       queueTranscription: vi.fn(),
       markTranscriptionProcessing: vi.fn(),
       saveTranscriptionResult: vi.fn(),
+      updateTranscriptionMetadata: vi.fn(),
       markTranscriptionFailure: vi.fn(),
       saveRagChunk: vi.fn(),
+      saveRagChunks: vi.fn(),
     };
     mockWorkspaceService = {
       getWorkspaceMemberNames: vi.fn().mockResolvedValue(["Anna", "Jan"]),
@@ -84,10 +86,20 @@ describe("TranscriptionService", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     expect(mockDb.markTranscriptionProcessing).toHaveBeenCalled();
-    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(2);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenNthCalledWith(
+      1,
+      asset,
+      expect.objectContaining({ processingMode: "fast" })
+    );
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenNthCalledWith(
+      2,
+      asset,
+      expect.objectContaining({ processingMode: "full" })
+    );
     expect(progressEvents).toEqual(
       expect.arrayContaining([
-        { progress: 55, message: "mid" },
+        expect.objectContaining({ progress: 55, message: "mid" }),
       ])
     );
     expect(mockDb.saveTranscriptionResult).toHaveBeenCalled();
@@ -149,9 +161,10 @@ describe("TranscriptionService", () => {
     expect(mockDb.markTranscriptionFailure).not.toHaveBeenCalled();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockDb.saveRagChunk).not.toHaveBeenCalled();
+    expect(mockDb.saveRagChunks).not.toHaveBeenCalled();
     expect(progressEvents).toEqual(
       expect.arrayContaining([
-        { progress: 100, message: "Nie wykryto wypowiedzi w nagraniu." },
+        expect.objectContaining({ progress: 100, message: "Nie wykryto wypowiedzi w nagraniu." }),
       ])
     );
   });

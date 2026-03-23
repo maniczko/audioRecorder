@@ -8,6 +8,7 @@ import './RecordingsTabStyles.css';
 import { createMediaService } from "./services/mediaService";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
+import TagInput from "./shared/TagInput";
 
 function formatPipelineDiagnostics(item) {
   const details = [];
@@ -274,16 +275,14 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           />
-          <Select 
-            className="studio-picker-search recordings-library-filter-control"
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-          >
-            <option value="">Wszystkie tagi</option>
-            {allTags.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </Select>
+          <div style={{ flex: 1, minWidth: 200, maxWidth: 350 }}>
+            <TagInput
+              tags={tagFilter}
+              suggestions={allTags}
+              onChange={setTagFilter}
+              placeholder="Filtruj wg tagów..."
+            />
+          </div>
           <div className="status-chip">{sortedAndFiltered.length}</div>
         </div>
       </div>

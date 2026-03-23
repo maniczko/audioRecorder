@@ -85,6 +85,7 @@ const mockProps = {
   selectMeeting: vi.fn(),
   selectedRecordingId: "rec1",
   setSelectedRecordingId: vi.fn(),
+  defaultToNewStudio: false,
 };
 
 describe("StudioTab", () => {
@@ -119,6 +120,18 @@ describe("StudioTab", () => {
       render(<StudioTab {...mockProps} />);
       
       expect(screen.queryByTestId("studio-sidebar")).not.toBeInTheDocument();
+    });
+
+    it("starts a new studio draft on first default studio entry", () => {
+      render(<StudioTab {...mockProps} defaultToNewStudio={true} />);
+
+      expect(mockProps.startNewMeetingDraft).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not reset meeting context when studio was opened intentionally from elsewhere", () => {
+      render(<StudioTab {...mockProps} defaultToNewStudio={false} />);
+
+      expect(mockProps.startNewMeetingDraft).not.toHaveBeenCalled();
     });
   });
 

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import fs from "node:fs";
 import { config } from "../config";
 
 const SUPABASE_URL = config.SUPABASE_URL || "";
@@ -51,6 +52,30 @@ export async function uploadAudioToStorage(recordingId: string, buffer: Buffer, 
     throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
   }
   
+  return data.path;
+}
+
+export async function uploadAudioFileToStorage(recordingId: string, filePath: string, contentType: string, extension: string): Promise<string | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  await ensureBucket();
+
+  const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+  const fileName = `${safeRecordingId}${extension}`;
+  const body = fs.createReadStream(filePath);
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(fileName, body as any, {
+      contentType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+  }
+
   return data.path;
 }
 

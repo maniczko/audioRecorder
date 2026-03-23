@@ -447,6 +447,32 @@ describe("Database - Additional Coverage Tests", () => {
       expect(result.speaker_name).toBe("Alice");
     });
 
+    test("saveRagChunks inserts multiple rows in one batch", async () => {
+      await db.saveRagChunks([
+        {
+          id: "rag_batch_1",
+          workspaceId: "ws1",
+          recordingId: "rec1",
+          speakerName: "Alice",
+          text: "Batch chunk 1",
+          embedding: [0.1, 0.2],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: "rag_batch_2",
+          workspaceId: "ws1",
+          recordingId: "rec1",
+          speakerName: "Bob",
+          text: "Batch chunk 2",
+          embedding: [0.3, 0.4],
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
+      const rows = await db._query("SELECT id FROM rag_chunks WHERE id IN (?, ?) ORDER BY id ASC", ["rag_batch_1", "rag_batch_2"]);
+      expect(rows.map((row: any) => row.id)).toEqual(["rag_batch_1", "rag_batch_2"]);
+    });
+
     test("getAllRagChunksForWorkspace returns all chunks for workspace", async () => {
       await db.saveRagChunk({
         id: "rag_test2",
