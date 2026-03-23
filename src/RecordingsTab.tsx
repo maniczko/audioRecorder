@@ -6,6 +6,8 @@ import { RecordingPipelineStatus } from "./components/RecordingPipelineStatus";
 import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
+import { Input } from "./ui/Input";
+import { Select } from "./ui/Select";
 
 function formatPipelineDiagnostics(item) {
   const details = [];
@@ -105,7 +107,7 @@ function RAGSearchPanel({ currentWorkspace }) {
       </div>
       <div className="panel-body">
         <form onSubmit={handleSearch} className="recordings-rag-form">
-          <input
+          <Input
             className="recordings-rag-input"
             type="text"
             value={query}
@@ -190,7 +192,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
         </div>
         {open && (
           <div className="studio-picker-dropdown">
-            <input
+            <Input
               className="studio-picker-search"
               type="search"
               placeholder="Szukaj spotkania…"
@@ -266,13 +268,13 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
           <h2>Baza spotkań i nagrań</h2>
         </div>
         <div className="recordings-library-filters">
-          <input 
+          <Input 
             type="date" 
             className="studio-picker-search recordings-library-filter-control" 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           />
-          <select 
+          <Select 
             className="studio-picker-search recordings-library-filter-control"
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
@@ -281,7 +283,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
             {allTags.map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
-          </select>
+          </Select>
           <div className="status-chip">{sortedAndFiltered.length}</div>
         </div>
       </div>

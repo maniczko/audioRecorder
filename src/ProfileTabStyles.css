@@ -208,20 +208,9 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-.stack-form input, .stack-form textarea, .stack-form select {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
-  color: var(--text);
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
+/* form styles disabled */
 
-.stack-form input:focus {
-  border-color: rgba(117, 214, 196, 0.4);
-}
+/* focus styles disabled */
 
 .toggle-grid {
   display: grid;

@@ -1034,6 +1034,210 @@ describe("audioPipeline exports", () => {
     expect(unlinkSync).toHaveBeenCalledWith("/tmp/audio.wav.norm.tmp");
   });
 
+  it("normalizeRecording succeeds and renames tmp file", async () => {
+    vi.resetModules();
+    const renameSync = vi.fn();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("../speakerEmbedder.ts", () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock("node:child_process", () => ({
+      exec: vi.fn().mockImplementation((_cmd, _opts, callback) => {
+        callback?.(null, "", "");
+        return { stdout: { on: vi.fn() }, on: vi.fn() };
+      }),
+      spawn: vi.fn(),
+    }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual, default: { ...actual.default, renameSync }, renameSync };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    await expect(pipeline.normalizeRecording("/tmp/audio.wav")).resolves.toBeUndefined();
+    expect(renameSync).toHaveBeenCalledWith("/tmp/audio.wav.norm.tmp", "/tmp/audio.wav");
+  });
+
+  it("extractSpeakerAudioClip extracts clips for valid segments", async () => {
+    vi.resetModules();
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, "", "");
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("../speakerEmbedder.ts", () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual, default: { ...actual.default, existsSync: vi.fn(() => true) } };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    const asset = { id: "rec1", file_path: "/tmp/audio.wav" };
+    const segments = [
+      { speakerId: "1", timestamp: 0, endTimestamp: 5 },
+      { speakerId: "1", timestamp: 10, endTimestamp: 15 },
+      { speakerId: "2", timestamp: 20, endTimestamp: 25 },
+    ];
+
+    const result = await pipeline.extractSpeakerAudioClip(asset, "1", segments);
+
+    expect(result).toMatch(/speaker_rec1_1_[a-f0-9]+\.wav$/);
+    expect(execMock).toHaveBeenCalledWith(
+      expect.stringContaining("ffmpeg"),
+      expect.objectContaining({ timeout: 30000 }),
+      expect.any(Function)
+    );
+  });
+
+  it("extractSpeakerAudioClip throws error when no valid segments", async () => {
+    vi.resetModules();
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("../speakerEmbedder.ts", () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ exec: vi.fn(), spawn: vi.fn() }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    const asset = { id: "rec1", file_path: "/tmp/audio.wav" };
+    const segments = [
+      { speakerId: "2", timestamp: 0, endTimestamp: 5 }, // wrong speaker
+    ];
+
+    await expect(pipeline.extractSpeakerAudioClip(asset, "1", segments))
+      .rejects.toThrow("Brak segmentów z poprawnymi znacznikami czasu");
+  });
+
+  it("extractSpeakerAudioClip limits to 15 segments maximum", async () => {
+    vi.resetModules();
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, "", "");
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("../speakerEmbedder.ts", () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    const asset = { id: "rec1", file_path: "/tmp/audio.wav" };
+    const segments = Array.from({ length: 20 }, (_, i) => ({
+      speakerId: "1",
+      timestamp: i * 5,
+      endTimestamp: i * 5 + 3,
+    }));
+
+    await pipeline.extractSpeakerAudioClip(asset, "1", segments);
+
+    // Check that only 15 segments were used (count 'between' in command)
+    const callArgs = execMock.mock.calls[0][0];
+    const betweenCount = (callArgs.match(/between\(/g) || []).length;
+    expect(betweenCount).toBeLessThanOrEqual(15);
+  });
+
+  it("extractSpeakerAudioClip passes signal option to exec", async () => {
+    vi.resetModules();
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, "", "");
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+    const abortController = new AbortController();
+
+    vi.doMock("../config.ts", () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: "key-1",
+        OPENAI_API_KEY: "key-1",
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("../speakerEmbedder.ts", () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+    const asset = { id: "rec1", file_path: "/tmp/audio.wav" };
+    const segments = [{ speakerId: "1", timestamp: 0, endTimestamp: 5 }];
+
+    await pipeline.extractSpeakerAudioClip(asset, "1", segments, { signal: abortController.signal });
+
+    expect(execMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: abortController.signal }),
+      expect.any(Function)
+    );
+  });
+
+  it("analyzeAcousticFeatures throws error when file does not exist", async () => {
+    vi.resetModules();
+    const existsSync = vi.fn().mockReturnValue(false);
+
+    vi.doMock("../config.ts", () => ({
+      config: {
+        FFMPEG_BINARY: "ffmpeg",
+        PYTHON_BINARY: "python",
+        ACOUSTIC_FEATURES_SCRIPT: "/path/to/acoustic_features.py",
+        DEBUG: false,
+      },
+    }));
+    vi.doMock("../logger.ts", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock("node:fs", async () => {
+      const actual = await vi.importActual<any>("node:fs");
+      return { ...actual, existsSync };
+    });
+
+    const pipeline = await import("../audioPipeline.ts");
+
+    await expect(pipeline.analyzeAcousticFeatures("/nonexistent.wav"))
+      .rejects.toThrow("Plik audio nie istnieje.");
+  });
+
   it("transcribeRecording uses pyannote for diarization and exercises word-level speaker splitting", async () => {
     const { EventEmitter } = await import("node:events");
     vi.resetModules();

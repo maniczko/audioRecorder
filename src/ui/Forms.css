@@ -1,0 +1,77 @@
+.ui-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ui-input {
+  width: 100%;
+  border: 1px solid var(--surface-stroke);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel-muted);
+  color: var(--text);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.ui-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-panel-hover);
+  box-shadow: 0 0 0 3px rgba(117, 214, 196, 0.15);
+}
+
+.ui-input.with-icon {
+  padding-left: 38px;
+}
+
+.ui-input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Select specifics */
+.ui-select-wrapper {
+  position: relative;
+}
+
+.ui-select {
+  appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.ui-select-chevron {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
+
+.has-error .ui-input {
+  border-color: var(--danger);
+  background: rgba(241, 125, 114, 0.05);
+}
+
+.has-error .ui-input:focus {
+  box-shadow: 0 0 0 3px rgba(241, 125, 114, 0.15);
+}
+
+/* Input Checkbox overrides */
+input[type="checkbox"].ui-input {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  border-radius: 4px;
+}

@@ -5,6 +5,8 @@ import { apiBaseUrlConfigured } from "./services/config";
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from "./shared/types";
 import './ProfileTabStyles.css';
 import useWorkspaceBackup from "./hooks/useWorkspaceBackup";
+import { Input } from "./ui/Input";
+import { Select } from "./ui/Select";
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
@@ -117,7 +119,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       <div className="stack-form profile-form-bottom">
         <label>
           <span>Imię osoby</span>
-          <input
+          <Input
             list="saved-people-list"
             value={speakerName}
             onChange={(e) => setSpeakerName(e.target.value)}
@@ -235,7 +237,7 @@ function VocabularyManagerSection({ vocabulary, onUpdateVocabulary }) {
 
       <form className="stack-form profile-form-bottom" onSubmit={handleAdd}>
         <div className="button-row profile-button-row-tight">
-          <input
+          <Input
             className="profile-input-flex"
             value={newTerm}
             onChange={(e) => setNewTerm(e.target.value)}
@@ -312,7 +314,7 @@ function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
           {allTags.map(({ tag, taskCount, meetingCount }) => (
             <div key={tag} className="tag-manager-row">
               {editingTag === tag ? (
-                <input
+                <Input
                   className="tag-manager-edit-input"
                   value={editValue}
                   autoFocus
@@ -735,13 +737,13 @@ export default function ProfileTab({
                 <form className="stack-form" onSubmit={saveProfile}>
                   <label>
                     <span>Imię i nazwisko</span>
-                    <input value={profileDraft.name} onChange={(e) => setProfileDraft(p => ({ ...p, name: e.target.value }))} />
+                    <Input value={profileDraft.name} onChange={(e) => setProfileDraft(p => ({ ...p, name: e.target.value }))} />
                   </label>
                   <label>
                     <span>Rola i Firma</span>
                     <div className="profile-two-column-fields">
-                      <input placeholder="Rola" value={profileDraft.role} onChange={(e) => setProfileDraft(p => ({ ...p, role: e.target.value }))} />
-                      <input placeholder="Firma" value={profileDraft.company} onChange={(e) => setProfileDraft(p => ({ ...p, company: e.target.value }))} />
+                      <Input placeholder="Rola" value={profileDraft.role} onChange={(e) => setProfileDraft(p => ({ ...p, role: e.target.value }))} />
+                      <Input placeholder="Firma" value={profileDraft.company} onChange={(e) => setProfileDraft(p => ({ ...p, company: e.target.value }))} />
                     </div>
                   </label>
                   <label>
@@ -761,8 +763,8 @@ export default function ProfileTab({
                 </div>
                 {canManagePassword ? (
                    <form className="stack-form" onSubmit={updatePassword}>
-                      <input type="password" placeholder="Aktualne hasło" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft(p => ({...p, currentPassword: e.target.value}))} />
-                      <input type="password" placeholder="Nowe hasło" value={passwordDraft.newPassword} onChange={(e) => setPasswordDraft(p => ({...p, newPassword: e.target.value}))} />
+                      <Input type="password" placeholder="Aktualne hasło" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft(p => ({...p, currentPassword: e.target.value}))} />
+                      <Input type="password" placeholder="Nowe hasło" value={passwordDraft.newPassword} onChange={(e) => setPasswordDraft(p => ({...p, newPassword: e.target.value}))} />
                       <button type="submit" className="secondary-button">Zmień hasło</button>
                       {securityMessage && <div className="inline-alert success">{securityMessage}</div>}
                    </form>
@@ -781,15 +783,15 @@ export default function ProfileTab({
                 <form className="stack-form" onSubmit={saveProfile}>
                   <div className="toggle-grid">
                     <label className="toggle-card">
-                      <input type="checkbox" checked={profileDraft.autoTaskCapture} onChange={e => setProfileDraft(p => ({...p, autoTaskCapture: e.target.checked}))} />
+                      <input className="ui-checkbox" type="checkbox" checked={profileDraft.autoTaskCapture} onChange={e => setProfileDraft(p => ({...p, autoTaskCapture: e.target.checked}))} />
                       <div><strong>Auto task capture</strong><span>Automatycznie wykrywaj zadania.</span></div>
                     </label>
                     <label className="toggle-card">
-                      <input type="checkbox" checked={profileDraft.notifyDailyDigest} onChange={e => setProfileDraft(p => ({...p, notifyDailyDigest: e.target.checked}))} />
+                      <input className="ui-checkbox" type="checkbox" checked={profileDraft.notifyDailyDigest} onChange={e => setProfileDraft(p => ({...p, notifyDailyDigest: e.target.checked}))} />
                       <div><strong>Daily digest</strong><span>Codzienne podsumowanie mailowe.</span></div>
                     </label>
                     <label className="toggle-card">
-                      <input type="checkbox" checked={profileDraft.autoLearnSpeakerProfiles} onChange={e => setProfileDraft(p => ({...p, autoLearnSpeakerProfiles: e.target.checked}))} />
+                      <input className="ui-checkbox" type="checkbox" checked={profileDraft.autoLearnSpeakerProfiles} onChange={e => setProfileDraft(p => ({...p, autoLearnSpeakerProfiles: e.target.checked}))} />
                       <div><strong>Auto-learn speaker profiles</strong><span>Po zmianie nazwy mowcy zapisuj probki do profilu glosu.</span></div>
                     </label>
                   </div>
@@ -831,10 +833,12 @@ export default function ProfileTab({
                   </div>
                 </div>
                 <div className="integration-card">
-                   <select value={selectedGoogleTaskListId || ""} onChange={(e) => onSelectGoogleTaskList?.(e.target.value)}>
-                      <option value="">Wybierz listę...</option>
-                      {googleTaskLists.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
-                   </select>
+                   <div style={{ marginBottom: "12px" }}>
+                     <Select value={selectedGoogleTaskListId || ""} onChange={(e) => onSelectGoogleTaskList?.(e.target.value)}>
+                        <option value="">Wybierz listę...</option>
+                        {googleTaskLists.map((l: any) => <option key={l.id} value={l.id}>{l.title}</option>)}
+                     </Select>
+                   </div>
                    <div className="button-row profile-button-row-top">
                       <button type="button" className="secondary-button" onClick={onConnectGoogleTasks}>Połącz</button>
                       <button type="button" className="ghost-button" onClick={onRefreshGoogleTasks}>Sync</button>

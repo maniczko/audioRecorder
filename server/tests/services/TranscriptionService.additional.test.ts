@@ -48,6 +48,94 @@ describe("TranscriptionService - Additional Coverage", () => {
     };
   });
 
+  describe("getSpeakerAcousticFeatures()", () => {
+    test("calls pipeline.analyzeAcousticFeatures for each speaker", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const tempClipPath = path.join(mockDb.uploadDir, "clip_spk1.wav");
+      fs.writeFileSync(tempClipPath, Buffer.from("audio"));
+
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockAudioPipeline.analyzeAcousticFeatures.mockResolvedValue({
+        energy: 0.5,
+        centroid: 0.3,
+        spread: 0.2,
+      });
+
+      const mockAsset = {
+        id: "rec1",
+        transcript_json: JSON.stringify([
+          { speakerId: "1", text: "Hello", speakerName: "Alice" },
+          { speakerId: "2", text: "Hi", speakerName: "Bob" },
+        ]),
+        diarization_json: JSON.stringify({
+          speakerNames: { "1": "Alice", "2": "Bob" },
+        }),
+      };
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+
+      const result = await service.getSpeakerAcousticFeatures(mockAsset);
+
+      expect(result.speakers).toHaveLength(2);
+      expect(result.speakers[0]).toEqual({
+        speakerId: "1",
+        speakerName: "Alice",
+        energy: 0.5,
+        centroid: 0.3,
+        spread: 0.2,
+      });
+      expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalled();
+      expect(mockAudioPipeline.analyzeAcousticFeatures).toHaveBeenCalled();
+    });
+
+    test("throws error when pipeline does not support acoustic features analysis", async () => {
+      delete mockAudioPipeline.analyzeAcousticFeatures;
+
+      const mockAsset = {
+        id: "rec1",
+        transcript_json: JSON.stringify([{ speakerId: "1", text: "Hello" }]),
+        diarization_json: JSON.stringify({}),
+      };
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+
+      await expect(
+        service.getSpeakerAcousticFeatures(mockAsset)
+      ).rejects.toThrow("Audio pipeline nie wspiera metryk akustycznych.");
+    });
+
+    test("throws error when asset has no transcript", async () => {
+      const mockAsset = {
+        id: "rec1",
+        transcript_json: "[]",
+        diarization_json: JSON.stringify({}),
+      };
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+
+      await expect(
+        service.getSpeakerAcousticFeatures(mockAsset)
+      ).rejects.toThrow("Brak transkrypcji w bazie.");
+    });
+  });
+
   describe("analyzeAudioQuality()", () => {
     test("calls pipeline.analyzeAudioQuality", async () => {
       mockAudioPipeline.analyzeAudioQuality.mockResolvedValue({

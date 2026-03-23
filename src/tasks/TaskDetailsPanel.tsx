@@ -3,6 +3,7 @@ import { formatDateTime } from "../lib/storage";
 import { createTaskComment } from "../lib/tasks";
 import { toInputDateTime } from "./taskViewUtils";
 import TagInput from "../shared/TagInput";
+import { Input } from "../ui/Input";
 import './TaskDetailsPanelStyles.css';
 
 function buildConflictDraft(conflict) {
@@ -144,7 +145,7 @@ function TaskDetailsPanel({
               >
                 {selectedTask.completed ? "✓" : ""}
               </button>
-              <input
+              <Input
                 className="todo-detail-title-input"
                 value={selectedTask.title}
                 onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })}
@@ -193,14 +194,14 @@ function TaskDetailsPanel({
                 <span className="todo-card-eyebrow">Finalna wersja</span>
                 <label>
                   <span>Tytuł</span>
-                  <input
+                  <Input
                     value={conflictDraft.title}
                     onChange={(event) => setConflictDraft((previous) => ({ ...previous, title: event.target.value }))}
                   />
                 </label>
                 <label>
                   <span>Termin</span>
-                  <input
+                  <Input
                     type="datetime-local"
                     value={conflictDraft.dueDate}
                     onChange={(event) => setConflictDraft((previous) => ({ ...previous, dueDate: event.target.value }))}
@@ -209,7 +210,7 @@ function TaskDetailsPanel({
                 <label>
                   <span>Notatki</span>
                   <textarea
-                    rows="4"
+                    rows={4}
                     value={conflictDraft.notes}
                     onChange={(event) => setConflictDraft((previous) => ({ ...previous, notes: event.target.value }))}
                   />
@@ -217,6 +218,7 @@ function TaskDetailsPanel({
                 <label className="todo-inline-check">
                   <span>Zakończone</span>
                   <input
+                    className="ui-checkbox"
                     type="checkbox"
                     checked={conflictDraft.completed}
                     onChange={(event) => setConflictDraft((previous) => ({ ...previous, completed: event.target.checked }))}
@@ -244,13 +246,13 @@ function TaskDetailsPanel({
             <label className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true">⏰</span>
               <span className="todo-row-label">Przypomnienie</span>
-              <input type="datetime-local" value={toInputDateTime(selectedTask.reminderAt)} onChange={(event) => onUpdateTask(selectedTask.id, { reminderAt: event.target.value })} />
+              <Input type="datetime-local" value={toInputDateTime(selectedTask.reminderAt)} onChange={(event) => onUpdateTask(selectedTask.id, { reminderAt: event.target.value })} />
             </label>
 
             <label className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true">📅</span>
               <span className="todo-row-label">Termin</span>
-              <input type="datetime-local" value={toInputDateTime(selectedTask.dueDate)} onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })} />
+              <Input type="datetime-local" value={toInputDateTime(selectedTask.dueDate)} onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })} />
             </label>
 
             <label className="todo-detail-row field-row">
@@ -267,7 +269,7 @@ function TaskDetailsPanel({
             <label className="todo-detail-row note-row">
               <span className="todo-row-icon" aria-hidden="true">📝</span>
               <span className="todo-row-label">Notatka</span>
-              <textarea rows="5" value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} placeholder="Dodaj notatkę..." />
+              <textarea rows={5} value={selectedTask.notes || ""} onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })} placeholder="Dodaj notatkę..." />
             </label>
           </div>
         </div>
@@ -280,7 +282,7 @@ function TaskDetailsPanel({
           <div className="todo-comment-create" style={{ position: "relative" }}>
             <textarea
               ref={commentTextareaRef}
-              rows="3"
+              rows={3}
               value={commentDraft}
               onChange={handleCommentChange}
               placeholder="Dodaj komentarz... wpisz @ aby wspomnieć osobę"
