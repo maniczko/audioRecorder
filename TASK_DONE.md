@@ -4,6 +4,18 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 079. [CSS] Usuwanie style={{...}} z widokow
+Status: `done`
+Completed by: GPT
+Result: Przeniesiono statyczne inline styles z kluczowych widokow do klas CSS, przede wszystkim w `RecordingsTab`, `ProfileTab`, `PeopleTab`, `StudioMeetingView`, a takze w fallbackach `TabRouter` i `StudioTab`. Oczyszczono layout, spacing, button variants, sekcje diagnostyczne, headery, karty summary i player shell, zostawiajac inline styles tylko tam, gdzie sa rzeczywiscie dynamiczne (np. speaker colors, progress widths, tooltip position, CSS custom properties sterowane runtime).
+
+Jak testowac:
+```bash
+pnpm build
+```
+
+---
+
 ## 078. [CSS] Stworzenie globalnych tokenow
 Status: `done`
 Completed by: GPT

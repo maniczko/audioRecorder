@@ -420,3 +420,146 @@
   background: rgba(239, 68, 68, 0.15);
   color: var(--danger);
 }
+
+.profile-muted-copy {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.profile-copy-bottom {
+  margin-bottom: 12px;
+}
+
+.profile-form-bottom {
+  margin-bottom: 16px;
+}
+
+.profile-recording-label {
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.profile-ghost-button-compact {
+  font-size: 0.78rem;
+}
+
+.profile-self-start {
+  align-self: flex-start;
+}
+
+.profile-button-row-tight {
+  gap: 8px;
+}
+
+.profile-button-row-top {
+  margin-top: 12px;
+}
+
+.profile-input-flex {
+  flex: 1;
+}
+
+.profile-chip-list-top {
+  margin-top: 8px;
+}
+
+.profile-vocabulary-chip {
+  padding-right: 4px;
+}
+
+.profile-chip-remove {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.profile-card-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-paragraph-reset {
+  margin: 0;
+}
+
+.profile-text-main {
+  color: var(--text);
+}
+
+.profile-paragraph-subtle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.profile-alert-warning-border {
+  border-color: rgba(243, 202, 114, 0.35);
+}
+
+.profile-audio-item {
+  align-items: center;
+}
+
+.profile-hidden-input {
+  display: none;
+}
+
+.profile-changelog-item.is-separated {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 16px;
+}
+
+.profile-changelog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.profile-changelog-title {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.profile-changelog-date {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.profile-changelog-toggle {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+.profile-changelog-list {
+  margin-top: 12px;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-two-column-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.profile-category-view-spaced {
+  margin-top: 32px;
+}
+
+.profile-grid-span-two {
+  grid-column: span 2;
+}

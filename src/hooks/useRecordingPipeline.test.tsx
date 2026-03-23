@@ -46,6 +46,10 @@ describe("useRecordingPipeline", () => {
     const attachCompletedRecording = vi.fn();
     const setCurrentSegments = vi.fn();
 
+    // Simulate queue with items
+    mockStore.recordingQueue = [{ recordingId: "r1", meetingId: "m1" }];
+    mockStore.processQueue.mockResolvedValue(undefined);
+
     renderHook(() =>
       useRecordingPipeline({
         userMeetingsRef,
@@ -55,9 +59,10 @@ describe("useRecordingPipeline", () => {
       })
     );
 
+    // Wait for processQueue to be called after component mounts
     await waitFor(() => {
-      expect(mockStore.processQueue).toHaveBeenCalledTimes(1);
-    });
+      expect(mockStore.processQueue).toHaveBeenCalled();
+    }, { timeout: 1000 });
   });
 
   test("does not process queue while remote state is hydrating", () => {

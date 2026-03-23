@@ -111,10 +111,10 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
         </div>
         <span className="status-chip">{profiles.length}</span>
       </div>
-      <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "12px" }}>
+      <p className="profile-muted-copy profile-copy-bottom">
         Nagraj 15–30 sekund głosu każdej osoby. Dodaj do 5 próbek dla lepszego rozpoznawania.
       </p>
-      <div className="stack-form" style={{ marginBottom: "16px" }}>
+      <div className="stack-form profile-form-bottom">
         <label>
           <span>Imię osoby</span>
           <input
@@ -136,7 +136,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
               <button type="button" className="danger-button" onClick={stopRecording}>
                 ■ Stop ({formatElapsed(elapsed)})
               </button>
-              <span style={{ fontSize: "0.82rem", color: "var(--accent)" }}>Nagrywa…</span>
+              <span className="profile-recording-label">Nagrywa…</span>
             </>
           ) : (
             <button
@@ -191,8 +191,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
               </div>
               <button
                 type="button"
-                className="ghost-button"
-                style={{ fontSize: "0.78rem", alignSelf: "flex-start" }}
+                className="ghost-button profile-ghost-button-compact profile-self-start"
                 onClick={() => deleteProfile(p.id)}
               >
                 Usuń
@@ -230,14 +229,14 @@ function VocabularyManagerSection({ vocabulary, onUpdateVocabulary }) {
         </div>
         <span className="status-chip">{vocabulary.length}</span>
       </div>
-      <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "12px" }}>
+      <p className="profile-muted-copy profile-copy-bottom">
         Dodaj nazwy projektów, żargon techniczny lub nazwiska. AI będzie ich używać do poprawy celności transkrypcji.
       </p>
 
-      <form className="stack-form" style={{ marginBottom: "16px" }} onSubmit={handleAdd}>
-        <div className="button-row" style={{ gap: "8px" }}>
+      <form className="stack-form profile-form-bottom" onSubmit={handleAdd}>
+        <div className="button-row profile-button-row-tight">
           <input
-            style={{ flex: 1 }}
+            className="profile-input-flex"
             value={newTerm}
             onChange={(e) => setNewTerm(e.target.value)}
             placeholder="np. Antigravity, Kubernetes, Kowalski"
@@ -248,14 +247,14 @@ function VocabularyManagerSection({ vocabulary, onUpdateVocabulary }) {
         </div>
       </form>
 
-      <div className="chip-list" style={{ marginTop: "8px" }}>
+      <div className="chip-list profile-chip-list-top">
         {vocabulary.length > 0 ? (
           vocabulary.map((term) => (
-            <span key={term} className="task-tag-chip neutral" style={{ paddingRight: "4px" }}>
+            <span key={term} className="task-tag-chip neutral profile-vocabulary-chip">
               {term}
               <button
                 type="button"
-                style={{ marginLeft: "6px", background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
+                className="profile-chip-remove"
                 onClick={() => removeTerm(term)}
               >
                 ×
@@ -263,7 +262,7 @@ function VocabularyManagerSection({ vocabulary, onUpdateVocabulary }) {
             </span>
           ))
         ) : (
-          <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Brak słów w słowniku.</p>
+          <p className="profile-muted-copy">Brak słów w słowniku.</p>
         )}
       </div>
     </section>
@@ -304,7 +303,7 @@ function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
 
       {allTags.length === 0 ? (
         <div className="integration-card">
-          <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+          <p className="profile-muted-copy">
             Brak tagów w workspace. Dodaj tagi do zadań lub spotkań.
           </p>
         </div>
@@ -389,18 +388,18 @@ function AudioStorageSection({
           {usagePercent || 0}%
         </span>
       </div>
-      <div className="integration-card" style={{ display: "grid", gap: "12px" }}>
+      <div className="integration-card profile-card-grid">
         <div>
-          <p style={{ margin: 0, color: "var(--text)" }}>
+          <p className="profile-paragraph-reset profile-text-main">
             Użyto {formatBytes(audioStorageState?.usageBytes)} z {formatBytes(audioStorageState?.quotaBytes)}.
           </p>
-          <p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: "0.85rem" }}>
+          <p className="profile-paragraph-subtle">
             Wolne miejsce: {formatBytes(audioStorageState?.freeBytes)}.
           </p>
         </div>
 
         {warningMessage ? (
-          <div className="inline-alert info" style={{ borderColor: "rgba(243, 202, 114, 0.35)" }}>
+          <div className="inline-alert info profile-alert-warning-border">
             {warningMessage}
           </div>
         ) : null}
@@ -413,7 +412,7 @@ function AudioStorageSection({
 
         <div className="voice-profile-list">
           {items.length > 0 ? items.map((item) => (
-            <div key={item.recordingId} className="voice-profile-item" style={{ alignItems: "center" }}>
+            <div key={item.recordingId} className="voice-profile-item profile-audio-item">
               <span className="voice-profile-avatar">A</span>
               <div className="voice-profile-info">
                 <strong>{item.recordingId.slice(0, 12)}...</strong>
@@ -423,15 +422,14 @@ function AudioStorageSection({
               </div>
               <button
                 type="button"
-                className="danger-button"
-                style={{ fontSize: "0.78rem" }}
+                className="danger-button profile-ghost-button-compact"
                 onClick={() => onDeleteStoredRecordingAudio?.(item.recordingId)}
               >
                 Usuń audio z pamięci lokalnej
               </button>
             </div>
           )) : (
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.85rem" }}>
+            <p className="profile-paragraph-reset profile-muted-copy">
               Brak lokalnie zapisanych plików audio.
             </p>
           )}
@@ -462,8 +460,8 @@ function WorkspaceBackupSection() {
           <h2>Eksport i import danych</h2>
         </div>
       </div>
-      <div className="integration-card" style={{ display: "grid", gap: "12px" }}>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.85rem" }}>
+      <div className="integration-card profile-card-grid">
+        <p className="profile-paragraph-reset profile-muted-copy">
           Eksport obejmuje spotkania, zadania, stan kolumn, metadane kalendarza i słownik. Plik nie zawiera audio blobów.
         </p>
         <div className="button-row">
@@ -478,7 +476,7 @@ function WorkspaceBackupSection() {
           ref={inputRef}
           type="file"
           accept="application/json,.json"
-          style={{ display: "none" }}
+          className="profile-hidden-input"
           onChange={async (event) => {
             const file = event.target.files?.[0] || null;
             await importWorkspaceFile(file);
@@ -582,26 +580,26 @@ function ChangelogSection() {
           <h2>Changelog</h2>
         </div>
       </div>
-      <div className="integration-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="integration-card profile-card-stack">
         {changelogData.map((item, idx) => {
           const isExpanded = expandedVersion === item.version || (idx === 0 && !expandedVersion);
           return (
-            <div key={idx} style={{ borderBottom: idx < changelogData.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingBottom: idx < changelogData.length - 1 ? '16px' : '0' }}>
+            <div key={idx} className={`profile-changelog-item${idx < changelogData.length - 1 ? " is-separated" : ""}`}>
               <div 
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                className="profile-changelog-header"
                 onClick={() => setExpandedVersion(isExpanded ? null : item.version)}
               >
                 <div>
-                  <strong style={{ fontSize: '1.05rem', color: 'var(--text)' }}>{item.version} - {item.title}</strong>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '4px' }}>{item.date}</p>
+                  <strong className="profile-changelog-title">{item.version} - {item.title}</strong>
+                  <p className="profile-changelog-date">{item.date}</p>
                 </div>
-                <span style={{ fontSize: '1.2rem', color: 'var(--muted)' }}>
+                <span className="profile-changelog-toggle">
                   {isExpanded ? '▴' : '▾'}
                 </span>
               </div>
               
               {isExpanded && (
-                <ul style={{ marginTop: '12px', paddingLeft: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <ul className="profile-changelog-list">
                   {item.changes.map((change, i) => (
                     <li key={i}>{change}</li>
                   ))}
@@ -741,7 +739,7 @@ export default function ProfileTab({
                   </label>
                   <label>
                     <span>Rola i Firma</span>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="profile-two-column-fields">
                       <input placeholder="Rola" value={profileDraft.role} onChange={(e) => setProfileDraft(p => ({ ...p, role: e.target.value }))} />
                       <input placeholder="Firma" value={profileDraft.company} onChange={(e) => setProfileDraft(p => ({ ...p, company: e.target.value }))} />
                     </div>
@@ -773,7 +771,7 @@ export default function ProfileTab({
                 )}
               </section>
 
-              <section className="panel" style={{ gridColumn: 'span 2' }}>
+              <section className="panel profile-grid-span-two">
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Preferences</div>
@@ -789,6 +787,10 @@ export default function ProfileTab({
                     <label className="toggle-card">
                       <input type="checkbox" checked={profileDraft.notifyDailyDigest} onChange={e => setProfileDraft(p => ({...p, notifyDailyDigest: e.target.checked}))} />
                       <div><strong>Daily digest</strong><span>Codzienne podsumowanie mailowe.</span></div>
+                    </label>
+                    <label className="toggle-card">
+                      <input type="checkbox" checked={profileDraft.autoLearnSpeakerProfiles} onChange={e => setProfileDraft(p => ({...p, autoLearnSpeakerProfiles: e.target.checked}))} />
+                      <div><strong>Auto-learn speaker profiles</strong><span>Po zmianie nazwy mowcy zapisuj probki do profilu glosu.</span></div>
                     </label>
                   </div>
                   <label>
@@ -833,7 +835,7 @@ export default function ProfileTab({
                       <option value="">Wybierz listę...</option>
                       {googleTaskLists.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
                    </select>
-                   <div className="button-row" style={{ marginTop: '12px' }}>
+                   <div className="button-row profile-button-row-top">
                       <button type="button" className="secondary-button" onClick={onConnectGoogleTasks}>Połącz</button>
                       <button type="button" className="ghost-button" onClick={onRefreshGoogleTasks}>Sync</button>
                    </div>
@@ -861,7 +863,7 @@ export default function ProfileTab({
         )}
 
         {activeCategory === 'review' && (
-          <div className="profile-category-view" style={{ marginTop: "32px" }}>
+          <div className="profile-category-view profile-category-view-spaced">
             <div className="profile-grid">
               <section className="panel">
                 <div className="panel-header compact">
@@ -899,7 +901,7 @@ export default function ProfileTab({
                 </div>
               </section>
 
-              <section className="panel" style={{ gridColumn: 'span 2' }}>
+              <section className="panel profile-grid-span-two">
                 <ChangelogSection />
               </section>
             </div>

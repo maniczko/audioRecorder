@@ -23,7 +23,10 @@ const {
   requestGoogleTasksAccessMock: vi.fn().mockResolvedValue({ access_token: "tasks-token" }),
   requestGoogleCalendarAccessMock: vi.fn().mockResolvedValue({ access_token: "calendar-token" }),
   fetchGoogleTaskListsMock: vi.fn().mockResolvedValue({ items: [{ id: "list1", title: "Work" }] }),
-  fetchPrimaryCalendarEventsMock: vi.fn().mockResolvedValue({ items: [] }),
+  fetchPrimaryCalendarEventsMock: vi.fn().mockResolvedValue({
+    items: [],
+    nextPageToken: null,
+  }),
   meetingsStoreState: {
     meetings: [],
     calendarMeta: {},
@@ -39,14 +42,14 @@ vi.mock("../lib/google", async () => {
     GOOGLE_CLIENT_ID: "demo",
     IS_GOOGLE_DEMO_MODE: true,
     renderGoogleSignInButton: vi.fn(),
-    requestGoogleTasksAccess: (...args: any[]) => requestGoogleTasksAccessMock(...args),
-    requestGoogleCalendarAccess: (...args: any[]) => requestGoogleCalendarAccessMock(...args),
-    fetchGoogleTaskLists: (...args: any[]) => fetchGoogleTaskListsMock(...args),
-    fetchPrimaryCalendarEvents: (...args: any[]) => fetchPrimaryCalendarEventsMock(...args),
+    requestGoogleTasksAccess: requestGoogleTasksAccessMock,
+    requestGoogleCalendarAccess: requestGoogleCalendarAccessMock,
+    fetchGoogleTaskLists: fetchGoogleTaskListsMock,
+    fetchPrimaryCalendarEvents: fetchPrimaryCalendarEventsMock,
     createGoogleTask: vi.fn(),
-    updateGoogleTask: (...args: any[]) => updateGoogleTaskMock(...args),
+    updateGoogleTask: updateGoogleTaskMock,
     createGoogleCalendarEvent: vi.fn(),
-    updateGoogleCalendarEvent: (...args: any[]) => updateGoogleCalendarEventMock(...args),
+    updateGoogleCalendarEvent: updateGoogleCalendarEventMock,
     signOutGoogleSession: vi.fn(),
   };
 });

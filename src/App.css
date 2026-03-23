@@ -1,37 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap");
-
 body, html {
   overflow-x: hidden;
-}
-
-:root {
-  --bg: #071119;
-  --bg-panel: rgba(10, 24, 38, 0.82);
-  --bg-panel-strong: rgba(7, 17, 27, 0.94);
-  --stroke: rgba(145, 220, 212, 0.14);
-  --text: #edf7f6;
-  --muted: rgba(237, 247, 246, 0.62);
-  --soft: rgba(237, 247, 246, 0.35);
-  --accent: #75d6c4;
-  --accent-strong: #9ef2db;
-  --danger: #f17d72;
-  --warning: #f3ca72;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-}
-
-:root[data-theme="light"] {
-  --bg: #f0f4f8;
-  --bg-panel: rgba(255, 255, 255, 0.88);
-  --bg-panel-strong: rgba(245, 248, 252, 0.97);
-  --stroke: rgba(30, 80, 120, 0.14);
-  --text: #0d1f2d;
-  --muted: rgba(13, 31, 45, 0.62);
-  --soft: rgba(13, 31, 45, 0.38);
-  --accent: #1a7a68;
-  --accent-strong: #0f5c4e;
-  --danger: #c0392b;
-  --warning: #b8860b;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
 }
 
 :root[data-theme="light"] body {
@@ -248,8 +216,29 @@ select:focus {
   gap: 22px;
 }
 
+.main-grid-skeleton {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.tab-router-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-2, #94a3b8);
+}
+
+.studio-tab-main {
+  width: 100%;
+}
+
 @media (max-width: 900px) {
   .workspace-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .main-grid-skeleton {
     grid-template-columns: 1fr;
     gap: 16px;
   }

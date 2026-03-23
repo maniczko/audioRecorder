@@ -95,29 +95,29 @@ function RAGSearchPanel({ currentWorkspace }) {
   };
 
   return (
-    <section className="panel" style={{ marginBottom: '32px', background: 'linear-gradient(145deg, rgba(117,214,196,0.1) 0%, rgba(0,0,0,0.4) 100%)', border: '1px solid rgba(117,214,196,0.2)' }}>
-      <div className="panel-header compact" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+    <section className="panel recordings-rag-panel">
+      <div className="panel-header compact recordings-panel-header-flat">
         <div>
-          <div className="eyebrow" style={{ color: '#75d6c4' }}>AI RAG Memory</div>
+          <div className="eyebrow recordings-rag-eyebrow">AI RAG Memory</div>
           <h2>Zapytaj o Archiwum</h2>
-          <p className="soft-copy" style={{ fontSize: '0.85rem', marginTop: '4px' }}>Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne ustalenia.</p>
+          <p className="soft-copy recordings-copy-tight">Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne ustalenia.</p>
         </div>
       </div>
       <div className="panel-body">
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '12px' }}>
+        <form onSubmit={handleSearch} className="recordings-rag-form">
           <input
+            className="recordings-rag-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
-            style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '0.95rem' }}
           />
-          <button type="submit" className="primary-button" disabled={loading || !query.trim()} style={{ background: '#75d6c4', color: '#000', fontWeight: 600 }}>
+          <button type="submit" className="primary-button recordings-rag-submit" disabled={loading || !query.trim()}>
             {loading ? "Szukam w wektorach..." : "Wyciągnij informację"}
           </button>
         </form>
         {answer && (
-          <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '3px solid #75d6c4', lineHeight: 1.5, fontSize: '0.95rem' }}>
+          <div className="recordings-rag-answer">
             {answer}
           </div>
         )}
@@ -164,7 +164,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
             </div>
           )}
           {meetingDiagnostics ? (
-            <div style={{ marginTop: "6px", color: "var(--text-3, #8f97ab)", fontSize: "0.78rem" }}>
+            <div className="recordings-diagnostics-copy">
               {meetingDiagnostics}
             </div>
           ) : null}
@@ -259,25 +259,23 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
   }, [userMeetings, dateFilter, tagFilter]);
 
   return (
-    <section className="panel meetings-library" style={{ marginBottom: '32px' }}>
-      <div className="panel-header compact" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
+    <section className="panel meetings-library recordings-library-panel">
+      <div className="panel-header compact recordings-library-header">
+        <div className="recordings-library-heading">
           <div className="eyebrow">Workspace</div>
           <h2>Baza spotkań i nagrań</h2>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="recordings-library-filters">
           <input 
             type="date" 
-            className="studio-picker-search" 
+            className="studio-picker-search recordings-library-filter-control" 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            style={{ width: 'auto', padding: '6px 12px', borderRadius: '6px' }}
           />
           <select 
-            className="studio-picker-search"
+            className="studio-picker-search recordings-library-filter-control"
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
-            style={{ width: 'auto', padding: '6px 12px', borderRadius: '6px' }}
           >
             <option value="">Wszystkie tagi</option>
             {allTags.map(t => (
@@ -297,7 +295,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
               <th>Czas trwania</th>
               <th>Nagrania</th>
               <th>Tagi</th>
-              <th style={{ width: '50px' }}></th>
+              <th className="recordings-library-actions-col"></th>
             </tr>
           </thead>
           <tbody>
@@ -309,7 +307,6 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
                   selectMeeting(m);
                   setActiveTab("studio");
                 }}
-                style={{ cursor: "pointer" }}
               >
                 <td className="recordings-library-meeting">
                   <strong>{m.title}</strong>
@@ -322,10 +319,10 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
                   </span>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <div className="recordings-library-tags">
                     {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
                       if (!t.trim()) return null;
-                      return <span key={idx} className="status-chip status-chip-sm" style={{ background: 'rgba(116, 208, 191, 0.15)', color: '#74d0bf' }}>{t.trim()}</span>
+                      return <span key={idx} className="status-chip status-chip-sm recordings-library-tag-chip">{t.trim()}</span>
                     })}
                   </div>
                 </td>
@@ -339,9 +336,7 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
                         onDeleteMeeting?.(m.id);
                       }
                     }}
-                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '0.85rem', opacity: 0.6, transition: 'opacity 0.2s' }}
-                    onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.opacity = '0.6'; }}
+                    className="recordings-library-delete-btn"
                   >
                     🗑️
                   </button>
@@ -472,24 +467,21 @@ export default function RecordingsTab(props) {
   };
 
   return (
-    <div className="recordings-tab-container" style={{ padding: '24px', width: '100%', maxWidth: 'none', margin: '0' }}>
-      <header className="recordings-tab-header" style={{ marginBottom: '32px', display: 'flex', gap: '24px' }}>
-        <div className="recordings-tab-upload-box" style={{ flex: '0 0 240px' }}>
+    <div className="recordings-tab-container recordings-tab-shell">
+      <header className="recordings-tab-header recordings-tab-header-shell">
+        <div className="recordings-tab-upload-box recordings-tab-upload-box-fixed">
           {isUploading ? (
-            <div style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px solid rgba(117,214,196,0.4)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-              <div style={{ color: '#75d6c4', fontSize: '0.90rem', fontWeight: 600 }}>Wgrywanie ({uploadProgress}%)</div>
-              <div style={{ width: '70%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div className="recordings-upload-state">
+              <div className="recordings-upload-label">Wgrywanie ({uploadProgress}%)</div>
+              <div className="recordings-upload-track">
                 <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#75d6c4', transition: 'width 0.2s ease-in-out' }} />
               </div>
             </div>
           ) : (
             <button 
-              className="hover-pop"
+              className="hover-pop recordings-upload-trigger"
               type="button" 
               onClick={() => mainFileInputRef.current?.click()} 
-              style={{ width: '100%', height: '100%', minHeight: '120px', background: 'rgba(117,214,196,0.1)', border: '1px dashed rgba(117,214,196,0.4)', borderRadius: '12px', color: '#75d6c4', fontSize: '1rem', fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'inset 0 0 10px rgba(117,214,196,0.05)' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.2)'; e.currentTarget.style.borderColor = '#75d6c4'; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(117,214,196,0.1)'; e.currentTarget.style.borderColor = 'rgba(117,214,196,0.4)'; }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Wgraj własne nagranie
@@ -500,11 +492,11 @@ export default function RecordingsTab(props) {
             type="file"
             ref={mainFileInputRef}
             accept="audio/*,video/*"
-            style={{ display: 'none' }}
+            className="recordings-hidden-input"
             onChange={handleMainFileUpload}
           />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="recordings-tab-picker-col">
           <MeetingPicker
              selectedMeeting={selectedMeeting}
              userMeetings={userMeetings}
@@ -516,20 +508,17 @@ export default function RecordingsTab(props) {
       </header>
 
       {showPipelineStatus ? (
-        <section
-          className="panel"
-          style={{ marginBottom: "24px", padding: "18px 20px", border: "1px solid rgba(117,214,196,0.16)" }}
-        >
-          <div className="panel-header compact" style={{ borderBottom: "none", paddingBottom: 0 }}>
+        <section className="panel recordings-status-panel">
+          <div className="panel-header compact recordings-panel-header-flat">
             <div>
               <div className="eyebrow">Pipeline</div>
-              <h2 style={{ marginBottom: "6px" }}>Status przetwarzania nagrania</h2>
-              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+              <h2 className="recordings-section-title">Status przetwarzania nagrania</h2>
+              <p className="soft-copy recordings-copy-md">
                 {recordingMessage || "Nagranie jest aktualnie przetwarzane przez pipeline audio."}
               </p>
             </div>
           </div>
-          <div className="panel-body" style={{ paddingTop: "12px" }}>
+          <div className="panel-body recordings-panel-body-top">
             <RecordingPipelineStatus
               status={analysisStatus}
               progressMessage={recordingMessage}
@@ -538,13 +527,7 @@ export default function RecordingsTab(props) {
               errorMessage={recordingMessage}
             />
             {activeDiagnostics ? (
-              <div
-                style={{
-                  marginTop: "10px",
-                  color: "var(--text-3, #8f97ab)",
-                  fontSize: "0.78rem",
-                }}
-              >
+              <div className="recordings-diagnostics-copy recordings-diagnostics-top">
                 {activeDiagnostics}
               </div>
             ) : null}
@@ -553,17 +536,17 @@ export default function RecordingsTab(props) {
       ) : null}
 
       {selectedMeetingHasEmptyTranscript ? (
-        <section className="panel" style={{ marginBottom: "24px", padding: "18px 20px" }}>
-          <div className="panel-header compact" style={{ borderBottom: "none", paddingBottom: 0 }}>
+        <section className="panel recordings-section-panel">
+          <div className="panel-header compact recordings-panel-header-flat">
             <div>
               <div className="eyebrow">Diagnostyka</div>
               <h2>Brak wykrytej mowy</h2>
-              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+              <p className="soft-copy recordings-copy-md">
                 Nie wykryto wypowiedzi w nagraniu. Sprawdz audio albo ponow transkrypcje dla wybranego pliku.
               </p>
             </div>
           </div>
-          <div className="panel-body" style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          <div className="panel-body recordings-panel-actions">
             {retryStoredRecording ? (
               <button
                 type="button"
@@ -574,7 +557,7 @@ export default function RecordingsTab(props) {
               </button>
             ) : null}
             {selectedMeetingEmptyDiagnostics ? (
-              <div style={{ color: "var(--text-3, #8f97ab)", fontSize: "0.8rem" }}>
+              <div className="recordings-diagnostics-copy recordings-diagnostics-md">
                 {selectedMeetingEmptyDiagnostics}
               </div>
             ) : null}
@@ -583,17 +566,17 @@ export default function RecordingsTab(props) {
       ) : null}
 
       {pendingImports.length ? (
-        <section className="panel" style={{ marginBottom: "24px" }}>
+        <section className="panel recordings-section-panel">
           <div className="panel-header compact">
             <div>
               <div className="eyebrow">Import</div>
               <h2>Pliki wgrywane i przetwarzane</h2>
-              <p className="soft-copy" style={{ fontSize: "0.9rem" }}>
+              <p className="soft-copy recordings-copy-md">
                 Nowo dodane pliki pojawiaja sie tutaj od razu, zanim trafia do finalnej listy nagran.
               </p>
             </div>
           </div>
-          <div className="panel-body" style={{ display: "grid", gap: "12px" }}>
+          <div className="panel-body recordings-pending-list">
             {pendingImports.map((item) => {
               const isActive = activeQueueItem?.recordingId === item.recordingId;
               const progressPercent = isActive ? pipelineProgressPercent : item.status === "queued" ? 8 : 0;
@@ -608,21 +591,11 @@ export default function RecordingsTab(props) {
               return (
                 <div
                   key={item.recordingId}
-                  className="pending-import-card"
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: "16px",
-                    padding: "14px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(117,214,196,0.16)",
-                    background: "rgba(117,214,196,0.04)",
-                  }}
+                  className="pending-import-card recordings-pending-card"
                 >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>{item.meetingTitle || "Nowy import"}</div>
-                    <div style={{ color: "var(--text-3, #8f97ab)", fontSize: "0.82rem" }}>
+                  <div className="recordings-pending-meta">
+                    <div className="recordings-pending-title">{item.meetingTitle || "Nowy import"}</div>
+                    <div className="recordings-pending-date">
                       Dodano {formatDateTime(item.createdAt)}
                     </div>
                   </div>
@@ -640,14 +613,7 @@ export default function RecordingsTab(props) {
                     className="recordings-tab-pending-status"
                   />
                   {diagnostics ? (
-                    <div
-                      style={{
-                        width: "100%",
-                        marginTop: "8px",
-                        color: "var(--text-3, #8f97ab)",
-                        fontSize: "0.76rem",
-                      }}
-                    >
+                    <div className="recordings-pending-diagnostics">
                       {diagnostics}
                     </div>
                   ) : null}

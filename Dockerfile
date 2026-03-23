@@ -1,104 +1,119 @@
-# ==========================================
-# STAGE 1: Build (TypeScript Compilation)
-# ==========================================
-FROM node:22.12-bookworm-slim AS builder
+# syntax=docker/dockerfile:1.7
 
-# Install pnpm globally (matching packageManager version)
+ARG NODE_IMAGE=node:24.14-bookworm-slim
+
+FROM ${NODE_IMAGE} AS base
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}:${PATH}
+
 RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
 
 WORKDIR /app
 
-# Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY server/package*.json ./server/
 
-# Install everything including dev dependencies so we get esbuild/typescript
-RUN pnpm install --frozen-lockfile
+FROM base AS deps
 
-# Copy server code and shared types used by server imports
-COPY server/ ./server/
-COPY src/shared/ ./src/shared/
+COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --link server/package.json ./server/package.json
 
-# Transpile TS -> JS using esbuild into dist-server/
-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile
 
-# Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
-RUN cd server && node -e " \
+
+FROM deps AS build
+
+COPY --link server/ ./server/
+COPY --link src/shared/ ./src/shared/
+
+RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \
+    --bundle \
+    --platform=node \
+    --format=esm \
+    --outdir=dist-server \
+    --packages=external
+
+RUN node -e " \
   const fs=require('fs'); \
-  const ffmpeg=require('ffmpeg-static'); \
-  const ffprobe=require('ffprobe-static').path; \
+  const path=require('path'); \
+  const pnpmDir='/app/node_modules/.pnpm'; \
+  const ffmpegPkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffmpeg-static@')); \
+  const ffprobePkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffprobe-static@')); \
+  if(!ffmpegPkg || !ffprobePkg){ throw new Error('Missing ffmpeg-static or ffprobe-static in pnpm store'); } \
+  const ffmpeg=require(path.join(pnpmDir,ffmpegPkg,'node_modules','ffmpeg-static')); \
+  const ffprobe=require(path.join(pnpmDir,ffprobePkg,'node_modules','ffprobe-static')).path; \
   fs.copyFileSync(ffmpeg,'/tmp/ffmpeg'); \
   fs.copyFileSync(ffprobe,'/tmp/ffprobe'); \
   fs.chmodSync('/tmp/ffmpeg',0o755); \
   fs.chmodSync('/tmp/ffprobe',0o755);"
 
-# Prune node_modules down to only production dependencies to save space
-RUN pnpm prune --prod
+FROM build AS prod-deps
+
+ENV HUSKY=0
+
+RUN pnpm deploy --filter voicelog-api --prod /prod/server
 
 
-# ==========================================
-# STAGE 2: Production Release
-# ==========================================
-FROM node:22.12-bookworm-slim
+FROM ${NODE_IMAGE} AS runtime
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Etc/UTC
-
-# Copy static ffmpeg binaries from builder (avoids re-download and OOM)
-COPY --from=builder /tmp/ffmpeg /usr/local/bin/ffmpeg
-COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
-
-# Install Python and runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install uv via official installer — avoids Docker Hub / ghcr.io registry dependency
-RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
-
-# Create virtual environment and activate it permanently for the container
-RUN uv venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-WORKDIR /app
-
-# Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
-COPY server/requirements.txt ./server/
-# Install CPU-only PyTorch first (saves ~6GB of image space), then the rest without caching wheels
-RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu torch torchaudio && \
-    uv pip install --no-cache -r server/requirements.txt
-
-# Copy production node_modules from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server/node_modules ./server/node_modules
-COPY --from=builder /app/package.json ./
-
-# Copy compiled backend code instead of raw TS
-COPY --from=builder /app/dist-server ./server
-
-# Copy python scripts separately since esbuild doesn't transpile .py
-COPY server/*.py ./server/
-
-# Copy server package mapping (optional if needed for runtime)
-COPY server/package*.json ./server/
-
-# Copy SQL migrations for database setup
-COPY server/migrations/ ./server/migrations/
-
-# Ensure data directories exist
-RUN mkdir -p /data/uploads
+ARG APP_UID=10001
+ARG APP_GID=10001
 
 ENV NODE_ENV=production
+ENV TZ=Etc/UTC
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV VOICELOG_API_HOST=0.0.0.0
 ENV FFMPEG_BINARY=ffmpeg
 ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=/opt/venv/bin:${PATH}
+ENV UV_COMPILE_BYTECODE=1
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${PORT:-${VOICELOG_API_PORT:-4000}}/health || exit 1
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      libgomp1 \
+      libsndfile1 \
+      python3 \
+      python3-venv \
+      tini && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid "${APP_GID}" app && \
+    useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
+
+COPY --link --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+RUN uv venv /opt/venv
+
+WORKDIR /app
+
+COPY --link server/requirements.txt ./server/requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+    uv pip install --python /opt/venv -r server/requirements.txt
+
+COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
+COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
+COPY --link --from=prod-deps /prod/server/node_modules ./server/node_modules
+COPY --link --from=prod-deps /prod/server/package.json ./server/package.json
+COPY --link --from=build /app/dist-server ./server
+COPY --link server/*.py ./server/
+COPY --link server/migrations/ ./server/migrations/
+
+RUN mkdir -p /data/uploads /app/server/data && \
+    chown -R app:app /app /data
+
+USER app
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD node -e "const port = Number(process.env.PORT || process.env.VOICELOG_API_PORT || 4000); const http = require('node:http'); const req = http.get({ host: '127.0.0.1', port, path: '/health', timeout: 5000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.on('timeout', () => { req.destroy(); process.exit(1); });"
 
 EXPOSE 4000
 
-# Execute natively instead of using tsx (huge memory savings & instant boot)
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server/index.js"]

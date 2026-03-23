@@ -13,15 +13,12 @@ import * as speakerEmbedder from "./speakerEmbedder.ts";
 import { resolveServerPort } from "./runtime.ts";
 
 const __filename = fileURLToPath(import.meta.url);
-// __dirname is not used in this file but kept for reference if needed elsewhere
 
-// Config is loaded and validated in config.ts
-
-
-process.on("uncaughtException", (err) => {
-  logger.error("FATAL UNCAUGHT EXCEPTION:", err);
+process.on("uncaughtException", (error) => {
+  logger.error("FATAL UNCAUGHT EXCEPTION:", error);
   process.exit(1);
 });
+
 process.on("unhandledRejection", (reason) => {
   logger.error("FATAL UNHANDLED REJECTION:", reason instanceof Error ? reason : new Error(String(reason)));
 });
@@ -30,11 +27,10 @@ const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || "0.0.0.0";
 
 export async function bootstrap() {
-  const missingEnv = ["DATABASE_URL"].filter(key => !process.env[key] && !config[key as keyof typeof config]);
-  if (missingEnv.length > 0) {
-    logger.error(`[Bootstrap] FATAL: Brakujące wymagane zmienne środowiskowe: ${missingEnv.join(", ")}`);
-    // Fail fast przed połączeniem z bazą
-    if (process.env.NODE_ENV !== 'test') process.exit(1);
+  const hasExternalDatabase = Boolean(config.VOICELOG_DATABASE_URL || config.DATABASE_URL);
+  const hasLocalDatabasePath = Boolean(config.VOICELOG_DB_PATH);
+  if (!hasExternalDatabase && !hasLocalDatabasePath) {
+    logger.warn("[Bootstrap] DATABASE_URL nie jest ustawione. Serwer uruchomi sie na lokalnym SQLite z domyslna sciezka.");
   }
 
   const db = getDatabase();
@@ -42,10 +38,9 @@ export async function bootstrap() {
 
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
-  
+
   logger.info(`[Bootstrap] Initializing TranscriptionService with audioPipeline (${typeof audioPipeline}, keys: ${Object.keys(audioPipeline).join(", ")})`);
   const transcriptionService = new TranscriptionService(db, workspaceService, audioPipeline, speakerEmbedder);
-
 
   const app = createApp({
     authService,
@@ -55,7 +50,7 @@ export async function bootstrap() {
       allowedOrigins: config.VOICELOG_ALLOWED_ORIGINS || "http://localhost:3000",
       trustProxy: config.VOICELOG_TRUST_PROXY === true,
       uploadDir: db.uploadDir,
-    }
+    },
   });
 
   const handler = getRequestListener(app.fetch);
@@ -64,21 +59,19 @@ export async function bootstrap() {
   return { server, db, authService, workspaceService, transcriptionService };
 }
 
-// Since we are using tsx or bundling, we can check if this is the main module
-if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
+if (process.argv[1] === __filename || process.argv[1]?.endsWith("index.ts")) {
   bootstrap().then(({ server }) => {
     logger.info(`Attempting to listen on ${HOST}:${PORT}...`);
-    server.on("error", (err) => {
-      logger.error("SERVER ERROR:", err);
+    server.on("error", (error) => {
+      logger.error("SERVER ERROR:", error);
     });
     server.listen(PORT, HOST, () => {
       logger.info(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
     });
-  }).catch(err => {
-    logger.error("FAILED TO START SERVER:", err);
+  }).catch((error) => {
+    logger.error("FAILED TO START SERVER:", error);
     process.exit(1);
   });
 }
 
 export default bootstrap;
-

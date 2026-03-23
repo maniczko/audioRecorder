@@ -44,6 +44,7 @@ describe("TranscriptionService - Additional Coverage", () => {
       generateVoiceCoaching: vi.fn(),
       embedTextChunks: vi.fn(),
       analyzeAudioQuality: vi.fn(),
+      analyzeAcousticFeatures: vi.fn(),
     };
   });
 
@@ -146,6 +147,54 @@ describe("TranscriptionService - Additional Coverage", () => {
       await expect(
         service.createVoiceProfileFromSpeaker(asset, "1", "Test", "user1")
       ).rejects.toThrow("Brak transkrypcji w bazie.");
+    });
+  });
+
+  describe("getSpeakerAcousticFeatures()", () => {
+    test("extracts per-speaker clips and returns acoustic metrics", async () => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const clipA = path.join(mockDb.uploadDir, "clip_a.wav");
+      const clipB = path.join(mockDb.uploadDir, "clip_b.wav");
+      fs.writeFileSync(clipA, Buffer.from("audio"));
+      fs.writeFileSync(clipB, Buffer.from("audio"));
+
+      mockAudioPipeline.extractSpeakerAudioClip
+        .mockResolvedValueOnce(clipA)
+        .mockResolvedValueOnce(clipB);
+      mockAudioPipeline.analyzeAcousticFeatures
+        .mockResolvedValueOnce({ f0Hz: 182.4, formantsHz: { f1: 500 } })
+        .mockResolvedValueOnce({ f0Hz: 211.7, formantsHz: { f1: 610 } });
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+
+      const asset = {
+        id: "rec1",
+        workspace_id: "ws1",
+        transcript_json: JSON.stringify([
+          { text: "Hello", speakerId: "0", timestamp: 0, endTimestamp: 1 },
+          { text: "Hi", speakerId: "1", timestamp: 1, endTimestamp: 2 },
+        ]),
+        diarization_json: JSON.stringify({
+          speakerNames: { "0": "Anna", "1": "Jan" },
+        }),
+      };
+
+      const result = await service.getSpeakerAcousticFeatures(asset);
+
+      expect(result).toEqual({
+        speakers: [
+          { speakerId: "0", speakerName: "Anna", f0Hz: 182.4, formantsHz: { f1: 500 } },
+          { speakerId: "1", speakerName: "Jan", f0Hz: 211.7, formantsHz: { f1: 610 } },
+        ],
+      });
+      expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledTimes(2);
+      expect(mockAudioPipeline.analyzeAcousticFeatures).toHaveBeenCalledTimes(2);
     });
   });
 

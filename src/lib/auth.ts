@@ -116,6 +116,7 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
     preferredInsights: [],
     notifyDailyDigest: true,
     autoTaskCapture: true,
+    autoLearnSpeakerProfiles: false,
     preferredTaskView: "list",
     provider: "local",
     ...copyUserWorkspaceIds(null, workspaceId),
@@ -205,6 +206,7 @@ export function updateUserProfile(existingUsers, userId, updates) {
           preferredInsights: normalizeLines(updates.preferredInsights),
           notifyDailyDigest: Boolean(updates.notifyDailyDigest),
           autoTaskCapture: Boolean(updates.autoTaskCapture),
+          autoLearnSpeakerProfiles: Boolean(updates.autoLearnSpeakerProfiles),
           preferredTaskView: updates.preferredTaskView === "kanban" ? "kanban" : "list",
           updatedAt: new Date().toISOString(),
         }
@@ -388,6 +390,7 @@ export function upsertGoogleUser(existingUsers, existingWorkspaces, googleProfil
     bio: "",
     notifyDailyDigest: true,
     autoTaskCapture: true,
+    autoLearnSpeakerProfiles: false,
     preferredTaskView: "list",
     provider: "google",
     ...copyUserWorkspaceIds(null, workspace.id),

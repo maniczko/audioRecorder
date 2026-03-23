@@ -24,6 +24,7 @@ export function buildProfileDraft(user) {
     preferredInsights: Array.isArray(user?.preferredInsights) ? user.preferredInsights.join("\n") : "",
     notifyDailyDigest: Boolean(user?.notifyDailyDigest ?? true),
     autoTaskCapture: Boolean(user?.autoTaskCapture ?? true),
+    autoLearnSpeakerProfiles: Boolean(user?.autoLearnSpeakerProfiles ?? false),
     preferredTaskView: user?.preferredTaskView === "kanban" ? "kanban" : "list",
   };
 }

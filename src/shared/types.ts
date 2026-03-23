@@ -66,6 +66,29 @@ export interface TranscriptionDiagnostics {
   lastChunkErrorMessage?: string;
   transcriptionProfileUsed?: "standard" | "enhanced";
   transcriptionAttemptCount?: 1 | 2;
+  sttAttempts?: SttProviderAttempt[];
+}
+
+export interface SttProviderAttempt {
+  providerId: string;
+  providerLabel: string;
+  model: string;
+  success: boolean;
+  durationMs?: number;
+  errorMessage?: string;
+}
+
+export interface TranscriptionQualityMetrics {
+  sttProviderId?: string;
+  sttProviderLabel?: string;
+  sttModel?: string;
+  sttAttempts?: SttProviderAttempt[];
+  werProxy?: number | null;
+  diarizationConfidence?: number | null;
+  attemptCount?: number;
+  retryCount?: number;
+  failureCount?: number;
+  failureRate?: number;
 }
 
 export interface TranscriptionStatusPayload {
@@ -83,6 +106,7 @@ export interface TranscriptionStatusPayload {
   pipelineBuildTime?: string;
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
+  qualityMetrics?: TranscriptionQualityMetrics | null;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;
@@ -119,6 +143,26 @@ export interface VoiceProfileSummary {
 
 export interface VoiceProfilesListPayload {
   profiles: VoiceProfileSummary[];
+}
+
+export interface SpeakerAcousticMetrics {
+  speakerId: string;
+  speakerName: string;
+  sampleDurationSeconds?: number | null;
+  f0Hz?: number | null;
+  jitterLocal?: number | null;
+  shimmerLocalDb?: number | null;
+  hnrDb?: number | null;
+  formantsHz?: {
+    f1?: number | null;
+    f2?: number | null;
+    f3?: number | null;
+    f4?: number | null;
+  };
+}
+
+export interface SpeakerAcousticMetricsPayload {
+  speakers: SpeakerAcousticMetrics[];
 }
 
 export interface AiTask {

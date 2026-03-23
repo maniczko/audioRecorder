@@ -192,6 +192,48 @@ export function average(values: number[]): number {
 }
 
 /**
+ * Calculates Levenshtein distance between token arrays.
+ */
+export function tokenEditDistance(left: string[], right: string[]): number {
+  const rows = left.length + 1;
+  const cols = right.length + 1;
+  const matrix = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+  for (let row = 0; row < rows; row += 1) matrix[row][0] = row;
+  for (let col = 0; col < cols; col += 1) matrix[0][col] = col;
+
+  for (let row = 1; row < rows; row += 1) {
+    for (let col = 1; col < cols; col += 1) {
+      const substitutionCost = left[row - 1] === right[col - 1] ? 0 : 1;
+      matrix[row][col] = Math.min(
+        matrix[row - 1][col] + 1,
+        matrix[row][col - 1] + 1,
+        matrix[row - 1][col - 1] + substitutionCost
+      );
+    }
+  }
+
+  return matrix[left.length][right.length];
+}
+
+/**
+ * Lightweight WER proxy based on token edit distance.
+ * Uses the longer token sequence as denominator to avoid over-optimistic scores.
+ */
+export function computeWerProxy(referenceText: string, hypothesisText: string): number | null {
+  const referenceTokens = tokenize(referenceText);
+  const hypothesisTokens = tokenize(hypothesisText);
+  const denominator = Math.max(referenceTokens.length, hypothesisTokens.length, 1);
+
+  if (!referenceTokens.length && !hypothesisTokens.length) {
+    return 0;
+  }
+
+  const distance = tokenEditDistance(referenceTokens, hypothesisTokens);
+  return clamp(distance / denominator, 0, 1);
+}
+
+/**
  * Parses a number from a string or returns fallback.
  * @param raw - Raw value to parse
  * @param fallback - Fallback value if parsing fails
@@ -678,8 +720,8 @@ export function buildEmptyTranscriptResult(
   audioQuality: any = null
 ): any {
   return {
-    providerId: "openai-audio-pipeline",
-    providerLabel: "OpenAI STT + diarization",
+    providerId: "stt-pipeline",
+    providerLabel: "STT + diarization",
     pipelineStatus: "completed",
     transcriptOutcome: "empty" as const,
     emptyReason: reason,

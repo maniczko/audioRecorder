@@ -1,6 +1,7 @@
 import type {
   AudioQualityDiagnostics,
   MeetingAsset,
+  TranscriptionQualityMetrics,
   TranscriptSegment,
   TranscriptionDiagnostics,
   TranscriptionStatusPayload,
@@ -56,6 +57,7 @@ export interface MediaTranscriptionResponse {
   pipelineBuildTime?: string;
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics | null;
+  qualityMetrics?: TranscriptionQualityMetrics | null;
   reviewSummary?: string | null;
   errorMessage?: string;
 }
@@ -366,6 +368,10 @@ export function normalizeTranscriptionStatusPayload(asset: Partial<MeetingAsset>
       diarization?.transcriptionDiagnostics && typeof diarization.transcriptionDiagnostics === "object"
         ? diarization.transcriptionDiagnostics
         : null,
+    qualityMetrics:
+      diarization?.qualityMetrics && typeof diarization.qualityMetrics === "object"
+        ? diarization.qualityMetrics
+        : null,
     segments: Array.isArray(segments) ? segments : [],
     diarization: diarization && typeof diarization === "object" ? diarization : {},
     speakerNames: diarization?.speakerNames || {},
@@ -398,6 +404,10 @@ export function normalizeMediaTranscriptionResponse(response: MediaTranscription
       (diarization as any)?.transcriptionDiagnostics && typeof (diarization as any).transcriptionDiagnostics === "object"
         ? (diarization as any).transcriptionDiagnostics
         : response?.transcriptionDiagnostics || null,
+    qualityMetrics:
+      (diarization as any)?.qualityMetrics && typeof (diarization as any).qualityMetrics === "object"
+        ? (diarization as any).qualityMetrics
+        : response?.qualityMetrics || null,
     segments,
     diarization,
     speakerNames: (diarization as any)?.speakerNames || {},

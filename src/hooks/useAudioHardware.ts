@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_BARS, recordingErrorMessage } from "../lib/recording";
 import { summarizeSpectrum } from "../lib/diarization";
-import { createNoiseReducerNode } from "../audio/noiseReducerNode";
+import { createNoiseReducerNode, isRnnoiseNode, requestNoiseReducerStatus } from "../audio/noiseReducerNode";
 
 // Amplitude below this (0–255 scale) is considered silence (~4%)
 const SILENCE_AMPLITUDE_THRESHOLD = 10;
@@ -30,12 +30,15 @@ export default function useAudioHardware({
   const [visualBars, setVisualBars] = useState(DEFAULT_BARS);
   // null = no warning; number = seconds until auto-stop
   const [silenceCountdown, setSilenceCountdown] = useState<number | null>(null);
+  const [voiceActivityStatus, setVoiceActivityStatus] = useState<"active" | "idle" | "unsupported">("unsupported");
 
   const mediaRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
   const streamRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const noiseReducerRef = useRef<any>(null);
+  const vadIntervalRef = useRef<any>(null);
   const frameRef = useRef(null);
   const timerRef = useRef(null);
   const startTimeRef = useRef(0);
@@ -83,9 +86,11 @@ export default function useAudioHardware({
     if (typeof window !== "undefined") {
       window.cancelAnimationFrame(frameRef.current);
       window.clearInterval(timerRef.current);
+      window.clearInterval(vadIntervalRef.current);
     }
     frameRef.current = null;
     timerRef.current = null;
+    vadIntervalRef.current = null;
 
     if (recognitionRef.current) {
       recognitionRef.current.clearHandlers?.();
@@ -105,7 +110,12 @@ export default function useAudioHardware({
       audioContextRef.current = null;
     }
     analyserRef.current = null;
+    if (noiseReducerRef.current && typeof noiseReducerRef.current === "object") {
+      noiseReducerRef.current.onstatus = null;
+    }
+    noiseReducerRef.current = null;
     mediaRecorderRef.current = null;
+    setVoiceActivityStatus("unsupported");
   }
 
   function pumpVisualizer() {
@@ -205,8 +215,23 @@ export default function useAudioHardware({
         noiseReducer.connect(analyser);
         noiseReducer.connect(destination);
         recordStream = destination.stream;
+        noiseReducerRef.current = noiseReducer;
+        if (isRnnoiseNode(noiseReducer)) {
+          setVoiceActivityStatus("idle");
+          noiseReducer.onstatus = (event) => {
+            const vadProbability = Number(event?.data?.vadProb ?? 0);
+            setVoiceActivityStatus(vadProbability >= 0.55 ? "active" : "idle");
+          };
+          requestNoiseReducerStatus(noiseReducer);
+          vadIntervalRef.current = window.setInterval(() => {
+            requestNoiseReducerStatus(noiseReducer);
+          }, 350);
+        } else {
+          setVoiceActivityStatus("unsupported");
+        }
       } else {
         source.connect(analyser);
+        setVoiceActivityStatus("unsupported");
       }
 
       streamRef.current = stream;
@@ -327,8 +352,9 @@ export default function useAudioHardware({
     isPaused,
     elapsed,
     visualBars,
-    silenceCountdown,
-    chunksRef,
+      silenceCountdown,
+      voiceActivityStatus,
+      chunksRef,
     mimeTypeRef,
     startRecording,
     stopRecording,

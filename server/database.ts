@@ -206,6 +206,38 @@ export class Database {
     };
   }
 
+  _normalizeQualityMetrics(existingMetrics: any = {}) {
+    const attemptCount = Math.max(0, Number(existingMetrics?.attemptCount) || 0);
+    const retryCount = Math.max(0, Number(existingMetrics?.retryCount) || 0);
+    const failureCount = Math.max(0, Number(existingMetrics?.failureCount) || 0);
+    const failureRate = attemptCount > 0 ? failureCount / attemptCount : 0;
+
+    return {
+      ...existingMetrics,
+      attemptCount,
+      retryCount,
+      failureCount,
+      failureRate,
+    };
+  }
+
+  _mergeQualityMetrics(existingMetrics: any = {}, nextMetrics: any = {}) {
+    const normalizedExisting = this._normalizeQualityMetrics(existingMetrics);
+    const normalizedNext = this._normalizeQualityMetrics(nextMetrics);
+    const attemptCount = Math.max(normalizedExisting.attemptCount, normalizedNext.attemptCount);
+    const retryCount = Math.max(normalizedExisting.retryCount, normalizedNext.retryCount);
+    const failureCount = Math.max(normalizedExisting.failureCount, normalizedNext.failureCount);
+
+    return {
+      ...normalizedExisting,
+      ...normalizedNext,
+      attemptCount,
+      retryCount,
+      failureCount,
+      failureRate: attemptCount > 0 ? failureCount / attemptCount : 0,
+    };
+  }
+
   // --- Internal Utilities ---
 
   _safeJsonParse(raw, fallbackValue) {
@@ -802,7 +834,23 @@ export class Database {
   }
 
   async markTranscriptionProcessing(recordingId) {
-    await this._execute("UPDATE media_assets SET transcription_status = 'processing', updated_at = ? WHERE id = ?", [this.nowIso(), recordingId]);
+    const existing = await this.getMediaAsset(recordingId);
+    const existingDiarization = this._safeJsonParse(existing?.diarization_json, {});
+    const existingQualityMetrics = this._normalizeQualityMetrics(existingDiarization?.qualityMetrics || {});
+    const nextQualityMetrics = this._mergeQualityMetrics(existingQualityMetrics, {
+      attemptCount: existingQualityMetrics.attemptCount + 1,
+      retryCount: existingQualityMetrics.attemptCount > 0
+        ? existingQualityMetrics.retryCount + 1
+        : existingQualityMetrics.retryCount,
+    });
+    await this._execute("UPDATE media_assets SET transcription_status = 'processing', diarization_json = ?, updated_at = ? WHERE id = ?", [
+      JSON.stringify({
+        ...existingDiarization,
+        qualityMetrics: nextQualityMetrics,
+      }),
+      this.nowIso(),
+      recordingId,
+    ]);
     return this.getMediaAsset(recordingId);
   }
 
@@ -815,6 +863,10 @@ export class Database {
       pipelineGitSha: result.pipelineGitSha || defaultPipelineMetadata.pipelineGitSha,
       pipelineBuildTime: result.pipelineBuildTime || defaultPipelineMetadata.pipelineBuildTime,
     };
+    const qualityMetrics = this._mergeQualityMetrics(
+      existingDiarization?.qualityMetrics || {},
+      result.qualityMetrics || {}
+    );
     const diarizationPayload =
       result.diarization && typeof result.diarization === "object"
         ? {
@@ -825,6 +877,7 @@ export class Database {
             userMessage: result.userMessage || "",
             audioQuality: result.audioQuality || existingDiarization.audioQuality || null,
             transcriptionDiagnostics: result.transcriptionDiagnostics || null,
+            qualityMetrics,
             ...pipelineMetadata,
           }
         : {
@@ -834,6 +887,7 @@ export class Database {
             userMessage: result.userMessage || "",
             audioQuality: result.audioQuality || existingDiarization.audioQuality || null,
             transcriptionDiagnostics: result.transcriptionDiagnostics || null,
+            qualityMetrics,
             ...pipelineMetadata,
           };
     await this._execute("UPDATE media_assets SET transcription_status = ?, transcript_json = ?, diarization_json = ?, updated_at = ? WHERE id = ?", [this._clean(result.pipelineStatus) || "completed",
@@ -846,11 +900,16 @@ export class Database {
   async markTranscriptionFailure(recordingId, errorMessage, transcriptionDiagnostics = null, audioQuality: AudioQualityDiagnostics | null = null) {
     const existing = await this.getMediaAsset(recordingId);
     const existingDiarization = this._safeJsonParse(existing?.diarization_json, {});
+    const existingQualityMetrics = this._normalizeQualityMetrics(existingDiarization?.qualityMetrics || {});
+    const qualityMetrics = this._mergeQualityMetrics(existingQualityMetrics, {
+      failureCount: existingQualityMetrics.failureCount + 1,
+    });
     await this._execute("UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?", [
       JSON.stringify({
         errorMessage: this._clean(errorMessage),
         audioQuality: audioQuality || existingDiarization.audioQuality || null,
         transcriptionDiagnostics: transcriptionDiagnostics || null,
+        qualityMetrics,
         ...this._buildPipelineMetadata(),
       }),
       this.nowIso(),
@@ -864,9 +923,14 @@ export class Database {
     if (!asset) throw new Error("Nie znaleziono nagrania.");
     const existingDiarization = this._safeJsonParse(asset.diarization_json, {});
     const preservedDiarization =
-      existingDiarization?.audioQuality && typeof existingDiarization.audioQuality === "object"
-        ? { audioQuality: existingDiarization.audioQuality }
-        : {};
+      {
+        ...(existingDiarization?.audioQuality && typeof existingDiarization.audioQuality === "object"
+          ? { audioQuality: existingDiarization.audioQuality }
+          : {}),
+        ...(existingDiarization?.qualityMetrics && typeof existingDiarization.qualityMetrics === "object"
+          ? { qualityMetrics: this._normalizeQualityMetrics(existingDiarization.qualityMetrics) }
+          : {}),
+      };
     await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = ?, updated_at = ? WHERE id = ?", [
       this._clean(updates.workspaceId) || asset.workspace_id,
       this._clean(updates.meetingId) || asset.meeting_id,

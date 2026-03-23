@@ -6,15 +6,17 @@ describe('appState library', () => {
     const draft = buildProfileDraft(null);
     expect(draft.name).toBe('');
     expect(draft.preferredTaskView).toBe('list');
+    expect(draft.autoLearnSpeakerProfiles).toBe(false);
     expect(draft.timezone).toBeDefined();
   });
 
   test('buildProfileDraft should map user fields', () => {
-    const user = { name: 'Jan', email: 'jan@ex.com', preferredInsights: ['a', 'b'], preferredTaskView: 'kanban' };
+    const user = { name: 'Jan', email: 'jan@ex.com', preferredInsights: ['a', 'b'], preferredTaskView: 'kanban', autoLearnSpeakerProfiles: true };
     const draft = buildProfileDraft(user);
     expect(draft.name).toBe('Jan');
     expect(draft.googleEmail).toBe('jan@ex.com');
     expect(draft.preferredInsights).toBe('a\nb');
+    expect(draft.autoLearnSpeakerProfiles).toBe(true);
     expect(draft.preferredTaskView).toBe('kanban');
   });
 

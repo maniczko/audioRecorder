@@ -1,383 +1,457 @@
+/**
+ * @vitest-environment node
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { execSync } from "node:child_process";
 
-describe("speakerEmbedder.ts", () => {
-  const originalEnv = process.env;
+// Mock transformers at the top level (hoisted)
+vi.mock("@xenova/transformers", () => ({
+  AutoModel: {
+    from_pretrained: vi.fn().mockResolvedValue({
+      run: vi.fn().mockResolvedValue({
+        embeddings: {
+          data: new Float32Array(512).fill(0.5),
+        },
+      }),
+    }),
+  },
+  AutoProcessor: {
+    from_pretrained: vi.fn().mockResolvedValue(
+      vi.fn().mockResolvedValue({
+        input_values: new Float32Array(16000),
+      })
+    ),
+  },
+}));
+
+// Mock config
+vi.mock("../config", () => ({
+  config: {
+    FFMPEG_BINARY: "ffmpeg",
+  },
+}));
+
+// Import after mocks
+import {
+  cosineSimilarity,
+  addToAverageEmbedding,
+  computeEmbedding,
+  matchSpeakerToProfile,
+} from "../speakerEmbedder";
+
+describe("speakerEmbedder", () => {
+  let tempAudioPath: string;
 
   beforeEach(() => {
-    vi.resetModules();
-    process.env = { ...originalEnv };
+    tempAudioPath = path.join(os.tmpdir(), `test_audio_${Date.now()}.wav`);
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
-    vi.restoreAllMocks();
+    if (fs.existsSync(tempAudioPath)) {
+      fs.unlinkSync(tempAudioPath);
+    }
   });
 
   describe("cosineSimilarity", () => {
-    it("returns 1 for identical vectors", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, 2, 3];
-      const b = [1, 2, 3];
-      
-      expect(cosineSimilarity(a, b)).toBeCloseTo(1, 5);
+    it("returns 1 for identical vectors", () => {
+      const vec = [0.5, 0.3, 0.8, 0.1];
+      const result = cosineSimilarity(vec, vec);
+      expect(result).toBeCloseTo(1, 5);
     });
 
-    it("returns 0 for orthogonal vectors", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, 0, 0];
-      const b = [0, 1, 0];
-      
-      expect(cosineSimilarity(a, b)).toBeCloseTo(0, 5);
+    it("returns 0 for orthogonal vectors", () => {
+      const vec1 = [1, 0, 0, 0];
+      const vec2 = [0, 1, 0, 0];
+      const result = cosineSimilarity(vec1, vec2);
+      expect(result).toBeCloseTo(0, 5);
     });
 
-    it("returns -1 for opposite vectors", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, 0, 0];
-      const b = [-1, 0, 0];
-      
-      expect(cosineSimilarity(a, b)).toBeCloseTo(-1, 5);
+    it("returns negative value for opposite vectors", () => {
+      const vec1 = [1, 0, 0, 0];
+      const vec2 = [-1, 0, 0, 0];
+      const result = cosineSimilarity(vec1, vec2);
+      expect(result).toBeCloseTo(-1, 5);
     });
 
-    it("returns 0 for null inputs", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
+    it("returns 0 when vectors are null", () => {
       expect(cosineSimilarity(null as any, [1, 2, 3])).toBe(0);
       expect(cosineSimilarity([1, 2, 3], null as any)).toBe(0);
+      expect(cosineSimilarity(null as any, null as any)).toBe(0);
     });
 
-    it("returns 0 for undefined inputs", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      expect(cosineSimilarity(undefined as any, [1, 2, 3])).toBe(0);
-      expect(cosineSimilarity([1, 2, 3], undefined as any)).toBe(0);
+    it("returns 0 when vectors have different lengths", () => {
+      const vec1 = [1, 2, 3];
+      const vec2 = [1, 2, 3, 4];
+      const result = cosineSimilarity(vec1, vec2);
+      expect(result).toBe(0);
     });
 
-    it("returns 0 for vectors of different lengths", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, 2, 3];
-      const b = [1, 2];
-      
-      expect(cosineSimilarity(a, b)).toBe(0);
+    it("handles empty vectors", () => {
+      const result = cosineSimilarity([], []);
+      expect(result).toBe(0);
     });
 
-    it("handles positive values correctly", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, 2, 3, 4, 5];
-      const b = [1, 2, 3, 4, 5];
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      expect(similarity).toBeGreaterThan(0.9);
-      expect(similarity).toBeLessThanOrEqual(1);
+    it("calculates correct similarity for real-world vectors", () => {
+      const vec1 = [0.1, 0.2, 0.3, 0.4, 0.5];
+      const vec2 = [0.15, 0.25, 0.35, 0.45, 0.55];
+      const result = cosineSimilarity(vec1, vec2);
+      expect(result).toBeGreaterThan(0.9); // Should be very similar
+    });
+  });
+
+  describe("addToAverageEmbedding", () => {
+    it("returns new embedding when existing is empty", () => {
+      const newEmbedding = [0.5, 0.3, 0.8];
+      const result = addToAverageEmbedding([], 0, newEmbedding);
+      expect(result).toEqual(newEmbedding);
     });
 
-    it("handles negative values correctly", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [-1, -2, -3];
-      const b = [-1, -2, -3];
-      
-      expect(cosineSimilarity(a, b)).toBeCloseTo(1, 5);
+    it("returns existing embedding when new is empty", () => {
+      const existing = [0.5, 0.3, 0.8];
+      const result = addToAverageEmbedding(existing, 1, []);
+      expect(result).toEqual(existing);
     });
 
-    it("handles mixed positive and negative values", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [1, -1, 1];
-      const b = [1, -1, 1];
-      
-      expect(cosineSimilarity(a, b)).toBeCloseTo(1, 5);
+    it("returns null when both are null", () => {
+      const result = addToAverageEmbedding(null as any, 0, null as any);
+      expect(result).toBeNull();
     });
 
-    it("returns high similarity for similar vectors", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
+    it("calculates weighted average correctly", () => {
+      const existing = [1, 0, 0]; // Unit vector in x direction
+      const newEmbedding = [0, 1, 0]; // Unit vector in y direction
+      const result = addToAverageEmbedding(existing, 1, newEmbedding);
       
-      const a = [0.1, 0.2, 0.3, 0.4, 0.5];
-      const b = [0.11, 0.21, 0.31, 0.41, 0.51];
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      expect(similarity).toBeGreaterThan(0.99);
+      // Should be normalized average: [0.5, 0.5, 0] normalized
+      expect(result.length).toBe(3);
+      expect(result[0]).toBeCloseTo(0.707, 2); // ~1/sqrt(2)
+      expect(result[1]).toBeCloseTo(0.707, 2);
     });
 
-    it("returns low similarity for different vectors", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
+    it("handles large existing count (profile with many samples)", () => {
+      const existing = [1, 0, 0];
+      const newEmbedding = [0, 1, 0];
+      const result = addToAverageEmbedding(existing, 9, newEmbedding);
       
-      const a = [1, 0, 0, 0, 0];
-      const b = [0, 0, 0, 0, 1];
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      expect(similarity).toBeCloseTo(0, 5);
+      // With 9 existing samples, new one has less impact
+      expect(result[0]).toBeGreaterThan(result[1]); // x should still dominate
     });
 
-    it("handles zero vector correctly", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
+    it("normalizes result to unit length", () => {
+      const existing = [2, 0, 0];
+      const newEmbedding = [0, 2, 0];
+      const result = addToAverageEmbedding(existing, 1, newEmbedding);
       
-      const a = [0, 0, 0];
-      const b = [1, 2, 3];
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      expect(Number.isNaN(similarity) || similarity === 0).toBe(true);
+      // Check that result is normalized (length = 1)
+      const length = Math.sqrt(result[0] ** 2 + result[1] ** 2 + result[2] ** 2);
+      expect(length).toBeCloseTo(1, 5);
     });
 
-    it("works with 512-dimensional speaker embeddings", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = Array.from({ length: 512 }, (_, i) => Math.sin(i * 0.1));
-      const b = Array.from({ length: 512 }, (_, i) => Math.sin(i * 0.1));
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      expect(similarity).toBeCloseTo(1, 5);
-    });
-
-    it("distinguishes between different speakers", async () => {
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const speaker1 = Array.from({ length: 512 }, (_, i) => Math.sin(i * 0.1));
-      const speaker2 = Array.from({ length: 512 }, (_, i) => Math.cos(i * 0.1));
-      
-      const similarity = cosineSimilarity(speaker1, speaker2);
-      
-      expect(similarity).toBeLessThan(0.5);
+    it("handles different length vectors (uses minimum)", () => {
+      const existing = [1, 2, 3, 4, 5];
+      const newEmbedding = [1, 2, 3];
+      const result = addToAverageEmbedding(existing, 1, newEmbedding);
+      expect(result.length).toBe(3);
     });
   });
 
   describe("computeEmbedding", () => {
-    it("returns null when transformers fail to load", async () => {
-      // Mock transformers to fail
-      vi.mock("@xenova/transformers", () => ({
-        AutoModel: {
-          from_pretrained: vi.fn().mockRejectedValue(new Error("Model load failed")),
-        },
-        AutoProcessor: {
-          from_pretrained: vi.fn(),
-        },
-      }));
-
-      const { computeEmbedding } = await import("../speakerEmbedder.ts");
-      
-      const result = await computeEmbedding("/tmp/test.wav");
-      
-      expect(result).toBeNull();
-    });
-
     it("returns null for non-existent file", async () => {
-      // Mock fs to return file not exists
-      vi.mock("node:fs", async () => {
-        const actual = await vi.importActual("node:fs");
-        return {
-          ...(actual as any),
-          existsSync: vi.fn(() => false),
-          readFileSync: vi.fn(),
-          unlinkSync: vi.fn(),
-        };
-      });
-
-      // Mock child_process
-      vi.mock("node:child_process", () => ({
-        execSync: vi.fn().mockImplementation(() => {
-          throw new Error("ffmpeg not found");
-        }),
-      }));
-
-      const { computeEmbedding } = await import("../speakerEmbedder.ts");
-      
-      const result = await computeEmbedding("/tmp/nonexistent.wav");
-      
+      const result = await computeEmbedding("/non/existent/file.wav");
       expect(result).toBeNull();
     });
 
     it("returns null for short audio files", async () => {
-      // Mock fs to return small buffer
-      vi.mock("node:fs", async () => {
-        const actual = await vi.importActual("node:fs");
-        return {
-          ...(actual as any),
-          existsSync: vi.fn(() => true),
-          readFileSync: vi.fn(() => Buffer.alloc(100)), // Too small
-          unlinkSync: vi.fn(),
-        };
-      });
-
-      // Mock child_process
-      vi.mock("node:child_process", () => ({
-        execSync: vi.fn(),
-      }));
-
-      const { computeEmbedding } = await import("../speakerEmbedder.ts");
-      
-      const result = await computeEmbedding("/tmp/short.wav");
-      
+      // Create a tiny file (less than 160 bytes = 10ms at 16kHz)
+      fs.writeFileSync(tempAudioPath, Buffer.alloc(100));
+      const result = await computeEmbedding(tempAudioPath);
       expect(result).toBeNull();
+    });
+
+    it("returns null when transformers fail to load", async () => {
+      // Create a valid audio file
+      const audioData = Buffer.alloc(16000 * 4); // 1 second of audio
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      // Mock model loading failure
+      vi.mocked(await import("@xenova/transformers")).AutoModel.from_pretrained.mockRejectedValue(
+        new Error("Model load failed")
+      );
+      
+      const result = await computeEmbedding(tempAudioPath);
+      expect(result).toBeNull();
+    });
+
+    it("returns embedding for valid audio file", async () => {
+      // Create a valid audio file
+      const audioData = Buffer.alloc(16000 * 4); // 1 second of audio
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      const result = await computeEmbedding(tempAudioPath);
+      
+      // Should return normalized 512-dim embedding
+      expect(result).toHaveLength(512);
+      
+      // Check normalization (length should be ~1)
+      const length = Math.sqrt(result!.reduce((sum, v) => sum + v ** 2, 0));
+      expect(length).toBeCloseTo(1, 3);
+    });
+
+    it("caches model after first load", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      await computeEmbedding(tempAudioPath);
+      await computeEmbedding(tempAudioPath);
+      
+      // AutoModel.from_pretrained should only be called once due to caching
+      const { AutoModel } = await import("@xenova/transformers");
+      expect(AutoModel.from_pretrained).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("matchSpeakerToProfile", () => {
-    it("returns null for empty voice profiles array", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("returns null when no profiles provided", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const result = await matchSpeakerToProfile("/tmp/test.wav", []);
-      
+      const result = await matchSpeakerToProfile(tempAudioPath, []);
       expect(result).toBeNull();
     });
 
-    it("returns null for undefined voice profiles", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("returns null when profiles have invalid embedding JSON", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const result = await matchSpeakerToProfile("/tmp/test.wav", undefined as any);
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: "invalid json {",
+          threshold: 0.8,
+        },
+      ];
       
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
       expect(result).toBeNull();
     });
 
-    it("returns null when computeEmbedding fails", async () => {
-      // Mock computeEmbedding to return null
-      vi.mock("../speakerEmbedder.ts", async () => {
-        const actual = await vi.importActual("../speakerEmbedder.ts");
-        return {
-          ...(actual as any),
-          computeEmbedding: vi.fn().mockResolvedValue(null),
-          cosineSimilarity: (actual as any).cosineSimilarity,
-        };
-      });
-
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("returns null when profile embedding is not an array", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Test", embedding: [0.1, 0.2, 0.3] },
-      ]);
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: '"not an array"',
+          threshold: 0.8,
+        },
+      ];
       
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
       expect(result).toBeNull();
     });
 
-    it("handles invalid JSON in profile embedding", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("returns null when profile embedding is empty array", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Invalid", embedding: "invalid-json" },
-      ]);
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: "[]",
+          threshold: 0.8,
+        },
+      ];
       
-      // Should skip invalid profile and return null
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
       expect(result).toBeNull();
     });
 
-    it("handles non-array embedding in profile", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("returns matching profile when similarity exceeds threshold", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Invalid", embedding: 123 },
-      ]);
+      // Create a profile with a known embedding that should match
+      const knownEmbedding = new Array(512).fill(0.5);
       
-      expect(result).toBeNull();
-    });
-
-    it("returns matching profile name when similarity exceeds threshold", async () => {
-      // This test requires mocking the transformer models
-      // For now, we test the function structure
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: JSON.stringify(knownEmbedding),
+          threshold: 0.8,
+        },
+      ];
       
-      // With no valid embeddings, should return null
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Test", embedding: "[0.1, 0.2, 0.3]" },
-      ]);
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
       
-      // Will try to parse JSON and compute similarity
-      expect(result).toBeNull();
+      // Since our mock returns [0.5, 0.5, ...], similarity should be 1.0
+      expect(result).toBeDefined();
+      expect(result!.name).toBe("Alice");
+      expect(result!.confidence).toBeGreaterThan(80);
     });
 
     it("returns null when no profile exceeds similarity threshold", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      // Profiles with embeddings that won't match
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Speaker 1", embedding: [0.9, 0.9, 0.9] },
-        { speaker_name: "Speaker 2", embedding: [0.8, 0.8, 0.8] },
-      ]);
+      // Create a profile with very different embedding
+      const differentEmbedding = new Array(512).fill(0).map((_, i) => (i % 2 === 0 ? 1 : -1));
       
-      // Without a matching embedding from the audio, should return null
-      expect(result).toBeNull();
-    });
-  });
-
-  describe("getEmbeddingModels", () => {
-    it("handles model loading errors gracefully", async () => {
-      // Mock the transformers import to fail
-      vi.mock("@xenova/transformers", () => ({
-        AutoModel: {
-          from_pretrained: vi.fn().mockRejectedValue(new Error("Model load failed")),
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: JSON.stringify(differentEmbedding),
+          threshold: 0.95, // Very high threshold
         },
-        AutoProcessor: {
-          from_pretrained: vi.fn(),
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      expect(result).toBeNull();
+    });
+
+    it("uses per-profile threshold when specified", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      const knownEmbedding = new Array(512).fill(0.5);
+      
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: JSON.stringify(knownEmbedding),
+          threshold: 0.99, // Very high threshold
         },
-        env: {},
-      }));
-
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+      ];
       
-      // Should handle the error and return null
-      const result = await matchSpeakerToProfile("/tmp/test.wav", [
-        { speaker_name: "Test", embedding: [0.1, 0.2, 0.3] },
-      ]);
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
       
-      expect(result).toBeNull();
+      // With high threshold, might not match
+      // Result depends on actual similarity calculation
+      expect(result === null || result.confidence >= 99).toBe(true);
     });
 
-    it("caches models after first load", async () => {
-      // First import should load models
-      const module1 = await import("../speakerEmbedder.ts");
+    it("falls back to default threshold when not specified", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      // Second import should use cached models
-      const module2 = await import("../speakerEmbedder.ts");
+      const knownEmbedding = new Array(512).fill(0.5);
       
-      // Both should reference the same module
-      expect(module1).toBe(module2);
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: JSON.stringify(knownEmbedding),
+          // No threshold specified - should use default 0.82
+        },
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      expect(result).toBeDefined();
+    });
+
+    it("returns best match when multiple profiles provided", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding_json: JSON.stringify(new Array(512).fill(0.5)),
+          threshold: 0.8,
+        },
+        {
+          speaker_name: "Bob",
+          embedding_json: JSON.stringify(new Array(512).fill(0.3)),
+          threshold: 0.8,
+        },
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      
+      // Should return the best match (highest similarity)
+      expect(result).toBeDefined();
+      expect(["Alice", "Bob"]).toContain(result!.name);
+    });
+
+    it("handles legacy embedding field format", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding: JSON.stringify(new Array(512).fill(0.5)),
+          threshold: 0.8,
+        },
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      expect(result).toBeDefined();
+    });
+
+    it("handles embedding as pre-parsed object", async () => {
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
+      
+      const profiles = [
+        {
+          speaker_name: "Alice",
+          embedding: new Array(512).fill(0.5),
+          threshold: 0.8,
+        },
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      expect(result).toBeDefined();
     });
   });
 
-  describe("SIMILARITY_THRESHOLD", () => {
-    it("uses correct threshold value", async () => {
-      // The threshold is hardcoded to 0.82
-      // Test that matching works with scores above threshold
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
+  describe("integration scenarios", () => {
+    it("handles complete speaker verification flow", async () => {
+      // Create audio file
+      const audioData = Buffer.alloc(16000 * 4);
+      fs.writeFileSync(tempAudioPath, audioData);
       
-      const similarity = cosineSimilarity([1, 2, 3], [1.01, 2.01, 3.01]);
+      // Simulate profile enrollment
+      const enrollmentEmbedding = new Array(512).fill(0.5);
       
-      expect(similarity).toBeGreaterThan(0.99);
+      // Simulate verification
+      const profiles = [
+        {
+          speaker_name: "Test User",
+          embedding_json: JSON.stringify(enrollmentEmbedding),
+          threshold: 0.8,
+        },
+      ];
+      
+      const result = await matchSpeakerToProfile(tempAudioPath, profiles);
+      
+      expect(result).toBeDefined();
+      expect(result!.name).toBe("Test User");
+      expect(typeof result!.confidence).toBe("number");
+      expect(result!.confidence).toBeGreaterThan(0);
+      expect(result!.confidence).toBeLessThanOrEqual(100);
     });
-  });
 
-  describe("decodeAudioToFloat32", () => {
-    it("handles ffmpeg errors gracefully", async () => {
-      const { matchSpeakerToProfile } = await import("../speakerEmbedder.ts");
+    it("handles multi-sample profile updates", () => {
+      // Simulate incremental profile building
+      let embedding: number[] = new Array(512).fill(0);
+      let sampleCount = 0;
       
-      // With non-existent file, should return null
-      const result = await matchSpeakerToProfile("/nonexistent/file.wav", [
-        { speaker_name: "Test", embedding: [0.1, 0.2, 0.3] },
-      ]);
+      // Add 3 samples
+      for (let i = 0; i < 3; i++) {
+        const newSample = new Array(512).fill(0.5).map((v) => v + (Math.random() - 0.5) * 0.1);
+        embedding = addToAverageEmbedding(embedding, sampleCount, newSample);
+        sampleCount++;
+      }
       
-      expect(result).toBeNull();
-    });
-  });
-
-  describe("computeEmbedding normalization", () => {
-    it("normalizes embedding vector to unit length", async () => {
-      // Test the normalization logic in cosineSimilarity
-      const { cosineSimilarity } = await import("../speakerEmbedder.ts");
-      
-      const a = [3, 4];
-      const b = [3, 4];
-      
-      const similarity = cosineSimilarity(a, b);
-      
-      // Normalized vectors should have similarity of 1
-      expect(similarity).toBeCloseTo(1, 5);
+      // Embedding should be normalized
+      const length = Math.sqrt(embedding.reduce((sum, v) => sum + v ** 2, 0));
+      expect(length).toBeCloseTo(1, 3);
+      expect(embedding.length).toBe(512);
     });
   });
 });

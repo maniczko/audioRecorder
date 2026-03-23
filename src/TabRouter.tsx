@@ -277,6 +277,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             selectedMeetingQueue={recorder.selectedMeetingQueue}
             elapsed={recorder.elapsed}
             visualBars={recorder.visualBars}
+            voiceActivityStatus={recorder.voiceActivityStatus}
             silenceCountdown={recorder.silenceCountdown}
             resetSilenceTimer={recorder.resetSilenceTimer}
             stopRecording={recorder.stopRecording}
@@ -328,7 +329,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
 
   return (
     <ErrorBoundary key={ui.activeTab} label={getActiveTabLabel(ui.activeTab)}>
-      <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "var(--color-surface-600)" }}>Ładowanie ekranu...</div>}>
+      <Suspense fallback={<div className="tab-router-loading">Ładowanie ekranu...</div>}>
         {renderActiveTab()}
       </Suspense>
     </ErrorBoundary>

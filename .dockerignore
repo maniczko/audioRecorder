@@ -1,5 +1,8 @@
 node_modules
+.pnpm-store
 build
+dist
+dist-server
 src
 !src/shared/
 public
@@ -7,8 +10,16 @@ public
 .env.*
 .git
 .claude
+.github
+.vercel
 *.md
 tests
 e2e
 playwright*
 .vscode
+coverage
+server/coverage
+data
+*.sqlite
+*.db
+*.tgz

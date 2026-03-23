@@ -94,6 +94,29 @@ export interface TranscriptionDiagnostics {
   lastChunkErrorMessage?: string;
   transcriptionProfileUsed?: "standard" | "enhanced";
   transcriptionAttemptCount?: 1 | 2;
+  sttAttempts?: SttProviderAttempt[];
+}
+
+export interface SttProviderAttempt {
+  providerId: string;
+  providerLabel: string;
+  model: string;
+  success: boolean;
+  durationMs?: number;
+  errorMessage?: string;
+}
+
+export interface TranscriptionQualityMetrics {
+  sttProviderId?: string;
+  sttProviderLabel?: string;
+  sttModel?: string;
+  sttAttempts?: SttProviderAttempt[];
+  werProxy?: number | null;
+  diarizationConfidence?: number | null;
+  attemptCount?: number;
+  retryCount?: number;
+  failureCount?: number;
+  failureRate?: number;
 }
 
 export interface TranscriptionResult {
@@ -110,6 +133,7 @@ export interface TranscriptionResult {
   pipelineBuildTime?: string;
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
+  qualityMetrics?: TranscriptionQualityMetrics | null;
   segments?: any[];
   diarization?: any;
   reviewSummary?: string | null;

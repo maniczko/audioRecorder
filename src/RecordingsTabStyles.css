@@ -284,3 +284,267 @@
   white-space: nowrap;
   font-weight: 500;
 }
+
+.recordings-rag-panel,
+.recordings-library-panel {
+  margin-bottom: 32px;
+}
+
+.recordings-rag-panel {
+  background: linear-gradient(145deg, rgba(117, 214, 196, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+  border: 1px solid rgba(117, 214, 196, 0.2);
+}
+
+.recordings-panel-header-flat {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.recordings-rag-eyebrow {
+  color: #75d6c4;
+}
+
+.recordings-copy-tight {
+  margin-top: 4px;
+  font-size: 0.85rem;
+}
+
+.recordings-copy-md {
+  font-size: 0.9rem;
+}
+
+.recordings-rag-form,
+.recordings-panel-actions,
+.recordings-library-header,
+.recordings-library-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.recordings-rag-input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.recordings-rag-submit {
+  background: #75d6c4;
+  color: #000;
+  font-weight: 600;
+}
+
+.recordings-rag-answer {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid #75d6c4;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.recordings-diagnostics-copy {
+  color: var(--text-3, #8f97ab);
+  font-size: 0.78rem;
+}
+
+.recordings-diagnostics-top {
+  margin-top: 10px;
+}
+
+.recordings-diagnostics-md {
+  font-size: 0.8rem;
+}
+
+.recordings-library-header {
+  gap: 16px;
+}
+
+.recordings-library-heading,
+.recordings-tab-picker-col {
+  flex: 1;
+  min-width: 200px;
+}
+
+.recordings-library-filter-control {
+  width: auto;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.recordings-library-actions-col {
+  width: 50px;
+}
+
+.recordings-library-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.recordings-library-tag-chip {
+  background: rgba(116, 208, 191, 0.15);
+  color: #74d0bf;
+}
+
+.recordings-library-delete-btn {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.recordings-library-delete-btn:hover {
+  opacity: 1;
+}
+
+.recordings-tab-shell {
+  padding: 24px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.recordings-tab-header-shell {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.recordings-tab-upload-box-fixed {
+  flex: 0 0 240px;
+}
+
+.recordings-upload-state,
+.recordings-upload-trigger {
+  width: 100%;
+  min-height: 120px;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.recordings-upload-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(117, 214, 196, 0.1);
+  border: 1px solid rgba(117, 214, 196, 0.4);
+}
+
+.recordings-upload-label {
+  color: #75d6c4;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.recordings-upload-track {
+  width: 70%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.recordings-upload-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(117, 214, 196, 0.1);
+  border: 1px dashed rgba(117, 214, 196, 0.4);
+  color: #75d6c4;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: inset 0 0 10px rgba(117, 214, 196, 0.05);
+}
+
+.recordings-upload-trigger:hover {
+  background: rgba(117, 214, 196, 0.2);
+  border-color: #75d6c4;
+}
+
+.recordings-hidden-input {
+  display: none;
+}
+
+.recordings-status-panel {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid rgba(117, 214, 196, 0.16);
+}
+
+.recordings-section-panel {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+}
+
+.recordings-section-title {
+  margin-bottom: 6px;
+}
+
+.recordings-panel-body-top {
+  padding-top: 12px;
+}
+
+.recordings-pending-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recordings-pending-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(117, 214, 196, 0.16);
+  background: rgba(117, 214, 196, 0.04);
+}
+
+.recordings-pending-meta {
+  min-width: 0;
+}
+
+.recordings-pending-title {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.recordings-pending-date {
+  color: var(--text-3, #8f97ab);
+  font-size: 0.82rem;
+}
+
+.recordings-pending-diagnostics {
+  width: 100%;
+  margin-top: 8px;
+  color: var(--text-3, #8f97ab);
+  font-size: 0.76rem;
+}
+
+@media (max-width: 900px) {
+  .recordings-tab-header-shell {
+    flex-direction: column;
+  }
+
+  .recordings-tab-upload-box-fixed {
+    flex: auto;
+  }
+}

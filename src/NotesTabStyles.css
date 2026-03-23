@@ -324,6 +324,12 @@
   flex-wrap: wrap;
   gap: 5px;
 }
+.note-tags-offset {
+  margin-top: 8px;
+}
+.notes-tag-input-wrap {
+  margin-top: 8px;
+}
 .note-tag-chip {
   font-size: 0.72rem;
   padding: 2px 8px;

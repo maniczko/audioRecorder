@@ -34,6 +34,7 @@ const envSchema = z.object({
 
   GROQ_API_KEY: z.string().optional(),
   VOICELOG_STT_PROVIDER: z.enum(["openai", "groq"]).default("openai"),
+  VOICELOG_STT_FALLBACK_PROVIDER: z.enum(["openai", "groq", "none"]).default("none"),
 
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-3-5-haiku-latest"),

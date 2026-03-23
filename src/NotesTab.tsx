@@ -283,7 +283,7 @@ function NoteDetail({ note, onOpenMeeting }) {
             )}
           </div>
           {note.tags.length > 0 && (
-            <div className="note-tags" style={{ marginTop: 8 }}>
+            <div className="note-tags note-tags-offset">
               {note.tags.map((tag) => (
                 <span key={tag} className="note-tag-chip" style={tagStyle(tag)}>
                   #{tag}
@@ -456,7 +456,7 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
           />
-          <div style={{ marginTop: 8 }}>
+          <div className="notes-tag-input-wrap">
             <TagInput
               tags={tags}
               suggestions={allTags}

@@ -20,13 +20,17 @@ const {
     selectedRecording: null,
     selectedMeetingId: "m1",
     selectedRecordingId: null,
-    createMeetingDirect: vi.fn(),
+    createMeetingDirect: vi.fn((payload) => ({ id: "new_meeting", ...payload })),
     resetSelectionState: vi.fn(),
     setSelectedMeetingId: vi.fn(),
     setSelectedRecordingId: vi.fn(),
   },
   taskOpsState: {
-    updateTask: vi.fn(),
+    updateTask: vi.fn((id, payload) => {
+      meetingsState.manualTasks = meetingsState.manualTasks.map((t) =>
+        t.id === id ? { ...t, ...payload } : t
+      );
+    }),
   },
 }));
 
@@ -124,6 +128,11 @@ describe("useMeetings", () => {
 
     act(() => {
       result.current.updateCalendarEntryMeta("meeting", "m1", { googleEventId: "g1" });
+    });
+
+    expect(meetingsState.calendarMeta["meeting:m1"]).toMatchObject({ googleEventId: "g1" });
+
+    act(() => {
       result.current.applyCalendarSyncSnapshot("meeting", "m1", {
         title: "Spotkanie po syncu",
         startsAt: "2026-03-21T12:00:00.000Z",
@@ -132,7 +141,6 @@ describe("useMeetings", () => {
       });
     });
 
-    expect(meetingsState.calendarMeta["meeting:m1"]).toMatchObject({ googleEventId: "g1" });
     expect(meetingsState.meetings[0]).toMatchObject({
       title: "Spotkanie po syncu",
       startsAt: "2026-03-21T12:00:00.000Z",

@@ -15,8 +15,14 @@ vi.mock("./store/workspaceStore", () => ({
   }),
 }));
 
+// Mock GoogleContext properly - return a valid context object
 vi.mock("./context/GoogleContext", () => ({
-  useGoogleCtx: () => ({ googleEnabled: false }),
+  useGoogleCtx: () => ({
+    googleEnabled: false,
+    googleSession: null,
+    connectGoogle: vi.fn(),
+    disconnectGoogle: vi.fn(),
+  }),
 }));
 
 vi.mock("./context/RecorderContext", () => ({

@@ -1,0 +1,11 @@
+{
+  "datasetName": "polish-meetings-sample",
+  "items": [
+    {
+      "id": "meeting-001",
+      "audioPath": "./meeting-001.wav",
+      "transcriptPath": "./meeting-001.txt",
+      "contentType": "audio/wav"
+    }
+  ]
+}

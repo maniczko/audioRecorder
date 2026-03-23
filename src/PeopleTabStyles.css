@@ -294,3 +294,38 @@
 .status-chip-link:hover {
   opacity: 0.8;
 }
+
+.people-psych-section-spaced,
+.people-sentiment-chart {
+  margin-top: 24px;
+}
+
+.people-soft-copy-sm {
+  font-size: 0.85rem;
+}
+
+.people-sentiment-chart {
+  overflow: hidden;
+}
+
+.people-sentiment-copy {
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+}
+
+.people-sentiment-svg {
+  width: 100%;
+  height: auto;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.people-ghost-button-xs {
+  font-size: 0.75rem;
+}
+
+.people-ghost-button-sm {
+  font-size: 0.8rem;
+}

@@ -172,6 +172,44 @@ export default class TranscriptionService extends EventEmitter {
     return this.pipeline.generateVoiceCoaching(asset, speakerId, segments, options);
   }
 
+  async getSpeakerAcousticFeatures(asset: any, options = {}) {
+    if (typeof this.pipeline.analyzeAcousticFeatures !== "function") {
+      throw new Error("Audio pipeline nie wspiera metryk akustycznych.");
+    }
+
+    const fs = await import("node:fs");
+
+    let segments = [];
+    let diarization = {};
+    try { segments = JSON.parse(asset.transcript_json || "[]"); } catch (_) {}
+    try { diarization = JSON.parse(asset.diarization_json || "{}"); } catch (_) {}
+    if (!segments.length) throw new Error("Brak transkrypcji w bazie.");
+
+    const speakerNames = typeof diarization === "object" && diarization ? (diarization as any).speakerNames || {} : {};
+    const uniqueSpeakerIds = [...new Set(segments.map((segment: any) => String(segment?.speakerId ?? "")).filter(Boolean))];
+
+    const speakers = [];
+    for (const speakerId of uniqueSpeakerIds) {
+      const clipPath = await this.pipeline.extractSpeakerAudioClip(asset, speakerId, segments, options);
+      try {
+        const metrics = await this.pipeline.analyzeAcousticFeatures(clipPath, options);
+        speakers.push({
+          speakerId,
+          speakerName: String(
+            speakerNames?.[speakerId] ||
+            segments.find((segment: any) => String(segment?.speakerId ?? "") === speakerId)?.speakerName ||
+            `Speaker ${Number(speakerId) + 1}`
+          ),
+          ...metrics,
+        });
+      } finally {
+        try { fs.unlinkSync(clipPath); } catch (_) {}
+      }
+    }
+
+    return { speakers };
+  }
+
   async createVoiceProfileFromSpeaker(asset: any, speakerId: string, speakerName: string, userId: string, options = {}) {
     const fs = await import("node:fs");
     const path = await import("node:path");

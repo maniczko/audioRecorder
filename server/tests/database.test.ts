@@ -88,6 +88,13 @@ describe("Database (Async Worker SQLite)", () => {
         transcriptOutcome: "empty",
         emptyReason: "no_segments_from_stt",
         userMessage: "Nie wykryto wypowiedzi w nagraniu.",
+        qualityMetrics: {
+          sttProviderId: "groq",
+          sttProviderLabel: "Groq Whisper",
+          sttModel: "whisper-large-v3",
+          werProxy: 0.18,
+          diarizationConfidence: 0.82,
+        },
         segments: [],
         diarization: { speakerNames: {}, speakerCount: 0, confidence: 0 },
         reviewSummary: { needsReview: 0, approved: 0 },
@@ -99,6 +106,11 @@ describe("Database (Async Worker SQLite)", () => {
       expect(diarization.pipelineVersion).toBe("3.1.4");
       expect(diarization.pipelineBuildTime).toBe("2026-03-21T20:40:00.000Z");
       expect(diarization.transcriptOutcome).toBe("empty");
+      expect(diarization.qualityMetrics).toMatchObject({
+        sttProviderId: "groq",
+        werProxy: 0.18,
+        diarizationConfidence: 0.82,
+      });
     } finally {
       if (previousSha === undefined) delete process.env.GITHUB_SHA;
       else process.env.GITHUB_SHA = previousSha;
@@ -143,6 +155,9 @@ describe("Database (Async Worker SQLite)", () => {
         chunksFailedAtStt: 3,
         lastChunkErrorMessage: "provider timeout",
       });
+      expect(diarization.qualityMetrics).toMatchObject({
+        failureCount: 1,
+      });
 
       await db.queueTranscription("rec_meta_failed", {
         workspaceId: "ws_meta",
@@ -153,7 +168,11 @@ describe("Database (Async Worker SQLite)", () => {
       const queued = await db.getMediaAsset("rec_meta_failed");
       diarization = JSON.parse(queued.diarization_json);
       expect(queued.transcription_status).toBe("queued");
-      expect(diarization).toEqual({});
+      expect(diarization).toMatchObject({
+        qualityMetrics: {
+          failureCount: 1,
+        },
+      });
       expect(JSON.parse(queued.transcript_json)).toEqual([]);
     } finally {
       if (previousSha === undefined) delete process.env.GITHUB_SHA;

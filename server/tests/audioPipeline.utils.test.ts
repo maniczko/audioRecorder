@@ -134,6 +134,22 @@ describe("audioPipeline.utils", () => {
     });
   });
 
+  describe("computeWerProxy()", () => {
+    it("returns 0 for identical transcripts", () => {
+      expect(utils.computeWerProxy("to jest test", "to jest test")).toBe(0);
+    });
+
+    it("returns fractional error for partial mismatch", () => {
+      const wer = utils.computeWerProxy("to jest bardzo dobry test", "to jest dobry test");
+      expect(wer).toBeGreaterThan(0);
+      expect(wer).toBeLessThan(1);
+    });
+
+    it("returns 1 for completely different short transcripts", () => {
+      expect(utils.computeWerProxy("ala ma kota", "pies je obiad")).toBe(1);
+    });
+  });
+
   describe("hasRepeatedPhrase()", () => {
     it("detects repeated phrases", () => {
       expect(utils.hasRepeatedPhrase("hello hello hello hello")).toBe(true);

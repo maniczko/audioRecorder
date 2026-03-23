@@ -32,6 +32,7 @@ describe("Media Routes", () => {
       normalizeRecording: vi.fn(),
       createVoiceProfileFromSpeaker: vi.fn(),
       generateVoiceCoaching: vi.fn(),
+      getSpeakerAcousticFeatures: vi.fn(),
       saveTranscriptionResult: vi.fn(),
       diarizeFromTranscript: vi.fn(),
       on: vi.fn(),
@@ -424,7 +425,7 @@ describe("Media Routes", () => {
     expect(res.headers.get("Content-Length")).toBe("1234");
   });
 
-  it("POST /media/recordings/:recordingId/normalize and /voice-coaching handle happy path", async () => {
+  it("POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path", async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: "rec_norm",
       workspace_id: "ws_1",
@@ -432,6 +433,9 @@ describe("Media Routes", () => {
       content_type: "audio/webm",
     });
     mockTranscriptionService.generateVoiceCoaching.mockResolvedValue("Mow wolniej.");
+    mockTranscriptionService.getSpeakerAcousticFeatures.mockResolvedValue({
+      speakers: [{ speakerId: "0", speakerName: "Anna", f0Hz: 198.2 }],
+    });
 
     const normalizeRes = await app.request("/media/recordings/rec_norm/normalize", {
       method: "POST",
@@ -442,6 +446,10 @@ describe("Media Routes", () => {
       headers: { Authorization: "Bearer fake_token", "Content-Type": "application/json" },
       body: JSON.stringify({ speakerId: "0", segments: [{ text: "Ala" }] }),
     });
+    const acousticRes = await app.request("/media/recordings/rec_norm/acoustic-features", {
+      method: "POST",
+      headers: { Authorization: "Bearer fake_token" },
+    });
 
     expect(normalizeRes.status).toBe(200);
     expect(await normalizeRes.json()).toEqual({ ok: true });
@@ -449,6 +457,10 @@ describe("Media Routes", () => {
 
     expect(coachingRes.status).toBe(200);
     expect(await coachingRes.json()).toEqual({ coaching: "Mow wolniej." });
+    expect(acousticRes.status).toBe(200);
+    expect(await acousticRes.json()).toEqual({
+      speakers: [{ speakerId: "0", speakerName: "Anna", f0Hz: 198.2 }],
+    });
   });
 
   it("POST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation", async () => {

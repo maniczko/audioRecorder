@@ -9,7 +9,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { File } from "node:buffer";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -18,6 +17,7 @@ import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 import { config } from "./config.ts";
 import { logger } from "./logger.ts";
 import { buildMeetingFeedbackSchemaExample } from "../src/shared/meetingFeedback.ts";
+import { resolveConfiguredSttProviders, transcribeWithProviders } from "./stt/providers.ts";
 
 // Import czystych funkcji z audioPipeline.utils.ts
 import {
@@ -33,13 +33,13 @@ import {
   // Segment utilities
   mergeShortSegments,
   removeConsecutiveDuplicates,
-  parseJsonResponse,
   normalizeSpeakerLabel,
   getRawWords,
   normalizeDiarizedSegments,
   normalizeVerificationSegments,
   buildVerificationResult,
   buildEmptyTranscriptResult,
+  computeWerProxy,
 
   // Prompt building
   buildWhisperPrompt,
@@ -65,10 +65,17 @@ const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 // STT provider — Groq (whisper-large-v3) preferred when configured, otherwise OpenAI
 const GROQ_API_KEY = config.GROQ_API_KEY || "";
 const _sttUseGroq = config.VOICELOG_STT_PROVIDER === "groq" && !!GROQ_API_KEY;
-const STT_API_KEY = _sttUseGroq ? GROQ_API_KEY : OPENAI_API_KEY;
-const STT_BASE_URL = _sttUseGroq ? "https://api.groq.com/openai/v1" : OPENAI_BASE_URL;
 // whisper-large-v3 on Groq is ~216× realtime and superior for Polish named entities
 const VERIFICATION_MODEL = _sttUseGroq ? "whisper-large-v3" : config.VERIFICATION_MODEL;
+const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
+  preferredProvider: config.VOICELOG_STT_PROVIDER,
+  fallbackProvider: config.VOICELOG_STT_FALLBACK_PROVIDER,
+  openAiApiKey: OPENAI_API_KEY,
+  openAiBaseUrl: OPENAI_BASE_URL,
+  groqApiKey: GROQ_API_KEY,
+  openAiModel: config.VERIFICATION_MODEL,
+  groqModel: "whisper-large-v3",
+});
 
 // Konfiguracja preprocessingu
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
@@ -79,6 +86,7 @@ const HF_TOKEN = config.HF_TOKEN || config.HUGGINGFACE_TOKEN || "";
 const PYTHON_BINARY = config.PYTHON_BINARY;
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
+const ACOUSTIC_FEATURES_SCRIPT = path.join(__dirname, "acoustic_features.py");
 const VAD_ENABLED = config.VAD_ENABLED;
 const VOICELOG_DIARIZER = config.VOICELOG_DIARIZER || "auto";
 const PER_SPEAKER_NORM = config.VOICELOG_PER_SPEAKER_NORM;
@@ -126,56 +134,22 @@ function isPreprocessCacheFile(filePath: string) {
   return Boolean(filePath && isPathInside(filePath, getPreprocessCacheDir()));
 }
 
-async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal, apiKey: overrideApiKey, baseUrl: overrideBaseUrl }: any) {
-  const activeApiKey = overrideApiKey || STT_API_KEY;
-  const activeBaseUrl = overrideBaseUrl || STT_BASE_URL;
-
-  if (!activeApiKey) {
-    throw new Error("Brakuje API key (OPENAI_API_KEY lub GROQ_API_KEY) dla serwerowego pipeline audio.");
+async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
+  if (!STT_PROVIDER_CHAIN.length) {
+    throw new Error("Brakuje skonfigurowanego providera STT.");
   }
 
-  const audioBuffer = buffer || fs.readFileSync(filePath);
-  if (audioBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
-    throw new Error("Plik audio przekracza limit 25 MB dla API transkrypcji.");
-  }
-
-  const form = new FormData();
-  const safeFilename = filename || (filePath ? path.basename(filePath) : "audio.wav");
-  form.append("file", new File([audioBuffer], safeFilename, { type: contentType || "application/octet-stream" }) as any);
-
-  Object.entries(fields || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === "") {
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      value.forEach((entry) => {
-        form.append(`${key}[]`, String(entry));
-      });
-      return;
-    }
-
-    form.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
-  });
-
-  const abortSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000);
-
-  const response = await fetch(`${activeBaseUrl}/audio/transcriptions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${activeApiKey}`,
+  return transcribeWithProviders(STT_PROVIDER_CHAIN, (provider) => ({
+    filePath,
+    buffer,
+    filename,
+    contentType,
+    signal,
+    fields: {
+      ...(fields || {}),
+      model: fields?.model || provider.defaultModel,
     },
-    body: form,
-    signal: abortSignal,
-  });
-
-  const rawBody = await response.text();
-  if (!response.ok) {
-    const payload = parseJsonResponse(rawBody);
-    throw new Error(payload?.error?.message || `STT audio request failed with status ${response.status}.`);
-  }
-
-  return parseJsonResponse(rawBody);
+  }));
 }
 
 
@@ -530,10 +504,20 @@ function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
     return deduped;
   });
   const fullText = safePayloads.map(({ payload }) => payload?.text || "").join(" ").trim();
+  const sttAttempts = attempts.flatMap(({ sttResult, diagnostics }) => {
+    if (Array.isArray(sttResult?.attempts)) {
+      return sttResult.attempts;
+    }
+    if (Array.isArray(diagnostics?.sttAttempts)) {
+      return diagnostics.sttAttempts;
+    }
+    return [];
+  });
   return {
     segments: allSegments,
     words: allWords,
     text: fullText,
+    sttProviderInfo: attempts.find(({ sttResult }) => sttResult?.providerId)?.sttResult || null,
     transcriptionDiagnostics: {
       usedChunking: true,
       fileSizeBytes,
@@ -562,6 +546,7 @@ function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
           .reverse()
           .map(({ diagnostics }) => clean(diagnostics?.sttErrorMessage || ""))
           .find(Boolean) || "",
+      sttAttempts,
     },
   };
 }
@@ -586,7 +571,6 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
     const batchPromises = [];
     for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
       const currentOffset = offsetSeconds;
-      const isFirstChunk = currentOffset === 0;
       // Advance by duration minus overlap so consecutive chunks share CHUNK_OVERLAP_SECONDS of audio.
       // The overlap gives Whisper context across boundaries; segments from the overlap zone
       // are stripped during mergeChunkedPayloads to avoid duplication.
@@ -628,27 +612,31 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
 
         try {
           diagnostics.sentToStt = true;
-          const payload = await requestAudioTranscription({
+          const sttResult = await requestAudioTranscription({
             buffer,
             filename: `chunk_${currentOffset}.wav`,
             contentType: "audio/wav",
             fields,
             signal: options.signal,
-            apiKey: options.sttApiKey,
-            baseUrl: options.sttBaseUrl,
           });
+          const payload = sttResult?.payload || null;
           diagnostics.hasSegments = Array.isArray(payload?.segments) && payload.segments.length > 0;
           diagnostics.hasWords = getRawWords(payload).length > 0;
           diagnostics.hasText = Boolean(clean(payload?.text || payload?.transcript || payload?.results?.text));
+          diagnostics.providerId = sttResult?.providerId || "";
+          diagnostics.providerLabel = sttResult?.providerLabel || "";
+          diagnostics.providerModel = sttResult?.model || "";
           return {
             payload,
             offsetSeconds: currentOffset,
             diagnostics,
+            sttResult,
           };
         } catch (error: any) {
           diagnostics.sentToStt = true;
           diagnostics.sttFailed = true;
           diagnostics.sttErrorMessage = clean(error?.message || "STT request failed");
+          diagnostics.sttAttempts = Array.isArray(error?.sttAttempts) ? error.sttAttempts : [];
           return {
             payload: null,
             offsetSeconds: currentOffset,
@@ -1292,6 +1280,7 @@ async function runTranscriptionAttempt(
 
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
   let whisperPayload: any = null;
+  let sttProviderInfo: any = null;
   // Groq only supports whisper-large-v3 (no whisper-1); OpenAI uses configured model with whisper-1 fallback
   const modelsToTry = _sttUseGroq
     ? ["whisper-large-v3"]
@@ -1309,6 +1298,7 @@ async function runTranscriptionAttempt(
       if (isLargeFile) {
         const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields, options);
         whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
+        sttProviderInfo = whisperPayload?.sttProviderInfo || null;
         transcriptionDiagnostics = {
           ...transcriptionDiagnostics,
           ...(whisperPayload?.transcriptionDiagnostics || {}),
@@ -1322,12 +1312,14 @@ async function runTranscriptionAttempt(
           throw error;
         }
       } else {
-        whisperPayload = await requestAudioTranscription({
+        const sttResult = await requestAudioTranscription({
           filePath: transcribeFilePath,
           contentType: transcribeContentType,
           fields,
           signal: options.signal,
         });
+        whisperPayload = sttResult?.payload || null;
+        sttProviderInfo = sttResult;
         transcriptionDiagnostics = {
           ...transcriptionDiagnostics,
           chunksAttempted: 1,
@@ -1350,6 +1342,7 @@ async function runTranscriptionAttempt(
           mergedWordsCount: getRawWords(whisperPayload).length,
           mergedTextLength: clean(whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text).length,
           lastChunkErrorMessage: "",
+          sttAttempts: Array.isArray(sttResult?.attempts) ? sttResult.attempts : [],
         };
       }
       if (DEBUG) console.log(`[audioPipeline] Transcription succeeded with model: ${model}`);
@@ -1601,15 +1594,31 @@ async function runTranscriptionAttempt(
     return buildEmptyTranscriptResult("segments_removed_as_hallucinations", transcriptionDiagnostics, attemptAudioQuality);
   }
 
+  const referenceTranscript = verificationSegments.map((segment) => clean(segment?.text || "")).filter(Boolean).join(" ");
+  const hypothesisTranscript = processedSegments.map((segment) => clean(segment?.text || "")).filter(Boolean).join(" ");
+  const qualityMetrics = {
+    sttProviderId: sttProviderInfo?.providerId || "",
+    sttProviderLabel: sttProviderInfo?.providerLabel || "",
+    sttModel: sttProviderInfo?.model || "",
+    sttAttempts: Array.isArray(sttProviderInfo?.attempts)
+      ? sttProviderInfo.attempts
+      : Array.isArray(transcriptionDiagnostics?.sttAttempts)
+        ? transcriptionDiagnostics.sttAttempts
+        : [],
+    werProxy: computeWerProxy(referenceTranscript, hypothesisTranscript),
+    diarizationConfidence: verificationResult.confidence,
+  };
+
   return {
-    providerId: "openai-audio-pipeline",
-    providerLabel: "OpenAI STT + diarization",
+    providerId: sttProviderInfo?.providerId || "stt-pipeline",
+    providerLabel: sttProviderInfo?.providerLabel || "STT + diarization",
     pipelineStatus: "completed",
     transcriptOutcome: "normal",
     emptyReason: "",
     userMessage: "",
     audioQuality: attemptAudioQuality,
     transcriptionDiagnostics,
+    qualityMetrics,
     diarization: {
       speakerNames: identifiedNames,
       speakerCount: diarization.speakerCount,
@@ -1620,6 +1629,7 @@ async function runTranscriptionAttempt(
       userMessage: "",
       audioQuality: attemptAudioQuality,
       transcriptionDiagnostics,
+      qualityMetrics,
     },
     // Post-processing pipeline: hallucination removal → short-segment merging → LLM correction
     segments: processedSegments,
@@ -1812,9 +1822,9 @@ async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
  * @returns {Promise<string>}  Transcribed text or empty string on failure
  */
 async function transcribeLiveChunk(filePath: string, contentType: string, options: any = {}) {
-  if (!STT_API_KEY) return "";
+  if (!STT_PROVIDER_CHAIN.length) return "";
   try {
-    const payload = await requestAudioTranscription({
+    const sttResult = await requestAudioTranscription({
       filePath,
       contentType: contentType || "audio/webm",
       fields: {
@@ -1831,6 +1841,7 @@ async function transcribeLiveChunk(filePath: string, contentType: string, option
       },
       signal: options.signal,
     });
+    const payload = sttResult?.payload || null;
     return String(payload?.text || "").trim();
   } catch (err) {
     if (!options.signal?.aborted) {
@@ -1954,6 +1965,58 @@ async function generateVoiceCoaching(asset: any, speakerId: any, segments: any[]
   } finally {
     try { fs.unlinkSync(clipPath); } catch (_) {}
   }
+}
+
+async function analyzeAcousticFeatures(filePath: string, options: any = {}) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error("Plik audio nie istnieje.");
+  }
+  if (!fs.existsSync(ACOUSTIC_FEATURES_SCRIPT)) {
+    throw new Error("Brak skryptu acoustic_features.py.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(PYTHON_BINARY, [ACOUSTIC_FEATURES_SCRIPT, filePath], {
+      signal: options.signal,
+      timeout: 120000,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr.trim() || `acoustic_features.py exited with status ${code}`));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(stdout.trim() || "{}");
+        if (parsed?.error) {
+          reject(new Error(String(parsed.error)));
+          return;
+        }
+        resolve(parsed);
+      } catch (error: any) {
+        reject(new Error(`Nie udalo sie sparsowac metryk akustycznych: ${error.message}`));
+      }
+    });
+  });
 }
 
 async function normalizeRecording(filePath: string, options: any = {}) {
@@ -2114,6 +2177,7 @@ export {
   extractSpeakerAudioClip,
   transcribeLiveChunk,
   generateVoiceCoaching,
+  analyzeAcousticFeatures,
   diarizeFromTranscript,
   analyzeMeetingWithOpenAI,
   embedTextChunks,

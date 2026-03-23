@@ -1157,7 +1157,7 @@ export default function StudioMeetingView({
             </button>
           </div>
           {recordingMessage && (
-            <div className={`ff-status-banner${analysisStatus === "error" ? " ff-status-error" : ""}`} style={{ marginTop: '24px' }}>
+            <div className={`ff-status-banner ff-status-banner-spaced${analysisStatus === "error" ? " ff-status-error" : ""}`}>
               <span>{recordingMessage}</span>
               <button
                 type="button"
@@ -1177,7 +1177,7 @@ export default function StudioMeetingView({
   return (
     <>
       {selectedRecordingAudioUrl ? (
-        <audio ref={audioRef} src={selectedRecordingAudioUrl} preload="metadata" style={{ display: "none" }}>
+        <audio ref={audioRef} src={selectedRecordingAudioUrl} preload="metadata" className="ff-audio-hidden">
           <track kind="captions" />
         </audio>
       ) : null}
@@ -1193,7 +1193,7 @@ export default function StudioMeetingView({
         {isEditingTitle ? (
           <input
             autoFocus
-            className="ff-header-title-input"
+            className="ff-header-title-input ff-header-title-input-editing"
             type="text"
             value={titleDraftValue}
             onChange={(e) => setTitleDraftValue(e.target.value)}
@@ -1211,22 +1211,10 @@ export default function StudioMeetingView({
               if (e.key === "Enter") e.currentTarget.blur();
               if (e.key === "Escape") setIsEditingTitle(false);
             }}
-            style={{
-              fontSize: "1.75rem",
-              fontWeight: 700,
-              color: "var(--text)",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: "8px",
-              padding: "4px 12px",
-              margin: "0 0 8px 0",
-              width: "100%",
-              outline: "none",
-            }}
           />
         ) : (
           <h1
-            className="ff-header-title"
+            className="ff-header-title ff-header-title-editable"
             title="Kliknij, aby edytować nazwę"
             onClick={() => {
               setTitleDraftValue(
@@ -1236,16 +1224,13 @@ export default function StudioMeetingView({
               );
               setIsEditingTitle(true);
             }}
-            style={{ cursor: "pointer", display: "inline-block", padding: "4px 8px", margin: "0 -8px 8px -8px", borderRadius: "6px" }}
-            onMouseOver={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"}
-            onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
           >
             {isRecording
               ? (meetingDraft?.title?.trim() || "Ad hoc")
               : (selectedMeeting?.title || "Ad hoc")}
             <svg
               width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ display: "inline-block", marginLeft: "12px", opacity: 0.4, verticalAlign: "middle" }}
+              className="ff-header-title-icon"
             >
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1264,7 +1249,7 @@ export default function StudioMeetingView({
         </p>
       </div>
 
-      <div className="ff-intelligence-tabs" style={{ display: 'flex', gap: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '20px', padding: '0 4px' }}>
+      <div className="ff-intelligence-tabs ff-intelligence-tabs-shell">
         {[
           { id: 'summary', label: 'Podsumowanie spotkania' },
           { id: 'needs', label: 'Potrzeby i obawy' },
@@ -1277,17 +1262,6 @@ export default function StudioMeetingView({
             type="button"
             className={`ff-int-tab ${studioAnalysisTab === t.id ? 'active' : ''}`}
             onClick={() => setStudioAnalysisTab(t.id)}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '12px 0 10px',
-              fontSize: '0.88rem',
-              fontWeight: 500,
-              color: studioAnalysisTab === t.id ? '#75d6c4' : 'rgba(255,255,255,0.5)',
-              cursor: 'pointer',
-              borderBottom: studioAnalysisTab === t.id ? '2px solid #75d6c4' : '2px solid transparent',
-              transition: 'all 0.2s ease'
-            }}
           >
             {t.label}
           </button>
@@ -1412,13 +1386,13 @@ export default function StudioMeetingView({
       {/* ── Brief panels ── */}
       {isEmptyTranscript ? (
         <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div className="ff-status-detail-stack">
             <span>Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz audio w odtwarzaczu.</span>
             {emptyTranscriptDiagnostics ? (
-              <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{emptyTranscriptDiagnostics}</span>
+              <span className="ff-status-detail-text">{emptyTranscriptDiagnostics}</span>
             ) : null}
             {selectedRecordingAudioQualitySummary ? (
-              <span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{selectedRecordingAudioQualitySummary}</span>
+              <span className="ff-status-detail-text">{selectedRecordingAudioQualitySummary}</span>
             ) : null}
           </div>
           {retryStoredRecording && selectedMeeting && selectedRecording ? (
@@ -1493,9 +1467,9 @@ export default function StudioMeetingView({
                       ))}
                     </ul>
                   ) : null}
-                  <div className="sketchnote-section" style={{ marginTop: '32px', padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="sketchnote-section sketchnote-section-shell">
+                    <div className="sketchnote-header">
+                      <h3 className="sketchnote-title">
                         🎨 Sketchnotka AI
                       </h3>
                       {!sketchnoteUrl && (
@@ -1513,7 +1487,7 @@ export default function StudioMeetingView({
                     {sketchnoteError && <div className="inline-alert error">{sketchnoteError}</div>}
 
                     {sketchnoteUrl || sketchnoteFallbackSvg ? (
-                      <div className="sketchnote-image-container" style={{ textAlign: 'center', background: '#fff', padding: '12px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                      <div className="sketchnote-image-container sketchnote-image-frame">
                         {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
                           <div
                             aria-label="Lokalna sketchnotka"
@@ -1523,12 +1497,11 @@ export default function StudioMeetingView({
                           <img
                             src={sketchnoteUrl}
                             alt="AI Generated Sketchnote"
-                            style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }}
+                            className="sketchnote-image"
                           />
                         )}
                         <button
-                          className="ghost-button"
-                          style={{ marginTop: '12px' }}
+                          className="ghost-button sketchnote-regenerate-btn"
                           onClick={handleGenerateSketchnote}
                           disabled={isGeneratingSketchnote}
                         >
@@ -1536,7 +1509,7 @@ export default function StudioMeetingView({
                         </button>
                       </div>
                       ) : (
-                        <p className="soft-copy" style={{ margin: 0 }}>
+                        <p className="soft-copy sketchnote-empty-copy">
                           Wygeneruj wizualną notatkę podsumowującą to spotkanie. Jeśli backend AI jest niedostępny, pokażemy lokalny podgląd oparty na podsumowaniu i punktach ze spotkania.
                         </p>
                       )}
@@ -1544,10 +1517,10 @@ export default function StudioMeetingView({
                 </div>
 
                 {aiDebrief ? (
-                  <section className="summary-card" style={{ marginBottom: "18px" }}>
+                  <section className="summary-card summary-card-spaced">
                     <div className="summary-card-head">
                       <h3>Debrief AI</h3>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <div className="summary-card-actions">
                         <span>{aiDebrief.followUps?.length || 0}</span>
                         <button type="button" className="ghost-button" onClick={copyAIDebrief}>
                           Kopiuj
@@ -1559,11 +1532,11 @@ export default function StudioMeetingView({
                         ) : null}
                       </div>
                     </div>
-                    <div className="analysis-summary-text" style={{ marginBottom: "12px" }}>
+                    <div className="analysis-summary-text summary-copy-spaced">
                       {aiDebrief.summary}
                     </div>
-                    <div className="summary-grid" style={{ gap: "12px" }}>
-                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                    <div className="summary-grid summary-grid-tight">
+                      <section className="summary-card summary-card-flush">
                         <div className="summary-card-head">
                           <h3>Decyzje</h3>
                           <span>{aiDebrief.decisions?.length || 0}</span>
@@ -1578,7 +1551,7 @@ export default function StudioMeetingView({
                           <p className="soft-copy">Brak jednoznacznych decyzji.</p>
                         )}
                       </section>
-                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                      <section className="summary-card summary-card-flush">
                         <div className="summary-card-head">
                           <h3>Ryzyka</h3>
                           <span>{aiDebrief.risks?.length || 0}</span>
@@ -1593,7 +1566,7 @@ export default function StudioMeetingView({
                           <p className="soft-copy">Brak ryzyk do odnotowania.</p>
                         )}
                       </section>
-                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                      <section className="summary-card summary-card-flush">
                         <div className="summary-card-head">
                           <h3>Następne kroki</h3>
                           <span>{aiDebrief.followUps?.length || 0}</span>
@@ -1609,7 +1582,7 @@ export default function StudioMeetingView({
                         )}
                       </section>
                     </div>
-                    {debriefCopyMessage ? <div className="inline-alert info" style={{ marginTop: "12px" }}>{debriefCopyMessage}</div> : null}
+                    {debriefCopyMessage ? <div className="inline-alert info summary-alert-spaced">{debriefCopyMessage}</div> : null}
                   </section>
                 ) : null}
 
@@ -1724,12 +1697,12 @@ export default function StudioMeetingView({
                   Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.
                 </div>
                 {selectedRecordingAudioQualitySummary ? (
-                  <div style={{ marginTop: "10px", color: "var(--text-3, #8f97ab)", fontSize: "0.84rem" }}>
+                  <div className="analysis-summary-diagnostics">
                     {selectedRecordingAudioQualitySummary}
                   </div>
                 ) : null}
                 {retryStoredRecording && selectedMeeting && selectedRecording ? (
-                  <div style={{ marginTop: "16px" }}>
+                  <div className="analysis-summary-retry">
                     <button
                       type="button"
                       className="ghost-button"
@@ -1837,13 +1810,13 @@ export default function StudioMeetingView({
             </div>
 
             {studioAnalysis?.answersToNeeds?.length > 0 && (
-              <div className="analysis-section" style={{ padding: '20px 24px' }}>
+              <div className="analysis-section analysis-section-padded">
                 <div className="eyebrow">AI — analiza potrzeb</div>
                 <h3>Odpowiedzi na potrzeby</h3>
                 <ul className="analysis-list">
                   {studioAnalysis.answersToNeeds.map((item, i) => (
                     <li key={i}>
-                      <strong style={{ color: 'var(--brand-primary)' }}>{item.need}:</strong> {item.answer}
+                      <strong className="analysis-need-label">{item.need}:</strong> {item.answer}
                     </li>
                   ))}
                 </ul>
@@ -2195,20 +2168,19 @@ export default function StudioMeetingView({
         <div className="ff-studio-right-col">
 
           {/* Section header */}
-          <div className="ff-sticky-header" style={{ padding: '16px 20px 12px' }}>
-            <div className="ff-tabs" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', gap: '20px' }}>
+          <div className="ff-sticky-header ff-sticky-header-shell">
+            <div className="ff-tabs ff-tabs-shell">
+              <div className="ff-tabs-group">
                 <button className="ff-tab active" type="button">Transkrypcja</button>
               </div>
 
               {transcript.length > 0 && remoteApiEnabled() && (
                 <button
                   type="button"
-                  className="ff-sidebar-action-btn"
+                  className="ff-sidebar-action-btn ff-sidebar-action-btn-centered"
                   onClick={handleRediarize}
                   disabled={rediarizing}
                   title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
-                  style={{ alignSelf: 'center' }}
                 >
                   {rediarizing ? "…" : "Wykryj mówców"}
                 </button>
@@ -2216,7 +2188,7 @@ export default function StudioMeetingView({
             </div>
 
           {/* Search */}
-          <div className="ff-search-bar" style={{ alignSelf: 'stretch', margin: '0' }}>
+          <div className="ff-search-bar ff-search-bar-stretch">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input
               type="text"
@@ -2265,12 +2237,12 @@ export default function StudioMeetingView({
           ) : null}
 
           {/* Segments list */}
-          <div className="transcript-list" style={{ flex: 1, minHeight: 0 }}>
+          <div className="transcript-list transcript-list-fill">
             {filteredTranscript.length ? (
               <Virtuoso
                 ref={virtuosoRef}
                 data={filteredTranscript}
-                style={{ height: '100%', width: '100%' }}
+                className="transcript-virtuoso"
                 itemContent={(index, seg) => {
                   const isActive = activeSeg?.id === seg.id;
                   const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
@@ -2279,14 +2251,13 @@ export default function StudioMeetingView({
                   return (
                     <div
                       key={seg.id}
-                      className={`fireflies-segment${isActive ? " active" : ""}`}
-                      style={{ marginBottom: '24px' }}
+                      className={`fireflies-segment${isActive ? " active" : ""} fireflies-segment-spaced`}
                     >
                       <div className="fireflies-avatar" style={{ background: color }}>{letter}</div>
 
                       <div className="fireflies-content">
                         <div className="fireflies-header">
-                          <div className="ff-speaker-picker-wrap" style={{ display: 'flex', alignItems: 'center' }}>
+                          <div className="ff-speaker-picker-wrap ff-speaker-picker-inline">
                             {renamingSpeakerId === String(seg.speakerId) ? (
                               <input
                                 className="ff-speaker-rename-input"
@@ -2307,7 +2278,7 @@ export default function StudioMeetingView({
                               <>
                                 <button
                                   type="button"
-                                  style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                  className="ff-speaker-trigger"
                                   onClick={() => setSpeakerDropdownSegId(speakerDropdownSegId === seg.id ? null : seg.id)}
                                 >
                                   <span className="fireflies-speaker">{name}</span>
@@ -2406,14 +2377,14 @@ export default function StudioMeetingView({
           {playerState === "recording" ? (
             <div className="ff-player-status-wrap recording-active">
                <div className="ff-rec-vis-row">
-                <div className="ff-rec-pulse-ring" style={{ width: '32px', height: '32px', animation: isPaused ? 'none' : undefined }}>
+                <div className="ff-rec-pulse-ring ff-rec-pulse-ring-sm" style={{ animation: isPaused ? 'none' : undefined }}>
                   <svg width="14" height="14" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
                     <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                <div className="ff-rec-wave-inline" style={{ height: '24px' }}>
+                <div className="ff-rec-wave-inline ff-rec-wave-inline-sm">
                   {visualBars.slice(-18).map((h, i) => (
                     <span key={i} className="ff-capture-bar" style={{
                       height: Math.max(3, Math.round(h * 0.35)) + "px",
@@ -2423,9 +2394,9 @@ export default function StudioMeetingView({
                 </div>
               </div>
 
-              <div className="ff-rec-timer-xl" style={{ fontSize: '2rem', minWidth: '120px' }}>{formatDuration(elapsed)}</div>
+              <div className="ff-rec-timer-xl ff-rec-timer-xl-compact">{formatDuration(elapsed)}</div>
 
-              <div className="ff-player-status-label" style={{ color: isPaused ? 'var(--text-muted)' : '#ef4444' }}>
+              <div className={`ff-player-status-label ${isPaused ? "is-paused" : "is-recording"}`}>
                 {isPaused ? "Wstrzymano" : "Nagrywanie..."}
               </div>
 
@@ -2435,12 +2406,11 @@ export default function StudioMeetingView({
                 </div>
               ) : null}
 
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+              <div className="ff-player-recording-actions">
                 <button
                   type="button"
-                  className="ff-tb-btn"
+                  className="ff-tb-btn ff-recording-toggle-btn"
                   onClick={isPaused ? resumeRecording : pauseRecording}
-                  style={{ minWidth: '110px', justifyContent: 'center' }}
                 >
                   {isPaused ? (
                     <>
@@ -2467,7 +2437,7 @@ export default function StudioMeetingView({
               {silenceCountdown != null && (
                 <div className="ff-silence-countdown">
                   <span>Zatrzymanie za {silenceCountdown}s — cisza wykryta</span>
-                  <button type="button" className="ghost-button" style={{ padding: "2px 10px", fontSize: "0.8rem" }} onClick={resetSilenceTimer}>
+                  <button type="button" className="ghost-button ff-silence-continue-btn" onClick={resetSilenceTimer}>
                     Kontynuuj
                   </button>
                 </div>
@@ -2492,7 +2462,7 @@ export default function StudioMeetingView({
             <div className="ff-player-status-wrap" data-testid="player-audio-error">
               <span className="ff-player-time">Nie udalo sie zaladowac audio.</span>
               {selectedRecordingAudioError ? (
-                <span className="soft-copy" style={{ fontSize: "0.8rem" }}>{selectedRecordingAudioError}</span>
+                <span className="soft-copy ff-audio-error-copy">{selectedRecordingAudioError}</span>
               ) : null}
               {selectedRecording?.id && hydrateRecordingAudio ? (
                 <button
@@ -2511,26 +2481,9 @@ export default function StudioMeetingView({
             <>
               <div className="ff-player-main">
                 <div className="ff-player-progress-row">
-                  <div className="ff-player-scrubber-container" style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className="ff-player-scrubber-container ff-player-scrubber-container-shell">
                     {hoverTime !== null && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: `${hoverPos}px`,
-                          bottom: '100%',
-                          transform: 'translateX(-50%)',
-                          marginBottom: '10px',
-                          background: '#111827',
-                          color: '#fff',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          pointerEvents: 'none',
-                          zIndex: 2000,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                          border: '1px solid rgba(255,255,255,0.1)'
-                        }}
-                      >
+                      <div className="ff-player-hover-time" style={{ left: `${hoverPos}px` }}>
                         {formatDuration(Math.floor(hoverTime))}
                       </div>
                     )}

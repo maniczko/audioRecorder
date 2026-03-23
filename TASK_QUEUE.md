@@ -34,10 +34,6 @@ Kolejnosc prac:
 
 ### GPT
 
-- `079` [P3] `in_progress` - [CSS] Usuwanie `style={{...}}` z widoków
-  - Cel: Usunąć ~200 instancji inline styles z komponentów (StudioMeetingView, RecordingsTab itp.).
-  - Zastąpienie czytelnymi klasami i integracja z LayoutPrimitives.
-
 - `080` [P3] `todo` - [CSS] Konsolidacja plików i usunięcie `!important`
   - Cel: Oczyszczenie `tasks.css` i `StudioMeetingViewStyles.css` oraz likwidacja tagów `!important`.
   - Migracja kilkuset twardych bindowań paddingów/wielkości na tokeny z `index.css`.

@@ -1,6 +1,5 @@
 import "./App.css";
 import "./styles/reset.css";
-import "./styles/variables.css";
 import "./styles/layout.css";
 import "./styles/animations.css";
 import "./styles/foundation.css";
@@ -40,7 +39,7 @@ export default function AppShell({ calendarMonth, setCalendarMonth }) {
           </Stack>
           <Stack className="workspace-main" gap="lg">
             <SkeletonBanner height={120} />
-            <div className="main-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "22px" }}>
+            <div className="main-grid main-grid-skeleton">
               <SkeletonList items={3} lines={3} />
               <SkeletonList items={3} lines={3} />
             </div>

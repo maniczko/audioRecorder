@@ -80,13 +80,14 @@ async function renderAuthHarness({
     );
   }
 
-  render(<Harness />);
+  const { unmount } = render(<Harness />);
 
   return {
     submitAuth,
     requestResetCode,
     completeReset,
     setAuthModeSpy,
+    unmount,
   };
 }
 
@@ -175,14 +176,21 @@ describe("AuthScreen", () => {
   });
 
   test("shows local-session warning only in local provider mode", async () => {
-    await renderAuthHarness({ provider: "local" });
-    expect(screen.getByText(/Ta instancja dziala w trybie lokalnym/)).toBeInTheDocument();
+    const { unmount } = await renderAuthHarness({ provider: "local" });
 
+    // The warning should be visible in local mode
+    const warningText = /Ta instancja dziala w trybie lokalnym/;
+    expect(screen.getByText(warningText)).toBeInTheDocument();
+
+    unmount();
     cleanup();
 
+    // Re-render with remote provider
     await renderAuthHarness({ provider: "remote" });
+
+    // The warning should NOT be visible in remote mode
     await waitFor(() => {
-      expect(screen.queryByText(/Ta instancja dziala w trybie lokalnym/)).not.toBeInTheDocument();
+      expect(screen.queryByText(warningText)).not.toBeInTheDocument();
     });
   });
 });

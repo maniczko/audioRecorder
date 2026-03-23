@@ -58,6 +58,7 @@ describe("ProfileTab auth integration", () => {
           bio: "",
           notifyDailyDigest: false,
           autoTaskCapture: false,
+          autoLearnSpeakerProfiles: false,
           preferredTaskView: "list",
         }}
         setProfileDraft={vi.fn()}

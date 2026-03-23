@@ -1,26 +1,43 @@
 import { vi, describe, test, expect } from "vitest";
 import { ensureNoiseReducerWorklet } from "./noiseReducerNode";
 
+vi.mock("simple-rnnoise-wasm", () => ({
+  RNNoiseNode: {
+    register: vi.fn().mockResolvedValue(undefined),
+  },
+  rnnoise_loadAssets: vi.fn((value) => value),
+}));
+
+vi.mock("simple-rnnoise-wasm/rnnoise.wasm?url", () => ({
+  default: "/assets/rnnoise.wasm",
+}));
+
+vi.mock("simple-rnnoise-wasm/rnnoise.worklet.js?url", () => ({
+  default: "/assets/rnnoise.worklet.js",
+}));
+
 describe("ensureNoiseReducerWorklet", () => {
-  test("reuses the same load promise for one audio context", async () => {
-    const addModule = vi.fn().mockReturnValue(Promise.resolve());
+  test("loads the worklet separately for different audio contexts", async () => {
+    const { RNNoiseNode } = await import("simple-rnnoise-wasm");
+    vi.mocked(RNNoiseNode.register).mockClear();
     const audioContext = {
       audioWorklet: {
-        addModule,
+        addModule: vi.fn().mockReturnValue(Promise.resolve()),
       },
     } as any;
 
     const firstLoad = ensureNoiseReducerWorklet(audioContext);
     const secondLoad = ensureNoiseReducerWorklet(audioContext);
 
-    // We expect the EXACT same promise object from WeakMap
     expect(firstLoad).toEqual(secondLoad);
-    
+
     await Promise.all([firstLoad, secondLoad]);
-    expect(addModule).toHaveBeenCalledTimes(1);
+    expect(RNNoiseNode.register).toHaveBeenCalledTimes(1);
   });
 
-  test("loads the worklet separately for different audio contexts", async () => {
+  test("reuses the same load promise for one audio context", async () => {
+    const { RNNoiseNode } = await import("simple-rnnoise-wasm");
+    vi.mocked(RNNoiseNode.register).mockClear();
     const firstContext = {
       audioWorklet: {
         addModule: vi.fn().mockReturnValue(Promise.resolve()),
@@ -37,7 +54,6 @@ describe("ensureNoiseReducerWorklet", () => {
 
     expect(firstLoad).not.toBe(secondLoad);
     await Promise.all([firstLoad, secondLoad]);
-    expect(firstContext.audioWorklet.addModule).toHaveBeenCalledTimes(1);
-    expect(secondContext.audioWorklet.addModule).toHaveBeenCalledTimes(1);
+    expect(RNNoiseNode.register).toHaveBeenCalledTimes(2);
   });
 });

@@ -43,6 +43,7 @@ describe("ProfileTab voice profiles", () => {
           bio: "",
           notifyDailyDigest: false,
           autoTaskCapture: false,
+          autoLearnSpeakerProfiles: false,
           preferredTaskView: "list",
         }}
         setProfileDraft={vi.fn()}

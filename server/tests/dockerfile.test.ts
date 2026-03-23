@@ -11,7 +11,7 @@ const dockerignore = fs.readFileSync(path.join(ROOT, ".dockerignore"), "utf8");
 
 describe("Dockerfile runtime healthcheck", () => {
   it("uses PORT-aware healthcheck for cloud runtimes", () => {
-    expect(dockerfile).toMatch(/\$\{PORT:-\$\{VOICELOG_API_PORT:-4000\}\}\/health/);
+    expect(dockerfile).toMatch(/process\.env\.PORT \|\| process\.env\.VOICELOG_API_PORT \|\| 4000/);
   });
 });
 
@@ -69,10 +69,8 @@ describe("Dockerfile COPY sources not excluded by .dockerignore", () => {
       // Only check paths that look relative (no leading /)
       if (srcBase.startsWith("/")) continue;
 
-      expect(
-        isExcluded(srcBase, patterns),
-        `"${srcBase}" (from: ${line.trim()}) is excluded by .dockerignore but is needed by COPY`
-      ).toBe(false);
+      const excluded = isExcluded(srcBase, patterns);
+      expect(excluded).toBe(false);
     }
   });
 });
@@ -81,6 +79,20 @@ describe("Dockerfile has no inline external registry COPY --from", () => {
   it("COPY --from only references named build stages, not external registries", () => {
     const externalRegistryPattern = /COPY\s+--from=(ghcr\.io|docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/;
     expect(dockerfile).not.toMatch(externalRegistryPattern);
+  });
+});
+
+describe("Dockerfile hardening", () => {
+  it("runs the final image as a non-root user", () => {
+    expect(dockerfile).toMatch(/USER app/);
+  });
+
+  it("uses tini as entrypoint for proper signal handling", () => {
+    expect(dockerfile).toMatch(/ENTRYPOINT \["\/usr\/bin\/tini", "--"\]/);
+  });
+
+  it("does not install uv through curl pipe", () => {
+    expect(dockerfile).not.toMatch(/curl .*uv\/install\.sh \|/);
   });
 });
 
@@ -97,9 +109,6 @@ describe("All server source files are tracked in git", () => {
       // git not available — skip silently
       return;
     }
-    expect(
-      untracked,
-      `Untracked files found — Railway esbuild will fail with "Could not resolve":\n${untracked}`
-    ).toBe("");
+    expect(untracked).toBe("");
   });
 });

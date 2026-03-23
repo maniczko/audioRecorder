@@ -64,9 +64,9 @@ function DiscRadarChart({ disc }) {
 function SentimentTimelineChart({ history }) {
   if (!history || history.length < 2) {
     return (
-       <div className="psych-section" style={{ marginTop: '24px' }}>
+       <div className="psych-section people-psych-section-spaced">
          <div className="psych-section-label">Temperatura relacji</div>
-         <p className="soft-copy" style={{ fontSize: '0.85rem' }}>Wygeneruj profil i zbierz 2 spotkania, aby zobaczyć EKG nastawienia.</p>
+         <p className="soft-copy people-soft-copy-sm">Wygeneruj profil i zbierz 2 spotkania, aby zobaczyć EKG nastawienia.</p>
        </div>
     );
   }
@@ -90,10 +90,10 @@ function SentimentTimelineChart({ history }) {
   const pts = history.map((h, i) => `${getX(i)},${getY(h.score)}`).join(" ");
 
   return (
-    <div className="sentiment-timeline-chart" style={{ marginTop: '24px', overflow: 'hidden' }}>
+    <div className="sentiment-timeline-chart people-sentiment-chart">
       <div className="psych-section-label">Temperatura Relacji w Czasie (AI Sentyment)</div>
-      <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>Wizualna ewolucja zaangażowania podczas kolejnych spotkań – od chłodu po głębokie partnerstwo.</p>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <p className="people-sentiment-copy">Wizualna ewolucja zaangażowania podczas kolejnych spotkań – od chłodu po głębokie partnerstwo.</p>
+      <svg viewBox={`0 0 ${width} ${height}`} className="people-sentiment-svg">
         {/* Grid */}
         <line x1={padding.left} y1={padding.top} x2={width-padding.right} y2={padding.top} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
         <line x1={padding.left} y1={height-padding.bottom} x2={width-padding.right} y2={height-padding.bottom} stroke="rgba(255,255,255,0.2)" />
@@ -267,7 +267,7 @@ function PsychProfilePanel({ person, onAnalyze, analyzing }) {
 
       <div className="psych-footer">
         <span>Na podstawie {p.meetingsAnalyzed || person.meetings.length} spotkań · model probabilistyczny</span>
-        <button type="button" className="ghost-button" style={{ fontSize: "0.75rem" }} onClick={onAnalyze} disabled={analyzing}>
+        <button type="button" className="ghost-button people-ghost-button-xs" onClick={onAnalyze} disabled={analyzing}>
           {analyzing ? "Aktualizuję…" : "Odśwież"}
         </button>
       </div>
@@ -454,8 +454,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                   </div>
                   <button
                     type="button"
-                    className="ghost-button"
-                    style={{fontSize:"0.8rem"}}
+                    className="ghost-button people-ghost-button-sm"
                     onClick={() => { setSummaryDraft(selectedPerson.summary); setEditingSummary(true); }}
                     title="Edytuj profil"
                   >
@@ -474,7 +473,7 @@ export default function PeopleTab({ profiles, onOpenMeeting, onOpenTask, onCreat
                         autoFocus
                       />
                       <div className="button-row">
-                        <button type="button" className="ghost-button" style={{fontSize:"0.8rem"}} onClick={() => setEditingSummary(false)}>Anuluj</button>
+                        <button type="button" className="ghost-button people-ghost-button-sm" onClick={() => setEditingSummary(false)}>Anuluj</button>
                       </div>
                     </div>
                   ) : (

@@ -1,4 +1,4 @@
-import { loginUser, registerUser, requestPasswordReset, resetPasswordWithCode } from "./auth";
+import { loginUser, registerUser, requestPasswordReset, resetPasswordWithCode, updateUserProfile } from "./auth";
 import { createWorkspace } from "./workspace";
 
 describe("auth flows", () => {
@@ -113,5 +113,25 @@ describe("auth flows", () => {
         }
       )
     ).rejects.toThrow("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+  });
+
+  test("persists the auto speaker learning preference in the user profile", async () => {
+    const registerResult = await registerUser([], [], {
+      name: "Anna Nowak",
+      email: "anna@example.com",
+      password: "tajne123",
+      workspaceMode: "create",
+      workspaceName: "Produkt",
+    });
+
+    const updatedUsers = updateUserProfile(registerResult.users, registerResult.user.id, {
+      ...registerResult.user,
+      preferredInsights: "",
+      notifyDailyDigest: true,
+      autoTaskCapture: true,
+      autoLearnSpeakerProfiles: true,
+    });
+
+    expect(updatedUsers.find((user) => user.id === registerResult.user.id)?.autoLearnSpeakerProfiles).toBe(true);
   });
 });

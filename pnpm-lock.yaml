@@ -68,6 +68,9 @@ importers:
       react-window:
         specifier: ^2.2.7
         version: 2.2.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      simple-rnnoise-wasm:
+        specifier: ^1.1.0
+        version: 1.1.0
       web-vitals:
         specifier: ^2.1.4
         version: 2.1.4
@@ -4401,6 +4404,9 @@ packages:
 
   simple-get@4.0.1:
     resolution: {integrity: sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==}
+
+  simple-rnnoise-wasm@1.1.0:
+    resolution: {integrity: sha512-Xoh2ZRresfOM5w9+PweYFIjJT6B1qP3kx5rphBzLV78FAbQ55d7VvOYaqBf4702Rke3E/jNhAMqamIl2djnR2g==}
 
   simple-swizzle@0.2.4:
     resolution: {integrity: sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw==}
@@ -10056,6 +10062,8 @@ snapshots:
       decompress-response: 6.0.0
       once: 1.4.0
       simple-concat: 1.0.1
+
+  simple-rnnoise-wasm@1.1.0: {}
 
   simple-swizzle@0.2.4:
     dependencies:
