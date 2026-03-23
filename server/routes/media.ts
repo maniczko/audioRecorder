@@ -279,6 +279,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const summaryText = diarization?.reviewSummary?.summary || diarization?.summary;
     if (!summaryText) return c.json({ message: "Brak podsumowania do wygenerowania sketchnotki." }, 400);
 
+    const asList = (value: any) => (Array.isArray(value) ? value : [])
+      .map((item) => String(typeof item === "object" ? item?.title || item?.text || item?.value || item?.label || "" : item || "").trim())
+      .filter(Boolean);
+    const decisions = asList(diarization?.decisions);
+    const actionItems = asList(diarization?.actionItems || diarization?.tasks);
+    const followUps = asList(diarization?.followUps);
+    const risks = asList(diarization?.risks);
+    const blockers = asList(diarization?.blockers);
+    const quotes = asList(diarization?.keyQuotes).slice(0, 2);
+
     if (!process.env.GEMINI_API_KEY) {
       return c.json({ message: "Brak klucza GEMINI_API_KEY w konfiguracji środowiska." }, 400);
     }
@@ -294,19 +304,47 @@ Style requirements:
 - thick marker outlines
 - soft yellow highlights
 - a few doodles, arrows, speech bubbles, sticky-note callouts
-- clear hierarchy and generous spacing
-- readable Polish text
-- keep the layout compact and visually balanced
+- clear hierarchy with 4-6 large visual zones
+- generous spacing and strong visual rhythm
+- readable Polish text with large headings
+- thick black contours and marker shading
 - feel like a real workshop whiteboard/sketchnote, not a generic infographic
+- use a friendly, handcrafted, imperfect look
+- balance text blocks, icons, and bubbles like a social-media sketchnote
+- do not make it look corporate or sterile
+
+Layout suggestion:
+- top left: bold title block
+- top right: small icon cluster or quick theme callout
+- middle: 2 or 3 boxed sections for key content
+- lower area: action plan / next steps / risks
+- add doodle arrows connecting the sections
 
 Content to include:
+Meeting summary:
 ${summaryText.substring(0, 1200)}
+
+Decisions:
+${decisions.length ? decisions.map((item) => `- ${item}`).join("\n") : "- none"}
+
+Action items:
+${actionItems.length ? actionItems.map((item) => `- ${item}`).join("\n") : "- none"}
+
+Next steps:
+${followUps.length ? followUps.map((item) => `- ${item}`).join("\n") : "- none"}
+
+Risks / blockers:
+${[...risks, ...blockers].length ? [...risks, ...blockers].map((item) => `- ${item}`).join("\n") : "- none"}
+
+Key quotes:
+${quotes.length ? quotes.map((item) => `- ${item}`).join("\n") : "- none"}
 
 Important:
 - make it look like a handcrafted visual note
 - do not use photorealism
 - do not include tiny unreadable text
-- use a 4:3 composition`;
+- use a 4:3 composition
+- prioritize visual clarity over dense text`;
 
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`, {
         method: "POST",
@@ -319,10 +357,10 @@ Important:
           generationConfig: {
             imageConfig: {
               aspectRatio: "4:3",
-              imageSize: "2K",
+              imageSize: "4K",
             },
             thinkingConfig: {
-              thinkingLevel: "low",
+              thinkingLevel: "medium",
             },
           }
         })
