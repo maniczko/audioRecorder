@@ -171,3 +171,13 @@ Repo ma guard workflowow Vercela. Lokalnie sprawdzisz go poleceniem:
 ```bash
 pnpm run test:workflows
 ```
+
+---
+
+## Changelog
+
+### 2026-03-23
+- **[TESTS] TASK-209** — Pokrycie testami  wzrosło z 40% → 71% statements.
+  Nowe testy izolowane (vi.doMock): analyzeAudioQuality, pyannote diarization, per-speaker normalization,
+  LLM correction catch path, large-file in-memory chunking, Groq STT → OpenAI fallback.
+  Uruchomienie: `pnpm run test:server` (351 passed).

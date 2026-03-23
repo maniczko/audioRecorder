@@ -1,21 +1,53 @@
-﻿# TASK_DONE
+# TASK_DONE
 
 Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
-## 061. [AUDIO] VAD — wycinanie ciszy przed uploadem
+## 025. AI semantyczne wyszukiwanie zadan i spotkan
+Status: `done`
+Completed by: GPT
+Result: Added /ai/search proxy route, semantic search client helper with caching, and CommandPalette integration that requests AI matches for non-trivial queries while keeping local search as the fallback. Added route and command-palette tests for the new flow.
+
+---
+
+## 209. [TESTS] Poprawa coverage audioPipeline.ts (40% → 71%)
 Status: `done`
 Completed by: Claude
-Result: Amplitude-based silence removal (Web Audio API) przed uploadem. filterSilence(blob) analizuje PCM w ramkach 50ms, wykrywa cisza > -42dBFS, usuwa segmenty ciszy > 2s z uploadu (lokalny blob niezmieniony). Re-encode do WAV. UI pokazuje "wycięto Xs ciszy" w pipelineStageLabel. Fallback: zwraca oryginalny blob przy błędzie (brak AudioContext, błąd dekodowania). @ricky0123/vad-web zainstalowany ale wymaga ORT ≥1.17 — upgrade zaplanowany jako kolejny krok.
+Result: Pokrycie testami server/audioPipeline.ts wzrosło z 40.4% do 71.1% statements (cel: 70%). Dodano 11 nowych testów izolowanych (vi.doMock + vi.resetModules) pokrywających: analyzeAudioQuality (ffprobe + volumedetect + silencedetect), pyannote diarization path (mergeWithPyannote, splitSegmentsByWordSpeaker, findPyannoteSpeakerAt), per-speaker normalization (applyPerSpeakerNorm), LLM transcript correction (correctTranscriptWithLLM — success + catch branch), large-file in-memory chunking (transcribeInChunks + mergeChunkedPayloads + extractAudioSegmentMemory), Groq STT fallback to OpenAI. Kluczowy fix: promisify.custom symbol na exec mocku wymagany żeby execPromise({ stdout, stderr }) działał poprawnie.
+Zmiany: server/tests/audio-pipeline.unit.test.ts (+200 linii testów)
+
+Jak testować:
+```bash
+pnpm run test:server
+# Oczekiwane: 351 passed | 6 skipped
+# Coverage audioPipeline.ts: statements ≥70% lines ≥70% functions ≥70%
+
+# Z raportem coverage:
+npx vitest run -c server/vitest.config.ts --coverage
+# Szukaj linii: audioPipeline.ts | 71.1 | ... | 74.66
+```
+
+---
+## 033. Optymalizacja wydajnosci code splitting i memoizacja
+Status: `done`
+Completed by: GPT
+Result: Added deferred task search in src/TasksTab.tsx, memoized key task views, lazy-loaded heavier task views with Suspense, and updated notes search rendering/tests to use the actual UI placeholders. Lint and focused vitest coverage passed for the affected task and notes views.
+
+---
+
+## 061. [AUDIO] VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ wycinanie ciszy przed uploadem
+Status: `done`
+Completed by: Claude
+Result: Amplitude-based silence removal (Web Audio API) przed uploadem. filterSilence(blob) analizuje PCM w ramkach 50ms, wykrywa cisza > -42dBFS, usuwa segmenty ciszy > 2s z uploadu (lokalny blob niezmieniony). Re-encode do WAV. UI pokazuje "wyciÄ‚â€žĂ˘â€žËto Xs ciszy" w pipelineStageLabel. Fallback: zwraca oryginalny blob przy bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdzie (brak AudioContext, bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦d dekodowania). @ricky0123/vad-web zainstalowany ale wymaga ORT Ä‚ËĂ˘â‚¬Â°Ă„â€ž1.17 Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ upgrade zaplanowany jako kolejny krok.
 Zmiany: src/audio/vadFilter.ts (nowy), src/store/recorderStore.ts (import + VAD call przed persistRecordingAudio), src/store/recorderStore.test.ts (mock vadFilter), package.json (@ricky0123/vad-web added, public/silero_vad_legacy.onnx).
 
 ---
 
-## 074. [AUDIO] Adaptacyjna normalizacja głośności per mówca
+## 074. [AUDIO] Adaptacyjna normalizacja gĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă˘â‚¬ĹźnoĂ„Ä…Ă˘â‚¬Ĺźci per mĂ„â€šÄąâ€šwca
 Status: `done`
 Completed by: Claude
-Result: Per-speaker loudness normalization przed Whisper. Pyannote uruchamiane wcześnie (przed transkrypcją). Dla >1 mówcy: volumedetect per speaker → gain do -16 dBFS → volume filter z if(between(t,...)) per segment. Normalizowany plik przekazywany do Whisper. Pyannote cache'owane i reużywane. Wyłączalne: VOICELOG_PER_SPEAKER_NORM=false.
+Result: Per-speaker loudness normalization przed Whisper. Pyannote uruchamiane wczeĂ„Ä…Ă˘â‚¬Ĺźnie (przed transkrypcjÄ‚â€žĂ˘â‚¬Â¦). Dla >1 mĂ„â€šÄąâ€šwcy: volumedetect per speaker Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ gain do -16 dBFS Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ volume filter z if(between(t,...)) per segment. Normalizowany plik przekazywany do Whisper. Pyannote cache'owane i reuĂ„Ä…Ă„Ëťywane. WyĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦czalne: VOICELOG_PER_SPEAKER_NORM=false.
 Zmiany: server/config.ts, server/audioPipeline.ts (os import, PER_SPEAKER_NORM, applyPerSpeakerNorm(), early pyannote block, reuse earlyPyannoteSegments).
 
 ---
@@ -23,8 +55,8 @@ Zmiany: server/config.ts, server/audioPipeline.ts (os import, PER_SPEAKER_NORM, 
 ## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
 Status: `done`
 Completed by: Claude
-Result: Zaimplementowano wielokrotne próbki głosu per profil (maks. 5) z uśrednianiem embeddingów (weighted average + L2 renorm). Dodano per-profil threshold slider (0.50–0.99, default 0.82) w UI listy profili. matchSpeakerToProfile zwraca {name, confidence} z % pewnością. Migracja SQL dodaje kolumny sample_count i threshold do voice_profiles.
-Zmiany: server/migrations/20260323_voice_profiles_multi_sample.sql (nowy), server/speakerEmbedder.ts (addToAverageEmbedding, matchSpeakerToProfile zwraca {name,confidence}), server/database.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/services/WorkspaceService.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/routes/workspaces.ts (PATCH /voice-profiles/:id/threshold, upsert w POST), src/shared/types.ts (sampleCount, threshold w VoiceProfileSummary), src/ProfileTab.tsx (sample badge, threshold slider, komunikat "Próbka N/5 dodana"), src/styles/profile.css (nowe klasy CSS).
+Result: Zaimplementowano wielokrotne prĂ„â€šÄąâ€šbki gĂ„Ä…Ă˘â‚¬Ĺˇosu per profil (maks. 5) z uĂ„Ä…Ă˘â‚¬Ĺźrednianiem embeddingĂ„â€šÄąâ€šw (weighted average + L2 renorm). Dodano per-profil threshold slider (0.50Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬Ĺ›0.99, default 0.82) w UI listy profili. matchSpeakerToProfile zwraca {name, confidence} z % pewnoĂ„Ä…Ă˘â‚¬ĹźciÄ‚â€žĂ˘â‚¬Â¦. Migracja SQL dodaje kolumny sample_count i threshold do voice_profiles.
+Zmiany: server/migrations/20260323_voice_profiles_multi_sample.sql (nowy), server/speakerEmbedder.ts (addToAverageEmbedding, matchSpeakerToProfile zwraca {name,confidence}), server/database.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/services/WorkspaceService.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/routes/workspaces.ts (PATCH /voice-profiles/:id/threshold, upsert w POST), src/shared/types.ts (sampleCount, threshold w VoiceProfileSummary), src/ProfileTab.tsx (sample badge, threshold slider, komunikat "PrĂ„â€šÄąâ€šbka N/5 dodana"), src/styles/profile.css (nowe klasy CSS).
 
 ---
 
@@ -37,39 +69,39 @@ Commit: f065121
 
 ---
 
-## 041. PodziaĹ‚ App.css na moduĹ‚y CSS
+## 041. PodziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ App.css na moduÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y CSS
 Status: `done`
 Priorytet: `P3`
 Wykonawca: `qwen`
 Wynik:
-- Struktura `/src/styles/` istnieje z 12 plikami moduĹ‚owymi
+- Struktura `/src/styles/` istnieje z 12 plikami moduÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡owymi
 - App.css zmniejszony z ~3500 do ~1700 linii
-- Build przechodzi bez bĹ‚Ä™dĂłw
+- Build przechodzi bez bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹ÂdÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 
-SzczegĂłĹ‚y:
+SzczegÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y:
 - `variables.css` - zmienne CSS (:root)
 - `foundation.css` - bazowe komponenty UI (empty/error/loading states)
 - `layout.css` - layouty i struktura
 - `reset.css` - reset i utility klasy
 - `animations.css` - animacje
-- `auth.css`, `calendar.css`, `people.css`, `profile.css`, `recordings.css`, `studio.css`, `tasks.css` - style specyficzne dla widokĂłw
+- `auth.css`, `calendar.css`, `people.css`, `profile.css`, `recordings.css`, `studio.css`, `tasks.css` - style specyficzne dla widokÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 
-Side effects / follow-up: Brak - struktura moduĹ‚owa juĹĽ istnieje.
+Side effects / follow-up: Brak - struktura moduÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡owa juÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄ istnieje.
 
 ---
 
-## 042. [LAYOUT] Standaryzacja stylĂłw CSS i kolorystyki
+## 042. [LAYOUT] Standaryzacja stylÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw CSS i kolorystyki
 Status: `done`
 Priorytet: `P3`
 Wykonawca: `qwen`
 Wynik:
-- Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
-- UsuniÄ™to duplikaty empty/error/loading states z 6 plikĂłw
-- Ujednolicono przyciski i komponenty z wspĂłlnymi stanami
-- SpĂłjne odstÄ™py z skalÄ… 4px
+- Wszystkie style uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
+- UsuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty empty/error/loading states z 6 plikÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
+- Ujednolicono przyciski i komponenty z wspÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇlnymi stanami
+- SpÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne odstĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpy z skalĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ 4px
 
-SzczegĂłĹ‚y:
-- foundation.css: +180 linii ujednoliconych stylĂłw
+SzczegÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y:
+- foundation.css: +180 linii ujednoliconych stylÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 - reset.css: -57 linii (duplikaty)
 - layout.css: -32 linie (duplikaty)
 - App.css: -24 linie (duplikaty)
@@ -77,7 +109,7 @@ SzczegĂłĹ‚y:
 - TranscriptPanelStyles.css: -6 linii (duplikaty)
 - skeleton.css: -8 linii (duplikaty)
 
-Side effects / follow-up: Brak - wszystkie style sÄ… spĂłjne.
+Side effects / follow-up: Brak - wszystkie style sĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ spÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne.
 
 ---
 
@@ -86,87 +118,87 @@ Status: `done`
 Priorytet: `P2`
 Wykonawca: `qwen`
 Wynik:
-- Ujednolicono loading/empty/error states w `foundation.css` (180 linii nowych stylĂłw)
-- UsuniÄ™to duplikaty z 6 plikĂłw: `reset.css`, `layout.css`, `App.css`, `StudioMeetingViewStyles.css`, `TranscriptPanelStyles.css`, `skeleton.css`
-- Dodano spĂłjne klasy: `.empty-panel`, `.empty-state`, `.error-state`, `.loading-state`, `.skeleton`
-- Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
-- Build przechodzi bez bĹ‚Ä™dĂłw
+- Ujednolicono loading/empty/error states w `foundation.css` (180 linii nowych stylÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
+- UsuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty z 6 plikÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw: `reset.css`, `layout.css`, `App.css`, `StudioMeetingViewStyles.css`, `TranscriptPanelStyles.css`, `skeleton.css`
+- Dodano spÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne klasy: `.empty-panel`, `.empty-state`, `.error-state`, `.loading-state`, `.skeleton`
+- Wszystkie style uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
+- Build przechodzi bez bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹ÂdÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 
-SzczegĂłĹ‚y:
+SzczegÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y:
 - `foundation.css`: +180 linii (empty/error/loading states)
-- `reset.css`: -57 linii (usuniÄ™to duplikaty)
-- `layout.css`: -32 linie (usuniÄ™to duplikaty)
-- `App.css`: -24 linie (usuniÄ™to duplikaty)
-- `StudioMeetingViewStyles.css`: -18 linii (usuniÄ™to duplikaty)
-- `TranscriptPanelStyles.css`: -6 linii (usuniÄ™to duplikaty)
-- `skeleton.css`: -8 linii (usuniÄ™to duplikaty)
+- `reset.css`: -57 linii (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
+- `layout.css`: -32 linie (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
+- `App.css`: -24 linie (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
+- `StudioMeetingViewStyles.css`: -18 linii (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
+- `TranscriptPanelStyles.css`: -6 linii (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
+- `skeleton.css`: -8 linii (usuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty)
 
-Side effects / follow-up: Brak - wszystkie style sÄ… spĂłjne i uĹĽywajÄ… zmiennych CSS.
+Side effects / follow-up: Brak - wszystkie style sĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ spÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne i uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ zmiennych CSS.
 
 ---
 
-## 100. [TESTS] audioPipeline.ts â€” pokrycie testami do 80%
+## 100. [TESTS] audioPipeline.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 80%
 Status: `done`
 Priorytet: `P0`
 Wykonawca: `qwen`
 Wynik:
 - **audioPipeline.utils.ts**: 97% coverage (771 linii czystych funkcji wydzielonych)
-- **audioPipeline.ts**: 50% coverage (funkcje nieczyste z zaleĹĽnoĹ›ciami zewnÄ™trznymi)
-- 326 testĂłw servera przechodzi (94% pass rate)
-- ĹÄ…czny coverage servera: 65% (z 47%)
-- Dodano 260 nowych testĂłw
+- **audioPipeline.ts**: 50% coverage (funkcje nieczyste z zaleÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşciami zewnĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âtrznymi)
+- 326 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw servera przechodzi (94% pass rate)
+- Ä‚â€žĂ„â€¦Ä‚â€šĂ‚ÂĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦czny coverage servera: 65% (z 47%)
+- Dodano 260 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 
-SzczegĂłĹ‚y:
+SzczegÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y:
 - Wydzielono czyste funkcje do `audioPipeline.utils.ts` (771 linii)
-- Dodano 114 testĂłw dla funkcji czystych (utils)
-- Dodano 14 testĂłw unit dla gĹ‚Ăłwnego pipeline (3 skipped - wymagajÄ… FFmpeg)
+- Dodano 114 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw dla funkcji czystych (utils)
+- Dodano 14 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw unit dla gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ä‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwnego pipeline (3 skipped - wymagajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ FFmpeg)
 - Naprawiono mocki dla `fetch`, `fs`, `child_process`
-- Ustalono ĹĽe 80%+ coverage wymagaĹ‚oby Docker z FFmpeg i mockĂłw API
+- Ustalono Ä‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄe 80%+ coverage wymagaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡oby Docker z FFmpeg i mockÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw API
 
 Uwagi:
-- Funkcje nieczyste (FFmpeg exec, OpenAI API calls) sÄ… z natury trudne do testowania jednostkowego
-- Obecny poziom 50% dla `audioPipeline.ts` + 97% dla `audioPipeline.utils.ts` daje ~74% waĹĽonego coverage
-- Dalsza praca wymagaĹ‚aby infrastruktury CI/CD z Docker
+- Funkcje nieczyste (FFmpeg exec, OpenAI API calls) sĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ z natury trudne do testowania jednostkowego
+- Obecny poziom 50% dla `audioPipeline.ts` + 97% dla `audioPipeline.utils.ts` daje ~74% waÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄonego coverage
+- Dalsza praca wymagaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡aby infrastruktury CI/CD z Docker
 
-Side effects / follow-up: Brak - zadanie zakoĹ„czone z realistycznym poziomem coverage dla pliku z zaleĹĽnoĹ›ciami systemowymi.
+Side effects / follow-up: Brak - zadanie zakoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľczone z realistycznym poziomem coverage dla pliku z zaleÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşciami systemowymi.
 
 ---
 
-## 066. [SPEAKER] Aktywny mĂłwca w UnifiedPlayer podczas odtwarzania
+## 066. [SPEAKER] Aktywny mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwca w UnifiedPlayer podczas odtwarzania
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `src/studio/UnifiedPlayer.js` â€” nowe props `transcript` + `displaySpeakerNames`; `activeSeg` = segment gdzie `timestamp <= currentTime < endTimestamp`.
-- Chip `.uplayer-speaker-chip` z `--chip-color: getSpeakerColor(speakerId)` renderowany miÄ™dzy czasem a scrubberem w trybie playback; ukryty gdy ĹĽaden segment nie pokrywa pozycji.
-- CSS: transition background 0.25s + kĂłĹ‚ko-indicator przed nazwÄ… mĂłwcy.
+- `src/studio/UnifiedPlayer.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ nowe props `transcript` + `displaySpeakerNames`; `activeSeg` = segment gdzie `timestamp <= currentTime < endTimestamp`.
+- Chip `.uplayer-speaker-chip` z `--chip-color: getSpeakerColor(speakerId)` renderowany miĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âdzy czasem a scrubberem w trybie playback; ukryty gdy Ä‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄaden segment nie pokrywa pozycji.
+- CSS: transition background 0.25s + kÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ko-indicator przed nazwĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwcy.
 - `src/studio/StudioMeetingView.js` przekazuje `transcript={displayRecording?.transcript}` i `displaySpeakerNames`.
 - `src/lib/speakerColors.js` + `src/lib/recording.js` (labelSpeaker) importowane w UnifiedPlayer.
 
 ---
 
-## 029. Testy E2E â€” krytyczne flows
+## 029. Testy E2E Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ krytyczne flows
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `playwright.config.js` â€” konfiguracja Playwright z webServer (port 3000), chromium, CI retries.
-- `tests/e2e/helpers/seed.js` â€” helper `seedLoggedInUser / seedMeeting / seedTask` do seedowania localStorage przed testem.
-- `tests/e2e/auth.spec.js` â€” rejestracja nowego konta (happy), duplikat emaila (error), logowanie (happy), zĹ‚e hasĹ‚o (error).
-- `tests/e2e/meeting.spec.js` â€” tworzenie spotkania (happy), pusty tytuĹ‚ â†’ przycisk disabled (error), reset formularza.
-- `tests/e2e/tasks.spec.js` â€” szybkie dodanie zadania (happy), pusty tytuĹ‚ (error), edycja, usuwanie, mock Google Tasks.
-- `tests/e2e/command-palette.spec.js` â€” Ctrl+K (happy), filtrowanie, nawigacja, Escape (error), backdrop, brak wynikĂłw.
-- `package.json` â€” `@playwright/test ^1.48` w devDependencies, skrypty `test:e2e` i `test:e2e:ui`.
-Uruchamianie: `npx playwright install` raz, potem `npm run test:e2e` (wymaga dziaĹ‚ajÄ…cego dev-server lub go uruchamia automatycznie).
+- `playwright.config.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ konfiguracja Playwright z webServer (port 3000), chromium, CI retries.
+- `tests/e2e/helpers/seed.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ helper `seedLoggedInUser / seedMeeting / seedTask` do seedowania localStorage przed testem.
+- `tests/e2e/auth.spec.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ rejestracja nowego konta (happy), duplikat emaila (error), logowanie (happy), zÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡e hasÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡o (error).
+- `tests/e2e/meeting.spec.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ tworzenie spotkania (happy), pusty tytuÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË przycisk disabled (error), reset formularza.
+- `tests/e2e/tasks.spec.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ szybkie dodanie zadania (happy), pusty tytuÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ (error), edycja, usuwanie, mock Google Tasks.
+- `tests/e2e/command-palette.spec.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ Ctrl+K (happy), filtrowanie, nawigacja, Escape (error), backdrop, brak wynikÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw.
+- `package.json` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ `@playwright/test ^1.48` w devDependencies, skrypty `test:e2e` i `test:e2e:ui`.
+Uruchamianie: `npx playwright install` raz, potem `npm run test:e2e` (wymaga dziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦cego dev-server lub go uruchamia automatycznie).
 
 ---
 
-## 037. Ekran zarzÄ…dzania tagami
+## 037. Ekran zarzĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦dzania tagami
 Status: `done`
 Priorytet: `P3`
 Wynik:
-- Zaimplementowane w `ProfileTab.js` jako `TagManagerSection` â€” lista wszystkich tagĂłw workspace z licznikami (zadania + spotkania).
-- KlikniÄ™cie nazwy tagu wchodzi w tryb inline-edit, Enter/blur zatwierdza zmianÄ™.
-- Przycisk Ă— usuwa tag ze wszystkich spotkaĹ„ i zadaĹ„.
-- `renameTag` / `deleteTag` w `useMeetings.js` â€” propagacja do `meetings[]` i `manualTasks[]`.
+- Zaimplementowane w `ProfileTab.js` jako `TagManagerSection` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ lista wszystkich tagÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw workspace z licznikami (zadania + spotkania).
+- KlikniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âcie nazwy tagu wchodzi w tryb inline-edit, Enter/blur zatwierdza zmianĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â.
+- Przycisk Ä‚â€žĂ˘â‚¬ĹˇÄ‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ usuwa tag ze wszystkich spotkaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ i zadaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ.
+- `renameTag` / `deleteTag` w `useMeetings.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ propagacja do `meetings[]` i `manualTasks[]`.
 - `allTags` obliczane w `MainApp.js` z `userMeetings` + `meetingTasks`, przekazywane do `ProfileTab`.
 - Style `.tag-manager-*` w `App.css`.
 
@@ -315,13 +347,13 @@ Wynik:
 
 ---
 
-## 021. Kanban w stylu Microsoft Planner â€” swimlanes, widok wykresow i zaawansowane karty
+## 021. Kanban w stylu Microsoft Planner Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ swimlanes, widok wykresow i zaawansowane karty
 Status: `done`
 Priorytet: `P1`
 Cel: podniesc widok tablicy Kanban do poziomu wizualnego i funkcjonalnego Microsoft Planner.
 Wynik:
 - TaskKanbanView przebudowany: cover bar (8 kolorow), kolorowe chipsety tagow z hashowaniem, pasek postepu subtaskow, avatary inicjalow z kolorami, hover actions (move-to-column select), quick-add inline per kolumna, WIP limit z ostrzezeniem w naglowku, swimlanes (by Person / Priority / Label / Due), drag-reorder naglowkow kolumn.
-- TaskChartsView (nowy): 4 wykresy SVG bez bibliotek â€” donut (status, priorytet), bar (osoby, terminy).
+- TaskChartsView (nowy): 4 wykresy SVG bez bibliotek Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ donut (status, priorytet), bar (osoby, terminy).
 - TaskScheduleView (nowy): os czasu 2 tyg / 5 tyg, drag zadania na dzien zmienia dueDate, sekcja "Bez terminu".
 - TasksWorkspaceView: 4 zakladki widoku (Kanban / Lista / Wykresy / Harmonogram), swimlane select w toolbarze, przycisk Eksport CSV.
 - TasksTab: stan swimlaneGroupBy, handler handleQuickAddToColumn, handleColumnReorder, handleExportCsv (Blob download).
@@ -346,7 +378,7 @@ Wynik:
 
 ---
 
-## 022. AI â€” inteligentne sugerowanie i kategoryzacja zadan po spotkaniu
+## 022. AI Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ inteligentne sugerowanie i kategoryzacja zadan po spotkaniu
 Status: `done`
 Priorytet: `P1`
 Cel: zautomatyzowac zamiane ustalen ze spotkan na dobrze opisane, przypisane i skategoryzowane zadania.
@@ -359,25 +391,25 @@ Wynik:
 
 ---
 
-## 026. UI/UX ergonomia â€” spojnosc, alignment i interaktywnosc
+## 026. UI/UX ergonomia Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ spojnosc, alignment i interaktywnosc
 Status: `done`
 Priorytet: `P1`
-Cel: zapewnic perfekcyjna ergonomie interfejsu bez nachodzenia, z rowno wyrowanymi przyciskami i spĂłjnymi stanami.
-Wynik (App.css â€” 25 poprawek w bloku 026):
-- button-row: dodano align-items center + flex-wrap wrap + row-gap 8px â€” przyciski nigdy nie nachodza na siebie.
-- topbar-actions + status-cluster: align-items center â€” wszystkie chipsety i przyciski wyrownane w pionie.
+Cel: zapewnic perfekcyjna ergonomie interfejsu bez nachodzenia, z rowno wyrowanymi przyciskami i spÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjnymi stanami.
+Wynik (App.css Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 25 poprawek w bloku 026):
+- button-row: dodano align-items center + flex-wrap wrap + row-gap 8px Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ przyciski nigdy nie nachodza na siebie.
+- topbar-actions + status-cluster: align-items center Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ wszystkie chipsety i przyciski wyrownane w pionie.
 - .small modifier: ujednolicono primary/secondary/ghost/danger w jednej regule (8px 12px, 0.84rem).
 - :disabled state: opacity 0.42, cursor not-allowed, transform none, pointer-events none dla wszystkich buttonow.
 - :focus-visible: jednolity outline 2px rgba(158,242,219,0.7) + box-shadow dla wszystkich buttonow i todo buttons.
-- transcript-bulk-actions + transcript-advanced-filters: align-items center zamiast flex-end â€” select + button na jednej osi.
+- transcript-bulk-actions + transcript-advanced-filters: align-items center zamiast flex-end Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ select + button na jednej osi.
 - transcript-bulk-toolbar: row-gap 12px przy zawijaniu.
 - panel-header: min-height 44px dla spojnosci.
-- ai-suggestion-meta-row: owner input flex:1, date flex:0 0 150px, select flex:0 0 120px â€” brak overflow w flex row.
-- .todo-detail-card sticky: z-index 10 â€” nie przykrywany przez inne panele.
+- ai-suggestion-meta-row: owner input flex:1, date flex:0 0 150px, select flex:0 0 120px Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ brak overflow w flex row.
+- .todo-detail-card sticky: z-index 10 Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ nie przykrywany przez inne panele.
 - review-queue-list: min-height 80px.
 - segment-card textarea: min-height 52px.
 - kanban-board + kanban-column-body: gap 12px (ujednolicono z reszta layoutu).
-- task-flag: white-space nowrap + flex-shrink 0 â€” nie lamie sie w srodku etykiety.
+- task-flag: white-space nowrap + flex-shrink 0 Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ nie lamie sie w srodku etykiety.
 - topbar: flex-wrap wrap + topbar-actions flex-wrap + row-gap przy max-width 1100px.
 
 ---
@@ -401,7 +433,7 @@ Priorytet: `P2`
 Cel: lepiej wspierac wspolprace zespolu przy spotkaniach i zadaniach.
 Wynik:
 - useMeetings: addMeetingComment(meetingId, text, authorName) dodaje komentarz + wpis activity z @mention detection.
-- StudioMeetingView: panel komentarzy do spotkania z textarea i listÄ… komentarzy (reversed), wyswietla @mention chips.
+- StudioMeetingView: panel komentarzy do spotkania z textarea i listĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ komentarzy (reversed), wyswietla @mention chips.
 - TaskDetailsPanel: sekcja komentarzy z createTaskComment (author, text, createdAt).
 - App.css: style dla meeting-comment-card, meeting-comment-meta, mention-chip.
 
@@ -412,10 +444,10 @@ Status: `done`
 Priorytet: `P2`
 Cel: przyspieszyc review transkrypcji przy dluzszych nagraniach.
 Wynik:
-- TranscriptPanel: useEffect na keydown â€” ] / â†’ nastepny, [ / â† poprzedni, A zatwierdz, S zostaw w review, Space play/pause, P odtworz od aktywnego.
+- TranscriptPanel: useEffect na keydown Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ ] / Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË nastepny, [ / Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚â€šĂ‚Â poprzedni, A zatwierdz, S zostaw w review, Space play/pause, P odtworz od aktywnego.
 - Licznik postep "X/Y zatwierdzonych" w naglowku review queue.
-- Przycisk "Zatwierdz wszystkie (N)" â€” bulk approve wszystkich widocznych review segmentow.
-- Panel pomocy klawiszowej z <kbd> renderingiem (toggle âŚ¨ SkrĂłty).
+- Przycisk "Zatwierdz wszystkie (N)" Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ bulk approve wszystkich widocznych review segmentow.
+- Panel pomocy klawiszowej z <kbd> renderingiem (toggle Ă„â€šĂ‹ÂĂ„Ä…ÄąË‡Ä‚â€šĂ‚Â¨ SkrÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇty).
 - Auto-scroll aktywnego elementu w liscie review przez activeReviewItemRef.
 
 ---
@@ -428,7 +460,7 @@ Wynik:
 - Hasla: crypto.scryptSync z 16-bajtowym losowym salt (bezpieczniejsze niz bcrypt).
 - Rate limiting /auth/*: Map-based, max 10 prob/60s, 429 + Retry-After (zadanie 044).
 - CORS: VOICELOG_ALLOWED_ORIGINS (zadanie 044).
-- Recovery code: nie zwracany w response â€” tylko { expiresAt }, kod logowany do konsoli w trybie dev.
+- Recovery code: nie zwracany w response Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ tylko { expiresAt }, kod logowany do konsoli w trybie dev.
 - Content-Security-Policy: default-src 'none' + X-Content-Type-Options: nosniff + X-Frame-Options: DENY dodane do wszystkich odpowiedzi przez securityHeaders() w server/index.js.
 
 ---
@@ -438,10 +470,10 @@ Status: `done`
 Priorytet: `P1`
 Cel: zapobiec crashowi calej aplikacji przy nieobsluzonym wyjatku w jednym komponencie.
 Wynik:
-- src/lib/ErrorBoundary.js â€” klasowy komponent z getDerivedStateFromError + componentDidCatch.
+- src/lib/ErrorBoundary.js Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ klasowy komponent z getDerivedStateFromError + componentDidCatch.
 - console.error z labelem taba przy kazdym bledzie.
 - fallback: czytelny komunikat + przycisk "Odswierz widok"; stacktrace widoczny tylko w dev.
-- MainApp.js: <ErrorBoundary key={activeTab} label="..."> wrapuje caly blok tabow â€” key resetuje boundary przy przelaczaniu zakladek, label identyfikuje widok w logu.
+- MainApp.js: <ErrorBoundary key={activeTab} label="..."> wrapuje caly blok tabow Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ key resetuje boundary przy przelaczaniu zakladek, label identyfikuje widok w logu.
 - style .error-boundary-fallback / .error-boundary-stack dodane do App.css.
 
 ---
@@ -452,14 +484,14 @@ Priorytet: `P1`
 Cel: uzytkownicy moga przegladac i przelaczac spotkania bezposrednio w Studio bez sidebara.
 Wynik:
 - MeetingPicker jako pelny naglowek Studio: tytul, data, czas trwania, liczba nagran.
-- Dropdown "Zmien â–ľ" z wyszukiwarka i lista 10 ostatnich spotkan.
+- Dropdown "Zmien Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă˘â‚¬Ĺ›Ä‚â€žĂ„Äľ" z wyszukiwarka i lista 10 ostatnich spotkan.
 - Przycisk "+ Nowe" zawsze widoczny.
 - RecordingsLibrary na dole strony rowniez w pustym stanie bez wybranego spotkania.
 - Zrealizowane w ramach zadania 052 (redesign MeetingPicker + globalna biblioteka nagran).
 
 ---
 
-## 043. XSS â€” sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
+## 043. XSS Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ sanityzacja HTML w NotesTab (dangerouslySetInnerHTML)
 Status: `done`
 Priorytet: `P1`
 Cel: zapobiec XSS przy renderowaniu notatek z edytora WYSIWYG.
@@ -511,7 +543,7 @@ Wynik:
 
 ---
 
-## 048. Node.js >= 22.5 â€” dokumentacja wymagan srodowiska
+## 048. Node.js >= 22.5 Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ dokumentacja wymagan srodowiska
 Status: `done`
 Priorytet: `P2`
 Cel: zapobiec bledom instalacji na starszych wersjach Node.
@@ -541,7 +573,7 @@ Wynik:
 
 ---
 
-## 051. Polling Google Calendar â€” visibility API i backoff
+## 051. Polling Google Calendar Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ visibility API i backoff
 Status: `done`
 Priorytet: `P2`
 Cel: nie odpytywac Google API gdy uzytkownik nie patrzy na aplikacje (karta w tle).
@@ -552,10 +584,10 @@ Wynik:
 
 ---
 
-## 052. Studio â€” globalna biblioteka nagran
+## 052. Studio Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ globalna biblioteka nagran
 Status: `done`
 Priorytet: `P2`
-Cel: uzytkownik moze przeglÄ…dac wszystkie nagrania ze wszystkich spotkan w jednym miejscu.
+Cel: uzytkownik moze przeglĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦dac wszystkie nagrania ze wszystkich spotkan w jednym miejscu.
 Wynik:
 - komponent RecordingsLibrary na dole strony Studio (takze w pustym stanie).
 - tabela: Spotkanie, Data, Czas, Speakerzy, Segmenty, Status.
@@ -563,7 +595,7 @@ Wynik:
 
 ---
 
-## 053. ZakĹ‚adka Osoba â€” tworzenie spotkania z profilu
+## 053. ZakÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adka Osoba Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ tworzenie spotkania z profilu
 Status: `done`
 Priorytet: `P2`
 Cel: uzytkownik moze zaplanowac nowe spotkanie bezposrednio z widoku osoby.
@@ -573,7 +605,7 @@ Wynik:
 
 ---
 
-## 054. AI â€” rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
+## 054. AI Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ rozszerzony ekstrakt po spotkaniu (rich post-meeting intelligence)
 Status: `done`
 Priorytet: `P2`
 Cel: wyciagnac z transkrypcji maksimum uzytecznych informacji biznesowych.
@@ -585,7 +617,7 @@ Wynik:
 
 ---
 
-## 055. AI â€” psychologiczny profil osoby na podstawie nagran
+## 055. AI Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ psychologiczny profil osoby na podstawie nagran
 Status: `done`
 Priorytet: `P2`
 Cel: na podstawie transkrypcji wszystkich spotkan z dana osoba zbudowac zrozumialy profil psychologiczny.
@@ -598,19 +630,19 @@ Wynik:
 
 ---
 
-## 043. [AUDIO] Sanityzacja timestampĂłw ffmpeg â€” command injection
+## 043. [AUDIO] Sanityzacja timestampÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw ffmpeg Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ command injection
 Status: `done`
 Priorytet: `P1`
 Wynik:
-- kaĹĽdy timestamp parsowany przez `Number()` + `isFinite()` przed wstawieniem do filtra ffmpeg w `buildSpeakerClip`; nieprawidĹ‚owe segmenty pomijane z ostrzeĹĽeniem.
+- kaÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄdy timestamp parsowany przez `Number()` + `isFinite()` przed wstawieniem do filtra ffmpeg w `buildSpeakerClip`; nieprawidÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡owe segmenty pomijane z ostrzeÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄeniem.
 
 ---
 
-## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym bĹ‚Ä™dzie
+## 044. [AUDIO] Odblokowywanie queueProcessingRef po synchronicznym bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âdzie
 Status: `done`
 Priorytet: `P1`
 Wynik:
-- caĹ‚y blok `processQueueItem` opakowany w `try/finally`; `queueProcessingRef.current = false` gwarantowane niezaleĹĽnie od rodzaju bĹ‚Ä™du.
+- caÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y blok `processQueueItem` opakowany w `try/finally`; `queueProcessingRef.current = false` gwarantowane niezaleÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄnie od rodzaju bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âdu.
 
 ---
 
@@ -618,7 +650,7 @@ Wynik:
 Status: `done`
 Priorytet: `P1`
 Wynik:
-- `checkStorageQuota(blobSize)` w `audioStore.js` uĹĽywa `navigator.storage.estimate()`; blob > 100 MB odrzucany, dostÄ™pne < 10 MB pokazuje ostrzeĹĽenie z opcjÄ… anulowania.
+- `checkStorageQuota(blobSize)` w `audioStore.js` uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywa `navigator.storage.estimate()`; blob > 100 MB odrzucany, dostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpne < 10 MB pokazuje ostrzeÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄenie z opcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ anulowania.
 
 ---
 
@@ -626,61 +658,61 @@ Wynik:
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `getUserMedia` otwierany z `{ echoCancellation, noiseSuppression, autoGainControl }`; toggle "Filtrowanie szumĂłw" w profilu (domyĹ›lnie wĹ‚Ä…czone); gain meter z `AnalyserNode` w RecorderPanel odĹ›wieĹĽany co 100 ms.
+- `getUserMedia` otwierany z `{ echoCancellation, noiseSuppression, autoGainControl }`; toggle "Filtrowanie szumÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw" w profilu (domyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşlnie wÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦czone); gain meter z `AnalyserNode` w RecorderPanel odÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşwieÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄany co 100 ms.
 
 ---
 
-## 053. [AUDIO] Normalizacja gĹ‚oĹ›noĹ›ci nagraĹ„ (loudness normalization)
+## 053. [AUDIO] Normalizacja gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡oÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşci nagraÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ (loudness normalization)
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `POST /media/recordings/:id/normalize` przetwarza plik przez `ffmpeg -af loudnorm=I=-16:TP=-1.5:LRA=11`; znormalizowana wersja zapisana jako osobny asset (`normalizedAudioPath`); przycisk "Normalizuj gĹ‚oĹ›noĹ›Ä‡" w TranscriptPanel.
+- `POST /media/recordings/:id/normalize` przetwarza plik przez `ffmpeg -af loudnorm=I=-16:TP=-1.5:LRA=11`; znormalizowana wersja zapisana jako osobny asset (`normalizedAudioPath`); przycisk "Normalizuj gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡oÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ" w TranscriptPanel.
 
 ---
 
-## 056. [AUDIO] RNNoise AudioWorklet â€” spektralne tĹ‚umienie szumĂłw
+## 056. [AUDIO] RNNoise AudioWorklet Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ spektralne tÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡umienie szumÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `public/rnnoise-worklet.js` â€” Cooley-Tukey FFT 512 pt, estymator minimum-statistics, filtr Wienera, WOLA hop=128; `src/audio/noiseReducerNode.js` z graceful fallback; pipeline: source â†’ noiseReducer â†’ analyser + MediaStreamDestination; bypass toggle via `port.postMessage`.
+- `public/rnnoise-worklet.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ Cooley-Tukey FFT 512 pt, estymator minimum-statistics, filtr Wienera, WOLA hop=128; `src/audio/noiseReducerNode.js` z graceful fallback; pipeline: source Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË noiseReducer Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË analyser + MediaStreamDestination; bypass toggle via `port.postMessage`.
 
 ---
 
-## 063. [SPEAKER] SpĂłjna paleta kolorĂłw mĂłwcĂłw w caĹ‚ej aplikacji
+## 063. [SPEAKER] SpÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjna paleta kolorÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇwcÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw w caÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ej aplikacji
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `src/lib/speakerColors.js` eksportuje `getSpeakerColor(speakerId)` (paleta 8 kolorĂłw, deterministyczna) i `getSpeakerColorDim`; uĹĽywane przez WaveformPanel, TimelineRuler, TranscriptPanel, SpeakerStatsPanel.
+- `src/lib/speakerColors.js` eksportuje `getSpeakerColor(speakerId)` (paleta 8 kolorÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw, deterministyczna) i `getSpeakerColorDim`; uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywane przez WaveformPanel, TimelineRuler, TranscriptPanel, SpeakerStatsPanel.
 
 ---
 
-## 064. [SPEAKER] Pasek mĂłwcĂłw pod waveformem (speaker timeline bar)
+## 064. [SPEAKER] Pasek mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇwcÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw pod waveformem (speaker timeline bar)
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- SVG pasek 12 px pod waveformem z kolorowymi prostokÄ…tami per segment; hover tooltip "ImiÄ™ â€” 0:42â€“1:18"; klik seekuje audio; aktywny segment wyrĂłĹĽniony biaĹ‚ym obrysem; dynamiczna legenda mĂłwcĂłw pod paskiem.
+- SVG pasek 12 px pod waveformem z kolorowymi prostokĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦tami per segment; hover tooltip "ImiĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 0:42Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬Äąâ€ş1:18"; klik seekuje audio; aktywny segment wyrÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄniony biaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ym obrysem; dynamiczna legenda mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇwcÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw pod paskiem.
 
 ---
 
-## 065. [SPEAKER] Kolor mĂłwcy na sĹ‚upkach waveformu
+## 065. [SPEAKER] Kolor mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwcy na sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡upkach waveformu
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `barColors[]` w WaveformPanel mapuje kaĹĽdy sĹ‚upek SVG do koloru mĂłwcy aktywnego w danym czasie via `segmentAtTime(transcript, t)`; brak pokrycia â†’ kolor domyĹ›lny `var(--accent)`; sĹ‚upki za playheadem dimowane (opacity 0.4).
+- `barColors[]` w WaveformPanel mapuje kaÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄdy sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡upek SVG do koloru mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwcy aktywnego w danym czasie via `segmentAtTime(transcript, t)`; brak pokrycia Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË kolor domyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşlny `var(--accent)`; sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡upki za playheadem dimowane (opacity 0.4).
 
 ---
 
-## 060. [AUDIO] ffmpeg pre-processing â€” denoise + filtrowanie przed Whisperem
+## 060. [AUDIO] ffmpeg pre-processing Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ denoise + filtrowanie przed Whisperem
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `preprocessAudio()` w `server/audioPipeline.js`: ffmpeg `afftdn=nf=-25,highpass=f=80,lowpass=f=8000` + konwersja 16kHz mono WAV przed transkrypcjÄ….
-- Oba pasy (diarization + verification) uĹĽywajÄ… przetworzonego pliku; cleanup w `finally`.
-- WyĹ‚Ä…czalne przez `VOICELOG_AUDIO_PREPROCESS=false`; fallback do oryginaĹ‚u przy bĹ‚Ä™dzie ffmpeg.
+- `preprocessAudio()` w `server/audioPipeline.js`: ffmpeg `afftdn=nf=-25,highpass=f=80,lowpass=f=8000` + konwersja 16kHz mono WAV przed transkrypcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦.
+- Oba pasy (diarization + verification) uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ przetworzonego pliku; cleanup w `finally`.
+- WyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦czalne przez `VOICELOG_AUDIO_PREPROCESS=false`; fallback do oryginaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡u przy bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âdzie ffmpeg.
 
 ---
 
-## 042. PropTypes â€” bezpieczeĹ„stwo typĂłw komponentĂłw
+## 042. PropTypes Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ bezpieczeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľstwo typÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw komponentÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 Status: `done`
 Priorytet: `P3`
 Wynik:
@@ -693,9 +725,9 @@ Wynik:
 Status: `done`
 Priorytet: `P3`
 Wynik:
-- `correctTranscriptWithLLM()` w `server/audioPipeline.js` â€” GPT-4o-mini koryguje interpunkcjÄ™ i pisowniÄ™ segmentĂłw.
-- Zachowuje speakerId/timestamps, fallback do oryginaĹ‚u przy bĹ‚Ä™dzie.
-- WĹ‚Ä…czane przez `VOICELOG_TRANSCRIPT_CORRECTION=true`.
+- `correctTranscriptWithLLM()` w `server/audioPipeline.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ GPT-4o-mini koryguje interpunkcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â i pisowniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â segmentÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw.
+- Zachowuje speakerId/timestamps, fallback do oryginaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡u przy bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âdzie.
+- WÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦czane przez `VOICELOG_TRANSCRIPT_CORRECTION=true`.
 
 ---
 
@@ -703,9 +735,9 @@ Wynik:
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `server/audioPipeline.js`: `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` â€” buduje kontekstowy prompt Whisper do 900 znakĂłw z danych spotkania; fallback do globalnego `WHISPER_PROMPT`.
-- Prompt uĹĽywany w obu przebiegach: Whisper `verbose_json` + diarization model.
-- `src/services/mediaService.js` `startTranscriptionJob()`: wysyĹ‚a `meetingTitle`, `participants` (z `meeting.attendees`), `tags` do serwera w ciele requstu transkrypcji.
+- `server/audioPipeline.js`: `buildWhisperPrompt({ meetingTitle, participants, tags, vocabulary })` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ buduje kontekstowy prompt Whisper do 900 znakÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw z danych spotkania; fallback do globalnego `WHISPER_PROMPT`.
+- Prompt uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywany w obu przebiegach: Whisper `verbose_json` + diarization model.
+- `src/services/mediaService.js` `startTranscriptionJob()`: wysyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a `meetingTitle`, `participants` (z `meeting.attendees`), `tags` do serwera w ciele requstu transkrypcji.
 
 ---
 
@@ -713,209 +745,209 @@ Wynik:
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- `server/audioPipeline.js`: `transcribeLiveChunk(filePath, contentType)` â€” szybka transkrypcja maĹ‚ego fragmentu audio bez diaryzacji; zwraca tekst.
-- `server/index.js`: `POST /transcribe/live` â€” przyjmuje audio blob, przepisuje do pliku tymczasowego, wywoĹ‚uje `transcribeLiveChunk`, zwraca `{ text }`.
-- `src/services/mediaService.js`: `transcribeLiveChunk(blob)` w remote service â€” wysyĹ‚a blob do serwera.
-- `src/hooks/useLiveTranscript.js` (nowy): hook zbiera ostatnie ~4 chunki MediaRecorder (~3.6s), co 3s wysyĹ‚a do serwera, aktualizuje podpis.
+- `server/audioPipeline.js`: `transcribeLiveChunk(filePath, contentType)` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ szybka transkrypcja maÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ego fragmentu audio bez diaryzacji; zwraca tekst.
+- `server/index.js`: `POST /transcribe/live` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ przyjmuje audio blob, przepisuje do pliku tymczasowego, wywoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡uje `transcribeLiveChunk`, zwraca `{ text }`.
+- `src/services/mediaService.js`: `transcribeLiveChunk(blob)` w remote service Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ wysyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a blob do serwera.
+- `src/hooks/useLiveTranscript.js` (nowy): hook zbiera ostatnie ~4 chunki MediaRecorder (~3.6s), co 3s wysyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a do serwera, aktualizuje podpis.
 - `src/hooks/useRecorder.js`: integracja `useLiveTranscript`; nowe pola `liveTranscriptEnabled` i `setLiveTranscriptEnabled` (null w trybie lokalnym).
 - `src/studio/StudioMeetingView.js`: guzik CC w pasku odtwarzacza (widoczny tylko w remote mode); `liveText` renderowany jako `.ff-live-caption` podczas nagrywania.
 - `src/styles/studio.css`: style dla `.ff-live-caption` i `.ff-cc-btn` (z wariantem `.active`).
 
 ---
 
-## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcjÄ…
+## 059. [AUDIO] Konwersja do 16 kHz mono WAV przed transkrypcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦
 Status: `done`
 Priorytet: `P2`
 Wynik:
-- Zrealizowane w ramach zadania 060: `preprocessAudio()` w `server/audioPipeline.js` wykonuje `ffmpeg -ar 16000 -ac 1 -acodec pcm_s16le` do pliku tymczasowego przed transkrypcjÄ…; plik tymczasowy usuwany w `finally`.
+- Zrealizowane w ramach zadania 060: `preprocessAudio()` w `server/audioPipeline.js` wykonuje `ffmpeg -ar 16000 -ac 1 -acodec pcm_s16le` do pliku tymczasowego przed transkrypcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦; plik tymczasowy usuwany w `finally`.
 
 ---
 
 
 ---
 
-## PRIORYTET P0 â€” TEST COVERAGE (aktualny sprint - UKOĹCZONY âś…)
+## PRIORYTET P0 Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ TEST COVERAGE (aktualny sprint - UKOÄ‚â€žĂ„â€¦Ä‚â€šĂ‚ÂCZONY Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦)
 
 ---
 
-### 101. [TESTS] database.ts â€” pokrycie testami do 80%
-Status: `done` âś…
+### 101. [TESTS] database.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 80%
+Status: `done` Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦
 Priorytet: `P0`
-Cel: `database.ts` ma 62% coverage (337 linii). Brakuje testĂłw dla `upsertMediaAsset()`, `getRecordingWithTranscript()`.
-PostÄ™p:
-- âś… Dodano 17 nowych testĂłw w `database.additional.test.ts`
-- âś… `upsertMediaAsset()` - insert, update, rĂłĹĽne formaty audio, sanitization ID
-- âś… `getMediaAsset()` - returns asset, returns null for nonexistent
-- âś… `deleteMediaAsset()` - delete with cleanup, workspace check
-- âś… `saveAudioQualityDiagnostics()` - save metrics, handle null
-- âś… Helper functions - `_generateId()`, `_generateInviteCode()`, `_safeJsonParse()`, `_pickProfileDraft()`
-- đź“ Coverage wzrosĹ‚o z 56% â†’ 64.85% (+8.85%)
+Cel: `database.ts` ma 62% coverage (337 linii). Brakuje testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw dla `upsertMediaAsset()`, `getRecordingWithTranscript()`.
+PostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âp:
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 17 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw w `database.additional.test.ts`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `upsertMediaAsset()` - insert, update, rÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄne formaty audio, sanitization ID
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `getMediaAsset()` - returns asset, returns null for nonexistent
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `deleteMediaAsset()` - delete with cleanup, workspace check
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `saveAudioQualityDiagnostics()` - save metrics, handle null
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Helper functions - `_generateId()`, `_generateInviteCode()`, `_safeJsonParse()`, `_pickProfileDraft()`
+- Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşÄ‚ËĂ˘â€šÂ¬Äąâ€şÄ‚â€šĂ‚Â Coverage wzrosÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡o z 56% Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË 64.85% (+8.85%)
 Pliki:
 - `server/database.ts`
-- `server/tests/database.test.ts` (istniejÄ…ce)
-- `server/tests/database/database.additional.test.ts` (nowe - 17 testĂłw)
+- `server/tests/database.test.ts` (istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ce)
+- `server/tests/database/database.additional.test.ts` (nowe - 17 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
 
 ---
 
-### 102. [TESTS] TranscriptionService.ts â€” pokrycie testami do 85%
-Status: `done` âś…
+### 102. [TESTS] TranscriptionService.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 85%
+Status: `done` Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦
 Priorytet: `P0`
-Cel: `TranscriptionService.ts` ma 68% coverage. Brakuje testĂłw dla `analyzeAudioQuality()`, `createVoiceProfileFromSpeaker()`.
-PostÄ™p:
-- âś… Dodano 21 nowych testĂłw w `TranscriptionService.additional.test.ts`
-- âś… `analyzeAudioQuality()` - z pipeline, bez pipeline
-- âś… `createVoiceProfileFromSpeaker()` - sukces, cleanup temp files
-- âś… `vectorizeTranscriptionResultToRAG()` - chunking, embedding, RAG indexing
-- âś… `queryRAG()` - similarity search, filtering
-- âś… `diarizeFromTranscript()`, `transcribeLiveChunk()`, `analyzeMeetingWithOpenAI()`
-- âś… `generateVoiceCoaching()`, `normalizeRecording()`, `computeEmbedding()`
-- âś… DB wrapper methods - `upsertMediaAsset()`, `getMediaAsset()`, `saveAudioQualityDiagnostics()`
-- đź“ Coverage wzrosĹ‚o z 68% â†’ 96.24% (+28.24%) đźŽ‰
+Cel: `TranscriptionService.ts` ma 68% coverage. Brakuje testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw dla `analyzeAudioQuality()`, `createVoiceProfileFromSpeaker()`.
+PostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âp:
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 21 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw w `TranscriptionService.additional.test.ts`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `analyzeAudioQuality()` - z pipeline, bez pipeline
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `createVoiceProfileFromSpeaker()` - sukces, cleanup temp files
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `vectorizeTranscriptionResultToRAG()` - chunking, embedding, RAG indexing
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `queryRAG()` - similarity search, filtering
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `diarizeFromTranscript()`, `transcribeLiveChunk()`, `analyzeMeetingWithOpenAI()`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `generateVoiceCoaching()`, `normalizeRecording()`, `computeEmbedding()`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ DB wrapper methods - `upsertMediaAsset()`, `getMediaAsset()`, `saveAudioQualityDiagnostics()`
+- Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşÄ‚ËĂ˘â€šÂ¬Äąâ€şÄ‚â€šĂ‚Â Coverage wzrosÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡o z 68% Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË 96.24% (+28.24%) Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşĂ„Ä…Ă‹ĹĄÄ‚ËĂ˘â€šÂ¬Ă‚Â°
 Pliki:
 - `server/services/TranscriptionService.ts`
-- `server/tests/transcription.test.ts` (istniejÄ…ce)
-- `server/tests/services/TranscriptionService.additional.test.ts` (nowe - 21 testĂłw)
+- `server/tests/transcription.test.ts` (istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ce)
+- `server/tests/services/TranscriptionService.additional.test.ts` (nowe - 21 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
 
 ---
 
-### 103. [TESTS] sqliteWorker.ts â€” pokrycie testami do 70%
-Status: `done` âś… (coverage nie zbierane przez worker threads limitation)
+### 103. [TESTS] sqliteWorker.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 70%
+Status: `done` Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ (coverage nie zbierane przez worker threads limitation)
 Priorytet: `P0`
 Cel: `sqliteWorker.ts` ma 0% coverage (30 linii). To krytyczny plik dla bazy danych.
-PostÄ™p:
-- âś… Dodano 24 testy w `sqliteWorker.test.ts`
-- âś… `init()` - inicjalizacja bazy z WAL mode i foreign keys
-- âś… `query` - SELECT z parametrami, empty results
-- âś… `get` - single row, undefined for no results
-- âś… `execute` - INSERT, UPDATE, DELETE
-- âś… `exec` - CREATE TABLE, DROP TABLE, multiple statements
-- âś… Error handling - invalid SQL, non-existent table, constraint violation, unknown type
-- âś… Message handling - sequential messages, id preservation
-- âś… PRAGMA statements - WAL mode, foreign keys enabled
-- đź“ 24 testy âś… (coverage nie zbierane przez Vitest worker threads limitation)
+PostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âp:
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 24 testy w `sqliteWorker.test.ts`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `init()` - inicjalizacja bazy z WAL mode i foreign keys
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `query` - SELECT z parametrami, empty results
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `get` - single row, undefined for no results
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `execute` - INSERT, UPDATE, DELETE
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `exec` - CREATE TABLE, DROP TABLE, multiple statements
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Error handling - invalid SQL, non-existent table, constraint violation, unknown type
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Message handling - sequential messages, id preservation
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ PRAGMA statements - WAL mode, foreign keys enabled
+- Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşÄ‚ËĂ˘â€šÂ¬Äąâ€şÄ‚â€šĂ‚Â 24 testy Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ (coverage nie zbierane przez Vitest worker threads limitation)
 Pliki:
 - `server/sqliteWorker.ts`
 - `server/tests/sqliteWorker.test.ts` (nowe - 24 testy)
 
 ---
 
-### 104. [TESTS] supabaseStorage.ts â€” utrzymanie 90% coverage
-Status: `done` âś…
+### 104. [TESTS] supabaseStorage.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ utrzymanie 90% coverage
+Status: `done` Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦
 Priorytet: `P0`
-Cel: `supabaseStorage.ts` ma 91% coverage â€” utrzymanie poziomu.
+Cel: `supabaseStorage.ts` ma 91% coverage Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ utrzymanie poziomu.
 Pliki:
 - `server/lib/supabaseStorage.ts`
 
 ---
 
-### 105. [TESTS] Integration/E2E â€” pokrycie testami do 80%
-Status: `done` âś…
+### 105. [TESTS] Integration/E2E Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 80%
+Status: `done` Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦
 Priorytet: `P1`
-Cel: Integration/E2E tests majÄ… 70% pass rate â€” zwiÄ™kszyÄ‡ coverage i liczbÄ™ testĂłw.
-PostÄ™p:
-- âś… Dodano 38 nowych testĂłw integracyjnych w `App.integration.e2e.test.tsx`
-- âś… Dodano 15 nowych testĂłw E2E w `tests/e2e/extended-flows.spec.js`
-- âś… Auth flow â€” register, login, password reset (3 testy)
-- âś… Meeting lifecycle â€” create, edit, delete (3 testy)
-- âś… Recording transcription â€” view, retry failed (2 testy)
-- âś… Task management â€” create, move kanban, complete (3 testy)
-- âś… Studio transcript â€” view, edit, merge, speaker assignment (3 testy)
-- âś… Workspace switching â€” switch, create new (2 testy)
-- âś… Calendar â€” view meetings, create from calendar (2 testy)
-- âś… Voice profiles â€” create, assign to speaker (2 testy)
-- âś… E2E Playwright â€” recording, upload, diarization (3 testy)
-- âś… E2E Playwright â€” tasks with deadline, filter, delete (3 testy)
-- âś… E2E Playwright â€” meeting analysis, export (2 testy)
-- âś… E2E Playwright â€” people profiles (2 testy)
-- âś… E2E Playwright â€” notes create/edit (2 testy)
-- âś… E2E Playwright â€” settings, search, navigation (3 testy)
-- đź“ Pass rate wzrĂłsĹ‚ z 70% â†’ 85% (+15%)
-- đź“ Liczba testĂłw Integration/E2E: 15 â†’ 68 (+53 testy)
+Cel: Integration/E2E tests majĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ 70% pass rate Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ zwiĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹ÂkszyĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ coverage i liczbĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw.
+PostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âp:
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 38 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw integracyjnych w `App.integration.e2e.test.tsx`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 15 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw E2E w `tests/e2e/extended-flows.spec.js`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Auth flow Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ register, login, password reset (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Meeting lifecycle Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ create, edit, delete (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Recording transcription Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ view, retry failed (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Task management Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ create, move kanban, complete (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Studio transcript Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ view, edit, merge, speaker assignment (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Workspace switching Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ switch, create new (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Calendar Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ view meetings, create from calendar (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Voice profiles Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ create, assign to speaker (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ recording, upload, diarization (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ tasks with deadline, filter, delete (3 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ meeting analysis, export (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ people profiles (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ notes create/edit (2 testy)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ E2E Playwright Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ settings, search, navigation (3 testy)
+- Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşÄ‚ËĂ˘â€šÂ¬Äąâ€şÄ‚â€šĂ‚Â Pass rate wzrÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇsÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ z 70% Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË 85% (+15%)
+- Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹşÄ‚ËĂ˘â€šÂ¬Äąâ€şÄ‚â€šĂ‚Â Liczba testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw Integration/E2E: 15 Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË 68 (+53 testy)
 Pliki:
-- `src/App.integration.test.tsx` (istniejÄ…ce - 14 testĂłw)
-- `src/App.integration.e2e.test.tsx` (nowe - 38 testĂłw)
-- `src/ProfileTab.auth.integration.test.tsx` (istniejÄ…ce - 1 test)
-- `tests/e2e/*.spec.js` (istniejÄ…ce - 9 plikĂłw)
-- `tests/e2e/extended-flows.spec.js` (nowe - 15 testĂłw)
+- `src/App.integration.test.tsx` (istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ce - 14 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
+- `src/App.integration.e2e.test.tsx` (nowe - 38 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
+- `src/ProfileTab.auth.integration.test.tsx` (istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ce - 1 test)
+- `tests/e2e/*.spec.js` (istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ce - 9 plikÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
+- `tests/e2e/extended-flows.spec.js` (nowe - 15 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw)
 
 ---
 
-## 078. [VOICE] GPT-4o audio-preview â€” coaching tonu gĹ‚osu i wymowy
+## 078. [VOICE] GPT-4o audio-preview Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ coaching tonu gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡osu i wymowy
 Status: `done`
 Priorytet: `P2`
-Cel: Analiza jakoĹ›ci mĂłwienia bazujÄ…c na rzeczywistym dĹşwiÄ™ku gĹ‚osu â€” ton, tempo, wymowa polskich gĹ‚osek, dykcja, pauzy, wypeĹ‚niacze. Dostarcza konkretnych wskazĂłwek w jÄ™zyku polskim jak poprawiÄ‡ kaĹĽdy aspekt.
+Cel: Analiza jakoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşci mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwienia bazujĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦c na rzeczywistym dÄ‚â€žĂ„â€¦Ă„Ä…ÄąĹźwiĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âku gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡osu Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ ton, tempo, wymowa polskich gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡osek, dykcja, pauzy, wypeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡niacze. Dostarcza konkretnych wskazÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwek w jĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âzyku polskim jak poprawiĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ kaÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄdy aspekt.
 Akceptacja:
-- przycisk "Analiza gĹ‚osu AI" przy kaĹĽdym mĂłwcy w panelu Voice Analytics (sidebar transcript).
-- GPT-4o audio-preview sĹ‚yszy rzeczywiste audio i odpowiada po polsku (~200-300 sĹ‚Ăłw).
-- ocenia: ton/emocje, tempo, wymowÄ™, pauzy, wypeĹ‚niacze, dykcjÄ™.
-- wyniki widoczne w sidebar bez przeĹ‚adowania strony.
-- graceful error jeĹ›li brak OpenAI API key lub plik audio niedostÄ™pny.
-Techniczne wskazĂłwki:
-- `server/audioPipeline.js`: `generateVoiceCoaching(asset, speakerId, segments)` â€” FFmpeg extractuje audio speakera (do 60s), wysyĹ‚a base64 do `gpt-4o-audio-preview`.
+- przycisk "Analiza gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡osu AI" przy kaÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄdym mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwcy w panelu Voice Analytics (sidebar transcript).
+- GPT-4o audio-preview sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡yszy rzeczywiste audio i odpowiada po polsku (~200-300 sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ä‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw).
+- ocenia: ton/emocje, tempo, wymowĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â, pauzy, wypeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡niacze, dykcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â.
+- wyniki widoczne w sidebar bez przeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adowania strony.
+- graceful error jeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşli brak OpenAI API key lub plik audio niedostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpny.
+Techniczne wskazÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwki:
+- `server/audioPipeline.js`: `generateVoiceCoaching(asset, speakerId, segments)` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ FFmpeg extractuje audio speakera (do 60s), wysyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a base64 do `gpt-4o-audio-preview`.
 - `POST /media/recordings/:id/voice-coaching` endpoint w `server/index.js`.
-- `VoiceSpeakerStats` component w `StudioMeetingView.js` â€” pokazuje metryki + "Analiza gĹ‚osu AI" button.
+- `VoiceSpeakerStats` component w `StudioMeetingView.js` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokazuje metryki + "Analiza gÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡osu AI" button.
 - tylko w remote mode (`remoteApiEnabled()`).
 
 ---
 
-## 079. [VOICE] Metryki mĂłwienia z transkrypcji (WPM, wypeĹ‚niacze, tury)
+## 079. [VOICE] Metryki mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwienia z transkrypcji (WPM, wypeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡niacze, tury)
 Status: `done`
 Priorytet: `P2`
-Cel: Bez API â€” natychmiastowe metryki stylu mĂłwienia z istniejÄ…cej transkrypcji per mĂłwca.
+Cel: Bez API Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ natychmiastowe metryki stylu mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwienia z istniejĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦cej transkrypcji per mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwca.
 Akceptacja:
-- sĹ‚owa/minutÄ™ (WPM) per mĂłwca widoczne w sidebar.
-- czas mĂłwienia (mm:ss) per mĂłwca.
-- liczba tur (wypowiedzi) i Ĺ›rednia dĹ‚ugoĹ›Ä‡ tury.
-- procent sĹ‚Ăłw-wypeĹ‚niaczy (ee, yyy, znaczy, jakby...) z ostrzeĹĽeniem gdy > 5%.
-Techniczne wskazĂłwki:
+- sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡owa/minutĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â (WPM) per mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwca widoczne w sidebar.
+- czas mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwienia (mm:ss) per mÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwca.
+- liczba tur (wypowiedzi) i Ä‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşrednia dÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ugoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ tury.
+- procent sÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ä‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw-wypeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡niaczy (ee, yyy, znaczy, jakby...) z ostrzeÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄeniem gdy > 5%.
+Techniczne wskazÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwki:
 - `src/lib/speakerAnalysis.js`: `analyzeSpeakingStyle(transcript, displaySpeakerNames)`.
-- FILLER_WORDS_PL set: ee, eee, yyy, yyyy, znaczy, jakby, wĹ‚aĹ›nie, tego, wiesz, hmm.
-- wywoĹ‚ywane w `VoiceSpeakerStats` useMemo.
+- FILLER_WORDS_PL set: ee, eee, yyy, yyyy, znaczy, jakby, wÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡aÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşnie, tego, wiesz, hmm.
+- wywoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ywane w `VoiceSpeakerStats` useMemo.
 ---
 
 ## 081. [REFACTOR] Uporzadkowac shared contracts i payloady miedzy frontendem a backendem
 Completed by: Codex
-Result: Dodano `src/shared/contracts.ts` z normalizatorami workspace state i transcription payloadďż˝w; serwisy i backend korzystajďż˝ z tych samych kontraktďż˝w.
+Result: Dodano `src/shared/contracts.ts` z normalizatorami workspace state i transcription payloadÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w; serwisy i backend korzystajÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ z tych samych kontraktÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w.
 Side effects / follow-up: `TASK-088` pozostaje jako osobny krok UI/layout po stabilizacji architektury.
 
 ## 082. [REFACTOR] Rozbic `server/app.ts` na bootstrap i modulowe rejestracje tras
 Completed by: Codex
-Result: Wyodrďż˝bniono `server/http/health.ts`, a rejestracja tras w `server/http/app-routes.ts` staďż˝a siďż˝ cieďż˝sza i bez logiki health.
-Side effects / follow-up: dalszy podziaďż˝ bootstrapu moďż˝na kontynuowaďż˝ w kolejnych iteracjach bez zmian kontraktďż˝w.
+Result: WyodrÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„bniono `server/http/health.ts`, a rejestracja tras w `server/http/app-routes.ts` staÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„a siÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ cieÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„sza i bez logiki health.
+Side effects / follow-up: dalszy podziaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ bootstrapu moÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„na kontynuowaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ w kolejnych iteracjach bez zmian kontraktÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w.
 
 ## 083. [REFACTOR] Wydzielic backendowy orchestration layer dla pipeline nagran
 Completed by: Codex
-Result: `TranscriptionService` dostaďż˝ `startTranscriptionPipeline()`, a `server/routes/media.ts` uďż˝ywa jednej ďż˝cieďż˝ki orkiestracji dla transcribe/retry z fallbackiem kompatybilnym z istniejďż˝cymi mockami.
-Side effects / follow-up: warto utrzymaďż˝ ten kontrakt jako gďż˝ďż˝wny punkt wejďż˝cia dla kolejnych zmian w pipeline audio.
+Result: `TranscriptionService` dostaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ `startTranscriptionPipeline()`, a `server/routes/media.ts` uÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ywa jednej Ä‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„cieÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ki orkiestracji dla transcribe/retry z fallbackiem kompatybilnym z istniejÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„cymi mockami.
+Side effects / follow-up: warto utrzymaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ ten kontrakt jako gÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„Ä‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„wny punkt wejÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„cia dla kolejnych zmian w pipeline audio.
 
 ## 084. [REFACTOR] Uporzadkowac warstwe stanu frontendu i odpowiedzialnosci hookow
 Completed by: Codex
-Result: `useWorkspaceData` korzysta z wspďż˝lnej normalizacji `WorkspaceState`, a synchronizacja/polling pracujďż˝ na jednym kanonicznym ksztaďż˝cie stanu.
-Side effects / follow-up: peďż˝ny dalszy rozdziaďż˝ bootstrap/sync/polling moďż˝e byďż˝ robiony etapami bez zmian API.
+Result: `useWorkspaceData` korzysta z wspÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„lnej normalizacji `WorkspaceState`, a synchronizacja/polling pracujÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ na jednym kanonicznym ksztaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„cie stanu.
+Side effects / follow-up: peÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ny dalszy rozdziaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ bootstrap/sync/polling moÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„e byÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ robiony etapami bez zmian API.
 
 ## 085. [REFACTOR] Rozbic `TabRouter.tsx` na container i widoki per zakladka
 Completed by: Codex
-Result: `TabRouter.tsx` zostaďż˝ przebudowany na helpery i jeden punkt renderowania aktywnej zakďż˝adki, z czytelniejszym `getActiveTabLabel()` i wydzielonym `buildAllTags()`.
-Side effects / follow-up: nastďż˝pny krok to wyciďż˝ganie per-tab containerďż˝w do osobnych moduďż˝ďż˝w, jeďż˝li potrzeba dalszego ciďż˝cia.
+Result: `TabRouter.tsx` zostaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ przebudowany na helpery i jeden punkt renderowania aktywnej zakÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„adki, z czytelniejszym `getActiveTabLabel()` i wydzielonym `buildAllTags()`.
+Side effects / follow-up: nastÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„pny krok to wyciÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ganie per-tab containerÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w do osobnych moduÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„Ä‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w, jeÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„li potrzeba dalszego ciÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„cia.
 
 ## 086. [REFACTOR] Wyczyscic warstwe services i adapterow API
 Completed by: Codex
-Result: `stateService` i `mediaService` uďż˝ywajďż˝ wspďż˝lnych helperďż˝w do normalizacji payloadďż˝w, a odpowiedzi transkrypcji sďż˝ mapowane jednym adapterem.
-Side effects / follow-up: warstwa `workspaceService` i `httpClient` pozostaďż˝y spďż˝jne z nowym kontraktem, bez rozjazdu w bďż˝ďż˝dach.
+Result: `stateService` i `mediaService` uÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ywajÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ wspÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„lnych helperÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w do normalizacji payloadÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„w, a odpowiedzi transkrypcji sÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ mapowane jednym adapterem.
+Side effects / follow-up: warstwa `workspaceService` i `httpClient` pozostaÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„y spÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„jne z nowym kontraktem, bez rozjazdu w bÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„Ä‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„dach.
 
 ## 087. [TEST] Dodac testy kontraktowe i regresyjne dla krytycznych flow refaktoru
 Completed by: Codex
 Result: Dodano testy kontraktowe dla `src/shared/contracts.ts` oraz test orkiestracji `startTranscriptionPipeline()` w backendzie.
-Side effects / follow-up: obecne testy serwerowe i frontendowe przechodzďż˝ po refaktorze; `TASK-088` zostaje jako dalszy etap UI.
-## 010. PeĹ‚ny live sync z Google Calendar i Google Tasks
+Side effects / follow-up: obecne testy serwerowe i frontendowe przechodzÄ‚â€žÄąÄ…Ă„Ä…Ă„ËťÄ‚â€ąÄąÄ„ po refaktorze; `TASK-088` zostaje jako dalszy etap UI.
+## 010. PeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ny live sync z Google Calendar i Google Tasks
 Completed by: Codex
-Result: Dodano automatyczny push lokalnych zmian do Google Tasks i Google Calendar w `useGoogleIntegrations`, z obsĹ‚ugÄ… linked taskĂłw oraz spotkaĹ„ po ich lokalnym zapisie.
-Side effects / follow-up: dodano test regresyjny dla auto-sync taskĂłw i Ĺ›cieĹĽki calendar sync; kolejne usprawnienia mogÄ… dotyczyÄ‡ widocznego statusu synchronizacji w UI.
+Result: Dodano automatyczny push lokalnych zmian do Google Tasks i Google Calendar w `useGoogleIntegrations`, z obsÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ugĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ linked taskÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw oraz spotkaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ po ich lokalnym zapisie.
+Side effects / follow-up: dodano test regresyjny dla auto-sync taskÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw i Ä‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşcieÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄki calendar sync; kolejne usprawnienia mogĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ dotyczyĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ widocznego statusu synchronizacji w UI.
 
-## 024. AI â€” automatyczny coaching po spotkaniu (meeting debrief)
+## 024. AI Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ automatyczny coaching po spotkaniu (meeting debrief)
 Completed by: Codex
-Result: Dodano trwaĹ‚y debrief AI w modelu spotkania, sekcjÄ™ w panelu spotkania oraz eksport do PDF/clipboard z persystencjÄ… w `meeting.aiDebrief`.
-Side effects / follow-up: debrief jest generowany z analiz spotkaĹ„ i widoczny w eksporcie; dalsze ulepszenia mogÄ… dotyczyÄ‡ dokĹ‚adniejszego promptu lub bardziej rozbudowanego ukĹ‚adu sekcji.
+Result: Dodano trwaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y debrief AI w modelu spotkania, sekcjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Â w panelu spotkania oraz eksport do PDF/clipboard z persystencjĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ w `meeting.aiDebrief`.
+Side effects / follow-up: debrief jest generowany z analiz spotkaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ i widoczny w eksporcie; dalsze ulepszenia mogĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ dotyczyĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ dokÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adniejszego promptu lub bardziej rozbudowanego ukÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adu sekcji.
 
 
 ## 039. Zarzadzanie pamiecia audio - limity IndexedDB
@@ -931,123 +963,123 @@ Wykonawca: `qwen`
 Priorytet: `P2`
 Cel: layout i UX maja byc nastepnym etapem po rozdzieleniu logiki, a nie rownolegle z najwiekszymi cieciami.
 Wynik:
-- âś… Ujednolicono loading/empty/error states w `foundation.css`
-- âś… UsuniÄ™to duplikaty z `reset.css`, `layout.css`, `App.css`, `StudioMeetingViewStyles.css`, `TranscriptPanelStyles.css`, `skeleton.css`
-- âś… Dodano spĂłjne klasy: `.empty-panel`, `.empty-state`, `.error-state`, `.loading-state`, `.skeleton`
-- âś… Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, etc.)
-- âś… Build przechodzi bez bĹ‚Ä™dĂłw
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Ujednolicono loading/empty/error states w `foundation.css`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ UsuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty z `reset.css`, `layout.css`, `App.css`, `StudioMeetingViewStyles.css`, `TranscriptPanelStyles.css`, `skeleton.css`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano spÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne klasy: `.empty-panel`, `.empty-state`, `.error-state`, `.loading-state`, `.skeleton`
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Wszystkie style uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, etc.)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Build przechodzi bez bÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡Ă„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹ÂdÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 Akceptacja:
-- âś… layout nie miesza sie z refaktorem architektury
-- âś… nowe komponenty layoutowe da sie reuse'owac w wielu widokach
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ layout nie miesza sie z refaktorem architektury
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ nowe komponenty layoutowe da sie reuse'owac w wielu widokach
 
 ---
 
-### 100. [TESTS] audioPipeline.ts â€” pokrycie testami do 80%
+### 100. [TESTS] audioPipeline.ts Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ pokrycie testami do 80%
 Status: `done`
 Wykonawca: `qwen`
 Priorytet: `P0`
 Cel: `audioPipeline.ts` ma 22% coverage (797 linii, 173 pokryte). To krytyczny plik dla transkrypcji audio.
 Wynik:
-- âś… **audioPipeline.utils.ts**: 97% coverage (771 linii czystych funkcji wydzielonych)
-- âś… **audioPipeline.ts**: 50% coverage (funkcje nieczyste z zaleĹĽnoĹ›ciami zewnÄ™trznymi)
-- âś… 326 testĂłw servera przechodzi (94% pass rate)
-- âś… ĹÄ…czny coverage servera: 65% (z 47%)
-- âś… Dodano 260 nowych testĂłw
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ **audioPipeline.utils.ts**: 97% coverage (771 linii czystych funkcji wydzielonych)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ **audioPipeline.ts**: 50% coverage (funkcje nieczyste z zaleÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşciami zewnĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âtrznymi)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ 326 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw servera przechodzi (94% pass rate)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Ä‚â€žĂ„â€¦Ä‚â€šĂ‚ÂĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦czny coverage servera: 65% (z 47%)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Dodano 260 nowych testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 Uwagi:
-- Funkcje nieczyste (FFmpeg, OpenAI API) wymagajÄ… Ĺ›rodowiska zewnÄ™trznego do peĹ‚nego przetestowania
-- OsiÄ…gniÄ™cie 80%+ wymagaĹ‚oby: Docker z FFmpeg, mocki API, testy integracyjne
-- Obecny poziom 50% jest realistyczny dla funkcji z zaleĹĽnoĹ›ciami systemowymi
+- Funkcje nieczyste (FFmpeg, OpenAI API) wymagajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Ä‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşrodowiska zewnĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âtrznego do peÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡nego przetestowania
+- OsiĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦gniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âcie 80%+ wymagaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡oby: Docker z FFmpeg, mocki API, testy integracyjne
+- Obecny poziom 50% jest realistyczny dla funkcji z zaleÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşciami systemowymi
 Pliki:
-- `server/audioPipeline.ts` â€” 50% coverage
-- `server/audioPipeline.utils.ts` â€” 97% coverage
-- `server/tests/audio-pipeline.unit.test.ts` â€” 14 testĂłw (3 skipped)
-- `server/tests/audioPipeline.utils.test.ts` â€” 114 testĂłw
+- `server/audioPipeline.ts` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 50% coverage
+- `server/audioPipeline.utils.ts` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 97% coverage
+- `server/tests/audio-pipeline.unit.test.ts` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 14 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw (3 skipped)
+- `server/tests/audioPipeline.utils.test.ts` Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 114 testÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
 
 ---
 
-## 071. [SECURITY] Proxy wywoĹ‚aĹ„ Anthropic API przez backend
+## 071. [SECURITY] Proxy wywoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡aÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ Anthropic API przez backend
 Status: `done`
 Wykonawca: `claude`
 Priorytet: `P1`
 
 ---
 
-## 041. PodziaĹ‚ App.css na moduĹ‚y CSS
+## 041. PodziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ App.css na moduÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡y CSS
 Status: `done`
 Wykonawca: `qwen`
 Priorytet: `P3`
-Cel: App.css przekroczyĹ‚ 3500 linii i jest trudny w utrzymaniu.
+Cel: App.css przekroczyÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ 3500 linii i jest trudny w utrzymaniu.
 Wynik:
-- âś… Struktura `/src/styles/` istnieje z 12 plikami moduĹ‚owymi
-- âś… `variables.css` - zmienne CSS (:root)
-- âś… `foundation.css` - bazowe komponenty UI
-- âś… `layout.css` - layouty i struktura
-- âś… `reset.css` - reset i utility klasy
-- âś… `animations.css` - animacje
-- âś… `auth.css`, `calendar.css`, `people.css`, `profile.css`, `recordings.css`, `studio.css`, `tasks.css` - style specyficzne dla widokĂłw
-- âś… App.css zmniejszony z ~3500 do ~1700 linii
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Struktura `/src/styles/` istnieje z 12 plikami moduÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡owymi
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `variables.css` - zmienne CSS (:root)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `foundation.css` - bazowe komponenty UI
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `layout.css` - layouty i struktura
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `reset.css` - reset i utility klasy
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `animations.css` - animacje
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ `auth.css`, `calendar.css`, `people.css`, `profile.css`, `recordings.css`, `studio.css`, `tasks.css` - style specyficzne dla widokÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ App.css zmniejszony z ~3500 do ~1700 linii
 Akceptacja:
-- âś… kaĹĽdy plik < 500 linii (poza App.css ktĂłry czeka na dalszy podziaĹ‚)
-- âś… build przechodzi bez ostrzeĹĽeĹ„
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ kaÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄdy plik < 500 linii (poza App.css ktÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇry czeka na dalszy podziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ build przechodzi bez ostrzeÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄeÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľ
 
 ---
 
-## 042. [LAYOUT] Standaryzacja stylĂłw CSS i kolorystyki
+## 042. [LAYOUT] Standaryzacja stylÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw CSS i kolorystyki
 Status: `done`
 Wykonawca: `qwen`
 Priorytet: `P3`
-Cel: Ujednolicenie palety kolorĂłw, odstÄ™pĂłw, typografii i stylĂłw komponentĂłw w caĹ‚ej aplikacji, tak aby interfejs byĹ‚ estetyczny i przewidywalny.
+Cel: Ujednolicenie palety kolorÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw, odstĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹ÂpÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw, typografii i stylÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw komponentÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw w caÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ej aplikacji, tak aby interfejs byÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡ estetyczny i przewidywalny.
 Wynik:
-- âś… Wszystkie style uĹĽywajÄ… zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
-- âś… UsuniÄ™to duplikaty empty/error/loading states z 6 plikĂłw
-- âś… Ujednolicono przyciski (primary, secondary, ghost, danger) z wspĂłlnymi stanami
-- âś… Standaryzacja komponentĂłw: segmented-control, markdown-toolbar, analysis-block
-- âś… SpĂłjne odstÄ™py z skalÄ… 4px (var(--space-1) do var(--space-9))
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Wszystkie style uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄywajĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ zmiennych CSS (`var(--space-*)`, `var(--radius-*)`, `var(--color-*)`)
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ UsuniĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âto duplikaty empty/error/loading states z 6 plikÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Ujednolicono przyciski (primary, secondary, ghost, danger) z wspÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇlnymi stanami
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ Standaryzacja komponentÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇw: segmented-control, markdown-toolbar, analysis-block
+- Ă„â€šĂ‹ÂĂ„Ä…Ă˘â‚¬ĹźÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ SpÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇjne odstĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpy z skalĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‚Â¦ 4px (var(--space-1) do var(--space-9))
 Akceptacja:
-- ✅ Aplikacja używa globalnych zmiennych CSS dla kolorów i typografii bez lokalnych nadpisań
-- ✅ Interfejs widocznie zyskuje na estetyce i spójności
-- ✅ Wszystkie przyciski interaktywne na stronie głównej oraz formularze zachowują się jednakowo w całej aplikacji
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Aplikacja uĂ„Ä…Ă„Ëťywa globalnych zmiennych CSS dla kolorĂ„â€šÄąâ€šw i typografii bez lokalnych nadpisaĂ„Ä…Ă˘â‚¬Ĺľ
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Interfejs widocznie zyskuje na estetyce i spĂ„â€šÄąâ€šjnoĂ„Ä…Ă˘â‚¬Ĺźci
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Wszystkie przyciski interaktywne na stronie gĂ„Ä…Ă˘â‚¬ĹˇĂ„â€šÄąâ€šwnej oraz formularze zachowujÄ‚â€žĂ˘â‚¬Â¦ siÄ‚â€žĂ˘â€žË jednakowo w caĂ„Ä…Ă˘â‚¬Ĺˇej aplikacji
 
 ---
 
-## 075. [AUDIO] Groq â€” whisper-large-v3 zamiast whisper-1/gpt-4o-transcribe
+## 075. [AUDIO] Groq Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ whisper-large-v3 zamiast whisper-1/gpt-4o-transcribe
 Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
-Cel: Groq oferuje `whisper-large-v3` (model 3Ă— lepszy od whisper-1 dla polskiego) z opĂłĹşnieniem ~0.3s dla pliku 60 min â€” 216Ă— realtime. Koszt ~$0.111/h vs ~$0.6/h OpenAI. To najszybszy, najtaĹ„szy i najdokĹ‚adniejszy model Whisper dostÄ™pny przez API.
+Cel: Groq oferuje `whisper-large-v3` (model 3Ä‚â€žĂ˘â‚¬ĹˇÄ‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ lepszy od whisper-1 dla polskiego) z opÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ„â€¦Ă„Ä…ÄąĹźnieniem ~0.3s dla pliku 60 min Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ 216Ä‚â€žĂ˘â‚¬ĹˇÄ‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ realtime. Koszt ~$0.111/h vs ~$0.6/h OpenAI. To najszybszy, najtaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąÄľszy i najdokÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adniejszy model Whisper dostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpny przez API.
 Akceptacja:
 - konfigurowalny dostawca: `VOICELOG_STT_PROVIDER=groq` lub `openai` (default: openai).
 - przy Groq: model `whisper-large-v3`, endpoint `https://api.groq.com/openai/v1`.
 - czas transkrypcji 60 min nagrania < 10s.
-- dokĹ‚adnoĹ›Ä‡ polskich nazw wĹ‚asnych wyraĹşnie lepsza niĹĽ whisper-1.
-- fallback do OpenAI gdy Groq niedostÄ™pne lub brak `GROQ_API_KEY`.
-Techniczne wskazĂłwki:
+- dokÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡adnoÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąĹşĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â€šÂ¬Ă‹â€ˇ polskich nazw wÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡asnych wyraÄ‚â€žĂ„â€¦Ă„Ä…ÄąĹźnie lepsza niÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄ whisper-1.
+- fallback do OpenAI gdy Groq niedostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpne lub brak `GROQ_API_KEY`.
+Techniczne wskazÄ‚â€žĂ˘â‚¬ĹˇĂ„Ä…Ă˘â‚¬Ĺˇwki:
 - `server/audioPipeline.js`: `GROQ_API_KEY = process.env.GROQ_API_KEY || ""`.
 - gdy `GROQ_API_KEY`: `OPENAI_BASE_URL = "https://api.groq.com/openai/v1"`, `VERIFICATION_MODEL = "whisper-large-v3"`.
-- Groq API jest OpenAI-compatible â€” `requestAudioTranscription` dziaĹ‚a bez zmian.
-- `response_format: "verbose_json"` dziaĹ‚a w Groq; `diarized_json` niedostÄ™pne â†’ uĹĽyj pyannote.
-- limit pliku Groq: 25 MB (taki sam jak OpenAI) â€” chunking bez zmian.
+- Groq API jest OpenAI-compatible Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ `requestAudioTranscription` dziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a bez zmian.
+- `response_format: "verbose_json"` dziaÄ‚â€žĂ„â€¦Ä‚ËĂ˘â€šÂ¬ÄąË‡a w Groq; `diarized_json` niedostĂ„â€šĂ˘â‚¬ĹľÄ‚ËĂ˘â‚¬ĹľĂ‹Âpne Ă„â€šĂ‹ÂÄ‚ËĂ˘â€šÂ¬Ă‚Â Ä‚ËĂ˘â€šÂ¬Ă˘â€žË uÄ‚â€žĂ„â€¦Ä‚â€žĂ‹ĹĄyj pyannote.
+- limit pliku Groq: 25 MB (taki sam jak OpenAI) Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚ËĂ˘â€šÂ¬ÄąÄ„ chunking bez zmian.
 
 ---
 
-## 200. [TESTS] Naprawa 78 padających testów frontend - priorytet P0
+## 200. [TESTS] Naprawa 78 padajÄ‚â€žĂ˘â‚¬Â¦cych testĂ„â€šÄąâ€šw frontend - priorytet P0
 Status: `done`
 Wykonawca: `qwen`
 Priorytet: `P0`
 Wynik:
-- ✅ Naprawiono **35 testów z 78** (45% poprawy)
-- ✅ Dodano `maxWorkers: 4` do vitest.config.js (uniknięcie OOM crash)
-- ✅ Naprawiono StudioMeetingView.test.tsx - dodano renderWithContext
-- ✅ Naprawiono useUI.test.tsx - dodano wrapper AppProviders
-- ✅ Naprawiono httpClient.test.ts - dodano BACKEND_API_BASE_URL do mocków
-- ✅ Naprawiono authService.test.ts - poprawiono import apiRequest
-- ✅ Naprawiono aiTaskSuggestions.test.ts - poprawiono import apiRequest
-- ✅ Naprawiono useGoogleIntegrations.autosync.test.ts - dodano AppProviders wrapper
-- 📊 Pass rate: **73% → 87%** (+14%)
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono **35 testĂ„â€šÄąâ€šw z 78** (45% poprawy)
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Dodano `maxWorkers: 4` do vitest.config.js (unikniÄ‚â€žĂ˘â€žËcie OOM crash)
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono StudioMeetingView.test.tsx - dodano renderWithContext
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono useUI.test.tsx - dodano wrapper AppProviders
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono httpClient.test.ts - dodano BACKEND_API_BASE_URL do mockĂ„â€šÄąâ€šw
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono authService.test.ts - poprawiono import apiRequest
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono aiTaskSuggestions.test.ts - poprawiono import apiRequest
+- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Naprawiono useGoogleIntegrations.autosync.test.ts - dodano AppProviders wrapper
+- Ă„â€ÄąĹźĂ˘â‚¬Ĺ›ÄąÂ  Pass rate: **73% Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ 87%** (+14%)
 
-Pozostałe testy do naprawy (wymagają dalszej pracy - 43 testy):
-- recorderStore.test.ts (11 testów) - głęboka zależność od logiki queue, wymaga refaktoryzacji
-- useWorkspaceData.test.tsx (8 testów) - infinite loop w Zustand przy remote bootstrap
+PozostaĂ„Ä…Ă˘â‚¬Ĺˇe testy do naprawy (wymagajÄ‚â€žĂ˘â‚¬Â¦ dalszej pracy - 43 testy):
+- recorderStore.test.ts (11 testĂ„â€šÄąâ€šw) - gĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËboka zaleĂ„Ä…Ă„ËťnoĂ„Ä…Ă˘â‚¬ĹźÄ‚â€žĂ˘â‚¬Ë‡ od logiki queue, wymaga refaktoryzacji
+- useWorkspaceData.test.tsx (8 testĂ„â€šÄąâ€šw) - infinite loop w Zustand przy remote bootstrap
 - useMeetings.test.tsx (4 testy) - kontekst MeetingsProvider nie inicjalizuje danych
 - useWorkspace.test.tsx (3 testy) - hydratacja remote session
 - workspaceStore.test.ts (2 testy) - fetch do backendu
@@ -1059,35 +1091,35 @@ Pozostałe testy do naprawy (wymagają dalszej pracy - 43 testy):
 - MeetingsContext.test.tsx (1 test) - provider context
 - AuthScreen.test.tsx (1 test) - local provider warning
 
-Następne kroki:
-- TASK-201: Testy AI routes (26% → 80%)
-- TASK-202: Testy Media routes (52% → 85%)
+NastÄ‚â€žĂ˘â€žËpne kroki:
+- TASK-201: Testy AI routes (26% Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ 80%)
+- TASK-202: Testy Media routes (52% Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ 85%)
 - TASK-203: E2E testy critical flows
-- TASK-206: Naprawa pozostałych 43 testów frontend (odroczone)
+- TASK-206: Naprawa pozostaĂ„Ä…Ă˘â‚¬Ĺˇych 43 testĂ„â€šÄąâ€šw frontend (odroczone)
 ## 035. Delta sync zamiast pelnego PUT stanu workspace
 Completed by: Codex
 Result: `syncWorkspaceState` wysyla teraz delta PATCH zamiast pelnego stanu, backend scala delta z aktualnym workspace state, a bootstrap GET pozostaje fallbackiem.
-Side effects / follow-up: payload synca jest znacznie mniejszy dla pojedynczych zmian; kolejnym krokiem moze byc dalsze rozdrobnienie delta dla kolekcji o duzym rozmiarze.## 077. [AUDIO] Server-side VAD — ffmpeg silence removal before transcription
+Side effects / follow-up: payload synca jest znacznie mniejszy dla pojedynczych zmian; kolejnym krokiem moze byc dalsze rozdrobnienie delta dla kolekcji o duzym rozmiarze.## 077. [AUDIO] Server-side VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ ffmpeg silence removal before transcription
 Completed by: Claude
-Result: Added ffmpeg `silenceremove` filter to `preprocessAudio()` in `server/audioPipeline.ts`. Filter removes silence >0.5s/-35dB to reduce Whisper hallucinations. Enabled by default via `VOICELOG_SILENCE_REMOVE=true`, auto-disabled when pyannote pipeline is active (HF_TOKEN set). Duration logging before/after when DEBUG=true. Also fixed pre-existing test failures in media.additional.test.ts and ai.test.ts; improved media routes (DELETE→204, normalize passes signal, voice-coaching validates speakerId, added GET /recordings list endpoint).
+Result: Added ffmpeg `silenceremove` filter to `preprocessAudio()` in `server/audioPipeline.ts`. Filter removes silence >0.5s/-35dB to reduce Whisper hallucinations. Enabled by default via `VOICELOG_SILENCE_REMOVE=true`, auto-disabled when pyannote pipeline is active (HF_TOKEN set). Duration logging before/after when DEBUG=true. Also fixed pre-existing test failures in media.additional.test.ts and ai.test.ts; improved media routes (DELETEÄ‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘204, normalize passes signal, voice-coaching validates speakerId, added GET /recordings list endpoint).
 Side effects / follow-up: Set `VOICELOG_SILENCE_REMOVE=false` in Railway env if silence removal causes issues with specific audio types.
 ## 047. [AUDIO] Audio playback error handling in UnifiedPlayer
 Completed by: Claude
-Result: Added local `playError` state to `UnifiedPlayer.tsx`. The `play()` handler now catches errors and sets descriptive messages (`NotAllowedError` → "Kliknij aby odblokować audio"; others → "Nie można odtworzyć — plik może być uszkodzony"). Play button switches to ⚠ icon (red background) when error occurs; click on error button retries playback. Error cleared automatically when audio source URL changes. Added `.uplayer-play-btn--error` CSS class for visual feedback.
+Result: Added local `playError` state to `UnifiedPlayer.tsx`. The `play()` handler now catches errors and sets descriptive messages (`NotAllowedError` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ "Kliknij aby odblokowaÄ‚â€žĂ˘â‚¬Ë‡ audio"; others Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ "Nie moĂ„Ä…Ă„Ëťna odtworzyÄ‚â€žĂ˘â‚¬Ë‡ Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ plik moĂ„Ä…Ă„Ëťe byÄ‚â€žĂ˘â‚¬Ë‡ uszkodzony"). Play button switches to Ä‚ËÄąË‡Ă‚Â  icon (red background) when error occurs; click on error button retries playback. Error cleared automatically when audio source URL changes. Added `.uplayer-play-btn--error` CSS class for visual feedback.
 Side effects / follow-up: None.
 ## 046. [AUDIO] Exponential backoff + auto-retry in recording queue
 Completed by: Claude
-Result: Replaced flat 5s retry delay with exponential backoff (1s, 4s, 16s) using `retryCount` field on queue items. Added `backoffUntil` timestamp to skip items in backoff period; `setTimeout` clears backoff and re-triggers queue processing. Added `navigator.onLine` check at queue start — registers one-time 'online' event listener when offline. After exhausting MAX_AUTO_RETRIES (3) transient errors, item gets `failed_permanent` status (vs `failed` for non-retriable errors). Retry count shown in UnifiedPlayer ("Próba N/3"). `retryRecordingQueueItem` resets `retryCount`/`backoffUntil` for manual retries.
+Result: Replaced flat 5s retry delay with exponential backoff (1s, 4s, 16s) using `retryCount` field on queue items. Added `backoffUntil` timestamp to skip items in backoff period; `setTimeout` clears backoff and re-triggers queue processing. Added `navigator.onLine` check at queue start Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ registers one-time 'online' event listener when offline. After exhausting MAX_AUTO_RETRIES (3) transient errors, item gets `failed_permanent` status (vs `failed` for non-retriable errors). Retry count shown in UnifiedPlayer ("PrĂ„â€šÄąâ€šba N/3"). `retryRecordingQueueItem` resets `retryCount`/`backoffUntil` for manual retries.
 Side effects / follow-up: None.
-## 049. [AUDIO] VAD — auto-stop on long silence
+## 049. [AUDIO] VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ auto-stop on long silence
 Completed by: Claude
-Result: Implemented silence auto-stop in `useAudioHardware.ts`. AnalyserNode frequency data is checked every 20 animation frames; if max amplitude < 10/255 threshold for 3+ minutes (configurable via `silenceAutoStopMinutes`, default 3), recording stops automatically. 30s warning countdown exposed as `silenceCountdown` state. `resetSilenceTimer()` resets the counter. Added yellow warning banner in `StudioMeetingView.tsx` showing "Zatrzymanie za Ns — cisza wykryta" with a "Kontynuuj" button. Props propagate via `useRecorder` → `RecorderContext` → `TabRouter` → `StudioTab` (spread) → `StudioMeetingView`.
+Result: Implemented silence auto-stop in `useAudioHardware.ts`. AnalyserNode frequency data is checked every 20 animation frames; if max amplitude < 10/255 threshold for 3+ minutes (configurable via `silenceAutoStopMinutes`, default 3), recording stops automatically. 30s warning countdown exposed as `silenceCountdown` state. `resetSilenceTimer()` resets the counter. Added yellow warning banner in `StudioMeetingView.tsx` showing "Zatrzymanie za Ns Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ cisza wykryta" with a "Kontynuuj" button. Props propagate via `useRecorder` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ `RecorderContext` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ `TabRouter` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ `StudioTab` (spread) Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ `StudioMeetingView`.
 Side effects / follow-up: `silenceAutoStopMinutes` currently hardcoded to 3; could be exposed as a user preference.
 ## 050. [AUDIO] Chunked upload for large files (>10MB)
 Completed by: Claude
-Result: Files >10MB are now split into 2MB chunks in `mediaService.ts` `persistRecordingAudio()`. Client sends each chunk as `PUT /media/recordings/:id/audio/chunk?index=N&total=M`, then finalizes with `POST /media/recordings/:id/audio/finalize` (body: `{contentType, workspaceId, meetingId, total}`). Server assembles buffers from `{uploadDir}/chunks/` directory, calls `upsertMediaAsset`, cleans up chunks, and runs audio quality analysis. Upload progress (0-90% per chunk, 100% on finalize) reported via `onProgress` callback passed from `recorderStore` — maps to `pipelineProgressPercent` 12-22% range during upload phase. Small files (<10MB) use the original single PUT endpoint unchanged.
-Side effects / follow-up: Chunks are cleaned up on successful finalize. Abandoned chunks (e.g. from failed uploads) accumulate in `{uploadDir}/chunks/` — could add TTL cleanup later.
-## 072. [SPEAKER] Pyannote.audio — zaawansowana diaryzacja serwera
+Result: Files >10MB are now split into 2MB chunks in `mediaService.ts` `persistRecordingAudio()`. Client sends each chunk as `PUT /media/recordings/:id/audio/chunk?index=N&total=M`, then finalizes with `POST /media/recordings/:id/audio/finalize` (body: `{contentType, workspaceId, meetingId, total}`). Server assembles buffers from `{uploadDir}/chunks/` directory, calls `upsertMediaAsset`, cleans up chunks, and runs audio quality analysis. Upload progress (0-90% per chunk, 100% on finalize) reported via `onProgress` callback passed from `recorderStore` Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ maps to `pipelineProgressPercent` 12-22% range during upload phase. Small files (<10MB) use the original single PUT endpoint unchanged.
+Side effects / follow-up: Chunks are cleaned up on successful finalize. Abandoned chunks (e.g. from failed uploads) accumulate in `{uploadDir}/chunks/` Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ could add TTL cleanup later.
+## 072. [SPEAKER] Pyannote.audio Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ zaawansowana diaryzacja serwera
 Completed by: Claude
 Result: Pyannote.audio diarization was already implemented in `server/diarize.py` and `server/audioPipeline.ts` (activated when `HF_TOKEN` set). Added missing `VOICELOG_DIARIZER=auto|pyannote|openai` toggle to `server/config.ts`. In `audioPipeline.ts`, `VOICELOG_DIARIZER=openai` skips pyannote even if HF_TOKEN present; `pyannote` forces pyannote; `auto` (default) uses pyannote when HF_TOKEN available. `server/requirements.txt` already contains `pyannote.audio>=3.1.0`, `torch>=2.0.0`, `torchaudio>=2.0.0`.
 Side effects / follow-up: Set `VOICELOG_DIARIZER=openai` to bypass pyannote and use GPT-4o-mini diarization only.
@@ -1095,3 +1127,12 @@ Side effects / follow-up: Set `VOICELOG_DIARIZER=openai` to bypass pyannote and 
 Completed by: Claude
 Result: Added `splitSegmentsByWordSpeaker(whisperRawSegments, pyannoteSegments)` and `findPyannoteSpeakerAt(timestamp, pyannoteSegments)` to `server/audioPipeline.ts`. When Whisper returns per-word timestamps (`timestamp_granularities: ["segment","word"]`) AND pyannote is active, each word is assigned to the pyannote speaker at its start timestamp; consecutive words with the same speaker are grouped into sub-segments. Whisper segments are split at speaker boundaries. Falls back to segment-level `mergeWithPyannote` when no word timestamps are available.
 Side effects / follow-up: Word-level result segments include a `words` array with per-word `{word, start, end}` data for future use.
+## 036. Backup i restore danych workspace (JSON export/import)
+Completed by: Codex
+Result: Dodano eksport backupu workspace do JSON oraz import z podgladem zmian i scalaniem danych po id dla meetings, manualTasks, taskState, taskBoards, calendarMeta i vocabulary.
+Side effects / follow-up: backup nie zawiera audio blobow; import dziala jako merge do aktualnego stanu i sygnalizuje liczbe nowych spotkan oraz zadan przed zatwierdzeniem.
+
+## 020. Dostepnosc i keyboard-only flows
+Completed by: Codex
+Result: Dodano jawne etykiety ARIA dla kluczowych przyciskow topbara, poprawiono type/button dla akcji retry, oraz dodano keyboard-focused smoke test dla topbara i Ctrl+K command palette.
+Side effects / follow-up: krytyczne akcje w topbarze sa teraz latwiejsze do odczytania przez czytniki ekranowe; kolejne ulepszenia moga dotyczyc pelnego axe-core smoke testu w CI.
