@@ -377,9 +377,11 @@ export default function useMeetings() {
         Promise.allSettled(
           recordings.map((rec) =>
             media.deleteRecording
-              ? media.deleteRecording(rec.id || rec.recordingId).catch((e) =>
-                  console.warn("Delete recording failed:", e)
-                )
+              ? media.deleteRecording(rec.id || rec.recordingId).catch((e) => {
+                  if ((e as any)?.status !== 404) {
+                    console.warn("Delete recording failed:", e);
+                  }
+                })
               : Promise.resolve()
           )
         ).catch(() => {});

@@ -27,10 +27,13 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     if (!force && audioUrlsRef.current[recordingId]) {
       return audioUrlsRef.current[recordingId];
     }
-    if (!force && audioHydrationStatusRef.current[recordingId] === "loading") {
+    const currentStatus = audioHydrationStatusRef.current[recordingId];
+    if (!force && (currentStatus === "loading" || currentStatus === "error")) {
       return null;
     }
 
+    // Update ref synchronously to prevent duplicate requests before React re-renders
+    audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "loading" };
     setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "loading" }));
     setAudioHydrationErrors((prev) => {
       if (!prev[recordingId]) return prev;
@@ -46,6 +49,7 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
       }
 
       const nextUrl = URL.createObjectURL(blob);
+      audioUrlsRef.current = { ...audioUrlsRef.current, [recordingId]: nextUrl };
       setAudioUrls((prev) => {
         const existing = prev[recordingId];
         if (existing) {
@@ -53,10 +57,15 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
         }
         return { ...prev, [recordingId]: nextUrl };
       });
+      audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "ready" };
       setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "ready" }));
       return nextUrl;
     } catch (error) {
-      console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
+      const is404 = (error as any)?.status === 404;
+      if (!is404) {
+        console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
+      }
+      audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "error" };
       setAudioHydrationErrors((prev) => ({
         ...prev,
         [recordingId]: error.message || "Blad ladowania audio",
@@ -77,62 +86,43 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
       return;
     }
 
-    let cancelled = false;
     const recordingIds = new Set(userMeetings.flatMap((meeting) => (meeting.recordings || []).map((recording) => recording.id)));
-
-    async function hydrateAudio() {
-      for (const rid of recordingIds) {
-        if (cancelled || audioUrlsRef.current[rid]) continue;
-        if (audioHydrationStatusRef.current[rid] === "loading") continue;
-        // Skip recordings that already failed — prevents 404 error spam for deleted files
-        if (audioHydrationStatusRef.current[rid] === "error") continue;
-        await hydrateRecordingAudio(rid);
-      }
-
-      if (cancelled) return;
-
-      setAudioUrls((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.entries(prev).forEach(([rid, url]) => {
-          if (!recordingIds.has(rid)) {
-            revokeAudioUrl(url);
-            delete next[rid];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
+    setAudioUrls((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      Object.entries(prev).forEach(([rid, url]) => {
+        if (!recordingIds.has(rid)) {
+          revokeAudioUrl(url);
+          delete next[rid];
+          changed = true;
+        }
       });
+      return changed ? next : prev;
+    });
 
-      setAudioHydrationStatusByRecordingId((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.keys(prev).forEach((rid) => {
-          if (!recordingIds.has(rid)) {
-            delete next[rid];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
+    setAudioHydrationStatusByRecordingId((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      Object.keys(prev).forEach((rid) => {
+        if (!recordingIds.has(rid)) {
+          delete next[rid];
+          changed = true;
+        }
       });
+      return changed ? next : prev;
+    });
 
-      setAudioHydrationErrors((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.keys(prev).forEach((rid) => {
-          if (!recordingIds.has(rid)) {
-            delete next[rid];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
+    setAudioHydrationErrors((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      Object.keys(prev).forEach((rid) => {
+        if (!recordingIds.has(rid)) {
+          delete next[rid];
+          changed = true;
+        }
       });
-    }
-
-    hydrateAudio();
-    return () => {
-      cancelled = true;
-    };
+      return changed ? next : prev;
+    });
   }, [hydrateRecordingAudio, userMeetings]);
 
   useEffect(() => () => {
