@@ -90,6 +90,9 @@ const ACOUSTIC_FEATURES_SCRIPT = path.join(__dirname, "acoustic_features.py");
 const VAD_ENABLED = config.VAD_ENABLED;
 const VOICELOG_DIARIZER = config.VOICELOG_DIARIZER || "auto";
 const PER_SPEAKER_NORM = config.VOICELOG_PER_SPEAKER_NORM;
+const PROCESSING_MODE_DEFAULT = config.VOICELOG_PROCESSING_MODE_DEFAULT || "fast";
+const CHUNK_VAD_ENABLED = config.VOICELOG_ENABLE_CHUNK_VAD;
+const POSTPROCESS_ENABLED = config.VOICELOG_ENABLE_POSTPROCESS;
 
 // Enable verbose pipeline logging with VOICELOG_DEBUG=true
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
@@ -132,6 +135,42 @@ function isPathInside(childPath: string, parentPath: string) {
 
 function isPreprocessCacheFile(filePath: string) {
   return Boolean(filePath && isPathInside(filePath, getPreprocessCacheDir()));
+}
+
+async function materializeAssetToLocal(assetOrPath: any, options: any = {}) {
+  const sourcePath = typeof assetOrPath === "string" ? assetOrPath : assetOrPath?.file_path;
+  const contentType =
+    options.contentType ||
+    (typeof assetOrPath === "object" && assetOrPath ? assetOrPath.content_type : "") ||
+    "";
+
+  if (!sourcePath) {
+    throw new Error("Brak sciezki do pliku audio.");
+  }
+
+  if (!isRemoteAudioPath(sourcePath)) {
+    return {
+      localPath: sourcePath,
+      wasDownloaded: false,
+      cleanup: async () => {},
+    };
+  }
+
+  const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
+  const buffer = await downloadAudioFromStorage(sourcePath);
+  const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
+  const uploadDir = getUploadDir();
+  const tempFilePath = path.join(uploadDir, `temp_materialize_${crypto.randomUUID()}${ext}`);
+  fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
+  await fs.promises.writeFile(tempFilePath, Buffer.from(buffer));
+
+  return {
+    localPath: tempFilePath,
+    wasDownloaded: true,
+    cleanup: async () => {
+      try { await fs.promises.unlink(tempFilePath); } catch (_) {}
+    },
+  };
 }
 
 async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
@@ -435,9 +474,9 @@ function splitSegmentsByWordSpeaker(whisperRawSegments: any[], pyannoteSegments:
 function extractAudioSegmentMemory(filePath: string, start: number, duration: number, signal: any): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const child = spawn(FFMPEG_BINARY, [
-      "-y", "-i", filePath,
       "-ss", String(start),
       "-t", String(duration),
+      "-y", "-i", filePath,
       "-ar", "16000", "-ac", "1",
       "-f", "wav", "pipe:1"
     ], { stdio: ["ignore", "pipe", "ignore"], signal });
@@ -563,7 +602,11 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
 
   const payloads = [];
-  const CONCURRENCY_LIMIT = 2;
+  const CONCURRENCY_LIMIT = config.STT_CONCURRENCY_LIMIT || 6;
+  const existingPayloads = new Map(
+    (Array.isArray(options.existingChunkPayloads) ? options.existingChunkPayloads : []).map((entry: any) => [Number(entry.offsetSeconds || 0), entry])
+  );
+  const useChunkVad = CHUNK_VAD_ENABLED && !options.skipChunkVAD;
   let offsetSeconds = 0;
   let hasMore = true;
 
@@ -577,7 +620,7 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
       offsetSeconds += CHUNK_DURATION_SECONDS - CHUNK_OVERLAP_SECONDS;
 
       batchPromises.push((async () => {
-        const diagnostics = {
+        const diagnostics: any = {
           extracted: false,
           discardedAsTooSmall: false,
           vadFlaggedSilent: false,
@@ -588,6 +631,10 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
           hasWords: false,
           hasText: false,
         };
+        const existing = existingPayloads.get(currentOffset);
+        if (existing && !existing?.diagnostics?.sttFailed) {
+          return existing;
+        }
         // Wyciągnij chunk audio prosto do bufora RAM (z pominięciem zapisu dyskowego)
         const buffer = await extractAudioSegmentMemory(filePath, currentOffset, CHUNK_DURATION_SECONDS, options.signal);
         diagnostics.extracted = true;
@@ -601,14 +648,23 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
         // Silero VAD. Python nadal wymaga testowej ścieżki więc zrzucamy bufor jako temp file, 
         // system operacyjny przechwyci to w locie pamięci cache RAM-u (tmpfs).
         let chunkSpeech: any = null;
-        if (VAD_ENABLED) {
-          const os = await import("os");
+        if (useChunkVad) {
           const tmpVad = path.join(os.tmpdir(), `vadsilero_${crypto.randomUUID()}.wav`);
-          fs.writeFileSync(tmpVad, buffer);
-          chunkSpeech = await runSileroVAD(tmpVad, options.signal);
-          try { fs.unlinkSync(tmpVad); } catch (_) {}
+          await fs.promises.writeFile(tmpVad, buffer);
+          try {
+            chunkSpeech = await runSileroVAD(tmpVad, options.signal);
+          } finally {
+            try { await fs.promises.unlink(tmpVad); } catch (_) {}
+          }
         }
         diagnostics.vadFlaggedSilent = Boolean(chunkSpeech && chunkSpeech.length === 0);
+        if (diagnostics.vadFlaggedSilent) {
+          return {
+            payload: null,
+            offsetSeconds: currentOffset,
+            diagnostics,
+          };
+        }
 
         try {
           diagnostics.sentToStt = true;
@@ -677,16 +733,12 @@ async function analyzeAudioQuality(filePath: string, options: any = {}) {
 
   let tempFilePath = "";
   try {
-    // If filePath is a Supabase Storage path (no path separators), download to temp
-    if (filePath && !filePath.includes(path.sep) && !filePath.includes("/")) {
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
-      const buffer = await downloadAudioFromStorage(filePath);
-      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(options.contentType || "").toLowerCase()] || ".bin";
-      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-      tempFilePath = path.join(uploadDir, `temp_analyze_${crypto.randomUUID()}${ext}`);
-      fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
-      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
-      filePath = tempFilePath;
+    if (options.localSourcePath) {
+      filePath = options.localSourcePath;
+    } else if (isRemoteAudioPath(filePath)) {
+      const materialized = await materializeAssetToLocal({ file_path: filePath, content_type: options.contentType }, options);
+      tempFilePath = materialized.localPath;
+      filePath = materialized.localPath;
     }
 
     if (!fs.existsSync(filePath)) return { error: "File not found" };
@@ -1131,9 +1183,13 @@ async function runTranscriptionAttempt(
   attemptCount: 1 | 2 = 1
 ) {
   const notify = (p: number, m: string) => { if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m }) };
+  const processingMode = options.processingMode === "full" ? "full" : PROCESSING_MODE_DEFAULT;
+  const skipEarlyPyannote = typeof options.skipEarlyPyannote === "boolean" ? options.skipEarlyPyannote : processingMode !== "full";
+  const skipSpeechVAD = typeof options.skipChunkVAD === "boolean" ? options.skipChunkVAD : processingMode !== "full";
+  const skipVoiceProfileMatch = typeof options.skipVoiceProfileMatch === "boolean" ? options.skipVoiceProfileMatch : processingMode !== "full";
 
   let tempFilePath = "";
-  let workingFilePath = options.workingFilePath || asset.file_path;
+  let workingFilePath = options.localSourcePath || options.workingFilePath || asset.file_path;
   let prepPath = options.preprocessedFilePath || "";
   const preprocessCacheKey = options.preprocessCacheKey || "";
   
@@ -1143,17 +1199,11 @@ async function runTranscriptionAttempt(
     }
 
     // If the caller did not already materialize a local file, download remote storage once.
-    if (!options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
+    if (!options.localSourcePath && !options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
       notify(10, "Pobieranie nagrania z bazy danych...");
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
-      const buffer = await downloadAudioFromStorage(workingFilePath);
-      
-      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";
-      const uploadDir = getUploadDir();
-      tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
-      fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
-      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
-      workingFilePath = tempFilePath;
+      const materialized = await materializeAssetToLocal(asset, options);
+      tempFilePath = materialized.localPath;
+      workingFilePath = materialized.localPath;
     }
 
     if (!fs.existsSync(workingFilePath)) {
@@ -1178,7 +1228,7 @@ async function runTranscriptionAttempt(
   // Results are cached and reused in the main diarization step below.
   let earlyPyannoteSegments: any[] | null = null;
   let normFilePath = "";
-  const usePyannote = VOICELOG_DIARIZER !== "openai" && HF_TOKEN;
+  const usePyannote = !skipEarlyPyannote && VOICELOG_DIARIZER !== "openai" && HF_TOKEN;
   if (usePyannote && PER_SPEAKER_NORM) {
     try {
       notify(25, "Wstępna diaryzacja mówców (normalizacja głośności)...");
@@ -1202,8 +1252,11 @@ async function runTranscriptionAttempt(
     }
   }
 
-  notify(30, "Silero VAD - optymalizacja ciszy...");
-  const speechSegments: any = await runSileroVAD(transcribeFilePath, options.signal);
+  let speechSegments: any = null;
+  if (!skipSpeechVAD) {
+    notify(30, "Silero VAD - optymalizacja ciszy...");
+    speechSegments = await runSileroVAD(transcribeFilePath, options.signal);
+  }
   if (DEBUG && speechSegments) {
     console.log(`[audioPipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
   }
@@ -1291,12 +1344,17 @@ async function runTranscriptionAttempt(
   const reqId = options.requestId || "internal-pipeline";
   const startTranscribe = performance.now();
   let lastTranscriptionError: any = null;
+  let reusableChunkPayloads: any[] = [];
 
   for (const model of modelsToTry) {
     const fields = { ...whisperFields, model };
     try {
       if (isLargeFile) {
-        const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields, options);
+        const chunkPayloads = await transcribeInChunks(transcribeFilePath, transcribeContentType, fields, {
+          ...options,
+          existingChunkPayloads: reusableChunkPayloads,
+        });
+        reusableChunkPayloads = chunkPayloads;
         whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
         sttProviderInfo = whisperPayload?.sttProviderInfo || null;
         transcriptionDiagnostics = {
@@ -1376,15 +1434,21 @@ async function runTranscriptionAttempt(
         if (isLargeFile) {
           const chunkPayloads = await transcribeInChunks(
             transcribeFilePath, transcribeContentType, fallbackFields,
-            { ...options, sttApiKey: OPENAI_API_KEY, sttBaseUrl: OPENAI_BASE_URL }
+            {
+              ...options,
+              sttApiKey: OPENAI_API_KEY,
+              sttBaseUrl: OPENAI_BASE_URL,
+              existingChunkPayloads: reusableChunkPayloads,
+            }
           );
+          reusableChunkPayloads = chunkPayloads;
           whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
           transcriptionDiagnostics = {
             ...transcriptionDiagnostics,
             ...(whisperPayload?.transcriptionDiagnostics || {}),
           };
         } else {
-          whisperPayload = await requestAudioTranscription({
+          const sttResult = await requestAudioTranscription({
             filePath: transcribeFilePath,
             contentType: transcribeContentType,
             fields: fallbackFields,
@@ -1392,6 +1456,8 @@ async function runTranscriptionAttempt(
             apiKey: OPENAI_API_KEY,
             baseUrl: OPENAI_BASE_URL,
           });
+          whisperPayload = sttResult?.payload || null;
+          sttProviderInfo = sttResult;
         }
         if (whisperPayload) {
           lastTranscriptionError = null;
@@ -1430,7 +1496,7 @@ async function runTranscriptionAttempt(
   // "openai" = skip pyannote, always use GPT-4o-mini transcript diarization
   let diarization = null;
   const startDiarize = performance.now();
-  if (usePyannote) {
+  if (processingMode === "full" && usePyannote) {
     notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
     // Reuse early pyannote result if per-speaker normalization already ran it; otherwise run now.
     const pyannoteSegments = earlyPyannoteSegments ?? await runPyannoteDiarization(transcribeFilePath, options.signal);
@@ -1453,7 +1519,7 @@ async function runTranscriptionAttempt(
   // ── Fall back to GPT-4o-mini transcript-based diarization ──
   // NOTE: "gpt-4o-transcribe-diarize" and "diarized_json" do not exist in OpenAI public API.
   // Instead, we use GPT-4o-mini to infer speaker changes from conversation text + timing.
-  if (!diarization) {
+  if (!diarization && processingMode === "full") {
     if (DEBUG) console.log("[audioPipeline] Pyannote unavailable — using GPT-4o-mini transcript diarization.");
     notify(80, "Analiza semantyczna GPT-4o-mini celem wyizolowania rozmówców...");
     try {
@@ -1526,7 +1592,8 @@ async function runTranscriptionAttempt(
   // Speaker identification against enrolled voice profiles
   const identifiedNames = { ...diarization.speakerNames };
   const voiceProfiles = options.voiceProfiles || [];
-  if (voiceProfiles.length && diarization.speakerCount > 0) {
+  if (!skipVoiceProfileMatch && voiceProfiles.length && diarization.speakerCount > 0) {
+    const voiceMatchSourcePath = options.localSourcePath || workingFilePath || asset.file_path;
     // For each unique speaker, find the time range of their segments and match
     const speakerSegmentMap = new Map();
     for (const seg of diarization.segments) {
@@ -1540,7 +1607,7 @@ async function runTranscriptionAttempt(
       const totalSpeakerTime = segments.reduce((sum, s) => sum + (s.endTimestamp - s.timestamp), 0);
       if (totalSpeakerTime < 2) continue; // not enough audio to identify
 
-      const clipPath = path.join(path.dirname(asset.file_path), `spk_${asset.id}_${speakerId}_clip.wav`);
+      const clipPath = path.join(path.dirname(voiceMatchSourcePath), `spk_${asset.id}_${speakerId}_clip.wav`);
       try {
         // Build ffmpeg filter — sanitize timestamps to prevent command injection
         const safeSegments = segments.slice(0, 8).filter((s) => {
@@ -1553,7 +1620,7 @@ async function runTranscriptionAttempt(
           .map((s) => `between(t,${Number(s.timestamp).toFixed(3)},${Number(s.endTimestamp).toFixed(3)})`)
           .join("+");
         await execPromise(
-          `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
+          `"${FFMPEG_BINARY}" -y -i "${voiceMatchSourcePath}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
           { timeout: 30000, signal: options.signal }
         );
         const matchResult = await matchSpeakerToProfile(clipPath, voiceProfiles);
@@ -1613,6 +1680,8 @@ async function runTranscriptionAttempt(
     providerId: sttProviderInfo?.providerId || "stt-pipeline",
     providerLabel: sttProviderInfo?.providerLabel || "STT + diarization",
     pipelineStatus: "completed",
+    enhancementsPending: processingMode === "fast" && POSTPROCESS_ENABLED,
+    postprocessStage: processingMode === "fast" && POSTPROCESS_ENABLED ? "queued" : "",
     transcriptOutcome: "normal",
     emptyReason: "",
     userMessage: "",
@@ -1665,13 +1734,15 @@ async function runTranscriptionAttempt(
 }
 
 async function transcribeRecording(asset: any, options: any = {}) {
+  const processingMode = options.processingMode === "full" ? "full" : PROCESSING_MODE_DEFAULT;
   let audioQuality = resolveStoredAudioQuality(asset);
 
   if (!audioQuality) {
     try {
       audioQuality = await Promise.race([
-        analyzeAudioQuality(asset.file_path, {
+        analyzeAudioQuality(options.localSourcePath || asset.file_path, {
           contentType: asset.content_type,
+          localSourcePath: options.localSourcePath,
           signal: options.signal,
         }),
         new Promise((resolve) => setTimeout(() => resolve(null), 250)),
@@ -1687,7 +1758,9 @@ async function transcribeRecording(asset: any, options: any = {}) {
   const initialProfile: "standard" | "enhanced" =
     audioQuality?.enhancementRecommended ? "enhanced" : "standard";
   const attemptProfiles: Array<"standard" | "enhanced"> =
-    initialProfile === "standard" ? ["standard", "enhanced"] : ["enhanced"];
+    processingMode === "full"
+      ? (initialProfile === "standard" ? ["standard", "enhanced"] : ["enhanced"])
+      : [initialProfile];
   const preprocessPlan = new Map(
     attemptProfiles.map((profile) => {
       const cacheKey = buildAudioPreprocessCacheKey(asset, profile);
@@ -1696,23 +1769,19 @@ async function transcribeRecording(asset: any, options: any = {}) {
   );
 
   let sourceTempPath = "";
-  let sourceFilePath = asset.file_path;
-  const remoteSource = isRemoteAudioPath(asset.file_path);
+  let sourceFilePath = options.localSourcePath || asset.file_path;
+  const remoteSource = isRemoteAudioPath(sourceFilePath);
   const needsSourceMaterialization =
     remoteSource &&
+    !options.localSourcePath &&
     (!AUDIO_PREPROCESS ||
       !attemptProfiles.every((profile) => fs.existsSync(preprocessPlan.get(profile)?.cachePath || "")));
 
   if (needsSourceMaterialization && remoteSource) {
     try {
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
-      const buffer = await downloadAudioFromStorage(asset.file_path);
-      const ext = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(asset.content_type || "").toLowerCase()] || ".bin";
-      const uploadDir = getUploadDir();
-      sourceTempPath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
-      fs.mkdirSync(path.dirname(sourceTempPath), { recursive: true });
-      fs.writeFileSync(sourceTempPath, Buffer.from(buffer));
-      sourceFilePath = sourceTempPath;
+      const materialized = await materializeAssetToLocal(asset, options);
+      sourceTempPath = materialized.localPath;
+      sourceFilePath = materialized.localPath;
     } catch (error: any) {
       if (!options.signal?.aborted) {
         console.warn("[audioPipeline] Failed to materialize remote audio source:", error?.message || error);
@@ -1730,11 +1799,12 @@ async function transcribeRecording(asset: any, options: any = {}) {
       const attemptCount = Math.min(index + 1, 2) as 1 | 2;
       const plan = preprocessPlan.get(profile);
       const profileWorkingFilePath = plan?.cachePath && fs.existsSync(plan.cachePath) ? plan.cachePath : sourceFilePath;
-      const profileOptions = {
-        ...options,
-        workingFilePath: profileWorkingFilePath,
-        workingContentType: profileWorkingFilePath === plan?.cachePath ? "audio/wav" : asset.content_type,
-        preprocessedFilePath: profileWorkingFilePath === plan?.cachePath ? plan.cachePath : "",
+        const profileOptions = {
+          ...options,
+          processingMode,
+          workingFilePath: profileWorkingFilePath,
+          workingContentType: profileWorkingFilePath === plan?.cachePath ? "audio/wav" : asset.content_type,
+          preprocessedFilePath: profileWorkingFilePath === plan?.cachePath ? plan.cachePath : "",
         preprocessCacheKey: plan?.cacheKey || "",
       };
 
@@ -1879,8 +1949,16 @@ async function extractSpeakerAudioClip(asset: any, speakerId: string | number, s
 
   if (!validSegs.length) throw new Error("Brak segmentów z poprawnymi znacznikami czasu.");
 
+  let cleanupLocalSource = async () => {};
+  let sourcePath = options.localSourcePath || asset.file_path;
+  if (isRemoteAudioPath(sourcePath)) {
+    const materialized = await materializeAssetToLocal(asset, options);
+    sourcePath = materialized.localPath;
+    cleanupLocalSource = materialized.cleanup;
+  }
+
   const clipPath = path.join(
-    path.dirname(asset.file_path),
+    path.dirname(sourcePath),
     `speaker_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, "")}_${crypto.randomUUID().slice(0,8)}.wav`
   );
 
@@ -1891,10 +1969,14 @@ async function extractSpeakerAudioClip(asset: any, speakerId: string | number, s
     )
     .join("+");
 
-  await execPromise(
-    `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
-    { timeout: 30000, signal: options.signal }
-  );
+  try {
+    await execPromise(
+      `"${FFMPEG_BINARY}" -y -i "${sourcePath}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
+      { timeout: 30000, signal: options.signal }
+    );
+  } finally {
+    await cleanupLocalSource();
+  }
 
   return clipPath;
 }
@@ -2184,4 +2266,5 @@ export {
   buildAudioPreprocessCacheKey,
   getPreprocessCachePath,
   isPreprocessCacheFile,
+  materializeAssetToLocal,
 };
