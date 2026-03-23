@@ -120,6 +120,9 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
   const [coaching, setCoaching] = useState({});
   const [loading, setLoading] = useState({});
   const [coachingError, setCoachingError] = useState({});
+  const [acousticMetrics, setAcousticMetrics] = useState({});
+  const [acousticLoading, setAcousticLoading] = useState(false);
+  const [acousticError, setAcousticError] = useState("");
 
   async function fetchCoaching(speakerId) {
     if (!recordingId || loading[speakerId]) return;
@@ -141,11 +144,38 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
     }
   }
 
+  async function fetchAcousticMetrics() {
+    if (!recordingId || acousticLoading || Object.keys(acousticMetrics).length > 0) return;
+    setAcousticLoading(true);
+    setAcousticError("");
+    try {
+      const response = await apiRequest(`/media/recordings/${recordingId}/acoustic-features`, {
+        method: "POST",
+      });
+      setAcousticMetrics(
+        Object.fromEntries(
+          (Array.isArray(response?.speakers) ? response.speakers : []).map((speaker) => [String(speaker.speakerId), speaker])
+        )
+      );
+    } catch (err) {
+      setAcousticError(err.message || "Nie udalo sie pobrac metryk akustycznych.");
+    } finally {
+      setAcousticLoading(false);
+    }
+  }
+
+  function formatMetricValue(value, suffix = "") {
+    if (!Number.isFinite(Number(value))) return "-";
+    return `${Number(value).toFixed(Number(value) >= 100 ? 0 : 1)}${suffix}`;
+  }
+
   if (!stats.length) return null;
 
   return (
     <div className="ff-voice-stats-list">
-      {stats.map((stat) => (
+      {stats.map((stat) => {
+        const metrics = acousticMetrics[stat.speakerId];
+        return (
         <div key={stat.speakerId} className="ff-voice-stat-card">
           <div className="ff-voice-stat-header">
             <span
@@ -176,11 +206,42 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
               </span>
             )}
           </div>
+          {metrics ? (
+            <div className="ff-voice-acoustic-grid">
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics.f0Hz, " Hz")}</strong>
+                <small>F0</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics.jitterLocal, "%")}</strong>
+                <small>jitter</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics.shimmerLocalDb, " dB")}</strong>
+                <small>shimmer</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics.hnrDb, " dB")}</strong>
+                <small>HNR</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics?.formantsHz?.f1, " Hz")}</strong>
+                <small>F1</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatMetricValue(metrics?.formantsHz?.f2, " Hz")}</strong>
+                <small>F2</small>
+              </span>
+            </div>
+          ) : null}
           {coaching[stat.speakerId] ? (
             <div className="ff-voice-coaching-text">{coaching[stat.speakerId]}</div>
           ) : null}
           {coachingError[stat.speakerId] ? (
             <div className="ff-voice-coaching-error">{coachingError[stat.speakerId]}</div>
+          ) : null}
+          {acousticError ? (
+            <div className="ff-voice-coaching-error">{acousticError}</div>
           ) : null}
           {recordingId && remoteApiEnabled() ? (
             <button
@@ -196,8 +257,22 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
                   : "Analiza głosu AI"}
             </button>
           ) : null}
+          {recordingId && remoteApiEnabled() ? (
+            <button
+              type="button"
+              className="ff-voice-coaching-btn secondary"
+              onClick={fetchAcousticMetrics}
+              disabled={acousticLoading}
+            >
+              {acousticLoading
+                ? "Licze cechy akustyczne..."
+                : metrics
+                  ? "Metryki akustyczne gotowe"
+                  : "Cechy akustyczne"}
+            </button>
+          ) : null}
         </div>
-      ))}
+      )})}
     </div>
   );
 }
@@ -352,6 +427,7 @@ export default function StudioMeetingView({
   selectedMeetingQueue,
   elapsed,
   visualBars,
+  voiceActivityStatus,
   isPaused,
   stopRecording,
   startRecording,
@@ -384,6 +460,7 @@ export default function StudioMeetingView({
   currentWorkspacePermissions,
   currentWorkspaceRole,
   currentWorkspace,
+  currentUser,
   userMeetings,
   meetingTasks,
   onCreateTask,
@@ -509,6 +586,7 @@ export default function StudioMeetingView({
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
+  const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<any>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
@@ -521,6 +599,7 @@ export default function StudioMeetingView({
 
   const audioRef = useRef(null);
   const virtuosoRef = useRef(null);
+  const autoLearnSpeakerProfiles = Boolean(currentUser?.autoLearnSpeakerProfiles);
 
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -840,6 +919,40 @@ export default function StudioMeetingView({
     setSpeakerDropdownSegId(null);
   }, [updateTranscriptSegment]);
 
+  const showVoiceProfileToast = useCallback((speakerName) => {
+    setVoiceProfileToast(speakerName);
+    if (typeof window !== "undefined") {
+      window.setTimeout(() => setVoiceProfileToast(null), 3500);
+    }
+  }, []);
+
+  const enrollSpeakerProfile = useCallback(async (speakerId, speakerName) => {
+    if (typeof autoCreateVoiceProfile !== "function") return false;
+    const enrolled = await autoCreateVoiceProfile(speakerId, speakerName);
+    if (enrolled) {
+      showVoiceProfileToast(speakerName);
+    }
+    return enrolled;
+  }, [autoCreateVoiceProfile, showVoiceProfileToast]);
+
+  const commitSpeakerRename = useCallback((speakerId, speakerName) => {
+    const nextName = String(speakerName || "").trim();
+    if (!nextName || typeof renameSpeaker !== "function") return;
+
+    renameSpeaker(speakerId, nextName);
+    if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(nextName)) return;
+
+    if (autoLearnSpeakerProfiles) {
+      enrollSpeakerProfile(speakerId, nextName).catch(() => undefined);
+      return;
+    }
+
+    setPendingVoiceProfileEnrollment({
+      speakerId,
+      speakerName: nextName,
+    });
+  }, [autoCreateVoiceProfile, autoLearnSpeakerProfiles, enrollSpeakerProfile, renameSpeaker]);
+
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
     if (!selectedRecording?.id || !remoteApiEnabled()) return;
@@ -876,7 +989,18 @@ export default function StudioMeetingView({
     setSketchnoteIsLocal(true);
     setSketchnoteUrl(fallbackSketchnoteUrl);
     try {
-      const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, { method: "POST" });
+      const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, {
+        method: "POST",
+        body: {
+          summary: sketchnoteSummaryText,
+          decisions: safeArray(studioAnalysis?.decisions).map((d) => String(typeof d === "object" ? (d as any)?.title || (d as any)?.text || "" : d || "").trim()).filter(Boolean),
+          actionItems: autoTaskDrafts.slice(0, 6).map((t) => t.title).filter(Boolean),
+          followUps: followUps.slice(0, 4),
+          risks: risks.slice(0, 3).map((r: any) => typeof r === "object" ? r?.risk || r?.title || String(r) : String(r)),
+          blockers: blockers.slice(0, 3),
+          keyQuotes: safeArray(studioAnalysis?.keyQuotes).slice(0, 2).map((q: any) => typeof q === "object" ? q?.text || q?.quote || String(q) : String(q)),
+        },
+      });
       if (res?.sketchnoteUrl) {
         setSketchnoteUrl(res.sketchnoteUrl);
         setSketchnoteIsLocal(false);
@@ -893,7 +1017,7 @@ export default function StudioMeetingView({
     } finally {
       setIsGeneratingSketchnote(false);
     }
-  }, [selectedRecording?.id, sketchnoteSummaryText, summaryBullets]);
+  }, [selectedRecording?.id, sketchnoteSummaryText, summaryBullets, autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions, studioAnalysis?.keyQuotes]);
 
   useEffect(() => {
     if (displayRecording?.diarization?.sketchnoteUrl) {
@@ -2171,17 +2295,7 @@ export default function StudioMeetingView({
                                 onChange={(e) => setRenameValue(e.target.value)}
                                 onBlur={() => {
                                   const name = renameValue.trim();
-                                  if (name && renameSpeaker) {
-                                    renameSpeaker(seg.speakerId, name);
-                                    if (autoCreateVoiceProfile) {
-                                      autoCreateVoiceProfile(seg.speakerId, name).then((ok) => {
-                                        if (ok) {
-                                          setVoiceProfileToast(name);
-                                          setTimeout(() => setVoiceProfileToast(null), 3500);
-                                        }
-                                      });
-                                    }
-                                  }
+                                  if (name) commitSpeakerRename(seg.speakerId, name);
                                   setRenamingSpeakerId(null);
                                 }}
                                 onKeyDown={(e) => {
@@ -2314,6 +2428,12 @@ export default function StudioMeetingView({
               <div className="ff-player-status-label" style={{ color: isPaused ? 'var(--text-muted)' : '#ef4444' }}>
                 {isPaused ? "Wstrzymano" : "Nagrywanie..."}
               </div>
+
+              {voiceActivityStatus !== "unsupported" ? (
+                <div className={`ff-vad-pill ${voiceActivityStatus === "active" ? "active" : ""}`}>
+                  {voiceActivityStatus === "active" ? "VAD: glos wykryty" : "VAD: cisza"}
+                </div>
+              ) : null}
 
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
                 <button
@@ -2499,6 +2619,40 @@ export default function StudioMeetingView({
           )}
         </div>
       )}
+      {pendingVoiceProfileEnrollment ? (
+        <div className="ff-modal-overlay" onClick={() => setPendingVoiceProfileEnrollment(null)}>
+          <div className="ff-modal-card ff-enrollment-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ff-modal-header">
+              <h2 className="ff-modal-title">Zapisac probke glosu?</h2>
+              <button className="ff-modal-close" onClick={() => setPendingVoiceProfileEnrollment(null)}>x</button>
+            </div>
+            <div className="ff-modal-body">
+              <p className="ff-enrollment-copy">
+                Zmieniono nazwe mowcy na <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>. Mozemy zapisac te probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly lepiej rozpoznawane.
+              </p>
+              <p className="ff-enrollment-copy muted">
+                Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.
+              </p>
+            </div>
+            <div className="ff-modal-footer">
+              <button className="ghost-button" onClick={() => setPendingVoiceProfileEnrollment(null)}>
+                Pomin
+              </button>
+              <button
+                className="ff-modal-download-btn"
+                onClick={async () => {
+                  const pending = pendingVoiceProfileEnrollment;
+                  setPendingVoiceProfileEnrollment(null);
+                  await enrollSpeakerProfile(pending.speakerId, pending.speakerName);
+                }}
+              >
+                Zapisz do profilu glosu
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isDownloadModalOpen && (
         <div className="ff-modal-overlay" onClick={() => setIsDownloadModalOpen(false)}>
           <div className="ff-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -2592,6 +2746,7 @@ StudioMeetingView.propTypes = {
   selectedMeetingQueue: PropTypes.array,
   elapsed: PropTypes.number,
   visualBars: PropTypes.array,
+  voiceActivityStatus: PropTypes.string,
   stopRecording: PropTypes.func,
   startRecording: PropTypes.func,
   retryRecordingQueueItem: PropTypes.func,
@@ -2620,6 +2775,7 @@ StudioMeetingView.propTypes = {
   currentWorkspacePermissions: PropTypes.object,
   currentWorkspaceRole: PropTypes.string,
   currentWorkspace: PropTypes.object,
+  currentUser: PropTypes.object,
   userMeetings: PropTypes.array,
   meetingTasks: PropTypes.array,
   onCreateTask: PropTypes.func,

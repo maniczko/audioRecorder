@@ -248,6 +248,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     return c.json({ coaching }, 200);
   });
 
+  router.post("/recordings/:recordingId/acoustic-features", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: "Nie znaleziono nagrania." }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+    const payload = await transcriptionService.getSpeakerAcousticFeatures(asset, { signal: c.req.raw.signal });
+    return c.json(payload, 200);
+  });
+
   router.post("/recordings/:recordingId/rediarize", async (c) => {
     const recordingId = c.req.param("recordingId");
     const asset = await transcriptionService.getMediaAsset(recordingId);
@@ -276,18 +285,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     let diarization: any = {};
     try { diarization = JSON.parse(asset.diarization_json || "{}"); } catch (_) {}
 
-    const summaryText = diarization?.reviewSummary?.summary || diarization?.summary;
+    // Accept analysis data from request body (frontend state) or fall back to stored diarization_json
+    const body: any = await c.req.json().catch(() => ({}));
+
+    const summaryText = body?.summary || diarization?.reviewSummary?.summary || diarization?.summary;
     if (!summaryText) return c.json({ message: "Brak podsumowania do wygenerowania sketchnotki." }, 400);
 
     const asList = (value: any) => (Array.isArray(value) ? value : [])
       .map((item) => String(typeof item === "object" ? item?.title || item?.text || item?.value || item?.label || "" : item || "").trim())
       .filter(Boolean);
-    const decisions = asList(diarization?.decisions);
-    const actionItems = asList(diarization?.actionItems || diarization?.tasks);
-    const followUps = asList(diarization?.followUps);
-    const risks = asList(diarization?.risks);
-    const blockers = asList(diarization?.blockers);
-    const quotes = asList(diarization?.keyQuotes).slice(0, 2);
+    const decisions = asList(body?.decisions || diarization?.decisions);
+    const actionItems = asList(body?.actionItems || diarization?.actionItems || diarization?.tasks);
+    const followUps = asList(body?.followUps || diarization?.followUps);
+    const risks = asList(body?.risks || diarization?.risks);
+    const blockers = asList(body?.blockers || diarization?.blockers);
+    const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
 
     if (!process.env.GEMINI_API_KEY) {
       return c.json({ message: "Brak klucza GEMINI_API_KEY w konfiguracji środowiska." }, 400);

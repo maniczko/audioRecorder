@@ -18,19 +18,9 @@ Kolejnosc prac:
 
 ## Otwarta kolejka
 
-### Claude
+### Codex
 
-- `057` [P2] `todo` - RNNoise worklet jako rzeczywisty model WASM
-  - Cel: wymienic obecna spektralna subtrakcje na RNNoise WASM.
-  - Akceptacja: fallback do obecnej metody, obsluga ramek 480 probek, opcjonalny VAD w UI.
-
-- `069` [P3] `todo` - korekta mowy jako aktualizacja profilu
-  - Cel: po zmianie nazwy mówcy zapisac ta wiedze do profilu glosu.
-  - Akceptacja: opcjonalny dialog enrolmentu, aktualizacja profilu, toggle auto-learn w ustawieniach.
-
-- `080` [P3] `todo` - acoustic features per speaker
-  - Cel: dodac analiza F0, jitter, shimmer, HNR i formantow.
-  - Akceptacja: endpoint z metrykami per speaker i widok w `VoiceSpeakerStats`.
+- Brak otwartych zadan.
 
 ### Qwen
 
@@ -43,6 +33,14 @@ Kolejnosc prac:
   - Zakres: render, interakcje, walidacja formularza, integracja z authStore.
 
 ### GPT
+
+- `079` [P3] `in_progress` - [CSS] Usuwanie `style={{...}}` z widoków
+  - Cel: Usunąć ~200 instancji inline styles z komponentów (StudioMeetingView, RecordingsTab itp.).
+  - Zastąpienie czytelnymi klasami i integracja z LayoutPrimitives.
+
+- `080` [P3] `todo` - [CSS] Konsolidacja plików i usunięcie `!important`
+  - Cel: Oczyszczenie `tasks.css` i `StudioMeetingViewStyles.css` oraz likwidacja tagów `!important`.
+  - Migracja kilkuset twardych bindowań paddingów/wielkości na tokeny z `index.css`.
 
 - `018` [P3] `todo` - Outlook / Microsoft To Do / Microsoft Calendar
   - Cel: rozszerzyc integracje poza ekosystem Google.

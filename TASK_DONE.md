@@ -4,6 +4,18 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 078. [CSS] Stworzenie globalnych tokenow
+Status: `done`
+Completed by: GPT
+Result: Przeniesiono globalne tokeny design systemu do `src/index.css` i rozszerzono je o spacing, radiuses, control heights, layout widths oraz theme primitives dla wariantow `dark`, `light` i `beaver`. Dodano aliasy kompatybilnosci dla starszych zmiennych (`--border`, `--surface`, `--foreground`, `--surface-1`, `--surface-2`, `--text-1`, `--text-2`), usunieto import `styles/variables.css` z `AppShell` i wyczyszczono zduplikowane deklaracje `:root` z `App.css`, dzieki czemu `src/index.css` jest teraz pojedynczym globalnym zrodlem prawdy.
+
+Jak testowac:
+```bash
+pnpm build
+```
+
+---
+
 ## 040. Email digest i powiadomienia poza przegladarka
 Status: `done`
 Completed by: GPT
@@ -1437,3 +1449,43 @@ Wynik:
 - Ă˘Ĺ›â€¦ TagInput.tsx: useMemo dependency naprawione
 - Ă˘Ĺ›â€¦ TaskDetailsPanel.tsx: unused variables usuniĂ„â„˘te
 - Ă˘Ĺ›â€¦ `npm run lint` przechodzi bez warningÄ‚Ĺ‚w
+---
+
+## 057. [Audio] RNNoise worklet jako rzeczywisty model WASM
+Status: `done`
+Wykonawca: `codex`
+Priorytet: `P2`
+Wynik:
+- frontendowy noise reducer korzysta teraz z `simple-rnnoise-wasm`
+- zachowany jest fallback do dotychczasowego `advanced-noise-worklet.js`
+- `useAudioHardware` odpytuje RNNoise o status VAD i wystawia go do UI
+- pasek nagrywania pokazuje prosty stan `VAD: glos wykryty` / `VAD: cisza`
+- testy `noiseReducerNode` zostaly zaktualizowane pod dynamiczny import RNNoise
+
+
+---
+
+## 069. [Voice Profiles] korekta mowy jako aktualizacja profilu
+Status: `done`
+Wykonawca: `codex`
+Priorytet: `P3`
+Wynik:
+- po zmianie nazwy mowcy aplikacja moze zapisac probke do profilu glosu
+- dodano dialog enrolmentu po rename speaker
+- dodano preferencje `autoLearnSpeakerProfiles` w profilu uzytkownika
+- w `ProfileTab` pojawil sie toggle `Auto-learn speaker profiles`
+- preferencja zapisuje sie w lokalnym auth/profile flow i ma testy regresyjne
+
+
+---
+
+## 080. [Audio Analytics] acoustic features per speaker
+Status: `done`
+Wykonawca: `codex`
+Priorytet: `P3`
+Wynik:
+- backend ma nowy endpoint `POST /media/recordings/:recordingId/acoustic-features`
+- `TranscriptionService` wycina clip per speaker i liczy metryki akustyczne
+- dodano skrypt `server/acoustic_features.py` oparty o Praat/Parselmouth
+- metryki obejmuja `F0`, `jitter`, `shimmer`, `HNR` i formanty `F1` / `F2`
+- `VoiceSpeakerStats` wyswietla metryki akustyczne per mowca po pobraniu z backendu
