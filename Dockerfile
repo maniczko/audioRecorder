@@ -23,7 +23,7 @@ COPY src/shared/ ./src/shared/
 RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
 
 # Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
-RUN node -e " \
+RUN cd server && node -e " \
   const fs=require('fs'); \
   const ffmpeg=require('ffmpeg-static'); \
   const ffprobe=require('ffprobe-static').path; \
