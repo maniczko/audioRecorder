@@ -61,6 +61,7 @@ describe("Topbar accessibility", () => {
   test("renders labelled controls and supports keyboard shortcuts", async () => {
     render(<Topbar />);
 
+    expect(screen.getByRole("button", { name: "Tab Studio" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nagraj ad hoc" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Otworz ustawienia" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Szukaj" })).toBeInTheDocument();

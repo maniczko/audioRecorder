@@ -49,6 +49,8 @@ export interface MediaTranscriptionResponse {
   providerId?: string;
   providerLabel?: string;
   pipelineStatus?: TranscriptionStatusPayload["pipelineStatus"] | "completed";
+  enhancementsPending?: boolean;
+  postprocessStage?: TranscriptionStatusPayload["postprocessStage"];
   transcriptOutcome?: TranscriptionStatusPayload["transcriptOutcome"];
   emptyReason?: TranscriptionStatusPayload["emptyReason"];
   userMessage?: string;
@@ -354,6 +356,8 @@ export function normalizeTranscriptionStatusPayload(asset: Partial<MeetingAsset>
   return {
     recordingId: String(asset?.id || ""),
     pipelineStatus: normalizePipelineStatus(String(asset?.transcription_status || "")),
+    enhancementsPending: Boolean(diarization?.enhancementsPending),
+    postprocessStage: String(diarization?.postprocessStage || "") as TranscriptionStatusPayload["postprocessStage"],
     transcriptOutcome: diarization?.transcriptOutcome || "normal",
     emptyReason: diarization?.emptyReason || "",
     userMessage: diarization?.userMessage || "",
@@ -390,6 +394,8 @@ export function normalizeMediaTranscriptionResponse(response: MediaTranscription
   return {
     recordingId: String((response as any)?.recordingId || ""),
     pipelineStatus: normalizePipelineStatus(String(response?.pipelineStatus || "queued")),
+    enhancementsPending: Boolean((diarization as any)?.enhancementsPending ?? response?.enhancementsPending),
+    postprocessStage: String((diarization as any)?.postprocessStage || response?.postprocessStage || "") as TranscriptionStatusPayload["postprocessStage"],
     transcriptOutcome: (diarization as any)?.transcriptOutcome || response?.transcriptOutcome || "normal",
     emptyReason: (diarization as any)?.emptyReason || response?.emptyReason || "",
     userMessage: (diarization as any)?.userMessage || response?.userMessage || "",

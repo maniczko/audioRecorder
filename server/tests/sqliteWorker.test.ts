@@ -1,283 +1,430 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DatabaseSync } from "node:sqlite";
+import { handleMessage } from "../sqliteWorker";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Test the sqliteWorker logic directly (without worker_threads)
-describe("sqliteWorker logic", () => {
-  let db: DatabaseSync;
+describe("sqliteWorker - handleMessage function", () => {
   let tempDbPath: string;
+  let db: DatabaseSync;
+  let initializedDb: DatabaseSync | null = null;
 
   beforeEach(() => {
-    tempDbPath = path.join(os.tmpdir(), `test_sqlite_${Date.now()}.db`);
+    tempDbPath = path.join(os.tmpdir(), `test_sqlite_worker_${Date.now()}.db`);
     db = new DatabaseSync(tempDbPath);
     db.exec("PRAGMA journal_mode = WAL;");
     db.exec("PRAGMA foreign_keys = ON;");
+    initializedDb = null;
   });
 
   afterEach(() => {
     try {
+      if (initializedDb && initializedDb !== db) {
+        initializedDb.close();
+      }
+    } catch (_) {}
+
+    try {
       db.close();
     } catch (_) {}
+
     if (fs.existsSync(tempDbPath)) {
       fs.unlinkSync(tempDbPath);
     }
-    // Clean up WAL files
     const walPath = tempDbPath + "-wal";
     const shmPath = tempDbPath + "-shm";
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
   });
 
-  describe("PRAGMA settings", () => {
-    it("sets WAL journal mode", () => {
-      const result = db.prepare("PRAGMA journal_mode").get();
-      expect(result.journal_mode).toBe("wal");
-    });
+  describe("init", () => {
+    it("initializes database with WAL mode and foreign keys", () => {
+      const initPath = path.join(os.tmpdir(), `test_init_${Date.now()}.db`);
 
-    it("enables foreign keys", () => {
-      const result = db.prepare("PRAGMA foreign_keys").get();
-      expect(result.foreign_keys).toBe(1);
+      try {
+        const response = handleMessage({ id: 1, type: "init", dbPath: initPath }, null);
+
+        expect(response.result).toBe("ok");
+        expect(response.db).toBeDefined();
+        expect(response.db).toBeInstanceOf(DatabaseSync);
+
+        // Store for cleanup
+        initializedDb = response.db;
+
+        // Verify WAL mode
+        const result = response.db.prepare("PRAGMA journal_mode").get();
+        expect(result.journal_mode).toBe("wal");
+
+        // Verify foreign keys
+        const fkResult = response.db.prepare("PRAGMA foreign_keys").get();
+        expect(fkResult.foreign_keys).toBe(1);
+      } finally {
+        if (fs.existsSync(initPath)) fs.unlinkSync(initPath);
+        if (fs.existsSync(initPath + "-wal")) fs.unlinkSync(initPath + "-wal");
+        if (fs.existsSync(initPath + "-shm")) fs.unlinkSync(initPath + "-shm");
+      }
     });
   });
 
-  describe("query operations", () => {
-    it("executes CREATE TABLE statement", () => {
-      db.exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)");
-      const result = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test'").get();
-      expect(result).toBeDefined();
+  describe("query", () => {
+    beforeEach(() => {
+      db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)");
     });
 
-    it("executes INSERT and retrieves data", () => {
-      db.exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)");
+    it("returns all rows matching the query", () => {
       db.prepare("INSERT INTO users (name, email) VALUES (?, ?)").run("Alice", "alice@example.com");
-      
-      const result = db.prepare("SELECT * FROM users WHERE name = ?").all("Alice");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Alice");
-      expect(result[0].email).toBe("alice@example.com");
+      db.prepare("INSERT INTO users (name, email) VALUES (?, ?)").run("Bob", "bob@example.com");
+
+      const response = handleMessage(
+        { id: 1, type: "query", sql: "SELECT * FROM users WHERE name = ?", params: ["Alice"] },
+        db
+      );
+
+      expect(response.result).toHaveLength(1);
+      expect(response.result[0].name).toBe("Alice");
+      expect(response.result[0].email).toBe("alice@example.com");
     });
 
-    it("returns single row with get operation", () => {
-      db.exec("CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)");
+    it("returns empty array when no rows match", () => {
+      const response = handleMessage(
+        { id: 1, type: "query", sql: "SELECT * FROM users WHERE name = ?", params: ["NonExistent"] },
+        db
+      );
+
+      expect(response.result).toEqual([]);
+    });
+  });
+
+  describe("get", () => {
+    beforeEach(() => {
+      db.exec("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, value TEXT)");
+    });
+
+    it("returns single row", () => {
       db.prepare("INSERT INTO items (value) VALUES (?)").run("test-value");
-      
-      const result = db.prepare("SELECT * FROM items WHERE value = ?").get("test-value");
-      expect(result).toBeDefined();
-      expect(result.value).toBe("test-value");
+
+      const response = handleMessage(
+        { id: 1, type: "get", sql: "SELECT * FROM items WHERE value = ?", params: ["test-value"] },
+        db
+      );
+
+      expect(response.result).toBeDefined();
+      expect(response.result.value).toBe("test-value");
     });
 
-    it("handles parameterized queries", () => {
-      db.exec("CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, price REAL)");
-      db.prepare("INSERT INTO products (name, price) VALUES (?, ?)").run("Widget", 9.99);
-      db.prepare("INSERT INTO products (name, price) VALUES (?, ?)").run("Gadget", 19.99);
-      
-      const result = db.prepare("SELECT * FROM products WHERE price > ?").all(10);
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Gadget");
+    it("returns undefined when no row matches", () => {
+      const response = handleMessage(
+        { id: 1, type: "get", sql: "SELECT * FROM items WHERE value = ?", params: ["nonexistent"] },
+        db
+      );
+
+      expect(response.result).toBeUndefined();
+    });
+  });
+
+  describe("execute", () => {
+    beforeEach(() => {
+      db.exec("CREATE TABLE IF NOT EXISTS counters (id INTEGER PRIMARY KEY, count INTEGER DEFAULT 0)");
     });
 
-    it("handles UPDATE operations", () => {
-      db.exec("CREATE TABLE counter (id INTEGER PRIMARY KEY, count INTEGER DEFAULT 0)");
-      db.prepare("INSERT INTO counter (count) VALUES (0)").run();
+    it("executes INSERT statement", () => {
+      const response = handleMessage(
+        { id: 1, type: "execute", sql: "INSERT INTO counters (count) VALUES (?)", params: [5] },
+        db
+      );
+
+      expect(response.result).toBe("ok");
       
-      db.prepare("UPDATE counter SET count = count + 1 WHERE id = 1").run();
-      
-      const result = db.prepare("SELECT count FROM counter WHERE id = 1").get();
-      expect(result.count).toBe(1);
+      const verify = db.prepare("SELECT count FROM counters").get();
+      expect(verify.count).toBe(5);
     });
 
-    it("handles DELETE operations", () => {
-      db.exec("CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)");
-      db.prepare("INSERT INTO items (value) VALUES (?)").run("item1");
-      db.prepare("INSERT INTO items (value) VALUES (?)").run("item2");
+    it("executes UPDATE statement", () => {
+      db.prepare("INSERT INTO counters (count) VALUES (?)").run(5);
       
-      db.prepare("DELETE FROM items WHERE value = ?").run("item1");
+      const response = handleMessage(
+        { id: 1, type: "execute", sql: "UPDATE counters SET count = count + 1 WHERE id = 1" },
+        db
+      );
+
+      expect(response.result).toBe("ok");
       
-      const result = db.prepare("SELECT * FROM items").all();
-      expect(result).toHaveLength(1);
-      expect(result[0].value).toBe("item2");
+      const verify = db.prepare("SELECT count FROM counters").get();
+      expect(verify.count).toBe(6);
+    });
+
+    it("executes DELETE statement", () => {
+      db.prepare("INSERT INTO counters (count) VALUES (?)").run(5);
+      
+      const response = handleMessage(
+        { id: 1, type: "execute", sql: "DELETE FROM counters WHERE id = 1" },
+        db
+      );
+
+      expect(response.result).toBe("ok");
+      
+      const verify = db.prepare("SELECT COUNT(*) as count FROM counters").get();
+      expect(verify.count).toBe(0);
+    });
+  });
+
+  describe("exec", () => {
+    it("executes raw SQL statements", () => {
+      const response = handleMessage(
+        { 
+          id: 1, 
+          type: "exec", 
+          sql: "CREATE TABLE IF NOT EXISTS test_exec (id INTEGER PRIMARY KEY); INSERT INTO test_exec VALUES (1);" 
+        },
+        db
+      );
+
+      expect(response.result).toBe("ok");
+      
+      const verify = db.prepare("SELECT COUNT(*) as count FROM test_exec").get();
+      expect(verify.count).toBe(1);
     });
   });
 
   describe("error handling", () => {
-    it("throws error for non-existent table", () => {
-      expect(() => {
-        db.prepare("SELECT * FROM nonexistent").all();
-      }).toThrow("no such table");
+    it("returns error when DB not initialized", () => {
+      const response = handleMessage(
+        { id: 1, type: "query", sql: "SELECT 1" },
+        null
+      );
+
+      expect(response.error).toBe("SQLite DB not initialized in worker");
     });
 
-    it("throws error for invalid SQL", () => {
-      expect(() => {
-        db.prepare("INVALID SQL STATEMENT").run();
-      }).toThrow();
+    it("returns error for unknown message type", () => {
+      const response = handleMessage(
+        { id: 1, type: "unknown_type", sql: "SELECT 1" },
+        db
+      );
+
+      expect(response.error).toBe("Unknown message type: unknown_type");
     });
 
-    it("handles constraint violations", () => {
-      db.exec("CREATE TABLE unique_items (id INTEGER PRIMARY KEY, code TEXT UNIQUE)");
-      db.prepare("INSERT INTO unique_items (code) VALUES (?)").run("ABC");
-      
-      expect(() => {
-        db.prepare("INSERT INTO unique_items (code) VALUES (?)").run("ABC");
-      }).toThrow("UNIQUE constraint failed");
+    it("returns error for invalid SQL", () => {
+      const response = handleMessage(
+        { id: 1, type: "query", sql: "INVALID SQL STATEMENT" },
+        db
+      );
+
+      expect(response.error).toBeDefined();
+      expect(response.error).toContain("syntax error");
     });
 
-    it("handles foreign key violations", () => {
+    it("returns error for constraint violation", () => {
+      db.exec("CREATE TABLE IF NOT EXISTS unique_test (id INTEGER PRIMARY KEY, code TEXT UNIQUE)");
+      db.prepare("INSERT INTO unique_test (code) VALUES (?)").run("ABC");
+
+      const response = handleMessage(
+        { id: 1, type: "execute", sql: "INSERT INTO unique_test (code) VALUES (?)", params: ["ABC"] },
+        db
+      );
+
+      expect(response.error).toBeDefined();
+      expect(response.error).toContain("UNIQUE constraint failed");
+    });
+
+    it("returns error for foreign key violation", () => {
       db.exec("CREATE TABLE parent (id INTEGER PRIMARY KEY, name TEXT)");
       db.exec("CREATE TABLE child (id INTEGER PRIMARY KEY, parent_id INTEGER, FOREIGN KEY(parent_id) REFERENCES parent(id))");
-      
-      expect(() => {
-        db.prepare("INSERT INTO child (parent_id) VALUES (?)").run(999);
-      }).toThrow("FOREIGN KEY constraint failed");
-    });
-  });
 
-  describe("transactions", () => {
-    it("supports explicit transactions", () => {
-      db.exec("CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER)");
-      db.prepare("INSERT INTO accounts (balance) VALUES (?)").run(100);
-      db.prepare("INSERT INTO accounts (balance) VALUES (?)").run(200);
-      
-      // Begin transaction
-      db.exec("BEGIN TRANSACTION");
-      try {
-        db.prepare("UPDATE accounts SET balance = balance - 50 WHERE id = 1").run();
-        db.prepare("UPDATE accounts SET balance = balance + 50 WHERE id = 2").run();
-        db.exec("COMMIT");
-      } catch (e) {
-        db.exec("ROLLBACK");
-        throw e;
-      }
-      
-      const result = db.prepare("SELECT * FROM accounts ORDER BY id").all();
-      expect(result[0].balance).toBe(50);
-      expect(result[1].balance).toBe(250);
-    });
+      const response = handleMessage(
+        { id: 1, type: "execute", sql: "INSERT INTO child (parent_id) VALUES (?)", params: [999] },
+        db
+      );
 
-    it("rolls back on error", () => {
-      db.exec("CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)");
-      db.prepare("INSERT INTO test (value) VALUES (?)").run(1);
-      
-      const beforeCount = db.prepare("SELECT COUNT(*) as count FROM test").get().count;
-      
-      // Try a transaction that will fail
-      db.exec("BEGIN TRANSACTION");
-      try {
-        db.prepare("INSERT INTO test (value) VALUES (?)").run(2);
-        db.prepare("INSERT INTO nonexistent (value) VALUES (?)").run(3); // This will fail
-        db.exec("COMMIT");
-      } catch (e) {
-        db.exec("ROLLBACK");
-      }
-      
-      const afterCount = db.prepare("SELECT COUNT(*) as count FROM test").get().count;
-      expect(afterCount).toBe(beforeCount); // Should be same as before transaction
+      expect(response.error).toBeDefined();
+      expect(response.error).toContain("FOREIGN KEY constraint failed");
     });
   });
 
   describe("complex queries", () => {
+    beforeEach(() => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS authors (id INTEGER PRIMARY KEY, name TEXT);
+        CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY, title TEXT, author_id INTEGER, FOREIGN KEY(author_id) REFERENCES authors(id));
+      `);
+    });
+
     it("handles JOIN operations", () => {
-      db.exec("CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT)");
-      db.exec("CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author_id INTEGER)");
-      
       db.prepare("INSERT INTO authors (name) VALUES (?)").run("Alice");
       db.prepare("INSERT INTO authors (name) VALUES (?)").run("Bob");
       db.prepare("INSERT INTO books (title, author_id) VALUES (?, ?)").run("Book 1", 1);
       db.prepare("INSERT INTO books (title, author_id) VALUES (?, ?)").run("Book 2", 1);
       db.prepare("INSERT INTO books (title, author_id) VALUES (?, ?)").run("Book 3", 2);
-      
-      const result = db.prepare(`
-        SELECT authors.name, COUNT(books.id) as book_count
-        FROM authors
-        LEFT JOIN books ON authors.id = books.author_id
-        GROUP BY authors.id
-      `).all();
-      
-      expect(result).toHaveLength(2);
-      expect(result.find((r: any) => r.name === "Alice")?.book_count).toBe(2);
-      expect(result.find((r: any) => r.name === "Bob")?.book_count).toBe(1);
+
+      const response = handleMessage(
+        {
+          id: 1,
+          type: "query",
+          sql: `
+            SELECT authors.name, COUNT(books.id) as book_count
+            FROM authors
+            LEFT JOIN books ON authors.id = books.author_id
+            GROUP BY authors.id
+          `,
+        },
+        db
+      );
+
+      expect(response.result).toHaveLength(2);
+      const alice = response.result.find((r: any) => r.name === "Alice");
+      expect(alice.book_count).toBe(2);
     });
 
     it("handles aggregate functions", () => {
-      db.exec("CREATE TABLE sales (id INTEGER PRIMARY KEY, amount REAL, date TEXT)");
-      db.prepare("INSERT INTO sales (amount, date) VALUES (?, ?)").run(100, "2026-03-01");
-      db.prepare("INSERT INTO sales (amount, date) VALUES (?, ?)").run(200, "2026-03-01");
-      db.prepare("INSERT INTO sales (amount, date) VALUES (?, ?)").run(150, "2026-03-02");
-      
-      const result = db.prepare(`
-        SELECT date, SUM(amount) as total, AVG(amount) as average, COUNT(*) as count
-        FROM sales
-        GROUP BY date
-      `).all();
-      
-      expect(result).toHaveLength(2);
-      const day1 = result.find((r: any) => r.date === "2026-03-01");
-      expect(day1.total).toBe(300);
-      expect(day1.average).toBe(150);
-      expect(day1.count).toBe(2);
+      db.prepare("INSERT INTO authors (name) VALUES (?)").run("Alice");
+      db.prepare("INSERT INTO books (title, author_id) VALUES (?, ?)").run("Book 1", 1);
+      db.prepare("INSERT INTO books (title, author_id) VALUES (?, ?)").run("Book 2", 1);
+
+      const response = handleMessage(
+        {
+          id: 1,
+          type: "query",
+          sql: "SELECT COUNT(*) as total, AVG(author_id) as avg_author FROM books",
+        },
+        db
+      );
+
+      expect(response.result[0].total).toBe(2);
+      expect(response.result[0].avg_author).toBe(1);
     });
 
     it("handles ORDER BY and LIMIT", () => {
-      db.exec("CREATE TABLE scores (id INTEGER PRIMARY KEY, player TEXT, score INTEGER)");
-      db.prepare("INSERT INTO scores (player, score) VALUES (?, ?)").run("Alice", 100);
-      db.prepare("INSERT INTO scores (player, score) VALUES (?, ?)").run("Bob", 300);
-      db.prepare("INSERT INTO scores (player, score) VALUES (?, ?)").run("Charlie", 200);
+      db.prepare("INSERT INTO authors (name) VALUES (?)").run("Charlie");
+      db.prepare("INSERT INTO authors (name) VALUES (?)").run("Alice");
+      db.prepare("INSERT INTO authors (name) VALUES (?)").run("Bob");
+
+      const response = handleMessage(
+        {
+          id: 1,
+          type: "query",
+          sql: "SELECT * FROM authors ORDER BY name ASC LIMIT 2",
+        },
+        db
+      );
+
+      expect(response.result).toHaveLength(2);
+      expect(response.result[0].name).toBe("Alice");
+      expect(response.result[1].name).toBe("Bob");
+    });
+  });
+
+  describe("transactions", () => {
+    beforeEach(() => {
+      db.exec("CREATE TABLE IF NOT EXISTS accounts (id INTEGER PRIMARY KEY, balance INTEGER)");
+    });
+
+    it("supports explicit transactions", () => {
+      // Begin transaction
+      handleMessage({ id: 1, type: "exec", sql: "BEGIN TRANSACTION" }, db);
       
-      const result = db.prepare("SELECT * FROM scores ORDER BY score DESC LIMIT 2").all();
+      // Insert and update
+      handleMessage({ id: 2, type: "execute", sql: "INSERT INTO accounts (balance) VALUES (?)", params: [100] }, db);
+      handleMessage({ id: 3, type: "execute", sql: "UPDATE accounts SET balance = balance + 50 WHERE id = 1" }, db);
       
-      expect(result).toHaveLength(2);
-      expect(result[0].player).toBe("Bob");
-      expect(result[1].player).toBe("Charlie");
+      // Commit
+      handleMessage({ id: 4, type: "exec", sql: "COMMIT" }, db);
+
+      const result = handleMessage(
+        { id: 5, type: "query", sql: "SELECT balance FROM accounts WHERE id = 1" },
+        db
+      );
+
+      expect(result.result[0].balance).toBe(150);
+    });
+
+    it("rolls back on error", () => {
+      // Insert initial data
+      handleMessage({ id: 1, type: "execute", sql: "INSERT INTO accounts (balance) VALUES (?)", params: [100] }, db);
+      
+      const beforeCount = handleMessage(
+        { id: 2, type: "query", sql: "SELECT COUNT(*) as count FROM accounts" },
+        db
+      ).result[0].count;
+
+      // Begin transaction
+      handleMessage({ id: 3, type: "exec", sql: "BEGIN TRANSACTION" }, db);
+      
+      // Insert
+      handleMessage({ id: 4, type: "execute", sql: "INSERT INTO accounts (balance) VALUES (?)", params: [200] }, db);
+      
+      // Rollback
+      handleMessage({ id: 5, type: "exec", sql: "ROLLBACK" }, db);
+
+      const afterCount = handleMessage(
+        { id: 6, type: "query", sql: "SELECT COUNT(*) as count FROM accounts" },
+        db
+      ).result[0].count;
+
+      expect(afterCount).toBe(beforeCount);
     });
   });
 
   describe("data types", () => {
+    beforeEach(() => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS types_test (
+          id INTEGER PRIMARY KEY,
+          int_col INTEGER,
+          real_col REAL,
+          text_col TEXT,
+          blob_col BLOB
+        )
+      `);
+    });
+
     it("handles INTEGER, REAL, TEXT, BLOB", () => {
-      db.exec(`CREATE TABLE types_test (
-        id INTEGER PRIMARY KEY,
-        int_col INTEGER,
-        real_col REAL,
-        text_col TEXT,
-        blob_col BLOB
-      )`);
-      
       const blobData = Buffer.from("hello blob");
-      db.prepare("INSERT INTO types_test (int_col, real_col, text_col, blob_col) VALUES (?, ?, ?, ?)")
-        .run(42, 3.14, "hello text", blobData);
       
-      const result = db.prepare("SELECT * FROM types_test").get();
-      expect(result.int_col).toBe(42);
-      expect(result.real_col).toBeCloseTo(3.14);
-      expect(result.text_col).toBe("hello text");
-      expect(Buffer.from(result.blob_col).toString()).toBe("hello blob");
+      handleMessage(
+        { 
+          id: 1, 
+          type: "execute", 
+          sql: "INSERT INTO types_test (int_col, real_col, text_col, blob_col) VALUES (?, ?, ?, ?)", 
+          params: [42, 3.14, "hello text", blobData] 
+        },
+        db
+      );
+
+      const result = handleMessage(
+        { id: 2, type: "query", sql: "SELECT * FROM types_test" },
+        db
+      );
+
+      expect(result.result[0].int_col).toBe(42);
+      expect(result.result[0].real_col).toBeCloseTo(3.14);
+      expect(result.result[0].text_col).toBe("hello text");
+      expect(Buffer.from(result.result[0].blob_col).toString()).toBe("hello blob");
     });
 
     it("handles NULL values", () => {
-      db.exec("CREATE TABLE nullable_test (id INTEGER PRIMARY KEY, value TEXT)");
-      db.prepare("INSERT INTO nullable_test (value) VALUES (?)").run(null);
-      
-      const result = db.prepare("SELECT * FROM nullable_test").get();
-      expect(result.value).toBeNull();
-    });
-  });
+      handleMessage(
+        { 
+          id: 1, 
+          type: "execute", 
+          sql: "INSERT INTO types_test (int_col) VALUES (?)", 
+          params: [null] 
+        },
+        db
+      );
 
-  describe("WAL mode benefits", () => {
-    it("allows concurrent reads during write", () => {
-      db.exec("CREATE TABLE wal_test (id INTEGER PRIMARY KEY, value TEXT)");
-      db.prepare("INSERT INTO wal_test (value) VALUES (?)").run("initial");
-      
-      // In WAL mode, readers don't block writers and vice versa
-      const reader = db.prepare("SELECT * FROM wal_test").all();
-      expect(reader).toHaveLength(1);
-      
-      db.prepare("INSERT INTO wal_test (value) VALUES (?)").run("added");
-      
-      const reader2 = db.prepare("SELECT * FROM wal_test").all();
-      expect(reader2).toHaveLength(2);
+      const result = handleMessage(
+        { id: 2, type: "query", sql: "SELECT * FROM types_test" },
+        db
+      );
+
+      expect(result.result[0].int_col).toBeNull();
+      expect(result.result[0].real_col).toBeNull();
+      expect(result.result[0].text_col).toBeNull();
     });
   });
 });

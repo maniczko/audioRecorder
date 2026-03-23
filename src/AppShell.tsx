@@ -8,7 +8,6 @@ import AuthScreen from "./AuthScreen";
 import CommandPalette from "./CommandPalette";
 import Topbar from "./Topbar";
 import TabRouter from "./TabRouter";
-import WorkspaceSidebar from "./components/WorkspaceSidebar";
 import { useWorkspaceSelectors } from "./store/workspaceStore";
 import { useAuthStore } from "./store/authStore";
 import useUI from "./hooks/useUI";
@@ -80,12 +79,7 @@ export default function AppShell({ calendarMonth, setCalendarMonth }) {
 
       <Topbar />
 
-      <div className="workspace-layout">
-        <WorkspaceSidebar />
-        <main className="workspace-main" style={{ minWidth: 0, paddingBottom: '40px' }}>
-          <TabRouter calendarMonth={calendarMonth} setCalendarMonth={setCalendarMonth} />
-        </main>
-      </div>
+      <TabRouter calendarMonth={calendarMonth} setCalendarMonth={setCalendarMonth} />
 
       <CommandPalette
         open={commandPaletteOpen}
