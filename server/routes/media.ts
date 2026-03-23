@@ -367,6 +367,7 @@ Important:
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"],
             imageConfig: {
               aspectRatio: "4:3",
               imageSize: "4K",
