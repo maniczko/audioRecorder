@@ -3,18 +3,33 @@ import { DEFAULT_BARS, recordingErrorMessage } from "../lib/recording";
 import { summarizeSpectrum } from "../lib/diarization";
 import { createNoiseReducerNode } from "../audio/noiseReducerNode";
 
+// Amplitude below this (0–255 scale) is considered silence (~4%)
+const SILENCE_AMPLITUDE_THRESHOLD = 10;
+// How often to update the silence countdown display (every N frames)
+const SILENCE_CHECK_INTERVAL_FRAMES = 20;
+
 export default function useAudioHardware({
   mediaService,
   onRecordingStop,
   onSegmentsChange,
   onInterimChange,
   onMessageChange,
+  silenceAutoStopMinutes = 3,
+}: {
+  mediaService: any;
+  onRecordingStop: (data: any) => void;
+  onSegmentsChange: (segs: any[]) => void;
+  onInterimChange: (text: string) => void;
+  onMessageChange: (msg: string) => void;
+  silenceAutoStopMinutes?: number | "off";
 }) {
   const [recordPermission, setRecordPermission] = useState("idle");
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [visualBars, setVisualBars] = useState(DEFAULT_BARS);
+  // null = no warning; number = seconds until auto-stop
+  const [silenceCountdown, setSilenceCountdown] = useState<number | null>(null);
 
   const mediaRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -32,6 +47,8 @@ export default function useAudioHardware({
   const pauseTimeRef = useRef(0);
   const totalPausedTimeRef = useRef(0);
   const mimeTypeRef = useRef("audio/webm");
+  const lastActiveTimeRef = useRef(Date.now());
+  const silenceFrameCountRef = useRef(0);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -108,10 +125,40 @@ export default function useAudioHardware({
       if (signatureTimelineRef.current.length > 1200) {
         signatureTimelineRef.current = signatureTimelineRef.current.slice(-900);
       }
+
+      // Silence auto-stop: track last active (non-silent) moment
+      if (!isPausedRef.current && silenceAutoStopMinutes !== "off" && silenceAutoStopMinutes > 0) {
+        const maxAmplitude = data.reduce((m, v) => Math.max(m, v), 0);
+        if (maxAmplitude > SILENCE_AMPLITUDE_THRESHOLD) {
+          lastActiveTimeRef.current = Date.now();
+        }
+        // Throttle countdown updates to avoid excessive re-renders
+        silenceFrameCountRef.current += 1;
+        if (silenceFrameCountRef.current >= SILENCE_CHECK_INTERVAL_FRAMES) {
+          silenceFrameCountRef.current = 0;
+          const silenceSecs = (Date.now() - lastActiveTimeRef.current) / 1000;
+          const autoStopSecs = (silenceAutoStopMinutes as number) * 60;
+          if (silenceSecs >= autoStopSecs) {
+            // Auto-stop: too long without audio
+            setSilenceCountdown(null);
+            stopRecording();
+          } else if (silenceSecs >= autoStopSecs - 30) {
+            // 30s warning countdown
+            setSilenceCountdown(Math.ceil(autoStopSecs - silenceSecs));
+          } else {
+            setSilenceCountdown(null);
+          }
+        }
+      }
     }
     if (typeof window !== "undefined") {
       frameRef.current = window.requestAnimationFrame(pumpVisualizer);
     }
+  }
+
+  function resetSilenceTimer() {
+    lastActiveTimeRef.current = Date.now();
+    setSilenceCountdown(null);
   }
 
   async function startRecording(meetingId) {
@@ -214,6 +261,8 @@ export default function useAudioHardware({
 
       startTimeRef.current = Date.now();
       totalPausedTimeRef.current = 0;
+      lastActiveTimeRef.current = Date.now();
+      setSilenceCountdown(null);
       setElapsed(0);
       setIsRecording(true);
       setIsPaused(false);
@@ -262,6 +311,8 @@ export default function useAudioHardware({
       mediaRecorderRef.current.resume();
       setIsPaused(false);
       totalPausedTimeRef.current += Date.now() - pauseTimeRef.current;
+      lastActiveTimeRef.current = Date.now();
+      setSilenceCountdown(null);
       try {
         recognitionRef.current?.start();
       } catch (error) {
@@ -276,6 +327,7 @@ export default function useAudioHardware({
     isPaused,
     elapsed,
     visualBars,
+    silenceCountdown,
     chunksRef,
     mimeTypeRef,
     startRecording,
@@ -283,5 +335,6 @@ export default function useAudioHardware({
     pauseRecording,
     resumeRecording,
     cleanupRecorder,
+    resetSilenceTimer,
   };
 }

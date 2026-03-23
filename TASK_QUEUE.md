@@ -322,7 +322,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 049. [AUDIO] VAD â€” automatyczne zatrzymanie przy dĹ‚ugiej ciszy
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: uĹĽytkownik zapomina zatrzymaÄ‡ nagranie â†’ kilkugodzinne pliki, przepeĹ‚nienie storage.
@@ -515,6 +515,66 @@ Wynik:
 Uruchamianie:
 - `npm run test:e2e -- visual-regression` - tylko testy wizualne
 - `npm run test:e2e:ui` - UI mode do review snapshotów
+
+---
+
+## 206. [TESTS] Naprawa pozostałych 43 testów frontend
+Status: `todo`
+Wykonawca: `qwen`
+Priorytet: `P0`
+Cel: Podnieść pass rate frontend z 87% do 95%+.
+Zakres:
+- Naprawić recorderStore.test.ts (11 testów) - problem z logiką queue
+- Naprawić useWorkspaceData.test.tsx (8 testów) - infinite loop w Zustand
+- Naprawić useMeetings.test.tsx (4 testy) - kontekst nie zainicjalizowany
+- Naprawić useUI.test.tsx (5 testów) - brakujące providery
+- Naprawić useWorkspace.test.tsx (3 testy) - hydratacja remote
+- Naprawić pozostałe (12 testów) - różne problemy
+Akceptacja:
+- Wszystkie testy frontend przechodzą (95%+ pass rate)
+- Brak testów oznaczonych jako "failed"
+
+---
+
+## 207. [TESTS] ESLint warnings - naprawa
+Status: `todo`
+Wykonawca: `qwen`
+Priorytet: `P0`
+Zakres:
+- TagInput.tsx: useMemo dependency (line 14)
+- TaskDetailsPanel.tsx: unused variables (lines 45, 78, 86, 92)
+Akceptacja:
+- `npm run lint` przechodzi bez warningów
+
+---
+
+## 208. [TESTS] Poprawa coverage ProfileTab.tsx (2% → 60%)
+Status: `todo`
+Wykonawca: `qwen`
+Priorytet: `P1`
+Zakres:
+- Testy renderowania komponentu
+- Testy interakcji użytkownika
+- Testy walidacji formularza
+- Testy integration z authStore
+Akceptacja:
+- coverage ProfileTab.tsx > 60%
+- Wszystkie ścieżki kodu przetestowane
+
+---
+
+## 209. [TESTS] Poprawa coverage audioPipeline.ts (48% → 70%)
+Status: `todo`
+Wykonawca: `claude`
+Priorytet: `P1`
+Zakres:
+- Testy dla funkcji z FFmpeg dependencies (mockowane)
+- Testy dla OpenAI API calls (mockowane)
+- Testy error handling
+- Testy edge cases
+Akceptacja:
+- coverage audioPipeline.ts > 70%
+- Testy izolowane (mocki fetch, fs, child_process)
 
 ---
 

@@ -1055,3 +1055,7 @@ Side effects / follow-up: None.
 Completed by: Claude
 Result: Replaced flat 5s retry delay with exponential backoff (1s, 4s, 16s) using `retryCount` field on queue items. Added `backoffUntil` timestamp to skip items in backoff period; `setTimeout` clears backoff and re-triggers queue processing. Added `navigator.onLine` check at queue start — registers one-time 'online' event listener when offline. After exhausting MAX_AUTO_RETRIES (3) transient errors, item gets `failed_permanent` status (vs `failed` for non-retriable errors). Retry count shown in UnifiedPlayer ("Próba N/3"). `retryRecordingQueueItem` resets `retryCount`/`backoffUntil` for manual retries.
 Side effects / follow-up: None.
+## 049. [AUDIO] VAD — auto-stop on long silence
+Completed by: Claude
+Result: Implemented silence auto-stop in `useAudioHardware.ts`. AnalyserNode frequency data is checked every 20 animation frames; if max amplitude < 10/255 threshold for 3+ minutes (configurable via `silenceAutoStopMinutes`, default 3), recording stops automatically. 30s warning countdown exposed as `silenceCountdown` state. `resetSilenceTimer()` resets the counter. Added yellow warning banner in `StudioMeetingView.tsx` showing "Zatrzymanie za Ns — cisza wykryta" with a "Kontynuuj" button. Props propagate via `useRecorder` → `RecorderContext` → `TabRouter` → `StudioTab` (spread) → `StudioMeetingView`.
+Side effects / follow-up: `silenceAutoStopMinutes` currently hardcoded to 3; could be exposed as a user preference.

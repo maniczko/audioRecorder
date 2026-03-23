@@ -215,6 +215,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onDeleteTag={meetings.deleteTag}
             vocabulary={meetings.vocabulary}
             onUpdateVocabulary={meetings.setVocabulary}
+            peopleProfiles={meetings.peopleProfiles}
             audioStorageState={recorder.audioStorageState}
             onRefreshAudioStorageState={recorder.refreshAudioStorageState}
             onDeleteStoredRecordingAudio={recorder.deleteStoredRecordingAudio}
@@ -276,6 +277,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             selectedMeetingQueue={recorder.selectedMeetingQueue}
             elapsed={recorder.elapsed}
             visualBars={recorder.visualBars}
+            silenceCountdown={recorder.silenceCountdown}
+            resetSilenceTimer={recorder.resetSilenceTimer}
             stopRecording={recorder.stopRecording}
             startRecording={recorder.startRecording}
             retryRecordingQueueItem={recorder.retryRecordingQueueItem}

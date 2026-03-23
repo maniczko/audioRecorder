@@ -400,6 +400,8 @@ export default function StudioMeetingView({
   briefOpen,
   setBriefOpen,
   setActiveTab,
+  silenceCountdown,
+  resetSilenceTimer,
 }) {
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState("");
@@ -2300,6 +2302,14 @@ export default function StudioMeetingView({
                   Zakończ
                 </button>
               </div>
+              {silenceCountdown != null && (
+                <div className="ff-silence-countdown">
+                  <span>Zatrzymanie za {silenceCountdown}s — cisza wykryta</span>
+                  <button type="button" className="ghost-button" style={{ padding: "2px 10px", fontSize: "0.8rem" }} onClick={resetSilenceTimer}>
+                    Kontynuuj
+                  </button>
+                </div>
+              )}
             </div>
           ) : playerState === "queued" ? (
             <div className="ff-player-status-wrap">
