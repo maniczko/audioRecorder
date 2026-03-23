@@ -549,7 +549,6 @@ export default function StudioMeetingView({
   const blockers = useMemo(() => safeArray(studioAnalysis?.blockers).slice(0, 3), [studioAnalysis?.blockers]);
   const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
   const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
-  const suggestedAgenda = useMemo(() => safeArray(studioAnalysis?.suggestedAgenda).slice(0, 5), [studioAnalysis?.suggestedAgenda]);
   const feedbackTranscript = useMemo(() => {
     if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
       return displayRecording.transcript;
@@ -1345,52 +1344,6 @@ export default function StudioMeetingView({
                 </div>
 
                 <div className="summary-grid">
-                  <section className="summary-card summary-card-wide">
-                    <div className="summary-card-head">
-                      <h3>Sugerowana agenda</h3>
-                      <span>{suggestedAgenda.length}</span>
-                    </div>
-                    {suggestedAgenda.length ? (
-                      <div className="summary-agenda">
-                        {suggestedAgenda.map((item, i) => (
-                          <div key={`${item}-${i}`} className="summary-agenda-item">
-                            <span className="summary-step-index">{String(i + 1).padStart(2, "0")}</span>
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="soft-copy">Brak wygenerowanej agendy.</p>
-                    )}
-                  </section>
-
-                  <section className="summary-card summary-card-wide">
-                    <div className="summary-card-head">
-                      <h3>Automatycznie utworzone zadania</h3>
-                      <span>{autoTaskDrafts.length}</span>
-                    </div>
-                    {autoTaskDrafts.length ? (
-                      <div className="summary-task-list">
-                        {autoTaskDrafts.map((task, index) => (
-                          <article key={`${task.title}-${index}`} className="summary-task-card">
-                            <div className="summary-task-head">
-                              <strong>{task.title}</strong>
-                              <span className="task-flag neutral">AI</span>
-                            </div>
-                            {task.description ? <p>{task.description}</p> : null}
-                            <div className="summary-task-meta">
-                              {task.owner ? <span>@{task.owner}</span> : null}
-                              {task.dueDate ? <span>{task.dueDate}</span> : null}
-                              {task.priority ? <span>{task.priority}</span> : null}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="soft-copy">Brak action items do utworzenia jako zadania.</p>
-                    )}
-                  </section>
-
                   <section className="summary-card">
                     <div className="summary-card-head">
                       <h3>Decyzje</h3>
@@ -2177,26 +2130,6 @@ export default function StudioMeetingView({
               </div>
             )}
           </div>
-
-
-          {/* Floating "Sync with audio" button */}
-          {transcript.length > 0 && selectedRecordingAudioUrl && !isRecording ? (
-            <button
-              type="button"
-              className="ff-sync-fab"
-              onClick={() => {
-                if (audioRef.current && activeSeg) {
-                  audioRef.current.currentTime = activeSeg.timestamp;
-                }
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M6 9V3M3 6l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Sync with audio
-            </button>
-          ) : null}
-
       </div>{/* /ff-studio-right-col */}
       </div>{/* /ff-studio-split-view */}
 

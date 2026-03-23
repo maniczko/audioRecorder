@@ -1,0 +1,41 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build:
+    name: Build & Verify Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: voicelog:test
+          load: true
+
+      - name: Verify binaries present in image
+        run: |
+          docker run --rm --entrypoint="" voicelog:test ffmpeg -version
+          docker run --rm --entrypoint="" voicelog:test ffprobe -version
+          docker run --rm --entrypoint="" voicelog:test python3 --version
+          docker run --rm --entrypoint="" voicelog:test node --version
+          docker run --rm --entrypoint="" voicelog:test uv --version

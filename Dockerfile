@@ -50,11 +50,11 @@ COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
 
 # Install Python and runtime dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
+    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install uv (astronomically fast API from Astral) to build python modules 100x faster
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Install uv via official installer — avoids Docker Hub / ghcr.io registry dependency
+RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
 # Create virtual environment and activate it permanently for the container
 RUN uv venv /opt/venv

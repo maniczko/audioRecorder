@@ -766,7 +766,7 @@
 }
 
 .ff-voice-analytics-top {
-  order: -1;
+  order: 0;
 }
 
 .ff-voice-analytics-toggle {

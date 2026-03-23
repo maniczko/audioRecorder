@@ -5,9 +5,81 @@ import { describe, expect, it } from "vitest";
 // Note: This test reads the actual Dockerfile, so fs is not mocked here
 // The vi.mock in setup.ts is bypassed for this specific test file
 
+const ROOT = process.cwd();
+const dockerfile = fs.readFileSync(path.join(ROOT, "Dockerfile"), "utf8");
+const dockerignore = fs.readFileSync(path.join(ROOT, ".dockerignore"), "utf8");
+
 describe("Dockerfile runtime healthcheck", () => {
   it("uses PORT-aware healthcheck for cloud runtimes", () => {
-    const dockerfile = fs.readFileSync(path.resolve(process.cwd(), "Dockerfile"), "utf8");
     expect(dockerfile).toMatch(/\$\{PORT:-\$\{VOICELOG_API_PORT:-4000\}\}\/health/);
+  });
+});
+
+describe("Dockerfile COPY sources not excluded by .dockerignore", () => {
+  // Parse .dockerignore into include/exclude patterns
+  function buildIgnorePatterns(ignoreContent: string) {
+    return ignoreContent
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"));
+  }
+
+  // Returns true if the given path is excluded by .dockerignore patterns
+  function isExcluded(filePath: string, patterns: string[]): boolean {
+    let excluded = false;
+    for (const pattern of patterns) {
+      const isNegation = pattern.startsWith("!");
+      const raw = isNegation ? pattern.slice(1) : pattern;
+      // Simple prefix-match: pattern "src" excludes "src/shared/..."
+      // pattern "!src/shared/" re-includes "src/shared/..."
+      const normalizedPath = filePath.replace(/\/$/, "");
+      const normalizedPattern = raw.replace(/\/$/, "");
+      if (
+        normalizedPath === normalizedPattern ||
+        normalizedPath.startsWith(normalizedPattern + "/")
+      ) {
+        excluded = !isNegation;
+      }
+    }
+    return excluded;
+  }
+
+  it("src/shared/ is not excluded from build context", () => {
+    const patterns = buildIgnorePatterns(dockerignore);
+    expect(isExcluded("src/shared", patterns)).toBe(false);
+    expect(isExcluded("src/shared/meetingFeedback.ts", patterns)).toBe(false);
+  });
+
+  it("all COPY source paths (non --from) are reachable in build context", () => {
+    const patterns = buildIgnorePatterns(dockerignore);
+    // Match: COPY <src> <dest>  (not COPY --from=...)
+    const copyLines = dockerfile
+      .split("\n")
+      .filter((l) => /^\s*COPY\s+(?!--from)/.test(l));
+
+    for (const line of copyLines) {
+      // Extract the source token (first arg after COPY)
+      const tokens = line.trim().split(/\s+/);
+      const src = tokens[1]; // e.g. "server/package*.json", "src/shared/", "server/"
+
+      // Resolve globs: just check the directory prefix
+      const srcBase = src.replace(/[*?].*$/, "").replace(/\/$/, "");
+      if (!srcBase) continue;
+
+      // Only check paths that look relative (no leading /)
+      if (srcBase.startsWith("/")) continue;
+
+      expect(
+        isExcluded(srcBase, patterns),
+        `"${srcBase}" (from: ${line.trim()}) is excluded by .dockerignore but is needed by COPY`
+      ).toBe(false);
+    }
+  });
+});
+
+describe("Dockerfile has no inline external registry COPY --from", () => {
+  it("COPY --from only references named build stages, not external registries", () => {
+    const externalRegistryPattern = /COPY\s+--from=(ghcr\.io|docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/;
+    expect(dockerfile).not.toMatch(externalRegistryPattern);
   });
 });
