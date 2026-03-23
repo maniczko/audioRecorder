@@ -547,6 +547,7 @@ export class Database {
   }
 
   async registerUser(draft: UserDraft): Promise<any> {
+    const errorWithStatus = (msg: string, code = 400) => { const e = new Error(msg); (e as any).statusCode = code; return e; };
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
     const name = this._clean(draft.name);
@@ -554,12 +555,12 @@ export class Database {
     const inviteCode = this._normalizeWorkspaceCode(draft.workspaceCode);
     const requestedWorkspaceName = this._clean(draft.workspaceName);
 
-    if (!email || !password || !name) throw new Error("Uzupelnij imie, email i haslo.");
-    if (!this._isValidEmail(email)) throw new Error("Podaj poprawny adres email.");
-    if (password.length < 6) throw new Error("Haslo musi miec przynajmniej 6 znakow.");
+    if (!email || !password || !name) throw errorWithStatus("Uzupelnij imie, email i haslo.");
+    if (!this._isValidEmail(email)) throw errorWithStatus("Podaj poprawny adres email.");
+    if (password.length < 6) throw errorWithStatus("Haslo musi miec przynajmniej 6 znakow.");
 
     const existingUser = await this._get("SELECT id FROM users WHERE email = ?", [email]);
-    if (existingUser) throw new Error("Konto z takim adresem juz istnieje.");
+    if (existingUser) throw errorWithStatus("Konto z takim adresem juz istnieje.", 409);
 
     const timestamp = this.nowIso();
     const userId = this._generateId("user");
@@ -584,9 +585,9 @@ export class Database {
       );
 
       if (workspaceMode === "join") {
-        if (!inviteCode) throw new Error("Podaj kod workspace, aby dolaczyc.");
+        if (!inviteCode) throw errorWithStatus("Podaj kod workspace, aby dolaczyc.", 400);
         const workspace = await this._get("SELECT * FROM workspaces WHERE invite_code = ?", [inviteCode]);
-        if (!workspace) throw new Error("Nie znaleziono workspace o takim kodzie.");
+        if (!workspace) throw errorWithStatus("Nie znaleziono workspace o takim kodzie.", 404);
 
         workspaceId = workspace.id;
         await this._execute("INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'member', ?)", [workspaceId, userId, timestamp]);
@@ -612,24 +613,25 @@ export class Database {
   }
 
   async loginUser(draft: UserDraft): Promise<any> {
+    const errorWithStatus = (msg: string, code = 401) => { const e = new Error(msg); (e as any).statusCode = code; return e; };
     const email = this._normalizeEmail(draft.email);
     const password = String(draft.password || "");
     const preferredWorkspaceId = this._clean(draft.workspaceId);
-    if (!email || !password) throw new Error("Uzupelnij email i haslo.");
+    if (!email || !password) throw errorWithStatus("Uzupelnij email i haslo.", 400);
     const row = await this._get("SELECT * FROM users WHERE email = ?", [email]);
 
     if (row && !row.password_hash) {
-      throw new Error("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+      throw errorWithStatus("To konto korzysta z logowania Google. Uzyj przycisku Google.", 400);
     }
 
     if (!row || !row.password_hash || !this._verifyPassword(password, row.password_hash)) {
-      throw new Error("Niepoprawny email lub haslo.");
+      throw errorWithStatus("Niepoprawny email lub haslo.", 401);
     }
 
     const workspaceId = await this.selectWorkspaceForUser(row.id, preferredWorkspaceId);
-    if (!workspaceId) throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
+    if (!workspaceId) throw errorWithStatus("To konto nie jest jeszcze przypiete do zadnego workspace.", 403);
     if (preferredWorkspaceId && workspaceId !== preferredWorkspaceId) {
-      throw new Error("Nie masz dostepu do wybranego workspace.");
+      throw errorWithStatus("Nie masz dostepu do wybranego workspace.", 403);
     }
 
     const [session, payload] = await Promise.all([
@@ -794,6 +796,58 @@ export class Database {
     return this.getMediaAsset(recordingId);
   }
 
+  async upsertMediaAssetFromPath({ recordingId, workspaceId, meetingId = "", contentType, filePath, createdByUserId }: any): Promise<MediaAsset | null> {
+    const safeRecordingId = String(recordingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+    if (!safeRecordingId) throw new Error("Nieprawidlowy identyfikator nagrania.");
+    if (!filePath || !fs.existsSync(filePath)) throw new Error("Plik zrodlowy nie istnieje.");
+
+    const extension = { "audio/webm": ".webm", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/wav": ".wav" }[String(contentType || "").toLowerCase()] || ".bin";
+    const fileStats = await fs.promises.stat(filePath);
+    let storagePath: string;
+
+    try {
+      const { uploadAudioFileToStorage } = await import("./lib/supabaseStorage");
+      const result = await uploadAudioFileToStorage(safeRecordingId, filePath, contentType, extension);
+      if (result) {
+        storagePath = result;
+      } else {
+        const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+        fs.mkdirSync(uploadDir, { recursive: true });
+        storagePath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+        if (path.resolve(storagePath) !== path.resolve(filePath)) {
+          await fs.promises.copyFile(filePath, storagePath);
+        }
+      }
+    } catch (err: any) {
+      if ((err as any).code === "ENOSPC" || String(err.message).includes("Brak miejsca na dysku")) {
+        throw err;
+      }
+      logger.warn("[database] Supabase upload from path failed, falling back to local:", { message: err.message });
+      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+      fs.mkdirSync(uploadDir, { recursive: true });
+      storagePath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+      if (path.resolve(storagePath) !== path.resolve(filePath)) {
+        await fs.promises.copyFile(filePath, storagePath);
+      }
+    }
+
+    const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);
+    const timestamp = this.nowIso();
+
+    if (existing) {
+      await this._execute("UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?", [workspaceId, meetingId, storagePath, contentType, fileStats.size, timestamp, recordingId]);
+    } else {
+      await this._execute(`
+        INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`, [recordingId, workspaceId, meetingId, createdByUserId, storagePath, contentType || "application/octet-stream", fileStats.size, timestamp, timestamp]);
+    }
+
+    return this.getMediaAsset(recordingId);
+  }
+
   async getMediaAsset(recordingId: string): Promise<MediaAsset | null> {
     return this._get("SELECT * FROM media_assets WHERE id = ?", [recordingId]) as Promise<MediaAsset | null>;
   }
@@ -827,6 +881,21 @@ export class Database {
         : { ...diarization };
     await this._execute("UPDATE media_assets SET diarization_json = ?, updated_at = ? WHERE id = ?", [
       JSON.stringify(nextPayload),
+      this.nowIso(),
+      recordingId,
+    ]);
+    return this.getMediaAsset(recordingId);
+  }
+
+  async updateTranscriptionMetadata(recordingId: string, updates: Record<string, unknown> = {}) {
+    const asset = await this.getMediaAsset(recordingId);
+    if (!asset) return null;
+    const diarization = this._safeJsonParse(asset.diarization_json, {});
+    await this._execute("UPDATE media_assets SET diarization_json = ?, updated_at = ? WHERE id = ?", [
+      JSON.stringify({
+        ...diarization,
+        ...updates,
+      }),
       this.nowIso(),
       recordingId,
     ]);
@@ -871,6 +940,8 @@ export class Database {
       result.diarization && typeof result.diarization === "object"
         ? {
             ...result.diarization,
+            enhancementsPending: Boolean(result.enhancementsPending),
+            postprocessStage: result.postprocessStage || "",
             reviewSummary: result.reviewSummary || null,
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
@@ -881,6 +952,8 @@ export class Database {
             ...pipelineMetadata,
           }
         : {
+            enhancementsPending: Boolean(result.enhancementsPending),
+            postprocessStage: result.postprocessStage || "",
             reviewSummary: result.reviewSummary || null,
             transcriptOutcome: result.transcriptOutcome || "normal",
             emptyReason: result.emptyReason || "",
@@ -1014,6 +1087,20 @@ export class Database {
       `INSERT INTO rag_chunks (id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [chunk.id, chunk.workspaceId, chunk.recordingId, chunk.speakerName, chunk.text, JSON.stringify(chunk.embedding), chunk.createdAt]
     );
+  }
+
+  async saveRagChunks(chunks: Array<{ id: string; workspaceId: string; recordingId: string; speakerName: string; text: string; embedding: number[]; createdAt: string }>) {
+    if (!Array.isArray(chunks) || !chunks.length) return;
+    await this._execute("BEGIN");
+    try {
+      for (const chunk of chunks) {
+        await this.saveRagChunk(chunk);
+      }
+      await this._execute("COMMIT");
+    } catch (error) {
+      await this._execute("ROLLBACK");
+      throw error;
+    }
   }
 
   async getAllRagChunksForWorkspace(workspaceId: string): Promise<any[]> {
