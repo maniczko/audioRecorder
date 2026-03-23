@@ -172,7 +172,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 061. [AUDIO] VAD (SileroVAD) â€” wycinanie ciszy przed uploadem
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: dĹ‚ugie pauzy wydĹ‚uĹĽajÄ… czas transkrypcji, zwiÄ™kszajÄ… koszt API i powodujÄ… halucynacje Whisper. SileroVAD wycina ciszÄ™ z uploadu (zachowuje lokalne audio bez zmian).

@@ -23,6 +23,11 @@ vi.mock("../services/httpClient", () => ({
   getPreviewRuntimeStatus: () => mocks.getPreviewRuntimeStatus(),
 }));
 
+// VAD filter: return original blob (no silence removed) in tests
+vi.mock("../audio/vadFilter", () => ({
+  filterSilence: (blob: Blob) => Promise.resolve({ blob, originalDurationS: 10, filteredDurationS: 10, removedS: 0 }),
+}));
+
 describe("recorderStore", () => {
   afterEach(() => {
     vi.useRealTimers();

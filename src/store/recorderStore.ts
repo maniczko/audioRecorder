@@ -12,6 +12,7 @@ import { getAudioBlob } from "../lib/audioStore";
 import { analyzeMeeting } from "../lib/analysis";
 import { createMediaService } from "../services/mediaService";
 import { getPreviewRuntimeStatus } from "../services/httpClient";
+import { filterSilence } from "../audio/vadFilter";
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -333,18 +334,35 @@ export const useRecorderStore = create<any>()(
           }
 
           if (!nextItem.uploaded) {
+            // VAD silence filter: strip silence gaps > 2s before upload to reduce
+            // transcription cost and Whisper hallucinations on silence.
+            let uploadBlob = localBlob;
+            let vadRemovedS = 0;
+            try {
+              set({ pipelineStageLabel: "Optymalizacja audio (VAD)…" });
+              const vadResult = await filterSilence(localBlob!);
+              if (vadResult.removedS >= 2) {
+                uploadBlob = vadResult.blob;
+                vadRemovedS = vadResult.removedS;
+              }
+            } catch (_) { /* fallback to original */ }
+
             const uploadSnapshot = getPipelineSnapshot("uploading", 12, "Wgrywanie audio na serwer");
             set({
               pipelineProgressPercent: uploadSnapshot.progressPercent,
-              pipelineStageLabel: uploadSnapshot.stageLabel,
-              recordingMessage: "Wgrywanie nagrania na serwer...",
+              pipelineStageLabel: vadRemovedS > 0
+                ? `Wgrywanie audio (wycięto ${Math.round(vadRemovedS)}s ciszy)…`
+                : uploadSnapshot.stageLabel,
+              recordingMessage: vadRemovedS > 0
+                ? `Wgrywanie nagrania (wycięto ${Math.round(vadRemovedS)}s ciszy)…`
+                : "Wgrywanie nagrania na serwer...",
             });
             get().updateQueueItem(nextItem.recordingId, {
               status: "uploading",
               attempts: (nextItem.attempts || 0) + 1,
               errorMessage: "",
             });
-            const uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, localBlob, {
+            const uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, uploadBlob, {
               workspaceId: target.workspaceId || nextItem.workspaceId || "",
               meetingId: target.id,
               onProgress: (pct: number) => {

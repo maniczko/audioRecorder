@@ -4,6 +4,14 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 061. [AUDIO] VAD — wycinanie ciszy przed uploadem
+Status: `done`
+Completed by: Claude
+Result: Amplitude-based silence removal (Web Audio API) przed uploadem. filterSilence(blob) analizuje PCM w ramkach 50ms, wykrywa cisza > -42dBFS, usuwa segmenty ciszy > 2s z uploadu (lokalny blob niezmieniony). Re-encode do WAV. UI pokazuje "wycięto Xs ciszy" w pipelineStageLabel. Fallback: zwraca oryginalny blob przy błędzie (brak AudioContext, błąd dekodowania). @ricky0123/vad-web zainstalowany ale wymaga ORT ≥1.17 — upgrade zaplanowany jako kolejny krok.
+Zmiany: src/audio/vadFilter.ts (nowy), src/store/recorderStore.ts (import + VAD call przed persistRecordingAudio), src/store/recorderStore.test.ts (mock vadFilter), package.json (@ricky0123/vad-web added, public/silero_vad_legacy.onnx).
+
+---
+
 ## 074. [AUDIO] Adaptacyjna normalizacja głośności per mówca
 Status: `done`
 Completed by: Claude
