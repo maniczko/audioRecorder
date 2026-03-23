@@ -2,17 +2,27 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import StudioMeetingView from "./StudioMeetingView";
 import React from "react";
 import { vi } from "vitest";
+import AppProviders from "../AppProviders";
 
 // Mock dependencies that we don't need to test for basic rendering
 vi.mock("./RecorderPanel", () => ({ default: () => <div data-testid="recorder-panel" /> }));
 vi.mock("./StudioSidebar", () => ({ default: () => <div data-testid="studio-sidebar" /> }));
 vi.mock("./AiTaskSuggestionsPanel", () => ({ default: () => <div data-testid="ai-task-suggestions" /> }));
-vi.mock("../context/MeetingsContext", () => ({
-  useMeetingsCtx: () => ({ meetings: { updateMeeting: vi.fn() } }),
-}));
 vi.mock("../services/config", () => ({
+  APP_DATA_PROVIDER: "local",
+  MEDIA_PIPELINE_PROVIDER: "local",
+  API_BASE_URL: "",
+  apiBaseUrlConfigured: () => false,
   remoteApiEnabled: () => false,
 }));
+
+function renderWithContext(ui: React.ReactElement) {
+  return render(
+    <AppProviders>
+      {ui}
+    </AppProviders>
+  );
+}
 
 describe("StudioMeetingView", () => {
   const sampleFeedback = {
@@ -95,18 +105,18 @@ describe("StudioMeetingView", () => {
   };
 
   test("renders without crashing", () => {
-    render(<StudioMeetingView {...defaultProps} />);
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Test Meeting/i)).toBeInTheDocument();
   });
 
   test("renders the player bar when there is a message or recording", () => {
     const props = { ...defaultProps, recordingMessage: "Test Message", analysisStatus: "error" };
-    render(<StudioMeetingView {...props} />);
+    renderWithContext(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
   });
 
   test("renders player shell while selected recording audio is loading", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
@@ -120,7 +130,7 @@ describe("StudioMeetingView", () => {
 
   test("shows empty transcript banner and retry action", () => {
     const retryStoredRecording = vi.fn();
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         selectedRecording={{
@@ -147,7 +157,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("shows summary fallback for empty transcript", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         studioAnalysis={{ summary: "", decisions: [], actionItems: [] }}
@@ -167,7 +177,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("renders playback scrubber and lets user seek audio", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         displayRecording={{ transcript: [], duration: 120 }}
@@ -184,13 +194,13 @@ describe("StudioMeetingView", () => {
 
   test("renders empty state when no meeting selected", () => {
     const props = { ...defaultProps, selectedMeeting: null };
-    render(<StudioMeetingView {...props} />);
+    renderWithContext(<StudioMeetingView {...props} />);
     const els = screen.getAllByText(/Brak aktywnego spotkania/i);
     expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
   test("renders analysis tabs", () => {
-    render(<StudioMeetingView {...defaultProps} />);
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getAllByText(/Podsumowanie spotkania/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Potrzeby i obawy/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Profil psychologiczny/i).length).toBeGreaterThan(0);
@@ -199,7 +209,7 @@ describe("StudioMeetingView", () => {
 
 
   test("renders detailed feedback cards and category scores", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         studioAnalysis={{ summary: "Spotkanie konkretne", decisions: [], actionItems: [], feedback: sampleFeedback }}
@@ -215,7 +225,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("builds fallback feedback for older analyses without feedback", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         displayRecording={{
@@ -249,7 +259,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("renders toolbar buttons", () => {
-    render(<StudioMeetingView {...defaultProps} />);
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Notatki/i)).toBeInTheDocument();
     expect(screen.getByText(/Transkrypt/i)).toBeInTheDocument();
     expect(screen.getByText(/Rozpocznij nagrywanie/i)).toBeInTheDocument();
@@ -257,12 +267,12 @@ describe("StudioMeetingView", () => {
 
   test("shows recording controls when isRecording is true", () => {
     const props = { ...defaultProps, isRecording: true };
-    render(<StudioMeetingView {...props} />);
+    renderWithContext(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Stop/i)).toBeInTheDocument();
     expect(screen.getByText(/● REC/i)).toBeInTheDocument();
   });
   test("shows meeting tasks in the tasks tab", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         meetingTasks={[
@@ -298,7 +308,7 @@ describe("StudioMeetingView", () => {
   test("task actions can navigate to tasks and open task details", () => {
     const onOpenTask = vi.fn();
     const setActiveTab = vi.fn();
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         onOpenTask={onOpenTask}
@@ -334,7 +344,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("renders participants as a list", () => {
-    render(
+    renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         studioAnalysis={{

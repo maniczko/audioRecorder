@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { AiPersonProfileRequest, AiPersonProfileResponse, AiSuggestTasksRequest, AiSuggestTasksResponse } from "../../src/shared/contracts.ts";
 import type { AppMiddlewares } from "./middleware.ts";
 import { config } from "../config.ts";
 
@@ -34,7 +35,7 @@ export function createAiRoutes(middlewares: AppMiddlewares) {
   router.post("/person-profile", applyRateLimit("ai-person-profile", 20), async (c) => {
     if (!config.ANTHROPIC_API_KEY) return c.json({ mode: "no-key" }, 200);
 
-    const { personName, meetings = [], allSegments = [] } = await c.req.json().catch(() => ({}));
+    const { personName, meetings = [], allSegments = [] } = await c.req.json().catch(() => ({})) as AiPersonProfileRequest;
 
     if (!personName || !Array.isArray(allSegments) || allSegments.length < 5) {
       return c.json({ mode: "no-key" }, 200); // fallback handled on client
@@ -82,7 +83,7 @@ export function createAiRoutes(middlewares: AppMiddlewares) {
   router.post("/suggest-tasks", applyRateLimit("ai-suggest-tasks", 20), async (c) => {
     if (!config.ANTHROPIC_API_KEY) return c.json({ tasks: [] }, 200);
 
-    const { transcript = [], people = [] } = await c.req.json().catch(() => ({}));
+    const { transcript = [], people = [] } = await c.req.json().catch(() => ({})) as AiSuggestTasksRequest;
 
     const transcriptText = (Array.isArray(transcript) ? transcript : [])
       .map((seg: any) => `[${seg.speakerName || `Speaker ${Number(seg.speakerId || 0) + 1}`}]: ${seg.text || ""}`)
