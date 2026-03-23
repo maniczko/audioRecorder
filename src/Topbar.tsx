@@ -71,7 +71,12 @@ export default function Topbar() {
           onDismiss={ui.dismissNotification}
           onActivate={ui.activateNotification}
         />
-        <button type="button" className="ghost-button command-palette-launcher" onClick={() => ui.setCommandPaletteOpen(true)}>
+        <button
+          type="button"
+          className="ghost-button command-palette-launcher"
+          onClick={() => ui.setCommandPaletteOpen(true)}
+          aria-label="Szukaj"
+        >
           Szukaj
           <span>Ctrl+K</span>
         </button>
@@ -88,6 +93,7 @@ export default function Topbar() {
           }}
           disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
           title={recorder.isRecording ? "Przejdz do aktywnego nagrania" : "Nagranie ad hoc"}
+          aria-label={recorder.isRecording ? "Przejdz do aktywnego nagrania" : "Nagraj ad hoc"}
         >
           <span className="topbar-record-dot" />
           {recorder.isRecording ? "Nagrywam..." : "Nagraj"}

@@ -331,6 +331,75 @@ describe("AI Routes", () => {
       expect(json.tasks).toEqual([]);
     });
   });
+
+  describe("POST /ai/search", () => {
+    test("returns no-key mode when ANTHROPIC_API_KEY is not configured", async () => {
+      vi.stubEnv("ANTHROPIC_API_KEY", "");
+
+      const res = await app.request("/ai/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: "spotkanie o budzecie",
+          items: [
+            { id: "meeting-1", title: "Budzet kwartalny", subtitle: "Plan finansowy", type: "meeting", group: "Spotkania" },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.mode).toBe("no-key");
+      expect(json.matches).toEqual([]);
+    });
+
+    test("calls Anthropic API and returns ranked matches when API key is configured", async () => {
+      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+      vi.resetModules();
+      const { createApp: createAppWithKey } = await import("../../app.ts");
+      const appWithKey = createAppWithKey({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          content: [
+            {
+              text: JSON.stringify({
+                matches: [
+                  { id: "task-2", reason: "Semantycznie pasuje", score: 94 },
+                  { id: "meeting-1", reason: "Pasuje do opisu", score: 88 },
+                ],
+              }),
+            },
+          ],
+        }),
+      });
+
+      const res = await appWithKey.request("/ai/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: "przypomnienie o follow-upie po spotkaniu",
+          items: [
+            { id: "meeting-1", title: "Budzet kwartalny", subtitle: "Plan finansowy", type: "meeting", group: "Spotkania" },
+            { id: "task-2", title: "Wyslac raport", subtitle: "Do piatku", type: "task", group: "Zadania" },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.mode).toBe("anthropic");
+      expect(json.matches).toHaveLength(2);
+      expect(json.matches[0].id).toBe("task-2");
+      expect(json.matches[0].reason).toBe("Semantycznie pasuje");
+    });
+  });
 });
 
 async function createApp(config: any) {

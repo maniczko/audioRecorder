@@ -12,13 +12,13 @@ interface RecordingPipelineStatusProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  uploading: "Wysyłanie...",
+  uploading: "WysyĹ‚anie...",
   queued: "W kolejce",
   processing: "Przetwarzanie...",
-  diarization: "Rozpoznawanie mówców...",
-  review: "Oczekuje na weryfikację",
+  diarization: "Rozpoznawanie mĂłwcĂłw...",
+  review: "Oczekuje na weryfikacjÄ™",
   done: "Transkrypcja gotowa",
-  failed: "Błąd przetwarzania",
+  failed: "BĹ‚Ä…d przetwarzania",
 };
 
 export function RecordingPipelineStatus({
@@ -71,11 +71,11 @@ export function RecordingPipelineStatus({
       {isFailed && (
         <div className="pipeline-error-box">
           <span className="pipeline-error-text" title={errorMessage}>
-            {errorMessage || "Wystąpił nieoczekiwany błąd."}
+            {errorMessage || "WystÄ…piĹ‚ nieoczekiwany bĹ‚Ä…d."}
           </span>
           {onRetry && (
-            <button className="pipeline-retry-btn" onClick={(e) => { e.stopPropagation(); onRetry(); }}>
-              🔄 Spróbuj ponownie
+            <button type="button" className="pipeline-retry-btn" onClick={(e) => { e.stopPropagation(); onRetry(); }}>
+              đź”„ SprĂłbuj ponownie
             </button>
           )}
         </div>

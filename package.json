@@ -19,6 +19,7 @@
     "dompurify": "^3.3.3",
     "hono": "^4.12.8",
     "idb-keyval": "^6.2.2",
+    "nodemailer": "^8.0.3",
     "onnxruntime-node": "^1.24.3",
     "pg": "^8.20.0",
     "prop-types": "^15.8.1",

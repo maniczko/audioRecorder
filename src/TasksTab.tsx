@@ -1,5 +1,5 @@
 import './styles/tasks.css';
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { PageShell, SplitPane } from "./ui/LayoutPrimitives";
 import { buildTaskGroups, getTaskSlaState, taskListStats } from "./lib/tasks";
 import TaskDetailsPanel from "./tasks/TaskDetailsPanel";
@@ -67,6 +67,7 @@ export default function TasksTab({
   const [tagFilter, setTagFilter] = useState("all");
   const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
+  const deferredQuery = useDeferredValue(query);
   const [dragTaskId, setDragTaskId] = useState("");
   const [dropColumnId, setDropColumnId] = useState("");
   const [message, setMessage] = useState("");
@@ -119,11 +120,11 @@ export default function TasksTab({
       if (tagFilter !== "all" && !(task.tags || []).includes(tagFilter)) {
         return false;
       }
-      if (query.trim()) {
+      if (deferredQuery.trim()) {
         const haystack = [task.title, task.owner, task.group, task.description, task.notes, safeArray(task.tags).join(" ")]
           .join(" ")
           .toLowerCase();
-        if (!haystack.includes(query.trim().toLowerCase())) {
+        if (!haystack.includes(deferredQuery.trim().toLowerCase())) {
           return false;
         }
       }
@@ -131,7 +132,7 @@ export default function TasksTab({
     });
 
     return sortVisibleTasks(filtered, sortBy);
-  }, [boardColumns, ownerFilter, query, selectedListId, sortBy, tagFilter, tasks]);
+  }, [boardColumns, deferredQuery, ownerFilter, selectedListId, sortBy, tagFilter, tasks]);
 
   const visibleStats = useMemo(() => taskListStats(visibleTasks), [visibleTasks]);
 

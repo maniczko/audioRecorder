@@ -157,6 +157,7 @@ export default function useWorkspaceData() {
     }
   }, [logRemoteErrorOnce, pushWorkspaceMessage]);
 
+  // Migration effect - run when source data changes
   useEffect(() => {
     const migration = migrateWorkspaceData({
       users,
@@ -177,7 +178,7 @@ export default function useWorkspaceData() {
     setManualTasks(migration.manualTasks);
     setTaskBoards(migration.taskBoards);
     setSession(migration.session);
-  }, [manualTasks, meetings, session, setManualTasks, setMeetings, setSession, setTaskBoards, setUsers, setWorkspaces, taskBoards, users, workspaces]);
+  }, [users, workspaces, meetings, manualTasks, taskBoards, session]);
 
   useEffect(() => {
     if (stateService?.mode !== "remote") {

@@ -91,7 +91,7 @@ describe("NotesTab", () => {
     expect(screen.getByPlaceholderText(/Tytuł notatki/i)).toBeInTheDocument();
 
     await userEvent.type(screen.getByPlaceholderText(/Tytuł notatki/i), "Nowy manualny wpis");
-    const tagInput = screen.getByPlaceholderText(/Tagi/i);
+    const tagInput = screen.getByPlaceholderText(/Dodaj tag/i);
     await userEvent.type(tagInput, "nowytag{enter}");
     expect(screen.getByText("#nowytag")).toBeInTheDocument();
     

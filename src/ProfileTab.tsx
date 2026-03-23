@@ -4,6 +4,7 @@ import { apiRequest } from "./services/httpClient";
 import { apiBaseUrlConfigured } from "./services/config";
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from "./shared/types";
 import './ProfileTabStyles.css';
+import useWorkspaceBackup from "./hooks/useWorkspaceBackup";
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
@@ -440,6 +441,71 @@ function AudioStorageSection({
   );
 }
 
+function WorkspaceBackupSection() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    exportWorkspace,
+    importWorkspaceFile,
+    applyWorkspaceImport,
+    clearImportState,
+    preview,
+    statusMessage,
+    isImporting,
+    hasPendingImport,
+  } = useWorkspaceBackup();
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Backup</div>
+          <h2>Eksport i import danych</h2>
+        </div>
+      </div>
+      <div className="integration-card" style={{ display: "grid", gap: "12px" }}>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.85rem" }}>
+          Eksport obejmuje spotkania, zadania, stan kolumn, metadane kalendarza i słownik. Plik nie zawiera audio blobów.
+        </p>
+        <div className="button-row">
+          <button type="button" className="primary-button" onClick={exportWorkspace}>
+            Eksportuj dane workspace
+          </button>
+          <button type="button" className="secondary-button" onClick={() => inputRef.current?.click()}>
+            Importuj dane
+          </button>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: "none" }}
+          onChange={async (event) => {
+            const file = event.target.files?.[0] || null;
+            await importWorkspaceFile(file);
+            event.target.value = "";
+          }}
+        />
+        {preview ? (
+          <div className="inline-alert info">
+            Do importu: {preview.meetingsToAdd} spotkań, {preview.manualTasksToAdd} zadań, {preview.vocabularyToAdd} słów w słowniku.
+          </div>
+        ) : null}
+        {statusMessage ? <div className="inline-alert info">{statusMessage}</div> : null}
+        <div className="button-row">
+          <button type="button" className="secondary-button" disabled={!hasPendingImport || isImporting} onClick={applyWorkspaceImport}>
+            {isImporting ? "Importowanie..." : "Zastosuj import"}
+          </button>
+          {preview ? (
+            <button type="button" className="ghost-button" onClick={clearImportState}>
+              Wyczyść podgląd
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function integrationStatusLabel(status, connectedCount) {
   if (connectedCount) {
     return `${connectedCount} wydarzen w kalendarzu`;
@@ -773,6 +839,8 @@ export default function ProfileTab({
                    </div>
                 </div>
               </section>
+
+              <WorkspaceBackupSection />
             </div>
           </div>
         )}

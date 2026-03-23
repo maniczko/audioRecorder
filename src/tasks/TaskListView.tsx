@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { memo } from "react";
 import {
   canDrop,
   formatListDueDate,
@@ -31,7 +32,7 @@ function DropLine({ placement, onDropTask, label = "Upusc tutaj zadanie" }) {
   );
 }
 
-export default function TaskListView({
+function TaskListView({
   groupedTasks,
   allTasks,
   groupBy,
@@ -225,3 +226,5 @@ TaskListView.propTypes = {
   handleTaskDrop: PropTypes.func,
   setDragTaskId: PropTypes.func,
 };
+
+export default memo(TaskListView);

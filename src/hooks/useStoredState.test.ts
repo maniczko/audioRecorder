@@ -1,24 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import useStoredState from "./useStoredState";
-import { readStorage, writeStorage, readStorageAsync, writeStorageAsync } from "../lib/storage";
 
-vi.mock("../lib/storage", () => ({
-  readStorage: vi.fn(),
-  writeStorage: vi.fn(),
-  readStorageAsync: vi.fn(),
-  writeStorageAsync: vi.fn(),
-}));
+// Mock storage before imports
+vi.mock("../lib/storage", async () => {
+  const actual = await vi.importActual("../lib/storage");
+  return {
+    ...actual,
+    readStorage: vi.fn(),
+    writeStorage: vi.fn(),
+    readStorageAsync: vi.fn(),
+    writeStorageAsync: vi.fn(),
+  };
+});
 
 describe("useStoredState (dual-write sync engine with IndexedDB)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
   });
 
-  it("yields localStorage fallback value INSTANTLY on first render to prevent blank UI", () => {
-    readStorage.mockReturnValueOnce("LOCAL_SESSION_TOKEN");
-    readStorageAsync.mockResolvedValueOnce("INDEXED_DB_TOKEN_UPGRADE");
+  it("yields localStorage fallback value INSTANTLY on first render to prevent blank UI", async () => {
+    const { readStorage } = await import("../lib/storage");
+    vi.mocked(readStorage).mockReturnValueOnce("LOCAL_SESSION_TOKEN");
 
+    const { useStoredState } = await import("./useStoredState");
     const { result } = renderHook(() => useStoredState("session.key", "default"));
 
     // Expected behavior: Must be available synchronously before any Promises resolve
@@ -26,10 +30,11 @@ describe("useStoredState (dual-write sync engine with IndexedDB)", () => {
     expect(readStorage).toHaveBeenCalledWith("session.key", "default");
   });
 
-  it("dual-writes to both synchronous localStorage and async IndexedDB on update", () => {
-    readStorage.mockReturnValueOnce("SYNC_VALUE");
-    readStorageAsync.mockResolvedValueOnce("SYNC_VALUE");
+  it("dual-writes to both synchronous localStorage and async IndexedDB on update", async () => {
+    const { readStorage, writeStorage, writeStorageAsync } = await import("../lib/storage");
+    vi.mocked(readStorage).mockReturnValueOnce("SYNC_VALUE");
 
+    const { useStoredState } = await import("./useStoredState");
     const { result } = renderHook(() => useStoredState("session.key", "initial"));
 
     act(() => {

@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { formatDateTime } from "../lib/storage";
 
-export default function TasksSidebar({
+function TasksSidebar({
   sidebarLists,
   selectedListId,
   setSelectedListId,
@@ -103,3 +104,5 @@ export default function TasksSidebar({
     </aside>
   );
 }
+
+export default memo(TasksSidebar);

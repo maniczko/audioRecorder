@@ -1,5 +1,11 @@
 import { Hono } from "hono";
-import type { AiPersonProfileRequest, AiPersonProfileResponse, AiSuggestTasksRequest, AiSuggestTasksResponse } from "../../src/shared/contracts.ts";
+import type {
+  AiPersonProfileRequest,
+  AiSearchMatch,
+  AiSearchRequest,
+  AiSearchResponse,
+  AiSuggestTasksRequest,
+} from "../../src/shared/contracts.ts";
 import type { AppMiddlewares } from "./middleware.ts";
 import { config } from "../config.ts";
 
@@ -21,6 +27,18 @@ async function callAnthropic(body: object): Promise<any> {
     throw new Error(`Anthropic ${res.status}: ${err.slice(0, 200)}`);
   }
   return res.json();
+}
+
+function normalizeSearchItems(items: unknown[]): AiSearchMatch[] {
+  return (Array.isArray(items) ? items : [])
+    .map((item: any) => ({
+      id: String(item?.id || ""),
+      title: String(item?.title || "").trim(),
+      subtitle: String(item?.subtitle || "").trim(),
+      type: String(item?.type || "").trim(),
+      group: String(item?.group || "").trim(),
+    }))
+    .filter((item) => Boolean(item.id) && Boolean(item.title));
 }
 
 export function createAiRoutes(middlewares: AppMiddlewares) {
@@ -116,6 +134,77 @@ export function createAiRoutes(middlewares: AppMiddlewares) {
     } catch (err: any) {
       console.error("[ai/suggest-tasks] error:", err.message);
       return c.json({ tasks: [] }, 200);
+    }
+  });
+
+  /**
+   * POST /ai/search
+   * Semantic ranking proxy for command palette searches.
+   * Body: { query: string, items: [{ id, title, subtitle, type, group }] }
+   */
+  router.post("/search", applyRateLimit("ai-search", 20), async (c) => {
+    if (!config.ANTHROPIC_API_KEY) {
+      return c.json({ mode: "no-key", matches: [] }, 200);
+    }
+
+    const { query = "", items = [] } = await c.req.json().catch(() => ({})) as AiSearchRequest;
+    const normalizedQuery = String(query || "").trim();
+    const normalizedItems = normalizeSearchItems(items as unknown[]);
+
+    if (normalizedQuery.length < 2 || !normalizedItems.length) {
+      return c.json({ mode: "no-key", matches: [] }, 200);
+    }
+
+    const prompt = [
+      "You are helping with semantic search in a command palette.",
+      "Return the most relevant items for the user query.",
+      "Respond in valid JSON only, no prose.",
+      "",
+      `Query: ${normalizedQuery}`,
+      "",
+      "Items:",
+      ...normalizedItems.slice(0, 20).map((item, index) =>
+        `${index + 1}. id=${item.id} | title=${item.title} | subtitle=${item.subtitle || ""} | type=${item.type || ""} | group=${item.group || ""}`
+      ),
+      "",
+      "Return exactly this JSON shape:",
+      '{"matches":[{"id":"item-id","reason":"short reason","score":92}]}',
+      "Rules:",
+      "- Return up to 5 matches.",
+      "- Only use ids from the provided items list.",
+      "- Prefer semantic relevance over exact substring matches.",
+      "- Keep reasons short.",
+    ].join("\n");
+
+    try {
+      const payload = await callAnthropic({
+        model: config.ANTHROPIC_MODEL,
+        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text = payload?.content?.[0]?.text || "";
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON in response");
+      const parsed = JSON.parse(match[0]) as { matches?: Array<{ id?: string; reason?: string; score?: number }> };
+      const itemsById = new Map(normalizedItems.map((item) => [item.id, item]));
+      const matches = (Array.isArray(parsed.matches) ? parsed.matches : [])
+        .map((entry) => {
+          const source = itemsById.get(String(entry.id || ""));
+          if (!source) return null;
+          return {
+            ...source,
+            reason: String(entry.reason || "").trim(),
+            score: typeof entry.score === "number" ? entry.score : 0,
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 5);
+
+      const response: AiSearchResponse = { mode: "anthropic", matches: matches as AiSearchMatch[] };
+      return c.json(response, 200);
+    } catch (err: any) {
+      console.error("[ai/search] error:", err.message);
+      return c.json({ mode: "no-key", matches: [] }, 200);
     }
   });
 

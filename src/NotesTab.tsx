@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { formatDateTime } from "./lib/storage";
 import { EmptyState } from "./components/Skeleton";
+import TagInput from "./shared/TagInput";
 import './NotesTabStyles.css';
 
 const ALLOWED_HTML = {
@@ -251,6 +252,8 @@ function NoteCard({ note, isActive, onSelect }) {
   );
 }
 
+const MemoNoteCard = memo(NoteCard);
+
 /* ── NoteDetail ───────────────────────────────────────── */
 
 function NoteDetail({ note, onOpenMeeting }) {
@@ -434,19 +437,6 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState("");
-
-  function handleTagKeyDown(e) {
-    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
-      e.preventDefault();
-      const newTag = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
-      if (!tags.includes(newTag)) setTags((prev) => [...prev, newTag]);
-      setTagInput("");
-    }
-    if (e.key === "Backspace" && !tagInput && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  }
 
   function handleSave() {
     if (!title.trim()) return;
@@ -466,33 +456,13 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
           />
-          <div className="notes-tag-chips-input">
-            {tags.map((tag) => (
-              <span key={tag} className="note-tag-chip" style={tagStyle(tag)}>
-                #{tag}
-                <button
-                  type="button"
-                  className="tag-chip-remove"
-                  onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <input
-              className="notes-tag-text-input"
-              type="text"
-              placeholder={tags.length === 0 ? "Tagi… (Enter aby dodać)" : ""}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              list="notes-new-tag-suggestions"
+          <div style={{ marginTop: 8 }}>
+            <TagInput
+              tags={tags}
+              suggestions={allTags}
+              onChange={setTags}
+              placeholder="Dodaj tag..."
             />
-            <datalist id="notes-new-tag-suggestions">
-              {allTags.filter((t) => !tags.includes(t)).map((t) => (
-                <option key={t} value={t} />
-              ))}
-            </datalist>
           </div>
         </div>
         <div className="notes-new-panel-actions">
@@ -524,6 +494,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   const [groupBy, setGroupBy] = useState("date");
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [showNewNote, setShowNewNote] = useState(false);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const allNotes = useMemo(
     () =>
@@ -540,7 +511,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   }, [allNotes]);
 
   const filteredNotes = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = deferredSearchQuery.toLowerCase().trim();
     return allNotes.filter((note) => {
       if (selectedTags.length > 0 && !selectedTags.every((t) => note.tags.includes(t))) return false;
       if (!q) return true;
@@ -559,7 +530,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [allNotes, searchQuery, selectedTags]);
+  }, [allNotes, deferredSearchQuery, selectedTags]);
 
   const groups = useMemo(() => groupNotes(filteredNotes, groupBy), [filteredNotes, groupBy]);
 
@@ -579,7 +550,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
     setShowNewNote(false);
   }
 
-  const hasFilters = searchQuery.trim() || selectedTags.length > 0;
+  const hasFilters = deferredSearchQuery.trim() || selectedTags.length > 0;
 
   return (
     <div className="notes-layout">
@@ -688,7 +659,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
               </div>
               <div className="notes-grid">
                 {group.items.map((note) => (
-                  <NoteCard
+                  <MemoNoteCard
                     key={note.id}
                     note={note}
                     isActive={note.id === selectedNoteId}

@@ -44,7 +44,8 @@
       "Bash(python3 -c \"import json; d=json.load\\(open\\(''package.json''\\)\\); print\\(d[''name'']\\)\")",
       "Bash(python3 -c \"import json; d=json.load\\(open\\(''server/package.json''\\)\\); print\\(d[''name'']\\)\")",
       "Bash(pnpm test:server)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(TASK_DONE.md:*)"
     ]
   }
 }

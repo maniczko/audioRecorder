@@ -4,6 +4,13 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 040. Email digest i powiadomienia poza przegladarka
+Status: `done`
+Completed by: GPT
+Result: Added a /digest/daily cron-friendly route that composes daily workspace summaries from existing workspace state and sends email via SMTP when configured. Also added server tests for preview mode and SMTP delivery.
+
+---
+
 ## 025. AI semantyczne wyszukiwanie zadan i spotkan
 Status: `done`
 Completed by: GPT

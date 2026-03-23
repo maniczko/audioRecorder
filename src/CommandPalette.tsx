@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { filterCommandPaletteItems } from "./lib/commandPalette";
+import { semanticSearch } from "./lib/aiSearch";
 import './CommandPaletteStyles.css';
 
 function groupedItems(items) {
@@ -15,16 +16,38 @@ function groupedItems(items) {
 export default function CommandPalette({ open, items, onClose, onSelect }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [aiResults, setAiResults] = useState<any[]>([]);
+  const [aiSearchUnavailable, setAiSearchUnavailable] = useState(false);
+  const deferredQuery = useDeferredValue(query);
   const inputRef = useRef(null);
   const resultButtonsRef = useRef([]);
 
-  const filteredItems = useMemo(() => filterCommandPaletteItems(items, query), [items, query]);
-  const grouped = useMemo(() => groupedItems(filteredItems), [filteredItems]);
+  const filteredItems = useMemo(() => filterCommandPaletteItems(items, deferredQuery), [items, deferredQuery]);
+  const displayItems = useMemo(() => {
+    if (!aiResults.length) {
+      return filteredItems;
+    }
+
+    const localIds = new Set(filteredItems.map((item) => item.id));
+    const semanticItems = aiResults
+      .filter((item) => !localIds.has(item.id))
+      .map((item) => ({
+        ...item,
+        group: "AI Match",
+        matchSource: "ai",
+        type: item.type || "AI Match",
+      }));
+
+    return [...semanticItems, ...filteredItems];
+  }, [aiResults, filteredItems]);
+  const grouped = useMemo(() => groupedItems(displayItems), [displayItems]);
 
   useEffect(() => {
     if (!open) {
       setQuery("");
       setActiveIndex(0);
+      setAiResults([]);
+      setAiSearchUnavailable(false);
       resultButtonsRef.current = [];
       return;
     }
@@ -35,6 +58,45 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
+
+  useEffect(() => {
+    if (!open || aiSearchUnavailable) {
+      return undefined;
+    }
+
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length < 2) {
+      setAiResults([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await semanticSearch(normalizedQuery, items);
+        if (cancelled) {
+          return;
+        }
+
+        if (response.mode === "no-key") {
+          setAiResults([]);
+          setAiSearchUnavailable(true);
+          return;
+        }
+
+        setAiResults(Array.isArray(response.matches) ? response.matches : []);
+      } catch (error) {
+        if (!cancelled) {
+          setAiResults([]);
+        }
+      }
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [aiSearchUnavailable, items, open, query]);
 
   useEffect(() => {
     if (!open) {
@@ -50,19 +112,19 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((previous) => (filteredItems.length ? (previous + 1) % filteredItems.length : 0));
+        setActiveIndex((previous) => (displayItems.length ? (previous + 1) % displayItems.length : 0));
         return;
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
-        setActiveIndex((previous) => (filteredItems.length ? (previous - 1 + filteredItems.length) % filteredItems.length : 0));
+        setActiveIndex((previous) => (displayItems.length ? (previous - 1 + displayItems.length) % displayItems.length : 0));
         return;
       }
 
       if (event.key === "Enter") {
         event.preventDefault();
-        const activeItem = filteredItems[activeIndex];
+        const activeItem = displayItems[activeIndex];
         if (activeItem) {
           onSelect(activeItem);
         }
@@ -73,7 +135,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeIndex, filteredItems, onClose, onSelect, open]);
+  }, [activeIndex, displayItems, onClose, onSelect, open]);
 
   useEffect(() => {
     if (resultButtonsRef.current[activeIndex]) {
@@ -121,7 +183,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
                 <div className="command-palette-group-label">{group}</div>
                 <div className="command-palette-group-items">
                   {groupItems.map((item) => {
-                    const itemIndex = filteredItems.indexOf(item);
+                    const itemIndex = displayItems.indexOf(item);
                     return (
                       <button
                         key={item.id}
@@ -137,7 +199,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
                           <strong>{item.title}</strong>
                           <span>{item.subtitle}</span>
                         </div>
-                        <small>{item.type}</small>
+                        <small>{item.matchSource === "ai" ? "AI Match" : item.type}</small>
                       </button>
                     );
                   })}

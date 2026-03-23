@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { getTaskDependencyDetails } from "../lib/tasks";
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from "./taskViewUtils";
 import { getTaskLastActivity } from "../lib/activityFeed";
@@ -415,7 +415,7 @@ function ColumnBody({
   );
 }
 
-export default function TaskKanbanView({
+function TaskKanbanView({
   kanbanColumns,
   allTasks,
   dropColumnId,
@@ -589,3 +589,5 @@ export default function TaskKanbanView({
     </div>
   );
 }
+
+export default memo(TaskKanbanView);

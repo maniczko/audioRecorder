@@ -21,7 +21,7 @@
 .profile-sidebar-header h3 {
   margin: 4px 0 0;
   font-size: 1.2rem;
-  color: #fff;
+  color: var(--text);
 }
 
 .profile-nav {
@@ -49,12 +49,12 @@
 
 .profile-nav-btn:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  color: var(--text);
 }
 
 .profile-nav-btn.active {
   background: rgba(117, 214, 196, 0.1);
-  color: #75d6c4;
+  color: var(--accent);
 }
 
 .profile-nav-icon {
@@ -76,7 +76,7 @@
   background: transparent;
   border: none;
   border-radius: 12px;
-  color: #ef4444;
+  color: var(--danger);
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
@@ -136,7 +136,7 @@
   align-items: center;
   justify-content: center;
   background: var(--bg-panel-strong);
-  color: #75d6c4;
+  color: var(--accent);
   font-size: 2rem;
   font-weight: 700;
 }
@@ -165,7 +165,7 @@
 
 .profile-stat-card strong {
   font-size: 1rem;
-  color: #fff;
+  color: var(--text);
   margin-top: 4px;
 }
 
@@ -213,7 +213,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 10px 14px;
-  color: #fff;
+  color: var(--text);
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s;
@@ -242,7 +242,7 @@
 .toggle-card input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #75d6c4;
+  accent-color: var(--accent);
 }
 
 .toggle-card strong {
@@ -269,8 +269,8 @@
 }
 
 .primary-button {
-  background: #75d6c4;
-  color: #071119;
+  background: var(--accent);
+  color: var(--bg);
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
@@ -281,7 +281,7 @@
 
 .secondary-button {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--text);
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
@@ -307,7 +307,7 @@
 
 .inline-alert.success {
   background: rgba(117, 214, 196, 0.1);
-  color: #75d6c4;
+  color: var(--accent);
   border: 1px solid rgba(117, 214, 196, 0.2);
 }
 
@@ -391,13 +391,13 @@
 
 .tag-count-chip.tasks {
   background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  color: var(--accent);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .tag-count-chip.meetings {
   background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  color: var(--accent);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
@@ -418,5 +418,5 @@
 
 .tag-manager-delete:hover {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--danger);
 }

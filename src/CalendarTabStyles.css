@@ -27,7 +27,7 @@
 }
 
 .mini-day.selected {
-  background: linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%);
-  color: #03222a;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: var(--bg);
   font-weight: 700;
 }

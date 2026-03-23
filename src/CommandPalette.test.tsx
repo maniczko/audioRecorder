@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import CommandPalette from "./CommandPalette";
 import { vi, describe, test, expect } from "vitest";
 
+vi.mock("./lib/aiSearch", () => ({
+  semanticSearch: vi.fn(),
+}));
+
 function renderCommandPalette(overrides = {}) {
   const defaultProps = {
     open: true,
@@ -76,5 +80,40 @@ describe("CommandPalette", () => {
     });
 
     expect(props.onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "mock_meeting" }));
+  });
+
+  test("renders AI matches when semantic search returns results", async () => {
+    vi.useFakeTimers();
+    try {
+    const { semanticSearch } = await import("./lib/aiSearch");
+    vi.mocked(semanticSearch).mockResolvedValue({
+      mode: "anthropic",
+      matches: [
+        {
+          id: "mock_task",
+          title: "Zadanie Test",
+          subtitle: "Dzisiaj",
+          type: "task",
+          group: "AI Match",
+          reason: "Pasuje do semantycznego opisu",
+          score: 95,
+        },
+      ],
+    });
+
+    renderCommandPalette();
+    const searchInput = screen.getByPlaceholderText("Zakladka, spotkanie, zadanie, osoba...");
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: "follow up on reporting" } });
+      await vi.advanceTimersByTimeAsync(250);
+    });
+
+    expect(vi.mocked(semanticSearch)).toHaveBeenCalledWith(
+      "follow up on reporting",
+      expect.arrayContaining([expect.objectContaining({ id: "mock_task" })])
+    );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

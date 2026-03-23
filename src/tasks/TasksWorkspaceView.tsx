@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { Suspense, lazy, memo, useState } from "react";
 import { TASK_PRIORITIES } from "../lib/tasks";
-import TaskKanbanView from "./TaskKanbanView";
-import TaskListView from "./TaskListView";
 import TaskChartsView from "./TaskChartsView";
 import TaskScheduleView from "./TaskScheduleView";
 import './TasksWorkspaceViewStyles.css';
+
+const TaskKanbanView = lazy(() => import("./TaskKanbanView"));
+const TaskListView = lazy(() => import("./TaskListView"));
 
 function statCards(stats, visibleStats) {
   return [
@@ -72,7 +73,7 @@ function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setS
   );
 }
 
-export default function TasksWorkspaceView({
+function TasksWorkspaceView({
   selectedListLabel,
   viewMode,
   setViewMode,
@@ -357,48 +358,54 @@ export default function TasksWorkspaceView({
               onUpdateTask={onUpdateTask}
             />
           ) : viewMode === "list" ? (
-            <TaskListView
-              groupedTasks={groupedTasks}
-              allTasks={allVisibleTasks}
-              groupBy={groupBy}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              selectedTask={selectedTask}
-              selectedTaskIds={selectedTaskIds}
-              toggleTaskSelection={toggleTaskSelection}
-              setSelectedTaskId={setSelectedTaskId}
-              onUpdateTask={onUpdateTask}
-              onMoveTaskToColumn={onMoveTaskToColumn}
-              peopleOptions={peopleOptions}
-              taskGroups={taskGroups}
-              boardColumns={boardColumns}
-              handleGroupDrop={handleGroupDrop}
-              handleTaskDrop={handleTaskDrop}
-              setDragTaskId={setDragTaskId}
-            />
+            <Suspense fallback={<div className="todo-loading">Ladowanie listy zadan...</div>}>
+              <TaskListView
+                groupedTasks={groupedTasks}
+                allTasks={allVisibleTasks}
+                groupBy={groupBy}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                selectedTask={selectedTask}
+                selectedTaskIds={selectedTaskIds}
+                toggleTaskSelection={toggleTaskSelection}
+                setSelectedTaskId={setSelectedTaskId}
+                onUpdateTask={onUpdateTask}
+                onMoveTaskToColumn={onMoveTaskToColumn}
+                peopleOptions={peopleOptions}
+                taskGroups={taskGroups}
+                boardColumns={boardColumns}
+                handleGroupDrop={handleGroupDrop}
+                handleTaskDrop={handleTaskDrop}
+                setDragTaskId={setDragTaskId}
+              />
+            </Suspense>
           ) : (
-            <TaskKanbanView
-              kanbanColumns={kanbanColumns}
-              allTasks={allVisibleTasks}
-              dropColumnId={dropColumnId}
-              setDropColumnId={setDropColumnId}
-              handleDrop={handleDrop}
-              handleTaskDrop={handleTaskDrop}
-              selectedTask={selectedTask}
-              selectedTaskIds={selectedTaskIds}
-              toggleTaskSelection={toggleTaskSelection}
-              setSelectedTaskId={setSelectedTaskId}
-              setDragTaskId={setDragTaskId}
-              onUpdateTask={onUpdateTask}
-              onMoveTaskToColumn={onMoveTaskToColumn}
-              onQuickAddToColumn={onQuickAddToColumn}
-              onReorderColumns={onReorderColumns}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-            />
+            <Suspense fallback={<div className="todo-loading">Ladowanie kanbanu zadan...</div>}>
+              <TaskKanbanView
+                kanbanColumns={kanbanColumns}
+                allTasks={allVisibleTasks}
+                dropColumnId={dropColumnId}
+                setDropColumnId={setDropColumnId}
+                handleDrop={handleDrop}
+                handleTaskDrop={handleTaskDrop}
+                selectedTask={selectedTask}
+                selectedTaskIds={selectedTaskIds}
+                toggleTaskSelection={toggleTaskSelection}
+                setSelectedTaskId={setSelectedTaskId}
+                setDragTaskId={setDragTaskId}
+                onUpdateTask={onUpdateTask}
+                onMoveTaskToColumn={onMoveTaskToColumn}
+                onQuickAddToColumn={onQuickAddToColumn}
+                onReorderColumns={onReorderColumns}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+              />
+            </Suspense>
           )}
         </section>
       </div>
     </section>
   );
 }
+
+export default memo(TasksWorkspaceView);

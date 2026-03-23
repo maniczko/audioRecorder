@@ -80,6 +80,29 @@ export interface AiSuggestTasksResponse {
   tasks: AiSuggestedTask[];
 }
 
+export interface AiSearchItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  type?: string;
+  group?: string;
+}
+
+export interface AiSearchRequest {
+  query: string;
+  items: AiSearchItem[];
+}
+
+export interface AiSearchMatch extends AiSearchItem {
+  reason?: string;
+  score?: number;
+}
+
+export interface AiSearchResponse {
+  mode: "anthropic" | "no-key";
+  matches: AiSearchMatch[];
+}
+
 export interface AiPersonProfileRequest {
   personName: string;
   meetings: unknown[];

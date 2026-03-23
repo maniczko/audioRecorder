@@ -35,8 +35,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f3ca72 0%, #f17d72 100%);
-  color: #172436;
+  background: linear-gradient(135deg, var(--warning) 0%, var(--danger) 100%);
+  color: var(--bg);
   font-size: 0.72rem;
 }
 
