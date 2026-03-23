@@ -6,6 +6,9 @@ import ProfileTab from "./ProfileTab";
 vi.mock("./services/config", () => ({
   apiBaseUrlConfigured: () => true,
   API_BASE_URL: "https://api.example.test",
+  APP_DATA_PROVIDER: "remote",
+  remoteApiEnabled: () => true,
+  MEDIA_PIPELINE_PROVIDER: "remote",
 }));
 
 describe("ProfileTab auth integration", () => {

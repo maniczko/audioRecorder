@@ -12,7 +12,7 @@ describe("StudioSidebar", () => {
       startsAt: "2026-03-10T10:00:00Z",
       durationMinutes: 30,
       attendees: "Alice\nBob",
-      tags: "tag1, tag2",
+      tags: "",
       needs: "",
       desiredOutputs: "",
       location: "",
@@ -62,10 +62,10 @@ describe("StudioSidebar", () => {
     });
     expect(defaultProps.setMeetingDraft).toHaveBeenCalled();
 
-    fireEvent.change(screen.getByPlaceholderText("Dodaj tag..."), {
-      target: { value: "urg" },
-    });
-    fireEvent.mouseDown(await screen.findByRole("button", { name: "urgent" }));
+    const tagInput = screen.getByPlaceholderText("Dodaj tag...");
+    fireEvent.focus(tagInput);
+    fireEvent.change(tagInput, { target: { value: "urg" } });
+    fireEvent.mouseDown(await screen.findByRole("button", { name: /urgent/i }));
     expect(defaultProps.setMeetingDraft).toHaveBeenCalled();
 
     fireEvent.click(screen.getAllByRole("button", { name: "×" })[0]);

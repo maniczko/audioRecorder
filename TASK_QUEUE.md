@@ -118,73 +118,11 @@ Context Providers         Ä‚ËĂ˘â‚¬ĹĄĂ˘â‚¬Ĺˇ        2 Ä‚
 
 ---
 
-## 076. [AUDIO] Word-level timestamps + precyzyjna diaryzacja per-sĂ„Ä…Ă˘â‚¬Ĺˇowo
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: Whisper moĂ„Ä…Ă„Ëťe zwracaÄ‚â€žĂ˘â‚¬Ë‡ timestamps per-sĂ„Ä…Ă˘â‚¬Ĺˇowo (`timestamp_granularities: ["word","segment"]`). Przy Ă„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦czeniu z pyannote kaĂ„Ä…Ă„Ëťde sĂ„Ä…Ă˘â‚¬Ĺˇowo trafia do wĂ„Ä…Ă˘â‚¬ĹˇaĂ„Ä…Ă˘â‚¬Ĺźciwego mĂ„â€šÄąâ€šwcy (zamiast caĂ„Ä…Ă˘â‚¬Ĺˇego segmentu). Poprawia dokĂ„Ä…Ă˘â‚¬ĹˇadnoĂ„Ä…Ă˘â‚¬ĹźÄ‚â€žĂ˘â‚¬Ë‡ przy przeplotach i krĂ„â€šÄąâ€štkich wypowiedziach.
-Akceptacja:
-- kaĂ„Ä…Ă„Ëťde sĂ„Ä…Ă˘â‚¬Ĺˇowo w segmencie ma `word`, `start`, `end` fields.
-- przy pyannote: `mergeWithPyannote` dziaĂ„Ä…Ă˘â‚¬Ĺˇa na poziomie sĂ„Ä…Ă˘â‚¬ĹˇĂ„â€šÄąâ€šw (nie segmentĂ„â€šÄąâ€šw) Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ mniej bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdnych przypisaĂ„Ä…Ă˘â‚¬Ĺľ.
-- segmenty w wynikowej transkrypcji dzielone na granicy zmiany mĂ„â€šÄąâ€šwcy wewnÄ‚â€žĂ˘â‚¬Â¦trz Whisper-segmentu.
-- fallback do obecnego zachowania gdy brak word timestamps.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `whisperFields.timestamp_granularities: ["word", "segment"]`.
-- `mergeWithPyannote`: dla kaĂ„Ä…Ă„Ëťdego sĂ„Ä…Ă˘â‚¬Ĺˇowa (`wseg.words[i]`) znajdĂ„Ä…ÄąĹş pyannote speakera Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ grupuj w segmenty po zmianie speakera.
-- nowa funkcja `splitSegmentsByWordSpeaker(whisperSegments, pyannoteSegments)`.
+---
 
 ---
 
-## 077. [AUDIO] Server-side VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ ffmpeg silence removal przed transkrypcjÄ‚â€žĂ˘â‚¬Â¦
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: Whisper halucynuje ("Thank you.", tekst po angielsku, powtarzajÄ‚â€žĂ˘â‚¬Â¦ce siÄ‚â€žĂ˘â€žË frazy) na ciszy. UsuniÄ‚â€žĂ˘â€žËcie ciszy ffmpeg po stronie serwera eliminuje te halucynacje bez potrzeby instalacji bibliotek klienckich.
-Akceptacja:
-- po `preprocessAudio()`: ffmpeg `silenceremove` filtruje fragmenty < -35 dB i > 0.5s.
-- czas trwania audio przed/po logowany gdy `VOICELOG_DEBUG=true`.
-- opcja wyĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦czenia: `VOICELOG_SILENCE_REMOVE=false`.
-- nie usuwa ciszy poniĂ„Ä…Ă„Ëťej 0.5s (krĂ„â€šÄąâ€štkie pauzy sÄ‚â€žĂ˘â‚¬Â¦ waĂ„Ä…Ă„Ëťne dla naturalnej mowy).
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- dodaÄ‚â€žĂ˘â‚¬Ë‡ do filter chain w `preprocessAudio()`: `silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-35dB`.
-- Uwaga: `silenceremove` nie resetuje timestamps Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ downstream pipeline dostaje plik bez ciszy, ale timestamps w Whisper wyjĂ„Ä…Ă˘â‚¬Ĺźciu dotyczÄ‚â€žĂ˘â‚¬Â¦ przetworzonego pliku.
-- Dlatego ten filtr jest bezpieczny TYLKO gdy nie uĂ„Ä…Ă„Ëťywamy pyannote (ktĂ„â€šÄąâ€šry potrzebuje oryginalnych timestamps). WĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦czyÄ‚â€žĂ˘â‚¬Ë‡ tylko dla Whisper-only pipeline.
-
 ---
-
-## 072. [SPEAKER] Pyannote.audio Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ zaawansowana diaryzacja serwera
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: model GPT-4o diarization jest dobry, ale pyannote.audio (neural pipeline z HuggingFace) daje lepsze wyniki dla trudnych nagraĂ„Ä…Ă˘â‚¬Ĺľ Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ szum tĂ„Ä…Ă˘â‚¬Ĺˇa, nakĂ„Ä…Ă˘â‚¬ĹˇadajÄ‚â€žĂ˘â‚¬Â¦ce siÄ‚â€žĂ˘â€žË gĂ„Ä…Ă˘â‚¬Ĺˇosy, krĂ„â€šÄąâ€štkie wypowiedzi. DziaĂ„Ä…Ă˘â‚¬Ĺˇa w trybie offline bez kosztĂ„â€šÄąâ€šw API.
-Akceptacja:
-- jeĂ„Ä…Ă˘â‚¬Ĺźli `HF_TOKEN` ustawiony i `pyannote` dostÄ‚â€žĂ˘â€žËpne Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ uĂ„Ä…Ă„Ëťywa pyannote.audio jako pierwszorzÄ‚â€žĂ˘â€žËdnego diaryzera.
-- wynik pyannote mapowany na istniejÄ‚â€žĂ˘â‚¬Â¦cy format `diarized_json` (speakerId A/B/C..., timestamps).
-- fallback Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ GPT-4o diarize jak dotÄ‚â€žĂ˘â‚¬Â¦d gdy pyannote niedostÄ‚â€žĂ˘â€žËpne.
-- diaryzacja pyannote dziaĂ„Ä…Ă˘â‚¬Ĺˇa dla pliku 60 min w < 3 min (GPU) lub < 15 min (CPU).
-- toggle `VOICELOG_DIARIZER=pyannote|openai` w `.env`.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `server/diarizePyannote.py` Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ prosty skrypt: `pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=HF_TOKEN)`, wyjĂ„Ä…Ă˘â‚¬Ĺźcie JSON.
-- `server/audioPipeline.js`: `diarizeWithPyannote(filePath)` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ `execSync("python server/diarizePyannote.py ...")` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ parse JSON.
-- `server/requirements.txt`: `pyannote.audio>=3.1`, `torch`, `torchaudio`.
-- instalacja: `pip install -r server/requirements.txt`.
-
----
-
-## 061. [AUDIO] VAD (SileroVAD) Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ wycinanie ciszy przed uploadem
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: dĂ„Ä…Ă˘â‚¬Ĺˇugie pauzy wydĂ„Ä…Ă˘â‚¬ĹˇuĂ„Ä…Ă„ËťajÄ‚â€žĂ˘â‚¬Â¦ czas transkrypcji, zwiÄ‚â€žĂ˘â€žËkszajÄ‚â€žĂ˘â‚¬Â¦ koszt API i powodujÄ‚â€žĂ˘â‚¬Â¦ halucynacje Whisper. SileroVAD wycina ciszÄ‚â€žĂ˘â€žË z uploadu (zachowuje lokalne audio bez zmian).
-Akceptacja:
-- po zatrzymaniu nagrania, przed uploadem: detekcja segmentĂ„â€šÄąâ€šw aktywnoĂ„Ä…Ă˘â‚¬Ĺźci mowy.
-- fragmenty ciszy > 2s usuwane z uploadu (lokalny plik niezmieniony).
-- w UI informacja ile % audio wyciÄ‚â€žĂ˘â€žËte ("WyciÄ‚â€žĂ˘â€žËto 3m 20s ciszy").
-- fallback: jeĂ„Ä…Ă˘â‚¬Ĺźli VAD niedostÄ‚â€žĂ˘â€žËpny Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ upload jak dotÄ‚â€žĂ˘â‚¬Â¦d.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `@ricky0123/vad-web` (SileroVAD ONNX, ~200 kB gzip) Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ dziaĂ„Ä…Ă˘â‚¬Ĺˇa w gĂ„Ä…Ă˘â‚¬ĹˇĂ„â€šÄąâ€šwnym wÄ‚â€žĂ˘â‚¬Â¦tku.
-- nowy plik `src/audio/vadFilter.js`: `async function filterSilence(blob) Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ Blob`.
-- wywoĂ„Ä…Ă˘â‚¬Ĺˇywany w `useRecorder.js` po zatrzymaniu nagrania, przed `persistRecordingAudio`.
 
 ---
 
@@ -206,41 +144,11 @@ Techniczne wskazĂ„â€šÄąâ€šwki:
 
 ---
 
-## 074. [AUDIO] Adaptacyjna normalizacja gĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă˘â‚¬ĹźnoĂ„Ä…Ă˘â‚¬Ĺźci per mĂ„â€šÄąâ€šwca
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: gdy jeden mĂ„â€šÄąâ€šwca jest znacznie gĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă˘â‚¬Ĺźniejszy od drugiego, Whisper czÄ‚â€žĂ˘â€žËĂ„Ä…Ă˘â‚¬Ĺźciej myli gĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă˘â‚¬Ĺźniejszego Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ normalizacja per speaker wyrĂ„â€šÄąâ€šwnuje szanse i poprawia rozpoznawanie.
-Akceptacja:
-- po diaryzacji (segmenty + speakerId): FFmpeg normalizuje kaĂ„Ä…Ă„Ëťdy segment osobno do -16 LUFS.
-- znormalizowane segmenty sklejane w jeden plik przed finalnÄ‚â€žĂ˘â‚¬Â¦ transkrypcjÄ‚â€žĂ˘â‚¬Â¦.
-- efekt: lepsza dokĂ„Ä…Ă˘â‚¬ĹˇadnoĂ„Ä…Ă˘â‚¬ĹźÄ‚â€žĂ˘â‚¬Ë‡ dla cichych mĂ„â€šÄąâ€šwcĂ„â€šÄąâ€šw (mierzalne przez `verificationScore`).
-- wyĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦czalne przez `VOICELOG_PER_SPEAKER_NORM=false`.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `server/audioPipeline.js`: po `diarize()` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ dla kaĂ„Ä…Ă„Ëťdego speakerId: `ffmpeg -ss [start] -t [dur] -af loudnorm=I=-16 [out_N.wav]`.
-- zĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă„Ëťenie: `ffmpeg -i "concat:seg1.wav|seg2.wav|..." -c copy combined_norm.wav`.
-- tylko jeĂ„Ä…Ă˘â‚¬Ĺźli `speakerCount > 1` Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ dla jednego mĂ„â€šÄąâ€šwcy globalny `loudnorm` wystarczy.
-
 ---
 
 ## PRIORYTET P2 Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ rozpoznawanie i wizualizacja mĂ„â€šÄąâ€šwcĂ„â€šÄąâ€šw
 
 ---
-
-## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: jeden sample gĂ„Ä…Ă˘â‚¬Ĺˇosu (~15s) to za maĂ„Ä…Ă˘â‚¬Ĺˇo Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ wielokrotne prĂ„â€šÄąâ€šbki dramatycznie zwiÄ‚â€žĂ˘â€žËkszajÄ‚â€žĂ˘â‚¬Â¦ dokĂ„Ä…Ă˘â‚¬ĹˇadnoĂ„Ä…Ă˘â‚¬ĹźÄ‚â€žĂ˘â‚¬Ë‡ rozpoznawania.
-Akceptacja:
-- uĂ„Ä…Ă„Ëťytkownik moĂ„Ä…Ă„Ëťe nagraÄ‚â€žĂ˘â‚¬Ë‡ do 5 prĂ„â€šÄąâ€šbek gĂ„Ä…Ă˘â‚¬Ĺˇosu per osoba (kaĂ„Ä…Ă„Ëťda 15Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬Ĺ›30s).
-- embedding przechowywany jako average ze wszystkich prĂ„â€šÄąâ€šbek.
-- per-profil slider threshold (0.70Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬Ĺ›0.95, default 0.82) w UI listy profili.
-- przy auto-labelu widoczne "Marek (94%)" z confidence score.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `voice_profiles` table: dodaÄ‚â€žĂ˘â‚¬Ë‡ kolumnÄ‚â€žĂ˘â€žË `sample_count INT DEFAULT 1`.
-- `POST /voice-profiles` z tym samym `X-Speaker-Name` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ uĂ„Ä…Ă˘â‚¬Ĺźrednia embedding z istniejÄ‚â€žĂ˘â‚¬Â¦cym.
-- `server/speakerEmbedder.js`: eksportowaÄ‚â€žĂ˘â‚¬Ë‡ `averageEmbeddings(embeddings[])`.
 
 ---
 
@@ -289,66 +197,11 @@ Techniczne wskazĂ„â€šÄąâ€šwki:
 
 ---
 
-## 046. [AUDIO] Exponential backoff i auto-retry w kolejce nagraĂ„Ä…Ă˘â‚¬Ĺľ
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦d sieciowy = item utkniÄ‚â€žĂ˘â€žËty w `failed` bez auto-ponowienia; user musi kliknÄ‚â€žĂ˘â‚¬Â¦Ä‚â€žĂ˘â‚¬Ë‡ rÄ‚â€žĂ˘â€žËcznie.
-Akceptacja:
-- po bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdzie item czeka 1s, 4s, 16s (3 prĂ„â€šÄąâ€šby) przed oznaczeniem jako trwaĂ„Ä…Ă˘â‚¬Ĺˇy bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦d.
-- przy braku internetu (`navigator.onLine === false`) item czeka do powrotu sieci.
-- po 3 nieudanych prĂ„â€šÄąâ€šbach: status `failed_permanent`, wyraĂ„Ä…ÄąĹşny komunikat + przycisk "PonĂ„â€šÄąâ€šw rÄ‚â€žĂ˘â€žËcznie".
-- licznik prĂ„â€šÄąâ€šb widoczny przy kaĂ„Ä…Ă„Ëťdym itemie w kolejce.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- dodaÄ‚â€žĂ˘â‚¬Ë‡ `retryCount`, `backoffUntil`, `lastErrorMessage` do `RecordingQueueItem` w `recordingQueue.js`.
-- w `useRecorder.js`: przed `processQueueItem` sprawdziÄ‚â€žĂ˘â‚¬Ë‡ `item.backoffUntil > Date.now()`.
-- `window.addEventListener("online", ...)` wznawia processing.
+---
 
 ---
 
-## 047. [AUDIO] ObsĂ„Ä…Ă˘â‚¬Ĺˇuga bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdĂ„â€šÄąâ€šw odtwarzania audio w UnifiedPlayer
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: `play().catch(() => {})` poĂ„Ä…Ă˘â‚¬Ĺˇyka bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdy Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ user klika Ä‚ËĂ˘â‚¬â€śĂ‚Â¶ i nic siÄ‚â€žĂ˘â€žË nie dzieje bez feedbacku.
-Akceptacja:
-- bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦d odtwarzania pokazuje inline komunikat ("Nie moĂ„Ä…Ă„Ëťna odtworzyÄ‚â€žĂ˘â‚¬Ë‡ Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ plik moĂ„Ä…Ă„Ëťe byÄ‚â€žĂ˘â‚¬Ë‡ uszkodzony").
-- po bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdzie Ä‚ËĂ˘â‚¬â€śĂ‚Â¶ zmienia siÄ‚â€žĂ˘â€žË na ikonÄ‚â€žĂ˘â€žË Ä‚ËÄąË‡Ă‚Â  z tooltipem.
-- bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â‚¬Â¦d `NotAllowedError` obsĂ„Ä…Ă˘â‚¬Ĺˇugiwany osobno: "Kliknij aby odblokowaÄ‚â€žĂ˘â‚¬Ë‡ audio".
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `src/studio/UnifiedPlayer.js`: `a.play().catch(err => setPlayError(err.message))`.
-- lokalny stan `playError`, czyszczony przy zmianie `src`.
-
 ---
-
-## 049. [AUDIO] VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ automatyczne zatrzymanie przy dĂ„Ä…Ă˘â‚¬Ĺˇugiej ciszy
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: uĂ„Ä…Ă„Ëťytkownik zapomina zatrzymaÄ‚â€žĂ˘â‚¬Ë‡ nagranie Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ kilkugodzinne pliki, przepeĂ„Ä…Ă˘â‚¬Ĺˇnienie storage.
-Akceptacja:
-- jeĂ„Ä…Ă˘â‚¬Ĺźli cisza > 3 minuty (konfigurowalnie: 1/3/5/off) Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ nagranie zatrzymuje siÄ‚â€žĂ˘â€žË automatycznie.
-- 30s przed zatrzymaniem: widoczne odliczanie "Zatrzymanie za 30s Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ kliknij aby kontynuowaÄ‚â€žĂ˘â‚¬Ë‡".
-- "Kontynuuj" resetuje licznik.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- w `useRecorder.js`: monitorowaÄ‚â€žĂ˘â‚¬Ë‡ `AnalyserNode` max amplitude w oknie 3 min Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ trigger.
-- countdown state eksponowany do `UnifiedPlayer` jako prop.
-
----
-
-## 050. [AUDIO] Chunked upload dla duĂ„Ä…Ă„Ëťych plikĂ„â€šÄąâ€šw (>10MB)
-Status: `done`
-Wykonawca: `claude`
-Priorytet: `P2`
-Cel: przy sĂ„Ä…Ă˘â‚¬Ĺˇabym WiFi upload duĂ„Ä…Ă„Ëťego pliku czÄ‚â€žĂ˘â€žËsto siÄ‚â€žĂ˘â€žË przerywa i wymaga ponowienia od zera.
-Akceptacja:
-- pliki > 10MB dzielone na chunki 2MB wysyĂ„Ä…Ă˘â‚¬Ĺˇane sekwencyjnie.
-- postÄ‚â€žĂ˘â€žËp uploadu widoczny w UnifiedPlayer (pasek procentowy).
-- przerwany upload moĂ„Ä…Ă„Ëťe byÄ‚â€žĂ˘â‚¬Ë‡ wznowiony Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ serwer przechowuje chunki przez 24h.
-Techniczne wskazĂ„â€šÄąâ€šwki:
-- `src/services/mediaService.js`: `persistRecordingAudio()` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ jeĂ„Ä…Ă˘â‚¬Ĺźli `blob.size > 10MB`, podzieliÄ‚â€žĂ˘â‚¬Ë‡ na `Blob.slice()` chunks.
-- serwer: `PUT /media/recordings/:id/audio/chunk?index=N&total=M` Ä‚ËĂ˘â‚¬Â Ă˘â‚¬â„˘ skĂ„Ä…Ă˘â‚¬Ĺˇada w jeden plik.
-- po zakoĂ„Ä…Ă˘â‚¬Ĺľczeniu: `POST /media/recordings/:id/audio/finalize`.
 
 ---
 
@@ -377,116 +230,15 @@ Akceptacja:
 
 ---
 
-## 202. [TESTS] Dodanie testÄ‚Ĺ‚w dla media.ts routes (52% coverage)
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P1`
-Wynik:
-- Ă˘Ĺ›â€¦ Media routes majĂ„â€¦ juÄąÄ˝ 14 testÄ‚Ĺ‚w w `server/tests/routes/media.test.ts`
-- Ă˘Ĺ›â€¦ Pokrycie endpointÄ‚Ĺ‚w: upload, transcribe, retry-transcribe, normalize, voice-coaching, rediarize, analyze
-- Ă˘Ĺ›â€¦ Testy security (401, 403, 413)
-- Ä‘Ĺşâ€śĹ  Coverage media.ts: 52% Ă˘â€ â€™ 55% (istniejĂ„â€¦ce testy wystarczajĂ„â€¦ce)
-Uwagi:
-- Dodatkowe testy w `media.additional.test.ts` wymagaÄąâ€šyby gÄąâ€šĂ„â„˘bszej refaktoryzacji route'Ä‚Ĺ‚w
-- Obecne testy pokrywajĂ„â€¦ gÄąâ€šÄ‚Ĺ‚wne Äąâ€şcieÄąÄ˝ki (happy path + error handling)
+---
 
 ---
 
-## 203. [TESTS] E2E testy dla krytycznych user flows
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P1`
-Wynik:
-- Ă˘Ĺ›â€¦ Dodano 5 nowych testÄ‚Ĺ‚w E2E w `tests/e2e/critical-flows.spec.js`
-- Ă˘Ĺ›â€¦ Pokryte flow:
-  1. Rejestracja Ă˘â€ â€™ pierwsze spotkanie Ă˘â€ â€™ nagranie Ă˘â€ â€™ transkrypcja
-  2. Logowanie Ă˘â€ â€™ przeglĂ„â€¦danie spotkaÄąâ€ž Ă˘â€ â€™ edycja transkrypcji
-  3. Tasks: create Ă˘â€ â€™ edit Ă˘â€ â€™ complete Ă˘â€ â€™ delete
-  4. People: profile Ă˘â€ â€™ psych profile Ă˘â€ â€™ meeting history
-  5. Calendar Ă˘â€ â€™ create meeting Ă˘â€ â€™ Google Calendar sync
-- Ă˘Ĺ›â€¦ ÄąÂĂ„â€¦cznie 13 testÄ‚Ĺ‚w E2E (8 istniejĂ„â€¦cych + 5 nowych)
-Pliki:
-- `tests/e2e/critical-flows.spec.js` - nowe testy E2E
-- `tests/e2e/helpers/seed.js` - helper do seedowania usera
-Uruchamianie:
-- `npm run test:e2e` - wszystkie E2E
-- `npm run test:e2e -- critical-flows` - tylko nowe testy
+---
 
 ---
 
-## 204. [CSS] Audyt i naprawa niespÄ‚Ĺ‚jnoÄąâ€şci w stylach
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P2`
-Wynik:
-- Ă˘Ĺ›â€¦ Zidentyfikowano 737 hardcoded kolorÄ‚Ĺ‚w #hex w plikach CSS
-- Ă˘Ĺ›â€¦ WiĂ„â„˘kszoÄąâ€şĂ„â€ˇ w App.css (definicje zmiennych - OK)
-- Ă˘Ĺ›â€¦ Naprawiono hardcoded kolory w:
-  - `CalendarTabStyles.css` - #74d0bf, #5bb3dc, #03222a Ă˘â€ â€™ var(--accent), var(--bg)
-  - `TopbarStyles.css` - #74d0bf, #5bb3dc, #03222a Ă˘â€ â€™ var(--accent), var(--bg)
-  - `NotificationCenterStyles.css` - #f3ca72, #f17d72, #172436 Ă˘â€ â€™ var(--warning), var(--danger), var(--bg)
-  - `ProfileTabStyles.css` - #fff, #75d6c4, #ef4444 Ă˘â€ â€™ var(--text), var(--accent), var(--danger)
-- Ă˘Ĺ›â€¦ Build przechodzi bez bÄąâ€šĂ„â„˘dÄ‚Ĺ‚w
-- Ä‘Ĺşâ€śĹ  CSS bundle: 68.06 kB (gzip: 14.05 kB) - w normie (< 100kB)
-
 ---
-
-## 205. [CSS] Dodanie testÄ‚Ĺ‚w wizualnych (visual regression)
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P2`
-Wynik:
-- Ă˘Ĺ›â€¦ Dodano 9 testÄ‚Ĺ‚w screenshot w `tests/e2e/visual-regression.spec.js`
-- Ă˘Ĺ›â€¦ Pokryte komponenty:
-  1. Topbar (desktop + mobile)
-  2. Tasks Kanban (desktop + mobile)
-  3. Calendar month view
-  4. People list
-  5. Studio meeting view
-  6. Command Palette
-  7. Dark mode rendering
-- Ă˘Ĺ›â€¦ Testy uÄąÄ˝ywajĂ„â€¦ Playwright `toHaveScreenshot()`
-- Ă˘Ĺ›â€¦ Snapshoty zapisywane w `tests/e2e/layout-visual.spec.js-snapshots/`
-Uruchamianie:
-- `npm run test:e2e -- visual-regression` - tylko testy wizualne
-- `npm run test:e2e:ui` - UI mode do review snapshotÄ‚Ĺ‚w
-
----
-
-## 206. [TESTS] Naprawa pozostałych testów frontend
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P0`
-Wynik:
-- ✅ useWorkspaceData.test.tsx skipnięty (8 testów - infinite loop w Zustand)
-- ✅ aiTaskSuggestions.test.ts naprawiony (1 passing, 4 skipped - Vitest 4 issue)
-- ✅ calendar.test.ts naprawiony (2 passing, 2 skipped - Vitest 4 issue)
-- ✅ useStoredState.test.ts naprawiony (2 skipped - vi.mocked issue)
-- ✅ recorderStore.test.ts naprawiony (2 passing, 13 skipped - Vitest 4 module mocking issue)
-- ✅ ESLint warnings naprawione (5 → 0)
-- ✅ useUI.test.tsx usunięty (5 testów które nie działały)
-- 📊 Pass Rate: 76% → 85% (+9%)
-- 📊 Test Files: 21 failed → 18 failed (-3)
-Pozostałe problemy:
-- Testy integracyjne z backendem (15 testów) - wymagają running backendu na localhost:4000
-- Testy z Google API (4 testy) - 401 unauthorized
-- Testy UI (5 testów) - placeholder text encoding issues
-- Testy recorderStore (13 testów) - Vitest 4 module mocking limitations
-Akceptacja:
-- Wszystkie testy które MOGĄ działać bez backendu przechodzą
-- Testy które wymagają backendu są oznaczone jako skip lub mają jasny error message
-- ESLint przechodzi bez warningów
-
----
-
-## 207. [TESTS] ESLint warnings - naprawa
-Status: `done`
-Wykonawca: `qwen`
-Priorytet: `P0`
-Wynik:
-- Ă˘Ĺ›â€¦ TagInput.tsx: useMemo dependency naprawione
-- Ă˘Ĺ›â€¦ TaskDetailsPanel.tsx: unused variables usuniĂ„â„˘te
-- Ă˘Ĺ›â€¦ `npm run lint` przechodzi bez warningÄ‚Ĺ‚w
 
 ---
 
@@ -524,46 +276,17 @@ Techniczne wskazĂ„â€šÄąâ€šwki:
 
 ---
 
-## Ă„â€ÄąĹźĂ˘â‚¬Ĺ›ÄąÄ„ PODSUMOWANIE ZADAĂ„Ä…Ă‚Â WEDĂ„Ä…Ă‚ÂUG WYKONAWCY
 
-### Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Qwen (Testy i proste zadania)
-- [TEST] Dodac testy kontraktowe i regresyjne dla krytycznych flow refaktoru
-- [LAYOUT] Odlozyc porzadki UI do etapu po stabilizacji architektury
-- [TESTS] audioPipeline.ts Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ pokrycie testami do 80%
-- PodziaĂ„Ä…Ă˘â‚¬Ĺˇ App.css na moduĂ„Ä…Ă˘â‚¬Ĺˇy CSS
-- [LAYOUT] Standaryzacja stylĂ„â€šÄąâ€šw CSS i kolorystyki
+## 📻 PODSUMOWANIE ZADAŃ WEDŁUG WYKONAWCY
 
-### Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś GPT (Ă„Ä…ÄąË‡rednie zadania)
-- AI Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ automatyczny coaching po spotkaniu (meeting debrief)
-- ZarzÄ‚â€žĂ˘â‚¬Â¦dzanie pamiÄ‚â€žĂ˘â€žËciÄ‚â€žĂ˘â‚¬Â¦ audio Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ limity IndexedDB
-- Delta sync zamiast peĂ„Ä…Ă˘â‚¬Ĺˇnego PUT stanu workspace
-- Backup i restore danych workspace (JSON export/import)
-- PeĂ„Ä…Ă˘â‚¬Ĺˇny live sync z Google Calendar i Google Tasks
-- DostÄ‚â€žĂ˘â€žËpnoĂ„Ä…Ă˘â‚¬ĹźÄ‚â€žĂ˘â‚¬Ë‡ i keyboard-only flows
-- Optymalizacja wydajnoĂ„Ä…Ă˘â‚¬Ĺźci Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ code splitting i memoizacja
-- AI Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ semantyczne wyszukiwanie zadaĂ„Ä…Ă˘â‚¬Ĺľ i spotkaĂ„Ä…Ă˘â‚¬Ĺľ
-- Email digest i powiadomienia poza przeglÄ‚â€žĂ˘â‚¬Â¦darkÄ‚â€žĂ˘â‚¬Â¦
+### 🤖 Qwen (Testy i proste zadania)
+- [TESTS] Dodanie testÄ‚Ĺ‚w dla ai/routes.ts (26% coverage)
+- [TESTS] Poprawa coverage ProfileTab.tsx (2% Ă˘â€ â€™ 60%)
+
+### 🤖 GPT (Średnie zadania)
 - Outlook / Microsoft To Do / Microsoft Calendar
 
-### Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Claude (Trudne zadania, dĂ„Ä…ÄąĹşwiÄ‚â€žĂ˘â€žËk, architektura)
-- [REFACTOR] Uporzadkowac shared contracts i payloady miedzy frontendem a backendem
-- [REFACTOR] Rozbic `server/app.ts` na bootstrap i modulowe rejestracje tras
-- [REFACTOR] Wydzielic backendowy orchestration layer dla pipeline nagran
-- [REFACTOR] Uporzadkowac warstwe stanu frontendu i odpowiedzialnosci hookow
-- [REFACTOR] Rozbic `TabRouter.tsx` na container i widoki per zakladka
-- [REFACTOR] Wyczyscic warstwe services i adapterow API
-- [SECURITY] Proxy wywoĂ„Ä…Ă˘â‚¬ĹˇaĂ„Ä…Ă˘â‚¬Ĺľ Anthropic API przez backend
-- [AUDIO] Groq Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ whisper-large-v3 zamiast whisper-1/gpt-4o-transcribe
-- [AUDIO] Word-level timestamps + precyzyjna diaryzacja per-sĂ„Ä…Ă˘â‚¬Ĺˇowo
-- [AUDIO] Server-side VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ ffmpeg silence removal przed transkrypcjÄ‚â€žĂ˘â‚¬Â¦
-- [SPEAKER] Pyannote.audio Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ zaawansowana diaryzacja serwera
-- [AUDIO] VAD (SileroVAD) Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ wycinanie ciszy przed uploadem
+### 🤖 Claude (Trudne zadania, dźwięk, architektura)
 - [AUDIO] Upgrade RNNoise worklet do rzeczywistego modelu WASM
-- [AUDIO] Adaptacyjna normalizacja gĂ„Ä…Ă˘â‚¬ĹˇoĂ„Ä…Ă˘â‚¬ĹźnoĂ„Ä…Ă˘â‚¬Ĺźci per mĂ„â€šÄąâ€šwca
-- [SPEAKER] Multi-sample enrollment i per-profile threshold
 - [SPEAKER] Korekta mĂ„â€šÄąâ€šwcy jako aktualizacja profilu (feedback loop)
 - [VOICE] Acoustic features per speaker Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ librosa/parselmouth (roadmap)
-- [AUDIO] Exponential backoff i auto-retry w kolejce nagraĂ„Ä…Ă˘â‚¬Ĺľ
-- [AUDIO] ObsĂ„Ä…Ă˘â‚¬Ĺˇuga bĂ„Ä…Ă˘â‚¬ĹˇÄ‚â€žĂ˘â€žËdĂ„â€šÄąâ€šw odtwarzania audio w UnifiedPlayer
-- [AUDIO] VAD Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ automatyczne zatrzymanie przy dĂ„Ä…Ă˘â‚¬Ĺˇugiej ciszy
-- [AUDIO] Chunked upload dla duĂ„Ä…Ă„Ëťych plikĂ„â€šÄąâ€šw (>10MB)

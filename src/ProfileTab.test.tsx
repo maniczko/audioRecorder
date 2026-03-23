@@ -12,6 +12,10 @@ vi.mock("./services/httpClient", () => ({
 
 vi.mock("./services/config", () => ({
   apiBaseUrlConfigured: () => apiBaseUrlConfiguredMock(),
+  APP_DATA_PROVIDER: "local",
+  remoteApiEnabled: () => false,
+  API_BASE_URL: "",
+  MEDIA_PIPELINE_PROVIDER: "local",
 }));
 
 describe("ProfileTab voice profiles", () => {

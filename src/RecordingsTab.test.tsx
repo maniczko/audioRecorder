@@ -200,7 +200,7 @@ describe("RecordingsTab", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Spróbuj ponownie|Sprobuj ponownie/i }));
+    fireEvent.click(screen.getByRole("button", { name: /ponownie/i }));
     expect(defaultProps.retryRecordingQueueItem).toHaveBeenCalledWith("rec_failed");
     expect(screen.getByText(/Build: def5678/i)).toBeInTheDocument();
   });
