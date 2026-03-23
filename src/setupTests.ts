@@ -1,11 +1,19 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
 /* eslint-disable no-undef */
 window.jest = vi;
 globalThis.jest = vi;
 /* eslint-enable no-undef */
+
+// Global cleanup after each test to prevent memory leaks and test interference
+afterEach(() => {
+  cleanup();
+  vi.clearAllTimers();
+  vi.clearAllMocks();
+});
 
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   clearRect: jest.fn(),
