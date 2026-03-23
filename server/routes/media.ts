@@ -13,9 +13,8 @@ import type { MediaAsset } from "../lib/types.ts";
  * Checks available disk space and returns true if there's enough space.
  * Returns false if disk space is critically low (<100MB free).
  */
-function checkDiskSpace(minBytes: number = 100 * 1024 * 1024): { ok: boolean; freeBytes?: number } {
+function checkDiskSpace(uploadDir: string, minBytes: number = 100 * 1024 * 1024): { ok: boolean; freeBytes?: number } {
   try {
-    const uploadDir = process.env.VOICELOG_UPLOAD_DIR || "./server/data/uploads";
     const fs = require("node:fs");
     const stats = fs.statfsSync ? fs.statfsSync(uploadDir) : null;
 
@@ -36,8 +35,7 @@ function checkDiskSpace(minBytes: number = 100 * 1024 * 1024): { ok: boolean; fr
  * Cleans up old chunk files older than maxAgeHours.
  * Returns number of files deleted and bytes freed.
  */
-async function cleanupOldChunks(maxAgeHours: number = 24): Promise<{ deleted: number; bytesFreed: number }> {
-  const uploadDir = process.env.VOICELOG_UPLOAD_DIR || "./server/data/uploads";
+async function cleanupOldChunks(uploadDir: string, maxAgeHours: number = 24): Promise<{ deleted: number; bytesFreed: number }> {
   const chunksDir = path.join(uploadDir, "chunks");
 
   if (!existsSync(chunksDir)) {
@@ -88,6 +86,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           await transcriptionService.ensureTranscriptionJob(recordingId, asset, options);
           return transcriptionService.getMediaAsset(recordingId);
         };
+  const uploadDir = config.uploadDir || process.env.VOICELOG_UPLOAD_DIR || "./server/data/uploads";
 
   function resolveProcessingMode(input: any) {
     return input === "full" || input === "fast"
@@ -548,7 +547,7 @@ Important:
     if (buffer.byteLength > 3 * 1024 * 1024) return c.json({ message: "Chunk jest zbyt duży (max 3MB)." }, 413);
 
     // Check disk space before writing
-    const diskSpace = checkDiskSpace(50 * 1024 * 1024); // 50MB minimum
+    const diskSpace = checkDiskSpace(uploadDir, 50 * 1024 * 1024); // 50MB minimum
     if (!diskSpace.ok) {
       const { logger } = await import("../logger.ts");
       logger.error(`[ENOSPC] Disk space critically low: ${diskSpace.freeBytes} bytes free`);
@@ -639,7 +638,7 @@ Important:
 
   // Disk space management endpoints
   router.get("/disk-space/status", async (c) => {
-    const diskSpace = checkDiskSpace(0); // Check without minimum
+    const diskSpace = checkDiskSpace(uploadDir, 0); // Check without minimum
     return c.json({
       ok: diskSpace.ok,
       freeBytes: diskSpace.freeBytes || null,
@@ -656,7 +655,7 @@ Important:
     }
 
     const maxAgeHours = parseInt(c.req.query("maxAge") || "24", 10);
-    const result = await cleanupOldChunks(Math.min(maxAgeHours, 168)); // Max 1 week
+    const result = await cleanupOldChunks(uploadDir, Math.min(maxAgeHours, 168)); // Max 1 week
 
     return c.json({
       success: true,

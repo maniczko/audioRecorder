@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import os from "node:os";
 import { Pool } from "pg";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
@@ -22,6 +23,37 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ENOSPC_MESSAGE = "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.";
+
+function _resolveWritableUploadDir(preferredDir: string): string {
+  const normalizedPreferred = path.resolve(preferredDir);
+  const candidates = Array.from(new Set([
+    normalizedPreferred,
+    path.resolve(process.cwd(), "server", "data", "uploads"),
+    path.resolve(process.cwd(), ".tmp", "uploads"),
+    path.join(os.tmpdir(), "voicelog", "uploads"),
+  ]));
+
+  let lastError: unknown = null;
+
+  for (const candidate of candidates) {
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      const probePath = path.join(candidate, `.write-probe-${process.pid}-${Date.now()}`);
+      fs.writeFileSync(probePath, "");
+      fs.unlinkSync(probePath);
+      if (candidate !== normalizedPreferred) {
+        logger.warn(`[database] Upload dir ${normalizedPreferred} is not writable, falling back to ${candidate}.`);
+      }
+      return candidate;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`No writable upload directory available. Preferred: ${normalizedPreferred}`);
+}
 
 function _cleanupOldLocalFiles(uploadDir: string): void {
   try {
@@ -75,7 +107,7 @@ export class Database {
   constructor(dbConfig: any = {}) {
     const { type = "sqlite", dbPath = ":memory:", uploadDir = "./uploads", sessionTtlHours = 24 * 30, connectionString } = dbConfig;
     this.type = connectionString ? "postgres" : type;
-    this.uploadDir = uploadDir;
+    this.uploadDir = _resolveWritableUploadDir(uploadDir);
     this.sessionTtlHours = sessionTtlHours;
 
     if (this.type === "postgres") {
@@ -107,7 +139,7 @@ export class Database {
       console.log("[DB] Using local async SQLite Worker at:", dbPath);
     }
 
-    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.mkdirSync(this.uploadDir, { recursive: true });
   }
 
   async init() {
@@ -768,16 +800,14 @@ export class Database {
         storagePath = result;
       } else {
         // Supabase not configured — save locally
-        const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-        storagePath = _writeLocalAudioFile(uploadDir, `${safeRecordingId}${extension}`, buffer);
+        storagePath = _writeLocalAudioFile(this.uploadDir, `${safeRecordingId}${extension}`, buffer);
       }
     } catch (err: any) {
       if ((err as any).code === "ENOSPC" || String(err.message).includes("Brak miejsca na dysku")) {
         throw err;
       }
       logger.warn("[database] Supabase upload failed, falling back to local:", { message: err.message });
-      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-      storagePath = _writeLocalAudioFile(uploadDir, `${safeRecordingId}${extension}`, buffer);
+      storagePath = _writeLocalAudioFile(this.uploadDir, `${safeRecordingId}${extension}`, buffer);
     }
 
     const existing = await this._get("SELECT id FROM media_assets WHERE id = ?", [recordingId]);
@@ -811,9 +841,8 @@ export class Database {
       if (result) {
         storagePath = result;
       } else {
-        const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-        fs.mkdirSync(uploadDir, { recursive: true });
-        storagePath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+        storagePath = path.join(this.uploadDir, `${safeRecordingId}${extension}`);
         if (path.resolve(storagePath) !== path.resolve(filePath)) {
           await fs.promises.copyFile(filePath, storagePath);
         }
@@ -823,9 +852,8 @@ export class Database {
         throw err;
       }
       logger.warn("[database] Supabase upload from path failed, falling back to local:", { message: err.message });
-      const uploadDir = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
-      fs.mkdirSync(uploadDir, { recursive: true });
-      storagePath = path.join(uploadDir, `${safeRecordingId}${extension}`);
+      fs.mkdirSync(this.uploadDir, { recursive: true });
+      storagePath = path.join(this.uploadDir, `${safeRecordingId}${extension}`);
       if (path.resolve(storagePath) !== path.resolve(filePath)) {
         await fs.promises.copyFile(filePath, storagePath);
       }
