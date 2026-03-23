@@ -117,13 +117,46 @@ function createRemoteMediaService() {
       return createBrowserTranscriptionController(options);
     },
     async persistRecordingAudio(recordingId, blob, options: any = {}) {
+      const { workspaceId = "", meetingId = "", onProgress } = options;
+      const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+      const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB
+
+      if (blob && blob.size > CHUNKED_THRESHOLD) {
+        const total = Math.ceil(blob.size / CHUNK_SIZE);
+        for (let i = 0; i < total; i++) {
+          const chunk = blob.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          await apiRequest(`/media/recordings/${recordingId}/audio/chunk?index=${i}&total=${total}`, {
+            method: "PUT",
+            body: chunk,
+            headers: {
+              "Content-Type": blob.type || "application/octet-stream",
+              ...(workspaceId ? { "X-Workspace-Id": workspaceId } : {}),
+              ...(meetingId ? { "X-Meeting-Id": meetingId } : {}),
+            },
+          });
+          onProgress?.((i + 1) / total * 90);
+        }
+        const response = await apiRequest(`/media/recordings/${recordingId}/audio/finalize`, {
+          method: "POST",
+          body: { contentType: blob.type || "application/octet-stream", workspaceId, meetingId, total },
+        });
+        onProgress?.(100);
+        return {
+          storageMode: "remote",
+          audioQuality:
+            response?.audioQuality && typeof response.audioQuality === "object"
+              ? response.audioQuality
+              : null,
+        };
+      }
+
       const response = await apiRequest(`/media/recordings/${recordingId}/audio`, {
         method: "PUT",
         body: blob,
         headers: {
           "Content-Type": blob?.type || "application/octet-stream",
-          ...(options.workspaceId ? { "X-Workspace-Id": options.workspaceId } : {}),
-          ...(options.meetingId ? { "X-Meeting-Id": options.meetingId } : {}),
+          ...(workspaceId ? { "X-Workspace-Id": workspaceId } : {}),
+          ...(meetingId ? { "X-Meeting-Id": meetingId } : {}),
         },
       });
       return {

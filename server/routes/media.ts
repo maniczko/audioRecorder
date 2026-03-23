@@ -1,4 +1,4 @@
-import { existsSync, createReadStream, statSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync, createReadStream, statSync, writeFileSync, unlinkSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { Hono } from "hono";
@@ -9,7 +9,7 @@ import type { MediaAsset } from "../lib/types.ts";
 
 export function createMediaRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
-  const { transcriptionService } = services;
+  const { transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
   const startTranscriptionPipeline =
     typeof transcriptionService.startTranscriptionPipeline === "function"
@@ -341,6 +341,96 @@ The SVG should look like a hand-drawn visual note with doodle character icons, s
     const body = await c.req.json().catch(() => ({}));
     const result = await transcriptionService.analyzeMeetingWithOpenAI(body);
     return c.json(result || { mode: "no-key" }, 200);
+  });
+
+  // Chunked upload: PUT /recordings/:id/audio/chunk?index=N&total=M
+  router.put("/recordings/:recordingId/audio/chunk", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const workspaceId = c.req.header("X-Workspace-Id") || "";
+    if (!workspaceId) return c.json({ message: "Brakuje X-Workspace-Id." }, 400);
+    await ensureWorkspaceAccess(c, workspaceId);
+
+    const index = parseInt(c.req.query("index") || "", 10);
+    const total = parseInt(c.req.query("total") || "", 10);
+    if (isNaN(index) || isNaN(total) || index < 0 || total <= 0 || index >= total) {
+      return c.json({ message: "Nieprawidłowe parametry chunka (index/total)." }, 400);
+    }
+    if (total > 600) return c.json({ message: "Za dużo chunków (max 600, ~1.2GB)." }, 400);
+
+    const buffer = await c.req.arrayBuffer();
+    if (buffer.byteLength > 3 * 1024 * 1024) return c.json({ message: "Chunk jest zbyt duży (max 3MB)." }, 413);
+
+    const chunksDir = path.join(config.uploadDir, "chunks");
+    mkdirSync(chunksDir, { recursive: true });
+
+    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
+    writeFileSync(chunkPath, Buffer.from(buffer));
+
+    return c.json({ index, total }, 200);
+  });
+
+  // Chunked upload finalize: POST /recordings/:id/audio/finalize
+  router.post("/recordings/:recordingId/audio/finalize", async (c) => {
+    const recordingId = c.req.param("recordingId");
+    const session = c.get("session") as any;
+    const body = await c.req.json().catch(() => ({}));
+    const workspaceId = body.workspaceId || c.req.header("X-Workspace-Id") || "";
+    const meetingId = body.meetingId || c.req.header("X-Meeting-Id") || "";
+    const contentType = body.contentType || "application/octet-stream";
+    const total = parseInt(body.total || "0", 10);
+
+    if (!workspaceId) return c.json({ message: "Brakuje workspaceId." }, 400);
+    if (!total || total <= 0) return c.json({ message: "Brakuje total w ciele żądania." }, 400);
+    await ensureWorkspaceAccess(c, workspaceId);
+
+    const chunksDir = path.join(config.uploadDir, "chunks");
+    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    const parts: Buffer[] = [];
+    for (let i = 0; i < total; i++) {
+      const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
+      if (!existsSync(chunkPath)) return c.json({ message: `Brakuje chunka ${i} z ${total}.` }, 400);
+      parts.push(readFileSync(chunkPath));
+    }
+
+    const fullBuffer = Buffer.concat(parts);
+    if (fullBuffer.byteLength > 100 * 1024 * 1024) {
+      return c.json({ message: "Złożony plik przekracza maksymalny rozmiar 100MB." }, 413);
+    }
+
+    let asset: MediaAsset;
+    try {
+      asset = await transcriptionService.upsertMediaAsset({
+        recordingId, workspaceId, meetingId,
+        contentType,
+        buffer: fullBuffer,
+        createdByUserId: session.user_id,
+      });
+    } catch (err: any) {
+      if ((err as any).code === "ENOSPC" || String(err.message).includes("Brak miejsca na dysku")) {
+        return c.json({ message: "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem." }, 507);
+      }
+      throw err;
+    }
+
+    // Cleanup chunks after successful assembly
+    for (let i = 0; i < total; i++) {
+      try { unlinkSync(path.join(chunksDir, `${safeId}_${i}.chunk`)); } catch (_) {}
+    }
+
+    let audioQuality = null;
+    try {
+      audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
+        contentType: asset.content_type,
+        signal: c.req.raw.signal,
+      });
+      await transcriptionService.saveAudioQualityDiagnostics(recordingId, audioQuality);
+    } catch (error: any) {
+      console.warn(`[mediaRoutes] Audio quality analysis failed for ${recordingId}:`, error?.message || error);
+    }
+
+    return c.json({ id: asset.id, workspaceId: asset.workspace_id, sizeBytes: asset.size_bytes, audioQuality }, 200);
   });
 
   return router;

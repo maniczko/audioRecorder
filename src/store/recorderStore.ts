@@ -347,6 +347,10 @@ export const useRecorderStore = create<any>()(
             const uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, localBlob, {
               workspaceId: target.workspaceId || nextItem.workspaceId || "",
               meetingId: target.id,
+              onProgress: (pct: number) => {
+                const mapped = 12 + Math.round((pct / 100) * 10);
+                set({ pipelineProgressPercent: mapped, pipelineStageLabel: `Wgrywanie audio: ${Math.round(pct)}%` });
+              },
             });
             get().updateQueueItem(nextItem.recordingId, {
               audioQuality: uploadResult?.audioQuality || nextItem.audioQuality || null,
