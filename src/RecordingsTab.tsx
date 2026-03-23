@@ -7,7 +7,6 @@ import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
 import { Input } from "./ui/Input";
-import { Select } from "./ui/Select";
 import TagInput from "./shared/TagInput";
 
 function formatPipelineDiagnostics(item) {
@@ -230,7 +229,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
 
 function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiveTab, onDeleteMeeting }) {
   const [dateFilter, setDateFilter] = React.useState("");
-  const [tagFilter, setTagFilter] = React.useState("");
+  const [tagFilter, setTagFilter] = React.useState<string[]>([]);
 
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
@@ -250,10 +249,10 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
         const d = m.startsAt || m.createdAt;
         if (!d || !d.startsWith(dateFilter)) return false;
       }
-      if (tagFilter) {
+      if (tagFilter && tagFilter.length > 0) {
         if (!Array.isArray(m.tags)) return false;
         const mt = m.tags.map(t=>t.trim());
-        if (!mt.includes(tagFilter)) return false;
+        if (!tagFilter.every(tf => mt.includes(tf))) return false;
       }
       return true;
     }).sort(

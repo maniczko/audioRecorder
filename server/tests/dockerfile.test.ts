@@ -94,6 +94,10 @@ describe("Dockerfile hardening", () => {
   it("does not install uv through curl pipe", () => {
     expect(dockerfile).not.toMatch(/curl .*uv\/install\.sh \|/);
   });
+
+  it("does not use BuildKit cache mounts", () => {
+    expect(dockerfile).not.toMatch(/--mount=type=cache/);
+  });
 });
 
 describe("All server source files are tracked in git", () => {

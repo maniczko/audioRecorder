@@ -17,8 +17,7 @@ FROM base AS deps
 COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --link server/package.json ./server/package.json
 
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 
 FROM deps AS build
@@ -93,8 +92,7 @@ WORKDIR /app
 
 COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
     uv pip install --python /opt/venv -r server/requirements.txt
 
 COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
