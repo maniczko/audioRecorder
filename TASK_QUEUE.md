@@ -153,7 +153,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 072. [SPEAKER] Pyannote.audio â€” zaawansowana diaryzacja serwera
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: model GPT-4o diarization jest dobry, ale pyannote.audio (neural pipeline z HuggingFace) daje lepsze wyniki dla trudnych nagraĹ„ â€” szum tĹ‚a, nakĹ‚adajÄ…ce siÄ™ gĹ‚osy, krĂłtkie wypowiedzi. DziaĹ‚a w trybie offline bez kosztĂłw API.

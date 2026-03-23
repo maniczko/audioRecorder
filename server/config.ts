@@ -47,6 +47,7 @@ const envSchema = z.object({
   SPEAKER_IDENTIFICATION_MODEL: z.string().default("microsoft/wavlm-base-plus-sv"),
   VERIFICATION_MODEL: z.string().default("gpt-4o-transcribe"),
   
+  VOICELOG_DIARIZER: z.enum(["pyannote", "openai", "auto"]).default("auto"),
   AUDIO_LANGUAGE: z.string().default("pl"),
   AUDIO_PREPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
   VOICELOG_SILENCE_REMOVE: z.preprocess((val) => val !== "false", z.boolean()).default(true),

@@ -79,6 +79,7 @@ const PYTHON_BINARY = config.PYTHON_BINARY;
 const DIARIZE_SCRIPT = path.join(__dirname, "diarize.py");
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
 const VAD_ENABLED = config.VAD_ENABLED;
+const VOICELOG_DIARIZER = config.VOICELOG_DIARIZER || "auto";
 
 // Enable verbose pipeline logging with VOICELOG_DEBUG=true
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
@@ -1221,9 +1222,14 @@ async function runTranscriptionAttempt(
   const verificationSegments = normalizeVerificationSegments(whisperPayload || {});
 
   // ── Try pyannote diarization (best quality, requires HF_TOKEN) ──
+  // Controlled by VOICELOG_DIARIZER: "pyannote" | "openai" | "auto" (default: auto)
+  // "auto" = use pyannote when HF_TOKEN available, else fall through to openai
+  // "pyannote" = force pyannote (requires HF_TOKEN)
+  // "openai" = skip pyannote, always use GPT-4o-mini transcript diarization
   let diarization = null;
   const startDiarize = performance.now();
-  if (HF_TOKEN) {
+  const usePyannote = VOICELOG_DIARIZER !== "openai" && HF_TOKEN;
+  if (usePyannote) {
     notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
     const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
