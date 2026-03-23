@@ -180,7 +180,26 @@ html {
   --panel-radius: 26px;
   --control-height-md: 44px;
   --control-padding-inline-md: 18px;
-  --shadow-panel: 0 18px 46px rgba(56, 78, 42, 0.11);
+}
+
+:root[data-layout="flat"] {
+  /* Flat UI characteristics: no shadows, solid colors, sharp or minimal curves */
+  --shadow: none;
+  --shadow-panel: none;
+  --surface-canvas: var(--bg);
+  --surface-panel: var(--bg);
+  --surface-panel-strong: var(--bg);
+  --bg-panel: var(--bg); 
+  --bg-panel-strong: var(--bg);
+  --surface-stroke: rgba(255, 255, 255, 0.1);
+  --surface-stroke-strong: rgba(255, 255, 255, 0.2);
+  --panel-blur: 0px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-pill: 0px;
 }
 
 body {

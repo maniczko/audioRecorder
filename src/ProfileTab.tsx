@@ -887,6 +887,7 @@ export default function ProfileTab({
                       <div className="button-row">
                         <button type="button" className="ghost-button" onClick={() => onSetLayoutPreset?.("default")}>Default</button>
                         <button type="button" className="ghost-button" onClick={() => onSetLayoutPreset?.("compact")}>Compact</button>
+                        <button type="button" className="ghost-button" onClick={() => onSetLayoutPreset?.("flat")}>Flat</button>
                       </div>
                    </div>
                 </div>
