@@ -1,26 +1,38 @@
 import crypto from "node:crypto";
-import { cors } from "hono/cors";
 import type { Hono } from "hono";
 import { z } from "zod";
 import { logger } from "../logger.ts";
+import { corsHeaders, securityHeaders } from "../lib/serverUtils.ts";
 
-
+function buildCorsHeaders(origin: string | undefined, allowedOrigins: string) {
+  return corsHeaders(origin || "", allowedOrigins);
+}
 
 export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use(
     "*",
-    cors({
-      origin: (origin) => {
-        // Always allow the requesting origin.
-        // The app uses Bearer token auth so CORS origin restrictions are redundant.
-        // Railway (backend) and Vercel (frontend) deploy independently, making
-        // strict origin matching fragile and error-prone.
-        return origin || "*";
-      },
-      allowHeaders: ["Content-Type", "Authorization", "X-Workspace-Id", "X-Meeting-Id", "X-Speaker-Name"],
-      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      credentials: true,
-    })
+    async (c, next) => {
+      const requestOrigin = c.req.header("origin") || "";
+      const cors = buildCorsHeaders(requestOrigin, _allowedOrigins);
+
+      if (c.req.method === "OPTIONS") {
+        c.status(204);
+        c.header("Access-Control-Allow-Origin", cors["Access-Control-Allow-Origin"]);
+        c.header("Access-Control-Allow-Headers", cors["Access-Control-Allow-Headers"]);
+        c.header("Access-Control-Allow-Methods", cors["Access-Control-Allow-Methods"]);
+        c.header("Access-Control-Allow-Credentials", "true");
+        c.header("Vary", cors["Vary"]);
+        return c.body(null);
+      }
+
+      await next();
+
+      c.header("Access-Control-Allow-Origin", cors["Access-Control-Allow-Origin"]);
+      c.header("Access-Control-Allow-Headers", cors["Access-Control-Allow-Headers"]);
+      c.header("Access-Control-Allow-Methods", cors["Access-Control-Allow-Methods"]);
+      c.header("Access-Control-Allow-Credentials", "true");
+      c.header("Vary", cors["Vary"]);
+    }
   );
 }
 
@@ -46,9 +58,10 @@ export function applyRequestMetadata(app: Hono<any>) {
 
 export function applySecurityHeaders(app: Hono<any>) {
   app.use("*", async (c, next) => {
-    c.header("Content-Security-Policy", "default-src 'none'");
-    c.header("X-Content-Type-Options", "nosniff");
-    c.header("X-Frame-Options", "DENY");
+    const headers = securityHeaders();
+    c.header("Content-Security-Policy", headers["Content-Security-Policy"]);
+    c.header("X-Content-Type-Options", headers["X-Content-Type-Options"]);
+    c.header("X-Frame-Options", headers["X-Frame-Options"]);
     await next();
   });
 }

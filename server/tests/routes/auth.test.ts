@@ -71,6 +71,24 @@ describe("Auth Routes", () => {
     expect(mockAuthService.loginUser).toHaveBeenCalledWith(expect.objectContaining({ email: "test@example.com" }));
   });
 
+  it("OPTIONS /auth/login - returns CORS headers for vercel preview origins", async () => {
+    const previewOrigin = "https://audiorecorder-rggk30uoj-iwoczajka-2703s-projects.vercel.app";
+    const res = await app.request("/auth/login", {
+      method: "OPTIONS",
+      headers: {
+        Origin: previewOrigin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "Content-Type,Authorization",
+      },
+    });
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+    expect(res.headers.get("Vary")).toContain("Origin");
+  });
+
   it("GET /auth/session - returns 401 on missing token", async () => {
     const res = await app.request("/auth/session", { method: "GET" });
     expect(res.status).toBe(401);
