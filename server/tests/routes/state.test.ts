@@ -13,6 +13,7 @@ describe("State Routes", () => {
     };
     mockWorkspaceService = {
       getMembership: vi.fn(),
+      getWorkspaceState: vi.fn(),
       saveWorkspaceState: vi.fn(),
     };
 
@@ -148,5 +149,40 @@ describe("State Routes", () => {
     expect(data.workspaceId).toBe("w123");
     expect(data.state.meetings).toEqual([]);
     expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledWith("w123", expect.any(Object));
+  });
+
+  it("PATCH /state/workspaces/:workspaceId - delta update", async () => {
+    mockWorkspaceService.getWorkspaceState.mockResolvedValue({
+      meetings: [{ id: "m1", title: "Old" }],
+      manualTasks: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+      updatedAt: "2026-03-22T00:00:00.000Z",
+    });
+    mockWorkspaceService.saveWorkspaceState.mockResolvedValue({
+      meetings: [{ id: "m1", title: "New" }],
+    });
+
+    const res = await app.request("/state/workspaces/w123", {
+      method: "PATCH",
+      headers: {
+        "Authorization": "Bearer valid_test_token",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        meetings: { upsert: [{ id: "m1", title: "New" }] },
+      })
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockWorkspaceService.getWorkspaceState).toHaveBeenCalledWith("w123");
+    expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledWith(
+      "w123",
+      expect.objectContaining({
+        meetings: [{ id: "m1", title: "New" }],
+      })
+    );
   });
 });

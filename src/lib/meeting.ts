@@ -1,5 +1,67 @@
 import { createId } from "./storage";
 
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function uniqueList(values, fallback = [], limit = 5) {
+  const seen = new Set();
+  const result = [];
+  [...safeArray(values), ...safeArray(fallback)].forEach((item) => {
+    const text = String(item || "").trim();
+    if (!text) {
+      return;
+    }
+    const key = text.toLowerCase();
+    if (seen.has(key) || result.length >= limit) {
+      return;
+    }
+    seen.add(key);
+    result.push(text);
+  });
+  return result;
+}
+
+function joinSentence(items, fallback) {
+  const list = uniqueList(items, [], 3);
+  return list.length ? list.join(" · ") : fallback;
+}
+
+export function buildMeetingAIDebrief(meeting, analysis) {
+  const safeAnalysis = analysis || {};
+  const decisions = uniqueList(safeAnalysis.decisions, [], 5);
+  const risks = uniqueList(
+    safeArray(safeAnalysis.risks).map((item) => item?.risk || item),
+    [],
+    3
+  );
+  const followUps = uniqueList(safeAnalysis.followUps, safeAnalysis.actionItems, 5);
+  const actionItems = uniqueList(safeAnalysis.actionItems, [], 5);
+
+  const summaryParts = [
+    safeAnalysis.summary || "Spotkanie zostało przetworzone i przygotowano wstępny debrief.",
+    decisions.length
+      ? `Kluczowe decyzje: ${joinSentence(decisions, "Brak jednoznacznych decyzji")}.`
+      : "Nie wykryto jednoznacznych decyzji.",
+    risks.length
+      ? `Ryzyka: ${joinSentence(risks, "Brak istotnych ryzyk")}.`
+      : "Nie wykryto istotnych ryzyk.",
+    followUps.length
+      ? `Następne kroki: ${joinSentence(followUps, "Brak dodatkowych follow-upów")}.`
+      : "Brak dodatkowych follow-upów.",
+  ];
+
+  return {
+    meetingTitle: meeting?.title || "",
+    summary: summaryParts.join(" "),
+    decisions,
+    risks,
+    followUps,
+    actionItems,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 export function parseList(text) {
   return String(text || "")
     .split(/\r?\n|,/)
@@ -28,6 +90,7 @@ export function createMeeting(userId, draft, options = {}) {
     recordings: [],
     latestRecordingId: null,
     analysis: null,
+    aiDebrief: null,
     speakerNames: {},
     speakerCount: 0,
     activity: [
@@ -75,11 +138,13 @@ export function upsertMeeting(meetings, nextMeeting) {
 }
 
 export function attachRecording(meeting, recording) {
+  const aiDebrief = recording.aiDebrief || buildMeetingAIDebrief(meeting, recording.analysis);
   return {
     ...meeting,
     recordings: [recording, ...meeting.recordings],
     latestRecordingId: recording.id,
     analysis: recording.analysis,
+    aiDebrief,
     speakerNames: recording.speakerNames,
     speakerCount: recording.speakerCount,
     updatedAt: new Date().toISOString(),

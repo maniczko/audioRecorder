@@ -1,3 +1,5 @@
+import type { WorkspaceStatePayload } from "../../src/shared/contracts.ts";
+
 export default class WorkspaceService {
   db: any;
   constructor(db: any) {
@@ -8,7 +10,7 @@ export default class WorkspaceService {
     return await this.db.getWorkspaceState(workspaceId);
   }
 
-  async saveWorkspaceState(workspaceId: string, payload: any) {
+  async saveWorkspaceState(workspaceId: string, payload: WorkspaceStatePayload) {
     return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 

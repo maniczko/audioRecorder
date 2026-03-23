@@ -1,5 +1,6 @@
 import { apiRequest } from "./httpClient";
 import { APP_DATA_PROVIDER } from "./config";
+import type { WorkspaceStateDeltaPayload, WorkspaceStatePayload } from "../shared/contracts";
 
 function createLocalStateService() {
   return {
@@ -22,9 +23,9 @@ function createRemoteStateService() {
         method: "GET",
       });
     },
-    syncWorkspaceState(workspaceId, state) {
+    syncWorkspaceState(workspaceId: string, state: WorkspaceStatePayload | WorkspaceStateDeltaPayload) {
       return apiRequest(`/state/workspaces/${workspaceId}`, {
-        method: "PUT",
+        method: "PATCH",
         body: state,
       });
     },

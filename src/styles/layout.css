@@ -472,35 +472,4 @@
   }
 }
 
-/* Empty workspace state — more compact */
-.hero-panel.empty-workspace {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-}
-
-.empty-workspace-inner {
-  text-align: center;
-  max-width: 480px;
-}
-
-.empty-workspace-inner h2 {
-  font-size: 1.6rem;
-  margin: 8px 0 12px;
-}
-
-.empty-workspace-inner p {
-  color: var(--muted);
-  margin: 0 0 20px;
-  line-height: 1.6;
-}
-
-.empty-workspace-inner .button-row {
-  justify-content: center;
-}
-
-.empty-workspace {
-  min-height: 300px;
-  align-content: center;
-}
+/* Empty workspace state - use foundation.css */

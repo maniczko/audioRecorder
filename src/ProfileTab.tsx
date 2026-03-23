@@ -303,6 +303,92 @@ function TagManagerSection({ allTags, onRenameTag, onDeleteTag }) {
   );
 }
 
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) {
+    return "0 MB";
+  }
+
+  const mb = bytes / (1024 * 1024);
+  if (mb < 1) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+}
+
+function AudioStorageSection({
+  audioStorageState,
+  onRefreshAudioStorageState,
+  onDeleteStoredRecordingAudio,
+}) {
+  const items = audioStorageState?.items || [];
+  const usageRatio = Number(audioStorageState?.usageRatio || 0);
+  const usagePercent = Math.round(usageRatio * 100);
+  const warningMessage = audioStorageState?.warningMessage || "";
+
+  return (
+    <section className="panel">
+      <div className="panel-header compact">
+        <div>
+          <div className="eyebrow">Storage</div>
+          <h2>Pamięć audio</h2>
+        </div>
+        <span className="status-chip" style={audioStorageState?.isNearQuota ? { background: "rgba(243, 202, 114, 0.12)", color: "var(--warning)" } : undefined}>
+          {usagePercent || 0}%
+        </span>
+      </div>
+      <div className="integration-card" style={{ display: "grid", gap: "12px" }}>
+        <div>
+          <p style={{ margin: 0, color: "var(--text)" }}>
+            Użyto {formatBytes(audioStorageState?.usageBytes)} z {formatBytes(audioStorageState?.quotaBytes)}.
+          </p>
+          <p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: "0.85rem" }}>
+            Wolne miejsce: {formatBytes(audioStorageState?.freeBytes)}.
+          </p>
+        </div>
+
+        {warningMessage ? (
+          <div className="inline-alert info" style={{ borderColor: "rgba(243, 202, 114, 0.35)" }}>
+            {warningMessage}
+          </div>
+        ) : null}
+
+        <div className="button-row">
+          <button type="button" className="secondary-button" onClick={() => onRefreshAudioStorageState?.()}>
+            Odśwież
+          </button>
+        </div>
+
+        <div className="voice-profile-list">
+          {items.length > 0 ? items.map((item) => (
+            <div key={item.recordingId} className="voice-profile-item" style={{ alignItems: "center" }}>
+              <span className="voice-profile-avatar">A</span>
+              <div className="voice-profile-info">
+                <strong>{item.recordingId.slice(0, 12)}...</strong>
+                <span>
+                  {formatBytes(item.sizeBytes)}{item.mimeType ? ` • ${item.mimeType}` : ""}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="danger-button"
+                style={{ fontSize: "0.78rem" }}
+                onClick={() => onDeleteStoredRecordingAudio?.(item.recordingId)}
+              >
+                Usuń audio z pamięci lokalnej
+              </button>
+            </div>
+          )) : (
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.85rem" }}>
+              Brak lokalnie zapisanych plików audio.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function integrationStatusLabel(status, connectedCount) {
   if (connectedCount) {
     return `${connectedCount} wydarzen w kalendarzu`;
@@ -452,6 +538,9 @@ export default function ProfileTab({
   onDeleteTag,
   vocabulary = [],
   onUpdateVocabulary,
+  audioStorageState,
+  onRefreshAudioStorageState,
+  onDeleteStoredRecordingAudio,
   sessionToken,
   apiBaseUrl,
 }) {
@@ -460,9 +549,8 @@ export default function ProfileTab({
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
-    // { id: 'integrations', label: 'Integracje', icon: '🔗' },
     { id: 'tools', label: 'Narzędzia AI', icon: '🛠️' },
-    // { id: 'system', label: 'Aplikacja i System', icon: '⚙️' }
+    { id: 'review', label: 'Ustawienia wyciszone', icon: '📦' }
   ];
 
     return (
@@ -596,7 +684,7 @@ export default function ProfileTab({
           </div>
         )}
 
-        {activeCategory === 'integrations' && (
+        {activeCategory === 'review' && (
           <div className="profile-category-view">
             <div className="profile-grid">
               <section className="panel">
@@ -643,13 +731,17 @@ export default function ProfileTab({
                 <VoiceProfilesSection />
                 <VocabularyManagerSection vocabulary={vocabulary} onUpdateVocabulary={onUpdateVocabulary} />
                 <TagManagerSection allTags={allTags} onRenameTag={onRenameTag} onDeleteTag={onDeleteTag} />
+                <AudioStorageSection
+                  audioStorageState={audioStorageState}
+                  onRefreshAudioStorageState={onRefreshAudioStorageState}
+                  onDeleteStoredRecordingAudio={onDeleteStoredRecordingAudio}
+                />
              </div>
           </div>
         )}
 
-        {activeCategory === 'system' && (
-          <div className="profile-category-view">
-         {/* 
+        {activeCategory === 'review' && (
+          <div className="profile-category-view" style={{ marginTop: "32px" }}>
             <div className="profile-grid">
               <section className="panel">
                 <div className="panel-header compact">
@@ -691,7 +783,6 @@ export default function ProfileTab({
                 <ChangelogSection />
               </section>
             </div>
-        */}
           </div>
         )}
       </main>

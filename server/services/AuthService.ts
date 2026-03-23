@@ -1,4 +1,5 @@
 import { UserDraft } from "../lib/types.ts";
+import type { SessionPayload } from "../../src/shared/contracts.ts";
 
 export default class AuthService {
   db: any;
@@ -38,7 +39,7 @@ export default class AuthService {
     return await this.db.changeUserPassword(userId, draft);
   }
 
-  async buildSessionPayload(userId: string, workspaceId: string) {
+  async buildSessionPayload(userId: string, workspaceId: string): Promise<SessionPayload> {
     return await this.db.buildSessionPayload(userId, workspaceId);
   }
 }

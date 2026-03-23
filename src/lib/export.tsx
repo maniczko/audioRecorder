@@ -39,6 +39,20 @@ export function buildMeetingNotesText(meeting, analysis, formatDateTime) {
   }
 
   const safeAnalysis = analysis || {};
+  const debrief = meeting.aiDebrief || null;
+  const debriefLines = [
+    "Debrief AI:",
+    debrief?.summary || "Brak debriefu AI.",
+  ];
+  if (debrief?.decisions?.length) {
+    debriefLines.push("", "Decyzje debriefu:", ...debrief.decisions.map((item) => `- ${item}`));
+  }
+  if (debrief?.risks?.length) {
+    debriefLines.push("", "Ryzyka debriefu:", ...debrief.risks.map((item) => `- ${item}`));
+  }
+  if (debrief?.followUps?.length) {
+    debriefLines.push("", "Nastepne kroki debriefu:", ...debrief.followUps.map((item) => `- ${item}`));
+  }
   return [
     `Spotkanie: ${meeting.title}`,
     `Start: ${formatDateTime(meeting.startsAt)}`,
@@ -54,6 +68,8 @@ export function buildMeetingNotesText(meeting, analysis, formatDateTime) {
     "",
     "Zadania:",
     ...(safeAnalysis.actionItems || []).map((item) => `- ${item}`),
+    "",
+    ...debriefLines,
   ].join("\n");
 }
 
@@ -81,6 +97,7 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
   });
 
   const analysis = recording?.analysis || meeting.analysis || {};
+  const debrief = meeting.aiDebrief || recording?.aiDebrief || null;
   const popup = window.open("", "_blank", "noopener,noreferrer,width=980,height=900");
   if (!popup) {
     return;
@@ -234,6 +251,12 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
           ${section("Podsumowanie", `<p>${escapeHtml(analysis.summary || "Brak podsumowania.")}</p>`)}
           ${section("Decyzje", list(analysis.decisions))}
           ${section("Zadania i follow-upy", list([...(analysis.actionItems || []), ...(analysis.followUps || [])]))}
+          ${debrief ? section("Debrief AI", `
+            <p>${escapeHtml(debrief.summary || "Brak debriefu AI.")}</p>
+            <p><strong>Decyzje:</strong> ${escapeHtml((debrief.decisions || []).join(", ") || "Brak")}</p>
+            <p><strong>Ryzyka:</strong> ${escapeHtml((debrief.risks || []).join(", ") || "Brak")}</p>
+            <p><strong>Następne kroki:</strong> ${escapeHtml((debrief.followUps || []).join(", ") || "Brak")}</p>
+          `) : ""}
           ${section("Notatki i transkrypcja", transcript.length ? transcript.join("") : "<p class=\"doc-muted\">Brak transkrypcji.</p>")}
         </main>
       </body>

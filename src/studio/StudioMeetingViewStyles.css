@@ -2,30 +2,12 @@
 .risk-item {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 0.85rem;
-  padding: 3px 0;
+  padding: var(--space-1) 0;
 }
 
-.empty-workspace-inner {
-  text-align: center;
-  max-width: 480px;
-}
-
-.empty-workspace-inner h2 {
-  font-size: 1.6rem;
-  margin: 8px 0 12px;
-}
-
-.empty-workspace-inner p {
-  color: var(--muted);
-  margin: 0 0 20px;
-  line-height: 1.6;
-}
-
-.empty-workspace-inner .button-row {
-  justify-content: center;
-}
+/* Empty workspace - use foundation.css */
 
 .brief-columns.two-col {
   display: grid;

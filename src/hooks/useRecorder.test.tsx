@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import useRecorder from "./useRecorder";
 
@@ -9,6 +9,9 @@ const {
   hardwareState,
   liveTranscriptValue,
   saveAudioBlobMock,
+  deleteRecordingBlobMock,
+  getAudioStorageEstimateMock,
+  listStoredSizesMock,
 } = vi.hoisted(() => ({
   mediaServiceMode: { current: "remote" },
   pipelineState: {
@@ -30,6 +33,7 @@ const {
     audioUrls: {},
     audioHydrationErrors: {},
     registerAudioUrl: vi.fn(),
+    removeAudioUrl: vi.fn(),
   },
   hardwareState: {
     chunksRef: { current: [] as Blob[] },
@@ -42,6 +46,9 @@ const {
   },
   liveTranscriptValue: { current: "" },
   saveAudioBlobMock: vi.fn(),
+  deleteRecordingBlobMock: vi.fn(),
+  getAudioStorageEstimateMock: vi.fn(),
+  listStoredSizesMock: vi.fn(),
 }));
 
 vi.mock("../services/mediaService", () => ({
@@ -54,6 +61,9 @@ vi.mock("../services/mediaService", () => ({
 
 vi.mock("../lib/audioStore", () => ({
   saveAudioBlob: (...args: any[]) => saveAudioBlobMock(...args),
+  deleteRecordingBlob: (...args: any[]) => deleteRecordingBlobMock(...args),
+  getAudioStorageEstimate: (...args: any[]) => getAudioStorageEstimateMock(...args),
+  listStoredSizes: (...args: any[]) => listStoredSizesMock(...args),
 }));
 
 vi.mock("./useRecordingPipeline", () => ({
@@ -82,10 +92,22 @@ describe("useRecorder", () => {
     pipelineState.setRecordingMessage.mockReset();
     pipelineState.setRecordingQueue.mockReset();
     hydrationState.registerAudioUrl.mockReset();
+    hydrationState.removeAudioUrl.mockReset();
     saveAudioBlobMock.mockReset();
+    deleteRecordingBlobMock.mockReset();
+    getAudioStorageEstimateMock.mockReset();
+    listStoredSizesMock.mockReset();
     hardwareState.startRecording.mockReset();
     hardwareState.cleanupRecorder.mockReset();
     hardwareState.isRecording = false;
+    getAudioStorageEstimateMock.mockResolvedValue({
+      usageBytes: 50 * 1024 * 1024,
+      quotaBytes: 100 * 1024 * 1024,
+      freeBytes: 50 * 1024 * 1024,
+      usageRatio: 0.5,
+      isNearQuota: false,
+    });
+    listStoredSizesMock.mockResolvedValue([]);
   });
 
   test("creates ad hoc meeting when no meeting is selected and starts recording", () => {
@@ -173,5 +195,54 @@ describe("useRecorder", () => {
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
       "Plik dodany do kolejki. Rozpoczynamy wgrywanie..."
     );
+  });
+
+  test("loads audio storage stats and removes stored audio blobs", async () => {
+    listStoredSizesMock
+      .mockResolvedValueOnce([
+        { recordingId: "rec-1", sizeBytes: 85 * 1024 * 1024, mimeType: "audio/webm" },
+      ])
+      .mockResolvedValueOnce([]);
+    getAudioStorageEstimateMock
+      .mockResolvedValueOnce({
+        usageBytes: 85 * 1024 * 1024,
+        quotaBytes: 100 * 1024 * 1024,
+        freeBytes: 15 * 1024 * 1024,
+        usageRatio: 0.85,
+        isNearQuota: true,
+      })
+      .mockResolvedValueOnce({
+        usageBytes: 0,
+        quotaBytes: 100 * 1024 * 1024,
+        freeBytes: 100 * 1024 * 1024,
+        usageRatio: 0,
+        isNearQuota: false,
+      });
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: "m1", title: "Demo import", workspaceId: "ws1" },
+        userMeetings: [{ id: "m1", title: "Demo import", workspaceId: "ws1" }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.audioStorageState.items).toHaveLength(1);
+    });
+
+    expect(result.current.audioStorageState.isNearQuota).toBe(true);
+    expect(result.current.audioStorageState.warningMessage).toContain("85%");
+
+    await act(async () => {
+      await result.current.deleteStoredRecordingAudio("rec-1");
+    });
+
+    expect(deleteRecordingBlobMock).toHaveBeenCalledWith("rec-1");
+    expect(hydrationState.removeAudioUrl).toHaveBeenCalledWith("rec-1");
+    expect(listStoredSizesMock).toHaveBeenCalled();
+    expect(result.current.audioStorageState.items).toEqual([]);
   });
 });

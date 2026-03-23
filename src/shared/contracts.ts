@@ -16,6 +16,20 @@ export interface WorkspaceStatePayload {
   vocabulary: string[];
 }
 
+export interface WorkspaceCollectionDelta {
+  upsert?: unknown[];
+  removeIds?: string[];
+}
+
+export interface WorkspaceStateDeltaPayload {
+  meetings?: WorkspaceCollectionDelta | unknown[];
+  manualTasks?: WorkspaceCollectionDelta | unknown[];
+  taskState?: Record<string, unknown>;
+  taskBoards?: Record<string, unknown>;
+  calendarMeta?: Record<string, unknown>;
+  vocabulary?: string[];
+}
+
 export interface SessionPayload<TState = WorkspaceState> {
   user: Record<string, unknown>;
   users: unknown[];
@@ -108,6 +122,181 @@ export function normalizeWorkspaceState(input: any = {}): WorkspaceState {
 
 export function serializeWorkspaceState(input: Partial<WorkspaceStatePayload> = {}) {
   return JSON.stringify(normalizeWorkspaceState(input));
+}
+
+function stableJson(value: unknown) {
+  return JSON.stringify(value ?? null);
+}
+
+function buildCollectionDelta(previous: unknown[] = [], next: unknown[] = []): WorkspaceCollectionDelta | null {
+  const previousById = new Map<string, unknown>();
+  const nextById = new Map<string, unknown>();
+
+  previous.forEach((item: any) => {
+    const id = String(item?.id || "");
+    if (id) {
+      previousById.set(id, item);
+    }
+  });
+
+  next.forEach((item: any) => {
+    const id = String(item?.id || "");
+    if (id) {
+      nextById.set(id, item);
+    }
+  });
+
+  const upsert: unknown[] = [];
+  nextById.forEach((item, id) => {
+    if (!previousById.has(id) || stableJson(previousById.get(id)) !== stableJson(item)) {
+      upsert.push(item);
+    }
+  });
+
+  const removeIds = [...previousById.keys()].filter((id) => !nextById.has(id));
+
+  if (!upsert.length && !removeIds.length) {
+    return null;
+  }
+
+  return {
+    ...(upsert.length ? { upsert } : {}),
+    ...(removeIds.length ? { removeIds } : {}),
+  };
+}
+
+function buildObjectDelta(previous: Record<string, unknown> = {}, next: Record<string, unknown> = {}) {
+  const delta: Record<string, unknown> = {};
+  const keys = new Set([...Object.keys(previous || {}), ...Object.keys(next || {})]);
+
+  keys.forEach((key) => {
+    if (!(key in next)) {
+      delta[key] = null;
+      return;
+    }
+
+    if (stableJson(previous[key]) !== stableJson(next[key])) {
+      delta[key] = next[key];
+    }
+  });
+
+  return delta;
+}
+
+export function buildWorkspaceStateDelta(previous: Partial<WorkspaceStatePayload> = {}, next: Partial<WorkspaceStatePayload> = {}) {
+  const prevState = normalizeWorkspaceState(previous);
+  const nextState = normalizeWorkspaceState(next);
+  const delta: WorkspaceStateDeltaPayload = {};
+
+  const meetingsDelta = buildCollectionDelta(prevState.meetings, nextState.meetings);
+  if (meetingsDelta) {
+    delta.meetings = meetingsDelta;
+  }
+
+  const manualTasksDelta = buildCollectionDelta(prevState.manualTasks, nextState.manualTasks);
+  if (manualTasksDelta) {
+    delta.manualTasks = manualTasksDelta;
+  }
+
+  const taskStateDelta = buildObjectDelta(prevState.taskState as Record<string, unknown>, nextState.taskState as Record<string, unknown>);
+  if (Object.keys(taskStateDelta).length) {
+    delta.taskState = taskStateDelta;
+  }
+
+  const taskBoardsDelta = buildObjectDelta(prevState.taskBoards as Record<string, unknown>, nextState.taskBoards as Record<string, unknown>);
+  if (Object.keys(taskBoardsDelta).length) {
+    delta.taskBoards = taskBoardsDelta;
+  }
+
+  const calendarMetaDelta = buildObjectDelta(prevState.calendarMeta as Record<string, unknown>, nextState.calendarMeta as Record<string, unknown>);
+  if (Object.keys(calendarMetaDelta).length) {
+    delta.calendarMeta = calendarMetaDelta;
+  }
+
+  if (stableJson(prevState.vocabulary) !== stableJson(nextState.vocabulary)) {
+    delta.vocabulary = Array.isArray(nextState.vocabulary) ? nextState.vocabulary : [];
+  }
+
+  return delta;
+}
+
+function applyCollectionDelta(previous: unknown[] = [], delta: WorkspaceCollectionDelta | unknown[] | undefined) {
+  if (!delta) {
+    return previous;
+  }
+
+  if (Array.isArray(delta)) {
+    return delta;
+  }
+
+  const current = [...previous];
+  const byId = new Map<string, number>();
+  current.forEach((item: any, index) => {
+    const id = String(item?.id || "");
+    if (id) {
+      byId.set(id, index);
+    }
+  });
+
+  const removeIds = Array.isArray(delta.removeIds) ? delta.removeIds : [];
+  if (removeIds.length) {
+    const removeSet = new Set(removeIds.map((id) => String(id)));
+    for (let i = current.length - 1; i >= 0; i -= 1) {
+      const id = String((current[i] as any)?.id || "");
+      if (id && removeSet.has(id)) {
+        current.splice(i, 1);
+      }
+    }
+  }
+
+  (Array.isArray(delta.upsert) ? delta.upsert : []).forEach((item: any) => {
+    const id = String(item?.id || "");
+    if (!id) {
+      current.push(item);
+      return;
+    }
+
+    const existingIndex = byId.get(id);
+    if (existingIndex === undefined) {
+      byId.set(id, current.length);
+      current.push(item);
+      return;
+    }
+
+    current[existingIndex] = item;
+  });
+
+  return current;
+}
+
+function applyObjectDelta(previous: Record<string, unknown> = {}, delta: Record<string, unknown> | undefined) {
+  if (!delta) {
+    return previous;
+  }
+
+  const next = { ...previous };
+  Object.entries(delta).forEach(([key, value]) => {
+    if (value === null) {
+      delete next[key];
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+}
+
+export function applyWorkspaceStateDelta(previous: Partial<WorkspaceStatePayload> = {}, delta: WorkspaceStateDeltaPayload = {}) {
+  const current = normalizeWorkspaceState(previous);
+
+  return normalizeWorkspaceState({
+    meetings: applyCollectionDelta(current.meetings, delta.meetings),
+    manualTasks: applyCollectionDelta(current.manualTasks, delta.manualTasks),
+    taskState: applyObjectDelta(current.taskState as Record<string, unknown>, delta.taskState),
+    taskBoards: applyObjectDelta(current.taskBoards as Record<string, unknown>, delta.taskBoards),
+    calendarMeta: applyObjectDelta(current.calendarMeta as Record<string, unknown>, delta.calendarMeta),
+    vocabulary: Array.isArray(delta.vocabulary) ? delta.vocabulary : current.vocabulary,
+    updatedAt: current.updatedAt,
+  });
 }
 
 export function normalizePipelineStatus(value: string | undefined): TranscriptionStatusPayload["pipelineStatus"] {

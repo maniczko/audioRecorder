@@ -619,14 +619,7 @@ select:focus {
   50% { opacity: 0.4; }
 }
 
-.empty-panel {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.14);
-  color: var(--muted);
-}
+/* Empty panel - moved to foundation.css */
 
 .speaker-editor-row {
   grid-template-columns: 120px minmax(0, 1fr);
@@ -907,10 +900,7 @@ select:focus {
   gap: 16px;
 }
 
-.empty-workspace {
-  min-height: 300px;
-  align-content: center;
-}
+/* Empty workspace - moved to foundation.css */
 
 .view-toggle {
   display: flex;
@@ -1479,14 +1469,7 @@ select:focus {
    UI FIXES — ergonomics batch 2
    ═══════════════════════════════════════════════════════ */
 
-/* Empty workspace state — more compact */
-
-.hero-panel.empty-workspace {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-}
+/* Empty workspace state - moved to foundation.css */
 
 /* Calendar board: week view alignment fix */
 

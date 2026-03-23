@@ -478,6 +478,39 @@ describe("TranscriptionService - Additional Coverage", () => {
     });
   });
 
+  describe("startTranscriptionPipeline()", () => {
+    test("queues the recording and starts the transcription job through a single orchestration method", async () => {
+      mockDb.getMediaAsset.mockResolvedValue({ id: "rec1", workspace_id: "ws1" });
+      mockDb.queueTranscription.mockResolvedValue(undefined);
+      mockDb.markTranscriptionProcessing.mockResolvedValue(undefined);
+      mockDb.saveTranscriptionResult.mockResolvedValue(undefined);
+      mockAudioPipeline.transcribeRecording.mockResolvedValue({
+        pipelineStatus: "completed",
+        diarization: { confidence: 0.9 },
+        segments: [{ text: "hello" }],
+      });
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+
+      const asset = { id: "rec1", workspace_id: "ws1" };
+      const result = await service.startTranscriptionPipeline("rec1", asset, {
+        workspaceId: "ws1",
+        requestId: "req-1",
+      });
+
+      expect(mockDb.queueTranscription).toHaveBeenCalledWith("rec1", {
+        workspaceId: "ws1",
+        requestId: "req-1",
+      });
+      expect(result).toEqual({ id: "rec1", workspace_id: "ws1" });
+    });
+  });
+
   describe("db wrapper methods", () => {
     test("upsertMediaAsset delegates to db.upsertMediaAsset", async () => {
       mockDb.upsertMediaAsset.mockResolvedValue({ id: "rec1" });

@@ -7,6 +7,15 @@ export default defineConfig({
     setupFiles: ['./src/setupTests.ts'],
     include: ['src/**/*.test.{js,jsx,ts,tsx}'],
     exclude: ['src/App.integration.test.tsx'],
+    // Limit workers to avoid OOM
+    maxWorkers: 4,
+    // Increase memory limit
+    poolOptions: {
+      forks: {
+        maxForks: 4,
+        minForks: 1,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary', 'lcov'],

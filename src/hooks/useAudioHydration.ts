@@ -191,6 +191,36 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     });
   }
 
+  function removeAudioUrl(recordingId) {
+    if (!recordingId) return;
+
+    const oldUrl = audioUrlsRef.current[recordingId];
+    if (oldUrl) {
+      revokeAudioUrl(oldUrl);
+    }
+
+    setAudioUrls((prev) => {
+      if (!prev[recordingId]) return prev;
+      const next = { ...prev };
+      delete next[recordingId];
+      return next;
+    });
+
+    setAudioHydrationStatusByRecordingId((prev) => {
+      if (!prev[recordingId]) return prev;
+      const next = { ...prev };
+      delete next[recordingId];
+      return next;
+    });
+
+    setAudioHydrationErrors((prev) => {
+      if (!prev[recordingId]) return prev;
+      const next = { ...prev };
+      delete next[recordingId];
+      return next;
+    });
+  }
+
   return {
     audioUrls,
     audioHydrationErrors,
@@ -199,5 +229,6 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     registerAudioUrl,
     hydrateRecordingAudio,
     clearAudioHydrationError,
+    removeAudioUrl,
   };
 }

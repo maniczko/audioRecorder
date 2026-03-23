@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { Hono } from "hono";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
+import { applyWorkspaceStateDelta, normalizeWorkspaceState } from "../../src/shared/contracts.ts";
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from "../../src/shared/types.ts";
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
@@ -47,6 +48,18 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     return c.json({
         workspaceId,
         state: await workspaceService.saveWorkspaceState(workspaceId, body),
+    }, 200);
+  });
+
+  router.patch("/state/workspaces/:workspaceId", async (c) => {
+    const workspaceId = c.req.param("workspaceId");
+    await ensureWorkspaceAccess(c, workspaceId);
+    const delta = await c.req.json().catch(() => ({}));
+    const currentState = normalizeWorkspaceState(await workspaceService.getWorkspaceState(workspaceId));
+    const mergedState = applyWorkspaceStateDelta(currentState, delta);
+    return c.json({
+      workspaceId,
+      state: await workspaceService.saveWorkspaceState(workspaceId, mergedState),
     }, 200);
   });
 

@@ -57,6 +57,12 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.queueTranscription(recordingId, updates);
   }
 
+  async startTranscriptionPipeline(recordingId: string, asset: any, options: any) {
+    await this.queueTranscription(recordingId, options);
+    await this.ensureTranscriptionJob(recordingId, asset, options);
+    return await this.getMediaAsset(recordingId);
+  }
+
   async markTranscriptionProcessing(recordingId: string) {
     return await this.db.markTranscriptionProcessing(recordingId);
   }

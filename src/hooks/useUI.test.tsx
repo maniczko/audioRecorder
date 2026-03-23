@@ -1,6 +1,7 @@
 import { act, fireEvent, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import useUI from "./useUI";
+import { AppProviders } from "../AppProviders";
 
 const state = vi.hoisted(() => ({
   uiState: {
@@ -138,7 +139,7 @@ describe("useUI", () => {
   });
 
   test("opens command palette on keyboard shortcut and delivers notifications", () => {
-    renderHook(() => useUI());
+    renderHook(() => useUI(), { wrapper: AppProviders });
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
 
@@ -150,7 +151,7 @@ describe("useUI", () => {
   });
 
   test("exports transcript and opens meeting from calendar", () => {
-    const { result } = renderHook(() => useUI());
+    const { result } = renderHook(() => useUI(), { wrapper: AppProviders });
 
     act(() => {
       result.current.exportTranscript();
@@ -163,7 +164,7 @@ describe("useUI", () => {
   });
 
   test("opens a fresh studio draft when requested", () => {
-    const { result } = renderHook(() => useUI());
+    const { result } = renderHook(() => useUI(), { wrapper: AppProviders });
 
     act(() => {
       result.current.openStudio();
@@ -174,7 +175,7 @@ describe("useUI", () => {
   });
 
   test("routes task, person and workspace actions through shared UI state", () => {
-    const { result } = renderHook(() => useUI());
+    const { result } = renderHook(() => useUI(), { wrapper: AppProviders });
 
     act(() => {
       result.current.createTaskForPerson({ title: "For Anna" });
@@ -194,7 +195,7 @@ describe("useUI", () => {
 
   test("cleans up recorder and shell state on logout", () => {
     state.recorder.isRecording = true;
-    const { result } = renderHook(() => useUI());
+    const { result } = renderHook(() => useUI(), { wrapper: AppProviders });
 
     act(() => {
       result.current.logout();

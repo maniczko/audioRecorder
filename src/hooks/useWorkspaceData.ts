@@ -6,10 +6,7 @@ import { migrateWorkspaceData } from "../lib/workspace";
 import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
 import { useMeetingsStore } from "../store/meetingsStore";
 import { isHostedPreviewHost } from "../runtime/browserRuntime";
-
-function serializeWorkspaceState(payload: any) {
-  return JSON.stringify(payload || {});
-}
+import { buildWorkspaceStateDelta, normalizeWorkspaceState, serializeWorkspaceState } from "../shared/contracts";
 
 const REMOTE_PULL_COOLDOWN_MS = 25000;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
@@ -58,6 +55,7 @@ export default function useWorkspaceData() {
   const remotePollTimerRef = useRef<number | null>(null);
   const hydratedWorkspaceIdRef = useRef("");
   const remoteSnapshotRef = useRef("");
+  const remoteStateRef = useRef(normalizeWorkspaceState());
   const remotePullCooldownUntilRef = useRef(0);
   const lastWorkspaceMessageRef = useRef("");
   const lastLoggedRemoteErrorRef = useRef("");
@@ -77,27 +75,19 @@ export default function useWorkspaceData() {
         setWorkspaces(result.workspaces);
       }
 
-      const nextState = result.state || {};
-      const normalizedState = {
-        meetings: Array.isArray(nextState.meetings) ? nextState.meetings : [],
-        manualTasks: Array.isArray(nextState.manualTasks) ? nextState.manualTasks : [],
-        taskState: nextState.taskState && typeof nextState.taskState === "object" ? nextState.taskState : {},
-        taskBoards: nextState.taskBoards && typeof nextState.taskBoards === "object" ? nextState.taskBoards : {},
-        calendarMeta:
-          nextState.calendarMeta && typeof nextState.calendarMeta === "object" ? nextState.calendarMeta : {},
-        vocabulary: Array.isArray(nextState.vocabulary) ? nextState.vocabulary : [],
-      };
+      const normalizedState = normalizeWorkspaceState(result.state || {});
       const nextSnapshot = serializeWorkspaceState(normalizedState);
       if (nextSnapshot === remoteSnapshotRef.current) {
         return;
       }
 
-      setMeetings(normalizedState.meetings);
-      setManualTasks(normalizedState.manualTasks);
-      setTaskState(normalizedState.taskState);
-      setTaskBoards(normalizedState.taskBoards);
-      setCalendarMeta(normalizedState.calendarMeta);
+      setMeetings(normalizedState.meetings as any[]);
+      setManualTasks(normalizedState.manualTasks as any[]);
+      setTaskState(normalizedState.taskState as any);
+      setTaskBoards(normalizedState.taskBoards as any);
+      setCalendarMeta(normalizedState.calendarMeta as any);
       setVocabulary(normalizedState.vocabulary);
+      remoteStateRef.current = normalizedState;
       remoteSnapshotRef.current = nextSnapshot;
       remotePullCooldownUntilRef.current = 0;
       lastWorkspaceMessageRef.current = "";
@@ -265,16 +255,25 @@ export default function useWorkspaceData() {
       calendarMeta,
       vocabulary,
     };
-    const nextSnapshot = serializeWorkspaceState(payload);
+    const nextState = normalizeWorkspaceState(payload);
+    const nextSnapshot = serializeWorkspaceState(nextState);
     if (nextSnapshot === remoteSnapshotRef.current) {
+      return undefined;
+    }
+
+    const delta = buildWorkspaceStateDelta(remoteStateRef.current, nextState);
+    if (!Object.keys(delta).length) {
+      remoteSnapshotRef.current = nextSnapshot;
+      remoteStateRef.current = nextState;
       return undefined;
     }
 
     const timeout = window.setTimeout(() => {
       stateService
-        .syncWorkspaceState(currentWorkspaceId, payload)
+        .syncWorkspaceState(currentWorkspaceId, delta)
         .then(() => {
           remoteSnapshotRef.current = nextSnapshot;
+          remoteStateRef.current = nextState;
         })
         .catch((error: any) => {
           applyRemoteTransportCooldown(error);
@@ -317,15 +316,7 @@ export default function useWorkspaceData() {
               return;
             }
 
-            const normalizedState = {
-              meetings: Array.isArray(result.state.meetings) ? result.state.meetings : [],
-              manualTasks: Array.isArray(result.state.manualTasks) ? result.state.manualTasks : [],
-              taskState: result.state.taskState && typeof result.state.taskState === "object" ? result.state.taskState : {},
-              taskBoards: result.state.taskBoards && typeof result.state.taskBoards === "object" ? result.state.taskBoards : {},
-              calendarMeta:
-                result.state.calendarMeta && typeof result.state.calendarMeta === "object" ? result.state.calendarMeta : {},
-              vocabulary: Array.isArray(result.state.vocabulary) ? result.state.vocabulary : [],
-            };
+            const normalizedState = normalizeWorkspaceState(result.state || {});
             const incomingSnapshot = serializeWorkspaceState(normalizedState);
             if (incomingSnapshot === remoteSnapshotRef.current) {
               return;

@@ -7,6 +7,7 @@ async function loadHttpClient({ buildId = "" } = {}) {
     API_BASE_URL: "https://api.example.test",
     apiBaseUrlConfigured: () => true,
     remoteApiEnabled: () => true,
+    BACKEND_API_BASE_URL: "https://api.example.test",
   }));
   vi.doMock("../runtime/browserRuntime", () => ({
     isHostedPreviewHost: (hostname: string) => /\.vercel\.app$/i.test(String(hostname || "")),
@@ -21,6 +22,7 @@ async function loadHttpClientWithoutApi() {
     API_BASE_URL: "",
     apiBaseUrlConfigured: () => false,
     remoteApiEnabled: () => false,
+    BACKEND_API_BASE_URL: "",
   }));
   vi.doMock("../runtime/browserRuntime", () => ({
     isHostedPreviewHost: (hostname: string) => /\.vercel\.app$/i.test(String(hostname || "")),

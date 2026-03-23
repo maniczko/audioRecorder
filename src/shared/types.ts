@@ -186,6 +186,16 @@ export interface MeetingFeedback {
   categoryScores: MeetingFeedbackCategoryScore[];
 }
 
+export interface MeetingAIDebrief {
+  meetingTitle?: string;
+  summary: string;
+  decisions: string[];
+  risks: string[];
+  followUps: string[];
+  actionItems: string[];
+  generatedAt: string;
+}
+
 export interface MeetingParticipantInsight {
   speaker: string;
   mainTopic?: string;

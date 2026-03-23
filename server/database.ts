@@ -7,6 +7,7 @@ import { Worker } from "node:worker_threads";
 import { logger } from "./logger.ts";
 import { config } from "./config.ts";
 import { resolveBuildMetadata } from "./runtime.ts";
+import type { SessionPayload, WorkspaceStatePayload } from "../src/shared/contracts.ts";
 import { 
   UserProfile, 
   UserDraft, 
@@ -409,7 +410,14 @@ export class Database {
     };
   }
 
-  async saveWorkspaceState(workspaceId: string, payload: Partial<WorkspaceState> = {}): Promise<WorkspaceState> {
+  async saveWorkspaceState(workspaceId: string, payload: WorkspaceStatePayload = {
+    meetings: [],
+    manualTasks: [],
+    taskState: {},
+    taskBoards: {},
+    calendarMeta: {},
+    vocabulary: [],
+  }): Promise<WorkspaceState> {
     await this.ensureWorkspaceState(workspaceId);
     const timestamp = this.nowIso();
     await this._execute(
@@ -482,7 +490,7 @@ export class Database {
     return workspaceIds[0];
   }
 
-  async buildSessionPayload(userId, workspaceId) {
+  async buildSessionPayload(userId, workspaceId): Promise<SessionPayload> {
     const [userRow, nextWorkspaceId] = await Promise.all([
       this._get("SELECT * FROM users WHERE id = ?", [userId]),
       this.selectWorkspaceForUser(userId, workspaceId)

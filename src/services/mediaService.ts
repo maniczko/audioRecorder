@@ -5,11 +5,38 @@ import { getSpeechRecognitionClass } from "../lib/recording";
 import { apiRequest } from "./httpClient";
 import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from "./config";
 import { resolvePersistedSession } from "../lib/sessionStorage";
+import { normalizeMediaTranscriptionResponse, type MediaTranscriptionResponse } from "../shared/contracts";
 
 export const REMOTE_TRANSCRIPTION_PROVIDER = {
   id: "remote-pipeline",
   label: "Remote STT + diarization pipeline",
 };
+
+function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {}) {
+  const normalized = normalizeMediaTranscriptionResponse({
+    ...response,
+    recordingId: String((response as any)?.recordingId || ""),
+    updatedAt: String((response as any)?.updatedAt || ""),
+  });
+
+  return {
+    diarization: response.diarization || {},
+    verifiedSegments: response.segments || [],
+    providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
+    providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
+    pipelineStatus: normalized.pipelineStatus || "queued",
+    transcriptOutcome: normalized.transcriptOutcome || "normal",
+    emptyReason: normalized.emptyReason || "",
+    userMessage: normalized.userMessage || "",
+    pipelineVersion: normalized.pipelineVersion || "",
+    pipelineGitSha: normalized.pipelineGitSha || "",
+    pipelineBuildTime: normalized.pipelineBuildTime || "",
+    audioQuality: normalized.audioQuality || null,
+    transcriptionDiagnostics: normalized.transcriptionDiagnostics || null,
+    reviewSummary: normalized.reviewSummary || null,
+    errorMessage: normalized.errorMessage || "",
+  };
+}
 
 function createLocalMediaService() {
   return {
@@ -130,87 +157,21 @@ function createRemoteMediaService() {
         },
       });
 
-      return {
-        diarization: response.diarization || {},
-        verifiedSegments: response.segments || [],
-        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
-        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
-        pipelineStatus: response.pipelineStatus || "queued",
-        transcriptOutcome: response.transcriptOutcome || "normal",
-        emptyReason: response.emptyReason || "",
-        userMessage: response.userMessage || "",
-        pipelineVersion: response.pipelineVersion || "",
-        pipelineGitSha: response.pipelineGitSha || "",
-        pipelineBuildTime: response.pipelineBuildTime || "",
-        audioQuality:
-          response.audioQuality && typeof response.audioQuality === "object"
-            ? response.audioQuality
-            : null,
-        transcriptionDiagnostics:
-          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
-            ? response.transcriptionDiagnostics
-            : null,
-        reviewSummary: response.reviewSummary || null,
-        errorMessage: response.errorMessage || "",
-      };
+      return mapRemoteTranscriptionResult(response);
     },
     async getTranscriptionJobStatus(recordingId) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: "GET",
       });
 
-      return {
-        diarization: response.diarization || {},
-        verifiedSegments: response.segments || [],
-        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
-        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
-        pipelineStatus: response.pipelineStatus || "queued",
-        transcriptOutcome: response.transcriptOutcome || "normal",
-        emptyReason: response.emptyReason || "",
-        userMessage: response.userMessage || "",
-        pipelineVersion: response.pipelineVersion || "",
-        pipelineGitSha: response.pipelineGitSha || "",
-        pipelineBuildTime: response.pipelineBuildTime || "",
-        audioQuality:
-          response.audioQuality && typeof response.audioQuality === "object"
-            ? response.audioQuality
-            : null,
-        transcriptionDiagnostics:
-          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
-            ? response.transcriptionDiagnostics
-            : null,
-        reviewSummary: response.reviewSummary || null,
-        errorMessage: response.errorMessage || "",
-      };
+      return mapRemoteTranscriptionResult(response);
     },
     async retryTranscriptionJob(recordingId) {
       const response = await apiRequest(`/media/recordings/${recordingId}/retry-transcribe`, {
         method: "POST",
       });
 
-      return {
-        diarization: response.diarization || {},
-        verifiedSegments: response.segments || [],
-        providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
-        providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
-        pipelineStatus: response.pipelineStatus || "queued",
-        transcriptOutcome: response.transcriptOutcome || "normal",
-        emptyReason: response.emptyReason || "",
-        userMessage: response.userMessage || "",
-        pipelineVersion: response.pipelineVersion || "",
-        pipelineGitSha: response.pipelineGitSha || "",
-        pipelineBuildTime: response.pipelineBuildTime || "",
-        audioQuality:
-          response.audioQuality && typeof response.audioQuality === "object"
-            ? response.audioQuality
-            : null,
-        transcriptionDiagnostics:
-          response.transcriptionDiagnostics && typeof response.transcriptionDiagnostics === "object"
-            ? response.transcriptionDiagnostics
-            : null,
-        reviewSummary: response.reviewSummary || null,
-        errorMessage: response.errorMessage || "",
-      };
+      return mapRemoteTranscriptionResult(response);
     },
     async normalizeRecordingAudio(recordingId) {
       await apiRequest(`/media/recordings/${recordingId}/normalize`, { method: "POST" });

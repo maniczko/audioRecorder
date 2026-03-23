@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  GOOGLE_CLIENT_ID,
   buildGoogleCalendarEventPayload,
   createGoogleCalendarEvent,
   createGoogleTask,
@@ -14,6 +15,11 @@ import {
   updateGoogleTask,
 } from "../lib/google";
 import { createTaskFromGoogle, createTaskHistoryEntry, upsertGoogleImportedTasks } from "../lib/tasks";
+import { useMeetingsStore } from "../store/meetingsStore";
+
+function isAfter(reference: string, baseline: string) {
+  return new Date(reference || 0).getTime() > new Date(baseline || 0).getTime();
+}
 
 export default function useGoogleIntegrations({
   currentUser,
@@ -26,6 +32,7 @@ export default function useGoogleIntegrations({
   onGoogleProfile,
   onGoogleError,
 }) {
+  const { meetings, calendarMeta, setCalendarMeta } = useMeetingsStore();
   const [googleCalendarStatus, setGoogleCalendarStatus] = useState("idle");
   const [googleCalendarEvents, setGoogleCalendarEvents] = useState([]);
   const [googleCalendarMessage, setGoogleCalendarMessage] = useState("");
@@ -40,11 +47,15 @@ export default function useGoogleIntegrations({
   const googleCalendarTokenRef = useRef("");
   const googleTasksTokenRef = useRef("");
   const manualTasksRef = useRef(manualTasks);
+  const inFlightTaskSyncRef = useRef(new Set());
+  const inFlightCalendarSyncRef = useRef(new Set());
+  const hasGoogleTasksToken = Boolean(googleTasksTokenRef.current);
+  const hasGoogleCalendarToken = Boolean(googleCalendarTokenRef.current);
 
   useEffect(() => {
     manualTasksRef.current = manualTasks;
   }, [manualTasks]);
-  const googleEnabled = false; // Temorarily disabled as per user request
+  const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
   const openTaskColumnId = taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || "todo";
   const doneTaskColumnId = taskColumns.find((column) => column.isDone)?.id || taskColumns[taskColumns.length - 1]?.id || "done";
 
@@ -216,7 +227,7 @@ export default function useGoogleIntegrations({
     });
   }
 
-  async function syncCalendarEntryToGoogle(entry, options = {}) {
+  const syncCalendarEntryToGoogle = useCallback(async (entry, options = {}) => {
     if (!googleCalendarTokenRef.current) {
       throw new Error("Najpierw polacz Google Calendar.");
     }
@@ -236,7 +247,7 @@ export default function useGoogleIntegrations({
     );
 
     return response;
-  }
+  }, []);
 
   async function rescheduleGoogleCalendarEntry(eventId, startsAt, endsAt) {
     if (!googleCalendarTokenRef.current) {
@@ -366,6 +377,157 @@ export default function useGoogleIntegrations({
       setGoogleTasksMessage("Nie udalo sie wyeksportowac zadan do Google Tasks.");
     }
   }
+
+  useEffect(() => {
+    if (!hasGoogleTasksToken || !selectedGoogleTaskListId || !googleEnabled) {
+      return undefined;
+    }
+
+    const pendingTasks = manualTasks.filter(
+      (task) =>
+        task?.googleTaskId &&
+        task?.googleTaskListId === selectedGoogleTaskListId &&
+        task?.googleSyncStatus === "local_changes" &&
+        !task?.googleSyncConflict
+    );
+
+    if (!pendingTasks.length) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const syncTasks = async () => {
+      for (const task of pendingTasks) {
+        if (cancelled) {
+          break;
+        }
+
+        const taskKey = `${task.googleTaskListId}:${task.googleTaskId}`;
+        if (inFlightTaskSyncRef.current.has(taskKey)) {
+          continue;
+        }
+
+        inFlightTaskSyncRef.current.add(taskKey);
+        try {
+          const remoteResponse = await updateGoogleTask(
+            googleTasksTokenRef.current,
+            task.googleTaskListId,
+            task.googleTaskId,
+            buildGoogleTaskPayloadFromSnapshot(task)
+          );
+          const now = new Date().toISOString();
+          const remoteUpdatedAt = remoteResponse?.updated || task.googleUpdatedAt || now;
+          const syncedTaskKey = task.id;
+
+          setManualTasks((previous) =>
+            previous.map((item) =>
+              item.id !== syncedTaskKey
+                ? item
+                : {
+                    ...item,
+                    googleUpdatedAt: remoteUpdatedAt,
+                    googleSyncedAt: now,
+                    googlePulledAt: now,
+                    googleLocalUpdatedAt: now,
+                    googleSyncStatus: "synced",
+                    googleSyncConflict: null,
+                    updatedAt: now,
+                  }
+            )
+          );
+          setGoogleTasksStatus("connected");
+          setGoogleTasksMessage(`Zsynchronizowano zadanie "${task.title}" z Google Tasks.`);
+        } catch (error) {
+          console.error("Google Tasks auto-sync failed.", error);
+          setGoogleTasksStatus("error");
+          setGoogleTasksMessage(`Nie udalo sie zsynchronizowac zadania "${task.title}" z Google Tasks.`);
+        } finally {
+          inFlightTaskSyncRef.current.delete(taskKey);
+        }
+      }
+    };
+
+    void syncTasks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [googleEnabled, hasGoogleTasksToken, manualTasks, selectedGoogleTaskListId, setManualTasks]);
+
+  useEffect(() => {
+    if (!hasGoogleCalendarToken || !googleEnabled || !currentWorkspaceId) {
+      return undefined;
+    }
+
+    const pendingMeetings = meetings.filter((meeting) => {
+      if (meeting?.workspaceId !== currentWorkspaceId) {
+        return false;
+      }
+
+      const metaKey = `meeting:${meeting.id}`;
+      const meta = calendarMeta?.[metaKey] || {};
+      if (!meta.googleEventId || meta.googleSyncConflict) {
+        return false;
+      }
+
+      const localUpdatedAt = meeting.updatedAt || meeting.createdAt || "";
+      const lastSyncedAt = meta.googleSyncedAt || meta.googlePulledAt || meeting.createdAt || "";
+      return isAfter(localUpdatedAt, lastSyncedAt);
+    });
+
+    if (!pendingMeetings.length) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const syncMeetings = async () => {
+      for (const meeting of pendingMeetings) {
+        if (cancelled) {
+          break;
+        }
+
+        const metaKey = `meeting:${meeting.id}`;
+        const meta = calendarMeta?.[metaKey] || {};
+        const syncKey = `${metaKey}:${meta.googleEventId}`;
+
+        if (inFlightCalendarSyncRef.current.has(syncKey)) {
+          continue;
+        }
+
+        inFlightCalendarSyncRef.current.add(syncKey);
+        try {
+          await syncCalendarEntryToGoogle(meeting, {
+            googleEventId: meta.googleEventId,
+          });
+          const now = new Date().toISOString();
+          setCalendarMeta((previous) => ({
+            ...previous,
+            [metaKey]: {
+              ...(previous[metaKey] || {}),
+              googleSyncedAt: now,
+              googlePulledAt: now,
+              googleLocalUpdatedAt: now,
+              googleSyncConflict: null,
+            },
+          }));
+        } catch (error) {
+          console.error("Google Calendar auto-sync failed.", error);
+          setGoogleCalendarStatus("error");
+          setGoogleCalendarMessage(`Nie udalo sie zsynchronizowac spotkania "${meeting.title}" z Google Calendar.`);
+        } finally {
+          inFlightCalendarSyncRef.current.delete(syncKey);
+        }
+      }
+    };
+
+    void syncMeetings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarMeta, currentWorkspaceId, googleEnabled, hasGoogleCalendarToken, meetings, setCalendarMeta, syncCalendarEntryToGoogle]);
 
   const resolveGoogleTaskConflict = useCallback(
     async (taskId, mode, finalSnapshot = null) => {

@@ -80,14 +80,14 @@ export default function Topbar() {
           className={recorder.isRecording ? "topbar-record-btn recording" : "topbar-record-btn"}
           onClick={() => {
             if (recorder.isRecording) {
-              recorder.stopRecording();
+              ui.setActiveTab("studio");
             } else {
               recorder.startRecording({ adHoc: true });
+              ui.setActiveTab("studio");
             }
-            ui.setActiveTab("studio");
           }}
           disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
-          title={recorder.isRecording ? "Zatrzymaj nagranie" : "Nagranie ad hoc"}
+          title={recorder.isRecording ? "Przejdz do aktywnego nagrania" : "Nagranie ad hoc"}
         >
           <span className="topbar-record-dot" />
           {recorder.isRecording ? "Nagrywam..." : "Nagraj"}

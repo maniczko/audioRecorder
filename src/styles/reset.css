@@ -538,23 +538,9 @@ select:focus {
   align-items: center;
 }
 
-.empty-panel {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.14);
-  color: var(--muted);
-}
-
-.empty-panel.large {
-  min-height: 220px;
-  align-content: center;
-}
-
 .analysis-block {
-  padding: 16px;
-  border-radius: 18px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -563,38 +549,38 @@ select:focus {
 .brief-columns h3 {
   margin: 0;
   font-size: 1rem;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: var(--font-display);
 }
 
 .stack-form.roomy {
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .stack-form.roomy label span {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .ghost-button.small {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 0.84rem;
 }
 
 .segmented-control {
   display: inline-flex;
-  padding: 4px;
-  gap: 4px;
-  border-radius: 16px;
+  padding: var(--space-1);
+  gap: var(--space-1);
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .segment {
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
-  color: rgba(237, 247, 246, 0.74);
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -610,7 +596,7 @@ select:focus {
 
 .markdown-toolbar {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .markdown-field textarea {
@@ -618,57 +604,14 @@ select:focus {
 }
 
 .markdown-preview {
-  padding: 16px;
-  border-radius: 18px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(237, 247, 246, 0.86);
+  color: var(--copy);
 }
 
 .markdown-preview p,
 .markdown-preview ul {
-  margin: 0 0 10px;
-}
-
-/* ── Error Boundary ─────────────────────────────── */
-.error-boundary-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-  padding: 40px 24px;
-}
-.error-boundary-inner {
-  max-width: 480px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.error-boundary-inner h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-}
-.error-boundary-inner p {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  margin: 0;
-}
-.error-boundary-stack {
-  margin-top: 16px;
-  text-align: left;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: rgba(255,80,80,0.07);
-  border: 1px solid rgba(255,80,80,0.18);
-  border-radius: 8px;
-  padding: 12px 16px;
-  max-height: 240px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  width: 100%;
+  margin: 0 0 var(--space-3);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createMediaService } from "../services/mediaService";
-import { saveAudioBlob } from "../lib/audioStore";
+import { deleteRecordingBlob, getAudioStorageEstimate, listStoredSizes, saveAudioBlob } from "../lib/audioStore";
 import { createId } from "../lib/storage";
 import { createRecordingQueueItem, upsertRecordingQueueItem, getNextPendingRecordingQueueItem } from "../lib/recordingQueue";
 
@@ -20,15 +20,58 @@ export default function useRecorder({
   const [liveText, setLiveText] = useState("");
   const [currentSegments, setCurrentSegments] = useState([]);
   const [recordingMeetingId, setRecordingMeetingId] = useState(null);
+  const [audioStorageState, setAudioStorageState] = useState({
+    usageBytes: 0,
+    quotaBytes: 0,
+    freeBytes: 0,
+    usageRatio: 0,
+    isNearQuota: false,
+    warningMessage: "",
+    items: [],
+  });
   const userMeetingsRef = useRef(userMeetings);
 
   useEffect(() => {
     userMeetingsRef.current = userMeetings;
   }, [userMeetings]);
 
+  async function refreshAudioStorageState() {
+    const [estimate, items] = await Promise.all([
+      getAudioStorageEstimate(),
+      listStoredSizes(),
+    ]);
+
+    const nextEstimate = estimate || {
+      usageBytes: 0,
+      quotaBytes: 0,
+      freeBytes: 0,
+      usageRatio: 0,
+      isNearQuota: false,
+    };
+    const warningMessage = nextEstimate.isNearQuota
+      ? `Storage audio jest wykorzystany w ${Math.round(nextEstimate.usageRatio * 100)}%. Zostało ${Math.max(0, Math.round(nextEstimate.freeBytes / 1024 / 1024))} MB.`
+      : "";
+
+    setAudioStorageState({
+      ...nextEstimate,
+      warningMessage,
+      items,
+    });
+    return {
+      ...nextEstimate,
+      warningMessage,
+      items,
+    };
+  }
+
+  useEffect(() => {
+    refreshAudioStorageState().catch((error) => {
+      console.warn("Unable to read audio storage state.", error);
+    });
+  }, []);
+
   // 1. Pipeline & Queue Management
   const pipeline = useRecordingPipeline({
-    mediaService,
     userMeetingsRef,
     attachCompletedRecording,
     setCurrentSegments,
@@ -57,6 +100,7 @@ export default function useRecorder({
         const blob = new Blob(chunks, { type: mimeType });
         hydration.registerAudioUrl(rid, blob);
         await saveAudioBlob(rid, blob);
+        refreshAudioStorageState().catch(() => undefined);
         pipeline.setRecordingQueue((prev) =>
           upsertRecordingQueueItem(prev, createRecordingQueueItem({
             recordingId: rid,
@@ -127,6 +171,7 @@ export default function useRecorder({
     try {
       hydration.registerAudioUrl(rid, blob);
       await saveAudioBlob(rid, blob);
+      refreshAudioStorageState().catch(() => undefined);
       pipeline.setRecordingQueue((prev) =>
         upsertRecordingQueueItem(
           prev,
@@ -165,6 +210,16 @@ export default function useRecorder({
     return pipeline.retryStoredRecording?.(meeting, recording);
   }
 
+  async function deleteStoredRecordingAudio(recordingId) {
+    if (!recordingId) {
+      return;
+    }
+
+    await deleteRecordingBlob(recordingId);
+    hydration.removeAudioUrl?.(recordingId);
+    await refreshAudioStorageState().catch(() => undefined);
+  }
+
   return {
     ...hardware,
     ...hydration,
@@ -178,8 +233,13 @@ export default function useRecorder({
     liveTranscriptEnabled,
     setLiveTranscriptEnabled: mediaService.mode === "remote" ? setLiveTranscriptEnabled : null,
     startRecording: startRecordingWrapper,
+    pauseRecording: hardware.pauseRecording,
+    resumeRecording: hardware.resumeRecording,
     queueRecording,
     retryStoredRecording,
     resetRecorderState,
+    audioStorageState,
+    refreshAudioStorageState,
+    deleteStoredRecordingAudio,
   };
 }

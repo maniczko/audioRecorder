@@ -41,7 +41,7 @@ describe("stateService", () => {
       method: "GET",
     });
     expect(apiRequest).toHaveBeenNthCalledWith(2, "/state/workspaces/ws1", {
-      method: "PUT",
+      method: "PATCH",
       body: { meetings: [] },
     });
   });

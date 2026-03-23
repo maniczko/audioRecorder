@@ -351,8 +351,11 @@ export default function StudioMeetingView({
   selectedMeetingQueue,
   elapsed,
   visualBars,
+  isPaused,
   stopRecording,
   startRecording,
+  pauseRecording,
+  resumeRecording,
   retryRecordingQueueItem,
   recordPermission,
   speechRecognitionSupported,
@@ -402,6 +405,7 @@ export default function StudioMeetingView({
   const [needDraft, setNeedDraft] = useState("");
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState("");
+  const [debriefCopyMessage, setDebriefCopyMessage] = useState("");
 
   const { meetings } = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
@@ -549,6 +553,7 @@ export default function StudioMeetingView({
   const blockers = useMemo(() => safeArray(studioAnalysis?.blockers).slice(0, 3), [studioAnalysis?.blockers]);
   const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
   const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
+  const aiDebrief = selectedMeeting?.aiDebrief || displayRecording?.aiDebrief || null;
   const feedbackTranscript = useMemo(() => {
     if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
       return displayRecording.transcript;
@@ -600,6 +605,33 @@ export default function StudioMeetingView({
     (!safeArray(studioAnalysis?.decisions).length &&
       !safeArray(studioAnalysis?.tasks).length &&
       !safeArray(studioAnalysis?.participantInsights).length);
+  const copyAIDebrief = useCallback(async () => {
+    if (!aiDebrief) {
+      return;
+    }
+
+    const lines = [
+      `Debrief AI: ${selectedMeeting?.title || "Spotkanie"}`,
+      "",
+      aiDebrief.summary,
+      "",
+      `Decyzje: ${(aiDebrief.decisions || []).join(" | ") || "Brak"}`,
+      `Ryzyka: ${(aiDebrief.risks || []).join(" | ") || "Brak"}`,
+      `Następne kroki: ${(aiDebrief.followUps || []).join(" | ") || "Brak"}`,
+    ];
+
+    const text = lines.join("\n");
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        setDebriefCopyMessage("Skopiowano debrief do schowka.");
+      } else {
+        setDebriefCopyMessage("Schowek nie jest dostępny w tej przeglądarce.");
+      }
+    } catch (error) {
+      setDebriefCopyMessage(String(error?.message || "Nie udało się skopiować debriefu."));
+    }
+  }, [aiDebrief, selectedMeeting?.title]);
   const meetingTaskEntries = useMemo(() => {
     const meetingId = String(selectedMeeting?.id || "").trim();
     const recordingId = String(selectedRecording?.id || "").trim();
@@ -1342,6 +1374,76 @@ export default function StudioMeetingView({
                     )}
                   </div>
                 </div>
+
+                {aiDebrief ? (
+                  <section className="summary-card" style={{ marginBottom: "18px" }}>
+                    <div className="summary-card-head">
+                      <h3>Debrief AI</h3>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <span>{aiDebrief.followUps?.length || 0}</span>
+                        <button type="button" className="ghost-button" onClick={copyAIDebrief}>
+                          Kopiuj
+                        </button>
+                        {exportMeetingPdfFile ? (
+                          <button type="button" className="ghost-button" onClick={exportMeetingPdfFile}>
+                            PDF
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="analysis-summary-text" style={{ marginBottom: "12px" }}>
+                      {aiDebrief.summary}
+                    </div>
+                    <div className="summary-grid" style={{ gap: "12px" }}>
+                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                        <div className="summary-card-head">
+                          <h3>Decyzje</h3>
+                          <span>{aiDebrief.decisions?.length || 0}</span>
+                        </div>
+                        {aiDebrief.decisions?.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {aiDebrief.decisions.map((item, index) => (
+                              <li key={`debrief-decision-${index}`}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak jednoznacznych decyzji.</p>
+                        )}
+                      </section>
+                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                        <div className="summary-card-head">
+                          <h3>Ryzyka</h3>
+                          <span>{aiDebrief.risks?.length || 0}</span>
+                        </div>
+                        {aiDebrief.risks?.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {aiDebrief.risks.map((item, index) => (
+                              <li key={`debrief-risk-${index}`}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak ryzyk do odnotowania.</p>
+                        )}
+                      </section>
+                      <section className="summary-card" style={{ marginBottom: 0 }}>
+                        <div className="summary-card-head">
+                          <h3>Następne kroki</h3>
+                          <span>{aiDebrief.followUps?.length || 0}</span>
+                        </div>
+                        {aiDebrief.followUps?.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {aiDebrief.followUps.map((item, index) => (
+                              <li key={`debrief-followup-${index}`}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak dodatkowych follow-upów.</p>
+                        )}
+                      </section>
+                    </div>
+                    {debriefCopyMessage ? <div className="inline-alert info" style={{ marginTop: "12px" }}>{debriefCopyMessage}</div> : null}
+                  </section>
+                ) : null}
 
                 <div className="summary-grid">
                   <section className="summary-card">
@@ -2136,26 +2238,7 @@ export default function StudioMeetingView({
       {/* ═══════════════════════════════════════════
            RECORDING ACTIVE HERO — only when recording
           ═══════════════════════════════════════════ */}
-      {isRecording && (
-        <div className="ff-rec-active-hero">
-          <div className="ff-rec-vis-row">
-            <div className="ff-rec-pulse-ring">
-              <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div className="ff-rec-wave-inline">
-              {visualBars.map((h, i) => (
-                <span key={i} className="ff-capture-bar" style={{ height: Math.max(3, Math.round(h * 0.45)) + "px" }} />
-              ))}
-            </div>
-          </div>
-          <div className="ff-rec-timer-xl">{formatDuration(elapsed)}</div>
-          <p className="ff-rec-status-label">● Nagrywanie</p>
-        </div>
-      )}
+      {/* STANDALONE RECORDING HERO REMOVED — MOVED TO PLAYER BAR BELOW */}
 
       {/* ═══════════════════════════════════════════
            PLAYER BAR — ALWAYS visible — at bottom
@@ -2163,14 +2246,61 @@ export default function StudioMeetingView({
       {shouldShowPlayerBar && (
         <div className="ff-player-bar">
           {playerState === "recording" ? (
-            <>
-              <div className="ff-rec-mini-bars">
-                {visualBars.slice(-14).map((h, i) => (
-                  <span key={i} className="ff-rec-mini-bar" style={{ height: Math.max(2, Math.round(h / 4)) + "px" }} />
-                ))}
+            <div className="ff-player-status-wrap recording-active">
+               <div className="ff-rec-vis-row">
+                <div className="ff-rec-pulse-ring" style={{ width: '32px', height: '32px', animation: isPaused ? 'none' : undefined }}>
+                  <svg width="14" height="14" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div className="ff-rec-wave-inline" style={{ height: '24px' }}>
+                  {visualBars.slice(-18).map((h, i) => (
+                    <span key={i} className="ff-capture-bar" style={{ 
+                      height: Math.max(3, Math.round(h * 0.35)) + "px",
+                      opacity: isPaused ? 0.3 : 1 
+                    }} />
+                  ))}
+                </div>
               </div>
-              <span className="ff-player-time">{formatDuration(elapsed)}</span>
-            </>
+
+              <div className="ff-rec-timer-xl" style={{ fontSize: '2rem', minWidth: '120px' }}>{formatDuration(elapsed)}</div>
+              
+              <div className="ff-player-status-label" style={{ color: isPaused ? 'var(--text-muted)' : '#ef4444' }}>
+                {isPaused ? "Wstrzymano" : "Nagrywanie..."}
+              </div>
+
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  className="ff-tb-btn" 
+                  onClick={isPaused ? resumeRecording : pauseRecording}
+                  style={{ minWidth: '110px', justifyContent: 'center' }}
+                >
+                  {isPaused ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M4 2l10 6-10 6z" />
+                      </svg>
+                      Wznów
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                        <rect x="3" y="2" width="4" height="12" rx="1" />
+                        <rect x="9" y="2" width="4" height="12" rx="1" />
+                      </svg>
+                      Wstrzymaj
+                    </>
+                  )}
+                </button>
+                <button type="button" className="ff-tb-stop" onClick={stopRecording}>
+                  <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+                  Zakończ
+                </button>
+              </div>
+            </div>
           ) : playerState === "queued" ? (
             <div className="ff-player-status-wrap">
               <RecordingPipelineStatus 

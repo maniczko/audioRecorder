@@ -3,7 +3,6 @@ import { DEFAULT_BARS, recordingErrorMessage } from "../lib/recording";
 import { summarizeSpectrum } from "../lib/diarization";
 import { createNoiseReducerNode } from "../audio/noiseReducerNode";
 
-
 export default function useAudioHardware({
   mediaService,
   onRecordingStop,
@@ -13,6 +12,7 @@ export default function useAudioHardware({
 }) {
   const [recordPermission, setRecordPermission] = useState("idle");
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [visualBars, setVisualBars] = useState(DEFAULT_BARS);
 
@@ -28,11 +28,18 @@ export default function useAudioHardware({
   const transcriptRef = useRef([]);
   const signatureTimelineRef = useRef([]);
   const isRecordingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const pauseTimeRef = useRef(0);
+  const totalPausedTimeRef = useRef(0);
   const mimeTypeRef = useRef("audio/webm");
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.permissions?.query) return undefined;
@@ -90,7 +97,7 @@ export default function useAudioHardware({
     analyserRef.current.getByteFrequencyData(data);
     setVisualBars(Array.from({ length: 24 }, (_, i) => {
       const srcIdx = Math.floor((i / 24) * data.length);
-      return Math.max(6, (data[srcIdx] / 255) * 58);
+      return Math.max(6, (data[srcIdx] / 255) * 58) as any;
     }));
 
     if (isRecordingRef.current) {
@@ -109,15 +116,15 @@ export default function useAudioHardware({
 
   async function startRecording(meetingId) {
     if (recordPermission === "denied") {
-      onMessageChange("Mikrofon jest zablokowany w przegladarce. Kliknij ikone klodki przy adresie strony i zezwol na mikrofon.");
+      onMessageChange("Mikrofon jest zablokowany w przeglądarce. Kliknij ikonę kłódki przy adresie strony i zezwól na mikrofon.");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      onMessageChange("Ta przegladarka nie obsluguje dostepu do mikrofonu.");
+      onMessageChange("Ta przeglądarka nie obsługuje dostępu do mikrofonu.");
       return;
     }
     if (typeof window !== "undefined" && typeof window.MediaRecorder === "undefined") {
-      onMessageChange("Ta przegladarka nie obsluguje nagrywania audio przez MediaRecorder.");
+      onMessageChange("Ta przeglądarka nie obsługuje nagrywania audio przez MediaRecorder.");
       return;
     }
 
@@ -133,11 +140,9 @@ export default function useAudioHardware({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        // 16 kHz matches the Whisper/VAD pipeline — avoids expensive server-side resampling.
-        // Browsers that don't support 16 kHz fall back to their native rate automatically.
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: { ideal: 1 }, sampleRate: { ideal: 16000 } },
       });
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) throw new Error("AudioContext unavailable");
 
       const audioContext = new AudioContextClass();
@@ -170,14 +175,16 @@ export default function useAudioHardware({
 
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.onstop = () => {
+        const finalDuration = Math.floor((Date.now() - startTimeRef.current - totalPausedTimeRef.current) / 1000);
         onRecordingStop({
           meetingId,
           chunks: chunksRef.current,
           mimeType: recorder.mimeType || "audio/webm",
           rawSegments: transcriptRef.current,
-          duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
+          duration: finalDuration,
         });
         setIsRecording(false);
+        setIsPaused(false);
         setRecordPermission("granted");
         cleanupRecorder();
         setVisualBars(DEFAULT_BARS);
@@ -206,11 +213,15 @@ export default function useAudioHardware({
       }
 
       startTimeRef.current = Date.now();
+      totalPausedTimeRef.current = 0;
       setElapsed(0);
       setIsRecording(true);
+      setIsPaused(false);
       setRecordPermission("granted");
       timerRef.current = window.setInterval(() => {
-        if (isRecordingRef.current) setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        if (isRecordingRef.current && !isPausedRef.current) {
+          setElapsed(Math.floor((Date.now() - startTimeRef.current - totalPausedTimeRef.current) / 1000));
+        }
       }, 300);
       pumpVisualizer();
     } catch (error) {
@@ -225,6 +236,7 @@ export default function useAudioHardware({
 
   function stopRecording() {
     setIsRecording(false);
+    setIsPaused(false);
     onInterimChange("");
     if (typeof window !== "undefined") window.clearInterval(timerRef.current);
     try { if (mediaRecorderRef.current?.state !== "inactive") mediaRecorderRef.current.stop(); } catch (e) {}
@@ -232,15 +244,44 @@ export default function useAudioHardware({
     streamRef.current?.getTracks().forEach((t) => t.stop());
   }
 
+  function pauseRecording() {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      pauseTimeRef.current = Date.now();
+      try {
+        recognitionRef.current?.stop();
+      } catch (error) {
+        console.warn("Pause recognition failed:", error);
+      }
+    }
+  }
+
+  function resumeRecording() {
+    if (mediaRecorderRef.current?.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      totalPausedTimeRef.current += Date.now() - pauseTimeRef.current;
+      try {
+        recognitionRef.current?.start();
+      } catch (error) {
+        console.warn("Resume recognition failed:", error);
+      }
+    }
+  }
+
   return {
     recordPermission,
     isRecording,
+    isPaused,
     elapsed,
     visualBars,
     chunksRef,
     mimeTypeRef,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     cleanupRecorder,
   };
 }

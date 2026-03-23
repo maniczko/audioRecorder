@@ -140,13 +140,10 @@
 
 .transcript-selection-copy {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
-.empty-panel.large {
-  min-height: 220px;
-  align-content: center;
-}
+/* Empty panel - use foundation.css */
 
 .waveform-panel {
   border: 1px solid var(--border, #2a2a45);

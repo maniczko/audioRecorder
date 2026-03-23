@@ -119,11 +119,4 @@
   }
 }
 
-.error-state {
-  border-color: rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.05);
-}
-
-.empty-state {
-  border-color: rgba(255, 255, 255, 0.08);
-}
+/* Error and empty states - use foundation.css */
