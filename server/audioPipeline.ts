@@ -59,8 +59,15 @@ const execPromise = promisify(exec);
 // Konfiguracja API
 const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || "";
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
-const VERIFICATION_MODEL = config.VERIFICATION_MODEL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
+
+// STT provider — Groq (whisper-large-v3) preferred when configured, otherwise OpenAI
+const GROQ_API_KEY = config.GROQ_API_KEY || "";
+const _sttUseGroq = config.VOICELOG_STT_PROVIDER === "groq" && !!GROQ_API_KEY;
+const STT_API_KEY = _sttUseGroq ? GROQ_API_KEY : OPENAI_API_KEY;
+const STT_BASE_URL = _sttUseGroq ? "https://api.groq.com/openai/v1" : OPENAI_BASE_URL;
+// whisper-large-v3 on Groq is ~216× realtime and superior for Polish named entities
+const VERIFICATION_MODEL = _sttUseGroq ? "whisper-large-v3" : config.VERIFICATION_MODEL;
 
 // Konfiguracja preprocessingu
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
@@ -115,9 +122,12 @@ function isPreprocessCacheFile(filePath: string) {
   return Boolean(filePath && isPathInside(filePath, getPreprocessCacheDir()));
 }
 
-async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal }: any) {
-  if (!OPENAI_API_KEY) {
-    throw new Error("Brakuje OPENAI_API_KEY dla serwerowego pipeline audio.");
+async function requestAudioTranscription({ filePath, buffer, filename, contentType, fields, signal, apiKey: overrideApiKey, baseUrl: overrideBaseUrl }: any) {
+  const activeApiKey = overrideApiKey || STT_API_KEY;
+  const activeBaseUrl = overrideBaseUrl || STT_BASE_URL;
+
+  if (!activeApiKey) {
+    throw new Error("Brakuje API key (OPENAI_API_KEY lub GROQ_API_KEY) dla serwerowego pipeline audio.");
   }
 
   const audioBuffer = buffer || fs.readFileSync(filePath);
@@ -146,10 +156,10 @@ async function requestAudioTranscription({ filePath, buffer, filename, contentTy
 
   const abortSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000);
 
-  const response = await fetch(`${OPENAI_BASE_URL}/audio/transcriptions`, {
+  const response = await fetch(`${activeBaseUrl}/audio/transcriptions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${activeApiKey}`,
     },
     body: form,
     signal: abortSignal,
@@ -158,7 +168,7 @@ async function requestAudioTranscription({ filePath, buffer, filename, contentTy
   const rawBody = await response.text();
   if (!response.ok) {
     const payload = parseJsonResponse(rawBody);
-    throw new Error(payload?.error?.message || `OpenAI audio request failed with status ${response.status}.`);
+    throw new Error(payload?.error?.message || `STT audio request failed with status ${response.status}.`);
   }
 
   return parseJsonResponse(rawBody);
@@ -516,6 +526,8 @@ async function transcribeInChunks(filePath: string, contentType: string, fields:
             contentType: "audio/wav",
             fields,
             signal: options.signal,
+            apiKey: options.sttApiKey,
+            baseUrl: options.sttBaseUrl,
           });
           diagnostics.hasSegments = Array.isArray(payload?.segments) && payload.segments.length > 0;
           diagnostics.hasWords = getRawWords(payload).length > 0;
@@ -1031,9 +1043,12 @@ async function runTranscriptionAttempt(
 
   // ── Whisper verbose_json (always run — needed for text + timestamps + verification) ──
   let whisperPayload: any = null;
-  const modelsToTry = VERIFICATION_MODEL !== "whisper-1"
-    ? [VERIFICATION_MODEL, "whisper-1"]
-    : ["whisper-1"];
+  // Groq only supports whisper-large-v3 (no whisper-1); OpenAI uses configured model with whisper-1 fallback
+  const modelsToTry = _sttUseGroq
+    ? ["whisper-large-v3"]
+    : VERIFICATION_MODEL !== "whisper-1"
+      ? [VERIFICATION_MODEL, "whisper-1"]
+      : ["whisper-1"];
 
   const reqId = options.requestId || "internal-pipeline";
   const startTranscribe = performance.now();
@@ -1103,6 +1118,47 @@ async function runTranscriptionAttempt(
       console.error(`[audioPipeline] Transcription failed with model ${model}:`, error.message);
       if (model === modelsToTry[modelsToTry.length - 1]) {
         console.error("[audioPipeline] All transcription models exhausted.");
+      }
+    }
+  }
+
+  // Provider-level fallback: Groq primary failed → retry with OpenAI when key is available
+  if (!whisperPayload && _sttUseGroq && OPENAI_API_KEY) {
+    const openaiModels = config.VERIFICATION_MODEL !== "whisper-1"
+      ? [config.VERIFICATION_MODEL, "whisper-1"]
+      : ["whisper-1"];
+    for (const model of openaiModels) {
+      const fallbackFields = { ...whisperFields, model };
+      try {
+        console.log(`[audioPipeline] Groq STT failed — retrying with OpenAI model ${model}`);
+        if (isLargeFile) {
+          const chunkPayloads = await transcribeInChunks(
+            transcribeFilePath, transcribeContentType, fallbackFields,
+            { ...options, sttApiKey: OPENAI_API_KEY, sttBaseUrl: OPENAI_BASE_URL }
+          );
+          whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
+          transcriptionDiagnostics = {
+            ...transcriptionDiagnostics,
+            ...(whisperPayload?.transcriptionDiagnostics || {}),
+          };
+        } else {
+          whisperPayload = await requestAudioTranscription({
+            filePath: transcribeFilePath,
+            contentType: transcribeContentType,
+            fields: fallbackFields,
+            signal: options.signal,
+            apiKey: OPENAI_API_KEY,
+            baseUrl: OPENAI_BASE_URL,
+          });
+        }
+        if (whisperPayload) {
+          lastTranscriptionError = null;
+          if (DEBUG) console.log(`[audioPipeline] OpenAI fallback succeeded with model: ${model}`);
+          break;
+        }
+      } catch (e: any) {
+        lastTranscriptionError = e;
+        console.error(`[audioPipeline] OpenAI fallback failed for model ${model}:`, e.message);
       }
     }
   }
@@ -1491,7 +1547,7 @@ async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
  * @returns {Promise<string>}  Transcribed text or empty string on failure
  */
 async function transcribeLiveChunk(filePath: string, contentType: string, options: any = {}) {
-  if (!OPENAI_API_KEY) return "";
+  if (!STT_API_KEY) return "";
   try {
     const payload = await requestAudioTranscription({
       filePath,

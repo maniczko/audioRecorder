@@ -32,6 +32,9 @@ const envSchema = z.object({
   VOICELOG_OPENAI_API_KEY: z.string().optional(),
   VOICELOG_OPENAI_BASE_URL: z.string().default("https://api.openai.com/v1"),
 
+  GROQ_API_KEY: z.string().optional(),
+  VOICELOG_STT_PROVIDER: z.enum(["openai", "groq"]).default("openai"),
+
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-3-5-haiku-latest"),
   

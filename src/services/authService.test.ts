@@ -2,9 +2,8 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { createAuthService } from './authService';
 import { apiRequest } from './httpClient';
 
-
 vi.mock('./httpClient', () => ({
-  apiRequest: vi.fn(),
+  apiRequest: vi.fn().mockResolvedValue({ user: { id: 'u1' } }),
 }));
 
 vi.mock('./config', () => ({
@@ -20,7 +19,6 @@ describe('authService - remote mode', () => {
 
   test('register calls /auth/register', async () => {
     const draft = { email: 'test@ex.com', password: 'pass', name: 'User' };
-    (apiRequest as any).mockResolvedValue({ user: { id: 'u1' } });
 
     await authService.register({ draft });
 
@@ -32,7 +30,6 @@ describe('authService - remote mode', () => {
 
   test('login calls /auth/login', async () => {
     const draft = { email: 'test@ex.com', password: 'pass' };
-    (apiRequest as any).mockResolvedValue({ user: { id: 'u1' } });
 
     await authService.login({ draft });
 
