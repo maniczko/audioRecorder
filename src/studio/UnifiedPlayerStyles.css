@@ -65,6 +65,8 @@
 }
 
 .uplayer-play-btn:hover { opacity: 0.85; transform: scale(1.06); }
+.uplayer-play-btn--error { background: var(--error, #f87171); color: #fff; }
+.uplayer-play-btn--error:hover { opacity: 0.9; transform: scale(1.06); }
 
 .uplayer-track {
   flex: 1;

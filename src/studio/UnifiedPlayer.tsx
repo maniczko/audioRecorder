@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
@@ -17,6 +18,11 @@ export default function UnifiedPlayer({
   // speaker
   transcript, displaySpeakerNames,
 }) {
+  const [playError, setPlayError] = useState<string | null>(null);
+
+  // Clear play error when audio source changes
+  useEffect(() => { setPlayError(null); }, [selectedRecordingAudioUrl]);
+
   const isQueued = ["queued","uploading","processing"].includes(analysisStatus) && !isRecording;
 
   // Compute peak level (0–1) from visualBars for the gain meter
@@ -58,16 +64,33 @@ export default function UnifiedPlayer({
         ) : mode === "playback" ? (
           <button
             type="button"
-            className="uplayer-play-btn"
+            className={`uplayer-play-btn${playError ? " uplayer-play-btn--error" : ""}`}
             onClick={() => {
               const a = audioRef.current;
               if (!a) return;
-              if (a.paused) a.play().catch(() => {});
-              else a.pause();
+              if (playError) {
+                // Retry on click after error
+                setPlayError(null);
+                a.load();
+                a.play().catch((err: Error) => {
+                  setPlayError(err.name === "NotAllowedError" ? "Kliknij aby odblokować audio" : `Nie można odtworzyć — ${err.message}`);
+                });
+                return;
+              }
+              if (a.paused) {
+                a.play().catch((err: Error) => {
+                  setPlayError(err.name === "NotAllowedError" ? "Kliknij aby odblokować audio" : "Nie można odtworzyć — plik może być uszkodzony");
+                });
+              } else {
+                a.pause();
+              }
             }}
-            aria-label={isPlaying ? "Pauza" : "Odtwórz"}
+            aria-label={playError ? "Błąd odtwarzania — kliknij aby ponowić" : isPlaying ? "Pauza" : "Odtwórz"}
+            title={playError || undefined}
           >
-            {isPlaying
+            {playError
+              ? <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1a6 6 0 100 12A6 6 0 007 1zm-.75 3h1.5v4h-1.5V4zm0 5h1.5v1.5h-1.5V9z"/></svg>
+              : isPlaying
               ? <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="4" height="12" rx="1"/><rect x="8" y="1" width="4" height="12" rx="1"/></svg>
               : <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5l10 5.5-10 5.5z"/></svg>
             }
@@ -206,7 +229,11 @@ export default function UnifiedPlayer({
       </div>
 
       {/* Error / review alert below the bar */}
-      {mode === "playback" && selectedRecordingAudioError ? (
+      {mode === "playback" && playError ? (
+        <div className="inline-alert error" style={{ margin: "4px 0 0" }}>
+          {playError}
+        </div>
+      ) : mode === "playback" && selectedRecordingAudioError ? (
         <div className="inline-alert error" style={{ margin: "4px 0 0" }}>
           Błąd audio: {selectedRecordingAudioError}
         </div>

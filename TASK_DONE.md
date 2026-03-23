@@ -1043,4 +1043,11 @@ Następne kroki:
 ## 035. Delta sync zamiast pelnego PUT stanu workspace
 Completed by: Codex
 Result: `syncWorkspaceState` wysyla teraz delta PATCH zamiast pelnego stanu, backend scala delta z aktualnym workspace state, a bootstrap GET pozostaje fallbackiem.
-Side effects / follow-up: payload synca jest znacznie mniejszy dla pojedynczych zmian; kolejnym krokiem moze byc dalsze rozdrobnienie delta dla kolekcji o duzym rozmiarze.
+Side effects / follow-up: payload synca jest znacznie mniejszy dla pojedynczych zmian; kolejnym krokiem moze byc dalsze rozdrobnienie delta dla kolekcji o duzym rozmiarze.## 077. [AUDIO] Server-side VAD — ffmpeg silence removal before transcription
+Completed by: Claude
+Result: Added ffmpeg `silenceremove` filter to `preprocessAudio()` in `server/audioPipeline.ts`. Filter removes silence >0.5s/-35dB to reduce Whisper hallucinations. Enabled by default via `VOICELOG_SILENCE_REMOVE=true`, auto-disabled when pyannote pipeline is active (HF_TOKEN set). Duration logging before/after when DEBUG=true. Also fixed pre-existing test failures in media.additional.test.ts and ai.test.ts; improved media routes (DELETE→204, normalize passes signal, voice-coaching validates speakerId, added GET /recordings list endpoint).
+Side effects / follow-up: Set `VOICELOG_SILENCE_REMOVE=false` in Railway env if silence removal causes issues with specific audio types.
+## 047. [AUDIO] Audio playback error handling in UnifiedPlayer
+Completed by: Claude
+Result: Added local `playError` state to `UnifiedPlayer.tsx`. The `play()` handler now catches errors and sets descriptive messages (`NotAllowedError` → "Kliknij aby odblokować audio"; others → "Nie można odtworzyć — plik może być uszkodzony"). Play button switches to ⚠ icon (red background) when error occurs; click on error button retries playback. Error cleared automatically when audio source URL changes. Added `.uplayer-play-btn--error` CSS class for visual feedback.
+Side effects / follow-up: None.
