@@ -158,7 +158,8 @@ function isTransientNetworkError(error: any) {
 }
 
 const MAX_AUTO_RETRIES = 3;
-const AUTO_RETRY_DELAY_MS = 5000;
+// Exponential backoff delays for retries: 1s, 4s, 16s
+const RETRY_DELAYS_MS = [1000, 4000, 16000];
 
 export const useRecorderStore = create<any>()(
   persist(
@@ -202,6 +203,9 @@ export const useRecorderStore = create<any>()(
           status: "queued",
           uploaded: reuseRemoteUpload,
           errorMessage: "",
+          retryCount: 0,
+          backoffUntil: 0,
+          lastErrorMessage: "",
           pipelineGitSha: "",
           pipelineVersion: "",
           pipelineBuildTime: "",
@@ -258,6 +262,15 @@ export const useRecorderStore = create<any>()(
       processQueue: async (resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments) => {
         const state = get();
         if (state.isProcessingQueue) return;
+
+        // Wait for network connectivity — register a one-time listener and bail
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          const onOnline = () => {
+            get().processQueue(resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments);
+          };
+          window.addEventListener("online", onOnline, { once: true });
+          return;
+        }
 
         const nextItem = getNextProcessableRecordingQueueItem(
           state.recordingQueue,
@@ -580,16 +593,22 @@ export const useRecorderStore = create<any>()(
               : "Nagranie zostalo przetworzone.",
           });
         } catch (error) {
-          const attempts = (nextItem.attempts || 0);
-          if (isTransientNetworkError(error) && attempts < MAX_AUTO_RETRIES) {
-            console.warn(`[queue] Transient network error (attempt ${attempts}/${MAX_AUTO_RETRIES}), retrying in ${AUTO_RETRY_DELAY_MS}ms...`, error?.message);
+          const retryCount = nextItem.retryCount || 0;
+          if (isTransientNetworkError(error) && retryCount < MAX_AUTO_RETRIES) {
+            const delay = RETRY_DELAYS_MS[retryCount] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1];
+            console.warn(`[queue] Transient network error (retry ${retryCount + 1}/${MAX_AUTO_RETRIES}), backoff ${delay}ms`, error?.message);
             get().updateQueueItem(nextItem.recordingId, {
               status: "queued",
+              retryCount: retryCount + 1,
+              backoffUntil: Date.now() + delay,
+              lastErrorMessage: toUserFacingQueueError(error),
               errorMessage: "",
             });
             set({ isProcessingQueue: false });
-            await sleep(AUTO_RETRY_DELAY_MS);
-            get().processQueue(resolveMeetingForQueueItem, attachCompletedRecording, setCurrentSegments);
+            // After the backoff expires, clear backoffUntil so the next processQueue run picks it up
+            setTimeout(() => {
+              get().updateQueueItem(nextItem.recordingId, { backoffUntil: 0 });
+            }, delay);
             return;
           }
 
@@ -601,8 +620,9 @@ export const useRecorderStore = create<any>()(
             }
             set({ lastQueueErrorKey: errorKey });
           }
+          // After exhausting retries mark as permanently failed — requires manual retry
           get().updateQueueItem(nextItem.recordingId, {
-            status: "failed",
+            status: retryCount >= MAX_AUTO_RETRIES ? "failed_permanent" : "failed",
             errorMessage: userFacingMessage,
           });
           const failedSnapshot = getPipelineSnapshot("failed", 0, userFacingMessage);

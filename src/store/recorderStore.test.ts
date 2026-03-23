@@ -317,8 +317,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
+      // retryCount: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate permanent failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, retryCount: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
@@ -328,7 +328,7 @@ describe("recorderStore", () => {
     );
 
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
-      status: "failed",
+      status: "failed_permanent",
       errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
     });
     expect(useRecorderStore.getState().recordingMessage).toBe(
@@ -347,8 +347,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
+      // retryCount: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate permanent failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, retryCount: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
@@ -358,7 +358,7 @@ describe("recorderStore", () => {
     );
 
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
-      status: "failed",
+      status: "failed_permanent",
       errorMessage:
         "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.",
     });
@@ -426,8 +426,8 @@ describe("recorderStore", () => {
       subscribeToTranscriptionProgress: vi.fn(() => () => {}),
     });
     useRecorderStore.setState({
-      // attempts: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate failure
-      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, attempts: 3 }],
+      // retryCount: 3 = MAX_AUTO_RETRIES — bypasses auto-retry so the test gets an immediate permanent failure
+      recordingQueue: [{ recordingId: "rec1", status: "queued", uploaded: false, retryCount: 3 }],
     });
 
     await useRecorderStore.getState().processQueue(
@@ -437,7 +437,7 @@ describe("recorderStore", () => {
     );
 
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
-      status: "failed",
+      status: "failed_permanent",
       errorMessage: "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.",
     });
   });

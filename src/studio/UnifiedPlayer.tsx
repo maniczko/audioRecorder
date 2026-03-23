@@ -45,6 +45,8 @@ export default function UnifiedPlayer({
 
   const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
     : analysisStatus === "processing" ? "Transkrypcja w toku…"
+    : activeQueueItem?.status === "failed_permanent" ? "Trwały błąd — wymagana ręczna próba"
+    : activeQueueItem?.backoffUntil > Date.now() ? `Ponowienie za chwilę… (próba ${activeQueueItem.retryCount}/3)`
     : "Nagranie w kolejce…";
 
   const fillPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
@@ -216,7 +218,7 @@ export default function UnifiedPlayer({
           </button>
         ) : mode === "recording" ? (
           <span className="uplayer-rec-dot" aria-label="Nagrywanie">REC</span>
-        ) : activeQueueItem?.status === "failed" ? (
+        ) : (activeQueueItem?.status === "failed" || activeQueueItem?.status === "failed_permanent") ? (
           <button
             type="button"
             className="ghost-button"
@@ -225,6 +227,10 @@ export default function UnifiedPlayer({
           >
             Ponów
           </button>
+        ) : activeQueueItem?.retryCount > 0 ? (
+          <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>
+            Próba {activeQueueItem.retryCount}/{3}
+          </span>
         ) : null}
       </div>
 

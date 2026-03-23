@@ -1051,3 +1051,7 @@ Side effects / follow-up: Set `VOICELOG_SILENCE_REMOVE=false` in Railway env if 
 Completed by: Claude
 Result: Added local `playError` state to `UnifiedPlayer.tsx`. The `play()` handler now catches errors and sets descriptive messages (`NotAllowedError` → "Kliknij aby odblokować audio"; others → "Nie można odtworzyć — plik może być uszkodzony"). Play button switches to ⚠ icon (red background) when error occurs; click on error button retries playback. Error cleared automatically when audio source URL changes. Added `.uplayer-play-btn--error` CSS class for visual feedback.
 Side effects / follow-up: None.
+## 046. [AUDIO] Exponential backoff + auto-retry in recording queue
+Completed by: Claude
+Result: Replaced flat 5s retry delay with exponential backoff (1s, 4s, 16s) using `retryCount` field on queue items. Added `backoffUntil` timestamp to skip items in backoff period; `setTimeout` clears backoff and re-triggers queue processing. Added `navigator.onLine` check at queue start — registers one-time 'online' event listener when offline. After exhausting MAX_AUTO_RETRIES (3) transient errors, item gets `failed_permanent` status (vs `failed` for non-retriable errors). Retry count shown in UnifiedPlayer ("Próba N/3"). `retryRecordingQueueItem` resets `retryCount`/`backoffUntil` for manual retries.
+Side effects / follow-up: None.
