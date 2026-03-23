@@ -181,51 +181,7 @@ function TasksWorkspaceView({
           </div>
         </section>
 
-
-        {!isCharts && !isSchedule && !isSummary && taskNotifications?.length > 0 ? (
-          <section className="todo-create-card" style={{ marginBottom: '24px' }}>
-            <div className="todo-create-head" style={{ marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-              <div>
-                <div className="eyebrow" style={{ color: 'var(--danger, #f87171)' }}>Ważne zadania</div>
-                <strong>Wymagają Twojej uwagi ({taskNotifications.length})</strong>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {taskNotifications.slice(0, 3).map(({ task, sla, dependencies }) => (
-                <div
-                  key={task.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    borderLeft: `4px solid ${sla.tone === 'danger' ? 'var(--text-danger, #f87171)' : 'var(--text-warning, #fbbf24)'}`,
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <strong style={{ fontSize: '0.85rem', color: 'var(--text-1)' }}>{task.title}</strong>
-                    {dependencies?.blocking ? (
-                      <small style={{ fontSize: '0.75rem', color: 'var(--text-3, #9ca3af)' }}>
-                        Blokuje zadania zależne
-                      </small>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`todo-status-pill ${sla.tone}`}
-                    style={{ fontSize: '0.7rem', padding: '4px 8px' }}
-                  >
-                    {sla.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {!isCharts && !isSchedule && !isSummary ? (
+        {!isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card">
             <div className="todo-create-head">
               <div>

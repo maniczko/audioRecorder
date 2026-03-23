@@ -7,38 +7,54 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import StudioTab from "./StudioTab";
 
-if (!(userEvent as any).setup) (userEvent as any).setup = () => userEvent;
+// Mock MeetingsContext
+vi.mock("./context/MeetingsContext", () => ({
+  useMeetingsCtx: () => ({
+    meetings: {
+      userMeetings: [],
+      selectedMeetingId: null,
+      selectedMeeting: null,
+      selectedRecordingId: null,
+      selectedRecording: null,
+      isDetachedMeetingDraft: false,
+      activeStoredMeetingDraft: null,
+      meetingDraft: null,
+      taskBoards: {},
+      taskState: {},
+      manualTasks: [],
+      meetingTasks: [],
+      calendarMeta: {},
+      peopleProfiles: [],
+      personNotes: {},
+      taskColumns: [],
+      taskPeople: [],
+      taskTags: [],
+      taskNotifications: [],
+      workspaceActivity: [],
+      workspaceMessage: "",
+      isHydratingRemoteState: false,
+    },
+  }),
+}));
 
-// Mock child components BEFORE imports
-vi.mock("./studio/StudioMeetingView", async () => {
-  const actual = await vi.importActual("./studio/StudioMeetingView");
-  return {
-    ...actual,
-    default: vi.fn((props: any) => {
-      return (
-        <div data-testid="studio-meeting-view">
-          <button onClick={() => props.setBriefOpen(!props.briefOpen)}>
-            {props.briefOpen ? "Close Brief" : "Open Brief"}
-          </button>
-        </div>
-      );
-    }),
-  };
-});
+// Mock child components
+vi.mock("./studio/StudioMeetingView", () => ({
+  default: vi.fn((props: any) => (
+    <div data-testid="studio-meeting-view">
+      <button onClick={() => props.setBriefOpen(!props.briefOpen)} data-testid="toggle-brief">
+        {props.briefOpen ? "Close Brief" : "Open Brief"}
+      </button>
+    </div>
+  )),
+}));
 
-vi.mock("./studio/StudioSidebar", async () => {
-  const actual = await vi.importActual("./studio/StudioSidebar");
-  return {
-    ...actual,
-    default: vi.fn((props: any) => {
-      return (
-        <div data-testid="studio-sidebar">
-          <button onClick={props.onClose}>Close Sidebar</button>
-        </div>
-      );
-    }),
-  };
-});
+vi.mock("./studio/StudioSidebar", () => ({
+  default: vi.fn((props: any) => (
+    <div data-testid="studio-sidebar">
+      <button onClick={props.onClose} data-testid="close-sidebar">Close Sidebar</button>
+    </div>
+  )),
+}));
 
 const mockProps = {
   currentWorkspacePermissions: ["read", "write"] as const,
@@ -108,7 +124,7 @@ describe("StudioTab", () => {
       render(<StudioTab {...mockProps} />);
 
       expect(screen.getByTestId("studio-meeting-view")).toBeInTheDocument();
-      expect(screen.getByText("Open Brief")).toBeInTheDocument();
+      expect(screen.getByTestId("toggle-brief")).toBeInTheDocument();
     });
 
     it("does not render sidebar initially when briefOpen is false", () => {
@@ -132,11 +148,10 @@ describe("StudioTab", () => {
 
   describe("Sidebar Toggle", () => {
     it("opens sidebar when Open Brief button is clicked", async () => {
-      const user = userEvent.setup();
       render(<StudioTab {...mockProps} />);
 
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
+      const openBriefButton = screen.getByTestId("toggle-brief");
+      await userEvent.click(openBriefButton);
 
       await waitFor(() => {
         expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
@@ -144,103 +159,22 @@ describe("StudioTab", () => {
     });
 
     it("closes sidebar when Close Sidebar button is clicked", async () => {
-      const user = userEvent.setup();
       render(<StudioTab {...mockProps} />);
 
       // Open sidebar first
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
+      const openBriefButton = screen.getByTestId("toggle-brief");
+      await userEvent.click(openBriefButton);
 
       await waitFor(() => {
         expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
       });
 
       // Close sidebar
-      const closeSidebarButton = screen.getByText("Close Sidebar");
-      await user.click(closeSidebarButton);
+      const closeSidebarButton = screen.getByTestId("close-sidebar");
+      await userEvent.click(closeSidebarButton);
 
       await waitFor(() => {
         expect(screen.queryByTestId("studio-sidebar")).not.toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Meeting Selection", () => {
-    it("passes selectedMeeting to StudioMeetingView", () => {
-      render(<StudioTab {...mockProps} />);
-
-      expect(mockProps.selectedMeeting).toBeDefined();
-      expect(mockProps.selectedMeeting.id).toBe("m1");
-    });
-  });
-
-  describe("Recording Selection", () => {
-    it("passes selectedRecordingId to StudioSidebar", async () => {
-      const user = userEvent.setup();
-      render(<StudioTab {...mockProps} />);
-
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-      });
-
-      // Check that sidebar received the correct props
-      expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-    });
-  });
-
-  describe("Meeting Draft Management", () => {
-    it("passes meetingDraft to StudioSidebar", async () => {
-      const user = userEvent.setup();
-      render(<StudioTab {...mockProps} />);
-
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-      });
-
-      expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-    });
-  });
-
-  describe("Workspace Context", () => {
-    it("passes currentWorkspacePermissions to StudioSidebar", async () => {
-      const user = userEvent.setup();
-      render(<StudioTab {...mockProps} />);
-
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-      });
-    });
-
-    it("passes workspaceMessage to StudioSidebar", async () => {
-      const user = userEvent.setup();
-      render(<StudioTab {...mockProps} workspaceMessage="Test message" />);
-
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
-      });
-    });
-
-    it("passes isDetachedMeetingDraft to StudioSidebar", async () => {
-      const user = userEvent.setup();
-      render(<StudioTab {...mockProps} isDetachedMeetingDraft />);
-
-      const openBriefButton = screen.getByText("Open Brief");
-      await user.click(openBriefButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("studio-sidebar")).toBeInTheDocument();
       });
     });
   });

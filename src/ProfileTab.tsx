@@ -130,9 +130,15 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
             disabled={isRecording}
           />
           <datalist id="saved-people-list">
-            {peopleProfiles.map((p) => (
-              <option key={p.id || p.name || p.speakerId} value={p.name || p.speakerId} />
-            ))}
+            {peopleProfiles
+              .filter(p => {
+                const nameStr = String(p.name || p.speakerId || "").trim();
+                const lower = nameStr.toLowerCase();
+                return lower !== "nieprzypisane" && lower !== "unassigned" && lower !== "system" && !nameStr.includes("@") && nameStr !== "";
+              })
+              .map((p) => (
+                <option key={p.id || p.name || p.speakerId} value={p.name || p.speakerId} />
+              ))}
           </datalist>
         </label>
         <div className="button-row">

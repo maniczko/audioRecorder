@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import Topbar from "./Topbar";
 
+// Mock all dependencies before importing Topbar
 vi.mock("./store/workspaceStore", () => ({
   useWorkspaceSelectors: () => ({
     currentWorkspacePermissions: { canRecordAudio: true },
@@ -15,7 +15,6 @@ vi.mock("./store/workspaceStore", () => ({
   }),
 }));
 
-// Mock GoogleContext properly - return a valid context object
 vi.mock("./context/GoogleContext", () => ({
   useGoogleCtx: () => ({
     googleEnabled: false,
@@ -23,6 +22,7 @@ vi.mock("./context/GoogleContext", () => ({
     connectGoogle: vi.fn(),
     disconnectGoogle: vi.fn(),
   }),
+  GoogleProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("./context/RecorderContext", () => ({
@@ -30,6 +30,7 @@ vi.mock("./context/RecorderContext", () => ({
     isRecording: false,
     startRecording: vi.fn(),
   }),
+  RecorderProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("./hooks/useUI", () => ({
@@ -56,6 +57,9 @@ vi.mock("./hooks/useUI", () => ({
 vi.mock("./NotificationCenter", () => ({
   default: () => null,
 }));
+
+// Import after mocks
+const Topbar = (await import("./Topbar")).default;
 
 describe("Topbar accessibility", () => {
   test("renders labelled controls and supports keyboard shortcuts", async () => {
