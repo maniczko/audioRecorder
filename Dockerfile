@@ -17,7 +17,7 @@ FROM base AS deps
 COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --link server/package.json ./server/package.json
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 
@@ -91,7 +91,7 @@ RUN uv venv /opt/venv
 
 WORKDIR /app
 
-COPY --link server/requirements.txt ./server/requirements.txt
+COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
@@ -99,14 +99,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
 COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
-COPY --link --from=prod-deps /prod/server/node_modules ./server/node_modules
-COPY --link --from=prod-deps /prod/server/package.json ./server/package.json
-COPY --link --from=build /app/dist-server ./server
-COPY --link server/*.py ./server/
-COPY --link server/migrations/ ./server/migrations/
+COPY --link --chown=10001:10001 --from=prod-deps /prod/server/node_modules ./server/node_modules
+COPY --link --chown=10001:10001 --from=prod-deps /prod/server/package.json ./server/package.json
+COPY --link --chown=10001:10001 --from=build /app/dist-server ./server
+COPY --link --chown=10001:10001 server/*.py ./server/
+COPY --link --chown=10001:10001 server/migrations/ ./server/migrations/
 
 RUN mkdir -p /data/uploads /app/server/data && \
-    chown -R app:app /app /data
+    chown -R app:app /data /app/server/data
 
 USER app
 
