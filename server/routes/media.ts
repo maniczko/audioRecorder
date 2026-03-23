@@ -279,46 +279,69 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const summaryText = diarization?.reviewSummary?.summary || diarization?.summary;
     if (!summaryText) return c.json({ message: "Brak podsumowania do wygenerowania sketchnotki." }, 400);
 
-    const prompt = `Create a visually stunning and professional SVG sketchnote summarizing this text: "${summaryText.substring(0, 500)}".
-Return ONLY valid SVG code. Do not include markdown formatting like \`\`\`svg or backticks around the output. Just raw <svg>...</svg>.
-The SVG should look like a hand-drawn visual note with doodle character icons, speech bubbles, arrows, and boxed sections. Use a warm color palette with pastel yellow accents. The text inside the SVG should be in Polish. Avoid excessively complex paths but arrange the layout clearly in a 800x600 viewBox.`;
-
     if (!process.env.GEMINI_API_KEY) {
       return c.json({ message: "Brak klucza GEMINI_API_KEY w konfiguracji środowiska." }, 400);
     }
 
     try {
       const { logger } = await import("../logger.ts");
-      logger.info(`Generating Gemini SVG sketchnote for recording ${recordingId}...`);
-      
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      logger.info(`Generating Gemini 3 Pro Image sketchnote for recording ${recordingId}...`);
+
+      const prompt = `Create a polished hand-drawn sketchnote poster in Polish that summarizes this meeting.
+Style requirements:
+- white or warm paper background
+- bold black hand-lettered headings
+- thick marker outlines
+- soft yellow highlights
+- a few doodles, arrows, speech bubbles, sticky-note callouts
+- clear hierarchy and generous spacing
+- readable Polish text
+- keep the layout compact and visually balanced
+- feel like a real workshop whiteboard/sketchnote, not a generic infographic
+
+Content to include:
+${summaryText.substring(0, 1200)}
+
+Important:
+- make it look like a handcrafted visual note
+- do not use photorealism
+- do not include tiny unreadable text
+- use a 4:3 composition`;
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
         },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
+          generationConfig: {
+            imageConfig: {
+              aspectRatio: "4:3",
+              imageSize: "2K",
+            },
+            thinkingConfig: {
+              thinkingLevel: "low",
+            },
+          }
         })
       });
 
       if (!res.ok) {
         const err = await res.text();
-        logger.error("Gemini SVG gen error:", err);
+        logger.error("Gemini image gen error:", err);
         return c.json({ message: "Blad generowania obrazu Gemini." }, 500);
       }
 
       const data = await res.json();
-      let svgText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      if (svgText.startsWith("```xml")) svgText = svgText.replace(/```xml\n?/g, "").replace(/```/g, "").trim();
-      if (svgText.startsWith("```svg")) svgText = svgText.replace(/```svg\n?/g, "").replace(/```/g, "").trim();
-      if (svgText.startsWith("```")) svgText = svgText.replace(/```\n?/g, "").replace(/```/g, "").trim();
-      
-      if (!svgText.includes("<svg")) {
-        return c.json({ message: "Model Gemini nie wygenerował poprawnego formatu SVG." }, 500);
+      const inlineImage = data.candidates?.[0]?.content?.parts?.find((part: any) => part?.inlineData?.data)?.inlineData;
+      if (!inlineImage?.data) {
+        return c.json({ message: "Model Gemini nie wygenerował obrazu." }, 500);
       }
 
-      const imageUrl = `data:image/svg+xml;base64,${Buffer.from(svgText).toString("base64")}`;
+      const mimeType = String(inlineImage.mimeType || "image/png").trim() || "image/png";
+      const imageUrl = `data:${mimeType};base64,${inlineImage.data}`;
 
       if (imageUrl) {
         diarization.sketchnoteUrl = imageUrl;
@@ -333,7 +356,7 @@ The SVG should look like a hand-drawn visual note with doodle character icons, s
       return c.json({ sketchnoteUrl: imageUrl }, 200);
     } catch (e: any) {
       console.error("Sketchnote generation exception:", e);
-      return c.json({ message: "Blad wywolywania API OpenAI." }, 500);
+      return c.json({ message: "Blad wywolywania API Gemini." }, 500);
     }
   });
 

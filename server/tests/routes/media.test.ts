@@ -291,6 +291,58 @@ describe("Media Routes", () => {
     );
   });
 
+  it("POST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview", async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: "rec_sketchnote",
+      workspace_id: "ws_1",
+      diarization_json: JSON.stringify({
+        summary: "Spotkanie o wdrożeniu nowego procesu.",
+      }),
+    });
+    mockWorkspaceService.getMembership.mockResolvedValue({ member_role: "owner" });
+
+    const originalFetch = global.fetch;
+    const originalGeminiKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "test-key";
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: Buffer.from("fake-image").toString("base64"),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    ) as any;
+
+    const res = await app.request("/media/recordings/rec_sketchnote/sketchnote", {
+      method: "POST",
+      headers: { Authorization: "Bearer fake_token" },
+    });
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload.sketchnoteUrl).toContain("data:image/png;base64,");
+    expect(mockTranscriptionService.getMediaAsset).toHaveBeenCalledWith("rec_sketchnote");
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect((global.fetch as any).mock.calls[0][0]).toContain("gemini-3-pro-image-preview:generateContent");
+    expect(String((global.fetch as any).mock.calls[0][1].headers["x-goog-api-key"])).toBe("test-key");
+
+    global.fetch = originalFetch;
+    process.env.GEMINI_API_KEY = originalGeminiKey;
+  });
+
   it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {
     const previewOrigin = "https://preview-app.vercel.app";
     const missingWorkspace = await app.request("/media/recordings/rec_missing/audio", {
