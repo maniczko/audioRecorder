@@ -16,13 +16,17 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
       const cors = buildCorsHeaders(requestOrigin, _allowedOrigins);
 
       if (c.req.method === "OPTIONS") {
-        c.status(204);
-        c.header("Access-Control-Allow-Origin", cors["Access-Control-Allow-Origin"]);
-        c.header("Access-Control-Allow-Headers", cors["Access-Control-Allow-Headers"]);
-        c.header("Access-Control-Allow-Methods", cors["Access-Control-Allow-Methods"]);
-        c.header("Access-Control-Allow-Credentials", "true");
-        c.header("Vary", cors["Vary"]);
-        return c.body(null);
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": cors["Access-Control-Allow-Origin"],
+            "Access-Control-Allow-Headers": cors["Access-Control-Allow-Headers"],
+            "Access-Control-Allow-Methods": cors["Access-Control-Allow-Methods"],
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "86400",
+            Vary: cors["Vary"],
+          },
+        });
       }
 
       await next();
