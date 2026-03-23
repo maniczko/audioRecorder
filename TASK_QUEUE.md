@@ -119,7 +119,7 @@ Context Providers         â”‚        2 â”‚      ~10 â”‚         5
 ---
 
 ## 076. [AUDIO] Word-level timestamps + precyzyjna diaryzacja per-sĹ‚owo
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: Whisper moĹĽe zwracaÄ‡ timestamps per-sĹ‚owo (`timestamp_granularities: ["word","segment"]`). Przy Ĺ‚Ä…czeniu z pyannote kaĹĽde sĹ‚owo trafia do wĹ‚aĹ›ciwego mĂłwcy (zamiast caĹ‚ego segmentu). Poprawia dokĹ‚adnoĹ›Ä‡ przy przeplotach i krĂłtkich wypowiedziach.

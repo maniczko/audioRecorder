@@ -349,6 +349,110 @@ function mergeWithPyannote(pyannoteSegments: any[], whisperSegments: any[]) {
 }
 
 /**
+ * Finds the pyannote speaker for a given timestamp.
+ * Returns the speaker label whose segment contains the timestamp,
+ * or the nearest segment's speaker if none contain it exactly.
+ */
+function findPyannoteSpeakerAt(timestamp: number, pyannoteSegments: any[]): string {
+  for (const pseg of pyannoteSegments) {
+    if (timestamp >= pseg.start && timestamp < pseg.end) return pseg.speaker;
+  }
+  let nearest: string | null = null;
+  let nearestDist = Infinity;
+  for (const pseg of pyannoteSegments) {
+    const dist = Math.min(Math.abs(timestamp - pseg.start), Math.abs(timestamp - pseg.end));
+    if (dist < nearestDist) { nearestDist = dist; nearest = pseg.speaker; }
+  }
+  return nearest || "speaker_unknown";
+}
+
+/**
+ * Word-level pyannote diarization: each word is assigned to a pyannote speaker,
+ * and Whisper segments are split at speaker boundaries within the segment.
+ * Returns null if no word timestamps are available (triggers segment-level fallback).
+ */
+function splitSegmentsByWordSpeaker(whisperRawSegments: any[], pyannoteSegments: any[]) {
+  const hasWords = whisperRawSegments.some((seg) => Array.isArray(seg.words) && seg.words.length > 0);
+  if (!hasWords) return null;
+
+  const speakerOrder = new Map<string, number>();
+  const speakerNames: Record<string, string> = {};
+  const resultSegments: any[] = [];
+
+  function getSpeakerId(rawLabel: string): number {
+    if (!speakerOrder.has(rawLabel)) {
+      const nextId = speakerOrder.size;
+      speakerOrder.set(rawLabel, nextId);
+      speakerNames[String(nextId)] = normalizeSpeakerLabel(rawLabel, nextId);
+    }
+    return speakerOrder.get(rawLabel)!;
+  }
+
+  for (const wseg of whisperRawSegments) {
+    const segText = clean(wseg.text || "");
+    if (!segText) continue;
+    const words: any[] = Array.isArray(wseg.words) ? wseg.words : [];
+
+    if (!words.length) {
+      // No word timestamps — use segment midpoint for speaker lookup
+      const midpoint = (Number(wseg.start ?? 0) + Number(wseg.end ?? 0)) / 2;
+      const rawLabel = findPyannoteSpeakerAt(midpoint, pyannoteSegments);
+      resultSegments.push({
+        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+        text: segText,
+        timestamp: Number(wseg.start ?? 0),
+        endTimestamp: Number(wseg.end ?? wseg.start ?? 0),
+        speakerId: getSpeakerId(rawLabel),
+        rawSpeakerLabel: rawLabel,
+      });
+      continue;
+    }
+
+    // Group consecutive words with the same pyannote speaker
+    let groupWords: any[] = [];
+    let groupSpeaker: string | null = null;
+
+    const flushGroup = () => {
+      if (!groupWords.length || !groupSpeaker) return;
+      const gText = groupWords.map((w) => (w.word || "")).join("").trim();
+      if (!gText) return;
+      const gStart = Number(groupWords[0].start ?? 0);
+      const gEnd = Number(groupWords[groupWords.length - 1].end ?? gStart);
+      resultSegments.push({
+        id: `seg_${crypto.randomUUID().replace(/-/g, "")}`,
+        text: gText,
+        timestamp: gStart,
+        endTimestamp: gEnd > gStart ? gEnd : gStart + Math.max(0.5, gText.split(/\s+/).length * 0.3),
+        speakerId: getSpeakerId(groupSpeaker),
+        rawSpeakerLabel: groupSpeaker,
+        words: groupWords.map((w) => ({ word: w.word || "", start: Number(w.start ?? 0), end: Number(w.end ?? 0) })),
+      });
+    };
+
+    for (const word of words) {
+      const wordStart = Number(word.start ?? 0);
+      const speaker = findPyannoteSpeakerAt(wordStart, pyannoteSegments);
+      if (speaker !== groupSpeaker && groupWords.length > 0) {
+        flushGroup();
+        groupWords = [];
+      }
+      groupSpeaker = speaker;
+      groupWords.push(word);
+    }
+    flushGroup();
+  }
+
+  if (!resultSegments.length) return null;
+
+  return {
+    segments: resultSegments,
+    speakerNames,
+    speakerCount: Object.keys(speakerNames).length,
+    text: resultSegments.map((s) => s.text).join(" "),
+  };
+}
+
+/**
  * Pipy strumienia FFmpeg prosto do pamięci RAM V8 (Node.js Buffer)
  * zamiast zapisów dyskowych (zero I/O bottleneck).
  */
@@ -1233,8 +1337,18 @@ async function runTranscriptionAttempt(
     notify(80, "Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!");
     const pyannoteSegments = await runPyannoteDiarization(transcribeFilePath, options.signal);
     if (pyannoteSegments && verificationSegments.length) {
-      if (DEBUG) console.log("[audioPipeline] Using pyannote diarization merged with Whisper transcription.");
-      diarization = mergeWithPyannote(pyannoteSegments as any[], verificationSegments as any[]);
+      // Prefer word-level diarization when Whisper returned per-word timestamps
+      const rawWhisperSegments = Array.isArray(whisperPayload?.segments) ? whisperPayload.segments : [];
+      const wordDiarization = rawWhisperSegments.length
+        ? splitSegmentsByWordSpeaker(rawWhisperSegments, pyannoteSegments as any[])
+        : null;
+      if (wordDiarization) {
+        if (DEBUG) console.log("[audioPipeline] Using word-level pyannote diarization (finer speaker splits).");
+        diarization = wordDiarization;
+      } else {
+        if (DEBUG) console.log("[audioPipeline] Using segment-level pyannote diarization merged with Whisper.");
+        diarization = mergeWithPyannote(pyannoteSegments as any[], verificationSegments as any[]);
+      }
     }
   }
 

@@ -1067,3 +1067,7 @@ Side effects / follow-up: Chunks are cleaned up on successful finalize. Abandone
 Completed by: Claude
 Result: Pyannote.audio diarization was already implemented in `server/diarize.py` and `server/audioPipeline.ts` (activated when `HF_TOKEN` set). Added missing `VOICELOG_DIARIZER=auto|pyannote|openai` toggle to `server/config.ts`. In `audioPipeline.ts`, `VOICELOG_DIARIZER=openai` skips pyannote even if HF_TOKEN present; `pyannote` forces pyannote; `auto` (default) uses pyannote when HF_TOKEN available. `server/requirements.txt` already contains `pyannote.audio>=3.1.0`, `torch>=2.0.0`, `torchaudio>=2.0.0`.
 Side effects / follow-up: Set `VOICELOG_DIARIZER=openai` to bypass pyannote and use GPT-4o-mini diarization only.
+## 076. [AUDIO] Word-level timestamps + precise per-word diarization
+Completed by: Claude
+Result: Added `splitSegmentsByWordSpeaker(whisperRawSegments, pyannoteSegments)` and `findPyannoteSpeakerAt(timestamp, pyannoteSegments)` to `server/audioPipeline.ts`. When Whisper returns per-word timestamps (`timestamp_granularities: ["segment","word"]`) AND pyannote is active, each word is assigned to the pyannote speaker at its start timestamp; consecutive words with the same speaker are grouped into sub-segments. Whisper segments are split at speaker boundaries. Falls back to segment-level `mergeWithPyannote` when no word timestamps are available.
+Side effects / follow-up: Word-level result segments include a `words` array with per-word `{word, start, end}` data for future use.
