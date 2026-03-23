@@ -1458,9 +1458,9 @@ async function runTranscriptionAttempt(
           `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
           { timeout: 30000, signal: options.signal }
         );
-        const matchedName = await matchSpeakerToProfile(clipPath, voiceProfiles);
-        if (matchedName) {
-          identifiedNames[speakerId] = matchedName;
+        const matchResult = await matchSpeakerToProfile(clipPath, voiceProfiles);
+        if (matchResult) {
+          identifiedNames[speakerId] = matchResult.name;
         }
       } catch (err) {
         console.warn(`[audioPipeline] Speaker clip extraction failed for speaker ${speakerId}:`, err.message);

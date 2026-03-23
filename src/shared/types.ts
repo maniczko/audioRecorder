@@ -113,6 +113,8 @@ export interface VoiceProfileSummary {
   userId: string;
   createdAt: string;
   hasEmbedding?: boolean;
+  sampleCount?: number;
+  threshold?: number;
 }
 
 export interface VoiceProfilesListPayload {

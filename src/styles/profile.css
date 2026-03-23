@@ -65,3 +65,95 @@
   gap: 8px;
   margin-top: 12px;
 }
+/* Voice Profile list items */
+.voice-profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voice-profile-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vp-item-expanded {
+  align-items: flex-start;
+}
+
+.voice-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.18);
+  color: var(--accent, #818cf8);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.voice-profile-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.voice-profile-info strong {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.voice-profile-info > span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.vp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vp-sample-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent, #818cf8);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.vp-threshold-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.vp-threshold-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.vp-threshold-slider {
+  flex: 1;
+  height: 3px;
+  cursor: pointer;
+  accent-color: var(--accent, #818cf8);
+}

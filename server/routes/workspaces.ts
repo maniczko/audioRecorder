@@ -125,6 +125,8 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       speakerName: p.speaker_name,
       userId: p.user_id,
       createdAt: p.created_at,
+      sampleCount: p.sample_count || 1,
+      threshold: typeof p.threshold === "number" ? p.threshold : 0.82,
     }));
     const payload: VoiceProfilesListPayload = { profiles };
     return c.json(payload, 200);
@@ -134,7 +136,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const session = c.get("session") as any;
     const speakerName = String(c.req.header("X-Speaker-Name") || "").slice(0, 120);
     if (!speakerName.trim()) return c.json({ message: "Brakuje naglowka X-Speaker-Name." }, 400);
-    
+
     const bufferArray = await c.req.arrayBuffer();
     if (bufferArray.byteLength > 1 * 1024 * 1024) return c.json({ message: "Plik audio przekracza maksymalny rozmiar limitu 1MB." }, 413);
     const buffer = Buffer.from(bufferArray);
@@ -148,12 +150,34 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
     const embedding = await transcriptionService.computeEmbedding(audioPath);
 
-    const profile = await workspaceService.saveVoiceProfile({
+    const profile = await workspaceService.upsertVoiceProfile({
       id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
       speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
     });
 
-    return c.json({ id: profile.id, speakerName: profile.speaker_name, hasEmbedding: (embedding || []).length > 0, createdAt: profile.created_at }, 201);
+    const sampleCount = profile.sample_count || 1;
+    const status = sampleCount > 1 ? 200 : 201;
+    return c.json({
+      id: profile.id,
+      speakerName: profile.speaker_name,
+      hasEmbedding: (embedding || []).length > 0,
+      createdAt: profile.created_at,
+      sampleCount,
+      threshold: typeof profile.threshold === "number" ? profile.threshold : 0.82,
+      isUpdate: Boolean(profile.isUpdate),
+    }, status);
+  });
+
+  router.patch("/voice-profiles/:id/threshold", async (c) => {
+    const session = c.get("session") as any;
+    const body = await c.req.json().catch(() => ({}));
+    const threshold = Number(body.threshold);
+    if (!Number.isFinite(threshold) || threshold < 0.5 || threshold > 0.99) {
+      return c.json({ message: "threshold musi być liczbą w zakresie 0.50–0.99." }, 400);
+    }
+    const updated = await workspaceService.updateVoiceProfileThreshold(c.req.param("id"), session.workspace_id, threshold);
+    if (!updated) return c.json({ message: "Profil nie znaleziony." }, 404);
+    return c.json({ id: updated.id, threshold: updated.threshold }, 200);
   });
 
   router.delete("/voice-profiles/:id", async (c) => {

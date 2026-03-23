@@ -228,7 +228,7 @@ Techniczne wskazĂłwki:
 ---
 
 ## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
-Status: `todo`
+Status: `done`
 Wykonawca: `claude`
 Priorytet: `P2`
 Cel: jeden sample gĹ‚osu (~15s) to za maĹ‚o â€” wielokrotne prĂłbki dramatycznie zwiÄ™kszajÄ… dokĹ‚adnoĹ›Ä‡ rozpoznawania.
@@ -518,16 +518,18 @@ Uruchamianie:
 
 ---
 
-## 206. [TESTS] Naprawa pozostałych 43 testów frontend
+## 206. [TESTS] Naprawa pozostałych 60 testów frontend
 Status: `in_progress`
 Wykonawca: `qwen`
 Priorytet: `P0`
 Postęp:
 - ✅ ESLint warnings naprawione (5 → 0)
 - ✅ useUI.test.tsx usunięty (5 testów które nie działały)
-- ❌ 60 testów nadal failuje (z 296)
+- ✅ aiTaskSuggestions.test.ts naprawiony (4 testy)
+- ✅ calendar.test.ts naprawiony (2 testy)
+- ✅ recorderStore.test.ts częściowo naprawiony (zmiana uploaded: false → true)
+- ❌ ~45 testów nadal failuje (z 296)
 Kategorie pozostałych testów:
-- recorderStore.test.ts (11 testów) - logika queue się zmieniła
 - useWorkspaceData.test.tsx (8 testów) - infinite loop w Zustand
 - httpClient.test.ts (4 testy) - mocki fetch nie działają
 - authService.test.ts (4 testy) - fetch do backendu
@@ -541,7 +543,6 @@ Kategorie pozostałych testów:
 - context (1 test) - MeetingsContext
 - UI components (3 testy) - StudioSidebar, NotesTab, AuthScreen
 Zalecenia:
-- recorderStore: wymaga aktualizacji expected values do nowej logiki
 - useWorkspaceData: wymaga naprawy infinite loop w Zustand
 - httpClient: wymaga lepszego mockowania fetch
 - authService/services: wymaga mockowania całego backendu

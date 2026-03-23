@@ -10,6 +10,8 @@ describe("Voice Profiles Routes", () => {
     mockWorkspaceService = {
       getWorkspaceVoiceProfiles: vi.fn(),
       saveVoiceProfile: vi.fn(),
+      upsertVoiceProfile: vi.fn(),
+      updateVoiceProfileThreshold: vi.fn(),
       deleteVoiceProfile: vi.fn(),
     };
     mockTranscriptionService = {
@@ -57,12 +59,15 @@ describe("Voice Profiles Routes", () => {
 
   it("POST /voice-profiles - happy path", async () => {
     mockTranscriptionService.computeEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
-    mockWorkspaceService.saveVoiceProfile.mockResolvedValue({
+    mockWorkspaceService.upsertVoiceProfile.mockResolvedValue({
       id: "vp_new",
       user_id: "u1",
       workspace_id: "w1",
       speaker_name: "Alice",
-      created_at: "2024"
+      created_at: "2024",
+      sample_count: 1,
+      threshold: 0.82,
+      isUpdate: false,
     });
 
     const res = await app.request("/voice-profiles", {
@@ -81,7 +86,7 @@ describe("Voice Profiles Routes", () => {
     expect(data.id).toBe("vp_new");
     expect(data.speakerName).toBe("Alice");
     expect(mockTranscriptionService.computeEmbedding).toHaveBeenCalled();
-    expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalledWith(
+    expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
         expect.objectContaining({ speakerName: "Alice", workspaceId: "w1" })
     );
   });

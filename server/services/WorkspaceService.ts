@@ -35,8 +35,16 @@ export default class WorkspaceService {
     return await this.db.saveVoiceProfile(data);
   }
 
+  async upsertVoiceProfile(data: any) {
+    return await this.db.upsertVoiceProfile(data);
+  }
+
   async deleteVoiceProfile(id: string, workspaceId: string) {
     return await this.db.deleteVoiceProfile(id, workspaceId);
+  }
+
+  async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {
+    return await this.db.updateVoiceProfileThreshold(id, workspaceId, threshold);
   }
 }
 

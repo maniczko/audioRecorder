@@ -50,6 +50,24 @@ export function cosineSimilarity(a: number[], b: number[]) {
 }
 
 /**
+ * Weighted average of an existing embedding (weight=existingCount) with a new embedding (weight=1),
+ * re-normalized to unit length. Used for incremental multi-sample profile updates.
+ */
+export function addToAverageEmbedding(existing: number[], existingCount: number, newEmbedding: number[]): number[] {
+  if (!existing?.length) return newEmbedding;
+  if (!newEmbedding?.length) return existing;
+  const len = Math.min(existing.length, newEmbedding.length);
+  const avg = new Array(len);
+  for (let i = 0; i < len; i++) {
+    avg[i] = (existing[i] * existingCount + newEmbedding[i]) / (existingCount + 1);
+  }
+  let sqSum = 0;
+  for (let i = 0; i < avg.length; i++) sqSum += avg[i] * avg[i];
+  const norm = Math.sqrt(sqSum) || 1e-8;
+  return avg.map((v) => v / norm);
+}
+
+/**
  * Decodes audio file to 16kHz mono Float32Array using ffmpeg.
  * Returns null if ffmpeg is unavailable.
  */
@@ -103,6 +121,8 @@ export async function computeEmbedding(audioFilePath: string) {
 /**
  * Given a list of voice profiles (with .embedding arrays) and an audio file,
  * return the best matching profile name (or null if no match above threshold).
+ * Uses per-profile threshold if set (profile.threshold), else falls back to default.
+ * Returns { name, confidence } or null.
  */
 export async function matchSpeakerToProfile(audioFilePath: string, voiceProfiles: any[]) {
   if (!voiceProfiles || !voiceProfiles.length) return null;
@@ -110,25 +130,29 @@ export async function matchSpeakerToProfile(audioFilePath: string, voiceProfiles
   const embedding = await computeEmbedding(audioFilePath);
   if (!embedding) return null;
 
-  let best: any = null;
-  let bestScore = SIMILARITY_THRESHOLD;
+  let best: { name: string; confidence: number } | null = null;
+  let bestScore = 0;
 
   for (const profile of voiceProfiles) {
+    const threshold = typeof profile.threshold === "number" && profile.threshold > 0
+      ? profile.threshold
+      : SIMILARITY_THRESHOLD;
+
     let profileEmbedding;
     try {
-      profileEmbedding = typeof profile.embedding === "string"
-        ? JSON.parse(profile.embedding)
-        : profile.embedding;
+      profileEmbedding = typeof profile.embedding_json === "string"
+        ? JSON.parse(profile.embedding_json)
+        : (typeof profile.embedding === "string" ? JSON.parse(profile.embedding) : profile.embedding);
     } catch (_) { continue; }
 
-    if (!Array.isArray(profileEmbedding)) continue;
+    if (!Array.isArray(profileEmbedding) || !profileEmbedding.length) continue;
     const score = cosineSimilarity(embedding, profileEmbedding);
-    if (score > bestScore) {
+    if (score >= threshold && score > bestScore) {
       bestScore = score;
-      best = { name: profile.speaker_name, score };
+      best = { name: profile.speaker_name, confidence: Math.round(score * 100) };
     }
   }
 
-  return best ? best.name : null;
+  return best;
 }
 

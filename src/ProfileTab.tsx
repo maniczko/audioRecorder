@@ -5,7 +5,7 @@ import { apiBaseUrlConfigured } from "./services/config";
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from "./shared/types";
 import './ProfileTabStyles.css';
 
-function VoiceProfilesSection() {
+function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -49,10 +49,23 @@ function VoiceProfilesSection() {
             "Content-Type": blob.type,
             "X-Speaker-Name": speakerName.trim(),
           },
-        }) as VoiceProfileSummary;
-        setProfiles((prev) => [data, ...prev]);
+        }) as VoiceProfileSummary & { isUpdate?: boolean };
+        setProfiles((prev) => {
+          const idx = prev.findIndex((p) => p.speakerName.toLowerCase() === data.speakerName.toLowerCase());
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = data;
+            return updated;
+          }
+          return [data, ...prev];
+        });
         setSpeakerName("");
-        setStatus(data.hasEmbedding ? "Profil głosowy zapisany i gotowy." : "Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.");
+        const sampleCount = data.sampleCount || 1;
+        if (data.isUpdate) {
+          setStatus(`Próbka ${sampleCount}/5 dodana do profilu ${data.speakerName}.`);
+        } else {
+          setStatus(data.hasEmbedding ? `Profil głosowy ${data.speakerName} zapisany (próbka 1/5).` : "Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.");
+        }
       } catch (err) {
         setStatus(`Błąd: ${err.message}`);
       }
@@ -74,6 +87,16 @@ function VoiceProfilesSection() {
     setProfiles((prev) => prev.filter((p) => p.id !== id));
   }
 
+  async function updateThreshold(id: string, threshold: number) {
+    try {
+      const updated = await apiRequest(`/voice-profiles/${id}/threshold`, {
+        method: "PATCH",
+        body: { threshold },
+      }) as { id: string; threshold: number };
+      setProfiles((prev) => prev.map((p) => p.id === updated.id ? { ...p, threshold: updated.threshold } : p));
+    } catch (_) {}
+  }
+
   function formatElapsed(s) {
     return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   }
@@ -88,17 +111,23 @@ function VoiceProfilesSection() {
         <span className="status-chip">{profiles.length}</span>
       </div>
       <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "12px" }}>
-        Nagraj 15–30 sekund głosu każdej osoby. AI automatycznie rozpozna je w przyszłych transkrypcjach.
+        Nagraj 15–30 sekund głosu każdej osoby. Dodaj do 5 próbek dla lepszego rozpoznawania.
       </p>
       <div className="stack-form" style={{ marginBottom: "16px" }}>
         <label>
           <span>Imię osoby</span>
           <input
+            list="saved-people-list"
             value={speakerName}
             onChange={(e) => setSpeakerName(e.target.value)}
             placeholder="np. Marek"
             disabled={isRecording}
           />
+          <datalist id="saved-people-list">
+            {peopleProfiles.map((p) => (
+              <option key={p.id || p.name || p.speakerId} value={p.name || p.speakerId} />
+            ))}
+          </datalist>
         </label>
         <div className="button-row">
           {isRecording ? (
@@ -131,16 +160,38 @@ function VoiceProfilesSection() {
       {profiles.length > 0 && (
         <ul className="voice-profile-list">
           {profiles.map((p) => (
-            <li key={p.id} className="voice-profile-item">
+            <li key={p.id} className="voice-profile-item vp-item-expanded">
               <span className="voice-profile-avatar">{p.speakerName.slice(0, 2).toUpperCase()}</span>
               <div className="voice-profile-info">
-                <strong>{p.speakerName}</strong>
+                <div className="vp-name-row">
+                  <strong>{p.speakerName}</strong>
+                  {p.sampleCount != null && (
+                    <span className="vp-sample-badge">{p.sampleCount}/5 próbek</span>
+                  )}
+                </div>
                 <span>{new Date(p.createdAt).toLocaleDateString("pl-PL")}</span>
+                <div className="vp-threshold-row">
+                  <span className="vp-threshold-label">Próg: {Math.round((p.threshold ?? 0.82) * 100)}%</span>
+                  <input
+                    type="range"
+                    className="vp-threshold-slider"
+                    min="50"
+                    max="99"
+                    step="1"
+                    value={Math.round((p.threshold ?? 0.82) * 100)}
+                    onChange={(e) => {
+                      const t = Number(e.target.value) / 100;
+                      setProfiles((prev) => prev.map((x) => x.id === p.id ? { ...x, threshold: t } : x));
+                    }}
+                    onMouseUp={(e) => updateThreshold(p.id, Number((e.target as HTMLInputElement).value) / 100)}
+                    onTouchEnd={(e) => updateThreshold(p.id, Number((e.target as HTMLInputElement).value) / 100)}
+                  />
+                </div>
               </div>
               <button
                 type="button"
                 className="ghost-button"
-                style={{ fontSize: "0.78rem" }}
+                style={{ fontSize: "0.78rem", alignSelf: "flex-start" }}
                 onClick={() => deleteProfile(p.id)}
               >
                 Usuń
@@ -538,6 +589,7 @@ export default function ProfileTab({
   onDeleteTag,
   vocabulary = [],
   onUpdateVocabulary,
+  peopleProfiles = [],
   audioStorageState,
   onRefreshAudioStorageState,
   onDeleteStoredRecordingAudio,
@@ -728,7 +780,7 @@ export default function ProfileTab({
         {activeCategory === 'tools' && (
           <div className="profile-category-view">
              <div className="profile-grid">
-                <VoiceProfilesSection />
+                <VoiceProfilesSection peopleProfiles={peopleProfiles} />
                 <VocabularyManagerSection vocabulary={vocabulary} onUpdateVocabulary={onUpdateVocabulary} />
                 <TagManagerSection allTags={allTags} onRenameTag={onRenameTag} onDeleteTag={onDeleteTag} />
                 <AudioStorageSection

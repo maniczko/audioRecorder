@@ -4,6 +4,14 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## 051. [SPEAKER] Multi-sample enrollment i per-profile threshold
+Status: `done`
+Completed by: Claude
+Result: Zaimplementowano wielokrotne próbki głosu per profil (maks. 5) z uśrednianiem embeddingów (weighted average + L2 renorm). Dodano per-profil threshold slider (0.50–0.99, default 0.82) w UI listy profili. matchSpeakerToProfile zwraca {name, confidence} z % pewnością. Migracja SQL dodaje kolumny sample_count i threshold do voice_profiles.
+Zmiany: server/migrations/20260323_voice_profiles_multi_sample.sql (nowy), server/speakerEmbedder.ts (addToAverageEmbedding, matchSpeakerToProfile zwraca {name,confidence}), server/database.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/services/WorkspaceService.ts (upsertVoiceProfile, updateVoiceProfileThreshold), server/routes/workspaces.ts (PATCH /voice-profiles/:id/threshold, upsert w POST), src/shared/types.ts (sampleCount, threshold w VoiceProfileSummary), src/ProfileTab.tsx (sample badge, threshold slider, komunikat "Próbka N/5 dodana"), src/styles/profile.css (nowe klasy CSS).
+
+---
+
 ## 071. [SECURITY] Proxy Anthropic API przez backend
 Status: `done`
 Completed by: Claude
