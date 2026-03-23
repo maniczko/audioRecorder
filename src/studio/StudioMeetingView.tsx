@@ -7,6 +7,7 @@ import { formatDateTime, formatDuration } from "../lib/storage";
 import { getSpeakerColor } from "../lib/speakerColors";
 import { labelSpeaker } from "../lib/recording";
 import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
+import { buildSketchnoteDataUrl, buildSketchnoteSvg } from "../lib/sketchnote";
 import { normalizeMeetingFeedback } from "../shared/meetingFeedback";
 import { apiRequest } from "../services/httpClient";
 import { remoteApiEnabled } from "../services/config";
@@ -460,7 +461,7 @@ export default function StudioMeetingView({
     let content = "";
     let filename = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
     const fullTranscript = displayRecording?.transcript || selectedMeeting?.transcript || [];
-    
+
     if (downloadTab === 'transcript') {
         if (downloadFormat === 'SRT') {
             content = fullTranscript.map((s, i) => {
@@ -512,6 +513,8 @@ export default function StudioMeetingView({
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
   const [sketchnoteUrl, setSketchnoteUrl] = useState("");
+  const [sketchnoteFallbackSvg, setSketchnoteFallbackSvg] = useState("");
+  const [sketchnoteIsLocal, setSketchnoteIsLocal] = useState(false);
   const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
   const [sketchnoteError, setSketchnoteError] = useState("");
   const autoTaskSyncKeyRef = useRef("");
@@ -730,6 +733,19 @@ export default function StudioMeetingView({
     return bullets.slice(0, 5);
   }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions, studioAnalysis?.summary]);
 
+  const sketchnoteSummaryText = useMemo(() => {
+    return String(
+      studioAnalysis?.summary ||
+        displayRecording?.diarization?.reviewSummary?.summary ||
+        displayRecording?.diarization?.summary ||
+        ""
+    ).trim();
+  }, [
+    displayRecording?.diarization?.reviewSummary?.summary,
+    displayRecording?.diarization?.summary,
+    studioAnalysis?.summary,
+  ]);
+
   useEffect(() => {
     if (!selectedRecording?.id || typeof onCreateTask !== "function" || !autoTaskDrafts.length) {
       return;
@@ -845,30 +861,49 @@ export default function StudioMeetingView({
   }, [selectedRecording?.id, updateTranscriptSegment]);
 
   const handleGenerateSketchnote = useCallback(async () => {
-    if (!selectedRecording?.id || !remoteApiEnabled()) return;
+    if (!selectedRecording?.id) return;
     setIsGeneratingSketchnote(true);
     setSketchnoteError("");
+    const fallbackSvg = buildSketchnoteSvg(
+      sketchnoteSummaryText || "Podsumowanie spotkania",
+      summaryBullets
+    );
+    const fallbackSketchnoteUrl = buildSketchnoteDataUrl(
+      sketchnoteSummaryText || "Podsumowanie spotkania",
+      summaryBullets
+    );
+    setSketchnoteFallbackSvg(fallbackSvg);
+    setSketchnoteIsLocal(true);
+    setSketchnoteUrl(fallbackSketchnoteUrl);
     try {
       const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, { method: "POST" });
       if (res?.sketchnoteUrl) {
         setSketchnoteUrl(res.sketchnoteUrl);
-      } else {
-        setSketchnoteError("Nie udało się wygenerować sketchnotki.");
+        setSketchnoteIsLocal(false);
+        setSketchnoteFallbackSvg("");
+        return;
       }
+      setSketchnoteError("Backend sketchnotki nie zwrócił obrazu. Pokazuję lokalny podgląd.");
     } catch (err) {
-      setSketchnoteError(err.message || "Błąd podczas generowania sketchnotki.");
+      setSketchnoteError(
+        err?.message
+          ? `Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd: ${err.message}`
+          : "Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd."
+      );
     } finally {
       setIsGeneratingSketchnote(false);
     }
-  }, [selectedRecording?.id]);
+  }, [selectedRecording?.id, sketchnoteSummaryText, summaryBullets]);
 
   useEffect(() => {
     if (displayRecording?.diarization?.sketchnoteUrl) {
       setSketchnoteUrl(displayRecording.diarization.sketchnoteUrl);
-    } else {
+      setSketchnoteIsLocal(false);
+      setSketchnoteFallbackSvg("");
+    } else if (!sketchnoteIsLocal) {
       setSketchnoteUrl("");
     }
-  }, [displayRecording?.diarization?.sketchnoteUrl, displayRecording?.id]);
+  }, [displayRecording?.diarization?.sketchnoteUrl, displayRecording?.id, sketchnoteIsLocal]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
@@ -1066,8 +1101,8 @@ export default function StudioMeetingView({
             }}
           />
         ) : (
-          <h1 
-            className="ff-header-title" 
+          <h1
+            className="ff-header-title"
             title="Kliknij, aby edytować nazwę"
             onClick={() => {
               setTitleDraftValue(
@@ -1084,7 +1119,7 @@ export default function StudioMeetingView({
             {isRecording
               ? (meetingDraft?.title?.trim() || "Ad hoc")
               : (selectedMeeting?.title || "Ad hoc")}
-            <svg 
+            <svg
               width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               style={{ display: "inline-block", marginLeft: "12px", opacity: 0.4, verticalAlign: "middle" }}
             >
@@ -1293,10 +1328,10 @@ export default function StudioMeetingView({
                 <div className="ff-sov-visual">
                   <div className="ff-sov-bar-track">
                     {speakerStats.map((s) => (
-                      <div 
-                        key={s.speakerId} 
+                      <div
+                        key={s.speakerId}
                         className="ff-sov-bar-segment"
-                        style={{ 
+                        style={{
                           width: `${(s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100}%`,
                           backgroundColor: getSpeakerColor(s.speakerId)
                         }}
@@ -1344,24 +1379,31 @@ export default function StudioMeetingView({
                           type="button"
                           className="primary-button"
                           onClick={handleGenerateSketchnote}
-                          disabled={isGeneratingSketchnote || !remoteApiEnabled()}
+                          disabled={isGeneratingSketchnote || !selectedRecording?.id}
                         >
                           {isGeneratingSketchnote ? "Generowanie..." : "Wygeneruj sketchnotkę AI"}
                         </button>
                       )}
                     </div>
-                    
+
                     {sketchnoteError && <div className="inline-alert error">{sketchnoteError}</div>}
-                    
-                    {sketchnoteUrl ? (
+
+                    {sketchnoteUrl || sketchnoteFallbackSvg ? (
                       <div className="sketchnote-image-container" style={{ textAlign: 'center', background: '#fff', padding: '12px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                        <img 
-                          src={sketchnoteUrl} 
-                          alt="AI Generated Sketchnote" 
-                          style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} 
-                        />
-                        <button 
-                          className="ghost-button" 
+                        {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
+                          <div
+                            aria-label="Lokalna sketchnotka"
+                            dangerouslySetInnerHTML={{ __html: sketchnoteFallbackSvg }}
+                          />
+                        ) : (
+                          <img
+                            src={sketchnoteUrl}
+                            alt="AI Generated Sketchnote"
+                            style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }}
+                          />
+                        )}
+                        <button
+                          className="ghost-button"
                           style={{ marginTop: '12px' }}
                           onClick={handleGenerateSketchnote}
                           disabled={isGeneratingSketchnote}
@@ -1369,11 +1411,11 @@ export default function StudioMeetingView({
                           {isGeneratingSketchnote ? "Generowanie..." : "Generuj ponownie"}
                         </button>
                       </div>
-                    ) : (
-                      <p className="soft-copy" style={{ margin: 0 }}>
-                        Wygeneruj wizualną notatkę podsumowującą to spotkanie za pomocą DALL-E 3. Obraz będzie zawierał najważniejsze punkty spotkania ubrane w radosną grafikę.
-                      </p>
-                    )}
+                      ) : (
+                        <p className="soft-copy" style={{ margin: 0 }}>
+                          Wygeneruj wizualną notatkę podsumowującą to spotkanie. Jeśli backend AI jest niedostępny, pokażemy lokalny podgląd oparty na podsumowaniu i punktach ze spotkania.
+                        </p>
+                      )}
                   </div>
                 </div>
 
@@ -2034,7 +2076,7 @@ export default function StudioMeetingView({
               <div style={{ display: 'flex', gap: '20px' }}>
                 <button className="ff-tab active" type="button">Transkrypcja</button>
               </div>
-              
+
               {transcript.length > 0 && remoteApiEnabled() && (
                 <button
                   type="button"
@@ -2117,7 +2159,7 @@ export default function StudioMeetingView({
                       style={{ marginBottom: '24px' }}
                     >
                       <div className="fireflies-avatar" style={{ background: color }}>{letter}</div>
-                      
+
                       <div className="fireflies-content">
                         <div className="fireflies-header">
                           <div className="ff-speaker-picker-wrap" style={{ display: 'flex', alignItems: 'center' }}>
@@ -2194,7 +2236,7 @@ export default function StudioMeetingView({
                             spellCheck="false"
                           />
                         </div>
-                        
+
                         <div className="fireflies-actions">
                            <button type="button" className="icon-button" aria-label="Copy">
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -2259,24 +2301,24 @@ export default function StudioMeetingView({
                 </div>
                 <div className="ff-rec-wave-inline" style={{ height: '24px' }}>
                   {visualBars.slice(-18).map((h, i) => (
-                    <span key={i} className="ff-capture-bar" style={{ 
+                    <span key={i} className="ff-capture-bar" style={{
                       height: Math.max(3, Math.round(h * 0.35)) + "px",
-                      opacity: isPaused ? 0.3 : 1 
+                      opacity: isPaused ? 0.3 : 1
                     }} />
                   ))}
                 </div>
               </div>
 
               <div className="ff-rec-timer-xl" style={{ fontSize: '2rem', minWidth: '120px' }}>{formatDuration(elapsed)}</div>
-              
+
               <div className="ff-player-status-label" style={{ color: isPaused ? 'var(--text-muted)' : '#ef4444' }}>
                 {isPaused ? "Wstrzymano" : "Nagrywanie..."}
               </div>
 
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                <button 
-                  type="button" 
-                  className="ff-tb-btn" 
+                <button
+                  type="button"
+                  className="ff-tb-btn"
                   onClick={isPaused ? resumeRecording : pauseRecording}
                   style={{ minWidth: '110px', justifyContent: 'center' }}
                 >
@@ -2313,7 +2355,7 @@ export default function StudioMeetingView({
             </div>
           ) : playerState === "queued" ? (
             <div className="ff-player-status-wrap">
-              <RecordingPipelineStatus 
+              <RecordingPipelineStatus
                 status={analysisStatus === "error" || analysisStatus === "failed" || activeQueueItem?.status === "failed" ? "failed" : (activeQueueItem?.status || "processing")}
                 errorMessage={activeQueueItem?.errorMessage || (analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : undefined)}
                 onRetry={activeQueueItem ? () => retryRecordingQueueItem(activeQueueItem.recordingId) : undefined}
@@ -2351,11 +2393,11 @@ export default function StudioMeetingView({
                 <div className="ff-player-progress-row">
                   <div className="ff-player-scrubber-container" style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
                     {hoverTime !== null && (
-                      <div 
-                        style={{ 
-                          position: 'absolute', 
-                          left: `${hoverPos}px`, 
-                          bottom: '100%', 
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${hoverPos}px`,
+                          bottom: '100%',
                           transform: 'translateX(-50%)',
                           marginBottom: '10px',
                           background: '#111827',
@@ -2464,17 +2506,17 @@ export default function StudioMeetingView({
               <h2 className="ff-modal-title">Download Meeting</h2>
               <button className="ff-modal-close" onClick={() => setIsDownloadModalOpen(false)}>×</button>
             </div>
-            
+
             <div className="ff-modal-tabs">
-              <button 
+              <button
                 className={`ff-modal-tab-btn ${downloadTab === 'transcript' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('transcript')}
               >Transcript</button>
-              <button 
+              <button
                 className={`ff-modal-tab-btn ${downloadTab === 'summary' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('summary')}
               >Summary</button>
-              <button 
+              <button
                 className={`ff-modal-tab-btn ${downloadTab === 'audio' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('audio')}
               >Audio</button>
@@ -2484,7 +2526,7 @@ export default function StudioMeetingView({
               {downloadTab !== 'audio' && (
                 <div className="ff-modal-format-grid">
                   {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map(f => (
-                    <button 
+                    <button
                       key={f}
                       className={`ff-modal-format-btn ${downloadFormat === f ? 'active' : ''}`}
                       onClick={() => setDownloadFormat(f)}
@@ -2497,31 +2539,31 @@ export default function StudioMeetingView({
                 {downloadTab === 'transcript' && (
                   <>
                     <label className="ff-modal-label">
-                      <input 
-                        type="checkbox" 
-                        className="ff-modal-checkbox" 
-                        checked={includeTimestamp} 
-                        onChange={(e) => setIncludeTimestamp(e.target.checked)} 
+                      <input
+                        type="checkbox"
+                        className="ff-modal-checkbox"
+                        checked={includeTimestamp}
+                        onChange={(e) => setIncludeTimestamp(e.target.checked)}
                       />
                       Include timestamp
                     </label>
                     <label className="ff-modal-label">
-                      <input 
-                        type="checkbox" 
-                        className="ff-modal-checkbox" 
-                        checked={showSpeakerName} 
-                        onChange={(e) => setShowSpeakerName(e.target.checked)} 
+                      <input
+                        type="checkbox"
+                        className="ff-modal-checkbox"
+                        checked={showSpeakerName}
+                        onChange={(e) => setShowSpeakerName(e.target.checked)}
                       />
                       Show speaker name
                     </label>
                   </>
                 )}
                 <label className="ff-modal-label">
-                  <input 
-                    type="checkbox" 
-                    className="ff-modal-checkbox" 
-                    checked={removeBranding} 
-                    onChange={(e) => setRemoveBranding(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    className="ff-modal-checkbox"
+                    checked={removeBranding}
+                    onChange={(e) => setRemoveBranding(e.target.checked)}
                   />
                   Remove Antigravity Branding
                 </label>
