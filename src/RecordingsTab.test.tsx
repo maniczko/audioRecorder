@@ -54,7 +54,7 @@ describe("RecordingsTab", () => {
 
   test("renders list of meetings and recordings", () => {
     render(<RecordingsTab {...defaultProps} />);
-    expect(screen.getAllByText("Weekly Sync")[0]).toBeInTheDocument();
+    expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
     expect(screen.getByText("Project Alpha")).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Filtruj wg tag/i)).toBeInTheDocument();
   });

@@ -101,8 +101,10 @@ describe("CommandPalette", () => {
         ],
       });
 
-      // Replace the mock implementation
-      vi.mocked(semanticSearch).mockImplementation(mockedSemanticSearch);
+      // Replace the mock implementation using direct assignment
+      (semanticSearch as any).mockImplementation = mockedSemanticSearch.mockImplementation;
+      (semanticSearch as any).mockResolvedValue = mockedSemanticSearch.mockResolvedValue;
+      semanticSearch.mockResolvedValue(mockedSemanticSearch());
 
       renderCommandPalette();
       const searchInput = screen.getByPlaceholderText("Zakladka, spotkanie, zadanie, osoba...");
@@ -111,7 +113,7 @@ describe("CommandPalette", () => {
         await vi.advanceTimersByTimeAsync(250);
       });
 
-      expect(mockedSemanticSearch).toHaveBeenCalledWith(
+      expect(semanticSearch).toHaveBeenCalledWith(
         "follow up on reporting",
         expect.arrayContaining([expect.objectContaining({ id: "mock_task" })])
       );

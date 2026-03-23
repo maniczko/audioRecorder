@@ -536,34 +536,33 @@ describe("ProfileTab", () => {
 
     it("calls export function when export button is clicked", async () => {
       const user = userEvent.setup();
-      const { vi: vitest } = await import("vitest");
-      
-      const mockExport = vitest.fn();
-      const mockImport = vitest.fn();
-      
-      vi.mocked(await import("./hooks/useWorkspaceBackup")).default.mockReturnValue({
+
+      const mockExport = vi.fn();
+      const mockImport = vi.fn();
+
+      vi.spyOn(await import("./hooks/useWorkspaceBackup"), "default").mockReturnValue({
         exportWorkspace: mockExport,
         importWorkspaceFile: mockImport,
-        applyWorkspaceImport: vitest.fn(),
-        clearImportState: vitest.fn(),
+        applyWorkspaceImport: vi.fn(),
+        clearImportState: vi.fn(),
         preview: null,
         statusMessage: "",
         isImporting: false,
         hasPendingImport: false,
       });
-      
+
       render(<ProfileTab {...mockProps} />);
-      
+
       const reviewButton = screen.getByText("Ustawienia wyciszone").closest("button");
       await user.click(reviewButton!);
-      
+
       await waitFor(() => {
         expect(screen.getByText("Eksportuj dane workspace")).toBeInTheDocument();
       });
-      
+
       const exportButton = screen.getByText("Eksportuj dane workspace");
       await user.click(exportButton);
-      
+
       expect(mockExport).toHaveBeenCalled();
     });
   });

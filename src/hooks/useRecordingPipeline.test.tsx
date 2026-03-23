@@ -10,7 +10,7 @@ const { mockStore } = vi.hoisted(() => ({
     pipelineProgressPercent: 0,
     pipelineStageLabel: "",
     isProcessingQueue: false,
-    processQueue: vi.fn(),
+    processQueue: vi.fn().mockResolvedValue(undefined),
     setAnalysisStatus: vi.fn(),
     setPipelineProgress: vi.fn(),
     setRecordingMessage: vi.fn(),
@@ -38,7 +38,7 @@ describe("useRecordingPipeline", () => {
     mockStore.pipelineProgressPercent = 0;
     mockStore.pipelineStageLabel = "";
     mockStore.isProcessingQueue = false;
-    mockStore.processQueue.mockReset();
+    mockStore.processQueue.mockClear();
   });
 
   test("triggers queue processing when hydration is finished", async () => {
@@ -48,7 +48,6 @@ describe("useRecordingPipeline", () => {
 
     // Simulate queue with items
     mockStore.recordingQueue = [{ recordingId: "r1", meetingId: "m1" }];
-    mockStore.processQueue.mockResolvedValue(undefined);
 
     renderHook(() =>
       useRecordingPipeline({
