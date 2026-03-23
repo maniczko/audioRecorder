@@ -43,7 +43,7 @@ export function corsHeaders(requestOrigin: string, allowedOrigins = "http://loca
     "Access-Control-Allow-Origin": origin,
     "Vary": "Origin",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id, X-Speaker-Name",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   };
 }
 

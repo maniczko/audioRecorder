@@ -18,7 +18,7 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
         return origin || "*";
       },
       allowHeaders: ["Content-Type", "Authorization", "X-Workspace-Id", "X-Meeting-Id", "X-Speaker-Name"],
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true,
     })
   );
