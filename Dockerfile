@@ -61,7 +61,8 @@ ENV VIRTUAL_ENV=/opt/venv
 ENV PATH=/opt/venv/bin:${PATH}
 ENV UV_COMPILE_BYTECODE=1
 
-COPY --link --from=ghcr.io/astral-sh/uv@sha256:0c0e6f04a5a8b5c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8 /uv /uvx /usr/local/bin/
+# Copy uv from official image (use version tag instead of digest for reliability)
+COPY --from=ghcr.io/astral-sh/uv:0.5.20 /uv /uvx /usr/local/bin/
 
 RUN uv venv /opt/venv
 
