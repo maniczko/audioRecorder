@@ -1,0 +1,4 @@
+# Files aider (GPT Auto-Fix) should never modify
+.github/
+*.md
+.env*
