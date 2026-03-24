@@ -2,27 +2,7 @@
 -- Created: 2026-03-20
 -- Purpose: Improve query performance for frequently accessed columns
 
--- ============================================
--- MEETINGS TABLE INDEXES
--- ============================================
-
--- User's meetings lookup (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_meetings_user_id ON meetings(user_id);
-
--- Workspace meetings listing
-CREATE INDEX IF NOT EXISTS idx_meetings_workspace_id ON meetings(workspace_id);
-
--- Recent meetings ordering (DESC for latest first)
-CREATE INDEX IF NOT EXISTS idx_meetings_created_at ON meetings(created_at DESC);
-
--- Updated meetings for sync operations
-CREATE INDEX IF NOT EXISTS idx_meetings_updated_at ON meetings(updated_at DESC);
-
--- Composite index for user's meetings ordered by date (covers most common query)
-CREATE INDEX IF NOT EXISTS idx_meetings_user_created ON meetings(user_id, created_at DESC);
-
--- Composite index for workspace meetings ordered by date
-CREATE INDEX IF NOT EXISTS idx_meetings_workspace_created ON meetings(workspace_id, created_at DESC);
+-- NOTE: meetings are stored as JSON in workspace_state.meetings_json — no standalone meetings table exists
 
 -- ============================================
 -- MEDIA_ASSETS TABLE INDEXES
