@@ -22,7 +22,7 @@ Kolejnosc prac:
 
 - Brak otwartych zadan.
 
-### Qwen
+### Gemini High
 
 - `230` [P1] `todo` - Fix failing CI after `fb339c35`: Deploy to Railway (after CI)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.

@@ -1,8 +1,8 @@
 name: CI Failure Triage
 
 # Fires when CI Pipeline fails on main.
-# Creates a GitHub Issue with full failure details → qwen-dispatch.yml picks it up
-# and starts Qwen working on a fix automatically.
+# Creates a GitHub Issue with full failure details
+# and starts Gemini High working on a fix automatically.
 on:
   workflow_run:
     workflows: ['CI Pipeline']
@@ -11,7 +11,7 @@ on:
 
 jobs:
   create-fix-task:
-    name: Create Qwen fix task
+    name: Create Gemini High fix task
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
     permissions:
@@ -106,7 +106,7 @@ jobs:
               ``,
               ...sections,
               `---`,
-              `*Auto-created by \`ci-failure-triage\` workflow. Qwen Code automatycznie naprawia.*`,
+              `*Auto-created by \`ci-failure-triage\` workflow. Gemini High automatycznie naprawia.*`,
             ].join('\n');
 
             core.setOutput('title', `[CI] Fix failing tests after \`${shaShort}\`: ${jobNames}`);
@@ -222,8 +222,8 @@ jobs:
               `  - Zakres: ${process.env.JOB_NAMES}. [Logi CI](${runUrl}).`,
             ].join('\n');
 
-            if (!content.includes('### Qwen')) return;
-            fs.writeFileSync(path, content.replace('### Qwen\n', `### Qwen\n${task}\n`));
+            if (!content.includes('### Gemini High')) return;
+            fs.writeFileSync(path, content.replace('### Gemini High\n', `### Gemini High\n${task}\n`));
 
       - name: Commit TASK_QUEUE.md update
         run: |
@@ -231,5 +231,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git diff --quiet TASK_QUEUE.md && echo "No changes" && exit 0
           git add TASK_QUEUE.md
-          git commit -m "chore(ci): add Qwen fix task after CI failure [skip ci]"
+          git commit -m "chore(ci): add Gemini High fix task after CI failure [skip ci]"
           git push origin main
