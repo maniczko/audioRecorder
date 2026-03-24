@@ -307,6 +307,43 @@ Kolejnosc prac:
   - Cel: rozszerzyc integracje poza ekosystem Google.
   - Akceptacja: logowanie MSAL OAuth2, synchronizacja z Microsoft To Do, integracja z Outlook Calendar.
 
+## CSS Layout Cleanup
+
+- `401` [P0] `todo` - [CSS] Remove all `!important` declarations
+  - Cel: przywrocic kaskade CSS i ulatwic utrzymanie.
+  - Zakres: 13 wystąpień w `App.css`, `studio.css`, `tasks.css`, `NotesTabStyles.css`.
+  - Akceptacja: `grep -r "!important" src/` zwraca 0 wyników.
+
+- `402` [P1] `todo` - [CSS] Remove duplicate CSS blocks
+  - Cel: zmniejszyć rozmiar bundle i uniknąć konfliktów.
+  - Zakres: `tasks.css` (4x duplicate panel styles), `App.css` + `studio.css` (duplicate `.energy-*`).
+  - Akceptacja: brak duplikatów, bundle size -33%.
+
+- `403` [P1] `todo` - [CSS] Migrate inline styles to CSS variables
+  - Cel: enable theme'owanie i responsive design.
+  - Zakres: `JapaneseThemeSelector.tsx` (25+), `TaskKanbanView.tsx` (6), `RecordingsTab.tsx` (2).
+  - Akceptacja: <20 inline styles w kodzie.
+
+- `404` [P2] `todo` - [CSS] Add missing design tokens
+  - Cel: eliminacja hardcoded values.
+  - Zakres: colors (`--energy-*`), spacing, font-sizes w `index.css`.
+  - Akceptacja: wszystkie magic numbers zastąpione tokenami.
+
+- `405` [P2] `todo` - [CSS] Create reusable `<ProgressBar>` component
+  - Cel: unifikacja progress bars across app.
+  - Zakres: nowy komponent + CSS module.
+  - Akceptacja: użyty w `RecordingsTab`, `TaskKanbanView`, `RecordingPipelineStatus`.
+
+- `406` [P3] `todo` - [CSS] Add Stylelint configuration
+  - Cel: automatyczne wykrywanie problemów z CSS.
+  - Zakres: `.stylelintrc.json`, `stylelint` w devDependencies.
+  - Akceptacja: `pnpm lint:css` działa w CI.
+
+- `407` [P3] `todo` - [CSS] Document CSS conventions
+  - Cel: ujednolicenie stylu w zespole.
+  - Zakres: `CSS_GUIDELINES.md` z BEM-lite, specificity rules, mobile-first.
+  - Akceptacja: dokument zatwierdzony, link w README.
+
 ## Uwagi
 
 - Nie dopisuje tu zakonczonych zadan. Sa w [`TASK_DONE.md`](TASK_DONE.md).
