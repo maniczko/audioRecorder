@@ -1,3 +1,4 @@
+```typescript
 import { z } from "zod";
 import dotenv from "dotenv";
 import path from "node:path";
@@ -53,93 +54,21 @@ const envSchema = z.object({
   ),
   STT_CONCURRENCY_LIMIT: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()),
   VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(["fast", "full"]).default("fast"),
-  VOICELOG_STT_MODEL_FAST: z.string().default("openai/whisper-1"),  // Domyślnie whisper-1, można ustawić np. "groq/whisper-large-v3-turbo"
+  VOICELOG_STT_MODEL_FAST: z.string().default("openai/whisper-1"),
   VOICELOG_STT_MODEL_FULL: z.string().default("openai/whisper-1"),
   VOICELOG_CHUNK_OVERLAP_SECONDS: z.preprocess((val) => val ? Number(val) : undefined, z.number().int().min(0).optional()).default(5),
-  VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === "true", z.boolean()).default(true), // Enable adaptive overlap based on speech density
+  VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === "true", z.boolean()).default(true),
   VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === "true", z.boolean()).default(false),
   VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
 
   ANTHROPIC_API_KEY: z.string().optional(),
-  ANTHROPIC_MODEL: z.string().default("claude-3-5-haiku-latest"),
-  
-  HF_TOKEN: z.string().optional(),
-  HUGGINGFACE_TOKEN: z.string().optional(),
-  FFMPEG_BINARY: z.string().default("ffmpeg"),
-  PYTHON_BINARY: z.string().default("python"),
-  
-  DIARIZATION_MODEL: z.string().default("pyannote/speaker-diarization-3.1"),
-  SPEAKER_IDENTIFICATION_MODEL: z.string().default("microsoft/wavlm-base-plus-sv"),
-  VERIFICATION_MODEL: z.string().default("gpt-4o-transcribe"),
-  
-  VOICELOG_DIARIZER: z.enum(["pyannote", "openai", "auto"]).default("auto"),
-  AUDIO_LANGUAGE: z.string().default("pl"),
-  AUDIO_PREPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
-  VOICELOG_SILENCE_REMOVE: z.preprocess((val) => val !== "false", z.boolean()).default(true),
-  VOICELOG_PER_SPEAKER_NORM: z.preprocess((val) => val !== "false", z.boolean()).default(true),
-  TRANSCRIPT_CORRECTION: z.preprocess((val) => val === "true", z.boolean()).default(false),
-  VAD_ENABLED: z.preprocess((val) => val !== "false", z.boolean()).default(true),
-  WHISPER_PROMPT: z.string().optional(),
-  
-  DEBUG: z.preprocess((val) => val === "true", z.boolean()).default(false),
+  ANTHROPIC_BASE_URL: z.string().default("https://api.anthropic.com/v1"),
 });
 
-const _env = envSchema.safeParse(process.env);
-
-if (!_env.success) {
-  console.error("❌ Invalid environment variables:", _env.error.format());
-  process.exit(1);
-}
-
-export const config = _env.data;
-export type Config = z.infer<typeof envSchema>;
-
-// ─────────────────────────────────────────────────────────────
-// [104] Runtime validation of required API keys
-// ─────────────────────────────────────────────────────────────
+export const config = envSchema.parse(process.env);
 export function validateRequiredApiKeys() {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Check if at least one STT provider is configured
-  const hasOpenAI = Boolean(config.OPENAI_API_KEY);
-  const hasGroq = Boolean(config.GROQ_API_KEY);
-  
-  if (!hasOpenAI && !hasGroq) {
-    errors.push(
-      "Missing STT provider API key. Set either OPENAI_API_KEY or GROQ_API_KEY.\n" +
-      "  See .env.example for configuration options."
-    );
-  }
-
-  // HuggingFace is required for diarization
-  if (!config.HF_TOKEN && !config.HUGGINGFACE_TOKEN) {
-    warnings.push(
-      "Missing HF_TOKEN. Speaker diarization will be disabled.\n" +
-      "  Get a token at: https://huggingface.co/settings/tokens"
-    );
-  }
-
-  // Log errors and warnings
-  if (errors.length > 0) {
-    console.error("\n❌ Configuration errors:\n");
-    errors.forEach((err) => console.error(`  - ${err}\n`));
-    console.error("Please fix these errors and restart the server.\n");
-    process.exit(1);
-  }
-
-  if (warnings.length > 0) {
-    console.warn("\n⚠️  Configuration warnings:\n");
-    warnings.forEach((warn) => console.warn(`  - ${warn}\n`));
-  }
-
-  // Log successful configuration
-  if (process.env.NODE_ENV === "development" || config.DEBUG) {
-    console.log("\n✅ Configuration loaded successfully:");
-    console.log(`  - STT Provider: ${config.VOICELOG_STT_PROVIDER} ${hasOpenAI ? "(OpenAI)" : hasGroq ? "(Groq)" : ""}`);
-    console.log(`  - Diarization: ${config.HF_TOKEN || config.HUGGINGFACE_TOKEN ? "pyannote (HF token set)" : "disabled"}`);
-    console.log(`  - Processing mode: ${config.VOICELOG_PROCESSING_MODE_DEFAULT}`);
-    console.log(`  - Debug: ${config.DEBUG}`);
-    console.log("");
+  if (!config.OPENAI_API_KEY && !config.GROQ_API_KEY) {
+    throw new Error("At least one API key must be provided: OPENAI_API_KEY or GROQ_API_KEY");
   }
 }
+```
