@@ -112,6 +112,7 @@ describe("useRecorder", () => {
 
   test("creates ad hoc meeting when no meeting is selected and starts recording", () => {
     const createAdHocMeeting = vi.fn(() => ({ id: "meeting-ad-hoc" }));
+    const selectMeeting = vi.fn();
 
     const { result } = renderHook(() =>
       useRecorder({
@@ -120,6 +121,7 @@ describe("useRecorder", () => {
         createAdHocMeeting,
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
+        selectMeeting,
       })
     );
 
@@ -128,6 +130,7 @@ describe("useRecorder", () => {
     });
 
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
+    expect(selectMeeting).toHaveBeenCalledWith({ id: "meeting-ad-hoc" });
     expect(hardwareState.startRecording).toHaveBeenCalledWith("meeting-ad-hoc");
   });
 

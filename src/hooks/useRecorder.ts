@@ -148,7 +148,7 @@ export default function useRecorder({
       return;
     }
     setRecordingMeetingId(active.id);
-    selectMeeting?.(active.id);
+    selectMeeting?.(active);
     hardware.startRecording(active.id);
   };
 
