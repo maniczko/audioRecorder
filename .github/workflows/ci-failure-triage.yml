@@ -1,96 +1,213 @@
 name: CI Failure Triage
 
-# Fires when CI Pipeline finishes with a failure on main.
-# Automatically adds a fix task to TASK_QUEUE.md under ### Qwen.
+# Fires when CI Pipeline fails on main.
+# Creates a GitHub Issue with full failure details → qwen-dispatch.yml picks it up
+# and starts Qwen working on a fix automatically.
 on:
   workflow_run:
-    workflows: ["CI Pipeline"]
+    workflows: ['CI Pipeline']
     types: [completed]
     branches: [main]
 
 jobs:
   create-fix-task:
-    name: Add Qwen task for failing tests
+    name: Create Qwen fix task
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
     permissions:
       contents: write
+      issues: write
       actions: read
 
     steps:
       - uses: actions/checkout@v4
         with:
-          # Use a PAT or default token — default token pushes won't retrigger CI
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
 
-      - name: Identify failing jobs
-        id: jobs
+      - name: Build issue body from CI failure details
+        id: build_issue
         uses: actions/github-script@v7
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           result-encoding: string
           script: |
-            const { data } = await github.rest.actions.listJobsForWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: ${{ github.event.workflow_run.id }},
-            });
-            const failing = data.jobs
-              .filter(j => j.conclusion === 'failure')
-              .map(j => j.name);
-            return failing.join(', ') || 'unknown';
+            const { owner, repo } = context.repo;
+            const runId = Number(process.env.RUN_ID);
+            const sha = process.env.HEAD_SHA;
+            const shaShort = sha.slice(0, 8);
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
 
-      - name: Add task to TASK_QUEUE.md
+            // ── 1. Get all jobs in this run ──────────────────────────────────
+            const { data: jobsData } = await github.rest.actions.listJobsForWorkflowRun({
+              owner, repo, run_id: runId, per_page: 50,
+            });
+
+            const failingJobs = jobsData.jobs.filter(j => j.conclusion === 'failure');
+
+            if (failingJobs.length === 0) {
+              console.log('No individual failing jobs found — run may have been cancelled.');
+              core.setOutput('skip', 'true');
+              return '';
+            }
+
+            // ── 2. For each failing job: failing steps + annotations ─────────
+            const sections = [];
+            let annotationCount = 0;
+
+            for (const job of failingJobs) {
+              const failingSteps = (job.steps || []).filter(s => s.conclusion === 'failure');
+
+              let section = `### ❌ ${job.name}\n`;
+              if (failingSteps.length > 0) {
+                section += `**Failing steps:** ${failingSteps.map(s => `\`${s.name}\``).join(', ')}\n\n`;
+              }
+
+              // Fetch check-run annotations (contains actual test error messages)
+              try {
+                const { data: annotations } = await github.rest.checks.listAnnotations({
+                  owner, repo, check_run_id: job.id, per_page: 20,
+                });
+
+                if (annotations.length > 0) {
+                  annotationCount += annotations.length;
+                  section += `**Errors (${annotations.length}):**\n\`\`\`\n`;
+                  for (const ann of annotations.slice(0, 15)) {
+                    const loc = ann.path ? `${ann.path}:${ann.start_line || '?'}` : '';
+                    section += loc ? `${loc}\n${ann.message}\n\n` : `${ann.message}\n\n`;
+                  }
+                  if (annotations.length > 15) {
+                    section += `... and ${annotations.length - 15} more (see CI logs)\n`;
+                  }
+                  section += '```\n';
+                }
+              } catch (e) {
+                section += `_Could not fetch annotations: ${e.message}_\n`;
+              }
+
+              sections.push(section);
+            }
+
+            const jobNames = failingJobs.map(j => j.name).join(', ');
+
+            const body = [
+              `## Failing CI jobs`,
+              ``,
+              `| | |`,
+              `|---|---|`,
+              `| **Commit** | [\`${shaShort}\`](${commitUrl}) |`,
+              `| **Failing jobs** | ${jobNames} |`,
+              `| **CI Run** | [Zobacz pełne logi](${runUrl}) |`,
+              ``,
+              `## Details`,
+              ``,
+              ...sections,
+              `---`,
+              `*Auto-created by \`ci-failure-triage\` workflow. Qwen Code automatycznie naprawia.*`,
+            ].join('\n');
+
+            core.setOutput('title', `[CI] Fix failing tests after \`${shaShort}\`: ${jobNames}`);
+            core.setOutput('body', body);
+            core.setOutput('sha_short', shaShort);
+            core.setOutput('job_names', jobNames);
+            core.setOutput('skip', 'false');
+            return body;
+
+      - name: Check for duplicate issue
+        id: check_dup
+        if: steps.build_issue.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
-          FAILING_JOBS: ${{ steps.jobs.outputs.result }}
+          SHA_SHORT: ${{ steps.build_issue.outputs.sha_short }}
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = process.env.SHA_SHORT;
+            const { data } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: 'ci-failure', per_page: 20,
+            });
+            const dup = data.find(i => i.title.includes(sha));
+            if (dup) {
+              console.log(`Duplicate issue #${dup.number} found for ${sha} — skipping.`);
+              return 'skip';
+            }
+            return 'create';
+
+      - name: Ensure labels exist
+        if: steps.check_dup.outputs.result == 'create'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const labels = [
+              { name: 'ci-failure', color: 'e4e669', description: 'CI pipeline failure requiring a fix' },
+              { name: 'qwen', color: 'f9d0c4', description: 'Task for Qwen Code to work on' },
+            ];
+            for (const label of labels) {
+              try { await github.rest.issues.getLabel({ owner, repo, name: label.name }); }
+              catch { await github.rest.issues.createLabel({ owner, repo, ...label }); }
+            }
+
+      - name: Create GitHub Issue (triggers Qwen automatically)
+        id: create_issue
+        if: steps.check_dup.outputs.result == 'create'
+        uses: actions/github-script@v7
+        env:
+          ISSUE_TITLE: ${{ steps.build_issue.outputs.title }}
+          ISSUE_BODY: ${{ steps.build_issue.outputs.body }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = await github.rest.issues.create({
+              owner, repo,
+              title: process.env.ISSUE_TITLE,
+              body: process.env.ISSUE_BODY,
+              labels: ['ci-failure', 'qwen'],
+            });
+            console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
+            core.summary.addRaw(`## 🤖 Qwen fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
+            await core.summary.write();
+
+      # Also update TASK_QUEUE.md so the task is visible in the project board
+      - name: Add entry to TASK_QUEUE.md
+        if: steps.check_dup.outputs.result == 'create'
+        uses: actions/github-script@v7
+        env:
+          SHA_SHORT: ${{ steps.build_issue.outputs.sha_short }}
+          JOB_NAMES: ${{ steps.build_issue.outputs.job_names }}
           RUN_ID: ${{ github.event.workflow_run.id }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           script: |
             const fs = require('fs');
             const path = 'TASK_QUEUE.md';
             const content = fs.readFileSync(path, 'utf8');
+            const sha = process.env.SHA_SHORT;
+            if (content.includes(sha)) return;
 
-            const sha = process.env.HEAD_SHA.slice(0, 8);
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.RUN_ID}`;
-            const failingJobs = process.env.FAILING_JOBS;
-
-            // Skip if a task for this SHA already exists
-            if (content.includes(sha)) {
-              console.log(`Task for ${sha} already exists in TASK_QUEUE.md — skipping.`);
-              return;
-            }
-
-            // Generate next task ID: max existing numeric ID + 1
             const ids = [...content.matchAll(/^- `(\d+)`/gm)]
-              .map(m => parseInt(m[1]))
-              .filter(n => !isNaN(n));
+              .map(m => parseInt(m[1])).filter(n => !isNaN(n));
             const newId = ids.length > 0 ? String(Math.max(...ids) + 1) : '300';
 
-            const newTask = [
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.RUN_ID}`;
+            const task = [
               ``,
-              `- \`${newId}\` [P1] \`todo\` - Fix failing CI after \`${sha}\`: ${failingJobs}`,
-              `  - Cel: przywrocic zielone CI — naprawic failujace testy/build po ostatnim commicie.`,
-              `  - Zakres: ${failingJobs}. [Logi CI](${runUrl}).`,
-              `  - Commit: \`${process.env.HEAD_SHA}\``,
+              `- \`${newId}\` [P1] \`todo\` - Fix failing CI after \`${sha}\`: ${process.env.JOB_NAMES}`,
+              `  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.`,
+              `  - Zakres: ${process.env.JOB_NAMES}. [Logi CI](${runUrl}).`,
             ].join('\n');
 
-            // Insert after "### Qwen\n" header
-            if (!content.includes('### Qwen')) {
-              console.log('### Qwen section not found in TASK_QUEUE.md — skipping.');
-              return;
-            }
+            if (!content.includes('### Qwen')) return;
+            fs.writeFileSync(path, content.replace('### Qwen\n', `### Qwen\n${task}\n`));
 
-            const updated = content.replace('### Qwen\n', `### Qwen\n${newTask}\n`);
-            fs.writeFileSync(path, updated);
-            console.log(`Added task #${newId} to TASK_QUEUE.md for failing jobs: ${failingJobs}`);
-
-      - name: Commit and push task
+      - name: Commit TASK_QUEUE.md update
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git diff --quiet TASK_QUEUE.md && echo "No changes to commit" && exit 0
+          git diff --quiet TASK_QUEUE.md && echo "No changes" && exit 0
           git add TASK_QUEUE.md
           git commit -m "chore(ci): add Qwen fix task after CI failure [skip ci]"
           git push origin main
