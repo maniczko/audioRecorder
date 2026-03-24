@@ -41,7 +41,7 @@ def _ensure_wav_16k(audio_path: str) -> tuple[str, bool]:
     try:
         subprocess.run(
             [ffmpeg, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", "-acodec", "pcm_s16le", tmp.name],
-            capture_output=True, timeout=120, check=True
+            capture_output=True, timeout=600, check=True
         )
         return tmp.name, True
     except Exception as e:

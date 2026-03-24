@@ -75,7 +75,7 @@ function decodeAudioToFloat32(inputPath: string) {
   const tmpPath = path.join(os.tmpdir(), `spkemb_${Date.now()}.raw`);
   try {
     execSync(
-      `"${FFMPEG_BINARY}" -y -i "${inputPath}" -ar 16000 -ac 1 -f f32le "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${inputPath}" -threads 4 -ar 16000 -ac 1 -f f32le "${tmpPath}"`,
       { stdio: "pipe", timeout: 30000 }
     );
     const buf = fs.readFileSync(tmpPath);

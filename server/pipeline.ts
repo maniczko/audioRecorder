@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.ts";
 import { logger } from "./logger.ts";
 import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
+import { getSttModelForProcessingMode } from "./stt/modelSelector.ts";
 
 // ── Sub-module imports ────────────────────────────────────────────────────────
 import {
@@ -271,8 +272,11 @@ async function runTranscriptionAttempt(
       const whisperTemperature =
         attemptAudioQuality?.qualityLabel === "poor" ? 0 : 0.1;
 
+      // Select model based on processing mode
+      const selectedModel = getSttModelForProcessingMode(options.processingMode || "fast");
+      
       const whisperFields = {
-        model: VERIFICATION_MODEL,
+        model: selectedModel,
         language: options.language || AUDIO_LANGUAGE,
         response_format: "verbose_json",
         timestamp_granularities: ["segment", "word"],
@@ -286,8 +290,8 @@ async function runTranscriptionAttempt(
       let sttProviderInfo: any = null;
       const modelsToTry = _sttUseGroq
         ? ["whisper-large-v3"]
-        : VERIFICATION_MODEL !== "whisper-1"
-        ? [VERIFICATION_MODEL, "whisper-1"]
+        : selectedModel !== "whisper-1"
+        ? [selectedModel, "whisper-1"]
         : ["whisper-1"];
 
       const reqId = options.requestId || "internal-pipeline";
@@ -673,7 +677,7 @@ async function runTranscriptionAttempt(
             const execP = promisify(execFn);
             const FFMPEG_BINARY = config.FFMPEG_BINARY;
             await execP(
-              `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -ar 16000 -ac 1 "${clipPath}"`,
+              `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
               { timeout: 30000, signal: options.signal }
             );
             const matchResult = await matchSpeakerToProfile(

@@ -301,7 +301,7 @@ export async function preprocessAudio(
 
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
     await execPromise(
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "${filter}" -ar 16000 -ac 1 "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "${filter}" -threads 4 -ar 16000 -ac 1 "${tmpPath}"`,
       { timeout: 180000, signal }
     );
 

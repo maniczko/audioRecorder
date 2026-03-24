@@ -262,7 +262,7 @@ export async function extractSpeakerAudioClip(
     .join("+");
 
   await execPromise(
-    `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -ar 16000 -ac 1 "${clipPath}"`,
+    `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
     { timeout: 30000, signal: options.signal }
   );
 
