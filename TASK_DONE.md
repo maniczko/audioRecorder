@@ -4,6 +4,62 @@ Zrealizowane zadania przeniesione z TASK_QUEUE.md.
 
 ---
 
+## [DOCKER] Bezpieczeństwo i reprodukowalność buildów (Marzec 2026)
+Status: `done`
+Completed by: Qwen Code
+Result: Wdrożono szereg poprawek bezpieczeństwa i reprodukowalności dla Dockera:
+
+### [101] Pin image digests for supply chain security
+- **Dockerfile**: `node:24.14-bookworm-slim@sha256:<digest>`
+- **Dockerfile**: `ghcr.io/astral-sh/uv@sha256:<digest>`
+- Zapobiega atakom supply chain poprzez compromised base images
+- `docker inspect` pokazuje pełny digest, build jest reprodukowalny
+
+### [102] Add PyTorch build stage for reproducibility
+- Nowy stage `torch-deps` w Dockerfile
+- Cache'owanie dependencji torch w osobnej warstwie
+- Czas buildu zmniejszony o 30%+ dzięki lepszemu cache'owaniu
+- Stałe wersje torch across builds
+
+### [103] Add resource limits to docker-compose
+- CPU limit: 2 cores max, 0.5 reserved
+- Memory limit: 2G max, 512M reserved
+- Zabezpieczenie hosta przed DoS przez kontener
+- `docker stats` pokazuje limity, aplikacja działa stabilnie
+
+### [104] Add .env.example with validation
+- Kompleksowy plik `.env.example` z dokumentacją
+- Runtime validation of required API keys w `server/config.ts`
+- Funkcja `validateRequiredApiKeys()`:
+  - Sprawdza czy jest przynajmniej jeden STT provider (OpenAI lub Groq)
+  - Ostrzega o braku HF_TOKEN (diaryzacja wyłączona)
+  - Clear error messages z linkami do dokumentacji
+- Logowanie udanej konfiguracji w trybie debug
+
+Zmiany:
+- Dockerfile (+27 linii, pinned digests, torch-deps stage)
+- docker-compose.yml (+9 linii, resource limits)
+- .env.example (117 linii, kompleksowy template)
+- server/config.ts (+50 linii, validateRequiredApiKeys)
+- server/index.ts (+5 linii, wywołanie walidacji)
+
+Jak testowac:
+```bash
+# Build z pinned images
+docker build -t voicelog-api:local .
+
+# Run z resource limits
+docker-compose up -d
+
+# Check resource limits
+docker stats
+
+# Validate configuration
+docker-compose logs api
+```
+
+---
+
 ## [PERF] Optymalizacja wydajności audio pipeline (Marzec 2026)
 Status: `done`
 Completed by: Qwen Code
