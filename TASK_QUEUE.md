@@ -24,6 +24,10 @@ Kolejnosc prac:
 
 ### Qwen
 
+- `209` [P1] `todo` - Fix failing CI after `25a84e23`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23483486998).
+
 - `201` [P1] `todo` - testy `ai/routes.ts`
   - Cel: podniesc coverage AI routes z 26% do 80%+.
   - Zakres: `/ai/analyze`, `/ai/suggest-tasks`, `/ai/search`, fallbacki i timeouty.
