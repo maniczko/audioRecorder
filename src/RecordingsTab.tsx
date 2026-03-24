@@ -3,6 +3,7 @@ import React from "react";
 import { formatDateTime } from "./lib/storage";
 import { EmptyState } from "./components/Skeleton";
 import { RecordingPipelineStatus } from "./components/RecordingPipelineStatus";
+import { ProgressBar } from "./components/ProgressBar";
 import './RecordingsTabStyles.css';
 
 import { createMediaService } from "./services/mediaService";
@@ -474,7 +475,7 @@ export default function RecordingsTab(props) {
             <div className="recordings-upload-state">
               <div className="recordings-upload-label">Wgrywanie ({uploadProgress}%)</div>
               <div className="recordings-upload-track">
-                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#75d6c4', transition: 'width 0.2s ease-in-out' }} />
+                <ProgressBar value={uploadProgress} variant="upload" />
               </div>
             </div>
           ) : (

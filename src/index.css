@@ -33,6 +33,23 @@ html {
   --energy-low-bg: rgba(255, 255, 255, 0.06);
   --energy-low-text: var(--muted);
 
+  /* Progress bar colors */
+  --progress-default: var(--accent);
+  --progress-success: var(--success, #67d59f);
+  --progress-warning: var(--warning, #f3ca72);
+  --progress-danger: var(--danger, #f17d72);
+  --progress-upload: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%);
+
+  /* Kanban card cover colors */
+  --kanban-cover-red: #f17d72;
+  --kanban-cover-pink: #e879a0;
+  --kanban-cover-orange: #f3a46e;
+  --kanban-cover-yellow: #f3ca72;
+  --kanban-cover-green: #67d59f;
+  --kanban-cover-teal: #34c5b5;
+  --kanban-cover-blue: #5a92ff;
+  --kanban-cover-purple: #8a6bff;
+
   --surface-canvas:
     radial-gradient(circle at top left, rgba(26, 95, 115, 0.32), transparent 28%),
     radial-gradient(circle at 85% 15%, rgba(242, 150, 69, 0.2), transparent 26%),

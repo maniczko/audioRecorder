@@ -1,5 +1,6 @@
 import React from "react";
 import "./RecordingPipelineStatus.css";
+import { ProgressBar } from "./ProgressBar";
 
 interface RecordingPipelineStatusProps {
   status: string;
@@ -60,7 +61,7 @@ export function RecordingPipelineStatus({
             aria-valuenow={Math.max(0, Math.min(100, Math.round(progressPercent)))}
             aria-label="Postep przetwarzania nagrania"
           >
-            <span style={{ width: `${Math.max(4, Math.min(100, Math.round(progressPercent)))}%` }} />
+            <ProgressBar value={progressPercent} animated={false} />
           </div>
           {stageLabel && progressMessage && stageLabel !== progressMessage ? (
             <span className="pipeline-progress-subtext">{progressMessage}</span>
