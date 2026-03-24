@@ -1,3 +1,4 @@
+```typescript
 import { describe, expect, it, vi } from "vitest";
 import { RagChunkRetriever } from "../lib/ragRetriever.ts";
 
@@ -44,3 +45,4 @@ describe("RagChunkRetriever", () => {
     });
   });
 });
+```
