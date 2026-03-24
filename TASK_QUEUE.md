@@ -24,6 +24,10 @@ Kolejnosc prac:
 
 ### Qwen
 
+- `230` [P1] `todo` - Fix failing CI after `fb339c35`: Deploy to Railway (after CI)
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: Deploy to Railway (after CI). [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23501788346).
+
 - `229` [P1] `todo` - Fix failing CI after `60059681`: E2E Smoke Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23501292568).
