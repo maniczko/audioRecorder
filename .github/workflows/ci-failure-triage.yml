@@ -1,0 +1,96 @@
+name: CI Failure Triage
+
+# Fires when CI Pipeline finishes with a failure on main.
+# Automatically adds a fix task to TASK_QUEUE.md under ### Qwen.
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  create-fix-task:
+    name: Add Qwen task for failing tests
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use a PAT or default token — default token pushes won't retrigger CI
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Identify failing jobs
+        id: jobs
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const { data } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }},
+            });
+            const failing = data.jobs
+              .filter(j => j.conclusion === 'failure')
+              .map(j => j.name);
+            return failing.join(', ') || 'unknown';
+
+      - name: Add task to TASK_QUEUE.md
+        uses: actions/github-script@v7
+        env:
+          FAILING_JOBS: ${{ steps.jobs.outputs.result }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'TASK_QUEUE.md';
+            const content = fs.readFileSync(path, 'utf8');
+
+            const sha = process.env.HEAD_SHA.slice(0, 8);
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.RUN_ID}`;
+            const failingJobs = process.env.FAILING_JOBS;
+
+            // Skip if a task for this SHA already exists
+            if (content.includes(sha)) {
+              console.log(`Task for ${sha} already exists in TASK_QUEUE.md — skipping.`);
+              return;
+            }
+
+            // Generate next task ID: max existing numeric ID + 1
+            const ids = [...content.matchAll(/^- `(\d+)`/gm)]
+              .map(m => parseInt(m[1]))
+              .filter(n => !isNaN(n));
+            const newId = ids.length > 0 ? String(Math.max(...ids) + 1) : '300';
+
+            const newTask = [
+              ``,
+              `- \`${newId}\` [P1] \`todo\` - Fix failing CI after \`${sha}\`: ${failingJobs}`,
+              `  - Cel: przywrocic zielone CI — naprawic failujace testy/build po ostatnim commicie.`,
+              `  - Zakres: ${failingJobs}. [Logi CI](${runUrl}).`,
+              `  - Commit: \`${process.env.HEAD_SHA}\``,
+            ].join('\n');
+
+            // Insert after "### Qwen\n" header
+            if (!content.includes('### Qwen')) {
+              console.log('### Qwen section not found in TASK_QUEUE.md — skipping.');
+              return;
+            }
+
+            const updated = content.replace('### Qwen\n', `### Qwen\n${newTask}\n`);
+            fs.writeFileSync(path, updated);
+            console.log(`Added task #${newId} to TASK_QUEUE.md for failing jobs: ${failingJobs}`);
+
+      - name: Commit and push task
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git diff --quiet TASK_QUEUE.md && echo "No changes to commit" && exit 0
+          git add TASK_QUEUE.md
+          git commit -m "chore(ci): add Qwen fix task after CI failure [skip ci]"
+          git push origin main
