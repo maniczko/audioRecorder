@@ -237,3 +237,42 @@ jobs:
             echo "E2E smoke tests failed"; exit 1
           fi
           echo "All CI stages passed successfully."
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Railway gate: deploy only after ALL tests pass.
+  #
+  # Setup (one-time):
+  #   1. Go to Railway → Service → Settings → General → Disable "Auto-Deploy"
+  #   2. Create a Railway API token: railway.app → Account → Tokens
+  #   3. Add RAILWAY_TOKEN + RAILWAY_SERVICE_ID to GitHub repo secrets
+  #      (Service ID is in Railway → Service → Settings → General)
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-railway:
+    name: Deploy to Railway (after CI)
+    runs-on: ubuntu-latest
+    needs: [ci-passed]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Railway secrets
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "RAILWAY_TOKEN secret not set — skipping Railway deploy."
+            echo "See ci.yml comments for setup instructions."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Railway CLI
+        if: steps.check_secrets.outputs.skip == 'false'
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        if: steps.check_secrets.outputs.skip == 'false'
+        run: railway up --detach --service "${{ secrets.RAILWAY_SERVICE_ID }}"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

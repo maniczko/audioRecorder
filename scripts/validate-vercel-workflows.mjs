@@ -25,7 +25,13 @@ const productionWorkflow = readFile(productionWorkflowPath);
 const previewWorkflow = readFile(previewWorkflowPath);
 const vercelConfig = readFile(vercelConfigPath);
 
-assertMatch(productionWorkflow, productionWorkflowPath, "production push trigger on main", /push:\s*\n\s*branches:\s*\[main\]/m);
+// Production workflow fires after CI passes (workflow_run) — not directly on push.
+// Either a legacy push trigger or the newer workflow_run trigger is acceptable.
+const hasProductionTrigger =
+  /workflow_run:/.test(productionWorkflow) || /push:\s*\n\s*branches:\s*\[main\]/m.test(productionWorkflow);
+if (!hasProductionTrigger) {
+  throw new Error(`Workflow validation failed for ${productionWorkflowPath}: missing push or workflow_run trigger on main`);
+}
 assertMatch(productionWorkflow, productionWorkflowPath, "workflow_dispatch trigger", /workflow_dispatch:/m);
 assertMatch(previewWorkflow, previewWorkflowPath, "pull_request trigger", /pull_request:/m);
 

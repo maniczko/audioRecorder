@@ -1,7 +1,10 @@
 name: Production Deployment (Vercel)
 
+# Trigger ONLY after CI Pipeline passes — never deploy broken code.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -13,12 +16,17 @@ jobs:
   vercel-production:
     runs-on: ubuntu-latest
     name: Deploy Production
+    # Skip if triggered by a failed CI run (workflow_dispatch always runs)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Deploy the exact SHA that CI tested, not whatever is on main at deploy time
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,7 +66,7 @@ jobs:
 
       - name: Build Project Artifacts
         env:
-          VITE_BUILD_ID: ${{ github.sha }}
+          VITE_BUILD_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy Project Artifacts to Vercel Production
