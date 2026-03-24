@@ -1,7 +1,6 @@
 name: 'GPT Auto-Fix'
 
 # Called directly by ci-failure-triage via workflow_dispatch.
-# (issues:opened from GITHUB_TOKEN does not re-trigger workflows — GitHub security restriction)
 on:
   workflow_dispatch:
     inputs:
@@ -17,9 +16,9 @@ on:
 
 jobs:
   fix:
-    name: 'Fix with GPT-4o'
+    name: 'Fix with Gemini'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     permissions:
       contents: write
       issues: write
@@ -32,25 +31,12 @@ jobs:
         with:
           node-version: '22'
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Python + Aider
-        run: |
-          pip install uv --quiet
-          uv tool install aider-chat
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
       - name: Acknowledge issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue comment "${{ inputs.issue_number }}" \
-            --body "🤖 GPT-4o odebrał zadanie. Analizuję błędy i przygotowuję PR..." \
+            --body "🤖 Gemini odebrał zadanie. Analizuję błędy i przygotowuję PR..." \
             --repo "${{ github.repository }}"
 
       - name: Create fix branch
@@ -60,97 +46,169 @@ jobs:
           git checkout -b "$BRANCH"
           echo "name=$BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Run Aider to fix failing tests
+      - name: Run Gemini to fix failing tests
+        id: gemini
+        uses: actions/github-script@v7
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ISSUE_BODY: ${{ inputs.issue_body }}
           ISSUE_TITLE: ${{ inputs.issue_title }}
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
 
-          # Gemini flash: generous free tier, fast — fallback to gpt-4o-mini if GEMINI key missing
-          if [ -n "$GEMINI_API_KEY" ]; then
-            MODEL="${{ vars.GPT_MODEL || 'gemini/gemini-2.0-flash' }}"
-          else
-            MODEL="${{ vars.GPT_MODEL || 'gpt-4o-mini' }}"
-          fi
+            const body = process.env.ISSUE_BODY || '';
+            const title = process.env.ISSUE_TITLE || '';
 
-          # Extract file paths from issue body
-          FILES=$(echo "$ISSUE_BODY" | grep -oP '(?:src|server)/[^\s:,`\n]+\.[jt]sx?' | sort -u | tr '\n' ' ')
-          echo "Files extracted from errors: $FILES"
+            // Extract file paths from error annotations
+            const fileMatches = [...body.matchAll(/\b((?:src|server)\/[^\s:,`\n]+\.[jt]sx?)/g)];
+            const files = [...new Set(fileMatches.map(m => m[1]))].filter(f => f.length > 5 && !f.includes('.github'));
+            console.log('Files to fix:', files);
 
-          # Extract error blocks only (cap to avoid token overflow)
-          ERRORS=$(echo "$ISSUE_BODY" | sed -n '/^```/,/^```/p' | head -c 2000)
+            // Read file contents (up to 5 files, 3000 chars each)
+            let fileContents = '';
+            for (const file of files.slice(0, 5)) {
+              if (fs.existsSync(file)) {
+                const content = fs.readFileSync(file, 'utf8');
+                fileContents += `\n\n=== ${file} ===\n${content.slice(0, 3000)}`;
+              }
+            }
 
-          PROMPT="Fix failing CI tests in this TypeScript/Node.js project.
+            // Extract error block from issue body
+            const errorBlocks = [...body.matchAll(/```\n([\s\S]*?)\n```/g)].map(m => m[1]).join('\n');
+            const errors = errorBlocks.slice(0, 2500) || body.slice(0, 2500);
 
-          Issue: ${ISSUE_TITLE}
+            if (!process.env.GEMINI_API_KEY) {
+              console.log('GEMINI_API_KEY not set — skipping');
+              core.setOutput('has_changes', 'false');
+              return;
+            }
 
-          Errors:
-          ${ERRORS}
+            const prompt = `You are a TypeScript/Node.js expert fixing failing CI tests.
 
-          Rules:
-          1. Fix the root cause — do NOT suppress errors
-          2. If a test imports a missing package (e.g. bun:sqlite), fix the import
-          3. If tests fail due to missing DB tables, fix test setup/migrations
-          4. Make minimal targeted changes only"
+            Issue: ${title}
 
-          if [ -n "$FILES" ]; then
-            echo "Running aider with files: $FILES"
-            # shellcheck disable=SC2086
-            aider --model "$MODEL" \
-              --yes \
-              --auto-commits \
-              --map-tokens 512 \
-              --message "$PROMPT" \
-              $FILES
-          else
-            echo "No specific files extracted — passing full error context to aider"
-            aider --model "$MODEL" \
-              --yes \
-              --auto-commits \
-              --map-tokens 512 \
-              --message "$PROMPT"
-          fi
+            CI Errors:
+            ${errors}
 
-      - name: Push branch and create PR
+            Current file contents:
+            ${fileContents}
+
+            Instructions:
+            1. Analyze the errors carefully
+            2. Fix ONLY the root cause — do NOT suppress errors
+            3. If a file imports a missing package (e.g. bun:sqlite), change the import
+            4. If tables are missing in tests, fix the test setup/migrations
+            5. Make MINIMAL targeted changes
+
+            Respond ONLY in this exact format for each changed file:
+            === path/to/file.ts ===
+            <complete new file content>
+
+            If nothing needs to change, respond: NO_CHANGES`;
+
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+                })
+              }
+            );
+
+            const result = await response.json();
+            if (result.error) {
+              console.log('Gemini API error:', result.error);
+              core.setOutput('has_changes', 'false');
+              return;
+            }
+
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            console.log('Gemini response length:', text.length);
+
+            if (!text || text.includes('NO_CHANGES') || !text.includes('===')) {
+              console.log('No changes suggested by Gemini');
+              core.setOutput('has_changes', 'false');
+              return;
+            }
+
+            // Parse and apply file changes
+            const lines = text.split('\n');
+            let currentFile = null;
+            let currentLines = [];
+            let changesApplied = 0;
+
+            for (const line of lines) {
+              const header = line.match(/^=== (.+?) ===$/);
+              if (header) {
+                if (currentFile && currentLines.length > 0 && !currentFile.startsWith('.github')) {
+                  fs.mkdirSync(path.dirname(currentFile), { recursive: true });
+                  fs.writeFileSync(currentFile, currentLines.join('\n'));
+                  console.log(`✅ Applied fix to ${currentFile}`);
+                  changesApplied++;
+                }
+                currentFile = header[1].trim();
+                currentLines = [];
+              } else if (currentFile) {
+                currentLines.push(line);
+              }
+            }
+            // Write last file
+            if (currentFile && currentLines.length > 0 && !currentFile.startsWith('.github')) {
+              fs.mkdirSync(path.dirname(currentFile), { recursive: true });
+              fs.writeFileSync(currentFile, currentLines.join('\n'));
+              console.log(`✅ Applied fix to ${currentFile}`);
+              changesApplied++;
+            }
+
+            core.setOutput('has_changes', changesApplied > 0 ? 'true' : 'false');
+            console.log(`Total changes applied: ${changesApplied}`);
+
+      - name: Commit and push fix
+        if: steps.gemini.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ steps.branch.outputs.name }}
         run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          git add -A
+          git diff --cached --quiet && echo "Nothing staged" && exit 0
+          git commit -m "fix(ci): auto-fix failing tests via Gemini [skip ci]"
           git push -f origin "$BRANCH"
 
-          COMMITS=$(git log origin/main.."$BRANCH" --oneline 2>/dev/null | wc -l)
-          if [ "$COMMITS" -eq 0 ]; then
-            gh issue comment "${{ inputs.issue_number }}" \
-              --body "⚠️ GPT-4o nie wprowadził żadnych zmian. Wymaga ręcznej analizy: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
-              --repo "${{ github.repository }}"
-            exit 0
-          fi
-
-          # Show what was changed
           DIFF_SUMMARY=$(git diff origin/main..."$BRANCH" --stat | tail -5)
-
           PR_URL=$(gh pr create \
             --title "fix(ci): auto-fix failing tests (issue #${{ inputs.issue_number }})" \
             --body "Closes #${{ inputs.issue_number }}
 
-          Auto-generated by GPT-4o via \`gpt-fix\` workflow.
+          Auto-generated by Gemini 2.0 Flash.
 
           **Changes:**
           \`\`\`
           ${DIFF_SUMMARY}
           \`\`\`
 
-          **Review carefully before merging.**" \
+          **Review before merging.**" \
             --head "$BRANCH" \
             --base main \
             --repo "${{ github.repository }}")
 
           gh issue comment "${{ inputs.issue_number }}" \
             --body "✅ PR gotowy do review: ${PR_URL}" \
+            --repo "${{ github.repository }}"
+
+      - name: Report no changes
+        if: steps.gemini.outputs.has_changes != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ inputs.issue_number }}" \
+            --body "⚠️ Gemini nie znalazł automatycznej poprawki. Wymaga ręcznej analizy: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
             --repo "${{ github.repository }}"
