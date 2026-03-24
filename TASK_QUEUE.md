@@ -142,6 +142,123 @@ Kolejnosc prac:
   - Zakres: `.env.example`, walidacja zmiennych w entrypoint.
   - Akceptacja: dokumentacja + error na brakujące wymagane zmienne.
 
+## Optymalizacja wydajności
+
+### Pipeline audio
+
+- `301` [P1] `todo` - [PERF] Równoleglenie VAD + diarization + STT
+  - Cel: skrócić czas przetwarzania o 40-60%.
+  - Problem: obecnie sekwencyjnie: VAD → STT → diarization → post-processing.
+  - Rozwiązanie: uruchomić pyannote i Whisper równolegle na pełnym pliku, VAD tylko do merge.
+  - Akceptacja: 10min nagranie < 3min processing time.
+
+- `302` [P1] `todo` - [PERF] Cacheowanie wyników pyannote per asset
+  - Cel: unikać powtórnej diaryzacji tego samego pliku.
+  - Zakres: cache key = hash(audio) + model_version, cache w /data/pyannote-cache/.
+  - Akceptacja: drugie przetwarzanie tego samego nagrania < 10s (load z cache).
+
+- `303` [P2] `todo` - [PERF] Optymalizacja chunking STT — overlap reduction
+  - Cel: zmniejszyć redundancję i czas Whisper.
+  - Problem: `CHUNK_OVERLAP_SECONDS` może dublować 10-15% audio.
+  - Rozwiązanie: adaptacyjny overlap (0.5s dla ciszy, 2s dla mowy).
+  - Akceptacja: redukcja tokenów Whisper o 20%+.
+
+- `304` [P2] `todo` - [PERF] GPU acceleration dla pyannote w Docker
+  - Cel: przyspieszyć diaryzację 5-10x.
+  - Zakres: NVIDIA runtime w docker-compose, CUDA base image, torch z GPU.
+  - Akceptacja: diarization 10min nagrania < 60s na GPU vs 600s CPU.
+
+- `305` [P2] `todo` - [PERF] Batch embedding speaker clips
+  - Cel: przyspieszyć generowanie embeddingów głosów.
+  - Problem: pojedyncze zapytania do API per speaker clip.
+  - Rozwiązanie: batchować wszystkie clipy jednego spotkania w jednym requeście.
+  - Akceptacja: redukcja zapytań embeddings z N→1 per meeting.
+
+### Frontend performance
+
+- `310` [P2] `todo` - [PERF] Virtualizacja długich list transkrypcji
+  - Cel: płynne scrollowanie 1000+ segmentów.
+  - Zakres: `react-virtuoso` już jest — sprawdzić czy użyty w TaskListView/TranscriptView.
+  - Akceptacja: 60fps przy 5000 segmentach, memory < 200MB.
+
+- `311` [P2] `todo` - [PERF] Code splitting dla AI panels
+  - Cel: zmniejszyć bundle size początkowy.
+  - Zakres: lazy load `AiTaskSuggestionsPanel`, `TaskChartsView`.
+  - Akceptacja: initial bundle < 500KB gzipped, TTI < 2s.
+
+- `312` [P3] `todo` - [PERF] Memoizacja ciężkich komponentów React
+  - Cel: uniknąć niepotrzebnych re-renderów.
+  - Zakres: `React.memo()` dla `TaskKanbanView`, `useMemo` dla obliczeń KPI.
+  - Akceptacja: React DevTools Profiler pokazuje 0 niepotrzebnych renderów.
+
+### Backend / API
+
+- `320` [P2] `todo` - [PERF] HTTP/2 + keep-alive dla external APIs
+  - Cel: zmniejszyć latency do OpenAI/Groq/HuggingFace.
+  - Zakres: reuse HTTP connections, enable HTTP/2 w fetch/axios.
+  - Akceptacja: p95 latency do API zewnętrznych < 500ms.
+
+- `321` [P2] `todo` - [PERF] Database connection pooling tuning
+  - Cel: obsłużyć 50+ równoczesnych żądań.
+  - Zakres: SQLite WAL mode + proper pooling, lub migracja do PostgreSQL.
+  - Akceptacja: 100 req/s bez timeoutów, p95 < 100ms.
+
+- `322` [P3] `todo` - [PERF] Streaming transcription progress
+  - Cel: realtime update postępu zamiast polling.
+  - Zakres: Server-Sent Events lub WebSocket do pushowania progressu.
+  - Akceptacja: UI aktualizuje się na żywo co 1-2s podczas transkrypcji.
+
+### Model optimization
+
+- `330` [P1] `todo` - [PERF] Mniejszy model Whisper dla trybu fast
+  - Cel: 3x szybsza transkrypcja w trybie fast.
+  - Zakres: `distil-whisper` lub `whisper-tiny` dla VOICELOG_PROCESSING_MODE=fast.
+  - Akceptacja: transkrypcja 10min < 2min z akceptowalną dokładnością.
+
+- `331` [P2] `todo` - [PERF] Quantization pyannote model
+  - Cel: zmniejszyć zużycie RAM i przyspieszyć inferencję.
+  - Zakres: torch quantization INT8 dla pyannote 3.1.
+  - Akceptacja: RAM usage < 2GB vs 4GB, speedup 1.5x.
+
+- `332` [P3] `todo` - [PERF] ONNX Runtime dla Silero VAD
+  - Cel: przyspieszyć VAD na CPU.
+  - Zakres: Silero VAD w ONNX zamiast torch.hub.
+  - Akceptacja: VAD 10min nagrania < 5s.
+
+## Monitoring & Profiling
+
+- `340` [P2] `todo` - [OBS] Dodaj metryki wydajności pipeline
+  - Cel: mierzyć czas każdego etapu (VAD, STT, diarization, post-process).
+  - Zakres: logowanie duration per stage, histogramy, p50/p95/p99.
+  - Akceptacja: dashboard z medianami i percentylami per etap.
+
+- `341` [P2] `todo` - [OBS] Memory profiling w production
+  - Cel: wykrywać memory leaks.
+  - Zakres: `clinic.js` lub `0x` profiling w Docker, heap snapshots.
+  - Akceptacja: memory stabilne po 100+ transkrypcjach.
+
+- `342` [P3] `todo` - [OBS] APM integration (DataDog/NewRelic)
+  - Cel: end-to-end tracing żądań.
+  - Zakres: distributed tracing od frontendu po Python scripts.
+  - Akceptacja: flame graph pokazuje wąskie gardła.
+
+## Quick wins (1-2h)
+
+- `350` [P2] `todo` - [QUICK] FFmpeg threads dla szybszej konwersji
+  - Cel: przyspieszyć konwersję audio do 16kHz.
+  - Zakres: `-threads 4` w spawn ffmpeg, `-cpu-used` dla libvorbis.
+  - Akceptacja: konwersja 10min < 10s.
+
+- `351` [P2] `todo` - [QUICK] Zwiększ timeout dla pyannote
+  - Cel: uniknąć timeoutów przy długich nagraniach.
+  - Zakres: timeout 120s → 600s dla pyannote subprocess.
+  - Akceptacja: 0 timeout errors dla nagrań 60min+.
+
+- `352` [P3] `todo` - [QUICK] Parallel chunk STT
+  - Cel: wysyłać wiele chunków do Whisper równolegle.
+  - Zakres: Promise.all z concurrency limit 3-5.
+  - Akceptacja: 3x szybszy STT dla 10+ chunków.
+
 - `080` [P3] `todo` - [CSS] Konsolidacja plików i usunięcie `!important`
   - Cel: Oczyszczenie `tasks.css` i `StudioMeetingViewStyles.css` oraz likwidacja tagów `!important`.
   - Migracja kilkuset twardych bindowań paddingów/wielkości na tokeny z `index.css`.

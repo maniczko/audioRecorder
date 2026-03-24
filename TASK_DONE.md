@@ -1502,3 +1502,4 @@ Wynik:
 - metryki obejmuja `F0`, `jitter`, `shimmer`, `HNR` i formanty `F1` / `F2`
 - `VoiceSpeakerStats` wyswietla metryki akustyczne per mowca po pobraniu z backendu
 
+
