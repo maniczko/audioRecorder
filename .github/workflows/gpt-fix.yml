@@ -116,6 +116,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ steps.branch.outputs.name }}
         run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git push -f origin "$BRANCH"
 
           COMMITS=$(git log origin/main.."$BRANCH" --oneline 2>/dev/null | wc -l)
