@@ -18,7 +18,8 @@ function statCards(stats, visibleStats) {
   ];
 }
 
-
+
+
 
 function SettingsDropdown({ onExportCsv, shareWorkspace, showColumnManager, setShowColumnManager, children = null }) {
   const [open, setOpen] = useState(false);
@@ -157,6 +158,21 @@ function TasksWorkspaceView({
                 </button>
               </div>
 
+              <button
+                type="button"
+                className="todo-big-green-button"
+                onClick={() => {
+                  const quickAddInput = document.querySelector('input[placeholder="Dodaj zadanie"]') as HTMLInputElement;
+                  if (quickAddInput) {
+                    quickAddInput.focus();
+                  }
+                }}
+                title="Szybko dodaj zadanie (N)"
+                aria-label="Szybko dodaj zadanie"
+              >
+                ✓ Dodaj Zadanie
+              </button>
+
             </div>
 
             <div className="todo-commandbar-right">
@@ -181,7 +197,8 @@ function TasksWorkspaceView({
           </div>
         </section>
 
-        {!isCharts && !isSchedule && !isSummary ? (
+
+        {!isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card">
             <div className="todo-create-head">
               <div>
