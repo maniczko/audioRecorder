@@ -686,6 +686,7 @@ export default function TasksTab({
             handleGroupDrop={handleGroupDrop}
             handleTaskDrop={handleTaskDrop}
             setDragTaskId={rememberDraggedTask}
+            dragTaskId={dragTaskId}
             onQuickAddToColumn={handleQuickAddToColumn}
             onReorderColumns={handleColumnReorder}
             stats={stats}

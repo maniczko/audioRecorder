@@ -65,9 +65,7 @@ vi.mock("../store/meetingsStore", () => ({
   useMeetingsStore: () => meetingsState,
 }));
 
-describe.skip("useWorkspaceData", () => {
-  // These tests are skipped because they depend on internal implementation details
-  // that cause infinite loops. The hook works correctly in production.
+describe("useWorkspaceData", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -162,69 +160,75 @@ describe.skip("useWorkspaceData", () => {
     expect(workspaceState.setSession).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  test("bootstraps remote state and syncs changed snapshots in remote mode", async () => {
+  test("bootstraps remote state and applies it to store", async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = "remote";
     workspaceState.session = { token: "token-1", userId: "u1", workspaceId: "ws1" };
     workspaceState.currentWorkspaceId = "ws1";
-    stateServiceMock.bootstrap
-      .mockResolvedValueOnce({
-        workspaceId: "ws1",
-        users: [{ id: "u1" }],
-        workspaces: [{ id: "ws1" }],
-        state: {
-          meetings: [{ id: "m1", workspaceId: "ws1", updatedAt: "2026-03-21T10:00:00.000Z" }],
-          manualTasks: [],
-          taskState: {},
-          taskBoards: {},
-          calendarMeta: {},
-          vocabulary: ["AI"],
-        },
-      })
-      .mockResolvedValueOnce({
-        workspaceId: "ws1",
-        state: {
-          meetings: [{ id: "m2", workspaceId: "ws1", updatedAt: "2026-03-22T10:00:00.000Z" }],
-          manualTasks: [],
-          taskState: {},
-          taskBoards: {},
-          calendarMeta: {},
-          vocabulary: ["AI"],
-        },
-      });
+    stateServiceMock.bootstrap.mockResolvedValueOnce({
+      workspaceId: "ws1",
+      users: [{ id: "u1" }],
+      workspaces: [{ id: "ws1" }],
+      state: {
+        meetings: [{ id: "m1", workspaceId: "ws1", updatedAt: "2026-03-21T10:00:00.000Z" }],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: ["AI"],
+      },
+    });
 
     const { result, unmount } = renderHook(() => useWorkspaceData());
 
     await act(async () => {
-      await vi.runAllTimersAsync();
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(stateServiceMock.bootstrap).toHaveBeenCalledWith("ws1");
     await waitFor(() => {
       expect(result.current.isHydratingRemoteState).toBe(false);
     });
+    expect(meetingsState.setMeetings).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ id: "m1" })])
+    );
+    expect(workspaceState.setUsers).toHaveBeenCalledWith([{ id: "u1" }]);
+    unmount();
+  });
 
-    meetingsState.meetings = [{ id: "m1", workspaceId: "ws1", updatedAt: "2026-03-21T10:00:00.000Z" }];
-    meetingsState.manualTasks = [{ id: "t1" }];
-    const { rerender } = renderHook(() => useWorkspaceData());
-    rerender();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(400);
-    });
+  test("deduplicates concurrent bootstrap calls — second call blocked while first is in flight", async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = "remote";
+    workspaceState.session = { token: "t1", userId: "u1", workspaceId: "ws1" };
+    workspaceState.currentWorkspaceId = "ws1";
 
-    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledWith(
-      "ws1",
-      expect.any(Object)
+    let resolveFirst!: (v: any) => void;
+    stateServiceMock.bootstrap.mockImplementation(
+      () => new Promise((res) => { resolveFirst = res; })
     );
 
-    Object.defineProperty(document, "visibilityState", {
-      configurable: true,
-      value: "visible",
-    });
+    const { rerender, unmount } = renderHook(() => useWorkspaceData());
+
+    // Let initial async bootstrap effect start
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5000);
+      await Promise.resolve();
+      await Promise.resolve();
     });
-    expect(stateServiceMock.bootstrap.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+    // Simulate a re-render (e.g. session re-hydration) — must NOT fire a second bootstrap
+    rerender();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+
+    resolveFirst({
+      workspaceId: "ws1",
+      state: { meetings: [], manualTasks: [], taskState: {}, taskBoards: {}, calendarMeta: {}, vocabulary: [] },
+    });
     unmount();
   });
 

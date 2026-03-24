@@ -99,6 +99,7 @@ function TasksWorkspaceView({
   handleGroupDrop,
   handleTaskDrop,
   setDragTaskId,
+  dragTaskId,
   onQuickAddToColumn,
   onReorderColumns,
   stats,
@@ -363,6 +364,7 @@ function TasksWorkspaceView({
                 toggleTaskSelection={toggleTaskSelection}
                 setSelectedTaskId={setSelectedTaskId}
                 setDragTaskId={setDragTaskId}
+                dragTaskId={dragTaskId}
                 onUpdateTask={onUpdateTask}
                 onMoveTaskToColumn={onMoveTaskToColumn}
                 onQuickAddToColumn={onQuickAddToColumn}

@@ -126,6 +126,7 @@ function KanbanCard({
   toggleTaskSelection,
   setSelectedTaskId,
   setDragTaskId,
+  dragTaskId,
   onUpdateTask,
   onMoveTaskToColumn,
   onDropTask,
@@ -339,6 +340,7 @@ function ColumnBody({
   toggleTaskSelection,
   setSelectedTaskId,
   setDragTaskId,
+  dragTaskId,
   onUpdateTask,
   onMoveTaskToColumn,
   boardColumns,
@@ -380,6 +382,7 @@ function ColumnBody({
                   setDropColumnId("");
                 }
               }}
+              dragTaskId={dragTaskId}
               onUpdateTask={onUpdateTask}
               onMoveTaskToColumn={onMoveTaskToColumn}
               onDropTask={handleTaskDrop}
@@ -427,6 +430,7 @@ function TaskKanbanView({
   toggleTaskSelection,
   setSelectedTaskId,
   setDragTaskId,
+  dragTaskId,
   onUpdateTask,
   onMoveTaskToColumn,
   swimlaneGroupBy = "none",
@@ -470,6 +474,7 @@ function TaskKanbanView({
     toggleTaskSelection,
     setSelectedTaskId,
     setDragTaskId,
+    dragTaskId,
     onUpdateTask,
     onMoveTaskToColumn,
     boardColumns: kanbanColumns,

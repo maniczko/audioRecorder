@@ -60,6 +60,7 @@ export default function useWorkspaceData() {
   const lastWorkspaceMessageRef = useRef("");
   const lastLoggedRemoteErrorRef = useRef("");
   const isProbingRef = useRef(false);
+  const isBootstrappingRef = useRef(false);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === "remote" && Boolean(session?.token)
@@ -216,6 +217,12 @@ export default function useWorkspaceData() {
         return;
       }
 
+      if (isBootstrappingRef.current) {
+        setIsHydratingRemoteState(false);
+        return;
+      }
+
+      isBootstrappingRef.current = true;
       stateService
         .bootstrap(session.workspaceId)
         .then((result) => {
@@ -233,6 +240,7 @@ export default function useWorkspaceData() {
           pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
         })
         .finally(() => {
+          isBootstrappingRef.current = false;
           if (!cancelled) {
             setIsHydratingRemoteState(false);
           }
@@ -319,6 +327,11 @@ export default function useWorkspaceData() {
           return;
         }
 
+        if (isBootstrappingRef.current) {
+          return;
+        }
+
+        isBootstrappingRef.current = true;
         stateService
           .bootstrap(currentWorkspaceId)
           .then((result) => {
@@ -338,6 +351,9 @@ export default function useWorkspaceData() {
             applyRemoteTransportCooldown(error);
             logRemoteErrorOnce("Remote workspace pull failed.", error);
             pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
+          })
+          .finally(() => {
+            isBootstrappingRef.current = false;
           });
       })();
     };
