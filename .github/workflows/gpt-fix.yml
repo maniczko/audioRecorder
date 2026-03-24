@@ -65,6 +65,7 @@ jobs:
           ISSUE_BODY: ${{ inputs.issue_body }}
           ISSUE_TITLE: ${{ inputs.issue_title }}
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
@@ -96,20 +97,16 @@ jobs:
             # shellcheck disable=SC2086
             aider --model "$MODEL" \
               --yes \
-              --no-show-model-warnings \
               --auto-commits \
               --map-tokens 512 \
-              --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
               --message "$PROMPT" \
               $FILES
           else
             echo "No specific files extracted — passing full error context to aider"
             aider --model "$MODEL" \
               --yes \
-              --no-show-model-warnings \
               --auto-commits \
               --map-tokens 512 \
-              --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
               --message "$PROMPT"
           fi
 
