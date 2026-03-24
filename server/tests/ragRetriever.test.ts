@@ -1,5 +1,6 @@
+```typescript
 import { describe, expect, it, vi } from "vitest";
-import { RagChunkRetriever } from "../lib/ragRetriever.ts";
+import { RagChunkRetriever } from "../lib/ragRetriever"; // Removed the .ts extension
 
 describe("RagChunkRetriever", () => {
   it("returns the highest-scoring docs and filters weak matches", async () => {
@@ -43,4 +44,5 @@ describe("RagChunkRetriever", () => {
       speakerName: "Anna",
     });
   });
-});
+}
+```
