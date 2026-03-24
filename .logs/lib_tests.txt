@@ -1,0 +1,2119 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mfetches calendar events from Google API[32m 11[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mhandles empty calendar[32m 2[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mreturns empty array on API error[32m 2[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mreturns empty array on 401 response[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mincludes timeMin and timeMax parameters[32m 2[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mfetches task lists from Google API[32m 12[2mms[22m[39m
+[31m   → expected { items: [ …(2) ] } to deeply equal [ …(2) ][39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mhandles empty task lists[32m 2[2mms[22m[39m
+[31m   → expected { items: [] } to deeply equal [][39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mreturns empty array on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mfetches tasks from Google API[32m 3[2mms[22m[39m
+[31m   → expected { items: [ …(2) ] } to deeply equal [ { id: 'task1', …(2) }, …(1) ][39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mhandles empty task list[32m 2[2mms[22m[39m
+[31m   → expected { items: [] } to deeply equal [][39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mreturns empty array on API error[32m 2[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleCalendarEvent[2m > [22mcreates calendar event[32m 13[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ StringContaining{…}, …(1) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   StringContaining "/calendars/primary/events",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "body": "{\"summary\":\"New Event\",\"description\":\"Event description\",\"start\":{\"dateTime\":\"2026-03-24T10:00:00Z\"},\"end\":{\"dateTime\":\"2026-03-24T11:00:00Z\"}}",[90m
+[31m+   "https://www.googleapis.com/calendar/v3/calendars/primary/events",[90m
+[31m+   {[90m
+[31m+     "body": "\"primary\"",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[2m      "method": "POST",[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleCalendarEvent[2m > [22mreturns null on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleCalendarEvent[2m > [22mupdates calendar event[32m 3[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ StringContaining{…}, …(1) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   StringContaining "/calendars/primary/events/event1",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "method": "PUT",[90m
+[31m+   "https://www.googleapis.com/calendar/v3/calendars/primary/events/primary",[90m
+[31m+   {[90m
+[31m+     "body": "\"event1\"",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[31m+     "method": "PATCH",[90m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleCalendarEvent[2m > [22mreturns null on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleCalendarEvent[2m > [22mdeletes calendar event[32m 2[2mms[22m[39m
+[31m   → deleteGoogleCalendarEvent is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleCalendarEvent[2m > [22mreturns false on API error[32m 2[2mms[22m[39m
+[31m   → deleteGoogleCalendarEvent is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleTask[2m > [22mcreates Google Task[32m 3[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ …(2) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   "https://www.googleapis.com/tasks/v1/lists/list1/tasks",[90m
+[32m-   ObjectContaining {[90m
+[31m+   "https://tasks.googleapis.com/tasks/v1/lists/list1/tasks",[90m
+[31m+   {[90m
+[2m      "body": "{\"title\":\"New Task\",\"notes\":\"Task description\"}",[22m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[2m      "method": "POST",[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleTask[2m > [22mreturns null on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleTask[2m > [22mupdates Google Task[32m 3[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ …(2) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   "https://www.googleapis.com/tasks/v1/lists/list1/tasks/task1",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "method": "PUT",[90m
+[31m+   "https://tasks.googleapis.com/tasks/v1/lists/list1/tasks/task1",[90m
+[31m+   {[90m
+[31m+     "body": "{\"title\":\"Updated Task\",\"status\":\"completed\"}",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[31m+     "method": "PATCH",[90m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleTask[2m > [22mreturns null on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleTask[2m > [22mdeletes Google Task[32m 1[2mms[22m[39m
+[31m   → deleteGoogleTask is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleTask[2m > [22mreturns false on API error[32m 1[2mms[22m[39m
+[31m   → deleteGoogleTask is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22msyncCalendarEntry[2m > [22msyncs calendar entry to Google[32m 1[2mms[22m[39m
+[31m   → syncCalendarEntry is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22msyncCalendarEntry[2m > [22mhandles sync failure[32m 1[2mms[22m[39m
+[31m   → syncCalendarEntry is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildCalendarEventPayload[2m > [22mbuilds calendar event payload from meeting[32m 1[2mms[22m[39m
+[31m   → buildCalendarEventPayload is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildCalendarEventPayload[2m > [22mincludes description when summary is provided[32m 1[2mms[22m[39m
+[31m   → buildCalendarEventPayload is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildTaskPayload[2m > [22mbuilds task payload from meeting task[32m 1[2mms[22m[39m
+[31m   → buildTaskPayload is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildTaskPayload[2m > [22mincludes due date when provided[32m 1[2mms[22m[39m
+[31m   → buildTaskPayload is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles null token gracefully[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles undefined token gracefully[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles empty calendar ID[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles special characters in event titles[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles Polish characters in titles[32m 1[2mms[22m[39m
+[31m   → fetchGoogleCalendarEvents is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for January[32m 7[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for February (non-leap)[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for February (leap year)[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for April[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for December[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetFirstDayOfMonth[2m > [22mreturns first day of month[32m 1[2mms[22m[39m
+[31m   → getFirstDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetFirstDayOfMonth[2m > [22mreturns correct day of week[32m 1[2mms[22m[39m
+[31m   → getFirstDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetLastDayOfMonth[2m > [22mreturns last day of month[32m 1[2mms[22m[39m
+[31m   → getLastDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetLastDayOfMonth[2m > [22mreturns correct day of week for February[32m 1[2mms[22m[39m
+[31m   → getLastDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22mreturns correct number of weeks[32m 1[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22meach week has 7 days[32m 0[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22mincludes days from previous month[32m 0[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns true for today[32m 0[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns false for yesterday[32m 0[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns false for tomorrow[32m 0[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns true for same date[32m 0[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different days[32m 0[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different months[32m 0[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different years[32m 0[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns true for same month[32m 0[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns false for different months[32m 0[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns false for different years[32m 1[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats month and year in Polish[32m 1[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats January correctly[32m 1[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats December correctly[32m 1[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22madds months to date[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22madds multiple months[32m 1[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22mhandles year rollover[32m 1[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22msubtracts months when negative[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubMonths[2m > [22msubtracts months from date[32m 1[2mms[22m[39m
+[31m   → subMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubMonths[2m > [22mhandles year rollover[32m 1[2mms[22m[39m
+[31m   → subMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22madds days to date[32m 1[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22madds multiple days[32m 1[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22mhandles month rollover[32m 1[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubDays[2m > [22msubtracts days from date[32m 0[2mms[22m[39m
+[31m   → subDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubDays[2m > [22mhandles month rollover[32m 0[2mms[22m[39m
+[31m   → subDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mstartOfWeek[2m > [22mreturns Sunday for Sunday[32m 0[2mms[22m[39m
+[31m   → startOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mstartOfWeek[2m > [22mreturns previous Sunday for Monday[32m 0[2mms[22m[39m
+[31m   → startOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mendOfWeek[2m > [22mreturns Saturday for Saturday[32m 0[2mms[22m[39m
+[31m   → endOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mendOfWeek[2m > [22mreturns next Saturday for Sunday[32m 0[2mms[22m[39m
+[31m   → endOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mreturns array of days for month[32m 1[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mincludes metadata for each day[32m 1[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mmarks days from current month[32m 0[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mmarks today correctly[32m 0[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles leap year February[32m 1[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles month with 5 weeks[32m 0[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles month with 6 weeks[32m 1[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles invalid month (fallback)[32m 6[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles negative month (fallback)[32m 1[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by title[32m 8[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by transcript[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by tags[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mreturns empty array for no matches[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mreturns empty array for empty query[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mis case insensitive[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mhandles null meetings gracefully[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mhandles undefined meetings gracefully[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by title[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by description[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by tags[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mreturns empty array for no matches[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mis case insensitive[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mhandles null tasks gracefully[32m 1[2mms[22m[39m
+[31m   → searchTasks is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by name[32m 1[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by role[32m 1[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by traits[32m 1[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mreturns empty array for no matches[32m 1[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mis case insensitive[32m 0[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mhandles partial name matches[32m 0[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mhandles null people gracefully[32m 0[2mms[22m[39m
+[31m   → searchPeople is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls API endpoint for semantic search[32m 3[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends query in request body[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array on API error[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array on 400 response[32m 1[2mms[22m[39m
+[31m   → HTTP 400[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array when VITE_API_BASE_URL is not set[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'ok')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles malformed response[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mbuilds query from keywords[32m 1[2mms[22m[39m
+[31m   → buildSearchQuery is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mhandles empty keywords[32m 1[2mms[22m[39m
+[31m   → buildSearchQuery is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mtrims whitespace[32m 1[2mms[22m[39m
+[31m   → buildSearchQuery is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mremoves duplicates[32m 1[2mms[22m[39m
+[31m   → buildSearchQuery is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22mranks results by relevance[32m 1[2mms[22m[39m
+[31m   → rankSearchResults is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22mhandles empty results[32m 1[2mms[22m[39m
+[31m   → rankSearchResults is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22msorts in descending order[32m 1[2mms[22m[39m
+[31m   → rankSearchResults is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mfilters items by date range[32m 1[2mms[22m[39m
+[31m   → filterByDate is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mhandles empty items[32m 1[2mms[22m[39m
+[31m   → filterByDate is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mincludes boundary dates[32m 1[2mms[22m[39m
+[31m   → filterByDate is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhighlights matched text[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mis case insensitive[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhandles multiple matches[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mreturns original text for no matches[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhandles empty query[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mescapes HTML in text[32m 1[2mms[22m[39m
+[31m   → highlightMatches is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in search[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long search queries[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles null query gracefully[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles undefined query gracefully[32m 1[2mms[22m[39m
+[31m   → searchMeetings is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mextracts decisions from transcript[32m 7[2mms[22m[39m
+[31m   → extractDecisions is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mreturns empty array for empty transcript[32m 1[2mms[22m[39m
+[31m   → extractDecisions is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mreturns empty array for transcript without decisions[32m 1[2mms[22m[39m
+[31m   → extractDecisions is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mhandles Polish decision keywords[32m 1[2mms[22m[39m
+[31m   → extractDecisions is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mextracts action items from transcript[32m 1[2mms[22m[39m
+[31m   → extractActionItems is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mreturns empty array for empty transcript[32m 1[2mms[22m[39m
+[31m   → extractActionItems is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22massigns action items to participants[32m 1[2mms[22m[39m
+[31m   → extractActionItems is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mhandles Polish action item patterns[32m 1[2mms[22m[39m
+[31m   → extractActionItems is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mgenerates summary from transcript[32m 1[2mms[22m[39m
+[31m   → generateSummary is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mreturns empty string for empty transcript[32m 1[2mms[22m[39m
+[31m   → generateSummary is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mhandles short transcripts[32m 1[2mms[22m[39m
+[31m   → generateSummary is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mhandles Polish text[32m 0[2mms[22m[39m
+[31m   → generateSummary is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22manalyzes engagement for participants[32m 0[2mms[22m[39m
+[31m   → analyzeParticipantEngagement is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mreturns empty object for no participants[32m 0[2mms[22m[39m
+[31m   → analyzeParticipantEngagement is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mhandles single participant[32m 0[2mms[22m[39m
+[31m   → analyzeParticipantEngagement is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mcalculates word count per participant[32m 1[2mms[22m[39m
+[31m   → analyzeParticipantEngagement is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mcalculates meeting score[32m 1[2mms[22m[39m
+[31m   → calculateMeetingScore is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mreturns 0 for empty meeting[32m 0[2mms[22m[39m
+[31m   → calculateMeetingScore is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mgives higher score for more decisions[32m 0[2mms[22m[39m
+[31m   → calculateMeetingScore is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mgives higher score for more action items[32m 0[2mms[22m[39m
+[31m   → calculateMeetingScore is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mdetects topics in transcript[32m 0[2mms[22m[39m
+[31m   → detectTopics is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mreturns empty array for empty transcript[32m 0[2mms[22m[39m
+[31m   → detectTopics is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mhandles Polish topics[32m 0[2mms[22m[39m
+[31m   → detectTopics is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22midentifies common meeting topics[32m 0[2mms[22m[39m
+[31m   → detectTopics is not a function[39m
+ [32m✓[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22manalyzes complete meeting[32m 4[2mms[22m[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns summary[32m 3[2mms[22m[39m
+[31m   → expected undefined to be defined[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns decisions[32m 6[2mms[22m[39m
+[31m   → expected false to be true // Object.is equality[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns action items[32m 2[2mms[22m[39m
+[31m   → expected false to be true // Object.is equality[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns topics[32m 2[2mms[22m[39m
+[31m   → expected false to be true // Object.is equality[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns meeting score[32m 4[2mms[22m[39m
+[31m   → expected 'undefined' to be 'number' // Object.is equality[39m
+ [32m✓[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mhandles meeting without participants[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mhandles meeting without transcript[32m 1[2mms[22m[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mbuilds complete analysis object[32m 1[2mms[22m[39m
+[31m   → buildMeetingAnalysis is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mhandles partial analysis[32m 1[2mms[22m[39m
+[31m   → buildMeetingAnalysis is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mincludes metadata[32m 0[2mms[22m[39m
+[31m   → buildMeetingAnalysis is not a function[39m
+ [32m✓[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles very long transcripts[32m 2[2mms[22m[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles special characters[32m 1[2mms[22m[39m
+[31m   → extractDecisions is not a function[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles null input gracefully[32m 2[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles undefined input gracefully[32m 1[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mgenerates meeting notes in markdown format[32m 6[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mincludes meeting metadata[32m 1[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mformats decisions as list[32m 1[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mformats action items with assignees[32m 1[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without decisions[32m 1[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without action items[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without tags[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without summary[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports transcript in text format[32m 1[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mincludes timestamps[32m 1[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in JSON format[32m 0[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in SRT format[32m 0[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in VTT format[32m 0[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mhandles empty transcript[32m 0[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mhandles transcript without speakers[32m 0[2mms[22m[39m
+[31m   → exportTranscript is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mbuilds structured content object[32m 0[2mms[22m[39m
+[31m   → buildMeetingNotesContent is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes formatted date[32m 0[2mms[22m[39m
+[31m   → buildMeetingNotesContent is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes participant count[32m 0[2mms[22m[39m
+[31m   → buildMeetingNotesContent is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes action item count[32m 0[2mms[22m[39m
+[31m   → buildMeetingNotesContent is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mformats date in Polish locale[32m 0[2mms[22m[39m
+[31m   → formatExportDate is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mhandles invalid date[32m 0[2mms[22m[39m
+[31m   → formatExportDate is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mhandles null date[32m 0[2mms[22m[39m
+[31m   → formatExportDate is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mremoves special characters[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mreplaces spaces with underscores[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mpreserves file extension[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mhandles Polish characters[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mtruncates long filenames[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mhandles empty filename[32m 0[2mms[22m[39m
+[31m   → sanitizeFilename is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22mcreates download link[32m 5[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22muses correct MIME type[32m 1[2mms[22m[39m
+[31m   → downloadFile is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22mhandles blob content[32m 2[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mreturns PDF content[32m 0[2mms[22m[39m
+[31m   → exportToPDF is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mincludes meeting title in PDF[32m 0[2mms[22m[39m
+[31m   → exportToPDF is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mhandles meeting without transcript[32m 0[2mms[22m[39m
+[31m   → exportToPDF is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles very long meeting titles[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles meeting with many participants[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles meeting with many action items[32m 0[2mms[22m[39m
+[31m   → exportMeetingNotes is not a function[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles null meeting gracefully[32m 1[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+ [31m×[39m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles undefined meeting gracefully[32m 1[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 205 [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by title
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m46:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by transcript
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m53:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22msearches meetings by tags
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m59:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mreturns empty array for no matches
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m65:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mreturns empty array for empty query
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m71:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mis case insensitive
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m77:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mhandles null meetings gracefully
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m84:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchMeetings[2m > [22mhandles undefined meetings gracefully
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m90:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by title
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m98:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by description
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m105:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22msearches tasks by tags
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m111:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mreturns empty array for no matches
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m117:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mis case insensitive
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m123:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchTasks[2m > [22mhandles null tasks gracefully
+[31m[1mTypeError[22m: searchTasks is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m130:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by name
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m138:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by role
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m145:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22msearches people by traits
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m152:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mreturns empty array for no matches
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m158:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mis case insensitive
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m164:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mhandles partial name matches
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m171:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msearchPeople[2m > [22mhandles null people gracefully
+[31m[1mTypeError[22m: searchPeople is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m177:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls API endpoint for semantic search
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends query in request body
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles malformed response
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'get')[39m
+[90m [2m❯[22m parseResponse src/services/httpClient.ts:[2m40:40[22m[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m208:56[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m184:29[22m[39m
+
+[31m[1mCaused by: Error[22m: Network error[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m225:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array on 400 response
+[31m[1mError[22m: HTTP 400[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m203:19[22m[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m238:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ status: 400 }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty array when VITE_API_BASE_URL is not set
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m189:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mbuilds query from keywords
+[31m[1mTypeError[22m: buildSearchQuery is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m267:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mhandles empty keywords
+[31m[1mTypeError[22m: buildSearchQuery is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m274:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mtrims whitespace
+[31m[1mTypeError[22m: buildSearchQuery is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m280:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mbuildSearchQuery[2m > [22mremoves duplicates
+[31m[1mTypeError[22m: buildSearchQuery is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m286:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22mranks results by relevance
+[31m[1mTypeError[22m: rankSearchResults is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m300:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22mhandles empty results
+[31m[1mTypeError[22m: rankSearchResults is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m307:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mrankSearchResults[2m > [22msorts in descending order
+[31m[1mTypeError[22m: rankSearchResults is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m319:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mfilters items by date range
+[31m[1mTypeError[22m: filterByDate is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m333:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mhandles empty items
+[31m[1mTypeError[22m: filterByDate is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m339:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mfilterByDate[2m > [22mincludes boundary dates
+[31m[1mTypeError[22m: filterByDate is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m350:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhighlights matched text
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m359:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mis case insensitive
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m368:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhandles multiple matches
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m375:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mreturns original text for no matches
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m383:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mhandles empty query
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m390:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mhighlightMatches[2m > [22mescapes HTML in text
+[31m[1mTypeError[22m: highlightMatches is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m397:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in search
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m405:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long search queries
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m412:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m422:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles null query gracefully
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m428:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles undefined query gracefully
+[31m[1mTypeError[22m: searchMeetings is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m434:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mextracts decisions from transcript
+[31m[1mTypeError[22m: extractDecisions is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m25:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mreturns empty array for empty transcript
+[31m[1mTypeError[22m: extractDecisions is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m31:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mreturns empty array for transcript without decisions
+[31m[1mTypeError[22m: extractDecisions is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m38:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractDecisions[2m > [22mhandles Polish decision keywords
+[31m[1mTypeError[22m: extractDecisions is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m45:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mextracts action items from transcript
+[31m[1mTypeError[22m: extractActionItems is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m54:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mreturns empty array for empty transcript
+[31m[1mTypeError[22m: extractActionItems is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m60:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22massigns action items to participants
+[31m[1mTypeError[22m: extractActionItems is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m67:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[53/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mextractActionItems[2m > [22mhandles Polish action item patterns
+[31m[1mTypeError[22m: extractActionItems is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m74:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[54/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mgenerates summary from transcript
+[31m[1mTypeError[22m: generateSummary is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m83:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[55/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mreturns empty string for empty transcript
+[31m[1mTypeError[22m: generateSummary is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m89:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[56/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mhandles short transcripts
+[31m[1mTypeError[22m: generateSummary is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m96:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[57/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mgenerateSummary[2m > [22mhandles Polish text
+[31m[1mTypeError[22m: generateSummary is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m103:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[58/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22manalyzes engagement for participants
+[31m[1mTypeError[22m: analyzeParticipantEngagement is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m113:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[59/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mreturns empty object for no participants
+[31m[1mTypeError[22m: analyzeParticipantEngagement is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m120:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[60/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mhandles single participant
+[31m[1mTypeError[22m: analyzeParticipantEngagement is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m127:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[61/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeParticipantEngagement[2m > [22mcalculates word count per participant
+[31m[1mTypeError[22m: analyzeParticipantEngagement is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m134:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[62/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mcalculates meeting score
+[31m[1mTypeError[22m: calculateMeetingScore is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m142:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[63/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mreturns 0 for empty meeting
+[31m[1mTypeError[22m: calculateMeetingScore is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m154:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[64/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mgives higher score for more decisions
+[31m[1mTypeError[22m: calculateMeetingScore is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m165:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[65/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mcalculateMeetingScore[2m > [22mgives higher score for more action items
+[31m[1mTypeError[22m: calculateMeetingScore is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m183:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[66/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mdetects topics in transcript
+[31m[1mTypeError[22m: detectTopics is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m204:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[67/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mreturns empty array for empty transcript
+[31m[1mTypeError[22m: detectTopics is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m210:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[68/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22mhandles Polish topics
+[31m[1mTypeError[22m: detectTopics is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m217:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[69/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mdetectTopics[2m > [22midentifies common meeting topics
+[31m[1mTypeError[22m: detectTopics is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m224:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[70/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns summary
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m241:32[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[71/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns decisions
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m247:49[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[72/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns action items
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m253:51[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[73/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns topics
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m259:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[74/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22manalyzeMeeting[2m > [22mreturns meeting score
+[31m[1mAssertionError[22m: expected 'undefined' to be 'number' // Object.is equality[39m
+
+Expected: [32m"number"[39m
+Received: [31m"undefined"[39m
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m265:37[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[75/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mbuilds complete analysis object
+[31m[1mTypeError[22m: buildMeetingAnalysis is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m285:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[76/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mhandles partial analysis
+[31m[1mTypeError[22m: buildMeetingAnalysis is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m300:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[77/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mbuildMeetingAnalysis[2m > [22mincludes metadata
+[31m[1mTypeError[22m: buildMeetingAnalysis is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m312:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[78/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles special characters
+[31m[1mTypeError[22m: extractDecisions is not a function[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m336:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[79/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles null input gracefully
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.extractDecisions) is not a function"
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m342:55[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[80/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/analysis.test.ts[2m > [22manalysis[2m > [22mEdge Cases[2m > [22mhandles undefined input gracefully
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.extractDecisions) is not a function"
+
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m348:60[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[81/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for January
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m23:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[82/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for February (non-leap)
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m27:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[83/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for February (leap year)
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m31:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[84/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for April
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m35:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[85/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetDaysInMonth[2m > [22mreturns correct number of days for December
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m39:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[86/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetFirstDayOfMonth[2m > [22mreturns first day of month
+[31m[1mTypeError[22m: getFirstDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m45:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[87/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetFirstDayOfMonth[2m > [22mreturns correct day of week
+[31m[1mTypeError[22m: getFirstDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m52:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[88/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetLastDayOfMonth[2m > [22mreturns last day of month
+[31m[1mTypeError[22m: getLastDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m59:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[89/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetLastDayOfMonth[2m > [22mreturns correct day of week for February
+[31m[1mTypeError[22m: getLastDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m66:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[90/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22mreturns correct number of weeks
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m73:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[91/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22meach week has 7 days
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m79:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[92/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetWeeksInMonth[2m > [22mincludes days from previous month
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m86:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[93/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns true for today
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m96:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[94/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns false for yesterday
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m102:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[95/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misToday[2m > [22mreturns false for tomorrow
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m108:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[96/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns true for same date
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m116:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[97/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different days
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m122:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[98/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different months
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m128:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[99/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameDay[2m > [22mreturns false for different years
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m134:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[100/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns true for same month
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m142:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[101/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns false for different months
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m148:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[102/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22misSameMonth[2m > [22mreturns false for different years
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m154:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[103/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats month and year in Polish
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m160:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[104/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats January correctly
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m166:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[105/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mformatMonthYear[2m > [22mformats December correctly
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m171:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[106/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22madds months to date
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m179:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[107/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22madds multiple months
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m186:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[108/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22mhandles year rollover
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m192:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[109/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddMonths[2m > [22msubtracts months when negative
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m199:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[110/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubMonths[2m > [22msubtracts months from date
+[31m[1mTypeError[22m: subMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m207:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[111/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubMonths[2m > [22mhandles year rollover
+[31m[1mTypeError[22m: subMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m214:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[112/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22madds days to date
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m223:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[113/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22madds multiple days
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m229:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[114/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22maddDays[2m > [22mhandles month rollover
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m235:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[115/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubDays[2m > [22msubtracts days from date
+[31m[1mTypeError[22m: subDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m243:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[116/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22msubDays[2m > [22mhandles month rollover
+[31m[1mTypeError[22m: subDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m249:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[117/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mstartOfWeek[2m > [22mreturns Sunday for Sunday
+[31m[1mTypeError[22m: startOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m257:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[118/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mstartOfWeek[2m > [22mreturns previous Sunday for Monday
+[31m[1mTypeError[22m: startOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m264:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[119/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mendOfWeek[2m > [22mreturns Saturday for Saturday
+[31m[1mTypeError[22m: endOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m273:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[120/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mendOfWeek[2m > [22mreturns next Saturday for Sunday
+[31m[1mTypeError[22m: endOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m280:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[121/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mreturns array of days for month
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m288:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[122/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mincludes metadata for each day
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m294:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[123/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mmarks days from current month
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m303:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[124/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mgetCalendarDays[2m > [22mmarks today correctly
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m310:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[125/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles leap year February
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m319:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[126/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles month with 5 weeks
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m326:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[127/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles month with 6 weeks
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m331:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[128/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles invalid month (fallback)
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.getDaysInMonth) is not a function"
+
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m336:57[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[129/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar[2m > [22mEdge Cases[2m > [22mhandles negative month (fallback)
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.getDaysInMonth) is not a function"
+
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m340:57[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[130/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mgenerates meeting notes in markdown format
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m30:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[131/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mincludes meeting metadata
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m39:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[132/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mformats decisions as list
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m47:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[133/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mformats action items with assignees
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m54:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[134/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without decisions
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m62:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[135/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without action items
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m69:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[136/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without tags
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m76:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[137/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportMeetingNotes[2m > [22mhandles meeting without summary
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m83:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[138/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports transcript in text format
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m99:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[139/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mincludes timestamps
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m106:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[140/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in JSON format
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m112:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[141/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in SRT format
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m120:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[142/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mexports in VTT format
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m128:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[143/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mhandles empty transcript
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m135:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[144/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportTranscript[2m > [22mhandles transcript without speakers
+[31m[1mTypeError[22m: exportTranscript is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m145:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[145/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mbuilds structured content object
+[31m[1mTypeError[22m: buildMeetingNotesContent is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m153:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[146/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes formatted date
+[31m[1mTypeError[22m: buildMeetingNotesContent is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m161:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[147/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes participant count
+[31m[1mTypeError[22m: buildMeetingNotesContent is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m167:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[148/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mbuildMeetingNotesContent[2m > [22mincludes action item count
+[31m[1mTypeError[22m: buildMeetingNotesContent is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m173:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[149/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mformats date in Polish locale
+[31m[1mTypeError[22m: formatExportDate is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m182:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[150/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mhandles invalid date
+[31m[1mTypeError[22m: formatExportDate is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m189:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[151/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mformatExportDate[2m > [22mhandles null date
+[31m[1mTypeError[22m: formatExportDate is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m195:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[152/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mremoves special characters
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m203:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[153/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mreplaces spaces with underscores
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m211:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[154/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mpreserves file extension
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m217:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[155/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mhandles Polish characters
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m223:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[156/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mtruncates long filenames
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m231:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[157/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22msanitizeFilename[2m > [22mhandles empty filename
+[31m[1mTypeError[22m: sanitizeFilename is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m237:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[158/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22mcreates download link
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.downloadFile) is not a function"
+
+[90m [2m❯[22m src/lib/export.test.ts:[2m250:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[159/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22muses correct MIME type
+[31m[1mTypeError[22m: downloadFile is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m254:7[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[160/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mdownloadFile[2m > [22mhandles blob content
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.downloadFile) is not a function"
+
+[90m [2m❯[22m src/lib/export.test.ts:[2m265:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[161/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mreturns PDF content
+[31m[1mTypeError[22m: exportToPDF is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m271:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[162/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mincludes meeting title in PDF
+[31m[1mTypeError[22m: exportToPDF is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m278:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[163/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mexportToPDF[2m > [22mhandles meeting without transcript
+[31m[1mTypeError[22m: exportToPDF is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m285:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[164/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles very long meeting titles
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m294:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[165/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles meeting with many participants
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m304:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[166/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles meeting with many action items
+[31m[1mTypeError[22m: exportMeetingNotes is not a function[39m
+[90m [2m❯[22m src/lib/export.test.ts:[2m314:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[167/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles null meeting gracefully
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.exportMeetingNotes) is not a function"
+
+[90m [2m❯[22m src/lib/export.test.ts:[2m320:57[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[168/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/export.test.ts[2m > [22mexport[2m > [22mEdge Cases[2m > [22mhandles undefined meeting gracefully
+[31m[1mAssertionError[22m: expected [Function] to not throw an error but 'TypeError: (0 , __vite_ssr_import_1__…' was thrown[39m
+
+[32m- Expected:[39m
+undefined
+
+[31m+ Received:[39m
+"TypeError: (0 , __vite_ssr_import_1__.exportMeetingNotes) is not a function"
+
+[90m [2m❯[22m src/lib/export.test.ts:[2m324:62[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[169/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mfetches calendar events from Google API
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m44:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[170/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mhandles empty calendar
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m63:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[171/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mreturns empty array on API error
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m71:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[172/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mreturns empty array on 401 response
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m82:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[173/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleCalendarEvents[2m > [22mincludes timeMin and timeMax parameters
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m96:13[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[174/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mfetches task lists from Google API
+[31m[1mAssertionError[22m: expected { items: [ …(2) ] } to deeply equal [ …(2) ][39m
+
+[32m- Expected:[39m
+[
+  {
+    "id": "list1",
+    "title": "My Tasks",
+  },
+  {
+    "id": "list2",
+    "title": "Work Tasks",
+  },
+]
+
+[31m+ Received:[39m
+{
+  "items": [
+    {
+      "id": "list1",
+      "title": "My Tasks",
+    },
+    {
+      "id": "list2",
+      "title": "Work Tasks",
+    },
+  ],
+}
+
+[90m [2m❯[22m src/lib/google.test.ts:[2m120:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[175/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mhandles empty task lists
+[31m[1mAssertionError[22m: expected { items: [] } to deeply equal [][39m
+
+[32m- Expected:[39m
+[]
+
+[31m+ Received:[39m
+{
+  "items": [],
+}
+
+[90m [2m❯[22m src/lib/google.test.ts:[2m139:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[176/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTaskLists[2m > [22mreturns empty array on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m143:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[177/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mfetches tasks from Google API
+[31m[1mAssertionError[22m: expected { items: [ …(2) ] } to deeply equal [ { id: 'task1', …(2) }, …(1) ][39m
+
+[32m- Expected:[39m
+[
+  {
+    "id": "task1",
+    "status": "needsAction",
+    "title": "Task 1",
+  },
+  {
+    "id": "task2",
+    "status": "completed",
+    "title": "Task 2",
+  },
+]
+
+[31m+ Received:[39m
+{
+  "items": [
+    {
+      "id": "task1",
+      "status": "needsAction",
+      "title": "Task 1",
+    },
+    {
+      "id": "task2",
+      "status": "completed",
+      "title": "Task 2",
+    },
+  ],
+}
+
+[90m [2m❯[22m src/lib/google.test.ts:[2m167:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[178/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mhandles empty task list
+[31m[1mAssertionError[22m: expected { items: [] } to deeply equal [][39m
+
+[32m- Expected:[39m
+[]
+
+[31m+ Received:[39m
+{
+  "items": [],
+}
+
+[90m [2m❯[22m src/lib/google.test.ts:[2m186:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[179/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mfetchGoogleTasks[2m > [22mreturns empty array on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m190:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[180/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleCalendarEvent[2m > [22mcreates calendar event
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…}, …(1) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   StringContaining "/calendars/primary/events",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "body": "{\"summary\":\"New Event\",\"description\":\"Event description\",\"start\":{\"dateTime\":\"2026-03-24T10:00:00Z\"},\"end\":{\"dateTime\":\"2026-03-24T11:00:00Z\"}}",[90m
+[31m+   "https://www.googleapis.com/calendar/v3/calendars/primary/events",[90m
+[31m+   {[90m
+[31m+     "body": "\"primary\"",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[2m      "method": "POST",[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m215:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[181/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleCalendarEvent[2m > [22mreturns null on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m225:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[182/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleCalendarEvent[2m > [22mupdates calendar event
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ StringContaining{…}, …(1) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   StringContaining "/calendars/primary/events/event1",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "method": "PUT",[90m
+[31m+   "https://www.googleapis.com/calendar/v3/calendars/primary/events/primary",[90m
+[31m+   {[90m
+[31m+     "body": "\"event1\"",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[31m+     "method": "PATCH",[90m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m248:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[183/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleCalendarEvent[2m > [22mreturns null on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m257:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[184/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleCalendarEvent[2m > [22mdeletes calendar event
+[31m[1mTypeError[22m: deleteGoogleCalendarEvent is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m271:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[185/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleCalendarEvent[2m > [22mreturns false on API error
+[31m[1mTypeError[22m: deleteGoogleCalendarEvent is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m285:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[186/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleTask[2m > [22mcreates Google Task
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ …(2) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   "https://www.googleapis.com/tasks/v1/lists/list1/tasks",[90m
+[32m-   ObjectContaining {[90m
+[31m+   "https://tasks.googleapis.com/tasks/v1/lists/list1/tasks",[90m
+[31m+   {[90m
+[2m      "body": "{\"title\":\"New Task\",\"notes\":\"Task description\"}",[22m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[2m      "method": "POST",[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m306:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[187/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mcreateGoogleTask[2m > [22mreturns null on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m316:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[188/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleTask[2m > [22mupdates Google Task
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ …(2) ][90m
+
+Received:
+
+[1m  1st vi.fn() call:
+
+[22m[2m  [[22m
+[32m-   "https://www.googleapis.com/tasks/v1/lists/list1/tasks/task1",[90m
+[32m-   ObjectContaining {[90m
+[32m-     "method": "PUT",[90m
+[31m+   "https://tasks.googleapis.com/tasks/v1/lists/list1/tasks/task1",[90m
+[31m+   {[90m
+[31m+     "body": "{\"title\":\"Updated Task\",\"status\":\"completed\"}",[90m
+[31m+     "headers": {[90m
+[31m+       "Authorization": "Bearer mock-access-token",[90m
+[31m+       "Content-Type": "application/json",[90m
+[31m+     },[90m
+[31m+     "method": "PATCH",[90m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m339:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[189/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mupdateGoogleTask[2m > [22mreturns null on API error
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m348:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[190/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleTask[2m > [22mdeletes Google Task
+[31m[1mTypeError[22m: deleteGoogleTask is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m362:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[191/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mdeleteGoogleTask[2m > [22mreturns false on API error
+[31m[1mTypeError[22m: deleteGoogleTask is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m376:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[192/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22msyncCalendarEntry[2m > [22msyncs calendar entry to Google
+[31m[1mTypeError[22m: syncCalendarEntry is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m396:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[193/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22msyncCalendarEntry[2m > [22mhandles sync failure
+[31m[1mTypeError[22m: syncCalendarEntry is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m404:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[194/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildCalendarEventPayload[2m > [22mbuilds calendar event payload from meeting
+[31m[1mTypeError[22m: buildCalendarEventPayload is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m419:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[195/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildCalendarEventPayload[2m > [22mincludes description when summary is provided
+[31m[1mTypeError[22m: buildCalendarEventPayload is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m434:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[196/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildTaskPayload[2m > [22mbuilds task payload from meeting task
+[31m[1mTypeError[22m: buildTaskPayload is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m448:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[197/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mbuildTaskPayload[2m > [22mincludes due date when provided
+[31m[1mTypeError[22m: buildTaskPayload is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m460:23[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[198/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles null token gracefully
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m468:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[199/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles undefined token gracefully
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m474:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[200/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles empty calendar ID
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m482:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[201/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles special characters in event titles
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m497:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[202/205]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/google.test.ts[2m > [22mgoogle[2m > [22mEdge Cases[2m > [22mhandles Polish characters in titles
+[31m[1mTypeError[22m: fetchGoogleCalendarEvents is not a function[39m
+[90m [2m❯[22m src/lib/google.test.ts:[2m512:28[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[203/205]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 9 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m232:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m239:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m245:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m251:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m257:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m263:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m270:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m277:24[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m296:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1258:26[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1681:20[22m[39m
+[90m [2m❯[22m runWithCancel node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1678:10[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1660:20[22m[39m
+[90m [2m❯[22m runWithTimeout node_modules/.pnpm/@vitest+runner@4.1.0/node_modules/@vitest/runner/dist/index.js:[2m1627:10[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'length')[39m
+[90m [2m❯[22m analyzeMeeting src/lib/analysis.ts:[2m399:17[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m330:9[22m[39m
+[90m [2m❯[22m Proxy.assertThrows node_modules/.pnpm/chai@6.2.2/node_modules/chai/index.js:[2m2798:5[22m[39m
+[90m [2m❯[22m Proxy.methodWrapper node_modules/.pnpm/chai@6.2.2/node_modules/chai/index.js:[2m1700:25[22m[39m
+[90m [2m❯[22m Proxy.<anonymous> node_modules/.pnpm/@vitest+expect@4.1.0/node_modules/@vitest/expect/dist/index.js:[2m1211:12[22m[39m
+[90m [2m❯[22m Proxy.overwritingMethodWrapper node_modules/.pnpm/chai@6.2.2/node_modules/chai/index.js:[2m1750:33[22m[39m
+[90m [2m❯[22m Proxy.<anonymous> node_modules/.pnpm/@vitest+expect@4.1.0/node_modules/@vitest/expect/dist/index.js:[2m1547:16[22m[39m
+[90m [2m❯[22m Proxy.<anonymous> node_modules/.pnpm/@vitest+expect@4.1.0/node_modules/@vitest/expect/dist/index.js:[2m1151:15[22m[39m
+[90m [2m❯[22m Proxy.methodWrapper node_modules/.pnpm/chai@6.2.2/node_modules/chai/index.js:[2m1700:25[22m[39m
+[90m [2m❯[22m src/lib/analysis.test.ts:[2m331:14[22m[39m
+
+[31mThis error originated in "[1msrc/lib/analysis.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m5 failed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[31m205 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (209)[39m
+[2m     Errors [22m [1m[31m9 errors[39m[22m
+[2m   Start at [22m 15:46:58
+[2m   Duration [22m 5.66s[2m (transform 1.36s, setup 2.58s, import 1.38s, tests 277ms, environment 9.26s)[22m
+

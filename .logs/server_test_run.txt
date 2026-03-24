@@ -1,0 +1,1643 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22mloads default config when no env vars are set[33m 496[2mms[22m[39m
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22moverrides defaults with custom env vars[32m 29[2mms[22m[39m
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22muses optional env vars when provided[32m 20[2mms[22m[39m
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22msupports HUGGINGFACE_TOKEN as alias for HF_TOKEN[32m 22[2mms[22m[39m
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22mfalls back to defaults when STT provider env vars are blank[32m 15[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.info[2m > [22mlogs info message without metadata[33m 457[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.info[2m > [22mlogs info message with metadata[32m 27[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.info[2m > [22mlogs info message with multiple metadata fields[32m 18[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.info[2m > [22mlogs info message with empty metadata object[32m 32[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.warn[2m > [22mlogs warn message without metadata[32m 16[2mms[22m[39m
+ [32m✓[39m server/tests/config.test.ts[2m > [22mconfig[2m > [22mexits with error on invalid NODE_ENV[32m 31[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports HALLUCINATION_PATTERNS array[32m 6[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports DEFAULT_WHISPER_PROMPT[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports VERIFY_CONFIDENCE_THRESHOLD[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports VERIFY_SCORE_THRESHOLD[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports CHUNK_DURATION_SECONDS[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mConstants[2m > [22mexports MAX_FILE_SIZE_BYTES[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mclean()[2m > [22mtrims whitespace[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mclean()[2m > [22mhandles null/undefined[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mclean()[2m > [22mconverts to string[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeText()[2m > [22mconverts to lowercase[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeText()[2m > [22mremoves punctuation[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeText()[2m > [22mnormalizes whitespace[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeText()[2m > [22mhandles Polish characters[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeText()[2m > [22mhandles empty input[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtokenize()[2m > [22msplits on whitespace[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtokenize()[2m > [22mremoves empty tokens[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtokenize()[2m > [22mremoves punctuation[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtokenize()[2m > [22mhandles Polish text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtokenize()[2m > [22mreturns empty array for empty input[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mreturns 1 for identical texts[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mreturns 0 for completely different texts[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mhandles partial matches[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mis case insensitive[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mignores punctuation[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mhandles empty strings[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mtextSimilarity()[2m > [22mhandles Polish text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcomputeWerProxy()[2m > [22mreturns 0 for identical transcripts[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcomputeWerProxy()[2m > [22mreturns fractional error for partial mismatch[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcomputeWerProxy()[2m > [22mreturns 1 for completely different short transcripts[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mhasRepeatedPhrase()[2m > [22mdetects repeated phrases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mhasRepeatedPhrase()[2m > [22mreturns false for normal text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mhasRepeatedPhrase()[2m > [22mreturns false for short text[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects English filler phrases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects goodbye phrases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects Polish filler phrases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects Polish short responses[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects music/non-speech markers[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects punctuation-only text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects repetition artifacts[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mreturns false for valid speech[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mreturns true for empty/short text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mhandles case insensitivity[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdetects Whisper repetition loops[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22misHallucination()[2m > [22mdoes not filter short repeated greetings (≤3 tokens)[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mclamp()[2m > [22mclamps value within range[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mclamp()[2m > [22mhandles edge cases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22maverage()[2m > [22mcalculates average of values[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22maverage()[2m > [22mreturns 0 for empty array[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22maverage()[2m > [22mhandles single value[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22maverage()[2m > [22mhandles negative values[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22maverage()[2m > [22mhandles decimal values[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseDbNumber()[2m > [22mparses numbers from strings[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseDbNumber()[2m > [22mextracts numbers from text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseDbNumber()[2m > [22mreturns fallback for invalid input[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mreturns single segment unchanged[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mmerges consecutive short segments from same speaker[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mdoes not merge segments from different speakers[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mdoes not merge long segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mpreserves verification status (review takes precedence)[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mmergeShortSegments()[2m > [22mhandles empty segments array[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mreturns high score for good text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mreturns low score for empty text[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mreturns low score for very short text[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mpenalizes hmm/yyy patterns[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mpenalizes repeated phrases[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mestimateQualityScore()[2m > [22mpenalizes multiple question marks[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseJsonResponse()[2m > [22mparses valid JSON[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseJsonResponse()[2m > [22mreturns empty object for invalid JSON[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mparseJsonResponse()[2m > [22mreturns empty object for null/undefined/empty[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeSpeakerLabel()[2m > [22mreturns Speaker N for generic labels[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeSpeakerLabel()[2m > [22mpreserves custom speaker names[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeSpeakerLabel()[2m > [22mhandles empty labels[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mgetRawWords()[2m > [22mextracts words from payload.words[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mgetRawWords()[2m > [22mextracts words from payload.transcript.words[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mgetRawWords()[2m > [22mextracts words from payload.results.words[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mgetRawWords()[2m > [22mreturns empty array for unknown format[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22msynthesizeSegmentsFromWords()[2m > [22mcreates segments from words[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22msynthesizeSegmentsFromWords()[2m > [22msplits segments on punctuation[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22msynthesizeSegmentsFromWords()[2m > [22mhandles empty payload[32m 1[2mms[22m[39m
+(node:14108) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.warn[2m > [22mlogs warn message with metadata[32m 15[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.warn[2m > [22mcaptures warning to Sentry when SENTRY_DSN is set[32m 14[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.warn[2m > [22mdoes not capture warning to Sentry when SENTRY_DSN is not set[32m 15[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mlogs error message without error object[32m 16[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mlogs error message with error object[32m 16[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mlogs error message with null error[32m 18[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mcaptures Error to Sentry when SENTRY_DSN is set[32m 14[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22msynthesizeSegmentsFromWords()[2m > [22mhandles payload with only text[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeDiarizedSegments()[2m > [22mnormalizes segments with speaker info[32m 6[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeDiarizedSegments()[2m > [22msynthesizes segments from words if no segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeDiarizedSegments()[2m > [22mhandles empty payload[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeVerificationSegments()[2m > [22mnormalizes verification segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mnormalizeVerificationSegments()[2m > [22msynthesizes from words if no segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22moverlapSeconds()[2m > [22mcalculates overlap for overlapping segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22moverlapSeconds()[2m > [22mreturns 0 for non-overlapping segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22moverlapSeconds()[2m > [22mhandles exact boundary[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mevaluateAgainstVerificationPass()[2m > [22mreturns default scores when no overlaps[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mevaluateAgainstVerificationPass()[2m > [22mcalculates scores for overlapping segments[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mevaluateAgainstVerificationPass()[2m > [22madds reasons for low confidence[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildVerificationResult()[2m > [22mbuilds verified segments with scores[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildVerificationResult()[2m > [22mmarks segments as review when score is low[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildVerificationResult()[2m > [22mdetects duplicate segments[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildEmptyTranscriptResult()[2m > [22mbuilds empty result with reason[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildEmptyTranscriptResult()[2m > [22mincludes diagnostics and audio quality[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mreturns default prompt when no metadata provided[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mincludes meeting title when provided[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mincludes participants (max 8)[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mincludes tags (max 6)[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mtruncates long meeting title to 80 chars[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mtruncates vocabulary to 200 chars[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mhandles empty arrays gracefully[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mhandles null/undefined values gracefully[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mfilters out empty participant names[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mfilters out empty tags[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mcombines all metadata fields[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22mrespects 900 character limit[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mbuildWhisperPrompt()[2m > [22muses custom base prompt when provided[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcryptoRandomId()[2m > [22mgenerates a random ID[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcryptoRandomId()[2m > [22mgenerates IDs without dashes[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mcryptoRandomId()[2m > [22mgenerates IDs of reasonable length[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mderiveFfprobeBinary()[2m > [22mderives ffprobe from ffmpeg[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mderiveFfprobeBinary()[2m > [22mhandles ffmpeg.exe[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mderiveFfprobeBinary()[2m > [22mhandles full path[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mderiveFfprobeBinary()[2m > [22mreturns default ffprobe for non-ffmpeg input[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/audioPipeline.utils.test.ts[2m > [22maudioPipeline.utils[2m > [22mdiarization utilities[2m > [22mextracts words from different payload formats[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mcaptures message to Sentry when SENTRY_DSN is set and error is not Error instance[32m 14[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger.error[2m > [22mdoes not capture error to Sentry when SENTRY_DSN is not set[32m 24[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mlogger exports[2m > [22mexports logger object with info, warn, and error methods[32m 19[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mSentry initialization[2m > [22minitializes Sentry when SENTRY_DSN is configured[32m 22[2mms[22m[39m
+ [32m✓[39m server/tests/logger.test.ts[2m > [22mlogger[2m > [22mSentry initialization[2m > [22mdoes not initialize Sentry when SENTRY_DSN is not configured[32m 27[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22minit[2m > [22minitializes database with WAL mode and foreign keys[32m 47[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mquery[2m > [22mreturns all rows matching the query[32m 32[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mquery[2m > [22mreturns empty array when no rows match[32m 30[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mget[2m > [22mreturns single row[32m 24[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mget[2m > [22mreturns undefined when no row matches[32m 24[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mexecute[2m > [22mexecutes INSERT statement[32m 25[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mexecute[2m > [22mexecutes UPDATE statement[32m 29[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mexecute[2m > [22mexecutes DELETE statement[32m 25[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mexec[2m > [22mexecutes raw SQL statements[32m 25[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22merror handling[2m > [22mreturns error when DB not initialized[32m 11[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22merror handling[2m > [22mreturns error for unknown message type[32m 10[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22merror handling[2m > [22mreturns error for invalid SQL[32m 10[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22merror handling[2m > [22mreturns error for constraint violation[32m 22[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22merror handling[2m > [22mreturns error for foreign key violation[32m 21[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mcomplex queries[2m > [22mhandles JOIN operations[32m 33[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mcomplex queries[2m > [22mhandles aggregate functions[32m 28[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mcomplex queries[2m > [22mhandles ORDER BY and LIMIT[32m 28[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mtransactions[2m > [22msupports explicit transactions[32m 22[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mtransactions[2m > [22mrolls back on error[32m 23[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mdata types[2m > [22mhandles INTEGER, REAL, TEXT, BLOB[32m 23[2mms[22m[39m
+ [32m✓[39m server/tests/sqliteWorker.test.ts[2m > [22msqliteWorker - handleMessage function[2m > [22mdata types[2m > [22mhandles NULL values[32m 21[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile runtime healthcheck[2m > [22muses PORT-aware healthcheck for cloud runtimes[32m 6[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile COPY sources not excluded by .dockerignore[2m > [22msrc/shared/ is not excluded from build context[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile COPY sources not excluded by .dockerignore[2m > [22mall COPY source paths (non --from) are reachable in build context[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile has no inline external registry COPY --from[2m > [22mCOPY --from only references named build stages, not external registries[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile hardening[2m > [22mruns the final image as a non-root user[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile hardening[2m > [22muses tini as entrypoint for proper signal handling[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile hardening[2m > [22mdoes not install uv through curl pipe[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mDockerfile hardening[2m > [22mdoes not use BuildKit cache mounts[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/dockerfile.test.ts[2m > [22mAll server source files are tracked in git[2m > [22mno untracked files in server/ or src/shared/ that would break Railway esbuild[32m 214[2mms[22m[39m
+[90mstdout[2m | server/tests/services/TranscriptionService.additional.test.ts[2m > [22m[2mTranscriptionService - Additional Coverage[2m > [22m[2mvectorizeTranscriptionResultToRAG()[2m > [22m[2mchunks segments and vectorizes for RAG
+[22m[39m[RAG] Pomyslnie zindeksowano 2 wektorow na archiwum spotkania.
+
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mgetSpeakerAcousticFeatures()[2m > [22mcalls pipeline.analyzeAcousticFeatures for each speaker[32m 18[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mgetSpeakerAcousticFeatures()[2m > [22mthrows error when pipeline does not support acoustic features analysis[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mgetSpeakerAcousticFeatures()[2m > [22mthrows error when asset has no transcript[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22manalyzeAudioQuality()[2m > [22mcalls pipeline.analyzeAudioQuality[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22manalyzeAudioQuality()[2m > [22mthrows error when pipeline does not support audio quality analysis[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mcreateVoiceProfileFromSpeaker()[2m > [22mcreates voice profile from speaker clip[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mcreateVoiceProfileFromSpeaker()[2m > [22mthrows error when no transcript available[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mgetSpeakerAcousticFeatures()[2m > [22mextracts per-speaker clips and returns acoustic metrics[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mvectorizeTranscriptionResultToRAG()[2m > [22mchunks segments and vectorizes for RAG[32m 7[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mvectorizeTranscriptionResultToRAG()[2m > [22mskips chunks that are too short[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mvectorizeTranscriptionResultToRAG()[2m > [22mhandles empty segments gracefully[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mvectorizeTranscriptionResultToRAG()[2m > [22mhandles pipeline without embedTextChunks gracefully[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mqueryRAG()[2m > [22mqueries RAG with question and returns top chunks[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mqueryRAG()[2m > [22mreturns null when pipeline does not support embedTextChunks[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mqueryRAG()[2m > [22mreturns null when no RAG chunks exist for workspace[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mqueryRAG()[2m > [22mfilters out chunks with low similarity score[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mdiarizeFromTranscript()[2m > [22mcalls pipeline.diarizeFromTranscript[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mtranscribeLiveChunk()[2m > [22mcalls pipeline.transcribeLiveChunk[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22manalyzeMeetingWithOpenAI()[2m > [22mcalls pipeline.analyzeMeetingWithOpenAI[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mgenerateVoiceCoaching()[2m > [22mcalls pipeline.generateVoiceCoaching[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mnormalizeRecording()[2m > [22mcalls pipeline.normalizeRecording[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mcomputeEmbedding()[2m > [22muses injected speakerEmbedder[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mstartTranscriptionPipeline()[2m > [22mqueues the recording and starts the transcription job through a single orchestration method[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mdb wrapper methods[2m > [22mupsertMediaAsset delegates to db.upsertMediaAsset[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mdb wrapper methods[2m > [22mgetMediaAsset delegates to db.getMediaAsset[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/TranscriptionService.additional.test.ts[2m > [22mTranscriptionService - Additional Coverage[2m > [22mdb wrapper methods[2m > [22msaveAudioQualityDiagnostics delegates to db.saveAudioQualityDiagnostics[32m 1[2mms[22m[39m
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  durationMs: [32m'3364.96'[39m,
+  confidence: [33m0[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'internal-stt'[39m, recordingId: [32m'rec_1'[39m }
+
+[90mstderr[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mthrows a descriptive error if transcribeRecording is missing
+[22m[39m[TranscriptionService] audioPipeline looks like an empty object (circular dep?).
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  durationMs: [32m'1.40'[39m,
+  confidence: [33m0.91[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'internal-stt'[39m, recordingId: [32m'rec_1'[39m }
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[RAG] Pomyslnie zindeksowano 1 wektorow na archiwum spotkania.
+
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mfalls back to injected audioPipeline and calls transcribeRecording[33m 3377[2mms[22m[39m
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mthrows a descriptive error if transcribeRecording is missing[32m 6[2mms[22m[39m
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mreturns null/empty values when OpenAI key is not configured[33m 4144[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mcaches preprocessed audio and reuses the cached file on subsequent calls[32m 44[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mdiarizes transcript text using chat completions when API key is configured[32m 49[2mms[22m[39m
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2manalyzes meetings and embeds text chunks through OpenAI endpoints
+[22m[39m[INFO] [Metrics] LLM Meeting Analysis Complete {
+  requestId: [32m'internal-analysis'[39m,
+  durationMs: [32m'0.30'[39m,
+  transcriptLength: [33m25[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns analysis result when transcription service returns data
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [6.9ms] {
+  requestId: [32m'448e1c99-65e7-45e9-96dc-fb3a1d00d8d0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'6.89'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when ANTHROPIC_API_KEY is not configured
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [4.4ms] {
+  requestId: [32m'3409d0ab-f8d9-4dc2-9351-3bb38358e3c3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'4.44'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null or empty arrays when analysis and embeddings upstream calls fail
+[22m[39m[postProcessing] analyzeMeetingWithOpenAI failed: OpenAI analyze HTTP 500
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mGET /media/recordings/.../audio - 401 Unauthorized without token
+[22m[39m[INFO] [REQ] GET /media/recordings/ignored/audio - 401 [7.2ms] {
+  requestId: [32m'a5750984-1f8f-4b8f-b58e-1dd8779f238b'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/ignored/audio'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'7.20'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null or empty arrays when analysis and embeddings upstream calls fail
+[22m[39membedTextChunks failed: Error: embed failed
+    at C:/Users/user/new/audioRecorder/server/tests/audio-pipeline.unit.test.ts:249:30
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at file:///C:/Users/user/new/audioRecorder/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.0/node_modules/[4m@vitest/runner[24m/dist/index.js:1258:20
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mPUT /users/:userId/profile updates only current user profile
+[22m[39m[INFO] [REQ] PUT /users/u1/profile - 200 [6.4ms] {
+  requestId: [32m'1358cbac-998b-423d-9e2c-84da9a8dfa27'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u1/profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'6.38'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [Metrics] Uploaded audio chunk {
+  requestId: [32m'60ef7ab4-f9d3-4fdd-9f11-9dd068b312e4'[39m,
+  recordingId: [32m'rec_new'[39m,
+  sizeBytes: [33m512[39m,
+  durationMs: [32m'3.09'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_new/audio - 200 [15.4ms] {
+  requestId: [32m'60ef7ab4-f9d3-4fdd-9f11-9dd068b312e4'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_new/audio'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'15.43'[39m
+}
+
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mreturns empty text for too-small live chunks
+[22m[39m[INFO] [REQ] POST /transcribe/live - 200 [7.3ms] {
+  requestId: [32m'9b9abb46-1094-492e-8bdd-88dbc104f382'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'7.32'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mGET /voice-profiles - 401 Unauthorized without token
+[22m[39m[INFO] [REQ] GET /voice-profiles - 401 [0.8ms] {
+  requestId: [32m'9b39a6ef-9586-493d-a3bb-695a7066eb1f'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'0.77'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/analyze[2m > [22mreturns analysis result when transcription service returns data[33m 4274[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] PUT /users/u2/profile - 403 [0.7ms] {
+  requestId: [32m'141df08a-29a4-42e1-a0b3-87542df59666'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u2/profile'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.68'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] POST /users/u2/password - 403 [0.7ms] {
+  requestId: [32m'7aa4fb59-0719-460d-bee9-caf7b1773493'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/users/u2/password'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.69'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns no-key mode when analysis returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [1.7ms] {
+  requestId: [32m'ba37f589-69b2-4f36-b378-2b323e9991da'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.73'[39m
+}
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mreturns null for diarization when upstream returns empty assignments or non-ok response[32m 32[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzes meetings and embeds text chunks through OpenAI endpoints[32m 31[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mreturns null or empty arrays when analysis and embeddings upstream calls fail[32m 45[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when personName is missing
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [3.9ms] {
+  requestId: [32m'cac45f60-a02f-4f9c-92ef-b49b0015a04a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.95'[39m
+}
+
+[90mstdout[2m | server/tests/routes/digest.test.ts[2m > [22m[2mDigest routes[2m > [22m[2mreturns preview mode when SMTP is not configured
+[22m[39m[INFO] [REQ] GET /digest/daily - 200 [75.7ms] {
+  requestId: [32m'9a3d9590-28c1-4739-969b-8001c9f0035c'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/digest/daily'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'75.67'[39m
+}
+
+ [32m✓[39m server/tests/routes/workspaces.test.ts[2m > [22mWorkspace Routes[2m > [22mPUT /users/:userId/profile updates only current user profile[32m 63[2mms[22m[39m
+ [32m✓[39m server/tests/routes/workspaces.test.ts[2m > [22mWorkspace Routes[2m > [22mblocks profile and password changes for other users[32m 32[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mreturns no-key mode when ANTHROPIC_API_KEY is not configured[33m 4288[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPUT /media/recordings/:recordingId/audio - upload success[32m 88[2mms[22m[39m
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /voice-profiles - 413 Payload Too Large if > 1MB
+[22m[39m[INFO] [REQ] POST /voice-profiles - 413 [9.1ms] {
+  requestId: [32m'4a8ffb33-7840-486f-9afd-af39cde36398'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'9.08'[39m
+}
+
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mGET /media/recordings/.../audio - 401 Unauthorized without token[32m 53[2mms[22m[39m
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mGET /voice-profiles - 401 Unauthorized without token[32m 33[2mms[22m[39m
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mPOST /voice-profiles - 413 Payload Too Large if > 1MB[32m 28[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mrejects oversized live transcription payloads
+[22m[39m[INFO] [REQ] POST /transcribe/live - 413 [5.3ms] {
+  requestId: [32m'0b49b6a7-9c52-40d7-984e-096a8d29aa1f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'5.34'[39m
+}
+
+ [32m✓[39m server/tests/routes/transcribe.test.ts[2m > [22mTranscribe Routes[2m > [22mreturns empty text for too-small live chunks[32m 64[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/transcribe - queues job
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_1/transcribe - 202 [2.0ms] {
+  requestId: [32m'0701e314-9cea-420a-bbba-59605daa3355'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_1/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'2.05'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 200 [28.0ms] {
+  requestId: [32m'3e3a10fb-25a4-4ac8-82ee-bb994b2b327c'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'28.01'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 403 [0.6ms] {
+  requestId: [32m'00c6908f-c210-4417-a464-81147a773b32'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.61'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[transcription] Silero VAD JSON parse failed: Unexpected end of JSON input
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[INFO] [Metrics] STT Transcription Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec_words_only'[39m,
+  durationMs: [32m'1.55'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when allSegments has less than 5 items
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [0.8ms] {
+  requestId: [32m'4a19be6d-4b59-4e21-b463-d671e340991a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.84'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 401 [4.5ms] {
+  requestId: [32m'bc5a52df-02d2-49a4-8f60-1c838bd64b94'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'4.48'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[INFO] [Metrics] Diarization Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec_words_only'[39m,
+  durationMs: [32m'1.55'[39m,
+  speakersIdentified: [33m1[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 400 [1.8ms] {
+  requestId: [32m'99ef6603-d64b-460a-ae6c-371a6b79b0c2'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.77'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 200 [0.8ms] {
+  requestId: [32m'b5fc7ff2-ea01-4ac8-9b40-874f3fa01ac1'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.82'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 500 [1.3ms] {
+  requestId: [32m'07d68926-147e-4bec-8b71-2526a82cf730'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.32'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mGET /media/recordings/:recordingId/transcribe - returns payload
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_2/transcribe - 200 [1.5ms] {
+  requestId: [32m'2b68645e-faac-46f0-846a-fab947ae18a8'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_2/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.49'[39m
+}
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mtranscribes live chunks when API key is configured and returns empty string on upstream failure[32m 46[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mbuilds transcript segments from word-level output when the STT payload has no segments[32m 81[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mOPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins[32m 37[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/transcribe - queues job[32m 18[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/transcribe - returns payload[32m 58[2mms[22m[39m
+(node:22104) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_retry/retry-transcribe - 202 [1.5ms] {
+  requestId: [32m'5c51b277-c7cb-4814-8d02-bf58dc253ffe'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'1.49'[39m
+}
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mreturns LLM answer when OpenAI key is configured
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 200 [1.3ms] {
+  requestId: [32m'27bc2c47-78ac-4309-adcc-975d5d24744a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.28'[39m
+}
+
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mwrites temp file, transcribes, and cleans up successful live chunk
+[22m[39m[INFO] [REQ] POST /transcribe/live - 200 [36.9ms] {
+  requestId: [32m'2c457da1-8a30-44ad-851e-06ff7fd5a8b3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'36.88'[39m
+}
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mreturns no-key mode when personName is missing[32m 63[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mreturns no-key mode when allSegments has less than 5 items[32m 69[2mms[22m[39m
+ [32m✓[39m server/tests/routes/digest.test.ts[2m > [22mDigest routes[2m > [22mreturns preview mode when SMTP is not configured[33m 4369[2mms[22m[39m
+(node:5456) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m server/tests/routes/transcribe.test.ts[2m > [22mTranscribe Routes[2m > [22mrejects oversized live transcription payloads[32m 60[2mms[22m[39m
+ [32m✓[39m server/tests/routes/transcribe.test.ts[2m > [22mTranscribe Routes[2m > [22mwrites temp file, transcribes, and cleans up successful live chunk[32m 88[2mms[22m[39m
+ [32m✓[39m server/tests/routes/workspaces.test.ts[2m > [22mWorkspace Routes[2m > [22mupdates workspace member roles only for owner/admin memberships[32m 70[2mms[22m[39m
+ [32m✓[39m server/tests/routes/workspaces.test.ts[2m > [22mWorkspace Routes[2m > [22mhandles RAG ask validation, no-results and LLM failure paths[32m 25[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/analyze[2m > [22mreturns no-key mode when analysis returns null[32m 62[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 401 when not authenticated[32m 69[2mms[22m[39m
+(node:1000) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[transcription] Silero VAD JSON parse failed: Unexpected end of JSON input
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_empty_retry/retry-transcribe - 202 [1.4ms] {
+  requestId: [32m'b9ea4fa9-035d-45db-bf79-867efe24a728'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_empty_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'1.35'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[INFO] [Metrics] STT Transcription Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  durationMs: [32m'0.64'[39m
+}
+
+[90mstderr[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[WARN] [Bootstrap] Unable to check disk space: Error: [vitest] No "statfsSync" export is defined on the "node:fs" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/user/new/audioRecorder/node_modules/[4m.pnpm[24m/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.C3ZR-4J3.js:62:17)
+    at Object.get (file:///C:/Users/user/new/audioRecorder/node_modules/[4m.pnpm[24m/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.C3ZR-4J3.js:310:16)
+    at bootstrap (C:/Users/user/new/audioRecorder/server/index.ts:60:12)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at C:/Users/user/new/audioRecorder/server/tests/security.test.ts:12:28 {
+  codeFrame: [32m'vi.mock(import("node:fs"), async (importOriginal) => {\n'[39m +
+    [32m'  const actual = await importOriginal()\n'[39m +
+    [32m'  return {\n'[39m +
+    [32m'    ...actual,\n'[39m +
+    [32m'    // your mocked methods\n'[39m +
+    [32m'  }\n'[39m +
+    [32m'})'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[INFO] [Metrics] Diarization Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  durationMs: [32m'0.27'[39m,
+  speakersIdentified: [33m0[39m
+}
+
+ [32m✓[39m server/tests/routes/workspaces.test.ts[2m > [22mWorkspace Routes[2m > [22mreturns LLM answer when OpenAI key is configured[32m 39[2mms[22m[39m
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when X-Workspace-Id is missing
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.2ms] {
+  requestId: [32m'57169b96-3be5-48ab-b6c0-ebc6cfe00c41'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.21'[39m
+}
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 200 [3.8ms] {
+  requestId: [32m'd468488e-77cb-42c9-8571-7d2c44fe15bf'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.83'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mcalls Anthropic API and returns parsed profile when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [2.8ms] {
+  requestId: [32m'61517484-a0e5-4fbe-bfe4-d6e83823f950'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.81'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_missing/audio - 400 [1.0ms] {
+  requestId: [32m'5accc610-8e4a-4ce8-a43e-d30377018e9b'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_missing/audio'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'0.97'[39m
+}
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - unauthorized without token
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 401 [12.5ms] {
+  requestId: [32m'e4a03fb5-dd15-41cd-86af-1561072c8e35'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'12.50'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when index/total parameters are invalid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.1ms] {
+  requestId: [32m'36362a2f-d1cb-4f28-b745-813f9f319822'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.10'[39m
+}
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[ERROR] Migration error in 003_add_missing_indexes.sql query: -- Migration 003: Add missing indexes for performance optimization
+-- Created: 2026-03-20
+-- Purpose: Improve query performance for frequently accessed columns
+
+-- ============================================
+-- MEETINGS TABLE INDEXES
+-- ============================================
+
+-- User's meetings lookup (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_meetings_user_id ON meetings(user_id) Error: no such table: main.meetings
+    at Worker.<anonymous> (C:/Users/user/new/audioRecorder/server/database.ts:131:32)
+[90m    at Worker.emit (node:events:508:28)[39m
+[90m    at MessagePort.<anonymous> (node:internal/worker:332:53)[39m
+[90m    at MessagePort.[nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)[39m
+[90m    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)[39m
+
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mGET /state/bootstrap - unauthorized without token[32m 103[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mupsertMediaAsset()[2m > [22minserts new media asset with local storage fallback
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mupsertMediaAsset()[2m > [22mupdates existing media asset
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mupsertMediaAsset()[2m > [22mhandles different audio formats correctly
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mupsertMediaAsset()[2m > [22msanitizes recording ID to prevent path traversal
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mupsertMediaAsset()[2m > [22mthrows error for empty recording ID
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mgetMediaAsset()[2m > [22mreturns media asset by ID
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mgetMediaAsset()[2m > [22mreturns null for non-existent asset
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mdeleteMediaAsset()[2m > [22mdeletes media asset and cleans up file
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mdeleteMediaAsset()[2m > [22mdoes not delete if workspace ID does not match
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mdeleteMediaAsset()[2m > [22mhandles deletion of non-existent asset gracefully
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22msaveAudioQualityDiagnostics()[2m > [22msaves audio quality metrics to diarization_json
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22msaveAudioQualityDiagnostics()[2m > [22mhandles null audio quality gracefully
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22msaveAudioQualityDiagnostics()[2m > [22mdoes nothing for non-existent asset
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22msaveVoiceProfile inserts new profile
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22mupsertVoiceProfile creates new profile when not exists
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22mupsertVoiceProfile updates existing profile with new sample
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22mupdateVoiceProfileThreshold clamps value between 0.5 and 0.99
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22mgetWorkspaceVoiceProfiles returns profiles
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mVoice Profiles[2m > [22mdeleteVoiceProfile removes profile
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mRAG (Retrieval-Augmented Generation)[2m > [22msaveRagChunk inserts chunk with embedding
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mRAG (Retrieval-Augmented Generation)[2m > [22msaveRagChunks inserts multiple rows in one batch
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mRAG (Retrieval-Augmented Generation)[2m > [22mgetAllRagChunksForWorkspace returns all chunks for workspace
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mWorkspace Member Role Management[2m > [22mupdateWorkspaceMemberRole updates role to valid value
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mWorkspace Member Role Management[2m > [22mupdateWorkspaceMemberRole clamps invalid role to member
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mHealth Check[2m > [22mgetHealth returns ok status
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mMeeting Tasks[2m > [22mupdateMeetingTasks is a no-op placeholder
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mHelper functions[2m > [22m_generateId() creates valid IDs
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mHelper functions[2m > [22m_generateInviteCode() creates valid codes
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mHelper functions[2m > [22m_safeJsonParse() handles invalid JSON
+ [2m[90m↓[39m[22m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests[2m > [22mHelper functions[2m > [22m_pickProfileDraft() extracts profile fields
+[90mstdout[2m | server/tests/routes/digest.test.ts[2m > [22m[2mDigest routes[2m > [22m[2msends digest email when SMTP is configured
+[22m[39m[INFO] [REQ] GET /digest/daily - 200 [3.3ms] {
+  requestId: [32m'454f7d8f-3df8-4218-a446-cf65fc6936e9'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/digest/daily'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.35'[39m
+}
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic API fails
+[22m[39m[ai/person-profile] error: Network error
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /health - returns build metadata without requiring auth
+[22m[39m[INFO] [REQ] GET /health - 200 [1.4ms] {
+  requestId: [32m'296afdf9-e1d1-4bad-bede-2ba13f7e09a5'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/health'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.36'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic API fails
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [2.6ms] {
+  requestId: [32m'69e25635-8098-495e-86c8-88b20c81ae1a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.58'[39m
+}
+
+[90mstderr[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[ERROR] Migration error in 003_add_missing_indexes.sql query: -- Migration 003: Add missing indexes for performance optimization
+-- Created: 2026-03-20
+-- Purpose: Improve query performance for frequently accessed columns
+
+-- ============================================
+-- MEETINGS TABLE INDEXES
+-- ============================================
+
+-- User's meetings lookup (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_meetings_user_id ON meetings(user_id) Error: no such table: main.meetings
+    at Worker.<anonymous> (C:/Users/user/new/audioRecorder/server/database.ts:131:32)
+[90m    at Worker.emit (node:events:508:28)[39m
+[90m    at MessagePort.<anonymous> (node:internal/worker:332:53)[39m
+[90m    at MessagePort.[nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)[39m
+[90m    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)[39m
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mreturns an empty transcript result when STT payload has no segments, words or text[32m 59[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mreturns all_chunks_discarded_as_too_small when chunk extraction never yields a transcribable buffer
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mfails the pipeline when every chunked STT request fails instead of classifying it as empty transcript
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mstill sends chunked audio to STT when chunk-level VAD reports silence
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mextracts speaker audio clips, normalizes audio and generates voice coaching with mocked exec/fs[32m 62[2mms[22m[39m
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[ERROR] Migration error in 003_add_missing_indexes.sql query: -- Migration 003: Add missing indexes for performance optimization
+-- Created: 2026-03-20
+-- Purpose: Improve query performance for frequently accessed columns
+
+-- ============================================
+-- MEETINGS TABLE INDEXES
+-- ============================================
+
+-- User's meetings lookup (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_meetings_user_id ON meetings(user_id) Error: no such table: main.meetings
+    at Worker.<anonymous> (C:/Users/user/new/audioRecorder/server/database.ts:131:32)
+[90m    at Worker.emit (node:events:508:28)[39m
+[90m    at MessagePort.<anonymous> (node:internal/worker:332:53)[39m
+[90m    at MessagePort.[nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)[39m
+[90m    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)[39m
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mcalls Anthropic API and returns parsed profile when API key is configured[32m 108[2mms[22m[39m
+ [32m✓[39m server/tests/routes/digest.test.ts[2m > [22mDigest routes[2m > [22msends digest email when SMTP is configured[32m 193[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould register a new user and create a workspace
+ [2m[90m↓[39m[22m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)[2m > [22mshould get the initialized database singleton
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when total > 600
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [0.8ms] {
+  requestId: [32m'5f381299-0fcf-4d12-89df-24f2474e013b'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'0.81'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 400 when X-Workspace-Id is missing[32m 79[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 400 when index/total parameters are invalid[32m 42[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 400 when total > 600[32m 61[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould throw error when registering with existing email
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould login successfully with correct credentials
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould fail login with wrong password
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould fail login with non-existent email
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould handle case-insensitive email during login
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould handle Polish characters in passwords
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould trim leading/trailing spaces in email during login
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould validate session token
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould reject expired session (simulated)
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould support multiple workspaces and selecting preferred one
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould reject login to a workspace the user does not belong to
+ [2m[90m↓[39m[22m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)[2m > [22mshould show a dedicated error for Google-managed accounts
+ [2m[90m↓[39m[22m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)[2m > [22mshould successfully query users via worker thread
+ [2m[90m↓[39m[22m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)[2m > [22mshould persist data across simulated 'deploys' (process restarts)
+ [2m[90m↓[39m[22m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)[2m > [22mshould persist pipeline metadata on successful transcription results
+ [2m[90m↓[39m[22m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)[2m > [22mshould persist pipeline metadata on failures and clear old errors when re-queueing
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - unauthorized response still keeps preview CORS headers
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 401 [0.5ms] {
+  requestId: [32m'0987075f-9cbe-49bc-b4d6-42bf11f0290c'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'0.49'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPUT /media/recordings/:id/audio - 413 Payload Too Large if > 100MB
+[22m[39m[INFO] [REQ] PUT /media/recordings/test_rec/audio - 413 [98.6ms] {
+  requestId: [32m'75fcbf47-287b-431f-b0b7-469323d61ad7'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/test_rec/audio'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'98.58'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic returns non-JSON response
+[22m[39m[ai/person-profile] error: No JSON in response
+
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mPUT /media/recordings/:id/audio - 413 Payload Too Large if > 100MB[32m 286[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic returns non-JSON response
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [1.9ms] {
+  requestId: [32m'e654d97b-36e9-48e9-8661-70bc698c1e4d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.87'[39m
+}
+
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mGET /health - returns build metadata without requiring auth[32m 35[2mms[22m[39m
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mOPTIONS /state/bootstrap - returns preview CORS headers for vercel origins[32m 27[2mms[22m[39m
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mGET /state/bootstrap - unauthorized response still keeps preview CORS headers[32m 14[2mms[22m[39m
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 422 (or 400) when passing bad JSON/Content-Type
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [4.5ms] {
+  requestId: [32m'6e457a26-4225-4335-ae00-e414a5d5e00e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'4.47'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 413 when chunk > 3MB
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 413 [5.0ms] {
+  requestId: [32m'a11bdb1e-d4a2-4b30-bda6-2577e465fc1a'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'5.03'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 422 Unprocessable Entity passing missing required fields
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [4.7ms] {
+  requestId: [32m'ae4e4320-6009-4ba7-94b6-402aaf777267'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'4.67'[39m
+}
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mreturns no-key mode when Anthropic API fails[32m 55[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/person-profile[2m > [22mreturns no-key mode when Anthropic returns non-JSON response[32m 65[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - success with valid token
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 200 [2.0ms] {
+  requestId: [32m'd75c808d-bd39-49d5-b4bd-9d661a2e26ba'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.02'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when ANTHROPIC_API_KEY is not configured
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when ANTHROPIC_API_KEY is not configured
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [4.0ms] {
+  requestId: [32m'332b5343-01c0-4d37-942c-f902f3e9548e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.98'[39m
+}
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22msurfaces voice coaching API errors and still cleans up temp clip[32m 74[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 413 when chunk > 3MB[32m 67[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mPUT /state/workspaces/:workspaceId - state update
+[22m[39m[INFO] [REQ] PUT /state/workspaces/w123 - 200 [2.9ms] {
+  requestId: [32m'1a29b59d-bc21-4f26-85c0-0571cbac842e'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/state/workspaces/w123'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.93'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [2.8ms] {
+  requestId: [32m'945cacd9-c7ab-47c3-84df-71085f1fb547'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.77'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.7ms] {
+  requestId: [32m'e4454026-3f95-49cc-af6b-07e022b40cfc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.66'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.4ms] {
+  requestId: [32m'a678db20-aa9e-41e4-b901-aa8b9252f6fb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.44'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.2ms] {
+  requestId: [32m'83d26666-caeb-4c2b-af62-0c3f1c750fc3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.20'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.8ms] {
+  requestId: [32m'404ba412-1d7b-436f-a467-3b3ce4dc4fea'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.78'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.6ms] {
+  requestId: [32m'6275e5a1-f2db-4b2b-bd14-274ab678659c'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.62'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 200 and saves chunk when valid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 200 [13.0ms] {
+  requestId: [32m'ff85296e-7b90-41e7-9ff6-268ea9ab8111'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'12.96'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.3ms] {
+  requestId: [32m'89cbed52-4ede-4799-8307-2969bd76f269'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.28'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.2ms] {
+  requestId: [32m'a1ca2ce6-d295-4a2f-b9d1-6acdd5c55b84'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.20'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mPATCH /state/workspaces/:workspaceId - delta update
+[22m[39m[INFO] [REQ] PATCH /state/workspaces/w123 - 200 [2.2ms] {
+  requestId: [32m'8e3eb5cd-ff2e-41e9-bd04-1b440ed2e98a'[39m,
+  method: [32m'PATCH'[39m,
+  route: [32m'/state/workspaces/w123'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.23'[39m
+}
+
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mGET /state/bootstrap - success with valid token[32m 61[2mms[22m[39m
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mPUT /state/workspaces/:workspaceId - state update[32m 35[2mms[22m[39m
+ [32m✓[39m server/tests/routes/state.test.ts[2m > [22mState Routes[2m > [22mPATCH /state/workspaces/:workspaceId - delta update[32m 25[2mms[22m[39m
+[90mstderr[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39mAPP ERROR STACK Error: Zbyt wiele prob. Sprobuj ponownie za chwile.
+    at checkRateLimit (C:/Users/user/new/audioRecorder/server/lib/serverUtils.ts:26:19)
+    at C:/Users/user/new/audioRecorder/server/routes/middleware.ts:23:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:46
+    at C:/Users/user/new/audioRecorder/server/routes/auth.ts:15:13
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:46
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:69:11
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.8/node_modules/hono/dist/compose.js:22:46
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 429 [12.6ms] {
+  requestId: [32m'4798fd1c-94ca-4ed4-bd51-109b34073d2e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m429[39m,
+  durationMs: [32m'12.59'[39m
+}
+
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mPOST /auth/login - 422 (or 400) when passing bad JSON/Content-Type[32m 21[2mms[22m[39m
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mPOST /auth/login - 422 Unprocessable Entity passing missing required fields[32m 38[2mms[22m[39m
+ [32m✓[39m server/tests/security/payload.test.ts[2m > [22mSecurity & Payload Limits[2m > [22mPOST /auth/login - 429 Too Many Requests after exceeding limit[32m 69[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_large/audio - 413 [114.3ms] {
+  requestId: [32m'b122616e-9e16-4934-8294-dfd78154c67c'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_large/audio'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'114.31'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload[32m 18[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript[32m 26[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview[32m 28[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when transcript is empty
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [0.9ms] {
+  requestId: [32m'59031b0b-7e2e-4fcc-b085-de0cdd20f62f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.90'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 401 [0.5ms] {
+  requestId: [32m'ca1b180d-2bf9-444e-9e32-d03e0cfbe5ad'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'0.49'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPUT /media/recordings/:recordingId/audio/chunk[2m > [22mreturns 200 and saves chunk when valid[32m 86[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/recordings/:recordingId/audio/finalize[2m > [22mreturns 401 when not authenticated[32m 66[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzeAudioQuality returns good quality metrics from ffprobe and volumedetect[32m 91[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzeAudioQuality classifies poor quality when volume is very low and silence ratio is high[32m 57[2mms[22m[39m
+(node:6804) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/normalize - 200 [0.9ms] {
+  requestId: [32m'd5d2d6d7-8b78-43bd-a08c-fb9bcaa35910'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/normalize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.90'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/voice-coaching - 200 [1.2ms] {
+  requestId: [32m'35d19a3a-9bd8-45b3-a0ff-1d58a5b4591d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/voice-coaching'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.19'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/acoustic-features - 200 [0.7ms] {
+  requestId: [32m'17864ba3-6937-4144-ab20-53eb80034816'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/acoustic-features'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.74'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when workspaceId is missing
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [2.1ms] {
+  requestId: [32m'b8efdb97-a4cb-438f-b950-0ddf4d6db2fd'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.10'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mreturns empty tasks when ANTHROPIC_API_KEY is not configured[32m 64[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mreturns empty tasks when transcript is empty[32m 83[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_voice/voice-profiles/from-speaker - 201 [1.1ms] {
+  requestId: [32m'a925c43b-51fe-4c37-9828-46dff5d0620c'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_voice/voice-profiles/from-speaker'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'1.14'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_missing/rediarize - 400 [2.6ms] {
+  requestId: [32m'f0bce46e-0cc3-4edb-aefb-7c1b95b707e3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_missing/rediarize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.64'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_ok/rediarize - 200 [1.0ms] {
+  requestId: [32m'9630810f-279f-4b2f-b051-44b7237b8fef'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_ok/rediarize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.97'[39m
+}
+
+[90mstderr[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[ERROR] Migration error in 003_add_missing_indexes.sql query: -- Migration 003: Add missing indexes for performance optimization
+-- Created: 2026-03-20
+-- Purpose: Improve query performance for frequently accessed columns
+
+-- ============================================
+-- MEETINGS TABLE INDEXES
+-- ============================================
+
+-- User's meetings lookup (most common query pattern)
+CREATE INDEX IF NOT EXISTS idx_meetings_user_id ON meetings(user_id) Error: no such table: main.meetings
+    at Worker.<anonymous> (C:/Users/user/new/audioRecorder/server/database.ts:131:32)
+[90m    at Worker.emit (node:events:508:28)[39m
+[90m    at MessagePort.<anonymous> (node:internal/worker:332:53)[39m
+[90m    at MessagePort.[nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)[39m
+[90m    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)[39m
+
+ [2m[90m↓[39m[22m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests[2m > [22m[H-01/M-04] POST /voice-profiles - Should reject >1MB JSON Body with 413 (Denial of Service & JSON Bomb)
+ [2m[90m↓[39m[22m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests[2m > [22m[H-04] GET /health - Should not leak dbPath or uploadDir (Information Disclosure)
+ [2m[90m↓[39m[22m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests[2m > [22m[M-03] GET /media/recordings/:id/audio - Should fallback Content-Type if invalid (Stored XSS)
+ [2m[90m↓[39m[22m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests[2m > [22m[M-06] POST /voice-profiles - Should cap arbitrarily long X-Speaker-Name header (Data Storage Abuse)
+ [2m[90m↓[39m[22m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests[2m > [22m[H-02] X-Forwarded-For Spoofing Bypass check
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/rediarize returns 422 when diarization fails
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_fail/rediarize - 422 [0.5ms] {
+  requestId: [32m'38b6e83f-35ac-4369-b092-3a0b27aaaa17'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_fail/rediarize'[39m,
+  status: [33m422[39m,
+  durationMs: [32m'0.53'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload[32m 282[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/audio - returns 404 for missing assets and files
+ [2m[90m↓[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/audio - streams existing file with safe headers
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path[32m 47[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation[32m 29[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when total is missing or invalid
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [0.7ms] {
+  requestId: [32m'cc752dfc-e95e-4b90-9159-b5daeece91f9'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'0.74'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/analyze returns fallback when analysis service returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [2.5ms] {
+  requestId: [32m'abac8ec3-decb-47a3-b659-393d00cb7f71'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.52'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mmarks transcription failure and clears the job map on pipeline error
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_2'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/rediarize returns 422 when diarization fails[32m 14[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/analyze returns fallback when analysis service returns null[32m 15[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mcalls Anthropic API and returns extracted tasks when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.5ms] {
+  requestId: [32m'f678d465-d7a6-445d-ab86-722cc67674bd'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.47'[39m
+}
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzeAudioQuality returns error when file does not exist[32m 58[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzeAudioQuality returns aborted error immediately when signal is already aborted[32m 27[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mnormalizeRecording cleans up tmp file and rethrows when ffmpeg fails[32m 39[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/recordings/:recordingId/audio/finalize[2m > [22mreturns 400 when workspaceId is missing[32m 39[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/recordings/:recordingId/audio/finalize[2m > [22mreturns 400 when total is missing or invalid[32m 36[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 413 when assembled file > 100MB
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [12.7ms] {
+  requestId: [32m'3fc7d32d-f762-4a5a-8887-0d16fdcbeaa5'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'12.71'[39m
+}
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mcalls Anthropic API and returns extracted tasks when API key is configured[32m 127[2mms[22m[39m
+ [32m✓[39m server/tests/routes/media.additional.test.ts[2m > [22mMedia Routes - Additional Coverage[2m > [22mPOST /media/recordings/:recordingId/audio/finalize[2m > [22mreturns 413 when assembled file > 100MB[32m 94[2mms[22m[39m
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic API fails
+[22m[39m[ai/suggest-tasks] error: Network error
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic API fails
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.5ms] {
+  requestId: [32m'204a2d70-e76b-4400-86ba-335b7f09b222'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.47'[39m
+}
+
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mdeduplicates in-flight transcription jobs and persists successful results[33m 1018[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mnormalizeRecording succeeds and renames tmp file[32m 80[2mms[22m[39m
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic returns non-JSON response
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic returns non-JSON response
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.7ms] {
+  requestId: [32m'74ae6c00-ef01-45e0-8631-69ec2d152cee'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.71'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when response has no tasks array
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when response has no tasks array
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.3ms] {
+  requestId: [32m'69400896-84d6-400a-b17d-928a46d8992f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.32'[39m
+}
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mreturns empty tasks when Anthropic API fails[32m 82[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mreturns empty tasks when Anthropic returns non-JSON response[32m 47[2mms[22m[39m
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/suggest-tasks[2m > [22mreturns empty tasks when response has no tasks array[32m 41[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/search[2m > [22mreturns no-key mode when ANTHROPIC_API_KEY is not configured
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mextractSpeakerAudioClip extracts clips for valid segments[32m 66[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mextractSpeakerAudioClip throws error when no valid segments[32m 37[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mextractSpeakerAudioClip limits to 15 segments maximum[32m 38[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mcalls Anthropic API and returns ranked matches when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [2.3ms] {
+  requestId: [32m'281db0f5-ca8b-421e-ab69-8ad6a8906aa0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.31'[39m
+}
+
+ [32m✓[39m server/tests/routes/ai.test.ts[2m > [22mAI Routes[2m > [22mPOST /ai/search[2m > [22mcalls Anthropic API and returns ranked matches when API key is configured[32m 89[2mms[22m[39m
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting
+[22m[39m[INFO] [Metrics] STT Transcription Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec-pyannote'[39m,
+  durationMs: [32m'0.86'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting
+[22m[39m[INFO] [Metrics] Diarization Stage Complete {
+  requestId: [32m'internal-pipeline'[39m,
+  recordingId: [32m'rec-pyannote'[39m,
+  durationMs: [32m'3.04'[39m,
+  speakersIdentified: [33m2[39m
+}
+
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mextractSpeakerAudioClip passes signal option to exec[32m 68[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22manalyzeAcousticFeatures throws error when file does not exist[32m 50[2mms[22m[39m
+ [32m✓[39m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting[32m 55[2mms[22m[39m
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mtranscribeRecording applies per-speaker normalization when HF_TOKEN and PER_SPEAKER_NORM are set
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mcorrectTranscriptWithLLM is called when transcriptCorrection option is set
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mtranscribeRecording processes large files via in-memory chunking and merges payloads
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mcorrectTranscriptWithLLM falls back to original segments when LLM returns HTTP error
+ [2m[90m↓[39m[22m server/tests/audio-pipeline.unit.test.ts[2m > [22maudioPipeline exports[2m > [22mtranscribeRecording falls back to OpenAI STT when Groq STT fails
+[90mstdout[2m | Object.info (C:\Users\user\new\audioRecorder\server\logger.ts:17:13)
+[22m[39m[INFO] [Pipeline] Starting transcription job. { requestId: [32m'req-1'[39m, recordingId: [32m'rec1'[39m, processingMode: [32m'fast'[39m }
+
+[90mstdout[2m | Object.info (C:\Users\user\new\audioRecorder\server\logger.ts:17:13)
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'req-1'[39m,
+  recordingId: [32m'rec1'[39m,
+  durationMs: [32m'2507.44'[39m,
+  confidence: [33m0.9[39m
+}
+
+[90mstdout[2m | Object.info (C:\Users\user\new\audioRecorder\server\logger.ts:17:13)
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'req-1'[39m, recordingId: [32m'rec1'[39m }
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mpersists empty transcript results without marking failure or vectorizing RAG
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mpersists empty transcript results without marking failure or vectorizing RAG
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  durationMs: [32m'1.75'[39m,
+  confidence: [33m0[39m
+}
+
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mmarks transcription failure and clears the job map on pipeline error[33m 506[2mms[22m[39m
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mpersists empty transcript results without marking failure or vectorizing RAG[32m 10[2mms[22m[39m
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mcreates voice profile from speaker clip and removes temp file afterward[32m 28[2mms[22m[39m
+ [32m✓[39m server/tests/transcription.test.ts[2m > [22mTranscriptionService[2m > [22mlazy-loads speaker embedder when missing[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/stt.providers.test.ts[2m > [22mstt providers[2m > [22mbuilds provider chain with explicit fallback[32m 9[2mms[22m[39m
+ [32m✓[39m server/tests/stt.providers.test.ts[2m > [22mstt providers[2m > [22mreturns successful provider metadata after fallback[32m 75[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mreturns PORT from config[32m 10[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mreturns VOICELOG_API_PORT from config[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mPORT takes precedence over VOICELOG_API_PORT[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mreturns default 4000 when no port configured[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mhandles undefined config[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveServerPort[2m > [22mhandles string port values[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mbuildLocalHealthUrl[2m > [22mreturns health URL with configured PORT[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mbuildLocalHealthUrl[2m > [22mreturns health URL with default port[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22mreturns metadata from environment variables[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22muses VERCEL environment variables[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22muses GITHUB_SHA for git commit[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22muses fallback version when no version specified[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22muses default fallback version[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22muses process build time when not specified[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22mreturns node runtime for local development[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22mhandles empty environment[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/runtime.test.ts[2m > [22mruntime.ts[2m > [22mresolveBuildMetadata[2m > [22mhandles null environment[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/services/services.test.ts[2m > [22mServer Services[2m > [22mAuthService delegates database operations[32m 7[2mms[22m[39m
+ [32m✓[39m server/tests/services/services.test.ts[2m > [22mServer Services[2m > [22mWorkspaceService delegates workspace and voice-profile operations[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/serverUtils.test.ts[2m > [22mserverUtils[2m > [22mbuilds CORS and security headers for localhost, vercel and fallback origins[32m 9[2mms[22m[39m
+ [32m✓[39m server/tests/serverUtils.test.ts[2m > [22mserverUtils[2m > [22mreturns bearer token only for proper authorization header[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/serverUtils.test.ts[2m > [22mserverUtils[2m > [22mthrows 429 after exceeding rate limit[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/serverUtils.test.ts[2m > [22mserverUtils[2m > [22mreads JSON body and handles invalid or oversized payloads[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/serverUtils.test.ts[2m > [22mserverUtils[2m > [22mreads binary body and handles oversize and aborted requests[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/middleware.test.ts[2m > [22mroute middleware[2m > [22mauthMiddleware rejects missing or invalid bearer token and stores valid session[32m 12[2mms[22m[39m
+ [32m✓[39m server/tests/middleware.test.ts[2m > [22mroute middleware[2m > [22mauthMiddleware accepts token from query string for SSE-style requests[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/middleware.test.ts[2m > [22mroute middleware[2m > [22mauthMiddleware passes OPTIONS requests through without auth check[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/middleware.test.ts[2m > [22mroute middleware[2m > [22mensureWorkspaceAccess throws 403 when membership is missing[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mreturns 1 for identical vectors[32m 5[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mreturns 0 for orthogonal vectors[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mreturns negative value for opposite vectors[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mreturns 0 when vectors are null[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mreturns 0 when vectors have different lengths[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mhandles empty vectors[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcosineSimilarity[2m > [22mcalculates correct similarity for real-world vectors[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mreturns new embedding when existing is empty[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mreturns existing embedding when new is empty[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mreturns null when both are null[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mcalculates weighted average correctly[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mhandles large existing count (profile with many samples)[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mnormalizes result to unit length[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22maddToAverageEmbedding[2m > [22mhandles different length vectors (uses minimum)[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcomputeEmbedding[2m > [22mreturns null for non-existent file[32m 4[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mcomputeEmbedding[2m > [22mreturns null when transformers fail to load[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mreturns null when no profiles provided[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mreturns null when profiles have invalid embedding JSON[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mreturns null when profile embedding is not an array[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mreturns null when profile embedding is empty array[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22muses per-profile threshold when specified[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mfalls back to default threshold when not specified[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mhandles legacy embedding field format[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mhandles embedding as pre-parsed object[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mmatchSpeakerToProfile[2m > [22mreturns best match when multiple profiles provided[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mintegration scenarios[2m > [22mhandles multi-sample profile updates[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mintegration scenarios[2m > [22mhandles cosine similarity for speaker matching[32m 1[2mms[22m[39m
+ [32m✓[39m server/tests/speakerEmbedder.test.ts[2m > [22mspeakerEmbedder[2m > [22mintegration scenarios[2m > [22mhandles dissimilar embeddings[32m 1[2mms[22m[39m
+[90mstderr[2m | server/tests/reproduce.test.ts[2m > [22m[2mTranscriptionService Reproduction[2m > [22m[2mshould throw a clear error if pipeline is missing transcribeRecording
+[22m[39m[TranscriptionService] audioPipeline looks like an empty object (circular dep?).
+
+ [32m✓[39m server/tests/reproduce.test.ts[2m > [22mTranscriptionService Reproduction[2m > [22mshould throw a clear error if pipeline is null[32m 6[2mms[22m[39m
+ [32m✓[39m server/tests/reproduce.test.ts[2m > [22mTranscriptionService Reproduction[2m > [22mshould throw a clear error if pipeline is missing transcribeRecording[32m 2[2mms[22m[39m
+ [32m✓[39m server/tests/speaker_embedder.test.ts[2m > [22mspeakerEmbedder - cosineSimilarity[2m > [22mshould return 1.0 for identical vectors[32m 3[2mms[22m[39m
+ [32m✓[39m server/tests/speaker_embedder.test.ts[2m > [22mspeakerEmbedder - cosineSimilarity[2m > [22mshould return 0.0 for orthogonal vectors[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speaker_embedder.test.ts[2m > [22mspeakerEmbedder - cosineSimilarity[2m > [22mshould return -1.0 for opposite vectors[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speaker_embedder.test.ts[2m > [22mspeakerEmbedder - cosineSimilarity[2m > [22mshould handle vectors with different lengths by returning 0[32m 0[2mms[22m[39m
+ [32m✓[39m server/tests/speaker_embedder.test.ts[2m > [22mspeakerEmbedder - matchSpeakerToProfile[2m > [22mshould return null if no profiles provided[32m 1[2mms[22m[39m
+[90mstderr[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[mediaRoutes] Audio quality analysis failed for rec_flow_1: transcriptionService.analyzeAudioQuality is not a function
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [Metrics] Uploaded audio chunk {
+  requestId: [32m'b3121582-5e6c-4833-943f-c8506c4127af'[39m,
+  recordingId: [32m'rec_flow_1'[39m,
+  sizeBytes: [33m512[39m,
+  durationMs: [32m'4.63'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_flow_1/audio - 200 [10.4ms] {
+  requestId: [32m'b3121582-5e6c-4833-943f-c8506c4127af'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_flow_1/audio'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'10.40'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/register - happy path
+[22m[39m[INFO] [REQ] POST /auth/register - 201 [8.0ms] {
+  requestId: [32m'4156a79b-0c4e-45a5-8b1b-b5334310672b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/register'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'8.01'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_flow_1/transcribe - 202 [2.1ms] {
+  requestId: [32m'dfa2fdf8-5723-4bb2-89a0-5aef60991910'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_flow_1/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'2.08'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_flow_1/transcribe - 200 [1.1ms] {
+  requestId: [32m'076194ed-c028-42cf-9a72-8ed6c190cfb9'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_flow_1/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.07'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_flow_failed/transcribe - 202 [1.2ms] {
+  requestId: [32m'fa3ad4ed-b263-4f8a-a62f-c5a11526d72b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_flow_failed/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'1.20'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_flow_failed/transcribe - 200 [0.5ms] {
+  requestId: [32m'f43df055-e91a-4583-8a97-95a11ea77062'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_flow_failed/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.48'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mGET /voice-profiles - happy path
+[22m[39m[INFO] [REQ] GET /voice-profiles - 200 [6.5ms] {
+  requestId: [32m'8b813b8e-1401-4946-8835-31e3a62693b7'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'6.49'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/login - missing password
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [2.9ms] {
+  requestId: [32m'876d551f-35f4-4c2a-a4b8-eb762c66a53e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.87'[39m
+}
+
+ [32m✓[39m server/tests/flow/audio-pipeline.test.ts[2m > [22mAudio Pipeline Full Integration Flow[2m > [22mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure[32m 70[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/login - happy path
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.3ms] {
+  requestId: [32m'f0fa836b-5ace-4e49-b858-9a87b3696820'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.29'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/password/reset/request - 200 [12.1ms] {
+  requestId: [32m'426ceb87-9d20-44a6-b8e3-b84686e8b29d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/password/reset/request'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'12.09'[39m
+}
+
+ [32m✓[39m server/tests/routes/auth.test.ts[2m > [22mAuth Routes[2m > [22mPOST /auth/register - happy path[32m 54[2mms[22m[39m
+ [32m✓[39m server/tests/routes/auth.test.ts[2m > [22mAuth Routes[2m > [22mPOST /auth/login - missing password[32m 20[2mms[22m[39m
+ [32m✓[39m server/tests/routes/auth.test.ts[2m > [22mAuth Routes[2m > [22mPOST /auth/login - happy path[32m 15[2mms[22m[39m
+ [32m✓[39m server/tests/routes/auth.test.ts[2m > [22mAuth Routes[2m > [22mOPTIONS /auth/login - returns CORS headers for vercel preview origins[32m 14[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mPOST /voice-profiles - fails when X-Speaker-Name is missing
+[22m[39m[INFO] [REQ] POST /voice-profiles - 400 [1.8ms] {
+  requestId: [32m'b43c32a5-883b-48c8-aa20-8091cddb28ff'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.78'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/password/reset/confirm - 200 [2.4ms] {
+  requestId: [32m'313d43f9-5de4-42d4-9b7e-6f86b6c03b7e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/password/reset/confirm'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.37'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/google - 200 [2.0ms] {
+  requestId: [32m'9b6a6365-91d3-451f-8d25-041bf77dbb0e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/google'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.99'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mGET /auth/session - returns 401 on missing token
+[22m[39m[INFO] [REQ] GET /auth/session - 401 [1.2ms] {
+  requestId: [32m'2c8d8819-6690-4141-b1e6-4b6b9dcb9662'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/auth/session'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'1.23'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mPOST /voice-profiles - happy path
+[22m[39m[INFO] [REQ] POST /voice-profiles - 201 [1.5ms] {
+  requestId: [32m'd44476c2-229c-4352-8a4d-ce14681a1f8b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'1.48'[39m
+}
+
+ [32m✓[39m server/tests/routes/auth.test.ts[2m > [22mAuth Routes[2m > [22mGET /auth/session - returns 401 on missing token[32m 15[2mms[22m[39m
+ [32m✓[39m server/tests/routes/voice-profiles.test.ts[2m > [22mVoice Profiles Routes[2m > [22mGET /voice-profiles - happy path[32m 61[2mms[22m[39m
+ [32m✓[39m server/tests/routes/voice-profiles.test.ts[2m > [22mVoice Profiles Routes[2m > [22mPOST /voice-profiles - fails when X-Speaker-Name is missing[32m 24[2mms[22m[39m
+ [32m✓[39m server/tests/routes/voice-profiles.test.ts[2m > [22mVoice Profiles Routes[2m > [22mPOST /voice-profiles - happy path[32m 18[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mreturns session payload when auth and workspace access pass
+[22m[39m[INFO] [REQ] GET /auth/session - 200 [2.0ms] {
+  requestId: [32m'7f35a518-1533-496c-864a-64744a567530'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/auth/session'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.03'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mDELETE /voice-profiles/:id
+[22m[39m[INFO] [REQ] DELETE /voice-profiles/vp_1 - 204 [0.8ms] {
+  requestId: [32m'f706a7b5-ef27-4348-b207-6a42ada0b639'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/voice-profiles/vp_1'[39m,
+  status: [33m204[39m,
+  durationMs: [32m'0.77'[39m
+}
+
+ [32m✓[39m server/tests/routes/auth-extended.test.ts[2m > [22mAuth Routes Extended[2m > [22mhandles password reset request/confirm and google login[32m 75[2mms[22m[39m
+ [32m✓[39m server/tests/routes/auth-extended.test.ts[2m > [22mAuth Routes Extended[2m > [22mreturns session payload when auth and workspace access pass[32m 32[2mms[22m[39m
+ [32m✓[39m server/tests/routes/voice-profiles.test.ts[2m > [22mVoice Profiles Routes[2m > [22mDELETE /voice-profiles/:id[32m 18[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 5 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/database.test.ts[2m [ server/database.test.ts ][22m
+[31m[1mError[22m: Cannot find package 'bun:sqlite' imported from c:/Users/user/new/audioRecorder/server/database.test.ts[39m
+[90m [2m❯[22m server/database.test.ts:[2m2:1[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/tests/auth.test.ts[2m > [22mAuthentication Logic (Server Layer)
+[41m[1m FAIL [22m[49m server/tests/database.test.ts[2m > [22mDatabase (Async Worker SQLite)
+[41m[1m FAIL [22m[49m server/tests/security.test.ts[2m > [22mAPI Security Regression Tests
+[41m[1m FAIL [22m[49m server/tests/database/database.additional.test.ts[2m > [22mDatabase - Additional Coverage Tests
+[31m[1mError[22m: no such table: main.meetings[39m
+[90m [2m❯[22m Worker.<anonymous> server/database.ts:[2m131:32[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m28 passed[39m[22m[90m (33)[39m
+[2m      Tests [22m [1m[32m364 passed[39m[22m[2m | [22m[33m65 skipped[39m[90m (429)[39m
+[2m   Start at [22m 13:53:12
+[2m   Duration [22m 9.30s[2m (transform 9.44s, setup 2.81s, import 49.37s, tests 31.95s, environment 12ms)[22m
+

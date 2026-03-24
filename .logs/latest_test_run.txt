@@ -1,0 +1,850 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+Warning: A vi.mock("./recording") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("./storage") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("./diarization") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mTRANSCRIPTION_PROVIDER[2m > [22mhas correct id[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mTRANSCRIPTION_PROVIDER[2m > [22mhas correct label[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mreturns null when SpeechRecognition is not available[32m 1[2mms[22m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mcreates recognition instance with correct settings[32m 8[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdefaults to pl-PL language[32m 7[2mms[22m[39m
+[31m   → expected '' to be 'pl-PL' // Object.is equality[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles no-speech error gracefully[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles network error with Polish message[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles not-allowed error with Polish message[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles service-not-allowed error with Polish message[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles language-not-supported error with Polish message[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for aborted error[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for unknown errors[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onerror is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles final results and adds segment[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onresult is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles interim results[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onresult is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles multiple results with final and interim[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onresult is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mskips empty transcripts[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onresult is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mtrims transcript text[32m 1[2mms[22m[39m
+[31m   → mockRecognition.onresult is not a function[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstart method calls recognition.start[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstop method calls recognition.stop[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22msetOnEnd sets the onend handler[32m 3[2mms[22m[39m
+[31m   → expected null to be [Function Mock] // Object.is equality[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mclearHandlers clears all handlers[32m 1[2mms[22m[39m
+[90mstderr[2m | src/NotesTab.test.tsx[2m > [22m[2mNotesTab[2m > [22m[2mrenders list of notes and allows filtering, grouping and selecting
+[22m[39mEach child in a list should have a unique "key" prop.
+
+Check the render method of `NoteDetail`. See https://react.dev/link/warning-keys for more information.
+
+ [32m✓[39m src/NotesTab.test.tsx[2m > [22mNotesTab[2m > [22mrenders empty state[32m 63[2mms[22m[39m
+ [32m✓[39m src/NotesTab.test.tsx[2m > [22mNotesTab[2m > [22mrenders list of notes and allows filtering, grouping and selecting[33m 1796[2mms[22m[39m
+[90mstderr[2m | src/studio/TranscriptPanel.test.tsx[2m > [22m[2mTranscriptPanel[2m > [22m[2mrenders review queue with verification evidence
+[22m[39mReceived NaN for the `width` attribute. If this is expected, cast the value to a string.
+
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22mrenders review queue with verification evidence[32m 189[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mNavigation and Layout[2m > [22mrenders all navigation categories[32m 107[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mNavigation and Layout[2m > [22mswitches between categories when navigation buttons are clicked
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mNavigation and Layout[2m > [22mdisplays logout button and calls onLogout when clicked[32m 258[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mrenders user profile information correctly
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mdisplays avatar or fallback based on avatarUrl[32m 79[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mupdates profile draft on form input changes
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22mfilters transcript list to review items only[33m 387[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mcalls saveProfile when profile form is submitted[32m 48[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mrenders preference toggles with correct initial states[32m 28[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAccount Category - Profile Section[2m > [22mupdates profile draft when preference toggles are clicked[32m 66[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders without crashing
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22mfilters transcript by speaker and low confidence[32m 252[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders the player bar when there is a message or recording
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mPassword Section[2m > [22mrenders password change form for local accounts[32m 31[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mPassword Section[2m > [22mshows info message for Google accounts without password[32m 15[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mPassword Section[2m > [22mcalls updatePassword when password form is submitted[32m 35[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mPassword Section[2m > [22mdisplays security message after password change[32m 12[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVoice Profiles Section[2m > [22mrenders voice profiles section with people count
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVoice Profiles Section[2m > [22mallows entering speaker name and starting recording
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVoice Profiles Section[2m > [22mshows error when trying to record without speaker name
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVoice Profiles Section[2m > [22mdisplays existing voice profiles with delete button
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVocabulary Section[2m > [22mrenders vocabulary section with word count
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVocabulary Section[2m > [22mallows adding new terms to vocabulary
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVocabulary Section[2m > [22mprevents adding empty terms
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mVocabulary Section[2m > [22mdisplays existing vocabulary terms with remove buttons
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mTag Manager Section[2m > [22mrenders tag manager section with tag count
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mTag Manager Section[2m > [22mdisplays tags with task and meeting counts
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mTag Manager Section[2m > [22mallows editing tag names
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mTag Manager Section[2m > [22mallows deleting tags
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAudio Storage Section[2m > [22mrenders audio storage section with usage information
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAudio Storage Section[2m > [22mdisplays storage usage details
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAudio Storage Section[2m > [22mcalls refresh function when refresh button is clicked
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAudio Storage Section[2m > [22mshows warning message when provided
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders player shell while selected recording audio is loading
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mWorkspace Backup Section[2m > [22mrenders backup section with export and import buttons[32m 134[2mms[22m[39m
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22mapplies speaker change to selected segment range[32m 252[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mWorkspace Backup Section[2m > [22mcalls export function when export button is clicked[32m 124[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mGoogle Calendar Integration[2m > [22mrenders Google Calendar section with connection status[32m 90[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mGoogle Calendar Integration[2m > [22mcalls connect function when connect button is clicked
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mGoogle Calendar Integration[2m > [22mcalls refresh function when sync button is clicked
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows empty transcript banner and retry action
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders without crashing[32m 118[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders the player bar when there is a message or recording[32m 38[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders player shell while selected recording audio is loading[32m 39[2mms[22m[39m
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22massigns speaker to segments inside selected audio range[32m 259[2mms[22m[39m
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx[2m > [22mTranscriptPanel[2m > [22mrenders clickable timeline segments[32m 141[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mGoogle Tasks Integration[2m > [22mrenders Google Tasks section with task list selector[32m 83[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows summary fallback for empty transcript
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mshows empty transcript banner and retry action[32m 297[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders playback scrubber and lets user seek audio
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders empty state when no meeting selected
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders analysis tabs
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mshows summary fallback for empty transcript[32m 124[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders playback scrubber and lets user seek audio[32m 76[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders empty state when no meeting selected[32m 10[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mGoogle Tasks Integration[2m > [22mcalls task list selection when dropdown changes[32m 121[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mSettings Section - Theme and Layout[2m > [22mrenders theme settings with current theme
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mSettings Section - Theme and Layout[2m > [22mcalls onSetTheme when theme buttons are clicked[32m 91[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders detailed feedback cards and category scores
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders analysis tabs[32m 32[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mSettings Section - Theme and Layout[2m > [22mcalls onSetLayoutPreset when layout buttons are clicked[32m 82[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAPI Connection Status[2m > [22mrenders API connection status section[32m 72[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mAPI Connection Status[2m > [22mshows online status when navigator is online[32m 61[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mChangelog Section[2m > [22mrenders changelog section with version history
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mChangelog Section[2m > [22mallows expanding and collapsing changelog versions
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mEmpty States[2m > [22mshows empty state for tags when no tags exist
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mEmpty States[2m > [22mshows empty state for vocabulary when no terms exist
+ [2m[90m↓[39m[22m src/ProfileTab.comprehensive.test.tsx[2m > [22mProfileTab[2m > [22mEmpty States[2m > [22mshows empty state for audio storage when no files exist
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mbuilds fallback feedback for older analyses without feedback
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders detailed feedback cards and category scores[32m 111[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders toolbar buttons
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows recording controls when isRecording is true
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows meeting tasks in the tasks tab
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mbuilds fallback feedback for older analyses without feedback[32m 257[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders toolbar buttons[32m 28[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mshows recording controls when isRecording is true[32m 33[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mtask actions can navigate to tasks and open task details
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mshows meeting tasks in the tasks tab[32m 93[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders participants as a list
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mtask actions can navigate to tasks and open task details[32m 103[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx[2m > [22mStudioMeetingView[2m > [22mrenders participants as a list[32m 106[2mms[22m[39m
+ [32m✓[39m src/TasksTab.test.tsx[2m > [22mTasksTab[2m > [22mmoves a task between kanban columns with drag and drop[33m 426[2mms[22m[39m
+ [32m✓[39m src/TasksTab.test.tsx[2m > [22mTasksTab[2m > [22mcreates a task with the group from advanced fields[33m 913[2mms[22m[39m
+ [32m✓[39m src/TasksTab.test.tsx[2m > [22mTasksTab[2m > [22mshows richer smart lists similar to task apps[32m 38[2mms[22m[39m
+ [2m[90m↓[39m[22m src/TasksTab.test.tsx[2m > [22mTasksTab[2m > [22mpokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)
+ [32m✓[39m src/AuthScreen.test.tsx[2m > [22mAuthScreen[2m > [22msubmits login flow after filling all fields[33m 381[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx[2m > [22mAuthScreen[2m > [22msupports full registration flow including join workspace mode[32m 165[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx[2m > [22mAuthScreen[2m > [22mblocks registration submit when password is too short[32m 82[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx[2m > [22mAuthScreen[2m > [22msupports forgot-password flow with request and completion actions[32m 188[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx[2m > [22mAuthScreen[2m > [22mshows local-session warning only in local provider mode[32m 1[2mms[22m[39m
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mrenders profile sidebar and selected person details
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mfilters people list by search query
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mswitches between people when sidebar item is clicked
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+ [32m✓[39m src/PeopleTab.test.tsx[2m > [22mPeopleTab[2m > [22mrenders profile sidebar and selected person details[33m 464[2mms[22m[39m
+ [32m✓[39m src/PeopleTab.test.tsx[2m > [22mPeopleTab[2m > [22mfilters people list by search query[32m 89[2mms[22m[39m
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2madds a new need for the selected person
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mcalls onOpenMeeting when history item is clicked
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+ [32m✓[39m src/PeopleTab.test.tsx[2m > [22mPeopleTab[2m > [22mswitches between people when sidebar item is clicked[32m 165[2mms[22m[39m
+ [32m✓[39m src/PeopleTab.test.tsx[2m > [22mPeopleTab[2m > [22madds a new need for the selected person[32m 78[2mms[22m[39m
+ [32m✓[39m src/PeopleTab.test.tsx[2m > [22mPeopleTab[2m > [22mcalls onOpenMeeting when history item is clicked[32m 36[2mms[22m[39m
+ [32m✓[39m src/tasks/TaskKanbanView.test.tsx[2m > [22mTaskKanbanView[2m > [22mrenders columns and tasks[32m 142[2mms[22m[39m
+ [32m✓[39m src/tasks/TaskKanbanView.test.tsx[2m > [22mTaskKanbanView[2m > [22minteractions with KanbanCard[33m 302[2mms[22m[39m
+ [32m✓[39m src/tasks/TaskKanbanView.test.tsx[2m > [22mTaskKanbanView[2m > [22mquick add task[32m 214[2mms[22m[39m
+ [32m✓[39m src/studio/StudioSidebar.test.tsx[2m > [22mStudioSidebar[2m > [22mrenders StudioSidebar and handles basic inputs[33m 692[2mms[22m[39m
+ [32m✓[39m src/studio/StudioSidebar.test.tsx[2m > [22mStudioSidebar[2m > [22mhandles recordings sidebar[32m 27[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mrenders empty state when no meetings are provided[32m 86[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mrenders list of meetings and recordings[32m 47[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mshows pipeline diagnostics for selected meeting latest recording[32m 18[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mcalls selectMeeting and setActiveTab when a meeting is clicked in the table[32m 21[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mdoes not render when closed[32m 45[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mshows retry action for selected meeting with empty transcript[33m 301[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx[2m > [22mRecordingsTab[2m > [22mopens meeting picker and filters results[32m 92[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mrenders groups and items when open[32m 71[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mfilters results via input query[32m 284[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mcalls onSelect when an item is clicked[32m 97[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mcalls onClose when escape is pressed[32m 10[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22msupports keyboard arrow navigation[32m 14[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx[2m > [22mCommandPalette[2m > [22mrenders AI matches when semantic search returns results[32m 69[2mms[22m[39m
+[90mstderr[2m | src/CalendarTab.test.tsx[2m > [22m[2mCalendarTab[2m > [22m[2mreschedules a task when dragged to another month cell
+[22m[39mAn update to CalendarTab inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CalendarTab inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/CalendarTab.test.tsx[2m > [22mCalendarTab[2m > [22mreschedules a task when dragged to another month cell[32m 243[2mms[22m[39m
+ [32m✓[39m src/CalendarTab.test.tsx[2m > [22mCalendarTab[2m > [22mrenders month navigation and meeting entries[32m 119[2mms[22m[39m
+ [32m✓[39m src/CalendarTab.test.tsx[2m > [22mCalendarTab[2m > [22mrenders google calendar events[32m 106[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts[2m > [22museGoogleIntegrations[2m > [22minitializes default state[32m 25[2mms[22m[39m
+[90mstderr[2m | src/hooks/useGoogleIntegrations.test.ts[2m > [22m[2museGoogleIntegrations[2m > [22m[2mconnect functions update state and throw unhandled errors safely
+[22m[39mGoogle Calendar connect failed. Error: Google Calendar API returned 401.
+    at fetchPrimaryCalendarEvents (C:/Users/user/new/audioRecorder/src/lib/google.ts:176:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:118:21
+    at Object.connectGoogleCalendar (C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:199:7)
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.test.ts:39:35
+
+[90mstderr[2m | src/hooks/useGoogleIntegrations.test.ts[2m > [22m[2museGoogleIntegrations[2m > [22m[2mconnect functions update state and throw unhandled errors safely
+[22m[39mGoogle Tasks connect failed. Error: Google Tasks API returned 401 while loading task lists.
+    at fetchGoogleTaskLists (C:/Users/user/new/audioRecorder/src/lib/google.ts:258:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at Object.connectGoogleTasks (C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:286:23)
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.test.ts:52:35
+
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts[2m > [22museGoogleIntegrations[2m > [22mconnect functions update state and throw unhandled errors safely[33m 413[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts[2m > [22museGoogleIntegrations[2m > [22msetSelectedGoogleTaskListId sets ID and refetches[32m 4[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts[2m > [22museGoogleIntegrations[2m > [22mresolveGoogleTaskConflict updates manualTasksRef[32m 4[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mexports Topbar component[32m 289[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas correct component name[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22maccepts required props[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22muses useUI hook for navigation[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas keyboard shortcut support (Ctrl+K)[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes search functionality[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes recording button[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes settings button[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes tab navigation[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22muses GoogleContext for Google features[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22muses RecorderContext for recording features[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22muses workspaceStore for workspace data[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mrenders NotificationCenter component[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper TypeScript types[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22msupports responsive design[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes workspace switcher[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes user profile menu[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper ARIA attributes[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22msupports dark mode theme[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes notification badge[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper z-index for overlays[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22muses CSS modules or styled components[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper error boundaries[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22msupports internationalization[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper loading states[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes back navigation button[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22msupports tab keyboard navigation[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper focus management[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mincludes CommandPalette integration[32m 0[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx[2m > [22mTopbar accessibility[2m > [22mhas proper cleanup on unmount[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mComponent Structure[2m > [22mexports StudioTab component[32m 190[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mComponent Structure[2m > [22mhas correct component name[32m 1[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mProps Interface[2m > [22maccepts currentWorkspacePermissions prop[32m 1[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mProps Interface[2m > [22maccepts meetingDraft prop[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mProps Interface[2m > [22maccepts peopleProfiles prop[32m 1[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mProps Interface[2m > [22maccepts userMeetings prop[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mDefault Props[2m > [22mhas default value for layoutPreset[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mDefault Props[2m > [22mhandles empty peopleProfiles array[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mDefault Props[2m > [22mhandles empty userMeetings array[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mDefault Props[2m > [22mhandles null selectedMeeting[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mType Safety[2m > [22maccepts valid workspace permissions[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mType Safety[2m > [22maccepts valid meeting draft structure[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mType Safety[2m > [22maccepts valid callback functions[32m 1[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mModule Exports[2m > [22mexports default component[32m 0[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx[2m > [22mStudioTab[2m > [22mModule Exports[2m > [22mhas no named exports[32m 0[2mms[22m[39m
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mrenders meeting intelligence screen
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/App.test.tsx[2m > [22mrenders meeting intelligence screen[32m 108[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22minitialization and selecting meeting via derived state[32m 31[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22mstartNewMeetingDraft & saveMeeting[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22mclearMeetingDraft[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22mcreateAdHocMeeting and createMeetingDirect[32m 33[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22msyncing selected meeting to draft[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22mhandling detached draft from storage[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts[2m > [22museMeetingLifecycle[2m > [22mresetSelectionState[32m 4[2mms[22m[39m
+ [32m✓[39m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mretries queued item by resetting flags and status message[32m 65[2mms[22m[39m
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mqueues stored recording for retry without reupload
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mretries failed remote item without requiring local audio re-upload
+ [32m✓[39m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mfails blocked queue item when meeting cannot be resolved[32m 3[2mms[22m[39m
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mfails queue item when local audio blob is missing
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mprocesses successful queue item and builds fallback analysis on AI error
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmarks item as failed when remote transcription throws
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps missing-token failures to a re-login message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps failed fetch errors to a backend availability message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps failed fetch errors to a hosted preview message when preview health was healthy
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps 502 application-failed responses to a backend availability message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps Vercel router target errors to a backend availability message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps explicit HTTP 502 errors to a backend availability message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mmaps empty-stt-output failures to a recording quality message
+ [2m[90m↓[39m[22m src/store/recorderStore.test.ts[2m > [22mrecorderStore[2m > [22mtreats empty transcript as a completed import without console error
+[90mstderr[2m | src/hooks/useAudioHardware.test.ts[2m > [22m[2museAudioHardware[2m > [22m[2mstarts and stops recording
+[22m[39m[NoiseReducer] AudioWorklet not supported, bypassing.
+
+ [32m✓[39m src/hooks/useAudioHardware.test.ts[2m > [22museAudioHardware[2m > [22mstarts and stops recording[32m 60[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx[2m > [22museMeetings[2m > [22mupdates calendar entry metadata and applies meeting snapshot[32m 32[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx[2m > [22museMeetings[2m > [22mdelegates task snapshot application to task operations[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx[2m > [22museMeetings[2m > [22mcreates manual note through lifecycle helper and updates workspace message[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx[2m > [22museMeetings[2m > [22mdeletes selected meeting and resets selection state[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx[2m > [22museMeetings[2m > [22mdeleteRecordingAndMeeting removes meeting and syncs workspace immediately[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22mrenameSpeaker[32m 21[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22mupdateTranscriptSegment[32m 4[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22massignSpeakerToTranscriptSegments[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22maddRecordingMarker, updateRecordingMarker, deleteRecordingMarker[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22mrenameTag and deleteTag[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22maddMeetingComment and attachCompletedRecording[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22mrescheduleMeeting[32m 2[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts[2m > [22museRecordingActions[2m > [22mmergeTranscriptSegments and splitTranscriptSegment[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mregisters a user and creates a workspace[32m 36[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mjoins an existing workspace and can log in to it[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mresets password with a recovery code[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mrejects login when a specific workspace is requested but user is not a member[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mshows a dedicated message for Google-managed accounts during password login[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts[2m > [22mauth flows[2m > [22mpersists the auto speaker learning preference in the user profile[32m 2[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mcreateTaskFromComposer[32m 27[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mupdateTask manual[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mupdateTask auto[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mmoveTaskToColumn, rescheduleTask, reorderTask[32m 7[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mbulkUpdateTasks[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22maddTaskColumn, changeTaskColumn, removeTaskColumn[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts[2m > [22museTaskOperations[2m > [22mdeleteTask, bulkDeleteTasks[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useLiveTranscript.test.tsx[2m > [22museLiveTranscript[2m > [22mpolls chunks and updates caption when transcription succeeds[32m 28[2mms[22m[39m
+ [32m✓[39m src/hooks/useLiveTranscript.test.tsx[2m > [22museLiveTranscript[2m > [22mdoes not start a second request while previous transcription is inflight[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useLiveTranscript.test.tsx[2m > [22museLiveTranscript[2m > [22mclears caption on cleanup and when disabled[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingPipeline.test.tsx[2m > [22museRecordingPipeline[2m > [22mtriggers queue processing when hydration is finished[32m 26[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingPipeline.test.tsx[2m > [22museRecordingPipeline[2m > [22mdoes not process queue while remote state is hydrating[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingPipeline.test.tsx[2m > [22museRecordingPipeline[2m > [22mexposes queue summary and meeting-specific queue accessors[32m 2[2mms[22m[39m
+ [32m✓[39m src/context/MeetingsContext.test.tsx[2m > [22mMeetingsContext[2m > [22mprovides meetings hook result to descendants[32m 34[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mbuildProfileDraft should provide defaults[32m 31[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mbuildProfileDraft should map user fields[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mnormalizeTaskUpdatePayload[2m > [22mshould update basic fields[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mnormalizeTaskUpdatePayload[2m > [22mshould sync completed status with columns[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mnormalizeTaskUpdatePayload[2m > [22mshould handle tags[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mnormalizeTaskUpdatePayload[2m > [22mshould normalize assignedTo[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts[2m > [22mappState library[2m > [22mnormalizeTaskUpdatePayload[2m > [22mshould handle owner vs assignedTo priority[32m 1[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.autosync.test.ts[2m > [22museGoogleIntegrations autosync[2m > [22mpushes linked task edits to Google Tasks after local update[32m 30[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.autosync.test.ts[2m > [22museGoogleIntegrations autosync[2m > [22msyncCalendarEntryToGoogle updates linked meeting on demand[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mnormalization functions[32m 6[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mcreation functions[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mdependency details[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mvalidation functions[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22msla and notifications[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22morder functions[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mchange history build[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22massignee summary[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts[2m > [22mextended tasks functions[2m > [22mcolumns[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould return empty array if no input data[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould unique names and build profiles[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould calculate correct task counts[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould infer traits correctly with Polish characters[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould create summary string using Polish marks and reverse chronological order[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould handle slugified IDs with Polish characters[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould sort profiles by activity (meetings * 2 + tasks)[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould match timezone from workspace members or current user[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts[2m > [22mbuildPeopleProfiles[2m > [22mshould find next meeting in the future[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mmerges class names correctly[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles conditional classes[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles false conditional classes[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles null and undefined[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles array of classes[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles object with boolean values[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mmerges tailwind classes correctly[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles empty input[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles single class[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts[2m > [22mcn utility function[2m > [22mhandles nested arrays[32m 1[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mnormalizes workspace state with safe defaults[32m 3[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mserializes workspace state into a stable json snapshot[32m 1[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mnormalizes transcription status payloads from storage rows[32m 1[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mAiSuggestTasksResponse has the correct shape[32m 2[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mAiPersonProfileResponse accepts anthropic mode with full DISC[32m 1[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mAiPersonProfileResponse accepts no-key fallback mode[32m 0[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts[2m > [22mshared contracts[2m > [22mnormalizes remote transcription responses through the same contract shape[32m 1[2mms[22m[39m
+ [32m✓[39m src/store/uiStore.test.ts[2m > [22muiStore[2m > [22mtracks tab history and browser-facing layout attributes[32m 6[2mms[22m[39m
+ [32m✓[39m src/store/uiStore.test.ts[2m > [22muiStore[2m > [22mrequests notification permission and delivers only new notifications[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/workspaceBackup.test.ts[2m > [22mworkspaceBackup[2m > [22mbuilds and parses a round-trip backup payload[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/workspaceBackup.test.ts[2m > [22mworkspaceBackup[2m > [22mpreviews only new items and changed state keys[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/workspaceBackup.test.ts[2m > [22mworkspaceBackup[2m > [22mmerges imported state into the current workspace state[32m 1[2mms[22m[39m
+ [32m✓[39m src/pwa.test.ts[2m > [22mregisterServiceWorker[2m > [22mregisters service worker on localhost and reloads once on controller change[32m 6[2mms[22m[39m
+ [32m✓[39m src/pwa.test.ts[2m > [22mregisterServiceWorker[2m > [22mdoes not register service worker on hosted vercel previews[32m 1[2mms[22m[39m
+ [32m✓[39m src/service-worker.test.ts[2m > [22mservice-worker[2m > [22mreacts to skip waiting messages[32m 5[2mms[22m[39m
+ [32m✓[39m src/service-worker.test.ts[2m > [22mservice-worker[2m > [22mskips api fetches and caches regular asset responses[32m 3[2mms[22m[39m
+ [32m✓[39m src/service-worker.test.ts[2m > [22mservice-worker[2m > [22mskips cross-origin api requests so the worker does not intercept remote backend calls[32m 2[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts[2m > [22mbrowserRuntime[2m > [22midentifies hosted vercel previews correctly[32m 3[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts[2m > [22mbrowserRuntime[2m > [22menables service worker only on localhost[32m 1[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts[2m > [22mbrowserRuntime[2m > [22mcleans preview workers and reloads once when a stale controller exists[32m 3[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts[2m > [22mbrowserRuntime[2m > [22mreloads once when the preview build id changes even without a worker controller[32m 1[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts[2m > [22mbrowserRuntime[2m > [22mskips cleanup on non-preview hosts[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mgetMeetingActivityEntries[2m > [22mshould return empty array for null meeting[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mgetMeetingActivityEntries[2m > [22mshould return manual activity entries if present[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mgetMeetingActivityEntries[2m > [22mshould return fallback created entry if no activity[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mgetTaskActivityEntries[2m > [22mshould return fallback created entry for task[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mgetTaskActivityEntries[2m > [22mshould process task history[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts[2m > [22mactivityFeed library[2m > [22mbuildWorkspaceActivityFeed[2m > [22mshould combine, sort and limit entries[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts[2m > [22mgoogleSync helpers[2m > [22mdetects a Google Task conflict when local and remote diverged[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts[2m > [22mgoogleSync helpers[2m > [22mtreats matching Google Task snapshots as equal[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts[2m > [22mgoogleSync helpers[2m > [22mcreates a calendar sync conflict when local and remote event changed after sync[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts[2m > [22mgoogleSync helpers[2m > [22mtask-event snapshot has endsAt = startsAt + 1h when endsAt not provided[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts[2m > [22mgoogleSync helpers[2m > [22mtask-event snapshot respects explicit endsAt when provided[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mbuildWorkspaceNotifications[2m > [22mshould handle empty input[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mbuildWorkspaceNotifications[2m > [22mshould build reminder notifications[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mbuildWorkspaceNotifications[2m > [22mshould build task sla notifications and sort them[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mgetBrowserNotificationCandidates[2m > [22mshould filter out delivered items[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mgetBrowserNotificationCandidates[2m > [22mshould only return items before now + 1 minute[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts[2m > [22mnotifications library[2m > [22mgetBrowserNotificationCandidates[2m > [22mshould limit output to 3 items[32m 0[2mms[22m[39m
+ [32m✓[39m src/store/meetingsStore.test.ts[2m > [22mmeetingsStore[2m > [22msupports updater functions across persisted collections[32m 7[2mms[22m[39m
+ [32m✓[39m src/store/meetingsStore.test.ts[2m > [22mmeetingsStore[2m > [22mmarks meeting draft as changed and persists stable fields[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22msummarizeSpectrum calculates fields correctly[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22msummarizeSpectrum handles empty data[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22msignatureAroundTimestamp finds correct signature[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22mdiarizeSegments processes empty list[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22mdiarizeSegments processes valid segments[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts[2m > [22mdiarization[2m > [22mverifyRecognizedSegments assigns scores and statuses[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts[2m > [22mrecordingQueue helpers[2m > [22mnormalizes completed to done[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts[2m > [22mrecordingQueue helpers[2m > [22mupdates queue item state and keeps meeting filters working[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts[2m > [22mrecordingQueue helpers[2m > [22mresolveMeetingForQueueItem uses fresh meetings over stale snapshot[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts[2m > [22mrecordingQueue helpers[2m > [22mpreserves meetingId when ad-hoc meeting snapshot is asynchronous and unavailable[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts[2m > [22mrecordingQueue helpers[2m > [22mreturns the next processable pending item based on a predicate[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/permissions.test.ts[2m > [22mworkspace permissions[2m > [22mnormalizes unknown roles to member[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/permissions.test.ts[2m > [22mworkspace permissions[2m > [22mreturns read-only permissions for viewer[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/permissions.test.ts[2m > [22mworkspace permissions[2m > [22mreturns management permissions for owner[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/sketchnote.test.ts[2m > [22msketchnote helpers[2m > [22mbuilds a valid SVG sketchnote[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/sketchnote.test.ts[2m > [22msketchnote helpers[2m > [22mbuilds a data URL that decodes to SVG[32m 1[2mms[22m[39m
+ [32m✓[39m src/audio/noiseReducerNode.test.tsx[2m > [22mensureNoiseReducerWorklet[2m > [22mloads the worklet separately for different audio contexts[32m 5[2mms[22m[39m
+ [32m✓[39m src/audio/noiseReducerNode.test.tsx[2m > [22mensureNoiseReducerWorklet[2m > [22mreuses the same load promise for one audio context[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/kpi.test.ts[2m > [22mworkspace KPI dashboard[2m > [22mbuilds KPI totals and trend points for meetings and tasks[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/export.test.ts[2m > [22mexport helpers[2m > [22mbuilds meeting notes with key sections[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/export.test.ts[2m > [22mexport helpers[2m > [22mslugifies export titles and falls back safely[32m 1[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.test.tsx[2m > [22mProfileTab voice profiles[2m > [22mshows a clear backend configuration message and disables recording when api is unavailable
+ [2m[90m↓[39m[22m src/ProfileTab.auth.integration.test.tsx[2m > [22mProfileTab auth integration[2m > [22mloads voice profiles directly from the absolute api base url on hosted previews
+ [2m[90m↓[39m[22m src/hooks/useStoredState.test.ts[2m > [22museStoredState (dual-write sync engine with IndexedDB)[2m > [22myields localStorage fallback value INSTANTLY on first render to prevent blank UI
+ [2m[90m↓[39m[22m src/hooks/useStoredState.test.ts[2m > [22museStoredState (dual-write sync engine with IndexedDB)[2m > [22mdual-writes to both synchronous localStorage and async IndexedDB on update
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mhydrates remote session and updates persisted state
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mlogs out on unauthorized callback and unsubscribes on cleanup
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mupdates member role through workspace service
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mreturns workspace-filtered meetings in local mode
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mapplies remote workspace state through store setters
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mbootstraps remote state and syncs changed snapshots in remote mode
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mreports bootstrap error message in remote mode
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mblocks first remote bootstrap on hosted preview when health probe fails
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mprobes health first on hosted preview and resumes normal bootstrap after probe success
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mapplies cooldown after transport bootstrap errors and avoids poll spam
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx[2m > [22museWorkspaceData[2m > [22mresets transport cooldown after a successful remote pull
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts[2m > [22msuggestTasksFromTranscript[2m > [22mreturns empty array if transcript is empty[2m > [22mreturns empty array
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts[2m > [22msuggestTasksFromTranscript[2m > [22mcalls server proxy when VITE_API_BASE_URL is set
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts[2m > [22msuggestTasksFromTranscript[2m > [22mreturns empty array when proxy fails
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts[2m > [22msuggestTasksFromTranscript[2m > [22mreturns empty array when proxy returns no tasks
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts[2m > [22msuggestTasksFromTranscript[2m > [22mreturns empty array when proxy returns unexpected shape
+ [2m[90m↓[39m[22m src/store/authStore.test.ts[2m > [22mauthStore[2m > [22msubmitAuth persists the remote session token for follow-up api requests
+ [2m[90m↓[39m[22m src/store/authStore.test.ts[2m > [22mauthStore[2m > [22msubsequent login overwrites stale legacy token
+ [2m[90m↓[39m[22m src/store/workspaceStore.test.ts[2m > [22mworkspaceStore[2m > [22mswitches workspace and updates member role locally
+ [2m[90m↓[39m[22m src/store/workspaceStore.test.ts[2m > [22mworkspaceStore[2m > [22mbootstraps remote session and clears session on unauthorized
+
+<--- Last few GCs --->
+
+[20624:00000170E57A5000]    74747 ms: Scavenge (interleaved) 4068.4 (4080.3) -> 4062.8 (4097.5) MB, pooled: 0 MB, 5.99 / 0.00 ms  (average mu = 0.244, current mu = 0.185) allocation failure; 
+[20624:00000170E57A5000]    76422 ms: Mark-Compact (reduce) 4080.1 (4100.3) -> 4074.7 (4080.0) MB, pooled: 0 MB, 164.44 / 0.00 ms  (+ 1374.0 ms in 274 steps since start of marking, biggest step 5.1 ms, walltime since start of marking 1675 ms) (average mu 
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7E01CC36F node::OnFatalError+1343
+ 2: 00007FF7E0E14D77 v8::Function::NewInstance+423
+ 3: 00007FF7E0C15467 v8::base::AddressSpaceReservation::AddressSpaceReservation+322071
+ 4: 00007FF7E0C19174 v8::base::AddressSpaceReservation::AddressSpaceReservation+337700
+ 5: 00007FF7E0C2810C v8::internal::StrongRootAllocatorBase::deallocate_impl+16604
+ 6: 00007FF7E0C2794B v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 7: 00007FF7E20ADAED v8::base::UnsignedDivisionByConstant<unsigned __int64>+2791421
+ 8: 00007FF7E0C12F30 v8::base::AddressSpaceReservation::AddressSpaceReservation+312544
+ 9: 00007FF7E0C96C09 v8::Unlocker::~Unlocker+9273
+10: 00007FF7E080CA18 v8::String::Utf8Value::~Utf8Value+142680
+11: 000001709FE7733A 
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/services/authService.test.ts[2m [ src/services/authService.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/authService.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/config.test.ts[2m [ src/services/config.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/config.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/httpClient.test.ts[2m [ src/services/httpClient.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/httpClient.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/mediaService.test.ts[2m [ src/services/mediaService.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/mediaService.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/stateService.test.ts[2m [ src/services/stateService.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/stateService.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/workspaceService.test.ts[2m [ src/services/workspaceService.test.ts ][22m
+[31m[1mError[22m: Cannot find module '/@id/c:/Users/user/new/audioRecorder/src/services/workspaceService.test.ts'[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'ERR_MODULE_NOT_FOUND' }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/23]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 17 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mcreates recognition instance with correct settings
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m83:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdefaults to pl-PL language
+[31m[1mAssertionError[22m: expected '' to be 'pl-PL' // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- pl-PL[39m
+
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m99:34[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles no-speech error gracefully
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m115:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles network error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m132:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles not-allowed error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m151:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles service-not-allowed error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m170:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles language-not-supported error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m189:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for aborted error
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m208:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for unknown errors
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m225:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles final results and adds segment
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m246:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles interim results
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m279:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles multiple results with final and interim
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m310:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mskips empty transcripts
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m349:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mtrims transcript text
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m380:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstart method calls recognition.start
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m408:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstop method calls recognition.stop
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m423:34[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22msetOnEnd sets the onend handler
+[31m[1mAssertionError[22m: expected null to be [Function Mock] // Object.is equality[39m
+
+[32m- Expected:[39m
+[Function Mock]
+
+[31m+ Received:[39m
+null
+
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m439:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/23]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest-pool]: Worker forks emitted error.[39m
+[90m [2m❯[22m EventEmitter.<anonymous> node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3452:22[22m[39m
+[90m [2m❯[22m EventEmitter.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3019:22[22m[39m
+[90m [2m❯[22m ChildProcess.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit c:/Users/user/new/audioRecorder/node:internal/child_process:[2m294:12[22m[39m
+
+[31m[1mCaused by: Error[22m: Worker exited unexpectedly[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3018:33[22m[39m
+[90m [2m❯[22m ChildProcess.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit c:/Users/user/new/audioRecorder/node:internal/child_process:[2m294:12[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m48 passed[39m[22m[2m | [22m[33m8 skipped[39m[90m (64)[39m
+[2m      Tests [22m [1m[31m17 failed[39m[22m[2m | [22m[1m[32m272 passed[39m[22m[2m | [22m[33m65 skipped[39m[90m (359)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 13:50:54
+[2m   Duration [22m 119.73s[2m (transform 4.14s, setup 33.34s, import 6.41s, tests 14.46s, environment 115.01s)[22m
+

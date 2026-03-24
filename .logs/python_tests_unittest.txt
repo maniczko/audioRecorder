@@ -1,0 +1,2 @@
+U¿ycie: python diarize.py <audio_file> [hf_token]
+  lub ustaw HF_TOKEN w zmiennych œrodowiskowych

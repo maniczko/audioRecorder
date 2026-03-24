@@ -1,0 +1,57 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mTRANSCRIPTION_PROVIDER[2m > [22mhas correct id[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mTRANSCRIPTION_PROVIDER[2m > [22mhas correct label[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mreturns null when SpeechRecognition is not available[32m 2[2mms[22m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mcreates recognition instance with correct settings[32m 6[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdefaults to pl-PL language[32m 4[2mms[22m[39m
+[31m   → expected '' to be 'pl-PL' // Object.is equality[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles no-speech error gracefully[32m 1[2mms[22m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles network error with Polish message[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ Array(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles not-allowed error with Polish message[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ Array(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles service-not-allowed error with Polish message[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ Array(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles language-not-supported error with Polish message[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ Array(1) ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for aborted error[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for unknown errors[32m 1[2mms[22m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles final results and adds segment[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles interim results[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles multiple results with final and interim[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [32m✓[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mskips empty transcripts[32m 0[2mms[22m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mtrims transcript text[32m 2[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called with arguments: [ ArrayContaining{…} ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstart method calls recognition.start[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstop method calls recognition.stop[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+ [31m×[39m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mclearHandlers clears all handlers[32m 1[2mms[22m[39m
+[31m   → expected "vi.fn()" to be called at least once[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m13 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (20)[39m
+[2m   Start at [22m 19:11:25
+[2m   Duration [22m 2.79s[2m (transform 178ms, setup 475ms, import 152ms, tests 30ms, environment 1.67s)[22m
+

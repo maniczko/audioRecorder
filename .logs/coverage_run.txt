@@ -1,0 +1,698 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+Warning: A vi.mock("./recording") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("./storage") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("./diarization") call in "c:/Users/user/new/audioRecorder/src/lib/transcription.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+ [31m❯[39m src/lib/transcription.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m17 failed[39m[2m)[22m[32m 40[2mms[22m[39m
+     [32m✓[39m has correct id[32m 3[2mms[22m[39m
+     [32m✓[39m has correct label[32m 0[2mms[22m[39m
+     [32m✓[39m returns null when SpeechRecognition is not available[32m 1[2mms[22m[39m
+[31m     [31m×[31m creates recognition instance with correct settings[39m[32m 9[2mms[22m[39m
+[31m     [31m×[31m defaults to pl-PL language[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m handles no-speech error gracefully[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles network error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles not-allowed error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles service-not-allowed error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles language-not-supported error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m does not call onError for aborted error[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m does not call onError for unknown errors[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles final results and adds segment[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles interim results[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles multiple results with final and interim[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m skips empty transcripts[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m trims transcript text[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m start method calls recognition.start[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m stop method calls recognition.stop[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m setOnEnd sets the onend handler[39m[32m 2[2mms[22m[39m
+     [32m✓[39m clearHandlers clears all handlers[32m 1[2mms[22m[39m
+[90mstderr[2m | src/studio/TranscriptPanel.test.tsx[2m > [22m[2mTranscriptPanel[2m > [22m[2mrenders review queue with verification evidence
+[22m[39mReceived NaN for the `width` attribute. If this is expected, cast the value to a string.
+
+[90mstderr[2m | src/NotesTab.test.tsx[2m > [22m[2mNotesTab[2m > [22m[2mrenders list of notes and allows filtering, grouping and selecting
+[22m[39mEach child in a list should have a unique "key" prop.
+
+Check the render method of `NoteDetail`. See https://react.dev/link/warning-keys for more information.
+
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2892[2mms[22m[39m
+     [33m[2m✓[22m[39m renders review queue with verification evidence [33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m filters transcript list to review items only [33m 805[2mms[22m[39m
+     [33m[2m✓[22m[39m filters transcript by speaker and low confidence [33m 541[2mms[22m[39m
+     [33m[2m✓[22m[39m applies speaker change to selected segment range [33m 529[2mms[22m[39m
+     [33m[2m✓[22m[39m assigns speaker to segments inside selected audio range [33m 419[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx [2m([22m[2m46 tests[22m[2m | [22m[33m27 skipped[39m[2m)[22m[33m 2766[2mms[22m[39m
+       [33m[2m✓[22m[39m displays logout button and calls onLogout when clicked [33m 405[2mms[22m[39m
+ [32m✓[39m src/NotesTab.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 3712[2mms[22m[39m
+     [33m[2m✓[22m[39m renders list of notes and allows filtering, grouping and selecting [33m 3604[2mms[22m[39m
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders without crashing
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders the player bar when there is a message or recording
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders player shell while selected recording audio is loading
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows empty transcript banner and retry action
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows summary fallback for empty transcript
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders playback scrubber and lets user seek audio
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders empty state when no meeting selected
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders analysis tabs
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders detailed feedback cards and category scores
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mbuilds fallback feedback for older analyses without feedback
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders toolbar buttons
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows recording controls when isRecording is true
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mshows meeting tasks in the tasks tab
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mtask actions can navigate to tasks and open task details
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/studio/StudioMeetingView.test.tsx[2m > [22m[2mStudioMeetingView[2m > [22m[2mrenders participants as a list
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 2276[2mms[22m[39m
+     [33m[2m✓[22m[39m shows empty transcript banner and retry action [33m 448[2mms[22m[39m
+     [33m[2m✓[22m[39m builds fallback feedback for older analyses without feedback [33m 427[2mms[22m[39m
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mrenders profile sidebar and selected person details
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mfilters people list by search query
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mswitches between people when sidebar item is clicked
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2madds a new need for the selected person
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+[90mstderr[2m | src/PeopleTab.test.tsx[2m > [22m[2mPeopleTab[2m > [22m[2mcalls onOpenMeeting when history item is clicked
+[22m[39mExpected `onClick` listener to be a function, instead got a value of `object` type.
+Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+ [32m✓[39m src/PeopleTab.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 900[2mms[22m[39m
+     [33m[2m✓[22m[39m renders profile sidebar and selected person details [33m 508[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 978[2mms[22m[39m
+     [33m[2m✓[22m[39m submits login flow after filling all fields [33m 414[2mms[22m[39m
+ [32m✓[39m src/TasksTab.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 1956[2mms[22m[39m
+     [33m[2m✓[22m[39m moves a task between kanban columns with drag and drop [33m 467[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a task with the group from advanced fields [33m 1410[2mms[22m[39m
+ [32m✓[39m src/studio/StudioSidebar.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 968[2mms[22m[39m
+     [33m[2m✓[22m[39m renders StudioSidebar and handles basic inputs [33m 926[2mms[22m[39m
+ [32m✓[39m src/tasks/TaskKanbanView.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 921[2mms[22m[39m
+     [33m[2m✓[22m[39m interactions with KanbanCard [33m 437[2mms[22m[39m
+     [33m[2m✓[22m[39m quick add task [33m 340[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 739[2mms[22m[39m
+     [33m[2m✓[22m[39m filters results via input query [33m 357[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 904[2mms[22m[39m
+     [33m[2m✓[22m[39m shows retry action for selected meeting with empty transcript [33m 454[2mms[22m[39m
+[90mstderr[2m | src/CalendarTab.test.tsx[2m > [22m[2mCalendarTab[2m > [22m[2mreschedules a task when dragged to another month cell
+[22m[39mAn update to CalendarTab inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CalendarTab inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/CalendarTab.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 648[2mms[22m[39m
+     [33m[2m✓[22m[39m reschedules a task when dragged to another month cell [33m 325[2mms[22m[39m
+[90mstderr[2m | src/hooks/useGoogleIntegrations.test.ts[2m > [22m[2museGoogleIntegrations[2m > [22m[2mconnect functions update state and throw unhandled errors safely
+[22m[39mGoogle Calendar connect failed. Error: Google Calendar API returned 401.
+    at fetchPrimaryCalendarEvents (C:/Users/user/new/audioRecorder/src/lib/google.ts:176:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:118:21
+    at Object.connectGoogleCalendar (C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:199:7)
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.test.ts:39:35
+
+[90mstderr[2m | src/hooks/useGoogleIntegrations.test.ts[2m > [22m[2museGoogleIntegrations[2m > [22m[2mconnect functions update state and throw unhandled errors safely
+[22m[39mGoogle Tasks connect failed. Error: Google Tasks API returned 401 while loading task lists.
+    at fetchGoogleTaskLists (C:/Users/user/new/audioRecorder/src/lib/google.ts:258:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at Object.connectGoogleTasks (C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.ts:286:23)
+    at C:/Users/user/new/audioRecorder/src/hooks/useGoogleIntegrations.test.ts:52:35
+
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 505[2mms[22m[39m
+     [33m[2m✓[22m[39m connect functions update state and throw unhandled errors safely [33m 452[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx [2m([22m[2m30 tests[22m[2m)[22m[32m 274[2mms[22m[39m
+ [32m✓[39m src/StudioTab.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 211[2mms[22m[39m
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mrenders meeting intelligence screen
+[22m[39mAn update to RecorderProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 106[2mms[22m[39m
+ [32m✓[39m src/store/recorderStore.test.ts [2m([22m[2m15 tests[22m[2m | [22m[33m13 skipped[39m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+[90mstderr[2m | src/hooks/useAudioHardware.test.ts[2m > [22m[2museAudioHardware[2m > [22m[2mstarts and stops recording
+[22m[39m[NoiseReducer] AudioWorklet not supported, bypassing.
+
+ [32m✓[39m src/hooks/useAudioHardware.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/hooks/useLiveTranscript.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/context/MeetingsContext.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.autosync.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingPipeline.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/store/uiStore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/service-worker.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/store/meetingsStore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/workspaceBackup.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/permissions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/pwa.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/kpi.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/audio/noiseReducerNode.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/export.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/sketchnote.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.test.tsx [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/ProfileTab.auth.integration.test.tsx [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useStoredState.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx [2m([22m[2m8 tests[22m[2m | [22m[33m8 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/lib/aiTaskSuggestions.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m5 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/store/authStore.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/store/workspaceStore.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+
+<--- Last few GCs --->
+
+[18512:0000026EFAF4B000]   147794 ms: Scavenge (interleaved) 4090.6 (4096.1) -> 4087.7 (4096.9) MB, pooled: 0 MB, 16.90 / 0.00 ms  (average mu = 0.294, current mu = 0.284) allocation failure; 
+[18512:0000026EFAF4B000]   149647 ms: Mark-Compact (reduce) 4090.0 (4096.9) -> 4081.6 (4090.1) MB, pooled: 0 MB, 1625.38 / 0.00 ms  (+ 174.3 ms in 36 steps since start of marking, biggest step 5.1 ms, walltime since start of marking 1844 ms) (average mu =
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7E01CC36F node::OnFatalError+1343
+ 2: 00007FF7E0E14D77 v8::Function::NewInstance+423
+ 3: 00007FF7E0C15467 v8::base::AddressSpaceReservation::AddressSpaceReservation+322071
+ 4: 00007FF7E0C19174 v8::base::AddressSpaceReservation::AddressSpaceReservation+337700
+ 5: 00007FF7E0C2810C v8::internal::StrongRootAllocatorBase::deallocate_impl+16604
+ 6: 00007FF7E0C2794B v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 7: 00007FF7E20ADAED v8::base::UnsignedDivisionByConstant<unsigned __int64>+2791421
+ 8: 00007FF7E0C12F30 v8::base::AddressSpaceReservation::AddressSpaceReservation+312544
+ 9: 00007FF7E0C96C09 v8::Unlocker::~Unlocker+9273
+10: 00007FF7E080C672 v8::String::Utf8Value::~Utf8Value+141746
+11: 0000026EB7E7733A 
+Failed to parse file:///c:/Users/user/new/audioRecorder/src/components/ui/button.tsx. Excluding it from coverage.
+ Error [RolldownError]: Parse failed with 1 error:
+Expected `,` or `}` but found `Identifier`
+1: import { Button as ButtonPrimitive } from "@base-ui/react/button"
+2: import { cva, type VariantProps } from "class-variance-authority"
+                      ^
+3: 
+4: import { cn } from "@/lib/utils"
+1: import { Button as ButtonPrimitive } from "@base-ui/react/button"
+2: import { cva, type VariantProps } from "class-variance-authority"
+          ^
+3: 
+4: import { cn } from "@/lib/utils"
+    at error (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/rolldown@1.0.0-rc.10/node_modules/rolldown/dist/shared/logs-D80CXhvg.mjs:147:24)
+    at normalizeParseError (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/rolldown@1.0.0-rc.10/node_modules/rolldown/dist/parse-ast-index.mjs:26:9)
+    at wrap (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/rolldown@1.0.0-rc.10/node_modules/rolldown/dist/parse-ast-index.mjs:6:39)
+    at parseAstAsync (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/rolldown@1.0.0-rc.10/node_modules/rolldown/dist/parse-ast-index.mjs:55:9)
+    at V8CoverageProvider.remapCoverage (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/@vitest+coverage-v8@4.1.0_vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0_25jrqp2bs5qvuenm2urplulscq/node_modules/@vitest/coverage-v8/dist/provider.js:133:10)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/@vitest+coverage-v8@4.1.0_vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0_25jrqp2bs5qvuenm2urplulscq/node_modules/@vitest/coverage-v8/dist/provider.js:119:23
+    at async Promise.all (index 7)
+    at V8CoverageProvider.getCoverageMapForUncoveredFiles (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/@vitest+coverage-v8@4.1.0_vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0_25jrqp2bs5qvuenm2urplulscq/node_modules/@vitest/coverage-v8/dist/provider.js:109:4)
+    at V8CoverageProvider.generateCoverage (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/@vitest+coverage-v8@4.1.0_vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0_25jrqp2bs5qvuenm2urplulscq/node_modules/@vitest/coverage-v8/dist/provider.js:56:29)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:13455:23 {
+  code: 'PARSE_ERROR',
+  id: undefined,
+  pos: 85
+}
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 17 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mcreates recognition instance with correct settings
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m83:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdefaults to pl-PL language
+[31m[1mAssertionError[22m: expected '' to be 'pl-PL' // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- pl-PL[39m
+
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m99:34[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles no-speech error gracefully
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m115:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles network error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m132:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles not-allowed error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m151:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles service-not-allowed error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m170:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles language-not-supported error with Polish message
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m189:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for aborted error
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m208:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mdoes not call onError for unknown errors
+[31m[1mTypeError[22m: mockRecognition.onerror is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m225:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles final results and adds segment
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m246:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles interim results
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m279:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mhandles multiple results with final and interim
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m310:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mskips empty transcripts
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m349:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mtrims transcript text
+[31m[1mTypeError[22m: mockRecognition.onresult is not a function[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m380:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstart method calls recognition.start
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m408:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22mstop method calls recognition.stop
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called at least once[39m
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m423:34[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/17]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/transcription.test.ts[2m > [22mcreateBrowserTranscriptionController[2m > [22msetOnEnd sets the onend handler
+[31m[1mAssertionError[22m: expected null to be [Function Mock] // Object.is equality[39m
+
+[32m- Expected:[39m
+[Function Mock]
+
+[31m+ Received:[39m
+null
+
+[90m [2m❯[22m src/lib/transcription.test.ts:[2m439:35[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/17]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest-pool]: Worker forks emitted error.[39m
+[90m [2m❯[22m EventEmitter.<anonymous> node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3452:22[22m[39m
+[90m [2m❯[22m EventEmitter.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3019:22[22m[39m
+[90m [2m❯[22m ChildProcess.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit c:/Users/user/new/audioRecorder/node:internal/child_process:[2m294:12[22m[39m
+
+[31m[1mCaused by: Error[22m: Worker exited unexpectedly[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.0_@opentelemetry+api@1.9.0_@types+node@25.5.0_jsdom@29.0.1_@noble+hashes@1.8.0__ms_obotgnuzl7sdgya6gqlu2bx5ja/node_modules/vitest/dist/chunks/cli-api.DuT9iuvY.js:[2m3018:33[22m[39m
+[90m [2m❯[22m ChildProcess.emit c:/Users/user/new/audioRecorder/node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit c:/Users/user/new/audioRecorder/node:internal/child_process:[2m294:12[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m48 passed[39m[22m[2m | [22m[33m8 skipped[39m[90m (58)[39m
+[2m      Tests [22m [1m[31m17 failed[39m[22m[2m | [22m[1m[32m272 passed[39m[22m[2m | [22m[33m65 skipped[39m[90m (359)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 13:55:01
+[2m   Duration [22m 195.02s[2m (transform 4.74s, setup 32.07s, import 7.82s, tests 21.86s, environment 104.23s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   51.13 |    45.52 |   55.56 |   51.31 |                   
+ src               |   55.91 |    49.96 |   59.96 |   55.44 |                   
+  App.tsx          |     100 |      100 |     100 |     100 |                   
+  AppProviders.tsx |     100 |      100 |     100 |     100 |                   
+  AppShell.tsx     |      70 |       50 |      50 |      70 | 52-53,87          
+  AuthScreen.tsx   |     100 |    90.32 |     100 |     100 | ...20-126,179,271 
+  CalendarTab.tsx  |   56.55 |    44.11 |   56.48 |   55.35 | ...88-697,752-826 
+  ...ndPalette.tsx |   83.83 |       60 |   88.88 |   84.04 | ...97,122,127-134 
+  MainApp.tsx      |     100 |      100 |     100 |     100 |                   
+  NotesTab.tsx     |   92.36 |    89.34 |   95.58 |   92.03 | ...96,120,550,655 
+  ...ionCenter.tsx |   10.52 |    16.21 |   11.11 |   10.52 | 24-100            
+  PeopleTab.tsx    |   56.21 |    52.98 |   56.33 |   57.63 | ...06,630-648,736 
+  ProfileTab.tsx   |   30.56 |    35.82 |   43.01 |   30.24 | 17-463,536-538    
+  ...rdingsTab.tsx |   70.39 |    64.22 |   73.33 |   70.98 | ...39-484,581-610 
+  StudioTab.tsx    |    7.14 |        0 |      20 |    9.09 | 23-58             
+  TabRouter.tsx    |   16.94 |     4.16 |   13.04 |   17.02 | 20-22,26-331      
+  TasksTab.tsx     |    44.9 |    36.31 |    50.7 |   44.01 | ...38-555,559-596 
+  Topbar.tsx       |   14.28 |        0 |    7.14 |      15 | 13-128            
+  index.tsx        |       0 |        0 |       0 |       0 | 11-31             
+  pwa.ts           |     100 |    71.42 |     100 |     100 | 8-30              
+  ...tWebVitals.ts |       0 |        0 |       0 |       0 | 1-8               
+ src/audio         |   26.76 |     11.9 |   57.14 |   27.11 |                   
+  ...educerNode.ts |   53.48 |    10.52 |      50 |   53.84 | 35,38-49,59-84,89 
+  vadFilter.ts     |   15.15 |    13.04 |      75 |   13.92 | 34-48,66-147      
+ src/components    |   75.67 |    51.61 |   66.66 |   77.77 |                   
+  ...eSelector.tsx |   94.73 |       75 |     100 |   94.73 | 32                
+  ...ncManager.tsx |     100 |      100 |     100 |     100 |                   
+  ...ineStatus.tsx |      75 |    58.06 |      50 |   85.71 | 78                
+  Skeleton.tsx     |      25 |    34.78 |      25 |      25 | 9-45              
+ src/context       |     100 |       50 |     100 |     100 |                   
+  ...leContext.tsx |     100 |       50 |     100 |     100 | 35                
+  ...gsContext.tsx |     100 |       50 |     100 |     100 | 18                
+  ...erContext.tsx |     100 |       50 |     100 |     100 | 28                
+  ...ceContext.tsx |     100 |       50 |     100 |     100 | 38                
+ src/hooks         |   50.39 |    42.37 |   54.22 |      50 |                   
+  ...ioHardware.ts |   68.26 |    54.83 |   61.53 |   69.01 | ...07-315,327-349 
+  ...oHydration.ts |   19.73 |     22.5 |   29.41 |   19.25 | ...37-152,154-214 
+  ...tegrations.ts |   42.25 |       30 |   33.92 |   42.66 | ...26-637,641-649 
+  ...ranscript.tsx |   93.54 |    76.47 |     100 |   92.59 | 51,56             
+  ...gLifecycle.ts |   82.79 |     73.2 |     100 |   82.45 | ...19,325,337-338 
+  useMeetings.ts   |   31.14 |     6.56 |   42.85 |   26.21 | ...75,390-401,404 
+  ...leProfiles.ts |      25 |    17.24 |      40 |   25.92 | 30-74             
+  useRecorder.ts   |   41.05 |    46.66 |      40 |   42.35 | ...56,168-221,225 
+  ...ingActions.ts |   73.96 |    71.49 |   85.33 |   73.17 | ...36,243,289-301 
+  ...ngPipeline.ts |   72.72 |    71.42 |      80 |   77.77 | 22-23             
+  ...toredState.ts |   57.89 |       40 |   42.85 |      60 | 18-27,31          
+  ...Operations.ts |   66.66 |    56.17 |   69.38 |   72.94 | ...41-242,258-262 
+  useUI.ts         |   50.34 |    48.27 |   54.54 |   52.94 | ...51-254,261-267 
+  useWorkspace.ts  |       0 |        0 |       0 |       0 | 11-181            
+  ...paceBackup.ts |   38.63 |    31.25 |   66.66 |   38.63 | ...7,79-83,86-101 
+  ...kspaceData.ts |   39.34 |    29.68 |   34.37 |   38.67 | ...17-353,367-371 
+ src/lib           |   56.08 |    51.63 |   59.97 |   56.57 |                   
+  ...rBoundary.tsx |      40 |        0 |      60 |      40 | 16-46             
+  activityFeed.ts  |   67.64 |    74.15 |   81.25 |   66.66 | ...5-79,84-88,102 
+  aiSearch.ts      |   76.19 |     92.3 |    62.5 |   76.19 | 9,21-22,29,49     
+  ...uggestions.ts |   17.07 |     2.77 |   33.33 |   17.94 | 16-91             
+  analysis.ts      |    5.74 |      1.4 |    9.43 |    6.21 | ...9,26-88,95-563 
+  appState.ts      |   91.66 |    84.11 |     100 |      90 | 36,57             
+  audioStore.tsx   |   30.68 |    19.56 |   14.81 |   30.86 | ...27-132,137-165 
+  auth.ts          |   57.71 |    57.92 |   56.66 |   58.15 | ...28-329,347-409 
+  calendar.ts      |   15.78 |        0 |   16.66 |   15.78 | 22-83             
+  calendarView.ts  |   67.97 |     56.9 |   65.57 |    67.6 | ...35-339,341-368 
+  ...andPalette.ts |   68.96 |    52.38 |   71.42 |      75 | 32,70-112         
+  diarization.ts   |   87.67 |    77.67 |   89.18 |    87.5 | ...49,165,240-255 
+  export.tsx       |   36.58 |    22.11 |   38.46 |   40.54 | ...3,56,70,82-267 
+  google.ts        |   24.52 |     17.8 |   10.34 |   25.49 | ...92-251,276-325 
+  googleSync.ts    |      90 |     80.8 |   83.33 |      90 | 55,93,131-141     
+  kpi.ts           |   70.96 |    68.42 |   82.35 |   72.13 | ...99,117-118,123 
+  meeting.ts       |   65.85 |       70 |    62.5 |   69.23 | ...-33,54,131-142 
+  notifications.ts |   86.36 |    79.31 |   85.71 |      90 | 7,17              
+  people.ts        |   90.78 |    89.39 |    92.3 |   92.42 | 48,99,101,110,126 
+  permissions.ts   |      90 |       80 |     100 |      90 | 33                
+  recording.ts     |   38.88 |    30.76 |      50 |   41.17 | 27-46             
+  ...rdingQueue.ts |   80.48 |       85 |      90 |   86.48 | 3,80,93-95        
+  ...ionStorage.ts |   77.77 |    71.42 |   57.14 |   77.77 | 9,20-24           
+  sketchnote.ts    |   91.66 |    81.48 |     100 |    91.3 | 33,39             
+  ...rAnalysis.tsx |   97.05 |    88.57 |     100 |   96.55 | 53                
+  speakerColors.ts |   81.81 |       75 |   33.33 |    87.5 | 23                
+  storage.ts       |   63.07 |    59.37 |   69.23 |    66.1 | ...01-105,137-140 
+  tasks.ts         |   56.38 |    44.88 |   63.63 |   56.12 | ...1130,1158,1166 
+  transcription.ts |   23.07 |    13.33 |   28.57 |   24.32 | 31-92             
+  utils.ts         |     100 |      100 |     100 |     100 |                   
+  workspace.ts     |   37.14 |    37.93 |   42.42 |   38.38 | ...12-248,250-258 
+  ...paceBackup.ts |   85.71 |    80.39 |     100 |   85.18 | ...08,120,124-129 
+ src/runtime       |   96.96 |     82.5 |      80 |   96.66 |                   
+  ...serRuntime.ts |   96.96 |     82.5 |      80 |   96.66 | 35                
+ src/services      |   29.64 |    28.25 |   22.22 |   30.66 |                   
+  authService.ts   |   17.64 |        0 |   17.64 |   17.64 | 20-44,56-89       
+  config.ts        |      64 |       64 |      75 |   78.94 | 20-24,45          
+  httpClient.ts    |   44.31 |    40.81 |   46.66 |    44.7 | ...20-166,196-209 
+  mediaService.ts  |    5.06 |      2.8 |       5 |     5.4 | 22-45,52-269      
+  stateService.ts  |    37.5 |        0 |   57.14 |    37.5 | 18-36             
+  ...aceService.ts |   22.22 |     12.5 |   14.28 |   22.22 | 8-54              
+ src/shared        |   65.47 |    66.17 |   71.42 |   64.75 |                   
+  TagInput.tsx     |   95.55 |    90.24 |   90.47 |   97.36 | 35                
+  contracts.ts     |   11.81 |    50.84 |   33.33 |   12.26 | 163-331,346-353   
+  ...ngFeedback.ts |   87.14 |    73.96 |   82.85 |   87.76 | ...19,474,498,523 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ src/store         |   36.09 |    26.63 |    52.3 |    35.8 |                   
+  authStore.ts     |   14.67 |     5.35 |      20 |   16.25 | ...35-149,151-157 
+  meetingsStore.ts |      88 |      100 |    82.6 |   83.33 | 64,71-75          
+  recorderStore.ts |   29.04 |    24.69 |   48.48 |   28.28 | ...88,605,620-669 
+  uiStore.ts       |      90 |    55.55 |   76.19 |   92.68 | 47,55,92          
+  ...spaceStore.ts |   34.09 |    24.61 |   42.85 |   33.82 | ...59-162,171,182 
+ src/studio        |   46.44 |    38.51 |   50.45 |    47.3 |                   
+  ...ionsPanel.tsx |   27.11 |     9.09 |    6.66 |   34.78 | 33,44-217         
+  KpiDashboard.tsx |       0 |        0 |       0 |       0 | 6-78              
+  ...rderPanel.tsx |       0 |        0 |       0 |       0 | 21-115            
+  ...etingView.tsx |   44.64 |    39.56 |   46.94 |    44.5 | ...2571,2591-2706 
+  ...ioSidebar.tsx |   89.02 |    87.65 |      90 |   90.32 | 165-172           
+  ...riptPanel.tsx |   50.84 |    48.82 |   61.47 |   53.94 | ...6,666-711,1055 
+  ...iedPlayer.tsx |       0 |        0 |       0 |       0 | 21-254            
+ src/styles        |     100 |      100 |     100 |     100 |                   
+  ...neseThemes.ts |     100 |      100 |     100 |     100 |                   
+ src/tasks         |   43.18 |    34.62 |   50.39 |   42.77 |                   
+  ...hartsView.tsx |   16.32 |        0 |       8 |   17.77 | 15-166            
+  ...ailsPanel.tsx |   37.34 |    45.36 |   44.44 |   39.72 | ...29,199-237,295 
+  ...anbanView.tsx |   62.22 |    49.31 |      70 |    62.4 | ...53-463,488-548 
+  TaskListView.tsx |    5.71 |     3.89 |   13.04 |    3.03 | 16-210            
+  ...eduleView.tsx |   12.28 |        0 |      15 |   12.96 | 22-152            
+  TasksSidebar.tsx |   71.42 |    64.28 |   71.42 |   71.42 | 84-88             
+  ...spaceView.tsx |   81.13 |     75.6 |   83.72 |   83.33 | 25-26,40-50,328   
+  taskViewUtils.ts |   43.83 |    32.19 |   52.38 |   43.93 | ...71,275-284,290 
+ src/ui            |   48.27 |     42.3 |   45.45 |   48.27 |                   
+  Input.tsx        |     100 |       75 |     100 |     100 | 17                
+  ...rimitives.tsx |   34.78 |    27.77 |   33.33 |   34.78 | 22-52,80-155      
+  Select.tsx       |     100 |       75 |     100 |     100 | 17                
+-------------------|---------|----------|---------|---------|-------------------

@@ -1,0 +1,117 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty query[32m 7[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for query with less than 2 characters[32m 1[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty items array[32m 1[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for null items[32m 1[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls apiRequest with correct endpoint[32m 1[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized query in request body[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized items in request body[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns API response on success[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on API error[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on HTTP 400[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on HTTP 500[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcaches successful requests[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mdoes not cache failed requests[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mnormalizes items with missing properties[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with null properties[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with empty string properties[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mclearSemanticSearchCache[2m > [22mclears the search cache[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long queries[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in query[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters in query[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles null query[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles undefined query[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very large items array[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with HTML in title[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles abort errors gracefully[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles timeout errors gracefully[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with undefined properties[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22maccepts AiSearchItem array[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22mreturns AiSearchResponse type[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates same cache key for same query and items[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates different cache key for different query[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates different cache key for different items[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mis case insensitive for query in cache key[32m 0[2mms[22m[39m
+[31m   → mockApiRequest.mockClear is not a function[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 33 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for query with less than 2 characters
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty items array
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for null items
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls apiRequest with correct endpoint
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized query in request body
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized items in request body
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns API response on success
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on API error
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on HTTP 400
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode on HTTP 500
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcaches successful requests
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mdoes not cache failed requests
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mnormalizes items with missing properties
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with null properties
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with empty string properties
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mclearSemanticSearchCache[2m > [22mclears the search cache
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long queries
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters in query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles null query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles undefined query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very large items array
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with HTML in title
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles abort errors gracefully
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles timeout errors gracefully
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with undefined properties
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22maccepts AiSearchItem array
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22mreturns AiSearchResponse type
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates same cache key for same query and items
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates different cache key for different query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mgenerates different cache key for different items
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mCache Key Generation[2m > [22mis case insensitive for query in cache key
+[31m[1mTypeError[22m: mockApiRequest.mockClear is not a function[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m21:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/33]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m33 failed[39m[22m[90m (33)[39m
+[2m   Start at [22m 16:35:02
+[2m   Duration [22m 2.68s[2m (transform 201ms, setup 469ms, import 164ms, tests 23ms, environment 1.66s)[22m
+

@@ -1,0 +1,150 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m❯[39m src/lib/transcription.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m17 failed[39m[2m)[22m[32m 44[2mms[22m[39m
+     [32m✓[39m has correct id[32m 4[2mms[22m[39m
+     [32m✓[39m has correct label[32m 1[2mms[22m[39m
+     [32m✓[39m returns null when SpeechRecognition is not available[32m 2[2mms[22m[39m
+[31m     [31m×[31m creates recognition instance with correct settings[39m[32m 7[2mms[22m[39m
+[31m     [31m×[31m defaults to pl-PL language[39m[32m 6[2mms[22m[39m
+[31m     [31m×[31m handles no-speech error gracefully[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles network error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles not-allowed error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles service-not-allowed error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles language-not-supported error with Polish message[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m does not call onError for aborted error[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m does not call onError for unknown errors[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles final results and adds segment[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles interim results[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m handles multiple results with final and interim[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m skips empty transcripts[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m trims transcript text[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m start method calls recognition.start[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m stop method calls recognition.stop[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m setOnEnd sets the onend handler[39m[32m 2[2mms[22m[39m
+     [32m✓[39m clearHandlers clears all handlers[32m 1[2mms[22m[39m
+ [31m❯[39m src/lib/aiTaskSuggestions.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 188[2mms[22m[39m
+       [32m✓[39m returns empty array if transcript is empty[32m 135[2mms[22m[39m
+       [32m✓[39m returns empty array if transcript is only whitespace[32m 2[2mms[22m[39m
+[31m       [31m×[31m calls server proxy when VITE_API_BASE_URL is set[39m[32m 11[2mms[22m[39m
+       [32m✓[39m sends transcript in request body[32m 3[2mms[22m[39m
+       [32m✓[39m returns empty array when proxy fails[32m 2[2mms[22m[39m
+       [32m✓[39m returns empty array when proxy returns 400[32m 2[2mms[22m[39m
+       [32m✓[39m returns empty array when proxy returns 500[32m 2[2mms[22m[39m
+       [32m✓[39m returns empty array when response has no tasks array[32m 1[2mms[22m[39m
+[31m       [31m×[31m returns tasks when proxy returns valid response[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m includes existing tasks in request for context[39m[32m 3[2mms[22m[39m
+       [32m✓[39m handles malformed JSON response[32m 2[2mms[22m[39m
+       [32m✓[39m handles timeout errors gracefully[32m 2[2mms[22m[39m
+       [32m✓[39m handles abort errors gracefully[32m 2[2mms[22m[39m
+       [32m✓[39m uses correct content type header[32m 2[2mms[22m[39m
+       [32m✓[39m uses POST method[32m 1[2mms[22m[39m
+       [32m✓[39m handles very long transcripts[32m 2[2mms[22m[39m
+       [32m✓[39m handles special characters in transcript[32m 1[2mms[22m[39m
+       [32m✓[39m handles Polish characters in transcript[32m 1[2mms[22m[39m
+       [32m✓[39m handles null transcript gracefully[32m 1[2mms[22m[39m
+       [32m✓[39m handles undefined transcript gracefully[32m 1[2mms[22m[39m
+       [32m✓[39m handles null existing tasks gracefully[32m 1[2mms[22m[39m
+       [32m✓[39m returns empty array when VITE_API_BASE_URL is not set[32m 1[2mms[22m[39m
+       [32m✓[39m returns empty array when VITE_API_BASE_URL is undefined[32m 2[2mms[22m[39m
+ [31m❯[39m src/lib/ErrorBoundary.test.tsx [2m([22m[2m17 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 485[2mms[22m[39m
+     [32m✓[39m renders children when there is no error[32m 55[2mms[22m[39m
+[31m     [31m×[31m renders error message when error is thrown[39m[32m 38[2mms[22m[39m
+     [32m✓[39m displays component label in error message[32m 10[2mms[22m[39m
+     [32m✓[39m displays error details[32m 7[2mms[22m[39m
+[31m     [31m×[31m renders fallback when provided[39m[32m 9[2mms[22m[39m
+[31m     [31m×[31m calls onReset when reset button is clicked[39m[32m 7[2mms[22m[39m
+[31m     [31m×[31m resets error state after reset[39m[32m 7[2mms[22m[39m
+     [32m✓[39m handles null children[32m 3[2mms[22m[39m
+     [32m✓[39m handles undefined children[32m 2[2mms[22m[39m
+     [32m✓[39m preserves error information after re-render[32m 7[2mms[22m[39m
+[31m     [31m×[31m has proper button role for reset[39m[32m 260[2mms[22m[39m
+     [32m✓[39m renders error header[32m 33[2mms[22m[39m
+       [32m✓[39m captures error info[32m 3[2mms[22m[39m
+       [32m✓[39m updates state with error[32m 9[2mms[22m[39m
+[31m       [31m×[31m handles error with no message[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m handles non-Error thrown[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m handles object thrown[39m[32m 10[2mms[22m[39m
+ [32m✓[39m src/NotesTab.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 2144[2mms[22m[39m
+     [33m[2m✓[22m[39m renders list of notes and allows filtering, grouping and selecting [33m 2058[2mms[22m[39m
+ [32m✓[39m src/studio/TranscriptPanel.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1894[2mms[22m[39m
+     [33m[2m✓[22m[39m filters transcript list to review items only [33m 498[2mms[22m[39m
+     [33m[2m✓[22m[39m filters transcript by speaker and low confidence [33m 325[2mms[22m[39m
+     [33m[2m✓[22m[39m applies speaker change to selected segment range [33m 346[2mms[22m[39m
+     [33m[2m✓[22m[39m assigns speaker to segments inside selected audio range [33m 340[2mms[22m[39m
+ [32m✓[39m src/ProfileTab.comprehensive.test.tsx [2m([22m[2m46 tests[22m[2m | [22m[33m27 skipped[39m[2m)[22m[33m 2035[2mms[22m[39m
+       [33m[2m✓[22m[39m displays logout button and calls onLogout when clicked [33m 303[2mms[22m[39m
+ [32m✓[39m src/studio/StudioMeetingView.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 1892[2mms[22m[39m
+     [33m[2m✓[22m[39m shows empty transcript banner and retry action [33m 417[2mms[22m[39m
+     [33m[2m✓[22m[39m builds fallback feedback for older analyses without feedback [33m 317[2mms[22m[39m
+ [32m✓[39m src/TasksTab.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 1629[2mms[22m[39m
+     [33m[2m✓[22m[39m moves a task between kanban columns with drag and drop [33m 499[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a task with the group from advanced fields [33m 1066[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m src/PeopleTab.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 910[2mms[22m[39m
+     [33m[2m✓[22m[39m renders profile sidebar and selected person details [33m 529[2mms[22m[39m
+ [32m✓[39m src/studio/StudioSidebar.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 846[2mms[22m[39m
+     [33m[2m✓[22m[39m renders StudioSidebar and handles basic inputs [33m 803[2mms[22m[39m
+ [32m✓[39m src/tasks/TaskKanbanView.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 848[2mms[22m[39m
+     [33m[2m✓[22m[39m interactions with KanbanCard [33m 452[2mms[22m[39m
+ [32m✓[39m src/AuthScreen.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 969[2mms[22m[39m
+     [33m[2m✓[22m[39m submits login flow after filling all fields [33m 496[2mms[22m[39m
+ [32m✓[39m src/RecordingsTab.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 786[2mms[22m[39m
+     [33m[2m✓[22m[39m shows retry action for selected meeting with empty transcript [33m 357[2mms[22m[39m
+ [32m✓[39m src/CommandPalette.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 749[2mms[22m[39m
+     [33m[2m✓[22m[39m filters results via input query [33m 341[2mms[22m[39m
+ [32m✓[39m src/CalendarTab.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 572[2mms[22m[39m
+ [32m✓[39m src/NotificationCenter.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[32m 214[2mms[22m[39m
+ [32m✓[39m src/Topbar.a11y.test.tsx [2m([22m[2m30 tests[22m[2m)[22m[33m 396[2mms[22m[39m
+     [33m[2m✓[22m[39m exports Topbar component [33m 376[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetingLifecycle.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 159[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32m✓[39m src/hooks/useAudioHardware.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m src/store/recorderStore.test.ts [2m([22m[2m15 tests[22m[2m | [22m[33m13 skipped[39m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m src/hooks/useMeetings.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/hooks/useTaskOperations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingActions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m src/hooks/useLiveTranscript.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/lib/storage.browser.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/lib/calendarView.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/context/MeetingsContext.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m src/hooks/useRecordingPipeline.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/lib/tasks.coverage.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/lib/utils.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/lib/appState.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/lib/people.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/hooks/useGoogleIntegrations.autosync.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/activityFeed.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/lib/tasks2.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/lib/workspace.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/runtime/browserRuntime.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/service-worker.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/workspaceBackup.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/googleSync.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m src/lib/diarization.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/sketchnote.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/notifications.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/recording.browser.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/store/meetingsStore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/pwa.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/kpi.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/shared/contracts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/store/uiStore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/permissions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/recordingQueue.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/audio/noiseReducerNode.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [2m[90m↓[39m[22m src/ProfileTab.auth.integration.test.tsx [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/ProfileTab.test.tsx [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useStoredState.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/hooks/useWorkspaceData.test.tsx [2m([22m[2m8 tests[22m[2m | [22m[33m8 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/store/authStore.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [2m[90m↓[39m[22m src/store/workspaceStore.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m52 passed[39m[22m[2m | [22m[33m7 skipped[39m[90m (63)[39m
+[2m      Tests [22m [1m[31m28 failed[39m[22m[2m | [22m[1m[32m353 passed[39m[22m[2m | [22m[33m60 skipped[39m[90m (446)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 18:23:15
+[2m   Duration [22m 148.25s[2m (transform 5.25s, setup 39.99s, import 8.68s, tests 18.58s, environment 143.88s)[22m
+

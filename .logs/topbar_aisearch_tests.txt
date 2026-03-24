@@ -1,0 +1,202 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty query[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for query with less than 2 characters[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for empty items[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns no-key mode for null items[32m 0[2mms[22m[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls API with correct parameters[32m 6[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized query in request body[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized items in request body[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns API response on success[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on API error[32m 2[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on 400 response[32m 2[2mms[22m[39m
+[31m   → HTTP 400[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on 500 response[32m 1[2mms[22m[39m
+[31m   → HTTP 500[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles malformed JSON response[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcaches successful requests[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mdoes not cache failed requests[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mnormalizes items with missing properties[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with null properties[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading '1')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mclearSemanticSearchCache[2m > [22mclears the search cache[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long queries[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in query[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters in query[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles null query[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles undefined query[32m 0[2mms[22m[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very large items array[32m 2[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with HTML in title[32m 1[2mms[22m[39m
+[31m   → Cannot read properties of undefined (reading 'get')[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles abort signal[32m 1[2mms[22m[39m
+[31m   → Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles timeout errors[32m 1[2mms[22m[39m
+[31m   → Timeout[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22maccepts AiSearchItem array[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+ [31m×[39m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22mreturns AiSearchResponse type[32m 1[2mms[22m[39m
+[31m   → Network error[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/Topbar.test.tsx[2m [ src/Topbar.test.tsx ][22m
+[31m[1mError[22m[39m: Transform failed with 18 errors:
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/Topbar.test.tsx:110:35 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m110 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249mo[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                   ──┬──  
+ [38;5;240m    │[0m                                     ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/Topbar.test.tsx:126:35 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m126 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249mo[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                   ──┬──  
+ [38;5;240m    │[0m                                     ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/Topbar.test.tsx:142:35 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m142 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249mo[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                   ──┬──  
+ [38;5;240m    │[0m                                     ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/Topbar.test.tsx:158:35 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m158 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249mo[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                   ──┬──  
+ [38;5;240m    │[0m                                     ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/Topbar.test.tsx:174:35 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m174 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mh[0m[38;5;249mo[0m[38;5;249mo[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mU[0m[38;5;249mI[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                   ──┬──  
+ [38;5;240m    │[0m                                     ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+...
+  Plugin: [35mvite:oxc[39m
+  File: [36mc:/Users/user/new/audioRecorder/src/Topbar.test.tsx[39m
+[90m [2m❯[22m transformWithOxc node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3720:19[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3788:26[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m30023:51[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m24152:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/23]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 22 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcalls API with correct parameters
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized query in request body
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22msends normalized items in request body
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns API response on success
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles malformed JSON response
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mcaches successful requests
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mnormalizes items with missing properties
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mclearSemanticSearchCache[2m > [22mclears the search cache
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles items with HTML in title
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'get')[39m
+[90m [2m❯[22m parseResponse src/services/httpClient.ts:[2m40:40[22m[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m208:56[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on API error
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mdoes not cache failed requests
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very long queries
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles special characters in query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles Polish characters in query
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles very large items array
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22maccepts AiSearchItem array
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mType Safety[2m > [22mreturns AiSearchResponse type
+[31m[1mError[22m: Network error[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m184:29[22m[39m
+
+[31m[1mCaused by: Error[22m: Network error[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m131:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on 400 response
+[31m[1mError[22m: HTTP 400[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m203:19[22m[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m144:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ status: 400 }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mreturns empty matches on 500 response
+[31m[1mError[22m: HTTP 500[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m203:19[22m[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m155:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ status: 500 }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22msemanticSearch[2m > [22mhandles items with null properties
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading '1')[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m236:38[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles abort signal
+[31m[1mError[22m: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m184:29[22m[39m
+
+[31m[1mCaused by: AbortError[22m: Aborted[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m335:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/23]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/aiSearch.test.ts[2m > [22maiSearch[2m > [22mEdge Cases[2m > [22mhandles timeout errors
+[31m[1mError[22m: Timeout[39m
+[90m [2m❯[22m apiRequest src/services/httpClient.ts:[2m184:29[22m[39m
+
+[31m[1mCaused by: Error[22m: Timeout[39m
+[90m [2m❯[22m src/lib/aiSearch.test.ts:[2m346:46[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/23]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m22 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 16:23:57
+[2m   Duration [22m 2.94s[2m (transform 264ms, setup 1.12s, import 198ms, tests 38ms, environment 3.49s)[22m
+

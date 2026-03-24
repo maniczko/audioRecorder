@@ -1,0 +1,7 @@
+{
+  "dependencies": ["pnpm-lock.yaml", "package.json"],
+  "graphs": {
+    "dispatcher": "./server/agents/dispatcher.ts:graph"
+  },
+  "env": ".env"
+}

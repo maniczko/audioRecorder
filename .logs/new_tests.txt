@@ -1,0 +1,1255 @@
+[1m[43m DEPRECATED [49m[22m [33m`test.poolOptions` was removed in Vitest 4. All previous `poolOptions` are now top-level options. Please, refer to the migration guide: https://vitest.dev/guide/migration#pool-rework[39m
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 31 for January[32m 9[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 28 for February (non-leap)[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 29 for February (leap year)[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 30 for April[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 31 for December[32m 1[2mms[22m[39m
+[31m   → getDaysInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetFirstDayOfMonth[2m > [22mreturns date with day 1[32m 1[2mms[22m[39m
+[31m   → getFirstDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetLastDayOfMonth[2m > [22mreturns last day of month[32m 1[2mms[22m[39m
+[31m   → getLastDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetLastDayOfMonth[2m > [22mreturns 28 for February non-leap[32m 1[2mms[22m[39m
+[31m   → getLastDayOfMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetWeeksInMonth[2m > [22mreturns array of weeks[32m 1[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetWeeksInMonth[2m > [22meach week has 7 days[32m 1[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns true for today[32m 1[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns false for yesterday[32m 1[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns false for different date[32m 1[2mms[22m[39m
+[31m   → isToday is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns true for same date[32m 1[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns false for different day[32m 1[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns false for different month[32m 1[2mms[22m[39m
+[31m   → isSameDay is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns true for same month[32m 1[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns false for different month[32m 0[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns false for different year[32m 0[2mms[22m[39m
+[31m   → isSameMonth is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats month in Polish[32m 0[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats January[32m 0[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats December[32m 0[2mms[22m[39m
+[31m   → formatMonthYear is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22madds one month[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22madds multiple months[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22mhandles year rollover[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22msubtracts when negative[32m 0[2mms[22m[39m
+[31m   → addMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubMonths[2m > [22msubtracts one month[32m 1[2mms[22m[39m
+[31m   → subMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubMonths[2m > [22mhandles year rollover[32m 0[2mms[22m[39m
+[31m   → subMonths is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22madds one day[32m 0[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22madds multiple days[32m 0[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22mhandles month rollover[32m 1[2mms[22m[39m
+[31m   → addDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubDays[2m > [22msubtracts one day[32m 1[2mms[22m[39m
+[31m   → subDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubDays[2m > [22mhandles month rollover[32m 1[2mms[22m[39m
+[31m   → subDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mstartOfWeek[2m > [22mreturns Sunday for Sunday[32m 1[2mms[22m[39m
+[31m   → startOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mstartOfWeek[2m > [22mreturns previous Sunday for Monday[32m 0[2mms[22m[39m
+[31m   → startOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mendOfWeek[2m > [22mreturns Saturday for Saturday[32m 1[2mms[22m[39m
+[31m   → endOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mendOfWeek[2m > [22mreturns next Saturday for Sunday[32m 0[2mms[22m[39m
+[31m   → endOfWeek is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22mreturns array of day objects[32m 0[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22meach day has required properties[32m 0[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22mmarks current month days[32m 1[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mEdge Cases[2m > [22mhandles leap year[32m 0[2mms[22m[39m
+[31m   → getCalendarDays is not a function[39m
+ [31m×[39m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mEdge Cases[2m > [22mhandles month with 5 weeks[32m 0[2mms[22m[39m
+[31m   → getWeeksInMonth is not a function[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders children when there is no error[32m 42[2mms[22m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders error message when error is thrown[32m 37[2mms[22m[39m
+[31m   → Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:36:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mdisplays component label in error message[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mdisplays error details[32m 8[2mms[22m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders fallback when provided[32m 9[2mms[22m[39m
+[31m   → Unable to find an element with the text: Custom Fallback. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:91:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mcalls onReset when reset button is clicked[32m 9[2mms[22m[39m
+[31m   → Unable to find an element with the text: Sprobuj ponownie. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:115:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mresets error state after reset[32m 8[2mms[22m[39m
+[31m   → Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Temporary error[0m
+          [0m
+[0m
+          [0m
+    at ConditionalComponent (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:137:27)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mhandles null children[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mhandles undefined children[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mpreserves error information after re-render[32m 10[2mms[22m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mhas proper button role for reset[32m 257[2mms[22m[39m
+[31m   → Unable to find an accessible element with the role "button" and name `/Sprobuj ponownie/`
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Test Component":
+  [36m<h3 />[31m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[31m
+
+  --------------------------------------------------
+  button:
+
+  Name "Odśwież widok":
+  [36m<button[31m
+    [33mclass[31m=[32m"primary-button"[31m
+    [33mtype[31m=[32m"button"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:229:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders error header[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mcomponentDidCatch[2m > [22mcaptures error info[32m 2[2mms[22m[39m
+ [32m✓[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mgetDerivedStateFromError[2m > [22mupdates state with error[32m 5[2mms[22m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles error with no message[32m 6[2mms[22m[39m
+[31m   → Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:302:11)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles non-Error thrown[32m 7[2mms[22m[39m
+[31m   → Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mString error[0m
+          [0m
+[0m
+          [0m
+    at ThrowString (&lt;anonymous&gt;)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [31m×[39m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles object thrown[32m 6[2mms[22m[39m
+[31m   → Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0m[object Object][0m
+          [0m
+[0m
+          [0m
+    at ThrowObject (&lt;anonymous&gt;)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mhydrates remote session and updates persisted state
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mlogs out on unauthorized callback and unsubscribes on cleanup
+ [2m[90m↓[39m[22m src/hooks/useWorkspace.test.tsx[2m > [22museWorkspace[2m > [22mupdates member role through workspace service
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/StudioTab.test.tsx[2m [ src/StudioTab.test.tsx ][22m
+[31m[1mError[22m: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/StudioTab.test.tsx:71:47 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m71 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mo[0m[38;5;249mM[0m[38;5;249me[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mg[0m[38;5;249mV[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249mw[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mo[0m[38;5;249m/[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mo[0m[38;5;249mM[0m[38;5;249me[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mg[0m[38;5;249mV[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249mw[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m   │[0m                                               ──┬──  
+ [38;5;240m   │[0m                                                 ╰──── 
+ [38;5;240m   │[0m 
+ [38;5;240m   │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mc:/Users/user/new/audioRecorder/src/StudioTab.test.tsx[39m
+[90m [2m❯[22m transformWithOxc node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3720:19[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3788:26[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m30023:51[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m24152:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/hooks/useWorkspace.test.ts[2m [ src/hooks/useWorkspace.test.ts ][22m
+[31m[1mError[22m[39m: Transform failed with 10 errors:
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/hooks/useWorkspace.test.ts:96:44 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m96 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m   │[0m                                            ──┬──  
+ [38;5;240m   │[0m                                              ╰──── 
+ [38;5;240m   │[0m 
+ [38;5;240m   │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/hooks/useWorkspace.test.ts:112:44 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m112 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                            ──┬──  
+ [38;5;240m    │[0m                                              ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/hooks/useWorkspace.test.ts:137:44 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m137 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                            ──┬──  
+ [38;5;240m    │[0m                                              ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/hooks/useWorkspace.test.ts:154:44 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m154 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249ms[0m[38;5;249me[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249md[0m[38;5;249mS[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                            ──┬──  
+ [38;5;240m    │[0m                                              ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+[31m[PARSE_ERROR] Error:[0m `await` is only allowed within async functions and at the top levels of modules
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/hooks/useWorkspace.test.ts:175:53 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m175 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mg[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mW[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mk[0m[38;5;249ms[0m[38;5;249mp[0m[38;5;249ma[0m[38;5;249mc[0m[38;5;249me[0m[38;5;249mP[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249mm[0m[38;5;249mi[0m[38;5;249ms[0m[38;5;249ms[0m[38;5;249mi[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mv[0m[38;5;249mi[0m[38;5;249m.[0m[38;5;249mm[0m[38;5;249mo[0m[38;5;249mc[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249md[0m[38;5;249m([0mawait[38;5;249m [0m[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mt[0m[38;5;249m([0m[38;5;249m'[0m[38;5;249m.[0m[38;5;249m.[0m[38;5;249m/[0m[38;5;249ml[0m[38;5;249mi[0m[38;5;249mb[0m[38;5;249m/[0m[38;5;249mp[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249mm[0m[38;5;249mi[0m[38;5;249ms[0m[38;5;249ms[0m[38;5;249mi[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249m'[0m[38;5;249m)[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                                                     ──┬──  
+ [38;5;240m    │[0m                                                       ╰──── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Either remove this `await` or add the `async` keyword to the enclosing function
+[38;5;246m─────╯[0m
+
+...
+  Plugin: [35mvite:oxc[39m
+  File: [36mc:/Users/user/new/audioRecorder/src/hooks/useWorkspace.test.ts[39m
+[90m [2m❯[22m transformWithOxc node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3720:19[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m3788:26[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m30023:51[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/.pnpm/vite@8.0.1_@types+node@25.5.0_esbuild@0.27.4_jiti@1.21.7_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/node.js:[2m24152:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/52]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 50 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 31 for January
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m23:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 28 for February (non-leap)
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m27:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 29 for February (leap year)
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m31:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 30 for April
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m35:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetDaysInMonth[2m > [22mreturns 31 for December
+[31m[1mTypeError[22m: getDaysInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m39:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetFirstDayOfMonth[2m > [22mreturns date with day 1
+[31m[1mTypeError[22m: getFirstDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m45:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetLastDayOfMonth[2m > [22mreturns last day of month
+[31m[1mTypeError[22m: getLastDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m54:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetLastDayOfMonth[2m > [22mreturns 28 for February non-leap
+[31m[1mTypeError[22m: getLastDayOfMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m60:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetWeeksInMonth[2m > [22mreturns array of weeks
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m67:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetWeeksInMonth[2m > [22meach week has 7 days
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m73:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns true for today
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m83:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns false for yesterday
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m89:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misToday[2m > [22mreturns false for different date
+[31m[1mTypeError[22m: isToday is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m94:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns true for same date
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m102:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns false for different day
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m108:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameDay[2m > [22mreturns false for different month
+[31m[1mTypeError[22m: isSameDay is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m114:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns true for same month
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m122:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns false for different month
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m128:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22misSameMonth[2m > [22mreturns false for different year
+[31m[1mTypeError[22m: isSameMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m134:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats month in Polish
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m140:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats January
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m146:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mformatMonthYear[2m > [22mformats December
+[31m[1mTypeError[22m: formatMonthYear is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m151:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22madds one month
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m159:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22madds multiple months
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m165:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22mhandles year rollover
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m171:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddMonths[2m > [22msubtracts when negative
+[31m[1mTypeError[22m: addMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m178:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubMonths[2m > [22msubtracts one month
+[31m[1mTypeError[22m: subMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m186:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubMonths[2m > [22mhandles year rollover
+[31m[1mTypeError[22m: subMonths is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m192:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22madds one day
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m201:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22madds multiple days
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m207:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22maddDays[2m > [22mhandles month rollover
+[31m[1mTypeError[22m: addDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m213:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubDays[2m > [22msubtracts one day
+[31m[1mTypeError[22m: subDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m221:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22msubDays[2m > [22mhandles month rollover
+[31m[1mTypeError[22m: subDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m227:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mstartOfWeek[2m > [22mreturns Sunday for Sunday
+[31m[1mTypeError[22m: startOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m235:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mstartOfWeek[2m > [22mreturns previous Sunday for Monday
+[31m[1mTypeError[22m: startOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m241:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mendOfWeek[2m > [22mreturns Saturday for Saturday
+[31m[1mTypeError[22m: endOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m249:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mendOfWeek[2m > [22mreturns next Saturday for Sunday
+[31m[1mTypeError[22m: endOfWeek is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m255:22[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22mreturns array of day objects
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m262:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22meach day has required properties
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m268:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mgetCalendarDays[2m > [22mmarks current month days
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m276:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mEdge Cases[2m > [22mhandles leap year
+[31m[1mTypeError[22m: getCalendarDays is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m284:20[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/calendar.test.ts[2m > [22mcalendar utilities[2m > [22mEdge Cases[2m > [22mhandles month with 5 weeks
+[31m[1mTypeError[22m: getWeeksInMonth is not a function[39m
+[90m [2m❯[22m src/lib/calendar.test.ts:[2m290:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders error message when error is thrown
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:36:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ThrowError src/lib/ErrorBoundary.test.tsx:[2m36:10[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m37:19[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mrenders fallback when provided
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: Custom Fallback. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:91:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ThrowError src/lib/ErrorBoundary.test.tsx:[2m91:10[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m79:19[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mcalls onReset when reset button is clicked
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: Sprobuj ponownie. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:115:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ThrowError src/lib/ErrorBoundary.test.tsx:[2m115:10[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m94:32[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mresets error state after reset
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Temporary error[0m
+          [0m
+[0m
+          [0m
+    at ConditionalComponent (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:137:27)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ConditionalComponent src/lib/ErrorBoundary.test.tsx:[2m137:27[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m113:19[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mhas proper button role for reset
+[31m[1mTestingLibraryElementError[22m: Unable to find an accessible element with the role "button" and name `/Sprobuj ponownie/`
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Test Component":
+  [36m<h3 />[31m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[31m
+
+  --------------------------------------------------
+  button:
+
+  Name "Odśwież widok":
+  [36m<button[31m
+    [33mclass[31m=[32m"primary-button"[31m
+    [33mtype[31m=[32m"button"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError: Test error[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:229:10)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ThrowError src/lib/ErrorBoundary.test.tsx:[2m229:10[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m170:32[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles error with no message
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mError[0m
+          [0m
+[0m
+          [0m
+    at ThrowError (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.test.tsx:302:11)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m ThrowError src/lib/ErrorBoundary.test.tsx:[2m302:11[22m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m227:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles non-Error thrown
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0mString error[0m
+          [0m
+[0m
+          [0m
+    at ThrowString (&lt;anonymous&gt;)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m241:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/52]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/ErrorBoundary.test.tsx[2m > [22mErrorBoundary[2m > [22mEdge Cases[2m > [22mhandles object thrown
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /Wystapil blad/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"error-boundary-fallback"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"error-boundary-inner"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"eyebrow"[31m
+        [36m>[31m
+          [0mBłąd widoku[0m
+        [36m</div>[31m
+        [36m<h3>[31m
+          [0mTest Component[0m
+        [36m</h3>[31m
+        [36m<p>[31m
+          [0mWystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.[0m
+        [36m</p>[31m
+        [36m<button[31m
+          [33mclass[31m=[32m"primary-button"[31m
+          [33mtype[31m=[32m"button"[31m
+        [36m>[31m
+          [0mOdśwież widok[0m
+        [36m</button>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"error-boundary-stack"[31m
+        [36m>[31m
+          [0m[object Object][0m
+          [0m
+[0m
+          [0m
+    at ThrowObject (&lt;anonymous&gt;)
+    at ErrorBoundary (c:/Users/user/new/audioRecorder/src/lib/ErrorBoundary.tsx:12:3)[0m
+        [36m</pre>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/lib/ErrorBoundary.test.tsx:[2m255:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/52]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m4 failed[39m[22m[2m | [22m[33m1 skipped[39m[90m (5)[39m
+[2m      Tests [22m [1m[31m50 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[2m | [22m[33m3 skipped[39m[90m (62)[39m
+[2m   Start at [22m 16:07:36
+[2m   Duration [22m 5.59s[2m (transform 698ms, setup 2.75s, import 615ms, tests 490ms, environment 9.70s)[22m
+
