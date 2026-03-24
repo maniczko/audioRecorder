@@ -41,87 +41,13 @@
   border: 1px solid rgba(170, 216, 255, 0.12);
   box-shadow: var(--shadow);
   border-radius: 28px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(11, 25, 40, 0.92) 0%, rgba(8, 20, 31, 0.94) 100%);
-  border: 1px solid rgba(170, 216, 255, 0.12);
-  box-shadow: var(--shadow);
-  border-radius: 28px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(11, 25, 40, 0.92) 0%, rgba(8, 20, 31, 0.94) 100%);
-  border: 1px solid rgba(170, 216, 255, 0.12);
-  box-shadow: var(--shadow);
-  border-radius: 28px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(11, 25, 40, 0.92) 0%, rgba(8, 20, 31, 0.94) 100%);
-  border: 1px solid rgba(170, 216, 255, 0.12);
-  box-shadow: var(--shadow);
-  border-radius: 28px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
   padding: var(--panel-padding);
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  padding: 22px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  padding: 22px;
-}
-
-.tasks-brand-panel,
-.tasks-list-panel,
-.tasks-main-panel,
-.task-detail-panel {
-  padding: 22px;
 }
 
 .tasks-brand-panel {
   background:
     radial-gradient(circle at top right, rgba(83, 144, 255, 0.24), transparent 40%),
     linear-gradient(180deg, rgba(11, 25, 40, 0.94) 0%, rgba(8, 20, 31, 0.96) 100%);
-}
-
-.tasks-brand-panel h2,
-.tasks-header h2,
-.task-detail-panel h2 {
-  margin: 8px 0 0;
-  font-family: "Space Grotesk", sans-serif;
-}
-
-.tasks-brand-panel h2,
-.tasks-header h2,
-.task-detail-panel h2 {
-  margin: 8px 0 0;
-  font-family: "Space Grotesk", sans-serif;
 }
 
 .tasks-brand-panel h2,
@@ -794,38 +720,6 @@
   border-radius: 26px;
 }
 
-.task-composer-card.premium,
-.tasks-layout.premium .task-detail-panel,
-.tasks-layout.premium .tasks-main-panel,
-.tasks-layout.premium .tasks-brand-panel,
-.tasks-layout.premium .tasks-list-panel {
-  border-radius: 26px;
-}
-
-.task-composer-card.premium,
-.tasks-layout.premium .task-detail-panel,
-.tasks-layout.premium .tasks-main-panel,
-.tasks-layout.premium .tasks-brand-panel,
-.tasks-layout.premium .tasks-list-panel {
-  border-radius: 26px;
-}
-
-.task-composer-card.premium,
-.tasks-layout.premium .task-detail-panel,
-.tasks-layout.premium .tasks-main-panel,
-.tasks-layout.premium .tasks-brand-panel,
-.tasks-layout.premium .tasks-list-panel {
-  border-radius: 26px;
-}
-
-.task-composer-card.premium,
-.tasks-layout.premium .task-detail-panel,
-.tasks-layout.premium .tasks-main-panel,
-.tasks-layout.premium .tasks-brand-panel,
-.tasks-layout.premium .tasks-list-panel {
-  border-radius: 26px;
-}
-
 .task-composer-header,
 .composer-footer,
 .task-group-header,
@@ -1257,24 +1151,6 @@
   box-shadow: 0 18px 40px rgba(12, 23, 46, 0.1);
 }
 
-.tasks-layout.ms-todo .todo-sidebar,
-.tasks-layout.ms-todo .todo-shell,
-.tasks-layout.ms-todo .todo-detail-card {
-  background: #ffffff;
-  border: 1px solid #dee6f2;
-  border-radius: 24px;
-  box-shadow: 0 18px 40px rgba(12, 23, 46, 0.1);
-}
-
-.tasks-layout.ms-todo .todo-sidebar,
-.tasks-layout.ms-todo .todo-shell,
-.tasks-layout.ms-todo .todo-detail-card {
-  background: #ffffff;
-  border: 1px solid #dee6f2;
-  border-radius: 24px;
-  box-shadow: 0 18px 40px rgba(12, 23, 46, 0.1);
-}
-
 .tasks-layout.ms-todo .todo-sidebar {
   display: grid;
   grid-template-rows: 1fr auto;
@@ -1449,86 +1325,6 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #58b87a 0%, #81d6a1 100%);
-}
-
-.tasks-layout.ms-todo .todo-google-head,
-.tasks-layout.ms-todo .todo-google-actions,
-.tasks-layout.ms-todo .todo-detail-header,
-.tasks-layout.ms-todo .todo-detail-actions,
-.tasks-layout.ms-todo .todo-kanban-card-top,
-.tasks-layout.ms-todo .todo-kanban-title,
-.tasks-layout.ms-todo .todo-kanban-meta,
-.tasks-layout.ms-todo .todo-commandbar,
-.tasks-layout.ms-todo .todo-commandbar-left,
-.tasks-layout.ms-todo .todo-commandbar-right,
-.tasks-layout.ms-todo .todo-view-switch {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.tasks-layout.ms-todo .todo-google-head,
-.tasks-layout.ms-todo .todo-google-actions,
-.tasks-layout.ms-todo .todo-detail-header,
-.tasks-layout.ms-todo .todo-detail-actions,
-.tasks-layout.ms-todo .todo-kanban-card-top,
-.tasks-layout.ms-todo .todo-kanban-title,
-.tasks-layout.ms-todo .todo-kanban-meta,
-.tasks-layout.ms-todo .todo-commandbar,
-.tasks-layout.ms-todo .todo-commandbar-left,
-.tasks-layout.ms-todo .todo-commandbar-right,
-.tasks-layout.ms-todo .todo-view-switch {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.tasks-layout.ms-todo .todo-google-head,
-.tasks-layout.ms-todo .todo-google-actions,
-.tasks-layout.ms-todo .todo-detail-header,
-.tasks-layout.ms-todo .todo-detail-actions,
-.tasks-layout.ms-todo .todo-kanban-card-top,
-.tasks-layout.ms-todo .todo-kanban-title,
-.tasks-layout.ms-todo .todo-kanban-meta,
-.tasks-layout.ms-todo .todo-commandbar,
-.tasks-layout.ms-todo .todo-commandbar-left,
-.tasks-layout.ms-todo .todo-commandbar-right,
-.tasks-layout.ms-todo .todo-view-switch {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.tasks-layout.ms-todo .todo-google-head,
-.tasks-layout.ms-todo .todo-google-actions,
-.tasks-layout.ms-todo .todo-detail-header,
-.tasks-layout.ms-todo .todo-detail-actions,
-.tasks-layout.ms-todo .todo-kanban-card-top,
-.tasks-layout.ms-todo .todo-kanban-title,
-.tasks-layout.ms-todo .todo-kanban-meta,
-.tasks-layout.ms-todo .todo-commandbar,
-.tasks-layout.ms-todo .todo-commandbar-left,
-.tasks-layout.ms-todo .todo-commandbar-right,
-.tasks-layout.ms-todo .todo-view-switch {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.tasks-layout.ms-todo .todo-google-head,
-.tasks-layout.ms-todo .todo-google-actions,
-.tasks-layout.ms-todo .todo-detail-header,
-.tasks-layout.ms-todo .todo-detail-actions,
-.tasks-layout.ms-todo .todo-kanban-card-top,
-.tasks-layout.ms-todo .todo-kanban-title,
-.tasks-layout.ms-todo .todo-kanban-meta,
-.tasks-layout.ms-todo .todo-commandbar,
-.tasks-layout.ms-todo .todo-commandbar-left,
-.tasks-layout.ms-todo .todo-commandbar-right,
-.tasks-layout.ms-todo .todo-view-switch {
-  display: flex;
-  gap: 12px;
-  align-items: center;
 }
 
 .tasks-layout.ms-todo .todo-google-head,
