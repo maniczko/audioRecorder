@@ -1,0 +1,150 @@
+name: 'GPT Auto-Fix'
+
+# Triggers automatically when ci-failure-triage creates an issue with [CI] tag.
+# Uses Aider + GPT-4o to analyze errors and create a fix PR.
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  fix:
+    name: 'Fix with GPT-4o'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only handle CI failure issues (created by ci-failure-triage workflow)
+    if: contains(github.event.issue.title, '[CI]') && github.event.issue.user.login == 'github-actions[bot]'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Python + Aider
+        run: |
+          pip install aider-chat --quiet
+
+      - name: Parse issue — extract failing files and errors
+        id: parse
+        uses: actions/github-script@v7
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        with:
+          result-encoding: string
+          script: |
+            const body = process.env.ISSUE_BODY || '';
+            const title = process.env.ISSUE_TITLE || '';
+
+            // Extract file paths mentioned in annotations (src/... or server/...)
+            const fileMatches = [...body.matchAll(/\b((?:src|server)\/[^\s:,`\n]+\.[jt]sx?)/g)];
+            const files = [...new Set(fileMatches.map(m => m[1]))].filter(f => f.length > 5);
+
+            // Extract the errors block
+            const errorsMatch = body.match(/```\n([\s\S]*?)\n```/g);
+            const errors = errorsMatch ? errorsMatch.join('\n') : body;
+
+            core.setOutput('files', files.join(' '));
+            core.setOutput('errors', errors.slice(0, 3000)); // cap for prompt length
+            core.setOutput('title', title);
+            console.log('Files to fix:', files);
+            return files.join(' ');
+
+      - name: Acknowledge issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "🤖 GPT-4o odebrał zadanie. Analizuję błędy i przygotowuję PR..." \
+            --repo "${{ github.repository }}"
+
+      - name: Create fix branch
+        id: branch
+        run: |
+          BRANCH="gpt-fix-${{ github.event.issue.number }}"
+          git checkout -b "$BRANCH"
+          echo "name=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Run Aider to fix failing tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FILES: ${{ steps.parse.outputs.files }}
+          ERRORS: ${{ steps.parse.outputs.errors }}
+          ISSUE_TITLE: ${{ steps.parse.outputs.title }}
+        run: |
+          # Configure git for aider commits
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          MODEL="${{ vars.GPT_MODEL || 'gpt-4o' }}"
+
+          PROMPT="Fix the failing CI tests. Issue: ${ISSUE_TITLE}
+
+          Failing test errors:
+          ${ERRORS}
+
+          Instructions:
+          - Fix only the source files (not test files) unless the test itself has a bug
+          - Do not change unrelated code
+          - Make minimal targeted changes to fix the specific errors shown
+          - Run the tests mentally to verify your fix makes sense
+          - After fixing, the CI pipeline should be green"
+
+          if [ -n "$FILES" ]; then
+            echo "Running aider on files: $FILES"
+            aider --model "$MODEL" \
+              --yes-always \
+              --no-show-model-warnings \
+              --auto-commits \
+              --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
+              --message "$PROMPT" \
+              $FILES
+          else
+            echo "No specific files found — running aider on full repo"
+            aider --model "$MODEL" \
+              --yes-always \
+              --no-show-model-warnings \
+              --auto-commits \
+              --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
+              --message "$PROMPT"
+          fi
+
+      - name: Push branch and create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          git push origin "$BRANCH" || echo "Nothing to push"
+
+          # Only create PR if there are new commits on this branch
+          COMMITS=$(git log origin/main.."$BRANCH" --oneline 2>/dev/null | wc -l)
+          if [ "$COMMITS" -eq 0 ]; then
+            gh issue comment "${{ github.event.issue.number }}" \
+              --body "ℹ️ GPT-4o nie znalazł zmian do wprowadzenia. Sprawdź błędy ręcznie: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
+              --repo "${{ github.repository }}"
+            exit 0
+          fi
+
+          PR_URL=$(gh pr create \
+            --title "fix(ci): auto-fix failing tests (issue #${{ github.event.issue.number }})" \
+            --body "Closes #${{ github.event.issue.number }}
+
+          Auto-generated by GPT-4o via \`gpt-fix\` workflow.
+
+          **Review carefully before merging** — AI fixes may need adjustments." \
+            --head "$BRANCH" \
+            --base main \
+            --repo "${{ github.repository }}")
+
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "✅ PR gotowy do review: ${PR_URL}" \
+            --repo "${{ github.repository }}"

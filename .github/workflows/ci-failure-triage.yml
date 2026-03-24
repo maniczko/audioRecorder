@@ -144,8 +144,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const labels = [
-              { name: 'ci-failure', color: 'e4e669', description: 'CI pipeline failure requiring a fix' },
-              { name: 'qwen', color: 'f9d0c4', description: 'Task for Qwen Code to work on' },
+              { name: 'ci-failure', color: 'e4e669', description: 'CI pipeline failure — GPT auto-fix triggered' },
             ];
             for (const label of labels) {
               try { await github.rest.issues.getLabel({ owner, repo, name: label.name }); }
@@ -166,7 +165,7 @@ jobs:
               owner, repo,
               title: process.env.ISSUE_TITLE,
               body: process.env.ISSUE_BODY,
-              labels: ['ci-failure', 'qwen'],
+              labels: ['ci-failure'],
             });
             console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
             core.summary.addRaw(`## 🤖 Qwen fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
