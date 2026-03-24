@@ -1,3 +1,4 @@
+```typescript
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveConfiguredSttProviders } from "../stt/providers.ts";
 
@@ -43,3 +44,4 @@ describe("stt providers", () => {
     expect(providers[0].id).toBe("openai");
   });
 });
+```

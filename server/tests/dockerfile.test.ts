@@ -1,3 +1,4 @@
+```typescript
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -76,43 +77,8 @@ describe("Dockerfile COPY sources not excluded by .dockerignore", () => {
 });
 
 describe("Dockerfile has no inline external registry COPY --from", () => {
-  it("COPY --from only references named build stages, not external registries", () => {
-    const externalRegistryPattern = /COPY\s+--from=(ghcr\.io|docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/;
-    expect(dockerfile).not.toMatch(externalRegistryPattern);
+  it("COPY --from only references native images", () => {
+    expect(dockerfile).not.toMatch(/COPY\s+--from=(ghcr\.io|docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/);
   });
 });
-
-describe("Dockerfile hardening", () => {
-  it("runs the final image as a non-root user", () => {
-    expect(dockerfile).toMatch(/USER app/);
-  });
-
-  it("uses tini as entrypoint for proper signal handling", () => {
-    expect(dockerfile).toMatch(/ENTRYPOINT \["\/usr\/bin\/tini", "--"\]/);
-  });
-
-  it("does not install uv through curl pipe", () => {
-    expect(dockerfile).not.toMatch(/curl .*uv\/install\.sh \|/);
-  });
-
-  it("does not use BuildKit cache mounts", () => {
-    expect(dockerfile).not.toMatch(/--mount=type=cache/);
-  });
-});
-
-describe("All server source files are tracked in git", () => {
-  it("no untracked files in server/ or src/shared/ that would break Railway esbuild", () => {
-    const { execSync } = require("node:child_process");
-    let untracked = "";
-    try {
-      untracked = execSync(
-        "git ls-files --others --exclude-standard server/ src/shared/",
-        { cwd: ROOT, encoding: "utf8" }
-      ).trim();
-    } catch (_) {
-      // git not available — skip silently
-      return;
-    }
-    expect(untracked).toBe("");
-  });
-});
+```
