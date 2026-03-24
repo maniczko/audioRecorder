@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-# [101] Pin image digests for supply chain security
-ARG NODE_IMAGE=node:24.14-bookworm-slim@sha256:07ae080094d0f997ed19d7c2fd797771e6f524049dc96e4c2a0b8a8b6d6f5e5a
+# Use official Node.js LTS image
+# Note: Digest pinning removed for reliability - use version tags instead
+ARG NODE_IMAGE=node:24.14-bookworm-slim
 
 FROM ${NODE_IMAGE} AS base
 
