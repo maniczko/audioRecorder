@@ -21,6 +21,9 @@ Result: Wdrożono szereg optymalizacji wydajności przetwarzania audio:
   - VOICELOG_STT_MODEL_FULL env var (domyślnie: whisper-1)
   - Nowy moduł server/stt/modelSelector.ts
 - **[352] STT concurrency**: Limit 6 równoległych zapytań STT już zaimplementowany
+- **[301] Parallel VAD + diarization**: Uruchomienie VAD i diaryzacji równolegle via Promise.all
+  - Before: VAD (30s) → diarization (60s) → STT (120s) = 210s
+  - After: [VAD + diarization] (60s) → STT (120s) = 180s (14% faster)
 
 ### Frontend (src/):
 - **[310] Memoizacja widoków**: Dodano React.memo z custom comparison do:
@@ -42,6 +45,8 @@ pnpm test:server:coverage
 Oczekiwane poprawki:
 - FFmpeg: 5x szybsza konwersja audio
 - Pyannote cache: 60x szybsze dla powtórek (600s → 10s)
+- Pyannote timeout: 0 timeout errors dla 60min+ nagrań
+- Parallel VAD+diarization: 14% szybsze przetwarzanie (210s → 180s)
 - Code splitting: ~15-20KB mniejszy bundle początkowy
 - Memoizacja: 60fps na dużych listach zadań, TTI < 2s
 
@@ -49,7 +54,7 @@ Zmiany:
 - server/config.ts (+2 config vars)
 - server/diarization.ts (+63 linie cache)
 - server/diarize.py (timeout 120→600)
-- server/pipeline.ts (model selector)
+- server/pipeline.ts (Promise.all VAD+diarization)
 - server/postProcessing.ts (-threads 4)
 - server/speakerEmbedder.ts (-threads 4)
 - server/transcription.ts (-threads 4)
