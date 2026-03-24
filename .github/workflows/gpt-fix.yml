@@ -19,7 +19,7 @@ jobs:
   fix:
     name: 'Fix with GPT-4o'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       contents: write
       issues: write
@@ -36,34 +36,11 @@ jobs:
         with:
           version: 9
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Install Python + Aider
         run: pip install aider-chat --quiet
-
-      - name: Parse issue — extract failing files and errors
-        id: parse
-        uses: actions/github-script@v7
-        env:
-          ISSUE_BODY: ${{ inputs.issue_body }}
-          ISSUE_TITLE: ${{ inputs.issue_title }}
-        with:
-          result-encoding: string
-          script: |
-            const body = process.env.ISSUE_BODY || '';
-            const title = process.env.ISSUE_TITLE || '';
-
-            // Extract file paths mentioned in annotations (src/... or server/...)
-            const fileMatches = [...body.matchAll(/\b((?:src|server)\/[^\s:,`\n]+\.[jt]sx?)/g)];
-            const files = [...new Set(fileMatches.map(m => m[1]))].filter(f => f.length > 5);
-
-            // Extract the errors block
-            const errorsMatch = body.match(/```\n([\s\S]*?)\n```/g);
-            const errors = errorsMatch ? errorsMatch.join('\n') : body;
-
-            core.setOutput('files', files.join(' '));
-            core.setOutput('errors', errors.slice(0, 3000));
-            core.setOutput('title', title);
-            console.log('Files to fix:', files);
-            return files.join(' ');
 
       - name: Acknowledge issue
         env:
@@ -76,36 +53,50 @@ jobs:
       - name: Create fix branch
         id: branch
         run: |
-          BRANCH="gpt-fix-${{ inputs.issue_number }}"
+          BRANCH="gpt-fix-${{ inputs.issue_number }}-$(date +%s)"
           git checkout -b "$BRANCH"
           echo "name=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Run Aider to fix failing tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          FILES: ${{ steps.parse.outputs.files }}
-          ERRORS: ${{ steps.parse.outputs.errors }}
-          ISSUE_TITLE: ${{ steps.parse.outputs.title }}
+          ISSUE_BODY: ${{ inputs.issue_body }}
+          ISSUE_TITLE: ${{ inputs.issue_title }}
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
           MODEL="${{ vars.GPT_MODEL || 'gpt-4o' }}"
 
-          PROMPT="Fix the failing CI tests. Issue: ${ISSUE_TITLE}
+          # Extract file paths from issue body
+          FILES=$(echo "$ISSUE_BODY" | grep -oP '(?:src|server)/[^\s:,`\n]+\.[jt]sx?' | sort -u | tr '\n' ' ')
+          echo "Files extracted from errors: $FILES"
 
-          Failing test errors:
+          # Extract error blocks
+          ERRORS=$(echo "$ISSUE_BODY" | sed -n '/^```/,/^```/p' | head -c 4000)
+
+          PROMPT="You are fixing failing CI tests in a TypeScript/Node.js project.
+
+          Issue: ${ISSUE_TITLE}
+
+          Failing test errors from CI:
           ${ERRORS}
 
-          Instructions:
-          - Fix only the source files (not test files) unless the test itself has a bug
-          - Do not change unrelated code
-          - Make minimal targeted changes to fix the specific errors shown
-          - Run the tests mentally to verify your fix makes sense
-          - After fixing, the CI pipeline should be green"
+          Full issue context:
+          ${ISSUE_BODY:0:3000}
+
+          Rules:
+          1. Read ALL the files you need before making any changes
+          2. Fix the root cause — do NOT just suppress the errors
+          3. If a test imports a package that doesn't exist (e.g. bun:sqlite), fix the import to use the correct package
+          4. If tests fail because tables don't exist, fix the test setup/migrations
+          5. If a source file has a bug causing test failures, fix the source file
+          6. Make minimal, targeted changes
+          7. You MUST make at least one change — if you cannot identify a fix, add a code comment explaining what needs to be done"
 
           if [ -n "$FILES" ]; then
-            echo "Running aider on files: $FILES"
+            echo "Running aider with files: $FILES"
+            # shellcheck disable=SC2086
             aider --model "$MODEL" \
               --yes-always \
               --no-show-model-warnings \
@@ -114,7 +105,7 @@ jobs:
               --message "$PROMPT" \
               $FILES
           else
-            echo "No specific files found — running aider on full repo"
+            echo "No specific files extracted — passing full error context to aider"
             aider --model "$MODEL" \
               --yes-always \
               --no-show-model-warnings \
@@ -133,10 +124,13 @@ jobs:
           COMMITS=$(git log origin/main.."$BRANCH" --oneline 2>/dev/null | wc -l)
           if [ "$COMMITS" -eq 0 ]; then
             gh issue comment "${{ inputs.issue_number }}" \
-              --body "ℹ️ GPT-4o nie znalazł zmian do wprowadzenia. Sprawdź błędy ręcznie: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
+              --body "⚠️ GPT-4o nie wprowadził żadnych zmian. Wymaga ręcznej analizy: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
               --repo "${{ github.repository }}"
             exit 0
           fi
+
+          # Show what was changed
+          DIFF_SUMMARY=$(git diff origin/main..."$BRANCH" --stat | tail -5)
 
           PR_URL=$(gh pr create \
             --title "fix(ci): auto-fix failing tests (issue #${{ inputs.issue_number }})" \
@@ -144,7 +138,12 @@ jobs:
 
           Auto-generated by GPT-4o via \`gpt-fix\` workflow.
 
-          **Review carefully before merging** — AI fixes may need adjustments." \
+          **Changes:**
+          \`\`\`
+          ${DIFF_SUMMARY}
+          \`\`\`
+
+          **Review carefully before merging.**" \
             --head "$BRANCH" \
             --base main \
             --repo "${{ github.repository }}")
