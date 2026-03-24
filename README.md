@@ -82,6 +82,8 @@ REACT_APP_API_BASE_URL=http://127.0.0.1:4000
 ```
 **Wymagania brzegowe backendu do działania usług Audio:**
 - `OPENAI_API_KEY` – do komunikacji z API analizującymi głos (`Whisper` / `ChatGPT`). Uruchomienie bez niego obetnie możliwość włączania STT w locie i raportowania insightów ze spotkania.
+- `VOICELOG_OPENAI_API_KEY` i `VOICELOG_OPENAI_BASE_URL` – preferowane aliasy dla backendu, w tym endpointu RAG przerobionego na LangChain.
+- `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY` i opcjonalnie `LANGSMITH_PROJECT` – jeśli chcesz sledzic wywolania modelu w LangSmith.
 - *Fallback bazy*: Bez `DATABASE_URL` zdeklarowanego jako URL np. do zewnętrznego PostgreSQL, aplikacja Hono uruchamia i wpisuje rekordy do wolumenu lokalnego wskazanego w `VOICELOG_DB_PATH`.
 
 ### B) Izolowany UX (Tryb "Local")

@@ -17,10 +17,22 @@ import {
   buildTaskNotifications,
   getTaskOrder,
   getNextTaskOrderTop,
+  buildTaskReorderUpdate,
+  nextRecurringDueDate,
   buildTaskChangeHistory,
   getTaskAssigneeSummary,
   buildTaskColumns,
   createTaskColumn,
+  buildTaskPeople,
+  buildTaskTags,
+  buildTaskGroups,
+  createManualTask,
+  createTaskFromGoogle,
+  createRecurringTaskFromTask,
+  upsertGoogleImportedTasks,
+  extractMeetingTasks,
+  buildTasksFromMeetings,
+  taskListStats,
   DEFAULT_TASK_COLUMNS
 } from "./tasks";
 
@@ -88,5 +100,169 @@ describe("extended tasks functions", () => {
     expect(buildTaskColumns({}, "workspace_1").length).toBe(DEFAULT_TASK_COLUMNS.length);
     const newBoard = createTaskColumn({}, "workspace_1", { label: "Nowa kolumna" });
     expect(newBoard["workspace_1"].columns.length).toBeGreaterThan(DEFAULT_TASK_COLUMNS.length);
+  });
+
+  test("recurrence, SLA and ordering branches", () => {
+    expect(normalizeTaskRecurrence({ frequency: "weekly", interval: 2 })).toEqual({ frequency: "weekly", interval: 2 });
+    expect(normalizeTaskRecurrence({ frequency: "invalid" })).toBeNull();
+    expect(nextRecurringDueDate("2026-03-24T10:00:00.000Z", { frequency: "daily", interval: 2 })).toBe(
+      "2026-03-26T10:00:00.000Z"
+    );
+    expect(getTaskSlaState({}).id).toBe("none");
+    expect(getTaskSlaState({ dueDate: "2026-03-24T20:00:00.000Z" }, new Date("2026-03-24T10:00:00.000Z")).id).toBe(
+      "at_risk"
+    );
+    expect(getTaskSlaState({ dueDate: "2026-03-24T13:00:00.000Z" }, new Date("2026-03-24T10:00:00.000Z")).id).toBe(
+      "critical"
+    );
+    expect(getTaskSlaState({ dueDate: "2026-03-24T09:00:00.000Z" }, new Date("2026-03-24T10:00:00.000Z")).id).toBe(
+      "overdue"
+    );
+    expect(getTaskSlaState({ dueDate: "2026-03-23T10:00:00.000Z" }, new Date("2026-03-24T10:00:00.000Z")).id).toBe(
+      "breached"
+    );
+    expect(
+      buildTaskReorderUpdate(
+        [
+          { id: "a", order: 10 },
+          { id: "b", order: 20 },
+        ],
+        { previousTaskId: "a", nextTaskId: "b", status: "done", group: "Nowa grupa" }
+      )
+    ).toMatchObject({ order: 15, status: "done", group: "Nowa grupa" });
+  });
+
+  test("builds history entries for many changes", () => {
+    const history = buildTaskChangeHistory(
+      {
+        title: "A",
+        status: "todo",
+        completed: false,
+        owner: "Ola",
+        assignedTo: ["Ola"],
+        group: "Sprzedaz",
+        priority: "low",
+        dueDate: "2026-03-24T10:00:00.000Z",
+        description: "Opis",
+        notes: "Notatki",
+        important: false,
+        tags: ["a"],
+        dependencies: ["1"],
+        comments: [],
+        subtasks: [],
+        recurrence: null,
+        order: 1,
+      },
+      {
+        title: "B",
+        status: "done",
+        completed: true,
+        owner: "Jan",
+        assignedTo: ["Jan", "Ala"],
+        group: "",
+        priority: "high",
+        dueDate: "2026-03-25T10:00:00.000Z",
+        description: "Nowy opis",
+        notes: "Nowe notatki",
+        important: true,
+        tags: ["a", "b"],
+        dependencies: ["1", "2"],
+        comments: [{ id: "c1" }],
+        subtasks: [{ id: "s1" }],
+        recurrence: { frequency: "weekly", interval: 1 },
+        order: 2,
+      },
+      "System",
+      DEFAULT_TASK_COLUMNS
+    );
+
+    expect(history.length).toBeGreaterThan(8);
+    expect(history.map((entry) => entry.type)).toEqual(expect.arrayContaining(["status", "completed", "owner"]));
+  });
+
+  test("builds task lists and stats", () => {
+    const columns = DEFAULT_TASK_COLUMNS;
+    const manualTask = createManualTask(
+      "user_1",
+      {
+        title: "  przygotowac raport  ",
+        owner: "Ola",
+        assignedTo: ["Ola", "Jan"],
+        description: "Opis",
+        dueDate: "2026-03-24T10:00:00.000Z",
+        important: true,
+        priority: "high",
+        tags: "alpha, beta",
+        group: "sprzedaz",
+        comments: ["Pierwszy komentarz"],
+        dependencies: ["dep_1"],
+        subtasks: ["Podzadanie"],
+        links: ["https://example.com"],
+        recurrence: { frequency: "weekly", interval: 1 },
+      },
+      columns,
+      "workspace_1"
+    );
+    const googleTask = createTaskFromGoogle(
+      "user_1",
+      { id: "g1", title: "google follow up", notes: "Notatka", due: "2026-03-25T10:00:00.000Z", status: "completed", updated: "2026-03-24T12:00:00.000Z" },
+      { id: "list_1", title: "Lista" },
+      columns,
+      { name: "Ola" },
+      "workspace_1"
+    );
+    const recurring = createRecurringTaskFromTask({ ...manualTask, recurrence: { frequency: "daily", interval: 1 } }, "user_1", "workspace_1", columns, [manualTask]);
+    const merged = upsertGoogleImportedTasks([googleTask], [{ ...googleTask, title: "google follow up updated", completed: true }], "user_1");
+    const extracted = extractMeetingTasks(
+      {
+        id: "meeting_1",
+        title: "Spotkanie",
+        startsAt: "2026-03-24T10:00:00.000Z",
+        updatedAt: "2026-03-24T11:00:00.000Z",
+        createdAt: "2026-03-24T09:00:00.000Z",
+        tags: ["meeting"],
+        analysis: { tasks: [{ title: "Jan: Zrobic ofert", sourceQuote: "ASAP" }] },
+      },
+      columns
+    );
+    const built = buildTasksFromMeetings(
+      [
+        {
+          id: "meeting_1",
+          title: "Spotkanie",
+          startsAt: "2026-03-24T10:00:00.000Z",
+          updatedAt: "2026-03-24T11:00:00.000Z",
+          createdAt: "2026-03-24T09:00:00.000Z",
+          tags: ["meeting"],
+          analysis: { tasks: [{ title: "Jan: Zrobic ofert", sourceQuote: "ASAP" }] },
+        },
+      ],
+      [manualTask],
+      { [manualTask.id]: { title: "Przygotowac raport" } },
+      { id: "user_1", name: "Ola", email: "ola@example.com" },
+      columns,
+      "workspace_1"
+    );
+    const stats = taskListStats([
+      manualTask,
+      { ...googleTask, completed: true, assignedToMe: true, subtasks: [{ completed: true }, { completed: false }] },
+      { id: "t3", completed: false, dueDate: "2026-03-23T10:00:00.000Z", assignedTo: [], owner: "", sourceType: "manual" },
+    ]);
+
+    expect(manualTask.title).toBe("Przygotowac raport");
+    expect(manualTask.completed).toBe(false);
+    expect(googleTask.status).toBe("done");
+    expect(recurring).not.toBeNull();
+    expect(merged.merged).toHaveLength(1);
+    expect(merged.conflictCount).toBe(0);
+    expect(extracted).toHaveLength(1);
+    expect(built.length).toBeGreaterThan(0);
+    expect(buildTaskPeople([], { name: "Ola" }, [{ name: "Jan" }], [manualTask])).toEqual(expect.arrayContaining(["Ola", "Jan"]));
+    expect(buildTaskTags([{ tags: ["a", "b"] }], [{ tags: ["b", "c"] }])).toEqual(["a", "b", "c"]);
+    expect(buildTaskGroups([{ group: "A" }, { group: "A" }, { group: "B" }])).toEqual(["A", "B"]);
+    expect(stats.all).toBe(3);
+    expect(stats.completed).toBe(1);
+    expect(stats.open).toBe(2);
+    expect(stats.manual).toBe(2);
   });
 });

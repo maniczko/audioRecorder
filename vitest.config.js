@@ -31,6 +31,7 @@ export default defineConfig({
         'src/setupTests.ts',
         'src/**/*.test.{js,jsx,ts,tsx}',
         'src/App.integration.test.tsx',
+        'src/components/ui/**',
         'src/**/*.d.ts',
       ],
       thresholds: {

@@ -37,6 +37,10 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   VOICELOG_OPENAI_API_KEY: z.string().optional(),
   VOICELOG_OPENAI_BASE_URL: z.string().default("https://api.openai.com/v1"),
+  OPENAI_BASE_URL: z.string().optional(),
+  LANGSMITH_TRACING: z.string().optional(),
+  LANGSMITH_API_KEY: z.string().optional(),
+  LANGSMITH_PROJECT: z.string().optional(),
 
   GROQ_API_KEY: z.string().optional(),
   VOICELOG_STT_PROVIDER: z.preprocess(

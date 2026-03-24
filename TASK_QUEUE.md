@@ -122,6 +122,26 @@ Kolejnosc prac:
 
 ### GPT
 
+- `101` [P2] `todo` - [Docker] Pin image digests for supply chain security
+  - Cel: zabezpieczyć build przed supply chain attacks poprzez pinowanie obrazów.
+  - Zakres: `node:24.14-bookworm-slim@sha256:<digest>`, `ghcr.io/astral-sh/uv:<version>`.
+  - Akceptacja: `docker inspect` pokazuje pełny digest, build jest reprodukowalny.
+
+- `102` [P2] `todo` - [Docker] Add PyTorch build stage for reproducibility
+  - Cel: przenieść instalację PyTorch do osobnego etapu buildu.
+  - Zakres: nowy stage `torch-deps`, cacheowanie dependencji torch.
+  - Akceptacja: czas buildu zmniejszony o 30%+, wersje torch są stałe.
+
+- `103` [P3] `todo` - [Docker] Add resource limits to docker-compose
+  - Cel: zabezpieczyć hosta przed DoS przez kontener.
+  - Zakres: `deploy.resources.limits` CPU/memory w docker-compose.yml.
+  - Akceptacja: `docker stats` pokazuje limity, aplikacja działa stabilnie.
+
+- `104` [P3] `todo` - [Docker] Add .env.example with validation
+  - Cel: ułatwić deployment i walidację konfiguracji.
+  - Zakres: `.env.example`, walidacja zmiennych w entrypoint.
+  - Akceptacja: dokumentacja + error na brakujące wymagane zmienne.
+
 - `080` [P3] `todo` - [CSS] Konsolidacja plików i usunięcie `!important`
   - Cel: Oczyszczenie `tasks.css` i `StudioMeetingViewStyles.css` oraz likwidacja tagów `!important`.
   - Migracja kilkuset twardych bindowań paddingów/wielkości na tokeny z `index.css`.

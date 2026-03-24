@@ -1,4 +1,12 @@
-import { loginUser, registerUser, requestPasswordReset, resetPasswordWithCode, updateUserProfile } from "./auth";
+import {
+  changeUserPassword,
+  loginUser,
+  registerUser,
+  requestPasswordReset,
+  resetPasswordWithCode,
+  updateUserProfile,
+  upsertGoogleUser,
+} from "./auth";
 import { createWorkspace } from "./workspace";
 
 describe("auth flows", () => {
@@ -133,5 +141,148 @@ describe("auth flows", () => {
     });
 
     expect(updatedUsers.find((user) => user.id === registerResult.user.id)?.autoLearnSpeakerProfiles).toBe(true);
+  });
+
+  test("rejects invalid registration data and workspace join errors", async () => {
+    await expect(
+      registerUser([], [], {
+        name: "Anna",
+        email: "bad-email",
+        password: "tajne123",
+        workspaceMode: "create",
+        workspaceName: "Produkt",
+      })
+    ).rejects.toThrow("Podaj poprawny adres email.");
+
+    await expect(
+      registerUser([], [], {
+        name: "Anna",
+        email: "anna@example.com",
+        password: "123",
+        workspaceMode: "create",
+        workspaceName: "Produkt",
+      })
+    ).rejects.toThrow("Haslo musi miec przynajmniej 6 znakow.");
+
+    await expect(
+      registerUser([], [], {
+        name: "Anna",
+        email: "anna@example.com",
+        password: "tajne123",
+        workspaceMode: "join",
+      })
+    ).rejects.toThrow("Podaj kod workspace, aby dolaczyc.");
+  });
+
+  test("changes password and handles reset edge cases", async () => {
+    const registerResult = await registerUser([], [], {
+      name: "Marta",
+      email: "marta@example.com",
+      password: "haslo123",
+      workspaceMode: "create",
+      workspaceName: "Wsparcie",
+    });
+
+    const updatedUsers = await changeUserPassword(registerResult.users, registerResult.user.id, {
+      currentPassword: "haslo123",
+      newPassword: "nowehaslo1",
+      confirmPassword: "nowehaslo1",
+    });
+
+    await expect(
+      loginUser(updatedUsers, registerResult.workspaces, {
+        email: "marta@example.com",
+        password: "nowehaslo1",
+      })
+    ).resolves.toMatchObject({ workspaceId: registerResult.workspaceId });
+
+    await expect(
+      changeUserPassword(registerResult.users, registerResult.user.id, {
+        currentPassword: "",
+        newPassword: "nowehaslo1",
+        confirmPassword: "nowehaslo1",
+      })
+    ).rejects.toThrow("Uzupelnij wszystkie pola hasla.");
+  });
+
+  test("supports Google users and reset password validation", async () => {
+    const { user, users, workspaces, workspaceId } = upsertGoogleUser([], [], {
+      email: "google@example.com",
+      name: "Google User",
+      sub: "google-sub-1",
+      picture: "https://example.com/avatar.png",
+    });
+
+    expect(user.provider).toBe("google");
+    expect(workspaceId).toBeTruthy();
+    expect(workspaces).toHaveLength(1);
+
+    await expect(
+      requestPasswordReset(users, {
+        email: "google@example.com",
+      })
+    ).rejects.toThrow("To konto korzysta z logowania Google. Reset hasla wykonaj w Google.");
+
+    const registerResult = await registerUser([], [], {
+      name: "Kasia",
+      email: "kasia@example.com",
+      password: "haslo123",
+      workspaceMode: "create",
+      workspaceName: "R&D",
+    });
+    const resetResult = await requestPasswordReset(registerResult.users, {
+      email: "kasia@example.com",
+    });
+
+    await expect(
+      resetPasswordWithCode(resetResult.users, {
+        email: "kasia@example.com",
+        code: "000000",
+        newPassword: "nowehaslo1",
+        confirmPassword: "nowehaslo1",
+      })
+    ).rejects.toThrow("Kod resetu jest niepoprawny.");
+  });
+
+  test("normalizes preferred insights and updates existing Google users", async () => {
+    const registerResult = await registerUser([], [], {
+      name: "Tomasz",
+      email: "tomasz@example.com",
+      password: "haslo123",
+      workspaceMode: "create",
+      workspaceName: "R&D",
+    });
+
+    const updated = updateUserProfile(registerResult.users, registerResult.user.id, {
+      ...registerResult.user,
+      preferredInsights: "alpha, beta\ngamma",
+    });
+
+    expect(updated.find((user) => user.id === registerResult.user.id)?.preferredInsights).toEqual([
+      "alpha",
+      "beta",
+      "gamma",
+    ]);
+
+    const workspace = createWorkspace("Core", registerResult.user.id);
+    const existingGoogleUser = {
+      ...registerResult.user,
+      email: "google@example.com",
+      googleEmail: "google@example.com",
+      googleSub: "sub_1",
+      workspaceIds: [workspace.id],
+      defaultWorkspaceId: workspace.id,
+    };
+
+    const result = upsertGoogleUser([existingGoogleUser], [workspace], {
+      email: "google@example.com",
+      name: "Google Update",
+      sub: "sub_1",
+      picture: "https://example.com/avatar.png",
+    });
+
+    expect(result.user.name).toBe("Google Update");
+    expect(result.user.provider).toBe("google");
+    expect(result.workspaceId).toBe(workspace.id);
   });
 });

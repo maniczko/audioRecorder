@@ -84,3 +84,6 @@ coverage/
 ```
 # Server runtime data
 server/data/
+
+# LangGraph API
+.langgraph_api

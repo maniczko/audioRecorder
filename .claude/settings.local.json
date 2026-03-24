@@ -47,7 +47,23 @@
       "Bash(git stash:*)",
       "Bash(TASK_DONE.md:*)",
       "Bash(npx skills:*)",
-      "Bash(claude skills:*)"
+      "Bash(claude skills:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr list --repo maniczko/audioRecorder --limit 5)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" issue list --repo maniczko/audioRecorder --limit 5)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run list --repo maniczko/audioRecorder --limit 15)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 23491990404 --repo maniczko/audioRecorder --log-failed)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 23493237952 --repo maniczko/audioRecorder --log-failed)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 23494526709 --repo maniczko/audioRecorder --log-failed)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 23495032915 --repo maniczko/audioRecorder --log-failed)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run list --repo maniczko/audioRecorder --limit 6)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 23495603915 --repo maniczko/audioRecorder --log-failed)",
+      "Bash(gh run:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh api:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway environment:*)",
+      "Bash(python -m json.tool)"
     ]
   }
 }

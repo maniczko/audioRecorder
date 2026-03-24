@@ -1,5 +1,7 @@
 import { EventEmitter } from "node:events";
 import { config } from "../config.ts";
+import { Document } from "@langchain/core/documents";
+import { RagVectorStore } from "../lib/ragVectorStore.ts";
 
 export default class TranscriptionService extends EventEmitter {
   db: any;
@@ -402,82 +404,60 @@ export default class TranscriptionService extends EventEmitter {
     if (!this.audioPipeline?.embedTextChunks) return;
     const crypto = await import("node:crypto");
 
-    const chunks = [];
+    const chunks: Document[] = [];
     for (let i = 0; i < segments.length; i += 3) {
       const slice = segments.slice(i, i + 3);
       if (!slice.length) continue;
       const text = slice.map((s) => s.text).join(" ");
       if (text.length < 15) continue;
-      chunks.push({
-        id: `rc_${crypto.randomUUID().replace(/-/g, "")}`,
-        workspaceId,
-        recordingId,
-        speakerName: slice[0].speakerId || "Nieznany",
-        text,
-        createdAt: new Date().toISOString(),
-      });
+      chunks.push(
+        new Document({
+          pageContent: text,
+          metadata: {
+            id: `rc_${crypto.randomUUID().replace(/-/g, "")}`,
+            workspaceId,
+            recordingId,
+            recording_id: recordingId,
+            speakerName: slice[0].speakerId || "Nieznany",
+            createdAt: new Date().toISOString(),
+          },
+        })
+      );
     }
 
     if (!chunks.length) return;
 
-    const textsToEmbed = chunks.map((chunk) => chunk.text);
-    const embeddings = await this.audioPipeline.embedTextChunks(textsToEmbed);
-
-    if (!embeddings || embeddings.length !== chunks.length) {
-      console.warn("[RAG] Odrzucono pakiet blokow ze wzgledu na blad API Embeddings.");
-      return;
-    }
-
-    const payload = chunks.map((chunk, index) => ({
-      ...chunk,
-      embedding: embeddings[index],
-    }));
-
-    if (typeof this.db.saveRagChunks === "function") {
-      await this.db.saveRagChunks(payload);
-    } else {
-      for (const chunk of payload) {
-        await this.db.saveRagChunk(chunk);
-      }
-    }
+    const vectorStore = new RagVectorStore({
+      workspaceId,
+      db: this.db,
+      embedTextChunks: this.audioPipeline.embedTextChunks.bind(this.audioPipeline),
+    });
+    await vectorStore.addDocuments(chunks);
 
     console.log(`[RAG] Pomyslnie zindeksowano ${chunks.length} wektorow na archiwum spotkania.`);
   }
 
   async queryRAG(workspaceId: string, question: string) {
     if (!this.audioPipeline?.embedTextChunks) return null;
-
-    const qEmbeddings = await this.audioPipeline.embedTextChunks([question]);
-    if (!qEmbeddings || !qEmbeddings[0]) return null;
-    const qVec = qEmbeddings[0];
-
-    const allChunks = await this.db.getAllRagChunksForWorkspace(workspaceId);
-    if (!allChunks || allChunks.length === 0) return null;
-
-    function dotProduct(a: number[], b: number[]) {
-      let sum = 0;
-      for (let i = 0; i < a.length; i += 1) sum += a[i] * b[i];
-      return sum;
-    }
-
-    function magnitude(a: number[]) {
-      let sum = 0;
-      for (let i = 0; i < a.length; i += 1) sum += a[i] * a[i];
-      return Math.sqrt(sum);
-    }
-
-    const qMag = magnitude(qVec);
-    const scored = allChunks.map((chunk) => {
-      let vec = [];
-      try { vec = JSON.parse(chunk.embedding_json); } catch (_) {}
-      if (!vec.length) return { chunk, score: -1 };
-      const score = dotProduct(qVec, vec) / (qMag * magnitude(vec));
-      return { chunk, score };
+    const vectorStore = new RagVectorStore({
+      workspaceId,
+      db: this.db,
+      embedTextChunks: this.audioPipeline.embedTextChunks.bind(this.audioPipeline),
     });
 
-    scored.sort((a, b) => b.score - a.score);
-    const topChunks = scored.slice(0, 15).filter((item) => item.score > 0.1);
+    const retriever = vectorStore.asRetriever({
+      k: 15,
+      tags: ["rag", "retrieval"],
+      metadata: { workspaceId, questionLength: question.length },
+    });
+    const docs = await retriever.invoke(question);
+    if (!Array.isArray(docs) || docs.length === 0) return null;
 
-    return topChunks.map((item) => item.chunk);
+    return docs.map((doc: any) => ({
+      recording_id: doc.metadata?.recordingId || doc.metadata?.recording_id || doc.metadata?.id || "",
+      speaker_name: doc.metadata?.speakerName || "",
+      text: doc.pageContent || "",
+      score: doc.metadata?.score || 0,
+    }));
   }
 }

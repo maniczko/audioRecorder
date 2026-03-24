@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app.ts";
+import { generateRagAnswer } from "../../lib/ragAnswer.ts";
+
+vi.mock("../../lib/ragAnswer.ts", () => ({
+  generateRagAnswer: vi.fn(),
+}));
 
 describe("Workspace Routes", () => {
   let app: ReturnType<typeof createApp>;
@@ -172,26 +177,31 @@ describe("Workspace Routes", () => {
     expect((await emptyRes.json()).answer).toMatch(/Brak danych/);
 
     mockTranscriptionService.queryRAG.mockResolvedValueOnce([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
+    vi.mocked(generateRagAnswer).mockRejectedValueOnce(new Error("Brak klucza API do RAG LLMa."));
     const errorRes = await app.request("/workspaces/ws1/rag/ask", {
       method: "POST",
       headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
       body: JSON.stringify({ question: "Co ustalono?" }),
     });
     expect(errorRes.status).toBe(500);
-    expect((await errorRes.json()).answer).toMatch(/Brak klucza API/);
+    expect((await errorRes.json()).answer).toMatch(/Blad LLM/);
   });
 
   it("returns LLM answer when OpenAI key is configured", async () => {
     mockTranscriptionService.queryRAG.mockResolvedValue([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
-    (global.fetch as any).mockResolvedValue({
-      json: vi.fn().mockResolvedValue({ choices: [{ message: { content: "Odpowiedz z RAG." } }] }),
-    });
+    vi.mocked(generateRagAnswer).mockResolvedValueOnce("Odpowiedz z RAG.");
     app = createApp(
       {
         authService: mockAuthService,
         workspaceService: mockWorkspaceService,
         transcriptionService: mockTranscriptionService,
-        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp", OPENAI_API_KEY: "key-1", OPENAI_BASE_URL: "https://api.example.test" },
+        config: {
+          allowedOrigins: "*",
+          trustProxy: false,
+          uploadDir: "/tmp",
+          OPENAI_API_KEY: "key-1",
+          OPENAI_BASE_URL: "https://api.example.test",
+        },
       },
       buildMiddlewares()
     );
@@ -204,9 +214,11 @@ describe("Workspace Routes", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ answer: "Odpowiedz z RAG." });
-    expect(global.fetch).toHaveBeenCalledWith(
-      "https://api.example.test/chat/completions",
-      expect.objectContaining({ method: "POST" })
+    expect(generateRagAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        question: "Co ustalono?",
+        chunks: [{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }],
+      })
     );
   });
 });

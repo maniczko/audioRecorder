@@ -16,6 +16,7 @@ export default defineConfig({
         'server/scripts/**',
         'server/jest.config.js',
         'server/debug_users.ts',
+        'server/test_diarization.ts',
         'server/test_scrypt.ts',
         'server/**/*.d.ts',
         'server/**/*.test.ts',

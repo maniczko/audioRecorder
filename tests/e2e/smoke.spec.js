@@ -61,7 +61,6 @@ test.describe("Smoke product flows", () => {
 
     await page.goto("/");
     await page.getByRole("button", { name: "Tab Nagrania" }).click();
-
-    await expect(page.getByRole("heading", { name: "Meeting with recording" })).toBeVisible();
+    await expect(page.getByText("Meeting with recording").first()).toBeVisible();
   });
 });

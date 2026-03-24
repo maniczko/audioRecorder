@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { AppServices, AppMiddlewares } from "./middleware.ts";
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from "../../src/shared/contracts.ts";
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from "../../src/shared/types.ts";
+import { generateRagAnswer } from "../lib/ragAnswer.ts";
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
@@ -45,10 +46,13 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const workspaceId = c.req.param("workspaceId");
     await ensureWorkspaceAccess(c, workspaceId);
     const body = await c.req.json().catch(() => ({}));
-    return c.json({
+    return c.json(
+      {
         workspaceId,
         state: await workspaceService.saveWorkspaceState(workspaceId, body),
-    }, 200);
+      },
+      200
+    );
   });
 
   router.patch("/state/workspaces/:workspaceId", async (c) => {
@@ -57,10 +61,13 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const delta = await c.req.json().catch(() => ({}));
     const currentState = normalizeWorkspaceState(await workspaceService.getWorkspaceState(workspaceId));
     const mergedState = applyWorkspaceStateDelta(currentState, delta);
-    return c.json({
-      workspaceId,
-      state: await workspaceService.saveWorkspaceState(workspaceId, mergedState),
-    }, 200);
+    return c.json(
+      {
+        workspaceId,
+        state: await workspaceService.saveWorkspaceState(workspaceId, mergedState),
+      },
+      200
+    );
   });
 
   // --- Workspaces ---
@@ -70,7 +77,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const targetUserId = c.req.param("targetUserId");
     const membership = await ensureWorkspaceAccess(c, workspaceId);
     if (!["owner", "admin"].includes(membership.member_role)) {
-       return c.json({ message: "Tylko owner lub admin moze zmieniac role." }, 403);
+      return c.json({ message: "Tylko owner lub admin moze zmieniac role." }, 403);
     }
     const body = await c.req.json().catch(() => ({}));
     return c.json(await workspaceService.updateWorkspaceMemberRole(workspaceId, targetUserId, body.memberRole), 200);
@@ -79,39 +86,26 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.post("/workspaces/:workspaceId/rag/ask", async (c) => {
     const workspaceId = c.req.param("workspaceId");
     await ensureWorkspaceAccess(c, workspaceId);
-    
+
     const body = await c.req.json().catch(() => ({}));
     const question = String(body.question || "").trim();
     if (!question) return c.json({ answer: "Zadaj konkretne pytanie." }, 400);
 
     const topChunks = await transcriptionService.queryRAG(workspaceId, question);
     if (!topChunks || topChunks.length === 0) {
-      return c.json({ answer: "Brak danych z archiwalnych spotkań na ten temat." }, 200);
+      return c.json({ answer: "Brak danych z archiwalnych spotkan na ten temat." }, 200);
     }
 
-    const contextStr = topChunks.map((c: any) => `[Spotkanie: ${c.recording_id}] ${c.speaker_name}: ${c.text}`).join("\n");
-    
     try {
-      if (!config.OPENAI_API_KEY) throw new Error("Brak klucza API do RAG LLMa.");
-      const res = await fetch(`${config.OPENAI_BASE_URL || "https://api.openai.com/v1"}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${config.OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "Jesteś asystentem wiedzy bazy RAG. Udziel krótkiej, konkretnej odpowiedzi bazując WYŁĄCZNIE na poniższym archiwalnym kontekście ze spotkań klienta. Jeśli pytanie wykracza poza kontekst, powiedz, że nie wiesz." },
-            { role: "user", content: `Kontekt ze spotkań:\n${contextStr}\n\nPytanie użytkownika: ${question}` }
-          ],
-          temperature: 0.2
-        })
+      const answer = await generateRagAnswer({
+        question,
+        chunks: topChunks,
+        config,
+        workspaceId,
       });
-      const data = await res.json();
-      return c.json({ answer: data.choices[0]?.message?.content || "Błąd RAG." });
+      return c.json({ answer });
     } catch (err: any) {
-      return c.json({ answer: `Błąd LLM: ${err.message}` }, 500);
+      return c.json({ answer: `Blad LLM: ${err.message}` }, 500);
     }
   });
 
@@ -151,21 +145,28 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const embedding = await transcriptionService.computeEmbedding(audioPath);
 
     const profile = await workspaceService.upsertVoiceProfile({
-      id: profileId, userId: session.user_id, workspaceId: session.workspace_id,
-      speakerName: speakerName.trim(), audioPath, embedding: embedding || [],
+      id: profileId,
+      userId: session.user_id,
+      workspaceId: session.workspace_id,
+      speakerName: speakerName.trim(),
+      audioPath,
+      embedding: embedding || [],
     });
 
     const sampleCount = profile.sample_count || 1;
     const status = sampleCount > 1 ? 200 : 201;
-    return c.json({
-      id: profile.id,
-      speakerName: profile.speaker_name,
-      hasEmbedding: (embedding || []).length > 0,
-      createdAt: profile.created_at,
-      sampleCount,
-      threshold: typeof profile.threshold === "number" ? profile.threshold : 0.82,
-      isUpdate: Boolean(profile.isUpdate),
-    }, status);
+    return c.json(
+      {
+        id: profile.id,
+        speakerName: profile.speaker_name,
+        hasEmbedding: (embedding || []).length > 0,
+        createdAt: profile.created_at,
+        sampleCount,
+        threshold: typeof profile.threshold === "number" ? profile.threshold : 0.82,
+        isUpdate: Boolean(profile.isUpdate),
+      },
+      status
+    );
   });
 
   router.patch("/voice-profiles/:id/threshold", async (c) => {
@@ -173,7 +174,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const body = await c.req.json().catch(() => ({}));
     const threshold = Number(body.threshold);
     if (!Number.isFinite(threshold) || threshold < 0.5 || threshold > 0.99) {
-      return c.json({ message: "threshold musi być liczbą w zakresie 0.50–0.99." }, 400);
+      return c.json({ message: "threshold musi byc liczba w zakresie 0.50-0.99." }, 400);
     }
     const updated = await workspaceService.updateVoiceProfileThreshold(c.req.param("id"), session.workspace_id, threshold);
     if (!updated) return c.json({ message: "Profil nie znaleziony." }, 404);
