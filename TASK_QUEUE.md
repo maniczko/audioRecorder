@@ -24,6 +24,10 @@ Kolejnosc prac:
 
 ### Qwen
 
+- `217` [P1] `todo` - Fix failing CI after `f6683244`: E2E Smoke Tests, Frontend Tests, Server Tests, CI Passed
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: E2E Smoke Tests, Frontend Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23493083112).
+
 - `216` [P1] `todo` - Fix failing CI after `b4ec256b`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23492502989).
