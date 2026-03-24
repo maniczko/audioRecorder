@@ -59,6 +59,7 @@ export default function useWorkspaceData() {
   const remotePullCooldownUntilRef = useRef(0);
   const lastWorkspaceMessageRef = useRef("");
   const lastLoggedRemoteErrorRef = useRef("");
+  const isProbingRef = useRef(false);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === "remote" && Boolean(session?.token)
@@ -142,10 +143,18 @@ export default function useWorkspaceData() {
       return true;
     }
 
+    // Prevent concurrent probes and respect active cooldown
+    if (isProbingRef.current || Date.now() < remotePullCooldownUntilRef.current) {
+      return false;
+    }
+
+    isProbingRef.current = true;
     try {
       await probeRemoteApiHealth();
+      isProbingRef.current = false;
       return true;
     } catch (error) {
+      isProbingRef.current = false;
       remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
       logRemoteErrorOnce("Hosted preview health probe failed.", error);
       pushWorkspaceMessage(

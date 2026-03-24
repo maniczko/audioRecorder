@@ -73,7 +73,9 @@ function isTransportFailureMessage(message = "") {
     normalized.includes("bad gateway") ||
     normalized.includes("target connection error") ||
     normalized.includes("application failed to respond") ||
-    normalized.includes("router_external_target_connection_error")
+    normalized.includes("router_external_target_connection_error") ||
+    normalized.includes("aborted") ||
+    normalized.includes("the operation was aborted")
   );
 }
 
@@ -105,13 +107,17 @@ function normalizeApiErrorMessage(message = "", status?: number) {
 }
 
 export async function probeRemoteApiHealth(fetchImpl = fetch) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
     const response = await fetchImpl(buildUrl("/health"), {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       setPreviewRuntimeStatus("backend_unreachable");
@@ -139,6 +145,7 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
     setPreviewRuntimeStatus("healthy");
     return payload;
   } catch (error) {
+    clearTimeout(timeoutId);
     if (String(error?.message || "").includes("nieaktualny wzgledem backendu")) {
       setPreviewRuntimeStatus("stale_runtime");
     } else {
