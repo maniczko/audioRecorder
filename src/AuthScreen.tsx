@@ -185,6 +185,7 @@ export default function AuthScreen({
                 <label>
                   <span>Imie i nazwisko</span>
                   <input
+                    placeholder="np. Anna Nowak"
                     value={authValues.name}
                     onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
                   />
@@ -212,6 +213,7 @@ export default function AuthScreen({
               <span>Email</span>
               <input
                 type="email"
+                placeholder="name@company.com"
                 value={authValues.email}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
               />
@@ -220,6 +222,7 @@ export default function AuthScreen({
               <span>Haslo</span>
               <input
                 type="password"
+                placeholder="minimum 6 znakow"
                 value={authValues.password}
                 onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
               />
@@ -248,6 +251,7 @@ export default function AuthScreen({
                   <label>
                     <span>Nazwa workspace</span>
                     <input
+                      placeholder="np. Zespol sprzedazy"
                       value={authValues.workspaceName}
                       onChange={(event) => setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))}
                     />
