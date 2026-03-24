@@ -590,4 +590,9 @@ function TaskKanbanView({
   );
 }
 
-export default memo(TaskKanbanView);
+export default memo(TaskKanbanView, (prevProps, nextProps) => {
+  // Only re-render if boardColumns or selectedTaskIds change
+  return prevProps.boardColumns === nextProps.boardColumns &&
+    prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
+    prevProps.selectedTask === nextProps.selectedTask;
+});

@@ -1,11 +1,11 @@
 import { Suspense, lazy, memo, useState } from "react";
 import { TASK_PRIORITIES } from "../lib/tasks";
-import TaskChartsView from "./TaskChartsView";
 import TaskScheduleView from "./TaskScheduleView";
 import './TasksWorkspaceViewStyles.css';
 
 const TaskKanbanView = lazy(() => import("./TaskKanbanView"));
 const TaskListView = lazy(() => import("./TaskListView"));
+const TaskChartsView = lazy(() => import("./TaskChartsView"));
 
 function statCards(stats, visibleStats) {
   return [
@@ -348,7 +348,9 @@ function TasksWorkspaceView({
               </div>
             </div>
           ) : isCharts ? (
-            <TaskChartsView tasks={allVisibleTasks} boardColumns={boardColumns} />
+            <Suspense fallback={<div className="todo-loading">Ładowanie wykresów...</div>}>
+              <TaskChartsView tasks={allVisibleTasks} boardColumns={boardColumns} />
+            </Suspense>
           ) : isSchedule ? (
             <TaskScheduleView
               tasks={allVisibleTasks}

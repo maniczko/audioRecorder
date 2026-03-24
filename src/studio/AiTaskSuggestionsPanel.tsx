@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { suggestTasksFromTranscript } from "../lib/aiTaskSuggestions";
 import { createId } from "../lib/storage";
 import './AiTaskSuggestionsPanelStyles.css';
@@ -6,7 +6,7 @@ import './AiTaskSuggestionsPanelStyles.css';
 const PRIORITY_LABELS = { high: "Wysoki", medium: "Sredni", low: "Niski" };
 const PRIORITY_FLAGS = { high: "overdue", medium: "in-progress", low: "neutral" };
 
-export default function AiTaskSuggestionsPanel({
+function AiTaskSuggestionsPanel({
   selectedRecording,
   displaySpeakerNames,
   peopleProfiles = [],
@@ -227,3 +227,9 @@ export default function AiTaskSuggestionsPanel({
     </section>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export default memo(AiTaskSuggestionsPanel, (prevProps, nextProps) => {
+  return prevProps.selectedRecording === nextProps.selectedRecording &&
+    prevProps.displaySpeakerNames === nextProps.displaySpeakerNames;
+});

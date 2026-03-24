@@ -227,4 +227,10 @@ TaskListView.propTypes = {
   setDragTaskId: PropTypes.func,
 };
 
-export default memo(TaskListView);
+// Memoize the entire list view to prevent unnecessary re-renders
+export default memo(TaskListView, (prevProps, nextProps) => {
+  // Only re-render if groupedTasks length or selectedTaskIds change
+  return prevProps.groupedTasks === nextProps.groupedTasks &&
+    prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
+    prevProps.selectedTask === nextProps.selectedTask;
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { TASK_PRIORITIES } from "../lib/tasks";
 import './TaskChartsViewStyles.css';
 
@@ -89,7 +90,7 @@ function BarChart({ title, bars, maxValue }) {
   );
 }
 
-export default function TaskChartsView({ tasks, boardColumns }) {
+function TaskChartsView({ tasks, boardColumns }) {
   const now = Date.now();
   const day = 86400000;
 
@@ -174,3 +175,9 @@ export default function TaskChartsView({ tasks, boardColumns }) {
     </div>
   );
 }
+
+// Memoize chart view to prevent re-renders when tasks haven't changed
+export default memo(TaskChartsView, (prevProps, nextProps) => {
+  return prevProps.tasks === nextProps.tasks &&
+    prevProps.boardColumns === nextProps.boardColumns;
+});

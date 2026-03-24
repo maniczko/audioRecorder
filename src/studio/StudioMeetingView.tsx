@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { useMeetingsCtx } from "../context/MeetingsContext";
 
@@ -11,9 +11,11 @@ import { buildSketchnoteDataUrl, buildSketchnoteSvg } from "../lib/sketchnote";
 import { normalizeMeetingFeedback } from "../shared/meetingFeedback";
 import { apiRequest } from "../services/httpClient";
 import { remoteApiEnabled } from "../services/config";
-import AiTaskSuggestionsPanel from "./AiTaskSuggestionsPanel";
 import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
 import './StudioMeetingViewStyles.css';
+
+// Lazy load AI Task Suggestions Panel for code splitting
+const AiTaskSuggestionsPanel = lazy(() => import("./AiTaskSuggestionsPanel"));
 
 
 
@@ -2165,13 +2167,15 @@ export default function StudioMeetingView({
               </section>
             </div>
 
-            <AiTaskSuggestionsPanel
-              selectedRecording={selectedRecording}
-              displaySpeakerNames={displaySpeakerNames}
-              peopleProfiles={peopleProfiles}
-              onCreateTask={onCreateTask}
-              canEdit={currentWorkspacePermissions?.canEditWorkspace}
-            />
+            <Suspense fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}>
+              <AiTaskSuggestionsPanel
+                selectedRecording={selectedRecording}
+                displaySpeakerNames={displaySpeakerNames}
+                peopleProfiles={peopleProfiles}
+                onCreateTask={onCreateTask}
+                canEdit={currentWorkspacePermissions?.canEditWorkspace}
+              />
+            </Suspense>
           </section>
         )}
 
