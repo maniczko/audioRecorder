@@ -13,6 +13,7 @@ export function RecorderProvider({ children }) {
     createAdHocMeeting: meetings.createAdHocMeeting,
     attachCompletedRecording: meetings.attachCompletedRecording,
     isHydratingRemoteState: meetings.isHydratingRemoteState,
+    selectMeeting: meetings.selectMeeting,
   });
 
   return (

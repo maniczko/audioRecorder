@@ -606,7 +606,7 @@ export default function RecordingsTab(props) {
                     stageLabel={stageLabel}
                     errorMessage={item.errorMessage}
                     onRetry={
-                      item.status === "failed" && retryRecordingQueueItem
+                      (item.status === "failed" || item.status === "failed_permanent") && retryRecordingQueueItem
                         ? () => retryRecordingQueueItem(item.recordingId)
                         : undefined
                     }

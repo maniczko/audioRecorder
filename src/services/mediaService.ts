@@ -120,6 +120,11 @@ function createRemoteMediaService() {
       const { workspaceId = "", meetingId = "", onProgress } = options;
       const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
       const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB
+      const MAX_UPLOAD_SIZE = 500 * 1024 * 1024; // 500 MB — matches server finalize limit
+
+      if (blob && blob.size > MAX_UPLOAD_SIZE) {
+        throw new Error(`Plik audio jest zbyt duży (${Math.round(blob.size / 1024 / 1024)}MB). Maksymalny rozmiar to 500MB. Skompresuj nagranie do formatu WebM lub MP3.`);
+      }
 
       if (blob && blob.size > CHUNKED_THRESHOLD) {
         const total = Math.ceil(blob.size / CHUNK_SIZE);

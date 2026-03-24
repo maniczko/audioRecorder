@@ -69,3 +69,5 @@ htmlcov/
 *.tar.xz
 *.tar.zst
 ```
+# Server runtime data
+server/data/

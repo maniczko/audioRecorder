@@ -4,6 +4,7 @@ import { getHostedRuntimeBuildId, isHostedPreviewHost } from "../runtime/browser
 
 const unauthorizedHandlers = new Set();
 let previewRuntimeStatus = "unknown";
+let buildIdMismatchLogged = false;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
   "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
 const HOSTED_PREVIEW_STALE_MESSAGE =
@@ -124,10 +125,12 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
       isHostedPreviewRuntime() &&
       frontendBuildId &&
       backendGitSha &&
-      frontendBuildId !== backendGitSha
+      frontendBuildId !== backendGitSha &&
+      !buildIdMismatchLogged
     ) {
       // Railway and Vercel deploy at different times — SHA mismatch is expected.
-      // Log a warning but do NOT block requests.
+      // Log once per session and do NOT block requests.
+      buildIdMismatchLogged = true;
       console.warn(
         `[Preview] Build ID mismatch: frontend=${frontendBuildId.slice(0, 8)} backend=${backendGitSha.slice(0, 8)}. This is expected when Railway and Vercel deploy at different times.`
       );

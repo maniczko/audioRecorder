@@ -604,9 +604,9 @@ Important:
     }
 
     const fullStats = await stat(assembledPath);
-    if (fullStats.size > 100 * 1024 * 1024) {
+    if (fullStats.size > 500 * 1024 * 1024) {
       try { await unlink(assembledPath); } catch (_) {}
-      return c.json({ message: "Złożony plik przekracza maksymalny rozmiar 100MB." }, 413);
+      return c.json({ message: "Złożony plik przekracza maksymalny rozmiar 500MB. Skompresuj nagranie do formatu WebM lub MP3." }, 413);
     }
 
     let asset: MediaAsset;

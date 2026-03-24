@@ -158,9 +158,9 @@ function isTransientNetworkError(error: any) {
   );
 }
 
-const MAX_AUTO_RETRIES = 3;
-// Exponential backoff delays for retries: 1s, 4s, 16s
-const RETRY_DELAYS_MS = [1000, 4000, 16000];
+const MAX_AUTO_RETRIES = 5;
+// Exponential backoff delays for retries: 1s, 4s, 16s, 32s, 64s (~2 min total — enough for Railway restart)
+const RETRY_DELAYS_MS = [1000, 4000, 16000, 32000, 64000];
 
 export const useRecorderStore = create<any>()(
   persist(
@@ -642,9 +642,10 @@ export const useRecorderStore = create<any>()(
             }
             set({ lastQueueErrorKey: errorKey });
           }
-          // After exhausting retries mark as permanently failed — requires manual retry
+          // Transient network errors always use "failed" (not "failed_permanent") — allows manual retry
+          const isPermanent = !isTransientNetworkError(error) && retryCount >= MAX_AUTO_RETRIES;
           get().updateQueueItem(nextItem.recordingId, {
-            status: retryCount >= MAX_AUTO_RETRIES ? "failed_permanent" : "failed",
+            status: isPermanent ? "failed_permanent" : "failed",
             errorMessage: userFacingMessage,
           });
           const failedSnapshot = getPipelineSnapshot("failed", 0, userFacingMessage);

@@ -15,6 +15,7 @@ export default function useRecorder({
   createAdHocMeeting,
   attachCompletedRecording,
   isHydratingRemoteState,
+  selectMeeting,
 }) {
   const mediaService = useMemo(() => createMediaService(), []);
   const [liveText, setLiveText] = useState("");
@@ -147,6 +148,7 @@ export default function useRecorder({
       return;
     }
     setRecordingMeetingId(active.id);
+    selectMeeting?.(active.id);
     hardware.startRecording(active.id);
   };
 
