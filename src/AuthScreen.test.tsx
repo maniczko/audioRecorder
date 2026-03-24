@@ -129,7 +129,7 @@ describe("AuthScreen", () => {
     fireEvent.change(screen.getByLabelText("Kod zaproszenia"), { target: { value: "AB12CD" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "anna@example.com" } });
     fireEvent.change(screen.getByLabelText("Haslo"), { target: { value: "secret-123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Zaloz konto" }));
+    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
 
     expect(screen.getByDisplayValue("Anna Nowak")).toBeInTheDocument();
     expect(screen.getByDisplayValue("AB12CD")).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("AuthScreen", () => {
     fireEvent.change(screen.getByLabelText("Haslo"), { target: { value: "123" } });
 
     // Click submit with short password - should not submit
-    fireEvent.click(screen.getByRole("button", { name: "Zaloz konto" }));
+    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
 
     // Password is too short, form should not submit
     await waitFor(() => {

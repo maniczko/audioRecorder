@@ -269,7 +269,7 @@ export default function AuthScreen({
             ) : null}
 
             <button type="submit" className="primary-button">
-              {isRegister ? "Zaloz konto" : "Zaloguj sie"}
+              {isRegister ? "Wejdz do workspace" : "Zaloguj sie"}
             </button>
 
             {authError ? <div className="inline-alert error">{authError}</div> : null}
