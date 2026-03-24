@@ -56,7 +56,43 @@ const PYTHON_BINARY = config.PYTHON_BINARY;
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
 const AUDIO_PREPROCESS_CACHE_VERSION = "v1";
 
+// Adaptive overlap configuration
+const MIN_OVERLAP_SECONDS = 5;      // Minimum overlap for silence
+const MAX_OVERLAP_SECONDS = 30;     // Maximum overlap for dense speech
+const SPEECH_DENSITY_THRESHOLD = 0.6; // 60% speech = high density
+
 // ── Path helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Calculate adaptive overlap based on speech density in the chunk.
+ * More overlap for dense speech, less for silence.
+ */
+function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): number {
+  if (!speechSegments || speechSegments.length === 0) {
+    return MIN_OVERLAP_SECONDS; // Silence = minimum overlap
+  }
+
+  // Calculate speech density (percentage of time with speech)
+  const totalDuration = speechSegments.reduce((max, seg) => Math.max(max, seg.end || seg.endTimestamp || 0), 0);
+  if (totalDuration <= 0) return MIN_OVERLAP_SECONDS;
+
+  const speechDuration = speechSegments.reduce((sum, seg) => {
+    const start = seg.start || seg.startTimestamp || 0;
+    const end = seg.end || seg.endTimestamp || 0;
+    return sum + (end - start);
+  }, 0);
+
+  const density = speechDuration / totalDuration;
+
+  // Adaptive overlap: more overlap for dense speech
+  if (density >= SPEECH_DENSITY_THRESHOLD) {
+    return MAX_OVERLAP_SECONDS; // Dense speech = maximum overlap
+  } else if (density >= SPEECH_DENSITY_THRESHOLD / 2) {
+    return (MIN_OVERLAP_SECONDS + MAX_OVERLAP_SECONDS) / 2; // Medium density
+  } else {
+    return MIN_OVERLAP_SECONDS; // Low density = minimum overlap
+  }
+}
 
 export function getUploadDir() {
   return config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
@@ -566,12 +602,15 @@ export async function transcribeInChunks(
   const CONCURRENCY_LIMIT = config.STT_CONCURRENCY_LIMIT || 6;
   let offsetSeconds = 0;
   let hasMore = true;
+  let currentOverlap = CHUNK_OVERLAP_SECONDS;
+  let allSpeechSegments: any[] = []; // Track all speech segments for adaptive overlap
 
   while (hasMore && !options.signal?.aborted) {
     const batchPromises = [];
     for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
       const currentOffset = offsetSeconds;
-      offsetSeconds += CHUNK_DURATION_SECONDS - CHUNK_OVERLAP_SECONDS;
+      // Use adaptive overlap based on speech density
+      offsetSeconds += CHUNK_DURATION_SECONDS - currentOverlap;
 
       batchPromises.push(
         (async () => {
@@ -611,6 +650,21 @@ export async function transcribeInChunks(
             try {
               fs.unlinkSync(tmpVad);
             } catch (_) {}
+          }
+          
+          // Track speech segments for adaptive overlap calculation
+          if (chunkSpeech && chunkSpeech.length > 0) {
+            allSpeechSegments = allSpeechSegments.concat(chunkSpeech.map((seg: any) => ({
+              start: (currentOffset * 1000) + seg.start,
+              end: (currentOffset * 1000) + seg.end,
+            })));
+            
+            // Recalculate overlap based on accumulated speech density
+            currentOverlap = calculateAdaptiveOverlap(allSpeechSegments, CHUNK_OVERLAP_SECONDS);
+            
+            if (DEBUG) {
+              console.log(`[transcription] Adaptive overlap: ${currentOverlap.toFixed(1)}s (density-based)`);
+            }
           }
           diagnostics.vadFlaggedSilent = Boolean(
             chunkSpeech && chunkSpeech.length === 0

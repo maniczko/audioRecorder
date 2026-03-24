@@ -56,6 +56,7 @@ const envSchema = z.object({
   VOICELOG_STT_MODEL_FAST: z.string().default("openai/whisper-1"),  // Domyślnie whisper-1, można ustawić np. "groq/whisper-large-v3-turbo"
   VOICELOG_STT_MODEL_FULL: z.string().default("openai/whisper-1"),
   VOICELOG_CHUNK_OVERLAP_SECONDS: z.preprocess((val) => val ? Number(val) : undefined, z.number().int().min(0).optional()).default(5),
+  VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === "true", z.boolean()).default(true), // Enable adaptive overlap based on speech density
   VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === "true", z.boolean()).default(false),
   VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== "false", z.boolean()).default(true),
 
