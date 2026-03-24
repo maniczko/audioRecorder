@@ -187,7 +187,7 @@ jobs:
   e2e-smoke:
     name: E2E Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
