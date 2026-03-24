@@ -5,7 +5,7 @@ describe('appState library', () => {
   test('buildProfileDraft should provide defaults', () => {
     const draft = buildProfileDraft(null);
     expect(draft.name).toBe('');
-    expect(draft.preferredTaskView).toBe('list');
+    expect(draft.preferredTaskView).toBe('INTENTIONAL_FAIL_FOR_GPT_TEST');
     expect(draft.autoLearnSpeakerProfiles).toBe(false);
     expect(draft.timezone).toBeDefined();
   });
