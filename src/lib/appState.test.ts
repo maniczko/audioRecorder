@@ -5,7 +5,7 @@ describe('appState library', () => {
   test('buildProfileDraft should provide defaults', () => {
     const draft = buildProfileDraft(null);
     expect(draft.name).toBe('');
-    expect(draft.preferredTaskView).toBe('INTENTIONAL_FAIL_FOR_GPT_TEST');
+    expect(draft.preferredTaskView).toBe('list');
     expect(draft.autoLearnSpeakerProfiles).toBe(false);
     expect(draft.timezone).toBeDefined();
   });
@@ -36,7 +36,7 @@ describe('appState library', () => {
     test('should update basic fields', () => {
       const updates = { title: 'New Title', owner: 'Anna' };
       const result = normalizeTaskUpdatePayload(previousTask, updates, columns);
-      
+
       expect(result.title).toBe('New Title');
       expect(result.owner).toBe('Anna');
       expect(result.status).toBe('todo');
