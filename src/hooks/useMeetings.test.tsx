@@ -6,6 +6,7 @@ const {
   meetingsState,
   lifecycleState,
   taskOpsState,
+  stateServiceState,
 } = vi.hoisted(() => ({
   meetingsState: {
     meetings: [{ id: "m1", title: "Spotkanie", startsAt: "2026-03-20T10:00:00.000Z", durationMinutes: 30, workspaceId: "ws1", updatedAt: "2026-03-20T10:00:00.000Z" }],
@@ -32,12 +33,23 @@ const {
       );
     }),
   },
+  stateServiceState: {
+    syncWorkspaceState: vi.fn().mockResolvedValue(null),
+  },
 }));
 
 vi.mock("./useWorkspaceData", () => ({
   default: () => ({
     userMeetings: meetingsState.meetings,
     isHydratingRemoteState: false,
+    pauseRemotePull: vi.fn(),
+  }),
+}));
+
+vi.mock("../services/stateService", () => ({
+  createStateService: () => ({
+    mode: "remote",
+    syncWorkspaceState: stateServiceState.syncWorkspaceState,
   }),
 }));
 
@@ -77,6 +89,7 @@ vi.mock("../store/meetingsStore", () => ({
     taskState: meetingsState.taskState,
     taskBoards: meetingsState.taskBoards,
     calendarMeta: meetingsState.calendarMeta,
+    vocabulary: [],
     setMeetings: (updater: any) => {
       meetingsState.meetings = typeof updater === "function" ? updater(meetingsState.meetings) : updater;
     },
@@ -121,6 +134,7 @@ describe("useMeetings", () => {
     lifecycleState.createMeetingDirect.mockReset();
     lifecycleState.resetSelectionState.mockReset();
     taskOpsState.updateTask.mockReset();
+    stateServiceState.syncWorkspaceState.mockReset().mockResolvedValue(null);
   });
 
   test("updates calendar entry metadata and applies meeting snapshot", () => {
@@ -147,5 +161,31 @@ describe("useMeetings", () => {
 
     expect(result.current.deleteMeeting).toBeDefined();
     expect(result.current.resetSelectionState).toBeDefined();
+  });
+
+  test("deleteRecordingAndMeeting removes meeting and syncs workspace immediately", async () => {
+    meetingsState.meetings = [
+      {
+        id: "m1",
+        title: "Spotkanie",
+        startsAt: "2026-03-20T10:00:00.000Z",
+        durationMinutes: 30,
+        workspaceId: "ws1",
+        updatedAt: "2026-03-20T10:00:00.000Z",
+        recordings: [{ id: "rec1" }],
+      },
+    ];
+
+    const { result } = renderHook(() => useMeetings());
+
+    await result.current.deleteRecordingAndMeeting("m1");
+
+    expect(meetingsState.meetings).toEqual([]);
+    expect(stateServiceState.syncWorkspaceState).toHaveBeenCalledWith(
+      "ws1",
+      expect.objectContaining({
+        meetings: [],
+      })
+    );
   });
 });

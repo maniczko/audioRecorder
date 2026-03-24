@@ -5,6 +5,7 @@ import useTaskOperations from "./useTaskOperations";
 import usePeopleProfiles from "./usePeopleProfiles";
 import useRecordingActions from "./useRecordingActions";
 import { createMediaService } from "../services/mediaService";
+import { createStateService } from "../services/stateService";
 
 import {
   buildTaskColumns,
@@ -40,8 +41,10 @@ export default function useMeetings() {
     setTaskBoards,
     calendarMeta,
     setCalendarMeta,
+    vocabulary,
     setWorkspaceMessage,
   } = useMeetingsStore();
+  const stateService = useMemo(() => createStateService(), []);
 
   // 2. Lifecycle & Drafts
   const lifecycle = useMeetingLifecycle({
@@ -363,14 +366,33 @@ export default function useMeetings() {
     deleteRecordingAndMeeting: async (meetingId: string) => {
       const meeting = userMeetings.find((m) => m.id === meetingId);
       if (!meeting) return;
+      const nextMeetings = userMeetings.filter((m) => m.id !== meetingId);
 
       // 1. Pause remote polling to prevent race condition
-      pauseRemotePull(3000);
+      pauseRemotePull?.(10000);
 
       // 2. Remove from local state IMMEDIATELY so sync push happens fast
       deleteMeeting(meetingId);
 
-      // 2. Fire-and-forget: clean up server-side recording data
+      // 3. Persist meeting deletion immediately in remote mode instead of waiting
+      // for the debounced workspace autosave cycle.
+      if (stateService?.mode === "remote" && currentWorkspaceId) {
+        try {
+          await stateService.syncWorkspaceState(currentWorkspaceId, {
+            meetings: nextMeetings,
+            manualTasks,
+            taskState,
+            taskBoards,
+            calendarMeta,
+            vocabulary,
+          });
+        } catch (error: any) {
+          console.warn("Immediate workspace sync after delete failed:", error);
+          setWorkspaceMessage(error?.message || "Nie udalo sie zapisac usuniecia spotkania na backendzie.");
+        }
+      }
+
+      // 4. Fire-and-forget: clean up server-side recording data
       const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
       if (recordings.length > 0) {
         const media = createMediaService();
