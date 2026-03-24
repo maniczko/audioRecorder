@@ -35,6 +35,7 @@ import {
   STT_PROVIDER_CHAIN,
   SILENCE_REMOVE,
   MAX_FILE_SIZE_BYTES,
+  VAD_ENABLED,
 } from "./transcription.ts";
 
 import {
