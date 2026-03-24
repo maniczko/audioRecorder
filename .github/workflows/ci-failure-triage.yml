@@ -151,7 +151,7 @@ jobs:
               catch { await github.rest.issues.createLabel({ owner, repo, ...label }); }
             }
 
-      - name: Create GitHub Issue (triggers Qwen automatically)
+      - name: Create GitHub Issue
         id: create_issue
         if: steps.check_dup.outputs.result == 'create'
         uses: actions/github-script@v7
@@ -168,8 +168,31 @@ jobs:
               labels: ['ci-failure'],
             });
             console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
-            core.summary.addRaw(`## 🤖 Qwen fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
+            core.setOutput('issue_number', String(issue.data.number));
+            core.summary.addRaw(`## 🤖 GPT fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
             await core.summary.write();
+
+      - name: Trigger GPT Auto-Fix workflow
+        if: steps.check_dup.outputs.result == 'create' && steps.create_issue.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        env:
+          ISSUE_TITLE: ${{ steps.build_issue.outputs.title }}
+          ISSUE_BODY: ${{ steps.build_issue.outputs.body }}
+          ISSUE_NUMBER: ${{ steps.create_issue.outputs.issue_number }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            await github.rest.actions.createWorkflowDispatch({
+              owner, repo,
+              workflow_id: 'gpt-fix.yml',
+              ref: 'main',
+              inputs: {
+                issue_number: process.env.ISSUE_NUMBER,
+                issue_title: process.env.ISSUE_TITLE,
+                issue_body: (process.env.ISSUE_BODY || '').slice(0, 65000),
+              },
+            });
+            console.log(`GPT Auto-Fix triggered for issue #${process.env.ISSUE_NUMBER}`);
 
       # Also update TASK_QUEUE.md so the task is visible in the project board
       - name: Add entry to TASK_QUEUE.md
