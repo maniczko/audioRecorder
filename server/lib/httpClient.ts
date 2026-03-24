@@ -1,36 +1,16 @@
 /**
  * httpClient.ts
  * 
- * HTTP client with HTTP/2 and keep-alive support for external APIs.
+ * HTTP client with keep-alive support for external APIs.
  * Provides connection pooling and reuse for better performance.
+ * 
+ * Note: Uses native fetch() with keep-alive headers for simplicity.
+ * Node.js 22+ fetch has built-in connection pooling.
  */
 
-import https from "node:https";
-import http from "node:http";
-
-// Connection pool configuration
+// Keep-alive configuration
 const KEEP_ALIVE_TIMEOUT = 30000; // 30 seconds
-const MAX_SOCKETS = 50; // Maximum concurrent connections per host
-const MAX_FREE_SOCKETS = 10; // Maximum idle sockets
-
-// Create HTTP/2-compatible agents with keep-alive
-const httpsAgent = new https.Agent({
-  keepAlive: true,
-  keepAliveMsecs: KEEP_ALIVE_TIMEOUT,
-  maxSockets: MAX_SOCKETS,
-  maxFreeSockets: MAX_FREE_SOCKETS,
-  scheduling: "lifo", // LIFO scheduling for better connection reuse
-  timeout: 60000, // 60 second timeout
-});
-
-const httpAgent = new http.Agent({
-  keepAlive: true,
-  keepAliveMsecs: KEEP_ALIVE_TIMEOUT,
-  maxSockets: MAX_SOCKETS,
-  maxFreeSockets: MAX_FREE_SOCKETS,
-  scheduling: "lifo",
-  timeout: 60000,
-});
+const MAX_RETRIES = 3;
 
 interface FetchOptions {
   method?: string;
@@ -50,8 +30,7 @@ interface FetchResponse {
 }
 
 /**
- * Fetch wrapper with HTTP/2 and keep-alive support
- * Uses native node:http/https agents for connection pooling
+ * Fetch wrapper with keep-alive headers and retry logic
  */
 export async function httpClient(
   url: string,
@@ -59,74 +38,56 @@ export async function httpClient(
 ): Promise<FetchResponse> {
   const { method = "GET", headers = {}, body, signal, timeout = 60000 } = options;
   
-  const parsedUrl = new URL(url);
-  const isHttps = parsedUrl.protocol === "https:";
-  const agent = isHttps ? httpsAgent : httpAgent;
+  let lastError: Error | null = null;
   
-  return new Promise((resolve, reject) => {
-    const reqOptions: any = {
-      hostname: parsedUrl.hostname,
-      port: parsedUrl.port || (isHttps ? 443 : 80),
-      path: parsedUrl.pathname + parsedUrl.search,
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "VoiceLog-API/1.0",
-        "Connection": "keep-alive",
-        "Keep-Alive": `timeout=${KEEP_ALIVE_TIMEOUT / 1000}, max=${MAX_SOCKETS}`,
-        ...headers,
-      },
-      agent,
-      timeout,
-    };
-
-    if (body && typeof body !== "string") {
-      reqOptions.headers["Content-Length"] = Buffer.byteLength(JSON.stringify(body));
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const mergedSignal = signal 
+        ? AbortSignal.any([signal, controller.signal])
+        : controller.signal;
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "VoiceLog-API/1.0",
+          "Connection": "keep-alive",
+          "Keep-Alive": `timeout=${KEEP_ALIVE_TIMEOUT / 1000}, max=${MAX_RETRIES}`,
+          ...headers,
+        },
+        body: body && typeof body !== "string" ? JSON.stringify(body) : body,
+        signal: mergedSignal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers as unknown as Headers,
+        text: async () => response.text(),
+        json: async () => response.json(),
+      };
+    } catch (error: any) {
+      lastError = error;
+      
+      // Don't retry on abort
+      if (signal?.aborted) {
+        throw error;
+      }
+      
+      // Wait before retry (exponential backoff)
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt)));
+      }
     }
-
-    const client = isHttps ? https : http;
-    const req = client.request(reqOptions, (res) => {
-      const responseHeaders = new Headers();
-      Object.entries(res.headers).forEach(([key, value]) => {
-        if (value) responseHeaders.append(key, Array.isArray(value) ? value.join(", ") : value);
-      });
-
-      let data = "";
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-
-      res.on("end", () => {
-        resolve({
-          ok: res.statusCode !== undefined && res.statusCode >= 200 && res.statusCode < 300,
-          status: res.statusCode || 0,
-          statusText: res.statusMessage || "",
-          headers: responseHeaders,
-          text: async () => data,
-          json: async () => JSON.parse(data),
-        });
-      });
-    });
-
-    req.on("error", reject);
-    req.on("timeout", () => {
-      req.destroy();
-      reject(new Error(`Request timeout after ${timeout}ms`));
-    });
-
-    if (signal) {
-      signal.addEventListener("abort", () => {
-        req.destroy();
-        reject(new Error("Request aborted"));
-      });
-    }
-
-    if (body) {
-      req.write(typeof body === "string" ? body : JSON.stringify(body));
-    }
-
-    req.end();
-  });
+  }
+  
+  throw lastError || new Error("Request failed after retries");
 }
 
 // Convenience methods
@@ -135,6 +96,3 @@ export const httpGet = (url: string, options?: FetchOptions) =>
 
 export const httpPost = (url: string, body: any, options?: FetchOptions) => 
   httpClient(url, { ...options, method: "POST", body });
-
-// Export agents for use with fetch() if needed
-export { httpsAgent, httpAgent };
