@@ -176,51 +176,50 @@ async function runTranscriptionAttempt(
       Boolean(prepPath)
     );
 
-    // ── Early pyannote for per-speaker loudness normalization ──
-    let earlyPyannoteSegments: any[] | null = null;
-    let normFilePath = "";
+    // ── PARALLEL: VAD + diarization (run concurrently to save time) ──
+    // Run VAD and pyannote in parallel, then do STT
+    notify(30, "Równoległe przetwarzanie: VAD + diaryzacja...");
+    
     const usePyannote = VOICELOG_DIARIZER !== "openai" && HF_TOKEN_SET;
-    if (usePyannote && PER_SPEAKER_NORM) {
-      try {
+    
+    const [speechSegments, earlyPyannoteSegments] = await Promise.all([
+      // 1. Silero VAD - silence detection
+      (async () => {
+        if (!VAD_ENABLED) return null;
+        notify(30, "Silero VAD - optymalizacja ciszy...");
+        return await runSileroVAD(transcribeFilePath, options.signal);
+      })(),
+      
+      // 2. Pyannote diarization (for per-speaker norm)
+      (async () => {
+        if (!usePyannote || !PER_SPEAKER_NORM) return null;
         notify(25, "Wstępna diaryzacja mówców (normalizacja głośności)...");
-        const earlySegs = await runPyannoteDiarization(
-          transcribeFilePath,
-          options.signal
+        return await runPyannoteDiarization(transcribeFilePath, options.signal);
+      })(),
+    ]);
+    
+    // ── Process diarization results ────────────────────────────────────────────
+    let normFilePath = "";
+    if (earlyPyannoteSegments && earlyPyannoteSegments.length > 0) {
+      const uniqueSpeakers = new Set(earlyPyannoteSegments.map((s) => s.speaker));
+      if (uniqueSpeakers.size > 1) {
+        notify(
+          28,
+          `Normalizacja głośności per mówca (${uniqueSpeakers.size} mówców)...`
         );
-        if (earlySegs && (earlySegs as any[]).length > 0) {
-          earlyPyannoteSegments = earlySegs as any[];
-          const uniqueSpeakers = new Set(
-            earlyPyannoteSegments.map((s) => s.speaker)
-          );
-          if (uniqueSpeakers.size > 1) {
-            notify(
-              28,
-              `Normalizacja głośności per mówca (${uniqueSpeakers.size} mówców)...`
-            );
-            const normalized = await applyPerSpeakerNorm(
-              transcribeFilePath,
-              earlyPyannoteSegments
-            );
-            if (normalized) {
-              normFilePath = normalized;
-              transcribeFilePath = normalized;
-              if (DEBUG)
-                console.log(`[pipeline] Per-speaker norm applied: ${normalized}`);
-            }
-          }
+        const normalized = await applyPerSpeakerNorm(
+          transcribeFilePath,
+          earlyPyannoteSegments
+        );
+        if (normalized) {
+          normFilePath = normalized;
+          transcribeFilePath = normalized;
+          if (DEBUG)
+            console.log(`[pipeline] Per-speaker norm applied: ${normalized}`);
         }
-      } catch (err: any) {
-        if (DEBUG)
-          console.warn("[pipeline] Early pyannote/norm failed:", err.message);
-        earlyPyannoteSegments = null;
       }
     }
-
-    notify(30, "Silero VAD - optymalizacja ciszy...");
-    const speechSegments: any = await runSileroVAD(
-      transcribeFilePath,
-      options.signal
-    );
+    
     if (DEBUG && speechSegments) {
       console.log(
         `[pipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`
