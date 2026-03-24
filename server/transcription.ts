@@ -50,7 +50,7 @@ export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const SILENCE_REMOVE = config.VOICELOG_SILENCE_REMOVE;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
-const VAD_ENABLED = config.VAD_ENABLED;
+export const VAD_ENABLED = config.VAD_ENABLED;
 const VAD_SCRIPT = path.join(__dirname, "vad.py");
 const PYTHON_BINARY = config.PYTHON_BINARY;
 const DEBUG = process.env.VOICELOG_DEBUG === "true";
