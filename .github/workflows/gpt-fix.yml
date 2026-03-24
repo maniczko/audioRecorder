@@ -66,33 +66,28 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-          MODEL="${{ vars.GPT_MODEL || 'gpt-4o' }}"
+          # gpt-4o-mini: 200k TPM limit (vs 30k for gpt-4o) — fits large repos
+          MODEL="${{ vars.GPT_MODEL || 'gpt-4o-mini' }}"
 
           # Extract file paths from issue body
           FILES=$(echo "$ISSUE_BODY" | grep -oP '(?:src|server)/[^\s:,`\n]+\.[jt]sx?' | sort -u | tr '\n' ' ')
           echo "Files extracted from errors: $FILES"
 
-          # Extract error blocks
-          ERRORS=$(echo "$ISSUE_BODY" | sed -n '/^```/,/^```/p' | head -c 4000)
+          # Extract error blocks only (cap to avoid token overflow)
+          ERRORS=$(echo "$ISSUE_BODY" | sed -n '/^```/,/^```/p' | head -c 2000)
 
-          PROMPT="You are fixing failing CI tests in a TypeScript/Node.js project.
+          PROMPT="Fix failing CI tests in this TypeScript/Node.js project.
 
           Issue: ${ISSUE_TITLE}
 
-          Failing test errors from CI:
+          Errors:
           ${ERRORS}
 
-          Full issue context:
-          ${ISSUE_BODY:0:3000}
-
           Rules:
-          1. Read ALL the files you need before making any changes
-          2. Fix the root cause — do NOT just suppress the errors
-          3. If a test imports a package that doesn't exist (e.g. bun:sqlite), fix the import to use the correct package
-          4. If tests fail because tables don't exist, fix the test setup/migrations
-          5. If a source file has a bug causing test failures, fix the source file
-          6. Make minimal, targeted changes
-          7. You MUST make at least one change — if you cannot identify a fix, add a code comment explaining what needs to be done"
+          1. Fix the root cause — do NOT suppress errors
+          2. If a test imports a missing package (e.g. bun:sqlite), fix the import
+          3. If tests fail due to missing DB tables, fix test setup/migrations
+          4. Make minimal targeted changes only"
 
           if [ -n "$FILES" ]; then
             echo "Running aider with files: $FILES"
@@ -101,6 +96,7 @@ jobs:
               --yes-always \
               --no-show-model-warnings \
               --auto-commits \
+              --map-tokens 512 \
               --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
               --message "$PROMPT" \
               $FILES
@@ -110,6 +106,7 @@ jobs:
               --yes-always \
               --no-show-model-warnings \
               --auto-commits \
+              --map-tokens 512 \
               --commit-prompt "fix(ci): auto-fix failing tests [skip ci]" \
               --message "$PROMPT"
           fi
