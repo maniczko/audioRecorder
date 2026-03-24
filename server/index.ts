@@ -4,7 +4,7 @@ import { getRequestListener } from "@hono/node-server";
 import { logger } from "./logger.ts";
 import { getDatabase } from "./database.ts";
 import { createApp } from "./app.ts";
-import { config } from "./config.ts";
+import { config, validateRequiredApiKeys } from "./config.ts";
 import AuthService from "./services/AuthService.ts";
 import WorkspaceService from "./services/WorkspaceService.ts";
 import TranscriptionService from "./services/TranscriptionService.ts";
@@ -27,6 +27,9 @@ const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || "0.0.0.0";
 
 export async function bootstrap() {
+  // [104] Validate required API keys on startup
+  validateRequiredApiKeys();
+
   const hasExternalDatabase = Boolean(config.VOICELOG_DATABASE_URL || config.DATABASE_URL);
   const hasLocalDatabasePath = Boolean(config.VOICELOG_DB_PATH);
   if (!hasExternalDatabase && !hasLocalDatabasePath) {

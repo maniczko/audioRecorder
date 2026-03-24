@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
-ARG NODE_IMAGE=node:24.14-bookworm-slim
+# [101] Pin image digests for supply chain security
+ARG NODE_IMAGE=node:24.14-bookworm-slim@sha256:07ae080094d0f997ed19d7c2fd797771e6f524049dc96e4c2a0b8a8b6d6f5e5a
 
 FROM ${NODE_IMAGE} AS base
 
@@ -53,6 +54,21 @@ ENV HUSKY=0
 RUN pnpm deploy --filter voicelog-api --prod /prod/server
 
 
+# [102] PyTorch build stage for reproducibility and caching
+FROM base AS torch-deps
+
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=/opt/venv/bin:${PATH}
+ENV UV_COMPILE_BYTECODE=1
+
+COPY --link --from=ghcr.io/astral-sh/uv@sha256:0c0e6f04a5a8b5c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8 /uv /uvx /usr/local/bin/
+
+RUN uv venv /opt/venv
+
+# Cache PyTorch in separate stage for faster builds
+RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+
 FROM ${NODE_IMAGE} AS runtime
 
 ARG APP_UID=10001
@@ -84,16 +100,15 @@ RUN apt-get update && \
 RUN groupadd --gid "${APP_GID}" app && \
     useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
 
-COPY --link --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
-
-RUN uv venv /opt/venv
+# Copy PyTorch from dedicated stage
+COPY --link --from=torch-deps /opt/venv /opt/venv
 
 WORKDIR /app
 
 COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
 
-RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
-    uv pip install --python /opt/venv -r server/requirements.txt
+# Install only requirements (PyTorch already installed)
+RUN uv pip install --python /opt/venv -r server/requirements.txt
 
 COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
 COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
