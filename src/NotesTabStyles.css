@@ -70,7 +70,7 @@
   align-items: center;
 }
 .notes-new-panel-body {
-  padding-top: 0 !important;
+  padding-top: 0;
 }
 .wysiwyg-wrap {
   display: flex;

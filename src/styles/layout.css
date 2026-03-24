@@ -305,7 +305,7 @@
 .topbar {
   position: relative;
   z-index: 100;
-  overflow: visible !important;
+  overflow: visible;
 }
 
 /* 2. topbar-actions: vertical centering */

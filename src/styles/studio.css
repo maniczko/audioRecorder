@@ -535,13 +535,7 @@
 
 .coaching-tip-box p { font-size: 0.84rem; line-height: 1.5; margin: 0; }
 
-/* Energy level chips */
-
-.energy-high   { background: rgba(116,208,191,0.12) !important; color: rgba(116,208,191,0.9) !important; }
-
-.energy-medium { background: rgba(255,200,80,0.1)  !important; color: rgba(255,200,80,0.85) !important; }
-
-.energy-low    { background: rgba(255,255,255,0.06) !important; color: var(--muted) !important; }
+/* Energy level chips - defined in App.css, using CSS variables from index.css */
 
 /* ── Studio picker header (redesigned) ───────────────── */
 

@@ -845,11 +845,11 @@ select:focus {
 
 /* Energy level chips */
 
-.energy-high   { background: rgba(116,208,191,0.12) !important; color: rgba(116,208,191,0.9) !important; }
+.energy-high   { background: var(--energy-high-bg); color: var(--energy-high-text); }
 
-.energy-medium { background: rgba(255,200,80,0.1)  !important; color: rgba(255,200,80,0.85) !important; }
+.energy-medium { background: var(--energy-medium-bg); color: var(--energy-medium-text); }
 
-.energy-low    { background: rgba(255,255,255,0.06) !important; color: var(--muted) !important; }
+.energy-low    { background: var(--energy-low-bg); color: var(--energy-low-text); }
 
 /* ── Studio picker header (redesigned) ───────────────── */
 
@@ -1302,7 +1302,7 @@ select:focus {
 .pill:disabled {
   opacity: 0.42;
   cursor: not-allowed;
-  transform: none !important;
+  transform: none;
   pointer-events: none;
 }
 
@@ -1529,7 +1529,7 @@ select:focus {
 .topbar {
   position: relative;
   z-index: 100;
-  overflow: visible !important;
+  overflow: visible;
 }
 
 /* --- Duration picker in sidebar --- */

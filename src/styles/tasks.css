@@ -5509,7 +5509,7 @@
 .tasks-layout.ms-todo .todo-view-button.active {
   border: 1px solid transparent; /* Match border size of inactive */
   margin: 0;
-  transform: none !important; /* Stop vertical transform jitter on active */
+  transform: none; /* Stop vertical transform jitter on active */
 }
 
 .tasks-layout.ms-todo {

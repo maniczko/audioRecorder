@@ -25,6 +25,14 @@ html {
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   --copy: rgba(237, 247, 246, 0.74);
 
+  /* Energy level indicators */
+  --energy-high-bg: rgba(116, 208, 191, 0.12);
+  --energy-high-text: rgba(116, 208, 191, 0.9);
+  --energy-medium-bg: rgba(255, 200, 80, 0.1);
+  --energy-medium-text: rgba(255, 200, 80, 0.85);
+  --energy-low-bg: rgba(255, 255, 255, 0.06);
+  --energy-low-text: var(--muted);
+
   --surface-canvas:
     radial-gradient(circle at top left, rgba(26, 95, 115, 0.32), transparent 28%),
     radial-gradient(circle at 85% 15%, rgba(242, 150, 69, 0.2), transparent 26%),

@@ -50,7 +50,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.05em;
   background: linear-gradient(135deg, #6366f1, #818cf8);
-  color: #fff !important;
+  color: #fff;
   border-radius: 4px;
   padding: 1px 6px;
 }
@@ -175,7 +175,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.05em;
   background: linear-gradient(135deg, #6366f1, #818cf8);
-  color: #fff !important;
+  color: #fff;
   border-radius: 4px;
   padding: 1px 6px;
 }
