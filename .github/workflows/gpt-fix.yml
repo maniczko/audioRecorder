@@ -41,8 +41,9 @@ jobs:
 
       - name: Install Python + Aider
         run: |
-          pip install --upgrade --quiet aider-chat
+          pip install --no-cache-dir --force-reinstall --quiet 'aider-chat>=0.60.0'
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          ~/.local/bin/aider --version || true
 
       - name: Acknowledge issue
         env:
