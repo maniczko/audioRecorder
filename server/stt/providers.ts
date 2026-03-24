@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { httpClient } from "../lib/httpClient.ts";
 
 export interface SttAudioRequest {
   filePath?: string;
@@ -91,13 +92,14 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
     throw new Error(`STT provider ${provider.id} nie jest skonfigurowany.`);
   }
 
-  const response = await fetch(`${provider.baseUrl}/audio/transcriptions`, {
+  // [320] Use HTTP client with keep-alive and connection pooling
+  const response = await httpClient(`${provider.baseUrl}/audio/transcriptions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${provider.apiKey}`,
     },
     body: createFormData(request),
-    signal: request.signal ? AbortSignal.any([request.signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000),
+    timeout: 120000,
   });
 
   const rawBody = await response.text();

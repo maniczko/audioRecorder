@@ -17,6 +17,7 @@ import { logger } from "./logger.ts";
 import { matchSpeakerToProfile } from "./speakerEmbedder.ts";
 import { buildMeetingFeedbackSchemaExample } from "../src/shared/meetingFeedback.ts";
 import { clean } from "./audioPipeline.utils.ts";
+import { httpClient } from "./lib/httpClient.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,18 +38,16 @@ export async function correctTranscriptWithLLM(segments: any[], options: any = {
   if (!OPENAI_API_KEY) return segments;
   const payload = segments.map((s) => ({ id: s.id, text: s.text }));
   const inputLen = payload.reduce((sum, s) => sum + (s.text?.length || 0), 0);
-  const abortSignal = options.signal
-    ? AbortSignal.any([options.signal, AbortSignal.timeout(60000)])
-    : undefined;
+  
   try {
-    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+    // [320] Use HTTP client with keep-alive and connection pooling
+    const response = await httpClient(`${OPENAI_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
-      signal: abortSignal,
-      body: JSON.stringify({
+      body: {
         model: "gpt-4o-mini",
         max_tokens: Math.min(4000, inputLen * 2 + 200),
         messages: [
@@ -57,7 +56,8 @@ export async function correctTranscriptWithLLM(segments: any[], options: any = {
             content: `Popraw interpunkcję i pisownię w poniższych segmentach transkrypcji. Zachowaj dokładne słowa i znaczenie. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
           },
         ],
-      }),
+      },
+      timeout: 60000,
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const json = await response.json();
