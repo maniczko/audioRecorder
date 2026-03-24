@@ -36,8 +36,8 @@ test.describe("Smoke product flows", () => {
     const taskTitle = `Smoke task ${Date.now()}`;
 
     await page.getByRole("button", { name: "Tab Zadania" }).click();
-    await page.getByPlaceholder("Dodaj zadanie").fill(taskTitle);
-    await page.getByRole("button", { name: "Dodaj zadanie" }).click();
+    await page.getByPlaceholder("Dodaj zadanie (N)").fill(taskTitle);
+    await page.getByRole("button", { name: "Dodaj" }).click();
 
     await expect(page.getByText(taskTitle)).toBeVisible();
   });
