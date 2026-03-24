@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['server/tests/**/*.test.ts'],
+    include: ['server/**/*.test.ts'],
     setupFiles: ['./server/tests/setup.ts'],
     coverage: {
       provider: 'v8',
@@ -18,6 +18,7 @@ export default defineConfig({
         'server/debug_users.ts',
         'server/test_scrypt.ts',
         'server/**/*.d.ts',
+        'server/**/*.test.ts',
       ],
       thresholds: {
         lines: 20,

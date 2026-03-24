@@ -16,6 +16,12 @@ export default defineConfig({
         minForks: 1,
       },
     },
+    // Clear mocks and restore state between tests
+    clearMocks: true,
+    restoreMocks: true,
+    fakeTimers: {
+      toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'Date'],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary', 'lcov'],

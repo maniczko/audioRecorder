@@ -267,27 +267,36 @@ describe("App integration", () => {
   });
 
   test.skip("restores an autosaved meeting draft after refresh", async () => {
-    seedWorkspaceAppState({ selectedMeetingId: null });
+    // Use fake timers to avoid real setTimeout delays
+    vi.useFakeTimers();
     
-    const { unmount } = render(<App />);
-    await screen.findByText(/Nowe spotkanie/i);
-    
-    const titleInput = screen.getByPlaceholderText("np. Spotkanie z klientem");
-    await userEvent.type(titleInput, "Plan retro");
-    
-    const contextInput = screen.getByPlaceholderText("O czym będzie to spotkanie?");
-    await userEvent.type(contextInput, "Podsumowanie sprintu");
+    try {
+      seedWorkspaceAppState({ selectedMeetingId: null });
+      
+      const { unmount } = render(<App />);
+      await screen.findByText(/Nowe spotkanie/i);
+      
+      const titleInput = screen.getByPlaceholderText("np. Spotkanie z klientem");
+      await userEvent.type(titleInput, "Plan retro");
+      
+      const contextInput = screen.getByPlaceholderText("O czym będzie to spotkanie?");
+      await userEvent.type(contextInput, "Podsumowanie sprintu");
 
-    expect(screen.getByDisplayValue("Plan retro")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Plan retro")).toBeInTheDocument();
 
-    // WAIT for the 1.5s autosave timeout!
-    await new Promise(r => setTimeout(r, 2000));
+      // Advance timers by 2s to trigger autosave (instead of waiting real time)
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
 
-    unmount();
-    render(<App />);
+      unmount();
+      render(<App />);
 
-    expect(await screen.findByDisplayValue("Plan retro")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Podsumowanie sprintu")).toBeInTheDocument();
+      expect(await screen.findByDisplayValue("Plan retro")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Podsumowanie sprintu")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test("shows notification center items and requests browser notification permission", async () => {
