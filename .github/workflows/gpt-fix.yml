@@ -41,9 +41,9 @@ jobs:
 
       - name: Install Python + Aider
         run: |
-          pip install --no-cache-dir --force-reinstall --quiet 'aider-chat>=0.60.0'
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          ~/.local/bin/aider --version || true
+          python3 -m venv /tmp/aider-env
+          /tmp/aider-env/bin/pip install --quiet aider-chat
+          /tmp/aider-env/bin/aider --version
 
       - name: Acknowledge issue
         env:
@@ -67,7 +67,7 @@ jobs:
           ISSUE_BODY: ${{ inputs.issue_body }}
           ISSUE_TITLE: ${{ inputs.issue_title }}
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="/tmp/aider-env/bin:$PATH"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
