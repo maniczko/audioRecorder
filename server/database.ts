@@ -208,7 +208,7 @@ export class Database {
       if (!row) {
         if (logger && logger.info) logger.info(`Applying migration: ${file}`);
         const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
-        const queries = sql.split(';').map(q => q.trim()).filter(q => q);
+        const queries = sql.split(';').map(q => q.trim()).filter(q => q && q.replace(/--[^\n]*/g, '').trim());
         for (const q of queries) {
           if (q.length > 0) {
             try {

@@ -70,8 +70,3 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_expires ON sessions(user_id, expire
 -- User's workspaces lookup
 CREATE INDEX IF NOT EXISTS idx_workspace_members_user_id ON workspace_members(user_id);
 
--- ============================================
--- VERIFICATION QUERY
--- ============================================
--- Run this to verify all indexes were created:
--- SELECT name, tbl_name FROM sqlite_master WHERE type='index' ORDER BY tbl_name, name;
