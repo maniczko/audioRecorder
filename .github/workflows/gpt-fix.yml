@@ -42,6 +42,7 @@ jobs:
       - name: Install Python + Aider
         run: |
           python3 -m venv /tmp/aider-env
+          /tmp/aider-env/bin/pip install --quiet --upgrade pip setuptools
           /tmp/aider-env/bin/pip install --quiet aider-chat
           /tmp/aider-env/bin/aider --version
 
