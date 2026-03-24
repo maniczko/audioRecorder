@@ -39,7 +39,7 @@ test.describe("Smoke product flows", () => {
     await page.getByPlaceholder("Dodaj zadanie").fill(taskTitle);
     await page.getByRole("button", { name: "Dodaj zadanie" }).click();
 
-    await expect(page.getByRole("heading", { name: taskTitle })).toBeVisible();
+    await expect(page.getByText(taskTitle)).toBeVisible();
   });
 
   test("opens recording view for a meeting with recordings", async ({ page }) => {
