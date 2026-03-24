@@ -157,22 +157,6 @@ function TasksWorkspaceView({
                   Podsumowanie
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="todo-big-green-button"
-                onClick={() => {
-                  const quickAddInput = document.querySelector('input[placeholder="Dodaj zadanie"]') as HTMLInputElement;
-                  if (quickAddInput) {
-                    quickAddInput.focus();
-                  }
-                }}
-                title="Szybko dodaj zadanie (N)"
-                aria-label="Szybko dodaj zadanie"
-              >
-                ✓ Dodaj Zadanie
-              </button>
-
             </div>
 
             <div className="todo-commandbar-right">
@@ -187,6 +171,30 @@ function TasksWorkspaceView({
                   />
                 </label>
               ) : null}
+              
+              <div className="todo-quick-add-inline">
+                <input
+                  ref={quickAddInputRef}
+                  value={quickDraft.title}
+                  onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
+                  placeholder="Dodaj zadanie (N)"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      submitQuickTask(e);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="todo-quick-add-btn"
+                  onClick={submitQuickTask}
+                  disabled={!quickDraft.title.trim()}
+                >
+                  Dodaj
+                </button>
+              </div>
+              
               <SettingsDropdown
                 onExportCsv={onExportCsv}
                 shareWorkspace={shareWorkspace}
@@ -197,48 +205,10 @@ function TasksWorkspaceView({
           </div>
         </section>
 
-
-        {!isCharts && !isSchedule && !isSummary ? (
-          <section className="todo-create-card">
-            <div className="todo-create-head">
-              <div>
-                <div className="eyebrow">Quick add</div>
-                <strong>Nowe zadanie</strong>
-              </div>
-              <button
-                type="button"
-                className="todo-command-button"
-                onClick={() => setShowAdvancedCreate((previous) => !previous)}
-              >
-                {showAdvancedCreate ? "Ukryj szczegoly" : "Szczegoly"}
-              </button>
-            </div>
-
-            <form className="todo-add-row" onSubmit={submitQuickTask}>
-              <button
-                type="button"
-                className="todo-task-circle"
-                aria-label="Szybkie dodanie zadania"
-                onClick={submitQuickTask}
-              />
-              <input
-                ref={quickAddInputRef}
-                value={quickDraft.title}
-                onChange={(event) => setQuickDraft((previous) => ({ ...previous, title: event.target.value }))}
-                placeholder="Dodaj zadanie"
-              />
-              <button
-                type="button"
-                className="todo-command-button primary"
-                disabled={!quickDraft.title.trim()}
-                onClick={submitQuickTask}
-              >
-                Dodaj zadanie
-              </button>
-            </form>
-
-            {showAdvancedCreate ? (
-              <div className="todo-add-advanced">
+        {/* Advanced create options - shown below toolbar when expanded */}
+        {showAdvancedCreate && !isCharts && !isSchedule && !isSummary ? (
+          <section className="todo-create-card todo-create-advanced">
+            <div className="todo-add-advanced">
                 <label>
                   <span>Osoba</span>
                   <select
@@ -325,8 +295,7 @@ function TasksWorkspaceView({
                   <span>Wazne</span>
                 </label>
               </div>
-            ) : null}
-          </section>
+            </section>
         ) : null}
 
         <datalist id="task-groups">

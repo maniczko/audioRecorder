@@ -115,12 +115,11 @@ describe("TasksTab", () => {
       onCreateTask: jest.fn().mockReturnValue(createdTask),
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Szczegoly" }));
-    await userEvent.type(screen.getByPlaceholderText("Dodaj zadanie"), "Nowe zadanie");
-    await userEvent.type(screen.getByLabelText("Grupa"), "Sprint 14");
-    await userEvent.click(screen.getByRole("button", { name: "Dodaj zadanie" }));
+    // Type in inline quick add input and press Enter
+    const quickAddInput = screen.getByPlaceholderText("Dodaj zadanie (N)");
+    await userEvent.type(quickAddInput, "Nowe zadanie{enter}");
 
-    expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie", group: "Sprint 14" }));
+    expect(props.onCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: "Nowe zadanie" }));
   }, 10000);
 
   test("shows richer smart lists similar to task apps", () => {

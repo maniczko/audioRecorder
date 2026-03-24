@@ -5712,29 +5712,71 @@
   box-shadow: none;
 }
 
-/* Big Green Button - szybkie dodawanie zadań */
-.tasks-layout.ms-todo .todo-big-green-button {
+/* Inline Quick Add - integrated with toolbar */
+.tasks-layout.ms-todo .todo-quick-add-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tasks-layout.ms-todo .todo-quick-add-inline input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 200px;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.tasks-layout.ms-todo .todo-quick-add-inline input::placeholder {
+  color: var(--muted);
+}
+
+.tasks-layout.ms-todo .todo-quick-add-inline input:focus {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tasks-layout.ms-todo .todo-quick-add-btn {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #ffffff;
   border: none;
-  border-radius: 12px;
-  padding: 14px 28px;
-  font-size: 1rem;
-  font-weight: 700;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
-  margin-left: 12px;
   white-space: nowrap;
 }
 
-.tasks-layout.ms-todo .todo-big-green-button:hover {
+.tasks-layout.ms-todo .todo-quick-add-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
-.tasks-layout.ms-todo .todo-big-green-button:active {
+.tasks-layout.ms-todo .todo-quick-add-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
 }
+
+.tasks-layout.ms-todo .todo-quick-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Advanced create panel */
+.tasks-layout.ms-todo .todo-create-advanced {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Big Green Button - removed (replaced with inline quick add) */
