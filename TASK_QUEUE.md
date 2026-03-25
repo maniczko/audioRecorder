@@ -10,11 +10,10 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - ✅ Docker security & reproducibility (101-104) — pinned images, torch-deps stage, resource limits, .env.example
 - ✅ Audio pipeline optimizations (301-302, 310-312, 350-352) — parallel VAD+diarization, pyannote cache, memoization, code splitting, FFmpeg threads
 - ✅ CI fixes (209-433) — wszystkie historyczne fixy zrealizowane
-- 🔄 CI fix `434` — w trakcie (Server Tests)
+- ✅ CI fix `434` — Naprawiono test retries HTTP klienta (Server Tests)
 
 **Pozostalo do zrobienia:**
 - 🔴 `435` — "fetch failed" w production — brak VITE_API_BASE_URL w frontend env (Vercel → Railway)
-- 🔴 CI fix `434` — Server Tests [actions/runs/23541335009](https://github.com/maniczko/audioRecorder/actions/runs/23541335009)
 - 🟡 `427` — Fix desync between global recording state and Studio view
 - 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
 - 🟢 `303-305`, `320-322`, `330-332` — optymalizacje performance (GPU, batch embeddings, HTTP/2, models)
@@ -51,9 +50,10 @@ Kolejnosc prac:
     - Opcjonalnie: dodać healthcheck i komunikat w UI gdy API niedostępne.
   - Akceptacja: nagrania wgrywane i przetwarzane działają na production.
 
-- `434` [P1] `todo` - Fix failing CI after `98d758be`: Server Tests, CI Passed
+- `434` [P1] `done` - Fix failing CI after `98d758be`: Server Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23541335009).
+  - Status: Naprawiono błąd z `vi.useFakeTimers()` w `httpClient.test.ts`.
 
 - `433` [P1] `done` - Fix failing CI after `71bee61b`: Fixed in `433`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.

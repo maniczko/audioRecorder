@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { httpClient } from "../lib/httpClient.ts";
 
 function makeOkResponse(body = "{}") {
@@ -13,12 +13,7 @@ function makeOkResponse(body = "{}") {
 }
 
 describe("httpClient", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -66,8 +61,6 @@ describe("httpClient", () => {
   });
 
   it("retries on network error up to MAX_RETRIES times", async () => {
-    // Use real timers so backoff sleeps don't accidentally fire the internal abort timeout
-    vi.useRealTimers();
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -81,7 +74,6 @@ describe("httpClient", () => {
   });
 
   it("does not retry when internal timeout fires (controller.signal.aborted)", async () => {
-    vi.useRealTimers();
 
     let resolveAbort!: () => void;
     const abortPromise = new Promise<void>((r) => { resolveAbort = r; });
@@ -107,7 +99,6 @@ describe("httpClient", () => {
   });
 
   it("does not retry when external abort signal is already aborted", async () => {
-    vi.useRealTimers();
 
     const controller = new AbortController();
     controller.abort();
