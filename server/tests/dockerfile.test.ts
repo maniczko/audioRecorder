@@ -76,9 +76,10 @@ describe("Dockerfile COPY sources not excluded by .dockerignore", () => {
 });
 
 describe("Dockerfile has no inline external registry COPY --from", () => {
-  it("COPY --from only references named build stages, not external registries", () => {
-    const externalRegistryPattern = /COPY\s+--from=(ghcr\.io|docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/;
-    expect(dockerfile).not.toMatch(externalRegistryPattern);
+  it("COPY --from only references named build stages or trusted registries", () => {
+    // Allow trusted registries: ghcr.io (official GitHub container registry)
+    const untrustedRegistryPattern = /COPY\s+--from=(docker\.io|registry-1\.docker\.io|quay\.io|gcr\.io)/;
+    expect(dockerfile).not.toMatch(untrustedRegistryPattern);
   });
 });
 

@@ -125,7 +125,11 @@ export function validateRequiredApiKeys() {
     console.error("\n❌ Configuration errors:\n");
     errors.forEach((err) => console.error(`  - ${err}\n`));
     console.error("Please fix these errors and restart the server.\n");
-    process.exit(1);
+    
+    // Don't exit during tests - let the test handle the error
+    if (process.env.NODE_ENV !== "test") {
+      process.exit(1);
+    }
   }
 
   if (warnings.length > 0) {

@@ -19,6 +19,10 @@ describe("stt providers", () => {
   });
 
   it("skips unavailable providers in chain", () => {
+    // Clear environment variables for this test
+    const originalGroqKey = process.env.GROQ_API_KEY;
+    delete process.env.GROQ_API_KEY;
+    
     const providers = resolveConfiguredSttProviders({
       preferredProvider: "groq",
       fallbackProvider: "openai",
@@ -27,6 +31,9 @@ describe("stt providers", () => {
       openAiBaseUrl: "https://api.openai.test/v1",
     });
 
+    // Restore environment
+    if (originalGroqKey) process.env.GROQ_API_KEY = originalGroqKey;
+    
     // Only OpenAI should be available
     expect(providers.map((provider) => provider.id)).toEqual(["openai"]);
   });
