@@ -2,7 +2,7 @@
 [data-layout="modern"] {
   --modern-bg: #0a0a0f;
   --modern-sidebar-width: 260px;
-  --modern-header-height: 64px;
+  --modern-header-height: 80px;
   --modern-text: #e2e8f0;
   --modern-muted: #94a3b8;
   --modern-border: rgba(255, 255, 255, 0.08);
@@ -43,6 +43,13 @@
   gap: 12px;
   margin-bottom: 40px;
   padding: 0 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+[data-layout="modern"] .modern-brand:hover {
+  opacity: 0.8;
 }
 
 [data-layout="modern"] .modern-brand h1 {
@@ -170,47 +177,57 @@
 [data-layout="modern"] .modern-search-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  justify-content: space-between;
+  gap: 16px;
+  width: 260px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--modern-border);
   color: var(--modern-muted);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 [data-layout="modern"] .modern-search-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-layout="modern"] .modern-search-btn span {
+[data-layout="modern"] .modern-search-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-layout="modern"] .modern-search-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--modern-muted);
+  font-size: 0.75rem;
+}
+
+[data-layout="modern"] .modern-search-shortcut kbd {
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-family: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 [data-layout="modern"] .modern-record-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  justify-content: center;
+  padding: 6px 16px;
   border-radius: 999px;
-  background: #f17d72;
-  color: #fff;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(241, 125, 114, 0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-[data-layout="modern"] .modern-record-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(241, 125, 114, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-layout="modern"] .modern-record-btn.recording {

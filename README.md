@@ -183,3 +183,22 @@ pnpm run test:workflows
   Nowe testy izolowane (vi.doMock): analyzeAudioQuality, pyannote diarization, per-speaker normalization,
   LLM correction catch path, large-file in-memory chunking, Groq STT → OpenAI fallback.
   Uruchomienie: `pnpm run test:server` (351 passed).
+
+## 📊 Project Stats
+
+- **Source Files:** 37
+- **Server Files:** 18
+- **Test Files:** See test report
+- **Test Coverage:** See coverage report
+
+## 🤖 Automation
+
+✅ Pre-commit hooks (lint, format, typecheck)
+- ✅ Pre-push hooks (test)
+- ✅ AI auto-fix on PR
+- ✅ Issue-to-PR automation
+- ✅ Security auto-patch (daily)
+- ✅ Optimized CI/CD pipeline
+- ✅ Smart lint staging
+- ✅ Automated documentation
+- ✅ Code migration scripts

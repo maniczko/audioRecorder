@@ -3,6 +3,7 @@ import DOMPurify from 'dompurify';
 import { formatDateTime } from './lib/storage';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
+import TagBadge, { getTagColor } from './shared/TagBadge';
 import './NotesTabStyles.css';
 
 const ALLOWED_HTML = {
@@ -15,23 +16,6 @@ function sanitizeHtml(html) {
 }
 
 /* ── helpers ─────────────────────────────────────────── */
-
-function hashToHue(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 360;
-}
-
-function tagStyle(tag) {
-  const h = hashToHue(tag);
-  return {
-    color: `hsl(${h},62%,62%)`,
-    background: `hsla(${h},62%,45%,0.13)`,
-    border: `1px solid hsla(${h},62%,55%,0.28)`,
-  };
-}
 
 function dateBucket(dateStr) {
   if (!dateStr) return 'Brak daty';
@@ -224,11 +208,9 @@ function NoteCard({ note, isActive, onSelect }) {
           )}
         </div>
         {note.tags.length > 0 && (
-          <div className="note-tags">
+          <div className="note-tags" style={{ display: 'flex', gap: '4px' }}>
             {note.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="note-tag-chip" style={tagStyle(tag)}>
-                #{tag}
-              </span>
+              <TagBadge key={tag} tag={tag} />
             ))}
             {note.tags.length > 3 && <span className="note-tag-more">+{note.tags.length - 3}</span>}
           </div>
@@ -306,11 +288,9 @@ function NoteDetail({ note, onOpenMeeting }) {
             )}
           </div>
           {note.tags.length > 0 && (
-            <div className="note-tags note-tags-offset">
+            <div className="note-tags note-tags-offset" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {note.tags.map((tag) => (
-                <span key={tag} className="note-tag-chip" style={tagStyle(tag)}>
-                  #{tag}
-                </span>
+                <TagBadge key={tag} tag={tag} />
               ))}
             </div>
           )}
@@ -660,10 +640,12 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
                     key={tag}
                     type="button"
                     className={`notes-filter-tag${active ? ' active' : ''}`}
-                    style={active ? tagStyle(tag) : {}}
                     onClick={() => toggleTag(tag)}
                   >
-                    <span>#{tag}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(tag), width: 8, height: 8, borderRadius: '50%' }} />
+                      <span>{tag}</span>
+                    </span>
                     <span className="notes-filter-tag-count">{count}</span>
                   </button>
                 );

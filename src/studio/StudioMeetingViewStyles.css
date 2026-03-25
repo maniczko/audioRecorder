@@ -960,7 +960,8 @@
   gap: var(--layout-gap-lg);
   width: 100%;
   min-width: 0;
-  min-height: calc(100vh - 220px);
+  flex: 1;
+  min-height: calc(100vh - 270px);
   margin-top: var(--layout-gap-lg);
   align-items: stretch;
 }
@@ -975,6 +976,7 @@
   .ff-studio-split-view {
     grid-template-columns: 1fr;
     height: auto;
+    min-height: 0;
   }
 }
 
@@ -983,9 +985,17 @@
   flex-direction: column;
   gap: var(--layout-gap-lg);
   height: 100%;
-  overflow-y: auto;
   min-width: 0;
   padding-right: var(--space-3);
+}
+
+.ff-panels,
+.studio-settings-section,
+.studio-analysis-tasks,
+.studio-analysis-summary-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .ff-studio-right-col {
@@ -2696,6 +2706,10 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+}
+
+.ff-int-tab:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .ff-int-tab.active {

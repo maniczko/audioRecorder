@@ -3,8 +3,9 @@ import { formatDateTime } from '../lib/storage';
 import { createTaskComment } from '../lib/tasks';
 import { toInputDateTime } from './taskViewUtils';
 import TagInput from '../shared/TagInput';
+import AssigneeInput from '../shared/AssigneeInput';
 import { Input } from '../ui/Input';
-import { Bell, Calendar, Tag, AlignLeft, MessageSquare, History, Trash2, Link } from 'lucide-react';
+import { Bell, Calendar, Tag, AlignLeft, MessageSquare, History, Trash2, Link, User } from 'lucide-react';
 import './TaskDetailsPanelStyles.css';
 
 function buildConflictDraft(conflict) {
@@ -285,6 +286,18 @@ function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
+            <label className="todo-detail-row field-row">
+              <span className="todo-row-icon" aria-hidden="true">
+                <User size={18} />
+              </span>
+              <span className="todo-row-label">Przypisane do</span>
+              <AssigneeInput
+                value={selectedTask.owner || ''}
+                suggestions={peopleOptions}
+                onChange={(val) => onUpdateTask(selectedTask.id, { owner: val })}
+                placeholder="Wybierz osobę..."
+              />
+            </label>
             <label className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true">
                 <Bell size={18} />

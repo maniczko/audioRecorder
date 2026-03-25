@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import './TagInput.css';
+import TagBadge, { getTagColor } from './TagBadge';
 
 export default function TagInput({
   tags = [],
@@ -63,20 +64,7 @@ export default function TagInput({
     >
       <div className="tag-input-tokens">
         {normalizedTags.map((tag) => (
-          <span key={tag} className="tag-input-chip">
-            <span className="tag-input-chip-label">#{tag}</span>
-            <button
-              type="button"
-              className="tag-input-chip-remove"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeTag(tag);
-              }}
-              title="Usuń tag"
-            >
-              ×
-            </button>
-          </span>
+          <TagBadge key={tag} tag={tag} onRemove={() => removeTag(tag)} />
         ))}
         <input
           ref={inputRef}
@@ -102,7 +90,8 @@ export default function TagInput({
                 addTag(s);
               }}
             >
-              <span className="tag-input-option-icon">#</span> {s}
+              <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(s) }} />
+              <span style={{ marginLeft: '8px' }}>{s}</span>
             </button>
           ))}
           {canCreate &&
@@ -117,7 +106,8 @@ export default function TagInput({
                   addTag(inputValue);
                 }}
               >
-                Utwórz: <strong>#{inputValue.trim()}</strong>
+                <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(inputValue.trim()) }} />
+                <span style={{ marginLeft: '8px' }}>Utwórz: <strong>{inputValue.trim()}</strong></span>
               </button>
             )}
         </div>

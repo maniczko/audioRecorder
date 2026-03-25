@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import Select from '../components/Select';
+import TagBadge from '../shared/TagBadge';
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 
@@ -584,6 +588,7 @@ export default function StudioMeetingView({
   updateTranscriptSegment,
   retryStoredRecording,
   onOpenTask,
+  onOpenPerson,
   briefOpen,
   setBriefOpen,
   setActiveTab,
@@ -602,7 +607,7 @@ export default function StudioMeetingView({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
 
-  const [studioAnalysisTab, setStudioAnalysisTab] = useState('tasks'); // default to tasks based on user preference
+  const [studioAnalysisTab, setStudioAnalysisTab] = useState('summary'); // default to summary based on user preference
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [downloadTab, setDownloadTab] = useState('transcript'); // 'transcript', 'summary', 'audio'
   const [downloadFormat, setDownloadFormat] = useState('PDF');
@@ -1703,34 +1708,6 @@ export default function StudioMeetingView({
                   </svg>
                   Rozpocznij nagrywanie
                 </button>
-                <button type="button" className="ff-tb-lang" title="Język nagrania">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path
-                      d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                    />
-                    <line
-                      x1="1.5"
-                      y1="8"
-                      x2="14.5"
-                      y2="8"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                    />
-                  </svg>
-                  PL
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                    <path
-                      d="M2.5 4l2.5 2.5L7.5 4"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
               </>
             )}
           </div>
@@ -2022,6 +1999,33 @@ export default function StudioMeetingView({
                     <div className="summary-grid">
                       <section className="summary-card">
                         <div className="summary-card-head">
+                          <h3>Uczestnicy</h3>
+                          <span>{participantInsights.length}</span>
+                        </div>
+                        {participantInsights.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {participantInsights.map((insight, i) => (
+                              <li key={`${insight.speaker}-${i}`}>
+                                <button 
+                                  type="button" 
+                                  className="ghost-button" 
+                                  onClick={() => onOpenPerson?.(insight.speaker)} 
+                                  style={{ color: 'var(--accent)', fontWeight: 600, padding: 0, height: 'auto', display: 'inline' }}
+                                >
+                                  {insight.speaker}
+                                </button>
+                                {insight.mainTopic ? ` – ${insight.mainTopic}` : ''}
+                                {insight.stance ? ` (${insight.stance})` : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak danych o uczestnikach.</p>
+                        )}
+                      </section>
+
+                      <section className="summary-card">
+                        <div className="summary-card-head">
                           <h3>Decyzje</h3>
                           <span>{safeArray(studioAnalysis.decisions).length}</span>
                         </div>
@@ -2035,7 +2039,6 @@ export default function StudioMeetingView({
                           <p className="soft-copy">Brak wykrytych decyzji.</p>
                         )}
                       </section>
-
                       <section className="summary-card">
                         <div className="summary-card-head">
                           <h3>Nastepne kroki</h3>
@@ -2086,51 +2089,6 @@ export default function StudioMeetingView({
                         )}
                       </section>
 
-                      <section className="summary-card">
-                        <div className="summary-card-head">
-                          <h3>Najwazniejsze cytaty</h3>
-                          <span>{keyQuotes.length}</span>
-                        </div>
-                        {keyQuotes.length ? (
-                          <div className="summary-quotes">
-                            {keyQuotes.map((item, i) => (
-                              <article key={`quote-${i}`} className="summary-quote">
-                                <p>{item.quote}</p>
-                                <small>
-                                  {item.speaker}
-                                  {item.why ? ` ? ${item.why}` : ''}
-                                </small>
-                              </article>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="soft-copy">Brak wyraznych cytatow.</p>
-                        )}
-                      </section>
-
-                      <section className="summary-card">
-                        <div className="summary-card-head">
-                          <h3>Uczestnicy</h3>
-                          <span>{participantInsights.length}</span>
-                        </div>
-                        {participantInsights.length ? (
-                          <ul className="summary-participants-list">
-                            {participantInsights.map((insight, i) => (
-                              <li key={`${insight.speaker}-${i}`} className="summary-participant">
-                                <strong>{insight.speaker}</strong>
-                                {insight.mainTopic ? (
-                                  <span>{insight.mainTopic}</span>
-                                ) : (
-                                  <span className="soft-copy">Brak glownego tematu</span>
-                                )}
-                                {insight.stance ? <small>{insight.stance}</small> : null}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="soft-copy">Brak danych o uczestnikach.</p>
-                        )}
-                      </section>
                     </div>
                   </div>
                 ) : isEmptyTranscript ? (
@@ -2668,7 +2626,9 @@ export default function StudioMeetingView({
                                 {task.owner ? <span>@{task.owner}</span> : null}
                                 {task.dueDate ? <span>{task.dueDate}</span> : null}
                                 {task.tags?.length ? (
-                                  <span>{task.tags.map((tag) => `#${tag}`).join(' ')}</span>
+                                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                    {task.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}
+                                  </div>
                                 ) : null}
                               </div>
                               <div className="meeting-task-actions">

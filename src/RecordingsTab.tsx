@@ -1,14 +1,15 @@
 import './styles/recordings.css';
 import React from 'react';
 import { formatDateTime } from './lib/storage';
-import { EmptyState } from './components/Skeleton';
 import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
 import './RecordingsTabStyles.css';
 
 import { createMediaService } from './services/mediaService';
 import { Input } from './ui/Input';
+import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
+import TagBadge from './shared/TagBadge';
 
 function formatPipelineDiagnostics(item) {
   const details = [];
@@ -253,10 +254,19 @@ function UnifiedLibrary({
   onDeleteMeeting,
 }) {
   const [dateFilter, setDateFilter] = React.useState('');
-  const [tagFilter, setTagFilter] = React.useState<string[]>([]);
+  const [tagFilter, setTagFilter] = React.useState([]);
+  const [sortConfig, setSortConfig] = React.useState({ key: 'startsAt', direction: 'desc' });
+  const [meetingToDelete, setMeetingToDelete] = React.useState(null);
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
+    }));
+  };
 
   const allTags = React.useMemo(() => {
-    const tags = new Set<string>();
+    const tags = new Set();
     userMeetings.forEach((m) => {
       if (Array.isArray(m.tags)) {
         m.tags.forEach((t) => {
@@ -281,12 +291,33 @@ function UnifiedLibrary({
         }
         return true;
       })
-      .sort(
-        (a, b) =>
-          new Date(b.startsAt || b.createdAt).valueOf() -
-          new Date(a.startsAt || a.createdAt).valueOf()
-      );
-  }, [userMeetings, dateFilter, tagFilter]);
+      .sort((a, b) => {
+        let aVal, bVal;
+        switch (sortConfig.key) {
+          case 'title':
+            aVal = (a.title || '').toLowerCase();
+            bVal = (b.title || '').toLowerCase();
+            break;
+          case 'durationMinutes':
+            aVal = a.durationMinutes || 0;
+            bVal = b.durationMinutes || 0;
+            break;
+          case 'recordingsCount':
+            aVal = (a.recordings || []).length;
+            bVal = (b.recordings || []).length;
+            break;
+          case 'startsAt':
+          default:
+            aVal = new Date(a.startsAt || a.createdAt).valueOf();
+            bVal = new Date(b.startsAt || b.createdAt).valueOf();
+            break;
+        }
+        
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [userMeetings, dateFilter, tagFilter, sortConfig]);
 
   return (
     <section className="panel meetings-library recordings-library-panel">
@@ -318,10 +349,18 @@ function UnifiedLibrary({
           <table className="studio-recordings-table">
             <thead>
               <tr>
-                <th>Spotkanie</th>
-                <th>Data i godzina</th>
-                <th>Czas trwania</th>
-                <th>Nagrania</th>
+                <th onClick={() => handleSort('title')} className="sortable-th">
+                  Spotkanie {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                </th>
+                <th onClick={() => handleSort('startsAt')} className="sortable-th">
+                  Data i godzina {sortConfig.key === 'startsAt' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                </th>
+                <th onClick={() => handleSort('durationMinutes')} className="sortable-th">
+                  Czas trwania {sortConfig.key === 'durationMinutes' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                </th>
+                <th onClick={() => handleSort('recordingsCount')} className="sortable-th">
+                  Nagrania {sortConfig.key === 'recordingsCount' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                </th>
                 <th>Tagi</th>
                 <th className="recordings-library-actions-col"></th>
               </tr>
@@ -350,14 +389,7 @@ function UnifiedLibrary({
                     <div className="recordings-library-tags">
                       {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
                         if (!t.trim()) return null;
-                        return (
-                          <span
-                            key={idx}
-                            className="status-chip status-chip-sm recordings-library-tag-chip"
-                          >
-                            {t.trim()}
-                          </span>
-                        );
+                        return <TagBadge key={idx} tag={t.trim()} />;
                       })}
                     </div>
                   </td>
@@ -367,17 +399,11 @@ function UnifiedLibrary({
                       title="Usuń spotkanie i nagrania"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (
-                          window.confirm(
-                            `Czy na pewno chcesz usunąć "${m.title}" i wszystkie powiązane nagrania?`
-                          )
-                        ) {
-                          onDeleteMeeting?.(m.id);
-                        }
+                        setMeetingToDelete(m);
                       }}
                       className="recordings-library-delete-btn"
                     >
-                      🗑️
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
                     </button>
                   </td>
                 </tr>
@@ -392,6 +418,38 @@ function UnifiedLibrary({
           />
         )}
       </div>
+
+      {meetingToDelete && (
+        <div className="recordings-modal-overlay">
+          <div className="recordings-delete-modal">
+            <h3>Usuwanie spotkania</h3>
+            <p>
+              Czy na pewno chcesz usunąć spotkanie <strong>"{meetingToDelete.title}"</strong> oraz wszystkie powiązane nagrania z archiwalnej bazy wektorowej? Zmian tych nie można cofnąć.
+            </p>
+            <div className="recordings-delete-modal-actions">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setMeetingToDelete(null)}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={() => {
+                  if (onDeleteMeeting) {
+                    onDeleteMeeting(meetingToDelete.id);
+                  }
+                  setMeetingToDelete(null);
+                }}
+              >
+                Usuń powiązane nagrania do spotkania
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

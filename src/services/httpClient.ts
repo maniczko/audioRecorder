@@ -159,10 +159,70 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
 interface ApiOptions extends RequestInit {
   body?: any;
   parseAs?: 'json' | 'text' | 'raw';
+  retries?: number;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Retry on 502, 503, 504 (server errors)
+      if (!response.ok && [502, 503, 504].includes(response.status)) {
+        if (attempt < maxRetries) {
+          const delayMs = Math.min(1000 * Math.pow(2, attempt), 10000); // exponential backoff, max 10s
+          console.warn(`[httpClient] Retry ${attempt + 1}/${maxRetries} after HTTP ${response.status}`);
+          await delay(delayMs);
+          continue;
+        }
+      }
+      
+      return response;
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a network error that should be retried
+      const errorMessage = String(error?.message || '').toLowerCase();
+      const isRetryable = 
+        errorMessage.includes('failed to fetch') ||
+        errorMessage.includes('networkerror') ||
+        errorMessage.includes('load failed') ||
+        errorMessage.includes('aborted') ||
+        errorMessage.includes('upstream') ||
+        errorMessage.includes('bad gateway');
+      
+      if (isRetryable && attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt), 10000); // exponential backoff, max 10s
+        console.warn(`[httpClient] Retry ${attempt + 1}/${maxRetries} after network error: ${error?.message}`);
+        await delay(delayMs);
+        continue;
+      }
+      
+      // Don't retry on non-retryable errors
+      break;
+    }
+  }
+  
+  // Throw the last error
+  if (lastError) {
+    throw lastError;
+  }
+  
+  throw new Error('Request failed after all retries');
 }
 
 export async function apiRequest(path: string, options: ApiOptions = {}) {
-  const { body, headers, parseAs = 'json', ...rest } = options;
+  const { body, headers, parseAs = 'json', retries = 3, ...rest } = options;
   const token = readSessionToken();
   const requestInit: RequestInit = {
     ...rest,
@@ -180,7 +240,7 @@ export async function apiRequest(path: string, options: ApiOptions = {}) {
 
   let response: Response;
   try {
-    response = await fetch(buildUrl(path), requestInit);
+    response = await fetchWithRetry(buildUrl(path), requestInit, retries);
   } catch (error: any) {
     const normalizedMessage = normalizeApiErrorMessage(error?.message || 'Failed to fetch');
     const normalizedError = new Error(normalizedMessage);

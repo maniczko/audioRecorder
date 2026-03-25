@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-03-25T20:36:21.888Z",
+  "dryRun": true,
+  "results": {
+    "total": 2,
+    "migrated": 2,
+    "errors": 0,
+    "files": []
+  },
+  "migrations": [
+    {
+      "name": "React 19 Compatibility",
+      "description": "Update React 18 → 19 patterns"
+    },
+    {
+      "name": "Vitest 4 Compatibility",
+      "description": "Update Vitest 3 → 4 patterns"
+    },
+    {
+      "name": "Node.js 22 Compatibility",
+      "description": "Update deprecated Node.js APIs"
+    }
+  ]
+}

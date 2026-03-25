@@ -746,17 +746,17 @@
 }
 
 .ff-ph-btn:hover:not(:disabled) {
-  border-color: rgba(124,58,237,0.5);
+  border-color: rgba(117, 214, 196, 0.5); /* --accent 0.5 */
   color: var(--text, #f3f4f6);
-  background: rgba(124,58,237,0.06);
+  background: rgba(117, 214, 196, 0.06);
 }
 
 .ff-ph-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .ff-ph-brief-btn.active {
-  border-color: rgba(124,58,237,0.6);
-  color: #a78bfa;
-  background: rgba(124,58,237,0.1);
+  border-color: rgba(117, 214, 196, 0.6);
+  color: var(--accent);
+  background: rgba(117, 214, 196, 0.1);
 }
 
 /* ══════════════════════════════════════════════
@@ -1599,7 +1599,7 @@
 }
 
 .ff-tab.active {
-  color: #8b5cf6;
+  color: var(--accent);
 }
 
 .ff-tab.active::after {
@@ -1609,7 +1609,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #8b5cf6;
+  background: var(--accent);
   border-radius: 2px 2px 0 0;
 }
 

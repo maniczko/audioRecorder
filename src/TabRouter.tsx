@@ -271,6 +271,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             displayRecording={ui.displayRecording}
             studioAnalysis={ui.studioAnalysis}
             onOpenTask={ui.openTask}
+            onOpenPerson={ui.openPersonFromPalette}
             isRecording={recorder.isRecording}
             analysisStatus={recorder.analysisStatus}
             activeQueueItem={recorder.activeQueueItem}
@@ -280,6 +281,9 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             voiceActivityStatus={recorder.voiceActivityStatus}
             silenceCountdown={recorder.silenceCountdown}
             resetSilenceTimer={recorder.resetSilenceTimer}
+            isPaused={recorder.isPaused}
+            pauseRecording={recorder.pauseRecording}
+            resumeRecording={recorder.resumeRecording}
             stopRecording={recorder.stopRecording}
             startRecording={recorder.startRecording}
             retryRecordingQueueItem={recorder.retryRecordingQueueItem}

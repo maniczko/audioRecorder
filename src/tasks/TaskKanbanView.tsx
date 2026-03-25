@@ -3,6 +3,7 @@ import { getTaskDependencyDetails } from '../lib/tasks';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import { getTaskLastActivity } from '../lib/activityFeed';
 import './TaskKanbanViewStyles.css';
+import TagBadge from '../shared/TagBadge';
 
 const COVER_COLORS = [
   { id: 'none', label: 'Brak', value: '' },
@@ -29,6 +30,7 @@ const TAG_PALETTE = [
   '#dc2626',
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function tagColor(tag) {
   let hash = 0;
   for (let i = 0; i < tag.length; i++) {
@@ -205,15 +207,9 @@ function KanbanCard({
         ) : null}
 
         {tags.length > 0 ? (
-          <div className="kanban-label-chips">
+          <div className="kanban-label-chips" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
             {tags.slice(0, 4).map((tag) => (
-              <span
-                key={`${task.id}-${tag}`}
-                className="kanban-label-chip"
-                style={{ backgroundColor: tagColor(tag) }}
-              >
-                {tag}
-              </span>
+              <TagBadge key={`${task.id}-${tag}`} tag={tag} />
             ))}
             {tags.length > 4 ? (
               <span className="kanban-label-chip overflow">+{tags.length - 4}</span>

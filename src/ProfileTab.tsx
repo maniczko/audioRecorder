@@ -17,9 +17,9 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [elapsed, setElapsed] = useState(0);
   const [speakerName, setSpeakerName] = useState('');
   const [status, setStatus] = useState('');
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const timerRef = useRef(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const backendApiReady = apiBaseUrlConfigured();
 
   useEffect(() => {
@@ -52,7 +52,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
     };
     recorder.onstop = async () => {
       stream.getTracks().forEach((t) => t.stop());
-      clearInterval(timerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
       setIsRecording(false);
       setElapsed(0);
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
@@ -88,8 +88,8 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
               : 'Profil zapisany. Zainstaluj ffmpeg dla automatycznego rozpoznawania.'
           );
         }
-      } catch (err) {
-        setStatus(`Błąd: ${err.message}`);
+      } catch (err: any) {
+        setStatus(`Błąd: ${err?.message || 'Nieznany błąd'}`);
       }
     };
     recorder.start(500);
@@ -104,9 +104,9 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
     mediaRecorderRef.current?.stop();
   }
 
-  async function deleteProfile(id) {
+  async function deleteProfile(id: string) {
     await apiRequest(`/voice-profiles/${id}`, { method: 'DELETE', parseAs: 'raw' });
-    setProfiles((prev) => prev.filter((p) => p.id !== id));
+    setProfiles((prev) => prev.filter((p: any) => p.id !== id));
   }
 
   async function updateThreshold(id: string, threshold: number) {
@@ -116,7 +116,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
         body: { threshold },
       })) as { id: string; threshold: number };
       setProfiles((prev) =>
-        prev.map((p) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
+        prev.map((p: any) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
       );
     } catch (_) {}
   }

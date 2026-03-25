@@ -1,4 +1,5 @@
 import { Suspense, lazy, memo, useState } from 'react';
+import { Search, Plus, Settings } from 'lucide-react';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import TaskScheduleView from './TaskScheduleView';
 import TagInput from '../shared/TagInput';
@@ -31,12 +32,12 @@ function SettingsDropdown({
     <div className="todo-settings-dropdown-wrap" style={{ position: 'relative' }}>
       <button
         type="button"
-        className="todo-command-button todo-settings-btn"
+        className="flex items-center justify-center w-9 h-9 border-none bg-transparent hover:bg-white/10 text-slate-400 hover:text-slate-200 rounded-full cursor-pointer transition-colors"
         onClick={() => setOpen((v) => !v)}
         title="Ustawienia"
         aria-label="Ustawienia widoku"
       >
-        ⚙
+        <Settings className="w-5 h-5" />
       </button>
       {open && (
         <div className="todo-settings-dropdown" onBlur={() => setOpen(false)}>
@@ -181,27 +182,29 @@ function TasksWorkspaceView({
               </div>
             </div>
 
-            <div className="todo-commandbar-right">
+            <div className="todo-commandbar-right flex-wrap">
               {!isCharts && !isSchedule && !isSummary ? (
-                <label className="todo-filter-search todo-filter-search-inline">
-                  <span>Szukaj</span>
+                <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   <input
                     ref={searchInputRef}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Szukaj w zadaniach"
+                    placeholder="Szukaj w zadaniach..."
+                    className="w-full pl-9 pr-4 py-2 bg-slate-800/60 border border-slate-700/50 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all"
                   />
-                </label>
+                </div>
               ) : null}
 
-              <div className="todo-quick-add-inline">
+              <div className="relative flex-1 min-w-[220px] max-w-[320px]">
                 <input
                   ref={quickAddInputRef}
                   value={quickDraft.title}
                   onChange={(event) =>
                     setQuickDraft((previous) => ({ ...previous, title: event.target.value }))
                   }
-                  placeholder="Dodaj zadanie (N)"
+                  placeholder="Dodaj zadanie (N)..."
+                  className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -211,11 +214,12 @@ function TasksWorkspaceView({
                 />
                 <button
                   type="button"
-                  className="todo-quick-add-btn"
+                  className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
                   onClick={submitQuickTask}
                   disabled={!quickDraft.title.trim()}
+                  title="Dodaj zadanie (Enter)"
                 >
-                  Dodaj
+                  <Plus className="w-[18px] h-[18px]" />
                 </button>
               </div>
 

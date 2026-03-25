@@ -2,6 +2,7 @@ import { useState, memo } from 'react';
 import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
 import { createId } from '../lib/storage';
 import './AiTaskSuggestionsPanelStyles.css';
+import TagBadge from '../shared/TagBadge';
 
 const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
 const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
@@ -188,11 +189,11 @@ function AiTaskSuggestionsPanel({
                   {suggestion.dueDate ? (
                     <span className="task-tag-chip neutral">{suggestion.dueDate}</span>
                   ) : null}
-                  {(Array.isArray(suggestion.tags) ? suggestion.tags : []).map((tag) => (
-                    <span key={tag} className="task-tag-chip neutral">
-                      #{tag}
-                    </span>
-                  ))}
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {(Array.isArray(suggestion.tags) ? suggestion.tags : []).map((tag) => (
+                      <TagBadge key={tag} tag={tag} />
+                    ))}
+                  </div>
                 </div>
                 <div className="button-row">
                   <button

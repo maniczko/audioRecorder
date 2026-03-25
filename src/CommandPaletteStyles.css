@@ -14,7 +14,8 @@
 .command-palette {
   width: min(780px, 100%);
   max-height: min(70vh, 780px);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   padding: 22px;
   border-radius: 28px;
@@ -30,11 +31,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .command-palette-search {
   display: grid;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .command-palette-search span,
@@ -63,8 +66,11 @@
 }
 
 .command-palette-results {
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 4px;
+  flex: 1;
+  min-height: 0;
 }
 
 .command-palette-group {

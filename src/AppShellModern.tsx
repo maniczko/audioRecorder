@@ -9,7 +9,7 @@ import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 import { useGoogleCtx } from './context/GoogleContext';
 import { SkeletonBanner, SkeletonList } from './components/Skeleton';
-import { Mic, Library, Calendar, CheckSquare, Users } from 'lucide-react';
+import { Mic, Library, Calendar, CheckSquare, Users, Search, Play, Square, AudioLines } from 'lucide-react';
 
 export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   const workspace = useWorkspaceSelectors();
@@ -65,8 +65,16 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
     <div className="app-shell-modern">
       {/* Sidebar */}
       <aside className="modern-sidebar">
-        <div className="modern-brand">
-          <div className="modern-brand-logo">V</div>
+        <div 
+          className="modern-brand" 
+          onClick={ui.openStudio} 
+          role="button" 
+          tabIndex={0} 
+          onKeyDown={(e) => e.key === 'Enter' && ui.openStudio()}
+        >
+          <div className="modern-brand-logo">
+            <AudioLines size={20} />
+          </div>
           <h1>VoiceLog OS</h1>
         </div>
 
@@ -148,7 +156,13 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
 
           <div className="modern-header-right">
             <button className="modern-search-btn" onClick={() => ui.setCommandPaletteOpen(true)}>
-              Szukaj <span>Ctrl+K</span>
+              <span className="modern-search-btn-left">
+                <Search size={16} />
+                Szukaj wszędzie...
+              </span>
+              <span className="modern-search-shortcut">
+                <kbd>Ctrl</kbd> + <kbd>K</kbd>
+              </span>
             </button>
 
             <NotificationCenter
@@ -165,20 +179,38 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             />
 
             <button
-              className={recorder.isRecording ? 'modern-record-btn recording' : 'modern-record-btn'}
+              className={recorder.isRecording ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20' : 'modern-record-btn bg-gradient-to-br from-teal-400 to-sky-400 text-slate-900 shadow-[0_4px_14px_rgba(116,208,191,0.25)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(116,208,191,0.4)]'}
               onClick={() => {
-                if (recorder.isRecording) ui.setActiveTab('studio');
-                else {
+                if (recorder.isRecording) {
+                  recorder.stopRecording();
+                } else {
                   recorder.startRecording({ adHoc: true });
                   ui.setActiveTab('studio');
                 }
               }}
               disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
             >
-              {recorder.isRecording ? 'Nagrywanie trwa...' : 'Rozpocznij Nagrywanie'}
+              <div className="flex items-center gap-2 px-2 py-1">
+                {recorder.isRecording ? (
+                  <>
+                    <Square size={16} className="fill-current text-red-500" />
+                    Zatrzymaj nagrywanie
+                  </>
+                ) : (
+                  <>
+                    <Play size={16} className="fill-current text-slate-900" />
+                    Rozpocznij nagrywanie
+                  </>
+                )}
+              </div>
             </button>
 
-            <div className="ml-2">
+            <button
+              type="button"
+              className="ml-2 p-0 border-none bg-transparent rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)] hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+              onClick={() => ui.setActiveTab('profile')}
+              title="Ustawienia profilu"
+            >
               {workspace.currentUser.avatarUrl ? (
                 <img
                   src={workspace.currentUser.avatarUrl}
@@ -186,11 +218,11 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                   className="w-8 h-8 rounded-full border border-slate-700"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm">
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm border border-slate-700/50">
                   {workspace.currentUser.name?.[0]?.toUpperCase()}
                 </div>
               )}
-            </div>
+            </button>
           </div>
         </header>
 

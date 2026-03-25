@@ -14,11 +14,11 @@ html {
   --bg-panel-strong: rgba(7, 17, 27, 0.94);
   --stroke: rgba(145, 220, 212, 0.14);
   --text: #edf7f6;
-  --muted: rgba(237, 247, 246, 0.62);
+  --muted: #8a8c8e;
   --soft: rgba(237, 247, 246, 0.35);
   --accent: #75d6c4;
   --accent-strong: #9ef2db;
-  --danger: #f17d72;
+  --danger: #e2421f;
   --warning: #f3ca72;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   --copy: rgba(237, 247, 246, 0.74);

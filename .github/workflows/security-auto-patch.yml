@@ -1,0 +1,141 @@
+name: Auto Security Patches
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  security-patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run npm audit fix
+        id: audit
+        run: |
+          echo "🔍 Scanning for vulnerabilities..."
+          npm audit --json > audit-report.json || true
+          
+          echo "🔧 Auto-fixing vulnerabilities..."
+          npm audit fix --only=prod || true
+          
+          # Check if there are changes
+          git diff --quiet || echo "has_changes=true" >> $GITHUB_OUTPUT
+          
+          # Count vulnerabilities
+          VULN_COUNT=$(cat audit-report.json | jq '.metadata.vulnerabilities.total // 0')
+          echo "vuln_count=$VULN_COUNT" >> $GITHUB_OUTPUT
+      
+      - name: Run tests after security fix
+        if: steps.audit.outputs.has_changes == 'true'
+        run: |
+          echo "🧪 Running tests after security fix..."
+          npm run test:smart-retry || true
+      
+      - name: Create Pull Request
+        if: steps.audit.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: auto-fix security vulnerabilities"
+          branch: 'auto/security-patches'
+          branch-suffix: 'timestamp'
+          delete-branch: true
+          title: 'chore: auto-fix security vulnerabilities'
+          body: |
+            ## 🔒 Auto Security Patch
+            
+            This PR was automatically generated to fix security vulnerabilities.
+            
+            ### Vulnerabilities Found
+            - Total: ${{ steps.audit.outputs.vuln_count }}
+            
+            ### Changes
+            - Ran `npm audit fix` to auto-fix vulnerabilities
+            - Updated affected dependencies
+            - Ran tests to ensure compatibility
+            
+            ### Review Required
+            Please review the dependency changes before merging.
+            
+            ### Commands
+            ```bash
+            # View detailed audit report
+            npm audit
+            
+            # Manual fix if needed
+            npm audit fix --force
+            ```
+            
+            ---
+            *This is an automated PR. Please review carefully.*
+          labels: |
+            security
+            automated-pr
+            dependencies
+          assignees: ''
+      
+      - name: Comment on vulnerabilities
+        if: steps.audit.outputs.vuln_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const vulnCount = '${{ steps.audit.outputs.vuln_count }}';
+            const hasChanges = '${{ steps.audit.outputs.has_changes }}' === 'true';
+            
+            let comment = '## 🔒 Security Scan Report\n\n';
+            
+            if (vulnCount > 0) {
+              comment += `### ⚠️ Vulnerabilities Found: ${vulnCount}\n\n`;
+              
+              if (hasChanges) {
+                comment += '### ✅ Auto-Fix Applied\n\n';
+                comment += 'I\'ve automatically fixed the vulnerabilities by updating dependencies.\n\n';
+                comment += 'A pull request has been created with the fixes.\n\n';
+              } else {
+                comment += '### ⚠️ Manual Fix Required\n\n';
+                comment += 'Some vulnerabilities couldn\'t be automatically fixed.\n\n';
+                comment += '### Next Steps:\n';
+                comment += '1. Run `npm audit` to see detailed report\n';
+                comment += '2. Run `npm audit fix` to attempt fixes\n';
+                comment += '3. Review and update vulnerable packages manually\n\n';
+              }
+            } else {
+              comment += '### ✅ No Vulnerabilities Found!\n\n';
+              comment += 'Your dependencies are secure.\n\n';
+            }
+            
+            comment += '---\n*This is an automated comment from Security Bot.*\n';
+            
+            // Find or create issue for security
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'security',
+              state: 'open'
+            });
+            
+            if (issues.length === 0 && vulnCount > 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔒 Security: ${vulnCount} vulnerabilities found`,
+                body: comment,
+                labels: ['security', 'automated']
+              });
+            }

@@ -5508,6 +5508,8 @@
 }
 
 .tasks-layout.ms-todo .todo-commandbar-right {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   min-width: 0;
@@ -5548,13 +5550,16 @@
 }
 
 .tasks-layout.ms-todo .todo-filter-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  width: 100%;
+  flex: 1 1 200px;
+  max-width: 320px;
 }
 
 .tasks-layout.ms-todo .todo-filter-search-inline {
-  max-width: 520px;
-  flex: 1 1 520px;
+  /* Usunięto sztuczne forsuwanie 520px flexa, pozwalając na flex 1 z max-width */
 }
 
 .tasks-layout.ms-todo .todo-filter-item {
@@ -5583,6 +5588,7 @@
 .tasks-layout.ms-todo .todo-filter-search span {
   font-size: 0.78rem;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .tasks-layout.ms-todo .todo-commandbar-right .todo-filter-search {
@@ -5717,7 +5723,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: 12px;
+  margin-left: 0; /* Zlikwidowany lewy margines, ktory psul layout po zawinieciu! */
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
