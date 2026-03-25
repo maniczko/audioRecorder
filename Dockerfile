@@ -102,8 +102,9 @@ RUN apt-get update && \
 RUN groupadd --gid "${APP_GID}" app && \
     useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
 
-# Copy PyTorch from dedicated stage
+# Copy PyTorch venv and uv from dedicated stage
 COPY --link --from=torch-deps /opt/venv /opt/venv
+COPY --from=torch-deps /usr/local/bin/uv /usr/local/bin/uv
 
 WORKDIR /app
 
