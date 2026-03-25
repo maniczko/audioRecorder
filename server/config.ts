@@ -51,7 +51,7 @@ const envSchema = z.object({
     optionalEnumValue,
     z.enum(["openai", "groq", "none"]).default("none")
   ),
-  STT_CONCURRENCY_LIMIT: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()),
+  STT_CONCURRENCY_LIMIT: z.preprocess((val) => val ? Number(val) : undefined, z.number().optional()).default(3),
   VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(["fast", "full"]).default("fast"),
   VOICELOG_STT_MODEL_FAST: z.string().default("whisper-1"),  // Direct OpenAI/Groq format; for OpenRouter use "openai/whisper-1"
   VOICELOG_STT_MODEL_FULL: z.string().default("whisper-1"),

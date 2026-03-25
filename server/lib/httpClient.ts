@@ -1,9 +1,9 @@
 /**
  * httpClient.ts
- * 
+ *
  * HTTP client with keep-alive support for external APIs.
  * Provides connection pooling and reuse for better performance.
- * 
+ *
  * Note: Uses native fetch() with keep-alive headers for simplicity.
  * Node.js 22+ fetch has built-in connection pooling.
  */
@@ -30,16 +30,53 @@ interface FetchResponse {
 }
 
 /**
+ * Safely merge two AbortSignals - compatible with Node.js < 21
+ */
+function mergeAbortSignals(signals: AbortSignal[]): AbortSignal {
+  // Use AbortSignal.any if available (Node.js 21+)
+  if (typeof (AbortSignal as any).any === "function") {
+    return (AbortSignal as any).any(signals);
+  }
+  
+  // Fallback for older Node.js versions
+  const controller = new AbortController();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort();
+      return controller.signal;
+    }
+    signal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+  return controller.signal;
+}
+
+/**
+ * Check if error is a retryable network error
+ */
+function isRetryableNetworkError(error: any): boolean {
+  const msg = String(error?.message || "").toLowerCase();
+  return (
+    msg.includes("fetch failed") ||
+    msg.includes("network") ||
+    msg.includes("timeout") ||
+    msg.includes("econnreset") ||
+    msg.includes("econnrefused") ||
+    msg.includes("enetunreach") ||
+    msg.includes("abort")
+  );
+}
+
+/**
  * Fetch wrapper with keep-alive headers and retry logic
  */
 export async function httpClient(
   url: string,
   options: FetchOptions = {}
 ): Promise<FetchResponse> {
-  const { method = "GET", headers = {}, body, signal, timeout = 60000 } = options;
-  
+  const { method = "GET", headers = {}, body, signal, timeout = 120000 } = options;
+
   let lastError: Error | null = null;
-  
+
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const controller = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -47,7 +84,7 @@ export async function httpClient(
       timeoutId = setTimeout(() => controller.abort(), timeout);
 
       const mergedSignal = signal
-        ? AbortSignal.any([signal, controller.signal])
+        ? mergeAbortSignals([signal, controller.signal])
         : controller.signal;
 
       const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
@@ -78,18 +115,30 @@ export async function httpClient(
       lastError = error;
       clearTimeout(timeoutId);
 
-      // Don't retry on external abort OR internal timeout
-      if (signal?.aborted || controller.signal.aborted) {
+      // Don't retry on external abort (user-initiated)
+      if (signal?.aborted) {
+        throw error;
+      }
+
+      // Don't retry on internal timeout
+      if (controller.signal.aborted) {
+        throw error;
+      }
+
+      // Only retry on network errors
+      if (!isRetryableNetworkError(error)) {
         throw error;
       }
 
       // Wait before retry (exponential backoff)
       if (attempt < MAX_RETRIES - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt)));
+        const delay = 200 * Math.pow(2, attempt);
+        console.log(`[httpClient] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms due to: ${error.message}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
-  
+
   throw lastError || new Error("Request failed after retries");
 }
 
