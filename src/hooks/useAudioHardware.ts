@@ -229,6 +229,8 @@ export default function useAudioHardware({
       
       if (noiseReducer) {
         try {
+          // Client-side noise reduction using RNNoise (WebAssembly) - ZERO server costs!
+          // All audio processing happens in user's browser via AudioWorklet API
           const destination = audioContext.createMediaStreamDestination();
           source.connect(noiseReducer);
           noiseReducer.connect(analyser);
@@ -236,8 +238,6 @@ export default function useAudioHardware({
           recordStream = destination.stream;
           noiseReducerRef.current = noiseReducer;
           noiseReductionEnabled = true;
-          
-          console.log('[NoiseReducer] RNNoise node created successfully');
           
           if (isRnnoiseNode(noiseReducer)) {
             setVoiceActivityStatus('idle');
@@ -249,22 +249,19 @@ export default function useAudioHardware({
             vadIntervalRef.current = window.setInterval(() => {
               requestNoiseReducerStatus(noiseReducer);
             }, 350);
-          } else {
-            console.log('[NoiseReducer] Using fallback noise reducer');
-            setVoiceActivityStatus('unsupported');
           }
         } catch (error) {
-          console.error('[NoiseReducer] Error connecting noise reducer:', error);
+          console.warn('[NoiseReducer] Fallback to raw audio:', error);
           source.connect(analyser);
           setVoiceActivityStatus('unsupported');
         }
       } else {
-        console.warn('[NoiseReducer] Noise reducer not available, using raw audio');
+        // RNNoise not available - using raw audio (still free, just noisier)
         source.connect(analyser);
         setVoiceActivityStatus('unsupported');
       }
       
-      // Store whether noise reduction is active for debugging
+      // Debug: check in console if noise reduction is active
       (window as any).__NOISE_REDUCTION_ENABLED = noiseReductionEnabled;
 
       streamRef.current = stream;

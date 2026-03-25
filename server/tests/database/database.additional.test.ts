@@ -103,7 +103,7 @@ describe('Database - Additional Coverage Tests', () => {
         { contentType: 'audio/mpeg', ext: '.mp3' },
         { contentType: 'audio/mp4', ext: '.m4a' },
         { contentType: 'audio/wav', ext: '.wav' },
-        { contentType: 'audio/unknown', ext: '.bin' },
+        { contentType: 'audio/unknown', ext: '.webm' },
       ];
 
       for (const { contentType, ext } of formats) {

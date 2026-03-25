@@ -6,16 +6,23 @@ on:
   push:
     branches: [main, master]
 
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  issues: write
+
 jobs:
   test-and-fix:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
