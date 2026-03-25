@@ -218,7 +218,7 @@ export default function useWorkspaceData() {
       }
 
       if (isBootstrappingRef.current) {
-        setIsHydratingRemoteState(false);
+        // Another bootstrap is already in flight — let it complete and set isHydratingRemoteState
         return;
       }
 
@@ -241,9 +241,9 @@ export default function useWorkspaceData() {
         })
         .finally(() => {
           isBootstrappingRef.current = false;
-          if (!cancelled) {
-            setIsHydratingRemoteState(false);
-          }
+          // Always clear hydration flag — even if this run was cancelled,
+          // the guard may have blocked isHydratingRemoteState(false) in re-renders
+          setIsHydratingRemoteState(false);
         });
     })();
 
