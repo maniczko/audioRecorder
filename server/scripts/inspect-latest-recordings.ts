@@ -1,4 +1,4 @@
-import { getDatabase } from "../database.ts";
+import { getDatabase } from '../database.ts';
 
 async function main() {
   const limit = Math.max(1, Number(process.env.RECORDINGS_LIMIT || 10));
@@ -19,28 +19,28 @@ async function main() {
     let diarization = {};
     let transcript = [];
     try {
-      diarization = JSON.parse(row.diarization_json || "{}");
+      diarization = JSON.parse(row.diarization_json || '{}');
     } catch (_) {}
     try {
-      transcript = JSON.parse(row.transcript_json || "[]");
+      transcript = JSON.parse(row.transcript_json || '[]');
     } catch (_) {}
 
     return {
       recordingId: row.id,
-      meetingId: row.meeting_id || "",
-      workspaceId: row.workspace_id || "",
-      contentType: row.content_type || "",
+      meetingId: row.meeting_id || '',
+      workspaceId: row.workspace_id || '',
+      contentType: row.content_type || '',
       fileSizeBytes: Number(row.size_bytes || 0),
       transcriptionStatus: row.transcription_status,
       updatedAt: row.updated_at,
-      pipelineGitSha: (diarization as any).pipelineGitSha || "",
-      pipelineVersion: (diarization as any).pipelineVersion || "",
-      pipelineBuildTime: (diarization as any).pipelineBuildTime || "",
-      transcriptOutcome: (diarization as any).transcriptOutcome || "normal",
-      emptyReason: (diarization as any).emptyReason || "",
-      errorMessage: (diarization as any).errorMessage || "",
+      pipelineGitSha: (diarization as any).pipelineGitSha || '',
+      pipelineVersion: (diarization as any).pipelineVersion || '',
+      pipelineBuildTime: (diarization as any).pipelineBuildTime || '',
+      transcriptOutcome: (diarization as any).transcriptOutcome || 'normal',
+      emptyReason: (diarization as any).emptyReason || '',
+      errorMessage: (diarization as any).errorMessage || '',
       audioQuality: (diarization as any).audioQuality || null,
-      qualityLabel: (diarization as any).audioQuality?.qualityLabel || "",
+      qualityLabel: (diarization as any).audioQuality?.qualityLabel || '',
       meanVolumeDb: Number((diarization as any).audioQuality?.meanVolumeDb || 0),
       silenceRatio: Number((diarization as any).audioQuality?.silenceRatio || 0),
       enhancementRecommended: Boolean((diarization as any).audioQuality?.enhancementRecommended),
@@ -48,15 +48,27 @@ async function main() {
       transcriptionDiagnostics: (diarization as any).transcriptionDiagnostics || null,
       chunksAttempted: Number((diarization as any).transcriptionDiagnostics?.chunksAttempted || 0),
       chunksExtracted: Number((diarization as any).transcriptionDiagnostics?.chunksExtracted || 0),
-      chunksDiscardedAsTooSmall: Number((diarization as any).transcriptionDiagnostics?.chunksDiscardedAsTooSmall || 0),
+      chunksDiscardedAsTooSmall: Number(
+        (diarization as any).transcriptionDiagnostics?.chunksDiscardedAsTooSmall || 0
+      ),
       chunksSentToStt: Number((diarization as any).transcriptionDiagnostics?.chunksSentToStt || 0),
-      chunksFailedAtStt: Number((diarization as any).transcriptionDiagnostics?.chunksFailedAtStt || 0),
-      chunksReturnedEmptyPayload: Number((diarization as any).transcriptionDiagnostics?.chunksReturnedEmptyPayload || 0),
+      chunksFailedAtStt: Number(
+        (diarization as any).transcriptionDiagnostics?.chunksFailedAtStt || 0
+      ),
+      chunksReturnedEmptyPayload: Number(
+        (diarization as any).transcriptionDiagnostics?.chunksReturnedEmptyPayload || 0
+      ),
       chunksWithText: Number((diarization as any).transcriptionDiagnostics?.chunksWithText || 0),
-      mergedTextLength: Number((diarization as any).transcriptionDiagnostics?.mergedTextLength || 0),
-      transcriptionProfileUsed: (diarization as any).transcriptionDiagnostics?.transcriptionProfileUsed || "",
-      transcriptionAttemptCount: Number((diarization as any).transcriptionDiagnostics?.transcriptionAttemptCount || 0),
-      lastChunkErrorMessage: (diarization as any).transcriptionDiagnostics?.lastChunkErrorMessage || "",
+      mergedTextLength: Number(
+        (diarization as any).transcriptionDiagnostics?.mergedTextLength || 0
+      ),
+      transcriptionProfileUsed:
+        (diarization as any).transcriptionDiagnostics?.transcriptionProfileUsed || '',
+      transcriptionAttemptCount: Number(
+        (diarization as any).transcriptionDiagnostics?.transcriptionAttemptCount || 0
+      ),
+      lastChunkErrorMessage:
+        (diarization as any).transcriptionDiagnostics?.lastChunkErrorMessage || '',
       transcriptLength: Array.isArray(transcript) ? transcript.length : 0,
     };
   });
@@ -65,6 +77,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Failed to inspect latest recordings.", error);
+  console.error('Failed to inspect latest recordings.', error);
   process.exit(1);
 });

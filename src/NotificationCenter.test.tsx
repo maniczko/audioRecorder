@@ -10,7 +10,7 @@ vi.mock('./lib/storage', () => ({
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }),
 }));
@@ -138,13 +138,7 @@ describe('NotificationCenter', () => {
     });
 
     it('hides enable button when permission granted', () => {
-      render(
-        <NotificationCenter
-          {...defaultProps}
-          open={true}
-          permissionState="granted"
-        />
-      );
+      render(<NotificationCenter {...defaultProps} open={true} permissionState="granted" />);
 
       expect(screen.queryByText('Wlacz w przegladarce')).not.toBeInTheDocument();
     });

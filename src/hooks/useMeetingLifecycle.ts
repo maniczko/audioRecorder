@@ -1,39 +1,42 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import useStoredState from "./useStoredState";
-import { STORAGE_KEYS } from "../lib/storage";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import useStoredState from './useStoredState';
+import { STORAGE_KEYS } from '../lib/storage';
 import {
   createEmptyMeetingDraft,
   createMeeting,
   meetingToDraft,
   updateMeeting,
   upsertMeeting,
-} from "../lib/meeting";
-import { createId } from "../lib/storage";
+} from '../lib/meeting';
+import { createId } from '../lib/storage';
 
 const MEETING_DRAFT_FIELDS = [
-  "title",
-  "context",
-  "startsAt",
-  "durationMinutes",
-  "attendees",
-  "tags",
-  "needs",
-  "concerns",
-  "desiredOutputs",
-  "location",
+  'title',
+  'context',
+  'startsAt',
+  'durationMinutes',
+  'attendees',
+  'tags',
+  'needs',
+  'concerns',
+  'desiredOutputs',
+  'location',
 ];
 
 function normalizeMeetingDraftValue(draft) {
-  const safeDraft = draft && typeof draft === "object" ? draft : createEmptyMeetingDraft();
+  const safeDraft = draft && typeof draft === 'object' ? draft : createEmptyMeetingDraft();
   return MEETING_DRAFT_FIELDS.reduce((accumulator, field) => {
     accumulator[field] =
-      field === "durationMinutes" ? Number(safeDraft[field]) || 45 : String(safeDraft[field] ?? "");
+      field === 'durationMinutes' ? Number(safeDraft[field]) || 45 : String(safeDraft[field] ?? '');
     return accumulator;
   }, {} as any);
 }
 
 function areMeetingDraftsEqual(left, right) {
-  return JSON.stringify(normalizeMeetingDraftValue(left)) === JSON.stringify(normalizeMeetingDraftValue(right));
+  return (
+    JSON.stringify(normalizeMeetingDraftValue(left)) ===
+    JSON.stringify(normalizeMeetingDraftValue(right))
+  );
 }
 
 export default function useMeetingLifecycle({
@@ -45,20 +48,23 @@ export default function useMeetingLifecycle({
   setMeetings,
   setWorkspaceMessage,
 }) {
-  const [storedMeetingDrafts, setStoredMeetingDrafts] = useStoredState(STORAGE_KEYS.meetingDrafts, {});
+  const [storedMeetingDrafts, setStoredMeetingDrafts] = useStoredState(
+    STORAGE_KEYS.meetingDrafts,
+    {}
+  );
   const [meetingDraft, setMeetingDraftState] = useState(createEmptyMeetingDraft());
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
   const [isDetachedMeetingDraft, setIsDetachedMeetingDraft] = useState(false);
   const [hasMeetingDraftChanges, setHasMeetingDraftChanges] = useState(false);
 
-  const restoredDraftWorkspaceRef = useRef("");
-  const skipSelectedMeetingDraftSyncRef = useRef("");
+  const restoredDraftWorkspaceRef = useRef('');
+  const skipSelectedMeetingDraftSyncRef = useRef('');
   const draftBaselineRef = useRef(createEmptyMeetingDraft());
 
   const setMeetingDraft = useCallback((value) => {
     setHasMeetingDraftChanges(true);
-    setMeetingDraftState((previous) => (typeof value === "function" ? value(previous) : value));
+    setMeetingDraftState((previous) => (typeof value === 'function' ? value(previous) : value));
   }, []);
 
   const selectedMeeting = userMeetings.find((meeting) => meeting.id === selectedMeetingId) || null;
@@ -66,7 +72,9 @@ export default function useMeetingLifecycle({
     selectedMeeting?.recordings.find((recording) => recording.id === selectedRecordingId) ||
     selectedMeeting?.recordings[0] ||
     null;
-  const activeStoredMeetingDraft = currentWorkspaceId ? storedMeetingDrafts[currentWorkspaceId] || null : null;
+  const activeStoredMeetingDraft = currentWorkspaceId
+    ? storedMeetingDrafts[currentWorkspaceId] || null
+    : null;
 
   // -- Draft Restoration Effect --
   useEffect(() => {
@@ -76,8 +84,8 @@ export default function useMeetingLifecycle({
       setIsDetachedMeetingDraft(false);
       const freshDraft = createEmptyMeetingDraft();
       draftBaselineRef.current = freshDraft;
-      restoredDraftWorkspaceRef.current = "";
-      skipSelectedMeetingDraftSyncRef.current = "";
+      restoredDraftWorkspaceRef.current = '';
+      skipSelectedMeetingDraftSyncRef.current = '';
       setHasMeetingDraftChanges(false);
       setMeetingDraftState(freshDraft);
       return;
@@ -93,18 +101,21 @@ export default function useMeetingLifecycle({
         ? userMeetings.find((meeting) => meeting.id === storedDraft.selectedMeetingId) || null
         : null;
       const baselineDraft =
-        storedDraft.baselineDraft || (matchingMeeting ? meetingToDraft(matchingMeeting) : createEmptyMeetingDraft());
+        storedDraft.baselineDraft ||
+        (matchingMeeting ? meetingToDraft(matchingMeeting) : createEmptyMeetingDraft());
       const nextDraft = normalizeMeetingDraftValue(storedDraft.draft || baselineDraft);
 
       restoredDraftWorkspaceRef.current = currentWorkspaceId;
       draftBaselineRef.current = baselineDraft;
-      skipSelectedMeetingDraftSyncRef.current = matchingMeeting?.id || "";
+      skipSelectedMeetingDraftSyncRef.current = matchingMeeting?.id || '';
       setSelectedMeetingId(matchingMeeting?.id || null);
-      setSelectedRecordingId(matchingMeeting?.latestRecordingId || matchingMeeting?.recordings[0]?.id || null);
+      setSelectedRecordingId(
+        matchingMeeting?.latestRecordingId || matchingMeeting?.recordings[0]?.id || null
+      );
       setIsDetachedMeetingDraft(!matchingMeeting);
       setHasMeetingDraftChanges(false);
       setMeetingDraftState(nextDraft);
-      setWorkspaceMessage("Przywrocono ostatni autosave briefu.");
+      setWorkspaceMessage('Przywrocono ostatni autosave briefu.');
       return;
     }
 
@@ -118,23 +129,34 @@ export default function useMeetingLifecycle({
       return;
     }
 
-    const nextSelectedMeeting = userMeetings.find((meeting) => meeting.id === selectedMeetingId) || userMeetings[0];
+    const nextSelectedMeeting =
+      userMeetings.find((meeting) => meeting.id === selectedMeetingId) || userMeetings[0];
     if (nextSelectedMeeting.id !== selectedMeetingId) {
       const nextDraft = meetingToDraft(nextSelectedMeeting);
       setSelectedMeetingId(nextSelectedMeeting.id);
-      setSelectedRecordingId(nextSelectedMeeting.latestRecordingId || nextSelectedMeeting.recordings[0]?.id || null);
+      setSelectedRecordingId(
+        nextSelectedMeeting.latestRecordingId || nextSelectedMeeting.recordings[0]?.id || null
+      );
       draftBaselineRef.current = nextDraft;
       setHasMeetingDraftChanges(false);
       setMeetingDraftState(nextDraft);
     }
-  }, [currentUserId, currentWorkspaceId, isDetachedMeetingDraft, selectedMeetingId, storedMeetingDrafts, userMeetings, setWorkspaceMessage]);
+  }, [
+    currentUserId,
+    currentWorkspaceId,
+    isDetachedMeetingDraft,
+    selectedMeetingId,
+    storedMeetingDrafts,
+    userMeetings,
+    setWorkspaceMessage,
+  ]);
 
   // -- Reflect Meeting Selection to Draft Effect --
   useEffect(() => {
     if (!selectedMeeting) return;
 
     if (skipSelectedMeetingDraftSyncRef.current === selectedMeeting.id) {
-      skipSelectedMeetingDraftSyncRef.current = "";
+      skipSelectedMeetingDraftSyncRef.current = '';
       return;
     }
 
@@ -148,7 +170,9 @@ export default function useMeetingLifecycle({
   useEffect(() => {
     if (!currentWorkspaceId) return;
 
-    const baselineDraft = selectedMeeting ? meetingToDraft(selectedMeeting) : draftBaselineRef.current;
+    const baselineDraft = selectedMeeting
+      ? meetingToDraft(selectedMeeting)
+      : draftBaselineRef.current;
     const hasDraftChanges = !areMeetingDraftsEqual(meetingDraft, baselineDraft);
     if (!hasMeetingDraftChanges && !activeStoredMeetingDraft) {
       return;
@@ -169,7 +193,7 @@ export default function useMeetingLifecycle({
         currentEntry &&
         areMeetingDraftsEqual(currentEntry.draft, normalizedDraft) &&
         areMeetingDraftsEqual(currentEntry.baselineDraft, normalizedBaselineDraft) &&
-        String(currentEntry.selectedMeetingId || "") === String(selectedMeeting?.id || "")
+        String(currentEntry.selectedMeetingId || '') === String(selectedMeeting?.id || '')
       ) {
         return previous;
       }
@@ -177,12 +201,19 @@ export default function useMeetingLifecycle({
       next[currentWorkspaceId] = {
         draft: normalizedDraft,
         baselineDraft: normalizedBaselineDraft,
-        selectedMeetingId: selectedMeeting?.id || "",
+        selectedMeetingId: selectedMeeting?.id || '',
         updatedAt: new Date().toISOString(),
       };
       return next;
     });
-  }, [currentWorkspaceId, hasMeetingDraftChanges, meetingDraft, selectedMeeting, activeStoredMeetingDraft, setStoredMeetingDrafts]);
+  }, [
+    currentWorkspaceId,
+    hasMeetingDraftChanges,
+    meetingDraft,
+    selectedMeeting,
+    activeStoredMeetingDraft,
+    setStoredMeetingDrafts,
+  ]);
 
   function selectMeeting(meeting) {
     setSelectedMeetingId(meeting.id);
@@ -192,7 +223,7 @@ export default function useMeetingLifecycle({
     draftBaselineRef.current = nextDraft;
     setHasMeetingDraftChanges(false);
     setMeetingDraftState(nextDraft);
-    setWorkspaceMessage("");
+    setWorkspaceMessage('');
   }
 
   function startNewMeetingDraft(prefill = null) {
@@ -207,10 +238,12 @@ export default function useMeetingLifecycle({
       };
       if (prefill.startsAt) {
         const d = new Date(prefill.startsAt);
-        nextDraft.startsAt = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        nextDraft.startsAt = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 16);
       }
     }
-    restoredDraftWorkspaceRef.current = currentWorkspaceId || "";
+    restoredDraftWorkspaceRef.current = currentWorkspaceId || '';
     draftBaselineRef.current = nextDraft;
     setSelectedMeetingId(null);
     setSelectedRecordingId(null);
@@ -230,7 +263,7 @@ export default function useMeetingLifecycle({
   function clearMeetingDraft() {
     const nextDraft = selectedMeeting ? meetingToDraft(selectedMeeting) : createEmptyMeetingDraft();
     draftBaselineRef.current = nextDraft;
-    restoredDraftWorkspaceRef.current = currentWorkspaceId || "";
+    restoredDraftWorkspaceRef.current = currentWorkspaceId || '';
     if (!selectedMeeting) {
       setIsDetachedMeetingDraft(true);
       setSelectedMeetingId(null);
@@ -239,7 +272,9 @@ export default function useMeetingLifecycle({
     setHasMeetingDraftChanges(false);
     setMeetingDraftState(nextDraft);
     setWorkspaceMessage(
-      selectedMeeting ? "Przywrocono ostatnia zapisana wersje spotkania." : "Wyczyszczono draft spotkania."
+      selectedMeeting
+        ? 'Przywrocono ostatnia zapisana wersje spotkania.'
+        : 'Wyczyszczono draft spotkania.'
     );
     if (currentWorkspaceId) {
       setStoredMeetingDrafts((previous) => {
@@ -258,31 +293,36 @@ export default function useMeetingLifecycle({
     const adHocMeeting = createMeeting(
       currentUser.id,
       {
-        title: `Ad hoc ${new Intl.DateTimeFormat("pl-PL", {
-          day: "2-digit",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
+        title: `Ad hoc ${new Intl.DateTimeFormat('pl-PL', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
         }).format(timestamp)}`,
-        context: "Szybkie nagranie bez wczesniejszego briefu.",
-        startsAt: new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 16),
+        context: 'Szybkie nagranie bez wczesniejszego briefu.',
+        startsAt: new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60 * 1000)
+          .toISOString()
+          .slice(0, 16),
         durationMinutes: 30,
-        attendees: currentWorkspaceMembers.map((member) => member.name).filter(Boolean).join("\n"),
-        tags: "ad-hoc",
-        needs: "",
-        desiredOutputs: "",
-        location: "",
+        attendees: currentWorkspaceMembers
+          .map((member) => member.name)
+          .filter(Boolean)
+          .join('\n'),
+        tags: 'ad-hoc',
+        needs: '',
+        desiredOutputs: '',
+        location: '',
       },
       {
         workspaceId: currentWorkspaceId,
         createdByUserId: currentUser.id,
-        createdByUserName: currentUser.name || currentUser.email || "Ty",
+        createdByUserName: currentUser.name || currentUser.email || 'Ty',
       }
     );
 
     setMeetings((previous) => upsertMeeting(previous, adHocMeeting));
     selectMeeting(adHocMeeting);
-    setWorkspaceMessage("Utworzono spotkanie ad hoc.");
+    setWorkspaceMessage('Utworzono spotkanie ad hoc.');
     return adHocMeeting;
   }
 
@@ -293,7 +333,7 @@ export default function useMeetingLifecycle({
       const meeting = createMeeting(currentUser.id, meetingDraft, {
         workspaceId: currentWorkspaceId,
         createdByUserId: currentUser.id,
-        createdByUserName: currentUser.name || currentUser.email || "Ty",
+        createdByUserName: currentUser.name || currentUser.email || 'Ty',
       });
       setMeetings((previous) => upsertMeeting(previous, meeting));
       setIsDetachedMeetingDraft(false);
@@ -306,11 +346,11 @@ export default function useMeetingLifecycle({
       activity: [
         ...(selectedMeeting.activity || []),
         {
-          id: createId("meeting_activity"),
-          type: "updated",
+          id: createId('meeting_activity'),
+          type: 'updated',
           actorId: currentUser.id,
-          actorName: currentUser.name || currentUser.email || "Ty",
-          message: "Zmieniono brief spotkania.",
+          actorName: currentUser.name || currentUser.email || 'Ty',
+          message: 'Zmieniono brief spotkania.',
           createdAt: new Date().toISOString(),
         },
       ],
@@ -325,7 +365,7 @@ export default function useMeetingLifecycle({
     const meeting = createMeeting(currentUser.id, draft, {
       workspaceId: currentWorkspaceId,
       createdByUserId: currentUser.id,
-      createdByUserName: currentUser.name || currentUser.email || "Ty",
+      createdByUserName: currentUser.name || currentUser.email || 'Ty',
     });
     setMeetings((previous) => upsertMeeting(previous, meeting));
     return meeting;
@@ -337,11 +377,11 @@ export default function useMeetingLifecycle({
     setSelectedRecordingId(null);
     setIsDetachedMeetingDraft(false);
     draftBaselineRef.current = freshDraft;
-    restoredDraftWorkspaceRef.current = "";
-    skipSelectedMeetingDraftSyncRef.current = "";
+    restoredDraftWorkspaceRef.current = '';
+    skipSelectedMeetingDraftSyncRef.current = '';
     setHasMeetingDraftChanges(false);
     setMeetingDraftState(freshDraft);
-    setWorkspaceMessage("");
+    setWorkspaceMessage('');
   }
 
   return {

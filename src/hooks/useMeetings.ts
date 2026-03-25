@@ -1,11 +1,11 @@
-import { useCallback, useMemo } from "react";
-import useWorkspaceData from "./useWorkspaceData";
-import useMeetingLifecycle from "./useMeetingLifecycle";
-import useTaskOperations from "./useTaskOperations";
-import usePeopleProfiles from "./usePeopleProfiles";
-import useRecordingActions from "./useRecordingActions";
-import { createMediaService } from "../services/mediaService";
-import { createStateService } from "../services/stateService";
+import { useCallback, useMemo } from 'react';
+import useWorkspaceData from './useWorkspaceData';
+import useMeetingLifecycle from './useMeetingLifecycle';
+import useTaskOperations from './useTaskOperations';
+import usePeopleProfiles from './usePeopleProfiles';
+import useRecordingActions from './useRecordingActions';
+import { createMediaService } from '../services/mediaService';
+import { createStateService } from '../services/stateService';
 
 import {
   buildTaskColumns,
@@ -13,20 +13,21 @@ import {
   buildTaskPeople,
   buildTaskTags,
   buildTaskNotifications,
-} from "../lib/tasks";
-import { buildWorkspaceActivityFeed } from "../lib/activityFeed";
+} from '../lib/tasks';
+import { buildWorkspaceActivityFeed } from '../lib/activityFeed';
 import {
   areCalendarSyncSnapshotsEqual,
   buildCalendarSyncSnapshot,
   createGoogleCalendarConflictState,
-} from "../lib/googleSync";
+} from '../lib/googleSync';
 
-import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
-import { useMeetingsStore } from "../store/meetingsStore";
+import { useWorkspaceStore, useWorkspaceSelectors } from '../store/workspaceStore';
+import { useMeetingsStore } from '../store/meetingsStore';
 
 export default function useMeetings() {
   const { users } = useWorkspaceStore();
-  const { currentUser, currentUserId, currentWorkspaceId, currentWorkspaceMembers } = useWorkspaceSelectors();
+  const { currentUser, currentUserId, currentWorkspaceId, currentWorkspaceMembers } =
+    useWorkspaceSelectors();
 
   // 1. Core State & Sync
   const { userMeetings, isHydratingRemoteState, pauseRemotePull } = useWorkspaceData();
@@ -64,7 +65,15 @@ export default function useMeetings() {
   );
 
   const meetingTasks = useMemo(
-    () => buildTasksFromMeetings(userMeetings, manualTasks, taskState, currentUser, taskColumns, currentWorkspaceId),
+    () =>
+      buildTasksFromMeetings(
+        userMeetings,
+        manualTasks,
+        taskState,
+        currentUser,
+        taskColumns,
+        currentWorkspaceId
+      ),
     [currentUser, currentWorkspaceId, manualTasks, taskColumns, taskState, userMeetings]
   );
 
@@ -125,7 +134,7 @@ export default function useMeetings() {
   function applyCalendarSyncSnapshot(entryType, entryId, snapshot, metaUpdates = {}) {
     if (!entryType || !entryId || !snapshot) return;
 
-    const nextStartsAt = snapshot.startsAt || "";
+    const nextStartsAt = snapshot.startsAt || '';
     const nextDurationMinutes = Math.max(
       15,
       Number(snapshot.durationMinutes) ||
@@ -137,7 +146,7 @@ export default function useMeetings() {
         15
     );
 
-    if (entryType === "meeting") {
+    if (entryType === 'meeting') {
       setMeetings((previous) =>
         previous.map((meeting) =>
           meeting.id !== entryId
@@ -147,12 +156,15 @@ export default function useMeetings() {
                 title: snapshot.title || meeting.title,
                 startsAt: nextStartsAt || meeting.startsAt,
                 durationMinutes: nextDurationMinutes || meeting.durationMinutes,
-                location: snapshot.location !== undefined ? String(snapshot.location || "").trim() : meeting.location,
+                location:
+                  snapshot.location !== undefined
+                    ? String(snapshot.location || '').trim()
+                    : meeting.location,
                 updatedAt: new Date().toISOString(),
               }
         )
       );
-    } else if (entryType === "task") {
+    } else if (entryType === 'task') {
       taskOps.updateTask(entryId, {
         title: snapshot.title,
         dueDate: nextStartsAt,
@@ -164,164 +176,173 @@ export default function useMeetings() {
     }
   }
 
-  const syncLinkedGoogleCalendarEvents = useCallback((googleEvents) => {
-    const eventMap = new Map((Array.isArray(googleEvents) ? googleEvents : []).map((e) => [e.id, e]));
-    const metaUpdates = {};
-    const rememberMetaUpdate = (metaKey, patch) => {
-      metaUpdates[metaKey] = { ...(metaUpdates[metaKey] || {}), ...patch };
-    };
+  const syncLinkedGoogleCalendarEvents = useCallback(
+    (googleEvents) => {
+      const eventMap = new Map(
+        (Array.isArray(googleEvents) ? googleEvents : []).map((e) => [e.id, e])
+      );
+      const metaUpdates = {};
+      const rememberMetaUpdate = (metaKey, patch) => {
+        metaUpdates[metaKey] = { ...(metaUpdates[metaKey] || {}), ...patch };
+      };
 
-    setMeetings((prev) =>
-      prev.map((m) => {
-        const metaKey = `meeting:${m.id}`;
-        const meta = calendarMeta?.[metaKey] || {};
-        const linkedEventId = meta.googleEventId;
-        if (!linkedEventId || m.workspaceId !== currentWorkspaceId) return m;
+      setMeetings((prev) =>
+        prev.map((m) => {
+          const metaKey = `meeting:${m.id}`;
+          const meta = calendarMeta?.[metaKey] || {};
+          const linkedEventId = meta.googleEventId;
+          if (!linkedEventId || m.workspaceId !== currentWorkspaceId) return m;
 
-        const event = eventMap.get(linkedEventId);
-        if (!event?.start?.dateTime || !event?.end?.dateTime) return m;
+          const event = eventMap.get(linkedEventId);
+          if (!event?.start?.dateTime || !event?.end?.dateTime) return m;
 
-        const localSnapshot = buildCalendarSyncSnapshot(m, { type: "meeting" });
-        const remoteSnapshot = buildCalendarSyncSnapshot(event, { type: "meeting" });
-        const conflict = createGoogleCalendarConflictState({
-          entryType: "meeting",
-          localSnapshot,
-          remoteSnapshot,
-          localUpdatedAt: m.updatedAt || m.createdAt,
-          remoteUpdatedAt: event.updated || event.created || event.start.dateTime,
-          lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || m.createdAt,
-        });
-
-        if (conflict) {
-          rememberMetaUpdate(metaKey, {
-            googleSyncConflict: conflict,
-            googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
-            googlePulledAt: new Date().toISOString(),
+          const localSnapshot = buildCalendarSyncSnapshot(m, { type: 'meeting' });
+          const remoteSnapshot = buildCalendarSyncSnapshot(event, { type: 'meeting' });
+          const conflict = createGoogleCalendarConflictState({
+            entryType: 'meeting',
+            localSnapshot,
+            remoteSnapshot,
+            localUpdatedAt: m.updatedAt || m.createdAt,
+            remoteUpdatedAt: event.updated || event.created || event.start.dateTime,
+            lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || m.createdAt,
           });
-          return m;
-        }
 
-        if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
-          rememberMetaUpdate(metaKey, {
-            googlePulledAt: new Date().toISOString(),
-            googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
-            googleSyncConflict: null,
-          });
-          return m;
-        }
+          if (conflict) {
+            rememberMetaUpdate(metaKey, {
+              googleSyncConflict: conflict,
+              googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
+              googlePulledAt: new Date().toISOString(),
+            });
+            return m;
+          }
 
-        rememberMetaUpdate(metaKey, {
-          googlePulledAt: new Date().toISOString(),
-          googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
-          googleSyncConflict: null,
-        });
+          if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
+            rememberMetaUpdate(metaKey, {
+              googlePulledAt: new Date().toISOString(),
+              googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
+              googleSyncConflict: null,
+            });
+            return m;
+          }
 
-        return {
-          ...m,
-          title: remoteSnapshot.title || m.title,
-          startsAt: remoteSnapshot.startsAt || m.startsAt,
-          durationMinutes: remoteSnapshot.durationMinutes || m.durationMinutes,
-          location: remoteSnapshot.location || m.location,
-          updatedAt: new Date().toISOString(),
-        };
-      })
-    );
-
-    setManualTasks((prev) =>
-      prev.map((t) => {
-        const metaKey = `task:${t.id}`;
-        const meta = calendarMeta?.[metaKey] || {};
-        const linkedEventId = meta.googleEventId;
-        if (!linkedEventId || t.workspaceId !== currentWorkspaceId) return t;
-
-        const event = eventMap.get(linkedEventId);
-        if (!event?.start?.dateTime) return t;
-
-        const localSnapshot = buildCalendarSyncSnapshot(t, { type: "task" });
-        const remoteSnapshot = buildCalendarSyncSnapshot(
-          {
-            title: event.summary || t.title,
-            dueDate: event.start.dateTime,
-            startsAt: event.start.dateTime,
-            endsAt: event.end?.dateTime || event.start.dateTime,
-            durationMinutes: 15,
-          },
-          { type: "task" }
-        );
-
-        const conflict = createGoogleCalendarConflictState({
-          entryType: "task",
-          localSnapshot,
-          remoteSnapshot,
-          localUpdatedAt: t.updatedAt || t.createdAt,
-          remoteUpdatedAt: event.updated || event.created || event.start.dateTime,
-          lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || t.createdAt,
-        });
-
-        if (conflict) {
-          rememberMetaUpdate(metaKey, {
-            googleSyncConflict: conflict,
-            googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
-            googlePulledAt: new Date().toISOString(),
-          });
-          return t;
-        }
-
-        if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
           rememberMetaUpdate(metaKey, {
             googlePulledAt: new Date().toISOString(),
             googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
             googleSyncConflict: null,
           });
-          return t;
-        }
 
-        rememberMetaUpdate(metaKey, {
-          googlePulledAt: new Date().toISOString(),
-          googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
-          googleSyncConflict: null,
+          return {
+            ...m,
+            title: remoteSnapshot.title || m.title,
+            startsAt: remoteSnapshot.startsAt || m.startsAt,
+            durationMinutes: remoteSnapshot.durationMinutes || m.durationMinutes,
+            location: remoteSnapshot.location || m.location,
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+
+      setManualTasks((prev) =>
+        prev.map((t) => {
+          const metaKey = `task:${t.id}`;
+          const meta = calendarMeta?.[metaKey] || {};
+          const linkedEventId = meta.googleEventId;
+          if (!linkedEventId || t.workspaceId !== currentWorkspaceId) return t;
+
+          const event = eventMap.get(linkedEventId);
+          if (!event?.start?.dateTime) return t;
+
+          const localSnapshot = buildCalendarSyncSnapshot(t, { type: 'task' });
+          const remoteSnapshot = buildCalendarSyncSnapshot(
+            {
+              title: event.summary || t.title,
+              dueDate: event.start.dateTime,
+              startsAt: event.start.dateTime,
+              endsAt: event.end?.dateTime || event.start.dateTime,
+              durationMinutes: 15,
+            },
+            { type: 'task' }
+          );
+
+          const conflict = createGoogleCalendarConflictState({
+            entryType: 'task',
+            localSnapshot,
+            remoteSnapshot,
+            localUpdatedAt: t.updatedAt || t.createdAt,
+            remoteUpdatedAt: event.updated || event.created || event.start.dateTime,
+            lastSyncedAt: meta.googleSyncedAt || meta.googlePulledAt || t.createdAt,
+          });
+
+          if (conflict) {
+            rememberMetaUpdate(metaKey, {
+              googleSyncConflict: conflict,
+              googleRemoteUpdatedAt: conflict.remoteUpdatedAt,
+              googlePulledAt: new Date().toISOString(),
+            });
+            return t;
+          }
+
+          if (areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot)) {
+            rememberMetaUpdate(metaKey, {
+              googlePulledAt: new Date().toISOString(),
+              googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
+              googleSyncConflict: null,
+            });
+            return t;
+          }
+
+          rememberMetaUpdate(metaKey, {
+            googlePulledAt: new Date().toISOString(),
+            googleRemoteUpdatedAt: event.updated || event.created || event.start.dateTime,
+            googleSyncConflict: null,
+          });
+
+          return {
+            ...t,
+            title: remoteSnapshot.title || t.title,
+            dueDate: remoteSnapshot.startsAt || event.start.dateTime,
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+
+      if (Object.keys(metaUpdates).length) {
+        setCalendarMeta((prev) => {
+          const next = { ...prev };
+          Object.entries(metaUpdates).forEach(([key, patch]) => {
+            next[key] = { ...(prev[key] || {}), ...(patch as any) };
+          });
+          return next;
         });
-
-        return {
-          ...t,
-          title: remoteSnapshot.title || t.title,
-          dueDate: remoteSnapshot.startsAt || event.start.dateTime,
-          updatedAt: new Date().toISOString(),
-        };
-      })
-    );
-
-    if (Object.keys(metaUpdates).length) {
-      setCalendarMeta((prev) => {
-        const next = { ...prev };
-        Object.entries(metaUpdates).forEach(([key, patch]) => {
-          next[key] = { ...(prev[key] || {}), ...(patch as any) };
-        });
-        return next;
-      });
-    }
-  }, [calendarMeta, currentWorkspaceId, setCalendarMeta, setManualTasks, setMeetings]);
+      }
+    },
+    [calendarMeta, currentWorkspaceId, setCalendarMeta, setManualTasks, setMeetings]
+  );
 
   // 6. Final Misc Bridge
   function createManualNote({ title, context, tags }) {
     lifecycle.createMeetingDirect({
       title,
-      context: context || "",
-      startsAt: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+      context: context || '',
+      startsAt: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16),
       durationMinutes: 0,
-      attendees: "",
-      tags: Array.isArray(tags) && tags.length > 0 ? tags.join("\n") : "notatka",
-      needs: "",
-      desiredOutputs: "",
-      location: "",
+      attendees: '',
+      tags: Array.isArray(tags) && tags.length > 0 ? tags.join('\n') : 'notatka',
+      needs: '',
+      desiredOutputs: '',
+      location: '',
     });
-    setWorkspaceMessage("Notatka zapisana.");
+    setWorkspaceMessage('Notatka zapisana.');
   }
 
   function updateMeeting(meetingId, updates) {
     setMeetings((previous) =>
       previous.map((meeting) =>
-        meeting.id !== meetingId ? meeting : { ...meeting, ...updates, updatedAt: new Date().toISOString() }
+        meeting.id !== meetingId
+          ? meeting
+          : { ...meeting, ...updates, updatedAt: new Date().toISOString() }
       )
     );
   }
@@ -332,7 +353,6 @@ export default function useMeetings() {
       lifecycle.resetSelectionState();
     }
   }
-
 
   return {
     userMeetings,
@@ -376,7 +396,7 @@ export default function useMeetings() {
 
       // 3. Persist meeting deletion immediately in remote mode instead of waiting
       // for the debounced workspace autosave cycle.
-      if (stateService?.mode === "remote" && currentWorkspaceId) {
+      if (stateService?.mode === 'remote' && currentWorkspaceId) {
         try {
           await stateService.syncWorkspaceState(currentWorkspaceId, {
             meetings: nextMeetings,
@@ -387,8 +407,10 @@ export default function useMeetings() {
             vocabulary,
           });
         } catch (error: any) {
-          console.warn("Immediate workspace sync after delete failed:", error);
-          setWorkspaceMessage(error?.message || "Nie udalo sie zapisac usuniecia spotkania na backendzie.");
+          console.warn('Immediate workspace sync after delete failed:', error);
+          setWorkspaceMessage(
+            error?.message || 'Nie udalo sie zapisac usuniecia spotkania na backendzie.'
+          );
         }
       }
 
@@ -401,7 +423,7 @@ export default function useMeetings() {
             media.deleteRecording
               ? media.deleteRecording(rec.id || rec.recordingId).catch((e) => {
                   if ((e as any)?.status !== 404) {
-                    console.warn("Delete recording failed:", e);
+                    console.warn('Delete recording failed:', e);
                   }
                 })
               : Promise.resolve()
@@ -411,4 +433,3 @@ export default function useMeetings() {
     },
   };
 }
-

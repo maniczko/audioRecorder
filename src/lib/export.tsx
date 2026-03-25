@@ -1,8 +1,8 @@
 function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function section(title, content) {
@@ -17,71 +17,73 @@ function section(title, content) {
 function list(items) {
   const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
   if (!safeItems.length) {
-    return "<p class=\"doc-muted\">Brak danych.</p>";
+    return '<p class="doc-muted">Brak danych.</p>';
   }
 
-  return `<ul>${safeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+  return `<ul>${safeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
 }
 
-export function slugifyExportTitle(value, fallback = "meeting") {
-  const normalized = String(value || "")
+export function slugifyExportTitle(value, fallback = 'meeting') {
+  const normalized = String(value || '')
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
   return normalized || fallback;
 }
 
 export function buildMeetingNotesText(meeting, analysis, formatDateTime) {
   if (!meeting) {
-    return "";
+    return '';
   }
 
   const safeAnalysis = analysis || {};
   const debrief = meeting.aiDebrief || null;
-  const debriefLines = [
-    "Debrief AI:",
-    debrief?.summary || "Brak debriefu AI.",
-  ];
+  const debriefLines = ['Debrief AI:', debrief?.summary || 'Brak debriefu AI.'];
   if (debrief?.decisions?.length) {
-    debriefLines.push("", "Decyzje debriefu:", ...debrief.decisions.map((item) => `- ${item}`));
+    debriefLines.push('', 'Decyzje debriefu:', ...debrief.decisions.map((item) => `- ${item}`));
   }
   if (debrief?.risks?.length) {
-    debriefLines.push("", "Ryzyka debriefu:", ...debrief.risks.map((item) => `- ${item}`));
+    debriefLines.push('', 'Ryzyka debriefu:', ...debrief.risks.map((item) => `- ${item}`));
   }
   if (debrief?.followUps?.length) {
-    debriefLines.push("", "Nastepne kroki debriefu:", ...debrief.followUps.map((item) => `- ${item}`));
+    debriefLines.push(
+      '',
+      'Nastepne kroki debriefu:',
+      ...debrief.followUps.map((item) => `- ${item}`)
+    );
   }
   return [
     `Spotkanie: ${meeting.title}`,
     `Start: ${formatDateTime(meeting.startsAt)}`,
-    `Tagi: ${(meeting.tags || []).join(", ") || "Brak"}`,
-    `Potrzeby: ${(meeting.needs || []).join(", ") || "Brak"}`,
-    `Outputy: ${(meeting.desiredOutputs || []).join(", ") || "Brak"}`,
-    "",
-    "Podsumowanie:",
-    safeAnalysis.summary || "Brak",
-    "",
-    "Decyzje:",
+    `Tagi: ${(meeting.tags || []).join(', ') || 'Brak'}`,
+    `Potrzeby: ${(meeting.needs || []).join(', ') || 'Brak'}`,
+    `Outputy: ${(meeting.desiredOutputs || []).join(', ') || 'Brak'}`,
+    '',
+    'Podsumowanie:',
+    safeAnalysis.summary || 'Brak',
+    '',
+    'Decyzje:',
     ...(safeAnalysis.decisions || []).map((item) => `- ${item}`),
-    "",
-    "Zadania:",
+    '',
+    'Zadania:',
     ...(safeAnalysis.actionItems || []).map((item) => `- ${item}`),
-    "",
+    '',
     ...debriefLines,
-  ].join("\n");
+  ].join('\n');
 }
 
 export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime, formatDuration) {
-  if (typeof window === "undefined" || !meeting) {
+  if (typeof window === 'undefined' || !meeting) {
     return;
   }
 
   const transcript = (recording?.transcript || []).map((segment) => {
-    const speaker = speakerNames?.[String(segment.speakerId)] || `Speaker ${Number(segment.speakerId) + 1}`;
+    const speaker =
+      speakerNames?.[String(segment.speakerId)] || `Speaker ${Number(segment.speakerId) + 1}`;
     const verification =
-      segment.verificationStatus === "review"
+      segment.verificationStatus === 'review'
         ? `<span class="doc-badge warning">Do weryfikacji</span>`
         : `<span class="doc-badge success">Zweryfikowane</span>`;
     return `
@@ -98,7 +100,7 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
 
   const analysis = recording?.analysis || meeting.analysis || {};
   const debrief = meeting.aiDebrief || recording?.aiDebrief || null;
-  const popup = window.open("", "_blank", "noopener,noreferrer,width=980,height=900");
+  const popup = window.open('', '_blank', 'noopener,noreferrer,width=980,height=900');
   if (!popup) {
     return;
   }
@@ -225,7 +227,7 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
           <section class="doc-card">
             <div class="doc-eyebrow">VoiceLog export</div>
             <h1>${escapeHtml(meeting.title)}</h1>
-            <p>${escapeHtml(meeting.context || "Brak dodatkowego kontekstu.")}</p>
+            <p>${escapeHtml(meeting.context || 'Brak dodatkowego kontekstu.')}</p>
             <div class="doc-grid">
               <div class="doc-stat">
                 <span>Start</span>
@@ -242,22 +244,32 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
             </div>
           </section>
 
-          ${section("Tagi i potrzeby", `
-            <p><strong>Tagi:</strong> ${escapeHtml((meeting.tags || []).join(", ") || "Brak")}</p>
-            <p><strong>Potrzeby:</strong> ${escapeHtml((meeting.needs || []).join(", ") || "Brak")}</p>
-            <p><strong>Oczekiwane outputy:</strong> ${escapeHtml((meeting.desiredOutputs || []).join(", ") || "Brak")}</p>
-          `)}
+          ${section(
+            'Tagi i potrzeby',
+            `
+            <p><strong>Tagi:</strong> ${escapeHtml((meeting.tags || []).join(', ') || 'Brak')}</p>
+            <p><strong>Potrzeby:</strong> ${escapeHtml((meeting.needs || []).join(', ') || 'Brak')}</p>
+            <p><strong>Oczekiwane outputy:</strong> ${escapeHtml((meeting.desiredOutputs || []).join(', ') || 'Brak')}</p>
+          `
+          )}
 
-          ${section("Podsumowanie", `<p>${escapeHtml(analysis.summary || "Brak podsumowania.")}</p>`)}
-          ${section("Decyzje", list(analysis.decisions))}
-          ${section("Zadania i follow-upy", list([...(analysis.actionItems || []), ...(analysis.followUps || [])]))}
-          ${debrief ? section("Debrief AI", `
-            <p>${escapeHtml(debrief.summary || "Brak debriefu AI.")}</p>
-            <p><strong>Decyzje:</strong> ${escapeHtml((debrief.decisions || []).join(", ") || "Brak")}</p>
-            <p><strong>Ryzyka:</strong> ${escapeHtml((debrief.risks || []).join(", ") || "Brak")}</p>
-            <p><strong>Następne kroki:</strong> ${escapeHtml((debrief.followUps || []).join(", ") || "Brak")}</p>
-          `) : ""}
-          ${section("Notatki i transkrypcja", transcript.length ? transcript.join("") : "<p class=\"doc-muted\">Brak transkrypcji.</p>")}
+          ${section('Podsumowanie', `<p>${escapeHtml(analysis.summary || 'Brak podsumowania.')}</p>`)}
+          ${section('Decyzje', list(analysis.decisions))}
+          ${section('Zadania i follow-upy', list([...(analysis.actionItems || []), ...(analysis.followUps || [])]))}
+          ${
+            debrief
+              ? section(
+                  'Debrief AI',
+                  `
+            <p>${escapeHtml(debrief.summary || 'Brak debriefu AI.')}</p>
+            <p><strong>Decyzje:</strong> ${escapeHtml((debrief.decisions || []).join(', ') || 'Brak')}</p>
+            <p><strong>Ryzyka:</strong> ${escapeHtml((debrief.risks || []).join(', ') || 'Brak')}</p>
+            <p><strong>Następne kroki:</strong> ${escapeHtml((debrief.followUps || []).join(', ') || 'Brak')}</p>
+          `
+                )
+              : ''
+          }
+          ${section('Notatki i transkrypcja', transcript.length ? transcript.join('') : '<p class="doc-muted">Brak transkrypcji.</p>')}
         </main>
       </body>
     </html>

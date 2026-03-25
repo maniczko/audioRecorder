@@ -1,18 +1,15 @@
-import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
-import { createApp } from "../../app.ts";
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { createApp } from '../../app.ts';
 
 // Helper to control fs mock state between tests
-function setFsState(overrides?: {
-  existsSync?: boolean;
-  statSyncSize?: number;
-}) {
+function setFsState(overrides?: { existsSync?: boolean; statSyncSize?: number }) {
   (global as any).__TEST_FS_STATE__ = {
     existsSync: overrides?.existsSync ?? true,
     statSyncSize: overrides?.statSyncSize ?? 1234,
   };
 }
 
-describe("Media Routes", () => {
+describe('Media Routes', () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: any;
   let mockWorkspaceService: any;
@@ -40,18 +37,18 @@ describe("Media Routes", () => {
       removeListener: vi.fn(),
     };
     mockWorkspaceService = {
-      getMembership: vi.fn().mockResolvedValue({ member_role: "owner" }),
+      getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }),
     };
 
     const mockAuthService = {
-      getSession: vi.fn().mockResolvedValue({ user_id: "user_1", workspace_id: "ws_1" })
+      getSession: vi.fn().mockResolvedValue({ user_id: 'user_1', workspace_id: 'ws_1' }),
     };
 
     app = createApp({
       authService: mockAuthService,
       workspaceService: mockWorkspaceService,
       transcriptionService: mockTranscriptionService,
-      config: { allowedOrigins: "http://localhost:3000", trustProxy: false, uploadDir: "/tmp" }
+      config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
     });
   });
 
@@ -62,252 +59,266 @@ describe("Media Routes", () => {
     setFsState();
   });
 
-  it("PUT /media/recordings/:recordingId/audio - upload success", async () => {
+  it('PUT /media/recordings/:recordingId/audio - upload success', async () => {
     mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
-      id: "rec_new", workspace_id: "ws_1", size_bytes: 512
+      id: 'rec_new',
+      workspace_id: 'ws_1',
+      size_bytes: 512,
     });
     mockTranscriptionService.analyzeAudioQuality.mockResolvedValue({
-      qualityLabel: "fair",
+      qualityLabel: 'fair',
       enhancementRecommended: true,
     });
 
-    const res = await app.request("/media/recordings/rec_new/audio", {
-      method: "PUT",
+    const res = await app.request('/media/recordings/rec_new/audio', {
+      method: 'PUT',
       headers: {
-        "Authorization": "Bearer fake_token",
-        "Content-Type": "audio/webm",
-        "X-Workspace-Id": "ws_1"
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
       },
-      body: Buffer.from("small-audio-data")
+      body: Buffer.from('small-audio-data'),
     });
 
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.id).toBe("rec_new");
+    expect(data.id).toBe('rec_new');
     expect(data.audioQuality).toBeNull();
     expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledWith(
-      expect.objectContaining({ recordingId: "rec_new", workspaceId: "ws_1", contentType: "audio/webm" })
+      expect.objectContaining({
+        recordingId: 'rec_new',
+        workspaceId: 'ws_1',
+        contentType: 'audio/webm',
+      })
     );
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledWith("rec_new", {
-      qualityLabel: "fair",
+    expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledWith('rec_new', {
+      qualityLabel: 'fair',
       enhancementRecommended: true,
     });
   });
 
-  it("OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins", async () => {
-    const previewOrigin = "https://preview-app.vercel.app";
-    const res = await app.request("/media/recordings/rec_new/audio", {
-      method: "OPTIONS",
+  it('OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins', async () => {
+    const previewOrigin = 'https://preview-app.vercel.app';
+    const res = await app.request('/media/recordings/rec_new/audio', {
+      method: 'OPTIONS',
       headers: {
         Origin: previewOrigin,
-        "Access-Control-Request-Method": "PUT",
-        "Access-Control-Request-Headers": "Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id",
+        'Access-Control-Request-Method': 'PUT',
+        'Access-Control-Request-Headers': 'Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id',
       },
     });
 
     expect(res.status).toBe(204);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
-    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Authorization");
-    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Content-Type");
-    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Workspace-Id");
-    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("X-Meeting-Id");
-    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("PUT");
-    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("OPTIONS");
-    expect(res.headers.get("Vary")).toContain("Origin");
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe(previewOrigin);
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Authorization');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Workspace-Id');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Meeting-Id');
+    expect(res.headers.get('Access-Control-Allow-Methods')).toContain('PUT');
+    expect(res.headers.get('Access-Control-Allow-Methods')).toContain('OPTIONS');
+    expect(res.headers.get('Vary')).toContain('Origin');
   });
 
-  it("POST /media/recordings/:recordingId/transcribe - queues job", async () => {
+  it('POST /media/recordings/:recordingId/transcribe - queues job', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_1", workspace_id: "ws_1", file_path: "/tmp/fake.webm", content_type: "audio/webm", size_bytes: 1024, transcription_status: "queued"
+      id: 'rec_1',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'queued',
     });
 
-    const res = await app.request("/media/recordings/rec_1/transcribe", {
-      method: "POST",
-      headers: { "Authorization": "Bearer fake_token", "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceId: "ws_1" })
+    const res = await app.request('/media/recordings/rec_1/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
     });
 
     expect(res.status).toBe(202);
     const data = await res.json();
-    expect(data.recordingId).toBe("rec_1");
-    expect(data.pipelineStatus).toBe("queued");
+    expect(data.recordingId).toBe('rec_1');
+    expect(data.pipelineStatus).toBe('queued');
     expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
-      "rec_1",
-      expect.objectContaining({ processingMode: "fast" })
+      'rec_1',
+      expect.objectContaining({ processingMode: 'fast' })
     );
   });
 
-  it("GET /media/recordings/:recordingId/transcribe - returns payload", async () => {
+  it('GET /media/recordings/:recordingId/transcribe - returns payload', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_2",
-      workspace_id: "ws_1",
-      transcription_status: "completed",
+      id: 'rec_2',
+      workspace_id: 'ws_1',
+      transcription_status: 'completed',
       diarization_json: JSON.stringify({
         speakerCount: 2,
-        transcriptOutcome: "empty",
-        emptyReason: "no_segments_from_stt",
-        userMessage: "Nie wykryto wypowiedzi w nagraniu.",
-        pipelineVersion: "0.1.0",
-        pipelineGitSha: "abc1234",
-        pipelineBuildTime: "2026-03-21T20:00:00.000Z",
+        transcriptOutcome: 'empty',
+        emptyReason: 'no_segments_from_stt',
+        userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+        pipelineVersion: '0.1.0',
+        pipelineGitSha: 'abc1234',
+        pipelineBuildTime: '2026-03-21T20:00:00.000Z',
       }),
-      transcript_json: "[]"
+      transcript_json: '[]',
     });
 
-    const res = await app.request("/media/recordings/rec_2/transcribe", {
-      method: "GET",
-      headers: { "Authorization": "Bearer fake_token" }
+    const res = await app.request('/media/recordings/rec_2/transcribe', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.recordingId).toBe("rec_2");
-    expect(data.pipelineStatus).toBe("done");
+    expect(data.recordingId).toBe('rec_2');
+    expect(data.pipelineStatus).toBe('done');
     expect(data.diarization.speakerCount).toBe(2);
-    expect(data.transcriptOutcome).toBe("empty");
-    expect(data.emptyReason).toBe("no_segments_from_stt");
-    expect(data.userMessage).toBe("Nie wykryto wypowiedzi w nagraniu.");
-    expect(data.pipelineVersion).toBe("0.1.0");
-    expect(data.pipelineGitSha).toBe("abc1234");
-    expect(data.pipelineBuildTime).toBe("2026-03-21T20:00:00.000Z");
+    expect(data.transcriptOutcome).toBe('empty');
+    expect(data.emptyReason).toBe('no_segments_from_stt');
+    expect(data.userMessage).toBe('Nie wykryto wypowiedzi w nagraniu.');
+    expect(data.pipelineVersion).toBe('0.1.0');
+    expect(data.pipelineGitSha).toBe('abc1234');
+    expect(data.pipelineBuildTime).toBe('2026-03-21T20:00:00.000Z');
   });
 
-  it("POST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload", async () => {
+  it('POST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload', async () => {
     mockTranscriptionService.getMediaAsset
       .mockResolvedValueOnce({
-        id: "rec_retry",
-        workspace_id: "ws_1",
-        meeting_id: "m_1",
-        file_path: "/tmp/retry.webm",
-        content_type: "audio/webm",
-        transcription_status: "failed",
-        diarization_json: JSON.stringify({ errorMessage: "old failure" }),
-        transcript_json: "[]",
+        id: 'rec_retry',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'failed',
+        diarization_json: JSON.stringify({ errorMessage: 'old failure' }),
+        transcript_json: '[]',
       })
       .mockResolvedValueOnce({
-        id: "rec_retry",
-        workspace_id: "ws_1",
-        meeting_id: "m_1",
-        file_path: "/tmp/retry.webm",
-        content_type: "audio/webm",
-        transcription_status: "queued",
-        diarization_json: "{}",
-        transcript_json: "[]",
+        id: 'rec_retry',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
+        diarization_json: '{}',
+        transcript_json: '[]',
       });
 
-    const res = await app.request("/media/recordings/rec_retry/retry-transcribe", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_retry/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(202);
     expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
-      "rec_retry",
+      'rec_retry',
       expect.objectContaining({
-        workspaceId: "ws_1",
-        meetingId: "m_1",
-        contentType: "audio/webm",
-        processingMode: "fast",
+        workspaceId: 'ws_1',
+        meetingId: 'm_1',
+        contentType: 'audio/webm',
+        processingMode: 'fast',
       })
     );
     expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledWith(
-      "rec_retry",
-      expect.objectContaining({ id: "rec_retry" }),
+      'rec_retry',
+      expect.objectContaining({ id: 'rec_retry' }),
       expect.objectContaining({
-        workspaceId: "ws_1",
-        meetingId: "m_1",
-        contentType: "audio/webm",
+        workspaceId: 'ws_1',
+        meetingId: 'm_1',
+        contentType: 'audio/webm',
       })
     );
   });
 
-  it.skip("POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing", async () => {
+  it.skip('POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing', async () => {
     // SKIP: fs mock caching - app is created before test can set fs state
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_retry_missing",
-      workspace_id: "ws_1",
-      meeting_id: "m_1",
-      file_path: "/tmp/missing.webm",
-      content_type: "audio/webm",
-      transcription_status: "failed",
-      diarization_json: "{}",
-      transcript_json: "[]",
+      id: 'rec_retry_missing',
+      workspace_id: 'ws_1',
+      meeting_id: 'm_1',
+      file_path: '/tmp/missing.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'failed',
+      diarization_json: '{}',
+      transcript_json: '[]',
     });
 
     // Set fs.exists to return false for this specific test
     setFsState({ existsSync: false });
 
-    const res = await app.request("/media/recordings/rec_retry_missing/retry-transcribe", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_retry_missing/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(409);
     expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
   });
 
-  it("POST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript", async () => {
+  it('POST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript', async () => {
     mockTranscriptionService.getMediaAsset
       .mockResolvedValueOnce({
-        id: "rec_empty_retry",
-        workspace_id: "ws_1",
-        meeting_id: "m_1",
-        file_path: "/tmp/retry.webm",
-        content_type: "audio/webm",
-        transcription_status: "completed",
+        id: 'rec_empty_retry',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'completed',
         diarization_json: JSON.stringify({
-          transcriptOutcome: "empty",
-          emptyReason: "no_segments_from_stt",
+          transcriptOutcome: 'empty',
+          emptyReason: 'no_segments_from_stt',
           transcriptionDiagnostics: { chunksWithText: 0, chunksAttempted: 2 },
         }),
-        transcript_json: "[]",
+        transcript_json: '[]',
       })
       .mockResolvedValueOnce({
-        id: "rec_empty_retry",
-        workspace_id: "ws_1",
-        meeting_id: "m_1",
-        file_path: "/tmp/retry.webm",
-        content_type: "audio/webm",
-        transcription_status: "queued",
+        id: 'rec_empty_retry',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
         diarization_json: JSON.stringify({
-          transcriptOutcome: "empty",
-          emptyReason: "no_segments_from_stt",
+          transcriptOutcome: 'empty',
+          emptyReason: 'no_segments_from_stt',
           transcriptionDiagnostics: { chunksWithText: 0, chunksAttempted: 2 },
         }),
-        transcript_json: "[]",
+        transcript_json: '[]',
       });
 
-    const res = await app.request("/media/recordings/rec_empty_retry/retry-transcribe", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_empty_retry/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(202);
     const payload = await res.json();
-    expect(payload.transcriptionDiagnostics).toMatchObject({ chunksWithText: 0, chunksAttempted: 2 });
+    expect(payload.transcriptionDiagnostics).toMatchObject({
+      chunksWithText: 0,
+      chunksAttempted: 2,
+    });
     expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
-      "rec_empty_retry",
+      'rec_empty_retry',
       expect.objectContaining({
-        workspaceId: "ws_1",
-        meetingId: "m_1",
+        workspaceId: 'ws_1',
+        meetingId: 'm_1',
       })
     );
   });
 
-  it("POST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview", async () => {
+  it('POST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_sketchnote",
-      workspace_id: "ws_1",
+      id: 'rec_sketchnote',
+      workspace_id: 'ws_1',
       diarization_json: JSON.stringify({
-        summary: "Spotkanie o wdrożeniu nowego procesu.",
+        summary: 'Spotkanie o wdrożeniu nowego procesu.',
       }),
     });
-    mockWorkspaceService.getMembership.mockResolvedValue({ member_role: "owner" });
+    mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
 
     const originalFetch = global.fetch;
     const originalGeminiKey = process.env.GEMINI_API_KEY;
-    process.env.GEMINI_API_KEY = "test-key";
+    process.env.GEMINI_API_KEY = 'test-key';
     global.fetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -317,8 +328,8 @@ describe("Media Routes", () => {
                 parts: [
                   {
                     inlineData: {
-                      mimeType: "image/png",
-                      data: Buffer.from("fake-image").toString("base64"),
+                      mimeType: 'image/png',
+                      data: Buffer.from('fake-image').toString('base64'),
                     },
                   },
                 ],
@@ -326,221 +337,237 @@ describe("Media Routes", () => {
             },
           ],
         }),
-        { status: 200, headers: { "content-type": "application/json" } }
+        { status: 200, headers: { 'content-type': 'application/json' } }
       )
     ) as any;
 
-    const res = await app.request("/media/recordings/rec_sketchnote/sketchnote", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(200);
     const payload = await res.json();
-    expect(payload.sketchnoteUrl).toContain("data:image/png;base64,");
-    expect(mockTranscriptionService.getMediaAsset).toHaveBeenCalledWith("rec_sketchnote");
+    expect(payload.sketchnoteUrl).toContain('data:image/png;base64,');
+    expect(mockTranscriptionService.getMediaAsset).toHaveBeenCalledWith('rec_sketchnote');
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect((global.fetch as any).mock.calls[0][0]).toContain("gemini-3-pro-image-preview:generateContent");
-    expect(String((global.fetch as any).mock.calls[0][1].headers["x-goog-api-key"])).toBe("test-key");
+    expect((global.fetch as any).mock.calls[0][0]).toContain(
+      'gemini-3-pro-image-preview:generateContent'
+    );
+    expect(String((global.fetch as any).mock.calls[0][1].headers['x-goog-api-key'])).toBe(
+      'test-key'
+    );
 
     global.fetch = originalFetch;
     process.env.GEMINI_API_KEY = originalGeminiKey;
   });
 
-  it("PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload", async () => {
-    const previewOrigin = "https://preview-app.vercel.app";
-    const missingWorkspace = await app.request("/media/recordings/rec_missing/audio", {
-      method: "PUT",
+  it('PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload', async () => {
+    const previewOrigin = 'https://preview-app.vercel.app';
+    const missingWorkspace = await app.request('/media/recordings/rec_missing/audio', {
+      method: 'PUT',
       headers: {
-        Authorization: "Bearer fake_token",
-        "Content-Type": "audio/webm",
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
         Origin: previewOrigin,
       },
-      body: Buffer.from("small-audio-data"),
+      body: Buffer.from('small-audio-data'),
     });
 
     expect(missingWorkspace.status).toBe(400);
-    expect(missingWorkspace.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
-    expect(missingWorkspace.headers.get("Vary")).toContain("Origin");
+    expect(missingWorkspace.headers.get('Access-Control-Allow-Origin')).toBe(previewOrigin);
+    expect(missingWorkspace.headers.get('Vary')).toContain('Origin');
 
-    const oversize = await app.request("/media/recordings/rec_large/audio", {
-      method: "PUT",
+    const oversize = await app.request('/media/recordings/rec_large/audio', {
+      method: 'PUT',
       headers: {
-        Authorization: "Bearer fake_token",
-        "Content-Type": "audio/webm",
-        "X-Workspace-Id": "ws_1",
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
         Origin: previewOrigin,
       },
       body: Buffer.alloc(100 * 1024 * 1024 + 1, 1),
     });
 
     expect(oversize.status).toBe(413);
-    expect(oversize.headers.get("Access-Control-Allow-Origin")).toBe(previewOrigin);
-    expect(oversize.headers.get("Vary")).toContain("Origin");
+    expect(oversize.headers.get('Access-Control-Allow-Origin')).toBe(previewOrigin);
+    expect(oversize.headers.get('Vary')).toContain('Origin');
   });
 
-  it.skip("GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files", async () => {
+  it.skip('GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files', async () => {
     // SKIP: fs mock caching - createReadStream throws with mocked fs
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce(null);
-    const missingAsset = await app.request("/media/recordings/rec_missing/audio", {
-      method: "GET",
-      headers: { Authorization: "Bearer fake_token" },
+    const missingAsset = await app.request('/media/recordings/rec_missing/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
     });
     expect(missingAsset.status).toBe(404);
 
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce({
-      id: "rec_file",
-      workspace_id: "ws_1",
-      file_path: "/tmp/missing.webm",
-      content_type: "audio/webm",
+      id: 'rec_file',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/missing.webm',
+      content_type: 'audio/webm',
     });
 
     // Set fs.exists to return false for this test
     setFsState({ existsSync: false });
 
-    const missingFile = await app.request("/media/recordings/rec_file/audio", {
-      method: "GET",
-      headers: { Authorization: "Bearer fake_token" },
+    const missingFile = await app.request('/media/recordings/rec_file/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(missingFile.status).toBe(404);
   });
 
-  it.skip("GET /media/recordings/:recordingId/audio - streams existing file with safe headers", async () => {
+  it.skip('GET /media/recordings/:recordingId/audio - streams existing file with safe headers', async () => {
     // SKIP: fs mock caching - createReadStream throws with mocked fs
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_stream",
-      workspace_id: "ws_1",
-      file_path: "/tmp/audio.webm",
-      content_type: "text/html",
+      id: 'rec_stream',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/audio.webm',
+      content_type: 'text/html',
     });
 
     // Set fs.exists to return true and statSync to return size
     setFsState({ existsSync: true, statSyncSize: 1234 });
 
-    const res = await app.request("/media/recordings/rec_stream/audio", {
-      method: "GET",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_stream/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
-    expect(res.headers.get("Content-Length")).toBe("1234");
+    expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
+    expect(res.headers.get('Content-Length')).toBe('1234');
   });
 
-  it("POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path", async () => {
+  it('POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_norm",
-      workspace_id: "ws_1",
-      file_path: "/tmp/audio.webm",
-      content_type: "audio/webm",
+      id: 'rec_norm',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/audio.webm',
+      content_type: 'audio/webm',
     });
-    mockTranscriptionService.generateVoiceCoaching.mockResolvedValue("Mow wolniej.");
+    mockTranscriptionService.generateVoiceCoaching.mockResolvedValue('Mow wolniej.');
     mockTranscriptionService.getSpeakerAcousticFeatures.mockResolvedValue({
-      speakers: [{ speakerId: "0", speakerName: "Anna", f0Hz: 198.2 }],
+      speakers: [{ speakerId: '0', speakerName: 'Anna', f0Hz: 198.2 }],
     });
 
-    const normalizeRes = await app.request("/media/recordings/rec_norm/normalize", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const normalizeRes = await app.request('/media/recordings/rec_norm/normalize', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
-    const coachingRes = await app.request("/media/recordings/rec_norm/voice-coaching", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token", "Content-Type": "application/json" },
-      body: JSON.stringify({ speakerId: "0", segments: [{ text: "Ala" }] }),
+    const coachingRes = await app.request('/media/recordings/rec_norm/voice-coaching', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speakerId: '0', segments: [{ text: 'Ala' }] }),
     });
-    const acousticRes = await app.request("/media/recordings/rec_norm/acoustic-features", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const acousticRes = await app.request('/media/recordings/rec_norm/acoustic-features', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(normalizeRes.status).toBe(200);
     expect(await normalizeRes.json()).toEqual({ ok: true });
-    expect(mockTranscriptionService.normalizeRecording).toHaveBeenCalledWith("/tmp/audio.webm", expect.objectContaining({ signal: expect.any(Object) }));
+    expect(mockTranscriptionService.normalizeRecording).toHaveBeenCalledWith(
+      '/tmp/audio.webm',
+      expect.objectContaining({ signal: expect.any(Object) })
+    );
 
     expect(coachingRes.status).toBe(200);
-    expect(await coachingRes.json()).toEqual({ coaching: "Mow wolniej." });
+    expect(await coachingRes.json()).toEqual({ coaching: 'Mow wolniej.' });
     expect(acousticRes.status).toBe(200);
     expect(await acousticRes.json()).toEqual({
-      speakers: [{ speakerId: "0", speakerName: "Anna", f0Hz: 198.2 }],
+      speakers: [{ speakerId: '0', speakerName: 'Anna', f0Hz: 198.2 }],
     });
   });
 
-  it("POST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation", async () => {
+  it('POST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation', async () => {
     mockTranscriptionService.getMediaAsset
       .mockResolvedValueOnce({
-        id: "rec_voice",
-        workspace_id: "ws_1",
+        id: 'rec_voice',
+        workspace_id: 'ws_1',
         transcript_json: '[{"text":"hello","timestamp":0,"endTimestamp":1}]',
       })
       .mockResolvedValueOnce({
-        id: "rec_rediarize_missing",
-        workspace_id: "ws_1",
-        transcript_json: "[]",
+        id: 'rec_rediarize_missing',
+        workspace_id: 'ws_1',
+        transcript_json: '[]',
       })
       .mockResolvedValueOnce({
-        id: "rec_rediarize_ok",
-        workspace_id: "ws_1",
+        id: 'rec_rediarize_ok',
+        workspace_id: 'ws_1',
         transcript_json: '[{"id":"s1","text":"hello","timestamp":0,"endTimestamp":1}]',
       });
-    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({ id: "vp_1" });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({ id: 'vp_1' });
     mockTranscriptionService.diarizeFromTranscript.mockResolvedValue({
       speakerCount: 1,
-      speakerNames: { "0": "Speaker 1" },
-      segments: [{ id: "seg1", text: "hello", timestamp: 0, endTimestamp: 1, speakerId: 0, rawSpeakerLabel: "A" }],
+      speakerNames: { '0': 'Speaker 1' },
+      segments: [
+        {
+          id: 'seg1',
+          text: 'hello',
+          timestamp: 0,
+          endTimestamp: 1,
+          speakerId: 0,
+          rawSpeakerLabel: 'A',
+        },
+      ],
     });
 
-    const voiceRes = await app.request("/media/recordings/rec_voice/voice-profiles/from-speaker", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token", "Content-Type": "application/json" },
-      body: JSON.stringify({ speakerId: "0", speakerName: "Anna" }),
+    const voiceRes = await app.request('/media/recordings/rec_voice/voice-profiles/from-speaker', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
     });
     expect(voiceRes.status).toBe(201);
-    expect(await voiceRes.json()).toEqual({ id: "vp_1" });
+    expect(await voiceRes.json()).toEqual({ id: 'vp_1' });
 
-    const noTranscriptRes = await app.request("/media/recordings/rec_rediarize_missing/rediarize", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const noTranscriptRes = await app.request('/media/recordings/rec_rediarize_missing/rediarize', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
     expect(noTranscriptRes.status).toBe(400);
 
-    const okRediarizeRes = await app.request("/media/recordings/rec_rediarize_ok/rediarize", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const okRediarizeRes = await app.request('/media/recordings/rec_rediarize_ok/rediarize', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
     expect(okRediarizeRes.status).toBe(200);
     expect(mockTranscriptionService.saveTranscriptionResult).toHaveBeenCalledWith(
-      "rec_rediarize_ok",
-      expect.objectContaining({ pipelineStatus: "completed" })
+      'rec_rediarize_ok',
+      expect.objectContaining({ pipelineStatus: 'completed' })
     );
   });
 
-  it("POST /media/recordings/:recordingId/rediarize returns 422 when diarization fails", async () => {
+  it('POST /media/recordings/:recordingId/rediarize returns 422 when diarization fails', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
-      id: "rec_rediarize_fail",
-      workspace_id: "ws_1",
+      id: 'rec_rediarize_fail',
+      workspace_id: 'ws_1',
       transcript_json: '[{"id":"s1","text":"hello","timestamp":0,"endTimestamp":1}]',
     });
     mockTranscriptionService.diarizeFromTranscript.mockResolvedValue(null);
 
-    const res = await app.request("/media/recordings/rec_rediarize_fail/rediarize", {
-      method: "POST",
-      headers: { Authorization: "Bearer fake_token" },
+    const res = await app.request('/media/recordings/rec_rediarize_fail/rediarize', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
     });
 
     expect(res.status).toBe(422);
   });
 
-  it("POST /media/analyze returns fallback when analysis service returns null", async () => {
+  it('POST /media/analyze returns fallback when analysis service returns null', async () => {
     mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn().mockResolvedValue(null);
 
-    const res = await app.request("/media/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ meeting: {}, segments: [] }),
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ mode: "no-key" });
+    expect(await res.json()).toEqual({ mode: 'no-key' });
   });
 });

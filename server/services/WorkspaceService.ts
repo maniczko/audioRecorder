@@ -1,4 +1,4 @@
-import type { WorkspaceStatePayload } from "../../src/shared/contracts.ts";
+import type { WorkspaceStatePayload } from '../../src/shared/contracts.ts';
 
 export default class WorkspaceService {
   db: any;
@@ -47,4 +47,3 @@ export default class WorkspaceService {
     return await this.db.updateVoiceProfileThreshold(id, workspaceId, threshold);
   }
 }
-

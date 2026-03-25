@@ -1,14 +1,14 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { resolveWorkspaceForUser, workspaceMembers } from "../lib/workspace";
-import { getWorkspacePermissions } from "../lib/permissions";
-import { createWorkspaceService } from "../services/workspaceService";
-import { createStateService } from "../services/stateService";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { resolveWorkspaceForUser, workspaceMembers } from '../lib/workspace';
+import { getWorkspacePermissions } from '../lib/permissions';
+import { createWorkspaceService } from '../services/workspaceService';
+import { createStateService } from '../services/stateService';
 import {
   clearPersistedSession,
   syncLegacySessionFromWorkspaceSession,
   type WorkspaceSession,
-} from "../lib/sessionStorage";
+} from '../lib/sessionStorage';
 
 interface WorkspaceState {
   users: any[];
@@ -18,7 +18,9 @@ interface WorkspaceState {
   sessionError: string;
   setUsers: (users: any[] | ((prev: any[]) => any[])) => void;
   setWorkspaces: (workspaces: any[] | ((prev: any[]) => any[])) => void;
-  setSession: (session: WorkspaceSession | null | ((prev: WorkspaceSession | null) => WorkspaceSession | null)) => void;
+  setSession: (
+    session: WorkspaceSession | null | ((prev: WorkspaceSession | null) => WorkspaceSession | null)
+  ) => void;
   switchWorkspace: (workspaceId: string) => void;
   updateWorkspaceMemberRole: (targetUserId: string, memberRole: string) => Promise<void>;
   bootstrapSession: () => Promise<void>;
@@ -39,21 +41,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       workspaces: [],
       session: null,
       isHydratingSession: false,
-      sessionError: "",
+      sessionError: '',
 
       setUsers: (updater) =>
         set((state) => ({
-          users: typeof updater === "function" ? updater(state.users) : updater,
+          users: typeof updater === 'function' ? updater(state.users) : updater,
         })),
 
       setWorkspaces: (updater) =>
         set((state) => ({
-          workspaces: typeof updater === "function" ? updater(state.workspaces) : updater,
+          workspaces: typeof updater === 'function' ? updater(state.workspaces) : updater,
         })),
 
       setSession: (updater) =>
         set((state) => {
-          const nextSession = typeof updater === "function" ? updater(state.session) : updater;
+          const nextSession = typeof updater === 'function' ? updater(state.session) : updater;
           persistSessionSnapshot(nextSession);
           return {
             session: nextSession,
@@ -69,12 +71,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       updateWorkspaceMemberRole: async (targetUserId, memberRole) => {
         const { workspaces, session, users } = get();
-        
+
         const currentUser = users.find((u) => u.id === session?.userId) || null;
         const currentWorkspaceId = currentUser
           ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId)
           : null;
-          
+
         if (!currentWorkspaceId || !targetUserId) return;
 
         const result = await workspaceService.updateMemberRole({
@@ -113,11 +115,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
 
       bootstrapSession: async () => {
-        if (stateService.mode !== "remote") return;
+        if (stateService.mode !== 'remote') return;
         const { session } = get();
         if (!session?.token || !session?.userId) return;
 
-        set({ isHydratingSession: true, sessionError: "" });
+        set({ isHydratingSession: true, sessionError: '' });
         try {
           const result = await stateService.bootstrap(session.workspaceId);
           if (!result) return;
@@ -126,7 +128,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (Array.isArray(result.users)) updates.users = result.users;
           if (Array.isArray(result.workspaces)) updates.workspaces = result.workspaces;
           if (result.workspaceId && result.workspaceId !== session.workspaceId) {
-            updates.session = persistSessionSnapshot({ ...session, workspaceId: result.workspaceId });
+            updates.session = persistSessionSnapshot({
+              ...session,
+              workspaceId: result.workspaceId,
+            });
           }
           set(updates);
         } catch (error: any) {
@@ -140,14 +145,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           set({ isHydratingSession: false });
         }
       },
-      
+
       logout: () => {
         clearPersistedSession();
         set({ session: null });
-      }
+      },
     }),
     {
-      name: "voicelog_workspace_store",
+      name: 'voicelog_workspace_store',
       partialize: (state) => ({
         users: state.users,
         workspaces: state.workspaces,
@@ -178,11 +183,17 @@ export const useWorkspaceSelectors = () => {
   const currentWorkspaceId = currentUser
     ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId)
     : null;
-  const currentWorkspace = workspaces.find((workspace) => workspace.id === currentWorkspaceId) || null;
+  const currentWorkspace =
+    workspaces.find((workspace) => workspace.id === currentWorkspaceId) || null;
   const currentWorkspaceMembers = workspaceMembers(users, currentWorkspace);
-  const currentWorkspaceRole = currentWorkspace?.memberRole || currentWorkspaceMembers.find((user) => user.id === currentUserId)?.workspaceMemberRole || "member";
+  const currentWorkspaceRole =
+    currentWorkspace?.memberRole ||
+    currentWorkspaceMembers.find((user) => user.id === currentUserId)?.workspaceMemberRole ||
+    'member';
   const currentWorkspacePermissions = getWorkspacePermissions(currentWorkspaceRole);
-  const availableWorkspaces = currentUser ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id)) : [];
+  const availableWorkspaces = currentUser
+    ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id))
+    : [];
 
   return {
     currentUser,

@@ -1,0 +1,15 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m❯[39m server/tests/routes/workspaces.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[32m 14[2mms[22m[39m
+[31m     [31m×[31m PUT /users/:userId/profile updates only current user profile[39m[32m 6[2mms[22m[39m
+[31m     [31m×[31m blocks profile and password changes for other users[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m updates workspace member roles only for owner/admin memberships[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m handles RAG ask validation, no-results and LLM failure paths[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m returns LLM answer when OpenAI key is configured[39m[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[90m (5)[39m
+[2m   Start at [22m 17:10:14
+[2m   Duration [22m 3.56s[2m (transform 358ms, setup 88ms, import 2.59s, tests 14ms, environment 0ms)[22m
+

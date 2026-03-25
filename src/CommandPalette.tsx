@@ -1,11 +1,11 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { filterCommandPaletteItems } from "./lib/commandPalette";
-import { semanticSearch } from "./lib/aiSearch";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { filterCommandPaletteItems } from './lib/commandPalette';
+import { semanticSearch } from './lib/aiSearch';
 import './CommandPaletteStyles.css';
 
 function groupedItems(items) {
   return items.reduce((groups, item) => {
-    const key = item.group || "Wyniki";
+    const key = item.group || 'Wyniki';
     const bucket = groups.get(key) || [];
     bucket.push(item);
     groups.set(key, bucket);
@@ -14,7 +14,7 @@ function groupedItems(items) {
 }
 
 export default function CommandPalette({ open, items, onClose, onSelect }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [aiResults, setAiResults] = useState<any[]>([]);
   const [aiSearchUnavailable, setAiSearchUnavailable] = useState(false);
@@ -22,7 +22,10 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
   const inputRef = useRef(null);
   const resultButtonsRef = useRef([]);
 
-  const filteredItems = useMemo(() => filterCommandPaletteItems(items, deferredQuery), [items, deferredQuery]);
+  const filteredItems = useMemo(
+    () => filterCommandPaletteItems(items, deferredQuery),
+    [items, deferredQuery]
+  );
   const displayItems = useMemo(() => {
     if (!aiResults.length) {
       return filteredItems;
@@ -33,9 +36,9 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
       .filter((item) => !localIds.has(item.id))
       .map((item) => ({
         ...item,
-        group: "AI Match",
-        matchSource: "ai",
-        type: item.type || "AI Match",
+        group: 'AI Match',
+        matchSource: 'ai',
+        type: item.type || 'AI Match',
       }));
 
     return [...semanticItems, ...filteredItems];
@@ -44,7 +47,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
 
   useEffect(() => {
     if (!open) {
-      setQuery("");
+      setQuery('');
       setActiveIndex(0);
       setAiResults([]);
       setAiSearchUnavailable(false);
@@ -78,7 +81,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
           return;
         }
 
-        if (response.mode === "no-key") {
+        if (response.mode === 'no-key') {
           setAiResults([]);
           setAiSearchUnavailable(true);
           return;
@@ -104,25 +107,29 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
     }
 
     function handleKeyDown(event) {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
         return;
       }
 
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setActiveIndex((previous) => (displayItems.length ? (previous + 1) % displayItems.length : 0));
+        setActiveIndex((previous) =>
+          displayItems.length ? (previous + 1) % displayItems.length : 0
+        );
         return;
       }
 
-      if (event.key === "ArrowUp") {
+      if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setActiveIndex((previous) => (displayItems.length ? (previous - 1 + displayItems.length) % displayItems.length : 0));
+        setActiveIndex((previous) =>
+          displayItems.length ? (previous - 1 + displayItems.length) % displayItems.length : 0
+        );
         return;
       }
 
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         event.preventDefault();
         const activeItem = displayItems[activeIndex];
         if (activeItem) {
@@ -131,15 +138,18 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [activeIndex, displayItems, onClose, onSelect, open]);
 
   useEffect(() => {
     if (resultButtonsRef.current[activeIndex]) {
-      resultButtonsRef.current[activeIndex].scrollIntoView({ block: "nearest", behavior: "smooth" });
+      resultButtonsRef.current[activeIndex].scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
     }
   }, [activeIndex]);
 
@@ -191,7 +201,9 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
                           resultButtonsRef.current[itemIndex] = node;
                         }}
                         type="button"
-                        className={itemIndex === activeIndex ? "command-result active" : "command-result"}
+                        className={
+                          itemIndex === activeIndex ? 'command-result active' : 'command-result'
+                        }
                         onMouseEnter={() => setActiveIndex(itemIndex)}
                         onClick={() => onSelect(item)}
                       >
@@ -199,7 +211,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
                           <strong>{item.title}</strong>
                           <span>{item.subtitle}</span>
                         </div>
-                        <small>{item.matchSource === "ai" ? "AI Match" : item.type}</small>
+                        <small>{item.matchSource === 'ai' ? 'AI Match' : item.type}</small>
                       </button>
                     );
                   })}

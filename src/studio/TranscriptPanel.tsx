@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
-import PropTypes from "prop-types";
-import { labelSpeaker } from "../lib/recording";
-import { formatDuration } from "../lib/storage";
-import { getSpeakerColor } from "../lib/speakerColors";
-import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
+import PropTypes from 'prop-types';
+import { labelSpeaker } from '../lib/recording';
+import { formatDuration } from '../lib/storage';
+import { getSpeakerColor } from '../lib/speakerColors';
+import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
 import './TranscriptPanelStyles.css';
 
 const WAVEFORM_SVG_W = 1000;
@@ -74,7 +74,7 @@ function WaveformPanel({
         setWaveformBars(bars.map((bar) => bar / max));
       })
       .catch((error) => {
-        if (!cancelled) console.error("Waveform decode error:", error);
+        if (!cancelled) console.error('Waveform decode error:', error);
       })
       .finally(() => {
         if (!cancelled) setIsDecoding(false);
@@ -96,8 +96,8 @@ function WaveformPanel({
       if (dur > 0) setPlayhead(audio.currentTime / dur);
     }
 
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -108,7 +108,7 @@ function WaveformPanel({
     const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const clickTime = ratio * Math.max(totalDuration, 0);
 
-    if (addMarkerMode && canEdit && typeof addRecordingMarker === "function") {
+    if (addMarkerMode && canEdit && typeof addRecordingMarker === 'function') {
       addRecordingMarker({ timestamp: clickTime, label: `Marker ${formatDuration(clickTime)}` });
       setAddMarkerMode(false);
     } else {
@@ -141,10 +141,10 @@ function WaveformPanel({
           {canEdit ? (
             <button
               type="button"
-              className={addMarkerMode ? "pill active" : "pill"}
+              className={addMarkerMode ? 'pill active' : 'pill'}
               onClick={() => setAddMarkerMode((prev) => !prev)}
             >
-              {addMarkerMode ? "Kliknij na waveformie..." : "+ Dodaj marker"}
+              {addMarkerMode ? 'Kliknij na waveformie...' : '+ Dodaj marker'}
             </button>
           ) : null}
         </div>
@@ -152,7 +152,7 @@ function WaveformPanel({
 
       <div
         ref={waveformRef}
-        className={`waveform-svg-container${addMarkerMode ? " waveform-add-marker-mode" : ""}`}
+        className={`waveform-svg-container${addMarkerMode ? ' waveform-add-marker-mode' : ''}`}
         onClick={handleWaveformClick}
         role="presentation"
         aria-label="Waveform nagrania — kliknij aby przewinac audio"
@@ -163,15 +163,23 @@ function WaveformPanel({
           height={WAVEFORM_SVG_H}
           preserveAspectRatio="none"
         >
-          <rect x="0" y="0" width={WAVEFORM_SVG_W} height={WAVEFORM_SVG_H} fill="var(--surface-2, #12121f)" rx="4" />
+          <rect
+            x="0"
+            y="0"
+            width={WAVEFORM_SVG_W}
+            height={WAVEFORM_SVG_H}
+            fill="var(--surface-2, #12121f)"
+            rx="4"
+          />
           {waveformBars.map((bar, index) => {
             const barH = Math.max(2, bar * (WAVEFORM_SVG_H - 8));
             const y = (WAVEFORM_SVG_H - barH) / 2;
             const barTime = totalDuration > 0 ? (index / WAVEFORM_NUM_BARS) * totalDuration : -1;
-            const seg = barTime >= 0 && Array.isArray(transcript)
-              ? transcript.find((s) => s.timestamp <= barTime && s.endTimestamp > barTime)
-              : null;
-            const barColor = seg ? getSpeakerColor(seg.speakerId) : "var(--accent, #6366f1)";
+            const seg =
+              barTime >= 0 && Array.isArray(transcript)
+                ? transcript.find((s) => s.timestamp <= barTime && s.endTimestamp > barTime)
+                : null;
+            const barColor = seg ? getSpeakerColor(seg.speakerId) : 'var(--accent, #6366f1)';
             return (
               <rect
                 key={index}
@@ -200,7 +208,14 @@ function WaveformPanel({
                 const x = (Number(marker.timestamp) / totalDuration) * WAVEFORM_SVG_W;
                 return (
                   <g key={marker.id}>
-                    <line x1={x} y1="0" x2={x} y2={WAVEFORM_SVG_H} stroke="#f59e0b" strokeWidth="2" />
+                    <line
+                      x1={x}
+                      y1="0"
+                      x2={x}
+                      y2={WAVEFORM_SVG_H}
+                      stroke="#f59e0b"
+                      strokeWidth="2"
+                    />
                     <circle cx={x} cy={6} r={5} fill="#f59e0b" />
                   </g>
                 );
@@ -224,9 +239,13 @@ function WaveformPanel({
           >
             {transcript.map((seg) => {
               const x = (seg.timestamp / totalDuration) * WAVEFORM_SVG_W;
-              const w = totalDuration > 0 
-                ? Math.max(1, ((seg.endTimestamp - seg.timestamp) / totalDuration) * WAVEFORM_SVG_W)
-                : 1;
+              const w =
+                totalDuration > 0
+                  ? Math.max(
+                      1,
+                      ((seg.endTimestamp - seg.timestamp) / totalDuration) * WAVEFORM_SVG_W
+                    )
+                  : 1;
               return (
                 <rect
                   key={seg.id}
@@ -270,7 +289,7 @@ function WaveformPanel({
               </button>
               <span className="marker-label">{marker.label}</span>
               {marker.note ? <span className="soft-copy marker-note">{marker.note}</span> : null}
-              {canEdit && typeof deleteRecordingMarker === "function" ? (
+              {canEdit && typeof deleteRecordingMarker === 'function' ? (
                 <button
                   type="button"
                   className="ghost-button small"
@@ -292,7 +311,11 @@ function clamp(value, min, max) {
 }
 
 function normalizeSpeakerOptions(transcript, displaySpeakerNames) {
-  const speakerIds = [...new Set((Array.isArray(transcript) ? transcript : []).map((segment) => String(segment.speakerId)))];
+  const speakerIds = [
+    ...new Set(
+      (Array.isArray(transcript) ? transcript : []).map((segment) => String(segment.speakerId))
+    ),
+  ];
   return speakerIds.map((speakerId) => ({
     id: speakerId,
     label: labelSpeaker(displaySpeakerNames, speakerId),
@@ -300,7 +323,9 @@ function normalizeSpeakerOptions(transcript, displaySpeakerNames) {
 }
 
 function areSelectionsContiguous(transcript, selectedSegmentIds) {
-  const selectedIds = new Set((Array.isArray(selectedSegmentIds) ? selectedSegmentIds : []).map(String));
+  const selectedIds = new Set(
+    (Array.isArray(selectedSegmentIds) ? selectedSegmentIds : []).map(String)
+  );
   if (selectedIds.size < 2) {
     return false;
   }
@@ -337,7 +362,7 @@ export default function TranscriptPanel({
   displaySpeakerNames,
   selectedRecordingAudioUrl,
   selectedRecordingAudioError,
-  audioRef,   // ← new prop
+  audioRef, // ← new prop
   updateTranscriptSegment,
   assignSpeakerToTranscriptSegments,
   mergeTranscriptSegments,
@@ -349,17 +374,16 @@ export default function TranscriptPanel({
 }) {
   const virtuosoRef = useRef(null);
 
-
-  const [filterMode, setFilterMode] = useState("all");
-  const [speakerFilter, setSpeakerFilter] = useState("all");
+  const [filterMode, setFilterMode] = useState('all');
+  const [speakerFilter, setSpeakerFilter] = useState('all');
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
-  const [activeSegmentId, setActiveSegmentId] = useState("");
+  const [activeSegmentId, setActiveSegmentId] = useState('');
   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]);
-  const [bulkSpeakerId, setBulkSpeakerId] = useState("");
-  const [splitCursor, setSplitCursor] = useState({ segmentId: "", start: 0 });
+  const [bulkSpeakerId, setBulkSpeakerId] = useState('');
+  const [splitCursor, setSplitCursor] = useState({ segmentId: '', start: 0 });
 
   const [isNormalizing, setIsNormalizing] = useState(false);
-  const [normalizeError, setNormalizeError] = useState("");
+  const [normalizeError, setNormalizeError] = useState('');
 
   const transcript = useMemo(
     () => (Array.isArray(displayRecording?.transcript) ? displayRecording.transcript : []),
@@ -371,15 +395,15 @@ export default function TranscriptPanel({
   );
   const filteredSegments = useMemo(() => {
     return transcript.filter((segment) => {
-      if (filterMode === "review" && segment.verificationStatus !== "review") {
+      if (filterMode === 'review' && segment.verificationStatus !== 'review') {
         return false;
       }
 
-      if (filterMode === "verified" && segment.verificationStatus === "review") {
+      if (filterMode === 'verified' && segment.verificationStatus === 'review') {
         return false;
       }
 
-      if (speakerFilter !== "all" && String(segment.speakerId) !== String(speakerFilter)) {
+      if (speakerFilter !== 'all' && String(segment.speakerId) !== String(speakerFilter)) {
         return false;
       }
 
@@ -391,7 +415,7 @@ export default function TranscriptPanel({
     });
   }, [filterMode, lowConfidenceOnly, speakerFilter, transcript]);
   const reviewSegments = useMemo(
-    () => filteredSegments.filter((segment) => segment.verificationStatus === "review"),
+    () => filteredSegments.filter((segment) => segment.verificationStatus === 'review'),
     [filteredSegments]
   );
   const totalDuration = useMemo(() => {
@@ -421,7 +445,10 @@ export default function TranscriptPanel({
     [totalDuration, transcript]
   );
   const normalizedRangeSelection = useMemo(() => {
-    const start = Math.max(0, Math.min(Number(rangeSelection.start || 0), Number(rangeSelection.end || 0)));
+    const start = Math.max(
+      0,
+      Math.min(Number(rangeSelection.start || 0), Number(rangeSelection.end || 0))
+    );
     const end = Math.max(Number(rangeSelection.start || 0), Number(rangeSelection.end || 0));
     return {
       start,
@@ -468,7 +495,7 @@ export default function TranscriptPanel({
 
   useEffect(() => {
     if (!filteredSegments.length) {
-      setActiveSegmentId("");
+      setActiveSegmentId('');
       return;
     }
 
@@ -491,7 +518,7 @@ export default function TranscriptPanel({
 
   useEffect(() => {
     if (!speakerOptions.length) {
-      setBulkSpeakerId("");
+      setBulkSpeakerId('');
       return;
     }
 
@@ -502,26 +529,25 @@ export default function TranscriptPanel({
 
   useEffect(() => {
     if (!virtuosoRef.current || !activeSegmentId) return;
-    
+
     const index = filteredSegments.findIndex((s) => s.id === activeSegmentId);
     if (index !== -1) {
       virtuosoRef.current.scrollToIndex({
         index,
-        align: "center",
-        behavior: "smooth",
+        align: 'center',
+        behavior: 'smooth',
       });
     }
   }, [activeSegmentId, filteredSegments]);
 
-
   useEffect(() => {
     function handleKeyDown(event) {
-      const tag = (event.target?.tagName || "").toLowerCase();
-      if (["input", "textarea", "select"].includes(tag) || event.target?.isContentEditable) return;
+      const tag = (event.target?.tagName || '').toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag) || event.target?.isContentEditable) return;
 
       const key = event.key;
 
-      if (key === "]" || key === "ArrowRight") {
+      if (key === ']' || key === 'ArrowRight') {
         event.preventDefault();
         const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
         const next = reviewSegments[idx + 1] || reviewSegments[0];
@@ -532,7 +558,7 @@ export default function TranscriptPanel({
         return;
       }
 
-      if (key === "[" || key === "ArrowLeft") {
+      if (key === '[' || key === 'ArrowLeft') {
         event.preventDefault();
         const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
         const prev = reviewSegments[idx > 0 ? idx - 1 : reviewSegments.length - 1];
@@ -543,10 +569,13 @@ export default function TranscriptPanel({
         return;
       }
 
-      if (key === "a" && canEditTranscript) {
+      if (key === 'a' && canEditTranscript) {
         const seg = reviewSegments.find((s) => s.id === activeSegmentId);
         if (seg) {
-          updateTranscriptSegment(seg.id, { verificationStatus: "verified", verificationReasons: [] });
+          updateTranscriptSegment(seg.id, {
+            verificationStatus: 'verified',
+            verificationReasons: [],
+          });
           const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
           const next = reviewSegments[idx + 1] || reviewSegments[0];
           if (next && next.id !== seg.id) {
@@ -557,12 +586,14 @@ export default function TranscriptPanel({
         return;
       }
 
-      if (key === "s" && canEditTranscript) {
+      if (key === 's' && canEditTranscript) {
         const seg = reviewSegments.find((s) => s.id === activeSegmentId);
         if (seg) {
           updateTranscriptSegment(seg.id, {
-            verificationStatus: "review",
-            verificationReasons: seg.verificationReasons?.length ? seg.verificationReasons : ["oznaczone recznie do ponownego sprawdzenia"],
+            verificationStatus: 'review',
+            verificationReasons: seg.verificationReasons?.length
+              ? seg.verificationReasons
+              : ['oznaczone recznie do ponownego sprawdzenia'],
           });
           const idx = reviewSegments.findIndex((s) => s.id === activeSegmentId);
           const next = reviewSegments[idx + 1] || reviewSegments[0];
@@ -574,7 +605,7 @@ export default function TranscriptPanel({
         return;
       }
 
-      if (key === " ") {
+      if (key === ' ') {
         event.preventDefault();
         const audio = audioRef.current;
         if (audio) {
@@ -584,16 +615,24 @@ export default function TranscriptPanel({
         return;
       }
 
-      if (key === "p") {
-        const seg = reviewSegments.find((s) => s.id === activeSegmentId) || filteredSegments.find((s) => s.id === activeSegmentId);
+      if (key === 'p') {
+        const seg =
+          reviewSegments.find((s) => s.id === activeSegmentId) ||
+          filteredSegments.find((s) => s.id === activeSegmentId);
         if (seg) playFromTimestamp(seg.timestamp);
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSegmentId, canEditTranscript, filteredSegments, reviewSegments, updateTranscriptSegment]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeSegmentId,
+    canEditTranscript,
+    filteredSegments,
+    reviewSegments,
+    updateTranscriptSegment,
+  ]);
 
   function toggleSegmentSelection(segmentId) {
     setSelectedSegmentIds((previous) =>
@@ -616,7 +655,7 @@ export default function TranscriptPanel({
         playPromise.catch(() => undefined);
       }
     } catch (error) {
-      console.error("Audio seek failed.", error);
+      console.error('Audio seek failed.', error);
     }
   }
 
@@ -630,7 +669,7 @@ export default function TranscriptPanel({
   }
 
   function handleMergeSelection() {
-    if (!canMergeSelection || typeof mergeTranscriptSegments !== "function") {
+    if (!canMergeSelection || typeof mergeTranscriptSegments !== 'function') {
       return;
     }
 
@@ -639,7 +678,11 @@ export default function TranscriptPanel({
   }
 
   function handleApplySpeakerRange() {
-    if (!selectedCount || !bulkSpeakerId || typeof assignSpeakerToTranscriptSegments !== "function") {
+    if (
+      !selectedCount ||
+      !bulkSpeakerId ||
+      typeof assignSpeakerToTranscriptSegments !== 'function'
+    ) {
       return;
     }
 
@@ -647,7 +690,11 @@ export default function TranscriptPanel({
   }
 
   function handleApplySpeakerToAudioRange() {
-    if (!rangeSelectedSegments.length || !bulkSpeakerId || typeof assignSpeakerToTranscriptSegments !== "function") {
+    if (
+      !rangeSelectedSegments.length ||
+      !bulkSpeakerId ||
+      typeof assignSpeakerToTranscriptSegments !== 'function'
+    ) {
       return;
     }
 
@@ -657,14 +704,18 @@ export default function TranscriptPanel({
   }
 
   function handleSplitActiveSegment() {
-    if (!activeSegment || typeof splitTranscriptSegment !== "function") {
+    if (!activeSegment || typeof splitTranscriptSegment !== 'function') {
       return;
     }
 
-    const fallbackIndex = Math.floor(String(activeSegment.text || "").length / 2);
+    const fallbackIndex = Math.floor(String(activeSegment.text || '').length / 2);
     const splitIndex =
       splitCursor.segmentId === activeSegment.id
-        ? clamp(Number(splitCursor.start || fallbackIndex), 1, Math.max(String(activeSegment.text || "").length - 1, 1))
+        ? clamp(
+            Number(splitCursor.start || fallbackIndex),
+            1,
+            Math.max(String(activeSegment.text || '').length - 1, 1)
+          )
         : fallbackIndex;
 
     splitTranscriptSegment(activeSegment.id, splitIndex);
@@ -675,7 +726,7 @@ export default function TranscriptPanel({
       <div className="panel-header compact">
         <div>
           <div className="eyebrow">Transcript</div>
-          <h2>{displayRecording ? "Kto co powiedzial" : "Brak nagrania"}</h2>
+          <h2>{displayRecording ? 'Kto co powiedzial' : 'Brak nagrania'}</h2>
         </div>
         {selectedRecording ? (
           <div className="status-cluster">
@@ -698,27 +749,29 @@ export default function TranscriptPanel({
               <button
                 type="button"
                 className="ghost-button"
-                style={{ fontSize: "0.72rem" }}
+                style={{ fontSize: '0.72rem' }}
                 disabled={isNormalizing}
                 onClick={async () => {
                   setIsNormalizing(true);
-                  setNormalizeError("");
+                  setNormalizeError('');
                   try {
                     await onNormalize(selectedRecording.id);
                   } catch (err) {
-                    setNormalizeError(err.message || "Błąd normalizacji.");
+                    setNormalizeError(err.message || 'Błąd normalizacji.');
                   } finally {
                     setIsNormalizing(false);
                   }
                 }}
               >
-                {isNormalizing ? "Koryguję…" : "Korekcja szumu i głośności"}
+                {isNormalizing ? 'Koryguję…' : 'Korekcja szumu i głośności'}
               </button>
             ) : null}
           </div>
         ) : null}
         {normalizeError ? (
-          <div className="inline-alert error" style={{ margin: "4px 0 0" }}>{normalizeError}</div>
+          <div className="inline-alert error" style={{ margin: '4px 0 0' }}>
+            {normalizeError}
+          </div>
         ) : null}
       </div>
 
@@ -743,8 +796,13 @@ export default function TranscriptPanel({
                 <h3>Segmenty po czasie</h3>
               </div>
               <div className="status-cluster">
-                <span className="status-chip">Zakres: {formatDuration(normalizedRangeSelection.start)} - {formatDuration(normalizedRangeSelection.end)}</span>
-                <span className="status-chip">{rangeSelectedSegments.length} segmentow w zakresie</span>
+                <span className="status-chip">
+                  Zakres: {formatDuration(normalizedRangeSelection.start)} -{' '}
+                  {formatDuration(normalizedRangeSelection.end)}
+                </span>
+                <span className="status-chip">
+                  {rangeSelectedSegments.length} segmentow w zakresie
+                </span>
               </div>
             </div>
 
@@ -762,10 +820,10 @@ export default function TranscriptPanel({
                   key={segment.id}
                   className={
                     segment.id === activeSegmentId
-                      ? "timeline-segment active"
-                      : segment.verificationStatus === "review"
-                        ? "timeline-segment review"
-                        : "timeline-segment"
+                      ? 'timeline-segment active'
+                      : segment.verificationStatus === 'review'
+                        ? 'timeline-segment review'
+                        : 'timeline-segment'
                   }
                   style={{
                     left: segment.left,
@@ -838,22 +896,22 @@ export default function TranscriptPanel({
             <div className="review-filter-group">
               <button
                 type="button"
-                className={filterMode === "all" ? "pill active" : "pill"}
-                onClick={() => setFilterMode("all")}
+                className={filterMode === 'all' ? 'pill active' : 'pill'}
+                onClick={() => setFilterMode('all')}
               >
                 Wszystkie
               </button>
               <button
                 type="button"
-                className={filterMode === "review" ? "pill active" : "pill"}
-                onClick={() => setFilterMode("review")}
+                className={filterMode === 'review' ? 'pill active' : 'pill'}
+                onClick={() => setFilterMode('review')}
               >
                 Do review
               </button>
               <button
                 type="button"
-                className={filterMode === "verified" ? "pill active" : "pill"}
-                onClick={() => setFilterMode("verified")}
+                className={filterMode === 'verified' ? 'pill active' : 'pill'}
+                onClick={() => setFilterMode('verified')}
               >
                 Zweryfikowane
               </button>
@@ -862,7 +920,10 @@ export default function TranscriptPanel({
             <div className="transcript-advanced-filters">
               <label>
                 <span>Speaker</span>
-                <select value={speakerFilter} onChange={(event) => setSpeakerFilter(event.target.value)}>
+                <select
+                  value={speakerFilter}
+                  onChange={(event) => setSpeakerFilter(event.target.value)}
+                >
                   <option value="all">Wszyscy</option>
                   {speakerOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -873,10 +934,10 @@ export default function TranscriptPanel({
               </label>
               <button
                 type="button"
-                className={lowConfidenceOnly ? "pill active" : "pill"}
+                className={lowConfidenceOnly ? 'pill active' : 'pill'}
                 onClick={() => setLowConfidenceOnly((previous) => !previous)}
               >
-                confidence {"<"} 60%
+                confidence {'<'} 60%
               </button>
             </div>
           </section>
@@ -886,14 +947,17 @@ export default function TranscriptPanel({
               <strong>{selectedCount} zaznaczonych</strong>
               <span>
                 {canMergeSelection || selectedCount < 2
-                  ? "Mozesz laczyc sasiednie segmenty i zmieniac speakera dla calego zakresu."
-                  : "Laczyc mozna tylko segmenty stojace obok siebie w transkrypcji."}
+                  ? 'Mozesz laczyc sasiednie segmenty i zmieniac speakera dla calego zakresu.'
+                  : 'Laczyc mozna tylko segmenty stojace obok siebie w transkrypcji.'}
               </span>
             </div>
             <div className="transcript-bulk-actions">
               <label>
                 <span>Speaker dla zakresu</span>
-                <select value={bulkSpeakerId} onChange={(event) => setBulkSpeakerId(event.target.value)}>
+                <select
+                  value={bulkSpeakerId}
+                  onChange={(event) => setBulkSpeakerId(event.target.value)}
+                >
                   {speakerOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
@@ -921,7 +985,11 @@ export default function TranscriptPanel({
                 type="button"
                 className="secondary-button"
                 onClick={handleSplitActiveSegment}
-                disabled={!activeSegment || String(activeSegment.text || "").length < 2 || !canEditTranscript}
+                disabled={
+                  !activeSegment ||
+                  String(activeSegment.text || '').length < 2 ||
+                  !canEditTranscript
+                }
               >
                 Podziel aktywny segment
               </button>
@@ -933,7 +1001,12 @@ export default function TranscriptPanel({
               >
                 Odtworz od aktywnego
               </button>
-              <button type="button" className="ghost-button" onClick={() => setSelectedSegmentIds([])} disabled={!selectedCount}>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setSelectedSegmentIds([])}
+                disabled={!selectedCount}
+              >
                 Wyczysc zaznaczenie
               </button>
             </div>
@@ -941,192 +1014,279 @@ export default function TranscriptPanel({
         </>
       ) : null}
 
-
       <div className="ff-transcript-wrapper">
         <div className="ff-sticky-header">
           <div className="ff-tabs">
-            <button className="ff-tab active" type="button">Transcript</button>
+            <button className="ff-tab active" type="button">
+              Transcript
+            </button>
             <button className="ff-tab askfred" type="button">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm-3-9a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 9 11Zm6 0a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 15 11Zm-3 5.5a4.48 4.48 0 0 1-3.64-1.92l1.64-1.16A2.47 2.47 0 0 0 12 14.5a2.47 2.47 0 0 0 2-1.08l1.64 1.16A4.48 4.48 0 0 1 12 16.5Z" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm-3-9a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 9 11Zm6 0a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 15 11Zm-3 5.5a4.48 4.48 0 0 1-3.64-1.92l1.64-1.16A2.47 2.47 0 0 0 12 14.5a2.47 2.47 0 0 0 2-1.08l1.64 1.16A4.48 4.48 0 0 1 12 16.5Z" />
+              </svg>
               AskFred
             </button>
             <div className="ff-header-actions">
               <button type="button" className="icon-button" aria-label="Wyszukaj">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
               </button>
               <button type="button" className="icon-button" aria-label="Edytuj">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  <path d="m15 5 4 4" />
+                </svg>
               </button>
             </div>
           </div>
           <div className="ff-search-bar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
             <input type="text" placeholder="Find or Replace" />
           </div>
         </div>
 
-      <div className="transcript-list">
-        {filteredSegments.length ? (
-          <Virtuoso
-            ref={virtuosoRef}
-            data={filteredSegments}
-            style={{ height: "100%", width: "100%" }}
-            itemContent={(index, segment) => {
-              const isSelected = selectedSegmentIds.includes(segment.id);
-              const isActive = segment.id === activeSegmentId;
+        <div className="transcript-list">
+          {filteredSegments.length ? (
+            <Virtuoso
+              ref={virtuosoRef}
+              data={filteredSegments}
+              style={{ height: '100%', width: '100%' }}
+              itemContent={(index, segment) => {
+                const isSelected = selectedSegmentIds.includes(segment.id);
+                const isActive = segment.id === activeSegmentId;
 
-              return (
-                <div
-                  className={`fireflies-segment ${isActive ? "active" : ""} ${segment.verificationStatus === "review" ? "needs-review" : ""} ${Number(segment.verificationScore || 1) < 0.6 ? "low-confidence" : ""}`}
-                  onClick={() => !isActive && activateSegment(segment)}
-                  style={{ marginBottom: '24px' }} // Maintain gap from CSS
-                >
-                  <div className="fireflies-avatar" style={{ background: getSpeakerColor(segment.speakerId) }}>
-                    {labelSpeaker(displaySpeakerNames, segment.speakerId).substring(0, 1).toUpperCase()}
-                  </div>
-                  
-                  <div className="fireflies-content">
-                    <div className="fireflies-header">
-                      {canEditTranscript ? (
-                        <select
-                          className="fireflies-speaker-select"
-                          value={segment.speakerId}
-                          onChange={(e) => assignSpeakerToTranscriptSegments([segment.id], Number(e.target.value))}
-                          onClick={(e) => e.stopPropagation()}
+                return (
+                  <div
+                    className={`fireflies-segment ${isActive ? 'active' : ''} ${segment.verificationStatus === 'review' ? 'needs-review' : ''} ${Number(segment.verificationScore || 1) < 0.6 ? 'low-confidence' : ''}`}
+                    onClick={() => !isActive && activateSegment(segment)}
+                    style={{ marginBottom: '24px' }} // Maintain gap from CSS
+                  >
+                    <div
+                      className="fireflies-avatar"
+                      style={{ background: getSpeakerColor(segment.speakerId) }}
+                    >
+                      {labelSpeaker(displaySpeakerNames, segment.speakerId)
+                        .substring(0, 1)
+                        .toUpperCase()}
+                    </div>
+
+                    <div className="fireflies-content">
+                      <div className="fireflies-header">
+                        {canEditTranscript ? (
+                          <select
+                            className="fireflies-speaker-select"
+                            value={segment.speakerId}
+                            onChange={(e) =>
+                              assignSpeakerToTranscriptSegments(
+                                [segment.id],
+                                Number(e.target.value)
+                              )
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {speakerOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <strong className="fireflies-speaker">
+                            {labelSpeaker(displaySpeakerNames, segment.speakerId)}
+                          </strong>
+                        )}
+
+                        {Number(segment.verificationScore || 1) < 0.6 && (
+                          <span
+                            className="task-flag low-confidence"
+                            title={`Niska pewność transkrypcji (${Math.round(Number(segment.verificationScore || 0) * 100)}%)`}
+                            style={{
+                              padding: '2px 6px',
+                              fontSize: '0.7rem',
+                              borderRadius: '4px',
+                              marginLeft: '6px',
+                            }}
+                          >
+                            ⚠️ {(Number(segment.verificationScore || 0) * 100).toFixed(0)}%
+                          </span>
+                        )}
+
+                        <svg
+                          className="fireflies-chevron"
+                          style={{ marginLeft: '8px' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
                         >
-                          {speakerOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <strong className="fireflies-speaker">
-                          {labelSpeaker(displaySpeakerNames, segment.speakerId)}
-                        </strong>
-                      )}
-                      
-                      {Number(segment.verificationScore || 1) < 0.6 && (
-                        <span className="task-flag low-confidence" title={`Niska pewność transkrypcji (${Math.round(Number(segment.verificationScore || 0) * 100)}%)`} style={{ padding: "2px 6px", fontSize: "0.7rem", borderRadius: "4px", marginLeft: "6px" }}>
-                          ⚠️ {(Number(segment.verificationScore || 0) * 100).toFixed(0)}%
-                        </span>
-                      )}
-                      
-                      <svg className="fireflies-chevron" style={{ marginLeft: "8px" }} xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-                      <span className="fireflies-dot">·</span>
-                      <button
-                        type="button"
-                        className="fireflies-time"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          playFromTimestamp(segment.timestamp);
-                        }}
-                        disabled={!selectedRecordingAudioUrl}
-                        title="Odtwórz od tego momentu"
-                      >
-                        {formatDuration(segment.timestamp)}
-                      </button>
-                      {segment.verificationStatus === "review" && (
-                        <span className="task-flag review" style={{ padding: "2px 6px", fontSize: "0.7rem", borderRadius: "4px" }}>
-                          Do weryfikacji
-                        </span>
-                      )}
-                      <label className="fireflies-select" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSegmentSelection(segment.id)}
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                        <span className="fireflies-dot">·</span>
+                        <button
+                          type="button"
+                          className="fireflies-time"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playFromTimestamp(segment.timestamp);
+                          }}
+                          disabled={!selectedRecordingAudioUrl}
+                          title="Odtwórz od tego momentu"
+                        >
+                          {formatDuration(segment.timestamp)}
+                        </button>
+                        {segment.verificationStatus === 'review' && (
+                          <span
+                            className="task-flag review"
+                            style={{ padding: '2px 6px', fontSize: '0.7rem', borderRadius: '4px' }}
+                          >
+                            Do weryfikacji
+                          </span>
+                        )}
+                        <label className="fireflies-select" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSegmentSelection(segment.id)}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="fireflies-text-area">
+                        <textarea
+                          rows={2}
+                          value={segment.text}
+                          onFocus={() => setActiveSegmentId(segment.id)}
+                          onSelect={(event) =>
+                            setSplitCursor({
+                              segmentId: segment.id,
+                              start: event.currentTarget.selectionStart || 0,
+                            })
+                          }
+                          onChange={(event) =>
+                            updateTranscriptSegment(segment.id, { text: event.target.value })
+                          }
+                          disabled={!canEditTranscript}
+                          className="fireflies-textarea"
                         />
-                      </label>
-                    </div>
+                      </div>
 
-                    <div className="fireflies-text-area">
-                      <textarea
-                        rows={2}
+                      {segment.verificationReasons?.length > 0 && (
+                        <div className="microcopy">
+                          Powód: {segment.verificationReasons.join(', ')}
+                        </div>
+                      )}
+                      {segment.verificationEvidence?.comparisonText && (
+                        <div className="microcopy">
+                          Weryfikacja: {segment.verificationEvidence.comparisonText}
+                        </div>
+                      )}
 
-                        value={segment.text}
-                        onFocus={() => setActiveSegmentId(segment.id)}
-                        onSelect={(event) =>
-                          setSplitCursor({
-                            segmentId: segment.id,
-                            start: event.currentTarget.selectionStart || 0,
-                          })
-                        }
-                        onChange={(event) => updateTranscriptSegment(segment.id, { text: event.target.value })}
-                        disabled={!canEditTranscript}
-                        className="fireflies-textarea"
-                      />
-                    </div>
-
-                    {segment.verificationReasons?.length > 0 && (
-                      <div className="microcopy">Powód: {segment.verificationReasons.join(", ")}</div>
-                    )}
-                    {segment.verificationEvidence?.comparisonText && (
-                      <div className="microcopy">Weryfikacja: {segment.verificationEvidence.comparisonText}</div>
-                    )}
-
-                    <div className="fireflies-actions">
-                      <button
-                        type="button"
-                        className="ghost-button small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateTranscriptSegment(segment.id, {
-                            verificationStatus: "verified",
-                            verificationReasons: [],
-                          });
-                        }}
-                        disabled={!canEditTranscript}
-                      >
-                        Zatwierdź
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateTranscriptSegment(segment.id, {
-                            verificationStatus: "review",
-                            verificationReasons: segment.verificationReasons?.length
-                              ? segment.verificationReasons
-                              : ["oznaczone ręcznie do ponownego sprawdzenia"],
-                          });
-                        }}
-                        disabled={!canEditTranscript}
-                      >
-                        Oznacz do sprawdzenia
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          playFromTimestamp(segment.timestamp);
-                        }}
-                        disabled={!selectedRecordingAudioUrl}
-                      >
-                        Odtwórz od {formatDuration(segment.timestamp)}
-                      </button>
+                      <div className="fireflies-actions">
+                        <button
+                          type="button"
+                          className="ghost-button small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTranscriptSegment(segment.id, {
+                              verificationStatus: 'verified',
+                              verificationReasons: [],
+                            });
+                          }}
+                          disabled={!canEditTranscript}
+                        >
+                          Zatwierdź
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost-button small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTranscriptSegment(segment.id, {
+                              verificationStatus: 'review',
+                              verificationReasons: segment.verificationReasons?.length
+                                ? segment.verificationReasons
+                                : ['oznaczone ręcznie do ponownego sprawdzenia'],
+                            });
+                          }}
+                          disabled={!canEditTranscript}
+                        >
+                          Oznacz do sprawdzenia
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost-button small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playFromTimestamp(segment.timestamp);
+                          }}
+                          disabled={!selectedRecordingAudioUrl}
+                        >
+                          Odtwórz od {formatDuration(segment.timestamp)}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            }}
-          />
-        ) : (
-          <div className="empty-panel large">
-            <strong>Brak transkrypcji</strong>
-            <span>
-              {selectedRecording?.transcriptOutcome === "empty"
-                ? "Nie wykryto wypowiedzi w tym nagraniu."
-                : selectedRecording?.pipelineStatus === "failed"
-                  ? "Transkrypcja nie powiodla sie dla tego nagrania."
-                  : "Uruchom nagrywanie, aby przypiac pierwsza rozmowe."}
-            </span>
-          </div>
-        )}
-      </div>
-
+                );
+              }}
+            />
+          ) : (
+            <div className="empty-panel large">
+              <strong>Brak transkrypcji</strong>
+              <span>
+                {selectedRecording?.transcriptOutcome === 'empty'
+                  ? 'Nie wykryto wypowiedzi w tym nagraniu.'
+                  : selectedRecording?.pipelineStatus === 'failed'
+                    ? 'Transkrypcja nie powiodla sie dla tego nagrania.'
+                    : 'Uruchom nagrywanie, aby przypiac pierwsza rozmowe.'}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

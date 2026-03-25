@@ -1,16 +1,18 @@
-import { createId } from "./storage";
+import { createId } from './storage';
 
 function cleanText(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function toIsoOrEmpty(value) {
   if (!value) {
-    return "";
+    return '';
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
 
 function toTimestamp(value) {
@@ -33,7 +35,7 @@ export function buildGoogleTaskSnapshot(taskLike) {
     title: cleanText(taskLike?.title),
     dueDate: toIsoOrEmpty(taskLike?.dueDate || taskLike?.due),
     notes: cleanText(taskLike?.notes || taskLike?.description),
-    completed: Boolean(taskLike?.completed || taskLike?.status === "completed"),
+    completed: Boolean(taskLike?.completed || taskLike?.status === 'completed'),
   };
 }
 
@@ -50,15 +52,23 @@ export function detectGoogleTaskConflict(existingTask, importedTask) {
   const localSnapshot = buildGoogleTaskSnapshot(existingTask);
   const remoteSnapshot = buildGoogleTaskSnapshot(importedTask);
   const lastSyncedAt =
-    existingTask?.googleSyncedAt || existingTask?.googlePulledAt || existingTask?.createdAt || importedTask?.createdAt || "";
-  const localUpdatedAt = existingTask?.googleLocalUpdatedAt || existingTask?.updatedAt || existingTask?.createdAt || "";
-  const remoteUpdatedAt = importedTask?.googleUpdatedAt || importedTask?.updatedAt || importedTask?.createdAt || "";
+    existingTask?.googleSyncedAt ||
+    existingTask?.googlePulledAt ||
+    existingTask?.createdAt ||
+    importedTask?.createdAt ||
+    '';
+  const localUpdatedAt =
+    existingTask?.googleLocalUpdatedAt || existingTask?.updatedAt || existingTask?.createdAt || '';
+  const remoteUpdatedAt =
+    importedTask?.googleUpdatedAt || importedTask?.updatedAt || importedTask?.createdAt || '';
   const localChanged =
-    existingTask?.googleSyncStatus === "local_changes" || toTimestamp(localUpdatedAt) > toTimestamp(lastSyncedAt);
+    existingTask?.googleSyncStatus === 'local_changes' ||
+    toTimestamp(localUpdatedAt) > toTimestamp(lastSyncedAt);
   const remoteChanged = toTimestamp(remoteUpdatedAt) > toTimestamp(lastSyncedAt);
 
   return {
-    hasConflict: localChanged && remoteChanged && !areGoogleTaskSnapshotsEqual(localSnapshot, remoteSnapshot),
+    hasConflict:
+      localChanged && remoteChanged && !areGoogleTaskSnapshotsEqual(localSnapshot, remoteSnapshot),
     localSnapshot,
     remoteSnapshot,
     localUpdatedAt,
@@ -74,8 +84,8 @@ export function createGoogleTaskConflictState(existingTask, importedTask) {
   }
 
   return {
-    id: createId("google_task_conflict"),
-    entityType: "task",
+    id: createId('google_task_conflict'),
+    entityType: 'task',
     detectedAt: new Date().toISOString(),
     localSnapshot: conflict.localSnapshot,
     remoteSnapshot: conflict.remoteSnapshot,
@@ -83,25 +93,26 @@ export function createGoogleTaskConflictState(existingTask, importedTask) {
     localUpdatedAt: conflict.localUpdatedAt,
     remoteUpdatedAt: conflict.remoteUpdatedAt,
     lastSyncedAt: conflict.lastSyncedAt,
-    sourceLabel: importedTask?.sourceMeetingTitle || existingTask?.sourceMeetingTitle || "Google Tasks",
+    sourceLabel:
+      importedTask?.sourceMeetingTitle || existingTask?.sourceMeetingTitle || 'Google Tasks',
   };
 }
 
 export function buildCalendarSyncSnapshot(source, options = {}) {
-  const type = options.type || source?.type || "meeting";
-  if (type === "task") {
+  const type = options.type || source?.type || 'meeting';
+  if (type === 'task') {
     const taskStartsAt = toIsoOrEmpty(source?.startsAt || source?.dueDate);
     const taskEndsAt = source?.endsAt
       ? toIsoOrEmpty(source.endsAt)
       : taskStartsAt
         ? new Date(new Date(taskStartsAt).getTime() + 3600000).toISOString()
-        : "";
+        : '';
     return {
       title: cleanText(source?.title),
       startsAt: taskStartsAt,
       endsAt: taskEndsAt,
       durationMinutes: Number(source?.durationMinutes) || 60,
-      location: "",
+      location: '',
     };
   }
 
@@ -121,7 +132,7 @@ export function buildCalendarSyncSnapshot(source, options = {}) {
       computeDurationMinutes(
         source?.startsAt || source?.start?.dateTime || source?.start?.date,
         source?.endsAt || source?.end?.dateTime || source?.end?.date,
-        type === "task" ? 15 : 30
+        type === 'task' ? 15 : 30
       ),
     location: cleanText(source?.location),
   };
@@ -137,12 +148,21 @@ export function areCalendarSyncSnapshotsEqual(left, right) {
   );
 }
 
-export function detectGoogleCalendarConflict({ localSnapshot, remoteSnapshot, localUpdatedAt, remoteUpdatedAt, lastSyncedAt }) {
+export function detectGoogleCalendarConflict({
+  localSnapshot,
+  remoteSnapshot,
+  localUpdatedAt,
+  remoteUpdatedAt,
+  lastSyncedAt,
+}) {
   const localChanged = toTimestamp(localUpdatedAt) > toTimestamp(lastSyncedAt);
   const remoteChanged = toTimestamp(remoteUpdatedAt) > toTimestamp(lastSyncedAt);
 
   return {
-    hasConflict: localChanged && remoteChanged && !areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot),
+    hasConflict:
+      localChanged &&
+      remoteChanged &&
+      !areCalendarSyncSnapshotsEqual(localSnapshot, remoteSnapshot),
     localChanged,
     remoteChanged,
   };
@@ -169,7 +189,7 @@ export function createGoogleCalendarConflictState({
   }
 
   return {
-    id: createId("google_calendar_conflict"),
+    id: createId('google_calendar_conflict'),
     entityType: entryType,
     detectedAt: new Date().toISOString(),
     localSnapshot,

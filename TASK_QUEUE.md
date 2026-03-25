@@ -56,9 +56,6 @@ Kolejnosc prac:
 - `408` [P1] `todo` - Fix failing CI after `e4d7ce37`: E2E Smoke Tests, Server Tests, Frontend Tests, Security Audit, Validate Workflow Guards, Build, Lint, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: E2E Smoke Tests, Server Tests, Frontend Tests, Security Audit, Validate Workflow Guards, Build, Lint, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23558316143).
-- `201` [P1] `todo` - testy `ai/routes.ts`
-  - Cel: podniesc coverage AI routes z 26% do 80%+.
-  - Zakres: `/ai/analyze`, `/ai/suggest-tasks`, `/ai/search`, fallbacki i timeouty.
 - `208` [P1] `todo` - coverage `ProfileTab.tsx`
   - Cel: podniesc coverage `ProfileTab.tsx` z 2% do 60%.
   - Zakres: render, interakcje, walidacja formularza, integracja z authStore.

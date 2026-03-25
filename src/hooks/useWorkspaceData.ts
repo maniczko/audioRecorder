@@ -1,33 +1,37 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createStateService } from "../services/stateService";
-import { probeRemoteApiHealth, setPreviewRuntimeStatus } from "../services/httpClient";
-import { migrateWorkspaceData } from "../lib/workspace";
-import { useWorkspaceStore, useWorkspaceSelectors } from "../store/workspaceStore";
-import { useMeetingsStore } from "../store/meetingsStore";
-import { isHostedPreviewHost } from "../runtime/browserRuntime";
-import { buildWorkspaceStateDelta, normalizeWorkspaceState, serializeWorkspaceState } from "../shared/contracts";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createStateService } from '../services/stateService';
+import { probeRemoteApiHealth, setPreviewRuntimeStatus } from '../services/httpClient';
+import { migrateWorkspaceData } from '../lib/workspace';
+import { useWorkspaceStore, useWorkspaceSelectors } from '../store/workspaceStore';
+import { useMeetingsStore } from '../store/meetingsStore';
+import { isHostedPreviewHost } from '../runtime/browserRuntime';
+import {
+  buildWorkspaceStateDelta,
+  normalizeWorkspaceState,
+  serializeWorkspaceState,
+} from '../shared/contracts';
 
 const REMOTE_PULL_COOLDOWN_MS = 25000;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
-  "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
+  'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.';
 const HOSTED_PREVIEW_STALE_MESSAGE =
-  "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.";
+  'Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.';
 
-function isBackendUnavailableMessage(message = "") {
-  const normalized = String(message || "").toLowerCase();
+function isBackendUnavailableMessage(message = '') {
+  const normalized = String(message || '').toLowerCase();
   return (
-    normalized.includes("nieaktualny wzgledem backendu") ||
-    normalized.includes("backend jest chwilowo niedostepny") ||
-    normalized.includes("application failed to respond") ||
-    normalized.includes("router_external_target_connection_error") ||
-    normalized.includes("bad gateway") ||
-    normalized.includes("target connection error") ||
-    normalized.includes("upstream") ||
-    normalized.includes("failed to fetch") ||
-    normalized.includes("networkerror") ||
-    normalized.includes("load failed") ||
-    normalized.includes("http 502")
+    normalized.includes('nieaktualny wzgledem backendu') ||
+    normalized.includes('backend jest chwilowo niedostepny') ||
+    normalized.includes('application failed to respond') ||
+    normalized.includes('router_external_target_connection_error') ||
+    normalized.includes('bad gateway') ||
+    normalized.includes('target connection error') ||
+    normalized.includes('upstream') ||
+    normalized.includes('failed to fetch') ||
+    normalized.includes('networkerror') ||
+    normalized.includes('load failed') ||
+    normalized.includes('http 502')
   );
 }
 
@@ -53,17 +57,17 @@ export default function useWorkspaceData() {
   const stateService = useMemo(() => createStateService(), []);
   const syncTimerRef = useRef<number | null>(null);
   const remotePollTimerRef = useRef<number | null>(null);
-  const hydratedWorkspaceIdRef = useRef("");
-  const remoteSnapshotRef = useRef("");
+  const hydratedWorkspaceIdRef = useRef('');
+  const remoteSnapshotRef = useRef('');
   const remoteStateRef = useRef(normalizeWorkspaceState());
   const remotePullCooldownUntilRef = useRef(0);
-  const lastWorkspaceMessageRef = useRef("");
-  const lastLoggedRemoteErrorRef = useRef("");
+  const lastWorkspaceMessageRef = useRef('');
+  const lastLoggedRemoteErrorRef = useRef('');
   const isProbingRef = useRef(false);
   const isBootstrappingRef = useRef(false);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
-    stateService?.mode === "remote" && Boolean(session?.token)
+    stateService?.mode === 'remote' && Boolean(session?.token)
   );
 
   const applyRemoteWorkspaceState = useCallback(
@@ -92,10 +96,10 @@ export default function useWorkspaceData() {
       remoteStateRef.current = normalizedState;
       remoteSnapshotRef.current = nextSnapshot;
       remotePullCooldownUntilRef.current = 0;
-      lastWorkspaceMessageRef.current = "";
-      lastLoggedRemoteErrorRef.current = "";
+      lastWorkspaceMessageRef.current = '';
+      lastLoggedRemoteErrorRef.current = '';
 
-      hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || "";
+      hydratedWorkspaceIdRef.current = result.workspaceId || session?.workspaceId || '';
       if (result.workspaceId && result.workspaceId !== session?.workspaceId) {
         setSession((previous: any) =>
           previous
@@ -107,12 +111,23 @@ export default function useWorkspaceData() {
         );
       }
     },
-    [session?.workspaceId, setCalendarMeta, setManualTasks, setMeetings, setSession, setTaskBoards, setTaskState, setUsers, setWorkspaces, setVocabulary]
+    [
+      session?.workspaceId,
+      setCalendarMeta,
+      setManualTasks,
+      setMeetings,
+      setSession,
+      setTaskBoards,
+      setTaskState,
+      setUsers,
+      setWorkspaces,
+      setVocabulary,
+    ]
   );
 
   const pushWorkspaceMessage = useCallback(
     (message: string) => {
-      const normalizedMessage = String(message || "").trim();
+      const normalizedMessage = String(message || '').trim();
       if (!normalizedMessage || normalizedMessage === lastWorkspaceMessageRef.current) {
         return;
       }
@@ -123,7 +138,7 @@ export default function useWorkspaceData() {
   );
 
   const logRemoteErrorOnce = useCallback((scope: string, error: any) => {
-    const message = String(error?.message || "Unknown remote error");
+    const message = String(error?.message || 'Unknown remote error');
     const key = `${scope}:${message}`;
     if (key === lastLoggedRemoteErrorRef.current) {
       return;
@@ -133,14 +148,14 @@ export default function useWorkspaceData() {
   }, []);
 
   const applyRemoteTransportCooldown = useCallback((error: any) => {
-    if (!isBackendUnavailableMessage(error?.message || "")) {
+    if (!isBackendUnavailableMessage(error?.message || '')) {
       return;
     }
     remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
   }, []);
 
   const ensureHostedPreviewConnectivity = useCallback(async () => {
-    if (typeof window === "undefined" || !isHostedPreviewHost(window.location.hostname)) {
+    if (typeof window === 'undefined' || !isHostedPreviewHost(window.location.hostname)) {
       return true;
     }
 
@@ -157,9 +172,9 @@ export default function useWorkspaceData() {
     } catch (error) {
       isProbingRef.current = false;
       remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
-      logRemoteErrorOnce("Hosted preview health probe failed.", error);
+      logRemoteErrorOnce('Hosted preview health probe failed.', error);
       pushWorkspaceMessage(
-        String(error?.message || "").includes("nieaktualny wzgledem backendu")
+        String(error?.message || '').includes('nieaktualny wzgledem backendu')
           ? HOSTED_PREVIEW_STALE_MESSAGE
           : HOSTED_PREVIEW_RUNTIME_MESSAGE
       );
@@ -191,16 +206,16 @@ export default function useWorkspaceData() {
   }, [users, workspaces, meetings, manualTasks, taskBoards, session]);
 
   useEffect(() => {
-    if (stateService?.mode !== "remote") {
-      setPreviewRuntimeStatus("unknown");
-      hydratedWorkspaceIdRef.current = currentWorkspaceId || "";
+    if (stateService?.mode !== 'remote') {
+      setPreviewRuntimeStatus('unknown');
+      hydratedWorkspaceIdRef.current = currentWorkspaceId || '';
       setIsHydratingRemoteState(false);
       return undefined;
     }
 
     if (!session?.token || !session?.userId) {
-      setPreviewRuntimeStatus("unknown");
-      hydratedWorkspaceIdRef.current = "";
+      setPreviewRuntimeStatus('unknown');
+      hydratedWorkspaceIdRef.current = '';
       setIsHydratingRemoteState(false);
       return undefined;
     }
@@ -236,8 +251,10 @@ export default function useWorkspaceData() {
             return;
           }
           applyRemoteTransportCooldown(error);
-          logRemoteErrorOnce("Remote workspace bootstrap failed.", error);
-          pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
+          logRemoteErrorOnce('Remote workspace bootstrap failed.', error);
+          pushWorkspaceMessage(
+            error?.message || 'Nie udalo sie pobrac danych workspace z backendu.'
+          );
         })
         .finally(() => {
           isBootstrappingRef.current = false;
@@ -250,10 +267,21 @@ export default function useWorkspaceData() {
     return () => {
       cancelled = true;
     };
-  }, [currentWorkspaceId, applyRemoteTransportCooldown, applyRemoteWorkspaceState, ensureHostedPreviewConnectivity, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, session?.userId, session?.workspaceId, stateService]);
+  }, [
+    currentWorkspaceId,
+    applyRemoteTransportCooldown,
+    applyRemoteWorkspaceState,
+    ensureHostedPreviewConnectivity,
+    logRemoteErrorOnce,
+    pushWorkspaceMessage,
+    session?.token,
+    session?.userId,
+    session?.workspaceId,
+    stateService,
+  ]);
 
   useEffect(() => {
-    if (stateService?.mode !== "remote") {
+    if (stateService?.mode !== 'remote') {
       return undefined;
     }
 
@@ -295,8 +323,8 @@ export default function useWorkspaceData() {
         })
         .catch((error: any) => {
           applyRemoteTransportCooldown(error);
-          logRemoteErrorOnce("Remote workspace sync failed.", error);
-          pushWorkspaceMessage(error?.message || "Nie udalo sie zapisac workspace na backendzie.");
+          logRemoteErrorOnce('Remote workspace sync failed.', error);
+          pushWorkspaceMessage(error?.message || 'Nie udalo sie zapisac workspace na backendzie.');
         });
     }, 350);
 
@@ -305,10 +333,24 @@ export default function useWorkspaceData() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [applyRemoteTransportCooldown, calendarMeta, vocabulary, currentWorkspaceId, isHydratingRemoteState, logRemoteErrorOnce, manualTasks, meetings, pushWorkspaceMessage, session?.token, stateService, taskBoards, taskState]);
+  }, [
+    applyRemoteTransportCooldown,
+    calendarMeta,
+    vocabulary,
+    currentWorkspaceId,
+    isHydratingRemoteState,
+    logRemoteErrorOnce,
+    manualTasks,
+    meetings,
+    pushWorkspaceMessage,
+    session?.token,
+    stateService,
+    taskBoards,
+    taskState,
+  ]);
 
   useEffect(() => {
-    if (stateService?.mode !== "remote") {
+    if (stateService?.mode !== 'remote') {
       return undefined;
     }
 
@@ -349,8 +391,10 @@ export default function useWorkspaceData() {
           })
           .catch((error) => {
             applyRemoteTransportCooldown(error);
-            logRemoteErrorOnce("Remote workspace pull failed.", error);
-            pushWorkspaceMessage(error?.message || "Nie udalo sie pobrac danych workspace z backendu.");
+            logRemoteErrorOnce('Remote workspace pull failed.', error);
+            pushWorkspaceMessage(
+              error?.message || 'Nie udalo sie pobrac danych workspace z backendu.'
+            );
           })
           .finally(() => {
             isBootstrappingRef.current = false;
@@ -359,7 +403,7 @@ export default function useWorkspaceData() {
     };
 
     remotePollTimerRef.current = window.setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         return;
       }
       pullRemoteWorkspaceState();
@@ -368,14 +412,27 @@ export default function useWorkspaceData() {
     return () => {
       window.clearInterval(remotePollTimerRef.current);
     };
-  }, [applyRemoteTransportCooldown, applyRemoteWorkspaceState, currentWorkspaceId, ensureHostedPreviewConnectivity, isHydratingRemoteState, logRemoteErrorOnce, pushWorkspaceMessage, session?.token, stateService]);
+  }, [
+    applyRemoteTransportCooldown,
+    applyRemoteWorkspaceState,
+    currentWorkspaceId,
+    ensureHostedPreviewConnectivity,
+    isHydratingRemoteState,
+    logRemoteErrorOnce,
+    pushWorkspaceMessage,
+    session?.token,
+    stateService,
+  ]);
 
   const userMeetings = useMemo(
     () =>
       currentWorkspaceId
         ? [...meetings]
             .filter((meeting) => meeting.workspaceId === currentWorkspaceId)
-            .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+            .sort(
+              (left, right) =>
+                new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+            )
         : [],
     [currentWorkspaceId, meetings]
   );

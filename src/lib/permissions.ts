@@ -1,13 +1,13 @@
-export const WORKSPACE_ROLES = ["owner", "admin", "member", "viewer"];
+export const WORKSPACE_ROLES = ['owner', 'admin', 'member', 'viewer'];
 
 export function normalizeWorkspaceRole(role) {
-  return WORKSPACE_ROLES.includes(String(role || "")) ? role : "member";
+  return WORKSPACE_ROLES.includes(String(role || '')) ? role : 'member';
 }
 
 export function getWorkspacePermissions(role) {
   const normalizedRole = normalizeWorkspaceRole(role);
 
-  if (normalizedRole === "owner") {
+  if (normalizedRole === 'owner') {
     return {
       role: normalizedRole,
       canEditWorkspace: true,
@@ -18,7 +18,7 @@ export function getWorkspacePermissions(role) {
     };
   }
 
-  if (normalizedRole === "admin") {
+  if (normalizedRole === 'admin') {
     return {
       role: normalizedRole,
       canEditWorkspace: true,
@@ -29,7 +29,7 @@ export function getWorkspacePermissions(role) {
     };
   }
 
-  if (normalizedRole === "viewer") {
+  if (normalizedRole === 'viewer') {
     return {
       role: normalizedRole,
       canEditWorkspace: false,

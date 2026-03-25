@@ -323,6 +323,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             addMeetingComment={meetings.addMeetingComment}
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
             defaultToNewStudio={ui.tabHistory.length === 1}
+            tagOptions={meetings.taskTags}
           />
         );
     }

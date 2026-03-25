@@ -1,6 +1,6 @@
-import { apiRequest } from "./httpClient";
-import { APP_DATA_PROVIDER } from "./config";
-import { normalizeWorkspaceRole } from "../lib/permissions";
+import { apiRequest } from './httpClient';
+import { APP_DATA_PROVIDER } from './config';
+import { normalizeWorkspaceRole } from '../lib/permissions';
 
 function updateWorkspaceRoleLocally(workspaces, workspaceId, targetUserId, memberRole) {
   const nextRole = normalizeWorkspaceRole(memberRole);
@@ -20,7 +20,7 @@ function updateWorkspaceRoleLocally(workspaces, workspaceId, targetUserId, membe
 
 function createLocalWorkspaceService() {
   return {
-    mode: "local",
+    mode: 'local',
     updateMemberRole({ workspaces, workspaceId, targetUserId, memberRole }) {
       return Promise.resolve({
         workspaces: updateWorkspaceRoleLocally(workspaces, workspaceId, targetUserId, memberRole),
@@ -36,14 +36,17 @@ function createLocalWorkspaceService() {
 
 function createRemoteWorkspaceService() {
   return {
-    mode: "remote",
+    mode: 'remote',
     async updateMemberRole({ workspaceId, targetUserId, memberRole }) {
-      const membership = await apiRequest(`/workspaces/${workspaceId}/members/${targetUserId}/role`, {
-        method: "PUT",
-        body: {
-          memberRole: normalizeWorkspaceRole(memberRole),
-        },
-      });
+      const membership = await apiRequest(
+        `/workspaces/${workspaceId}/members/${targetUserId}/role`,
+        {
+          method: 'PUT',
+          body: {
+            memberRole: normalizeWorkspaceRole(memberRole),
+          },
+        }
+      );
 
       return { membership };
     },
@@ -51,5 +54,7 @@ function createRemoteWorkspaceService() {
 }
 
 export function createWorkspaceService() {
-  return APP_DATA_PROVIDER === "remote" ? createRemoteWorkspaceService() : createLocalWorkspaceService();
+  return APP_DATA_PROVIDER === 'remote'
+    ? createRemoteWorkspaceService()
+    : createLocalWorkspaceService();
 }

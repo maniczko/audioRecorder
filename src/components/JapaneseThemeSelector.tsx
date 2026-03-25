@@ -109,9 +109,7 @@ export const JapaneseThemeSelector: React.FC<JapaneseThemeSelectorProps> = ({
 
           {/* Preview Elements */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ color: colors.text, marginBottom: '16px' }}>
-              Przykładowe Elementy
-            </h3>
+            <h3 style={{ color: colors.text, marginBottom: '16px' }}>Przykładowe Elementy</h3>
 
             {/* Buttons */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
@@ -132,9 +130,7 @@ export const JapaneseThemeSelector: React.FC<JapaneseThemeSelectorProps> = ({
               >
                 Przycisk Drugorzędny
               </button>
-              <button className="jp-button jp-button-ghost">
-                Przycisk Ghost
-              </button>
+              <button className="jp-button jp-button-ghost">Przycisk Ghost</button>
             </div>
 
             {/* Form */}
@@ -198,9 +194,7 @@ export const JapaneseThemeSelector: React.FC<JapaneseThemeSelectorProps> = ({
 
           {/* Color Palette */}
           <div>
-            <h3 style={{ color: colors.text, marginBottom: '16px' }}>
-              Paleta Kolorów
-            </h3>
+            <h3 style={{ color: colors.text, marginBottom: '16px' }}>Paleta Kolorów</h3>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {Object.entries(colors).map(([name, value]) => (
                 <div key={name} style={{ textAlign: 'center' }}>
@@ -231,7 +225,7 @@ export const JapaneseThemeSelector: React.FC<JapaneseThemeSelectorProps> = ({
             <div className="jp-section-icon">✓</div>
             <h2 className="jp-section-title">Aktualny Wybór</h2>
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div
               style={{
@@ -253,17 +247,13 @@ export const JapaneseThemeSelector: React.FC<JapaneseThemeSelectorProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '32px' }}>
-          <button
-            className="jp-button jp-button-ghost"
-            onClick={() => setPreviewTheme(null)}
-          >
+        <div
+          style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '32px' }}
+        >
+          <button className="jp-button jp-button-ghost" onClick={() => setPreviewTheme(null)}>
             Anuluj
           </button>
-          <button
-            className="jp-button jp-button-secondary"
-            onClick={handleReset}
-          >
+          <button className="jp-button jp-button-secondary" onClick={handleReset}>
             Resetuj Podgląd
           </button>
           <button

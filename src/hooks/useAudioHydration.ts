@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 function revokeAudioUrl(url) {
-  if (url && typeof URL !== "undefined" && URL.revokeObjectURL) {
+  if (url && typeof URL !== 'undefined' && URL.revokeObjectURL) {
     URL.revokeObjectURL(url);
   }
 }
@@ -21,59 +21,71 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     audioHydrationStatusRef.current = audioHydrationStatusByRecordingId;
   }, [audioHydrationStatusByRecordingId]);
 
-  const hydrateRecordingAudio = useCallback(async (recordingId, options = {}) => {
-    if (!recordingId || !mediaService?.getRecordingAudioBlob) return null;
-    const force = Boolean(options.force);
-    if (!force && audioUrlsRef.current[recordingId]) {
-      return audioUrlsRef.current[recordingId];
-    }
-    const currentStatus = audioHydrationStatusRef.current[recordingId];
-    if (!force && (currentStatus === "loading" || currentStatus === "error")) {
-      return null;
-    }
-
-    // Update ref synchronously to prevent duplicate requests before React re-renders
-    audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "loading" };
-    setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "loading" }));
-    setAudioHydrationErrors((prev) => {
-      if (!prev[recordingId]) return prev;
-      const next = { ...prev };
-      delete next[recordingId];
-      return next;
-    });
-
-    try {
-      const blob = await mediaService.getRecordingAudioBlob(recordingId);
-      if (!blob || typeof URL === "undefined" || !URL.createObjectURL) {
-        throw new Error("Audio blob jest niedostepny.");
+  const hydrateRecordingAudio = useCallback(
+    async (recordingId, options = {}) => {
+      if (!recordingId || !mediaService?.getRecordingAudioBlob) return null;
+      const force = Boolean(options.force);
+      if (!force && audioUrlsRef.current[recordingId]) {
+        return audioUrlsRef.current[recordingId];
+      }
+      const currentStatus = audioHydrationStatusRef.current[recordingId];
+      if (!force && (currentStatus === 'loading' || currentStatus === 'error')) {
+        return null;
       }
 
-      const nextUrl = URL.createObjectURL(blob);
-      audioUrlsRef.current = { ...audioUrlsRef.current, [recordingId]: nextUrl };
-      setAudioUrls((prev) => {
-        const existing = prev[recordingId];
-        if (existing) {
-          revokeAudioUrl(existing);
-        }
-        return { ...prev, [recordingId]: nextUrl };
+      // Update ref synchronously to prevent duplicate requests before React re-renders
+      audioHydrationStatusRef.current = {
+        ...audioHydrationStatusRef.current,
+        [recordingId]: 'loading',
+      };
+      setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: 'loading' }));
+      setAudioHydrationErrors((prev) => {
+        if (!prev[recordingId]) return prev;
+        const next = { ...prev };
+        delete next[recordingId];
+        return next;
       });
-      audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "ready" };
-      setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "ready" }));
-      return nextUrl;
-    } catch (error) {
-      const is404 = (error as any)?.status === 404;
-      if (!is404) {
-        console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
+
+      try {
+        const blob = await mediaService.getRecordingAudioBlob(recordingId);
+        if (!blob || typeof URL === 'undefined' || !URL.createObjectURL) {
+          throw new Error('Audio blob jest niedostepny.');
+        }
+
+        const nextUrl = URL.createObjectURL(blob);
+        audioUrlsRef.current = { ...audioUrlsRef.current, [recordingId]: nextUrl };
+        setAudioUrls((prev) => {
+          const existing = prev[recordingId];
+          if (existing) {
+            revokeAudioUrl(existing);
+          }
+          return { ...prev, [recordingId]: nextUrl };
+        });
+        audioHydrationStatusRef.current = {
+          ...audioHydrationStatusRef.current,
+          [recordingId]: 'ready',
+        };
+        setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: 'ready' }));
+        return nextUrl;
+      } catch (error) {
+        const is404 = (error as any)?.status === 404;
+        if (!is404) {
+          console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
+        }
+        audioHydrationStatusRef.current = {
+          ...audioHydrationStatusRef.current,
+          [recordingId]: 'error',
+        };
+        setAudioHydrationErrors((prev) => ({
+          ...prev,
+          [recordingId]: error.message || 'Blad ladowania audio',
+        }));
+        setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: 'error' }));
+        return null;
       }
-      audioHydrationStatusRef.current = { ...audioHydrationStatusRef.current, [recordingId]: "error" };
-      setAudioHydrationErrors((prev) => ({
-        ...prev,
-        [recordingId]: error.message || "Blad ladowania audio",
-      }));
-      setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "error" }));
-      return null;
-    }
-  }, [mediaService]);
+    },
+    [mediaService]
+  );
 
   useEffect(() => {
     if (!userMeetings.length) {
@@ -86,7 +98,9 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
       return;
     }
 
-    const recordingIds = new Set(userMeetings.flatMap((meeting) => (meeting.recordings || []).map((recording) => recording.id)));
+    const recordingIds = new Set(
+      userMeetings.flatMap((meeting) => (meeting.recordings || []).map((recording) => recording.id))
+    );
     setAudioUrls((prev) => {
       let changed = false;
       const next = { ...prev };
@@ -125,27 +139,33 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
     });
   }, [hydrateRecordingAudio, userMeetings]);
 
-  useEffect(() => () => {
-    Object.values(audioUrlsRef.current).forEach(revokeAudioUrl);
-  }, []);
+  useEffect(
+    () => () => {
+      Object.values(audioUrlsRef.current).forEach(revokeAudioUrl);
+    },
+    []
+  );
 
-  const normalizeRecording = useCallback(async (recordingId) => {
-    if (!recordingId || !mediaService.normalizeRecordingAudio) return;
-    await mediaService.normalizeRecordingAudio(recordingId);
-    const old = audioUrlsRef.current[recordingId];
-    if (old) {
-      revokeAudioUrl(old);
-      setAudioUrls((prev) => {
-        const next = { ...prev };
-        delete next[recordingId];
-        return next;
-      });
-    }
-    await hydrateRecordingAudio(recordingId, { force: true });
-  }, [hydrateRecordingAudio, mediaService]);
+  const normalizeRecording = useCallback(
+    async (recordingId) => {
+      if (!recordingId || !mediaService.normalizeRecordingAudio) return;
+      await mediaService.normalizeRecordingAudio(recordingId);
+      const old = audioUrlsRef.current[recordingId];
+      if (old) {
+        revokeAudioUrl(old);
+        setAudioUrls((prev) => {
+          const next = { ...prev };
+          delete next[recordingId];
+          return next;
+        });
+      }
+      await hydrateRecordingAudio(recordingId, { force: true });
+    },
+    [hydrateRecordingAudio, mediaService]
+  );
 
   function registerAudioUrl(recordingId, blob) {
-    if (!recordingId || !blob || typeof URL === "undefined" || !URL.createObjectURL) {
+    if (!recordingId || !blob || typeof URL === 'undefined' || !URL.createObjectURL) {
       return;
     }
 
@@ -160,7 +180,7 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
         [recordingId]: nextUrl,
       };
     });
-    setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: "ready" }));
+    setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: 'ready' }));
     setAudioHydrationErrors((prev) => {
       if (!prev[recordingId]) {
         return prev;

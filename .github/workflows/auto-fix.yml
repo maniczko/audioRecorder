@@ -1,0 +1,104 @@
+name: Auto-Fix Test Failures
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  test-and-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint auto-fix
+        id: lint
+        run: |
+          echo "Running ESLint auto-fix..."
+          pnpm run lint:fix || echo "lint_failed=true" >> $GITHUB_OUTPUT
+
+      - name: Run tests with retry
+        id: tests
+        run: |
+          echo "Running tests with retry..."
+          pnpm run test:retry || echo "tests_failed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit ESLint fixes
+        if: steps.lint.outputs.lint_failed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-fix ESLint errors"
+          branch: ${{ github.head_ref }}
+          file_pattern: "*.ts *.tsx *.js *.jsx"
+          commit_options: "--no-verify"
+
+      - name: Upload test failure report
+        if: steps.tests.outputs.tests_failed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failure-report
+          path: |
+            coverage/
+            *.log
+          retention-days: 7
+
+      - name: Comment on PR with test failures
+        if: steps.tests.outputs.tests_failed == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c => 
+              c.body.includes('⚠️ Test Failures Detected')
+            );
+
+            if (!existingComment) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## ⚠️ Test Failures Detected
+
+Some tests failed even after retry. Please review:
+
+- Download the test failure report from the "Artifacts" section
+- Check which tests are failing consistently vs flaky
+- Fix failing tests before merging
+
+### Quick Fixes:
+\`\`\`bash
+# Run auto-fix locally
+npm run test:fix
+
+# Run tests with retry
+npm run test:retry
+\`\`\`
+`,
+              });
+            }
+
+      - name: Fail workflow if tests still failing
+        if: steps.tests.outputs.tests_failed == 'true'
+        run: |
+          echo "Tests failed after retry. Please fix manually."
+          exit 1

@@ -1,13 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createMediaService } from "../services/mediaService";
-import { deleteRecordingBlob, getAudioStorageEstimate, listStoredSizes, saveAudioBlob } from "../lib/audioStore";
-import { createId } from "../lib/storage";
-import { createRecordingQueueItem, upsertRecordingQueueItem, getNextPendingRecordingQueueItem } from "../lib/recordingQueue";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createMediaService } from '../services/mediaService';
+import {
+  deleteRecordingBlob,
+  getAudioStorageEstimate,
+  listStoredSizes,
+  saveAudioBlob,
+} from '../lib/audioStore';
+import { createId } from '../lib/storage';
+import {
+  createRecordingQueueItem,
+  upsertRecordingQueueItem,
+  getNextPendingRecordingQueueItem,
+} from '../lib/recordingQueue';
 
-import useAudioHardware from "./useAudioHardware";
-import useAudioHydration from "./useAudioHydration";
-import useRecordingPipeline from "./useRecordingPipeline";
-import useLiveTranscript from "./useLiveTranscript";
+import useAudioHardware from './useAudioHardware';
+import useAudioHydration from './useAudioHydration';
+import useRecordingPipeline from './useRecordingPipeline';
+import useLiveTranscript from './useLiveTranscript';
 
 export default function useRecorder({
   selectedMeeting,
@@ -18,7 +27,7 @@ export default function useRecorder({
   selectMeeting,
 }) {
   const mediaService = useMemo(() => createMediaService(), []);
-  const [liveText, setLiveText] = useState("");
+  const [liveText, setLiveText] = useState('');
   const [currentSegments, setCurrentSegments] = useState([]);
   const [recordingMeetingId, setRecordingMeetingId] = useState(null);
   const [audioStorageState, setAudioStorageState] = useState({
@@ -27,7 +36,7 @@ export default function useRecorder({
     freeBytes: 0,
     usageRatio: 0,
     isNearQuota: false,
-    warningMessage: "",
+    warningMessage: '',
     items: [],
   });
   const userMeetingsRef = useRef(userMeetings);
@@ -37,10 +46,7 @@ export default function useRecorder({
   }, [userMeetings]);
 
   async function refreshAudioStorageState() {
-    const [estimate, items] = await Promise.all([
-      getAudioStorageEstimate(),
-      listStoredSizes(),
-    ]);
+    const [estimate, items] = await Promise.all([getAudioStorageEstimate(), listStoredSizes()]);
 
     const nextEstimate = estimate || {
       usageBytes: 0,
@@ -51,7 +57,7 @@ export default function useRecorder({
     };
     const warningMessage = nextEstimate.isNearQuota
       ? `Storage audio jest wykorzystany w ${Math.round(nextEstimate.usageRatio * 100)}%. Zostało ${Math.max(0, Math.round(nextEstimate.freeBytes / 1024 / 1024))} MB.`
-      : "";
+      : '';
 
     setAudioStorageState({
       ...nextEstimate,
@@ -67,7 +73,7 @@ export default function useRecorder({
 
   useEffect(() => {
     refreshAudioStorageState().catch((error) => {
-      console.warn("Unable to read audio storage state.", error);
+      console.warn('Unable to read audio storage state.', error);
     });
   }, []);
 
@@ -97,25 +103,28 @@ export default function useRecorder({
     mediaService,
     onRecordingStop: async ({ meetingId, chunks, mimeType, rawSegments, duration }) => {
       try {
-        const rid = createId("recording");
+        const rid = createId('recording');
         const blob = new Blob(chunks, { type: mimeType });
         hydration.registerAudioUrl(rid, blob);
         await saveAudioBlob(rid, blob);
         refreshAudioStorageState().catch(() => undefined);
         pipeline.setRecordingQueue((prev) =>
-          upsertRecordingQueueItem(prev, createRecordingQueueItem({
-            recordingId: rid,
-            meetingId,
-            meeting: userMeetingsRef.current.find(m => m.id === meetingId) || selectedMeeting,
-            mimeType,
-            rawSegments,
-            duration,
-          }))
+          upsertRecordingQueueItem(
+            prev,
+            createRecordingQueueItem({
+              recordingId: rid,
+              meetingId,
+              meeting: userMeetingsRef.current.find((m) => m.id === meetingId) || selectedMeeting,
+              mimeType,
+              rawSegments,
+              duration,
+            })
+          )
         );
-        pipeline.setRecordingMessage("Nagranie trafilo do kolejki.");
+        pipeline.setRecordingMessage('Nagranie trafilo do kolejki.');
       } catch (e) {
-        console.error("Recording finalization failed.", e);
-        pipeline.setRecordingMessage("Błąd finalizacji nagrania.");
+        console.error('Recording finalization failed.', e);
+        pipeline.setRecordingMessage('Błąd finalizacji nagrania.');
       } finally {
         setRecordingMeetingId(null);
       }
@@ -126,17 +135,22 @@ export default function useRecorder({
   });
 
   // 4. Live Transcription Bridge
-  const [liveTranscriptEnabled, setLiveTranscriptEnabled] = useState(mediaService.mode === "remote");
+  const [liveTranscriptEnabled, setLiveTranscriptEnabled] = useState(
+    mediaService.mode === 'remote'
+  );
   const serverCaption = useLiveTranscript({
     chunksRef: hardware.chunksRef,
     isRecording: hardware.isRecording,
-    enabled: mediaService.mode === "remote" && liveTranscriptEnabled && !mediaService.supportsLiveTranscription(),
-    transcribeLive: (blob) => mediaService.transcribeLiveChunk?.(blob) ?? Promise.resolve(""),
+    enabled:
+      mediaService.mode === 'remote' &&
+      liveTranscriptEnabled &&
+      !mediaService.supportsLiveTranscription(),
+    transcribeLive: (blob) => mediaService.transcribeLiveChunk?.(blob) ?? Promise.resolve(''),
     mimeType: hardware.mimeTypeRef.current,
   });
 
   useEffect(() => {
-    if (mediaService.mode === "remote" && liveTranscriptEnabled && serverCaption) {
+    if (mediaService.mode === 'remote' && liveTranscriptEnabled && serverCaption) {
       setLiveText(serverCaption);
     }
   }, [serverCaption, mediaService.mode, liveTranscriptEnabled]);
@@ -144,7 +158,7 @@ export default function useRecorder({
   const startRecordingWrapper = (options = {}) => {
     const active = options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting;
     if (!active) {
-      pipeline.setRecordingMessage("Nie udalo sie przygotowac spotkania.");
+      pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');
       return;
     }
     setRecordingMeetingId(active.id);
@@ -156,15 +170,18 @@ export default function useRecorder({
     () => pipeline.getMeetingQueue(selectedMeeting?.id),
     [pipeline, selectedMeeting?.id]
   );
-  const activeQueueItem = useMemo(() => getNextPendingRecordingQueueItem(pipeline.recordingQueue), [pipeline.recordingQueue]);
+  const activeQueueItem = useMemo(
+    () => getNextPendingRecordingQueueItem(pipeline.recordingQueue),
+    [pipeline.recordingQueue]
+  );
 
   async function queueRecording(meetingId, file) {
     if (!meetingId || !file) {
-      pipeline.setRecordingMessage("Nie udalo sie dodac pliku do kolejki.");
+      pipeline.setRecordingMessage('Nie udalo sie dodac pliku do kolejki.');
       return null;
     }
 
-    const rid = createId("recording");
+    const rid = createId('recording');
     const blob = file instanceof Blob ? file : new Blob([file]);
     const meeting =
       userMeetingsRef.current.find((item) => item.id === meetingId) ||
@@ -181,28 +198,28 @@ export default function useRecorder({
             recordingId: rid,
             meetingId,
             meeting,
-            mimeType: file.type || "audio/webm",
+            mimeType: file.type || 'audio/webm',
             rawSegments: [],
             duration: 0,
           })
         )
       );
-      pipeline.setAnalysisStatus("queued");
-      pipeline.setPipelineProgress(8, "Plik dodany do kolejki");
-      pipeline.setRecordingMessage("Plik dodany do kolejki. Rozpoczynamy wgrywanie...");
+      pipeline.setAnalysisStatus('queued');
+      pipeline.setPipelineProgress(8, 'Plik dodany do kolejki');
+      pipeline.setRecordingMessage('Plik dodany do kolejki. Rozpoczynamy wgrywanie...');
       return rid;
     } catch (error) {
-      console.error("Queued file import failed.", error);
-      pipeline.setAnalysisStatus("error");
-      pipeline.setPipelineProgress(0, "Dodanie pliku nie powiodlo sie");
-      pipeline.setRecordingMessage("Nie udalo sie zapisac pliku do kolejki.");
+      console.error('Queued file import failed.', error);
+      pipeline.setAnalysisStatus('error');
+      pipeline.setPipelineProgress(0, 'Dodanie pliku nie powiodlo sie');
+      pipeline.setRecordingMessage('Nie udalo sie zapisac pliku do kolejki.');
       return null;
     }
   }
 
   function resetRecorderState() {
-    pipeline.setRecordingMessage("");
-    setLiveText("");
+    pipeline.setRecordingMessage('');
+    setLiveText('');
     setCurrentSegments([]);
     hardware.cleanupRecorder();
     setRecordingMeetingId(null);
@@ -233,7 +250,7 @@ export default function useRecorder({
     activeQueueItem,
     speechRecognitionSupported: mediaService.supportsLiveTranscription(),
     liveTranscriptEnabled,
-    setLiveTranscriptEnabled: mediaService.mode === "remote" ? setLiveTranscriptEnabled : null,
+    setLiveTranscriptEnabled: mediaService.mode === 'remote' ? setLiveTranscriptEnabled : null,
     startRecording: startRecordingWrapper,
     pauseRecording: hardware.pauseRecording,
     resumeRecording: hardware.resumeRecording,

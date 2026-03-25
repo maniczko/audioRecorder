@@ -1,0 +1,201 @@
+npm warn Unknown project config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+
+ RUN  v4.1.0 C:/Users/user/new/audioRecorder
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when ANTHROPIC_API_KEY is not configured
+[ai/person-profile] error: Anthropic 401: {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CZPRRoruURZ1xyRya5TQd"}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when ANTHROPIC_API_KEY is not configured
+[INFO] [REQ] POST /ai/person-profile - 200 [335.4ms] {
+  requestId: [32m'884ba7b7-00ae-4344-9b39-6db1c5112dec'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'335.39'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when personName is missing
+[INFO] [REQ] POST /ai/person-profile - 200 [0.6ms] {
+  requestId: [32m'3afa1304-1a18-4f17-b42f-701272c35bfc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.57'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when allSegments has less than 5 items
+[INFO] [REQ] POST /ai/person-profile - 200 [1.5ms] {
+  requestId: [32m'fc69a1e6-0aba-4b6c-88ca-eae3bf6901a0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.54'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > calls Anthropic API and returns parsed profile when API key is configured
+[INFO] [REQ] POST /ai/person-profile - 200 [1.5ms] {
+  requestId: [32m'6f80d53b-3912-409f-868e-aded36ccfd9f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.50'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when Anthropic API fails
+[ai/person-profile] error: Network error
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when Anthropic API fails
+[INFO] [REQ] POST /ai/person-profile - 200 [1.2ms] {
+  requestId: [32m'0fc1f43b-83be-4a48-8707-1805f76a2570'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.18'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when Anthropic returns non-JSON response
+[ai/person-profile] error: No JSON in response
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/person-profile > returns no-key mode when Anthropic returns non-JSON response
+[INFO] [REQ] POST /ai/person-profile - 200 [2.0ms] {
+  requestId: [32m'c84ed1f7-ec6a-4dfa-9358-58fdf30017de'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.99'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when ANTHROPIC_API_KEY is not configured
+[ai/suggest-tasks] error: No JSON in response
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when ANTHROPIC_API_KEY is not configured
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.7ms] {
+  requestId: [32m'2325aba3-e748-4df0-91d7-4918fe529ee6'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.65'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when transcript is empty
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [0.5ms] {
+  requestId: [32m'6c846feb-ef3a-403a-ab07-3479fc3dab40'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.47'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > calls Anthropic API and returns extracted tasks when API key is configured
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.2ms] {
+  requestId: [32m'ae448cf1-5f55-47eb-9cb6-4c76d80d4bf0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.23'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when Anthropic API fails
+[ai/suggest-tasks] error: Network error
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when Anthropic API fails
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.6ms] {
+  requestId: [32m'f38d2985-3479-4f4e-bd82-1371c011d0cf'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.61'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when Anthropic returns non-JSON response
+[ai/suggest-tasks] error: No JSON in response
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when Anthropic returns non-JSON response
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.7ms] {
+  requestId: [32m'ca80b912-8909-4847-9da3-05880c2498a9'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.71'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when response has no tasks array
+[ai/suggest-tasks] error: No JSON in response
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/suggest-tasks > returns empty tasks when response has no tasks array
+[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.2ms] {
+  requestId: [32m'f7845447-2381-4ec7-9b54-2c5d4e03f956'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.15'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns no-key mode when ANTHROPIC_API_KEY is not configured
+[INFO] [REQ] POST /ai/search - 200 [1.2ms] {
+  requestId: [32m'88c28dec-5c13-4674-b513-56f7816da121'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.21'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns no-key mode when query is empty or too short
+[INFO] [REQ] POST /ai/search - 200 [0.8ms] {
+  requestId: [32m'17ffd10b-ccbe-4c14-8500-78db92ae88f1'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.78'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns no-key mode when items are empty
+[INFO] [REQ] POST /ai/search - 200 [0.8ms] {
+  requestId: [32m'79d4b534-00d2-4611-8c49-555423b84eea'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.84'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns empty matches when Anthropic API fails
+[ai/search] error: Network error
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns empty matches when Anthropic API fails
+[INFO] [REQ] POST /ai/search - 200 [2.7ms] {
+  requestId: [32m'509de4d7-1030-4a54-acaa-b88b27cc8d22'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.73'[39m
+}
+
+stderr | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns empty matches when Anthropic returns non-JSON response
+[ai/search] error: No JSON in response
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > returns empty matches when Anthropic returns non-JSON response
+[INFO] [REQ] POST /ai/search - 200 [2.0ms] {
+  requestId: [32m'ef3847ac-2946-4ff2-ab0c-8696b19816b3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.98'[39m
+}
+
+stdout | server/tests/routes/ai.test.ts > AI Routes > POST /ai/search > calls Anthropic API and returns ranked matches when API key is configured
+[INFO] [REQ] POST /ai/search - 200 [1.7ms] {
+  requestId: [32m'c14ce0c9-f9b5-4fcd-a87f-cb168bd1f1ba'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.70'[39m
+}
+
+ ✓ server/tests/routes/ai.test.ts (18 tests) 6221ms
+       ✓ returns no-key mode when ANTHROPIC_API_KEY is not configured  5575ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  08:41:55
+   Duration  9.44s (transform 954ms, setup 391ms, import 225ms, tests 6.22s, environment 1ms)
+

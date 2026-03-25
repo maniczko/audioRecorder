@@ -31,7 +31,13 @@ const createReadStreamMock = vi.fn(() => ({ pipe: vi.fn() }));
 
 const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
   // Allow reading migration files, database, and Dockerfile
-  if (filePath && (filePath.endsWith('.sql') || filePath.endsWith('.sqlite') || filePath.endsWith('.db') || filePath.endsWith('Dockerfile'))) {
+  if (
+    filePath &&
+    (filePath.endsWith('.sql') ||
+      filePath.endsWith('.sqlite') ||
+      filePath.endsWith('.db') ||
+      filePath.endsWith('Dockerfile'))
+  ) {
     return originalFs?.readFileSync(filePath, options) ?? Buffer.from('mocked');
   }
   // If encoding is 'utf8' or options has encoding utf8, return string

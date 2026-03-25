@@ -6,9 +6,27 @@
 
 // Common Polish filler words / hesitation markers
 const FILLER_WORDS_PL = new Set([
-  "ee", "eee", "yyy", "yyyy", "yy", "um", "uh", "hmm", "hm",
-  "znaczy", "jakby", "właśnie", "tego", "wiesz", "rozumiesz",
-  "no", "tak", "okej", "okay", "niee", "właśnie",
+  'ee',
+  'eee',
+  'yyy',
+  'yyyy',
+  'yy',
+  'um',
+  'uh',
+  'hmm',
+  'hm',
+  'znaczy',
+  'jakby',
+  'właśnie',
+  'tego',
+  'wiesz',
+  'rozumiesz',
+  'no',
+  'tak',
+  'okej',
+  'okay',
+  'niee',
+  'właśnie',
 ]);
 
 /**
@@ -24,7 +42,7 @@ export function analyzeSpeakingStyle(transcript, displaySpeakerNames = {}) {
   // Group segments by speaker
   const bySpeaker = new Map();
   for (const seg of transcript) {
-    const sid = String(seg.speakerId ?? "unknown");
+    const sid = String(seg.speakerId ?? 'unknown');
     if (!bySpeaker.has(sid)) bySpeaker.set(sid, []);
     bySpeaker.get(sid).push(seg);
   }
@@ -34,7 +52,7 @@ export function analyzeSpeakingStyle(transcript, displaySpeakerNames = {}) {
   for (const [speakerId, segs] of bySpeaker) {
     // Total word count
     const totalWords = segs.reduce(
-      (n, s) => n + (s.text || "").split(/\s+/).filter(Boolean).length,
+      (n, s) => n + (s.text || '').split(/\s+/).filter(Boolean).length,
       0
     );
 
@@ -45,18 +63,16 @@ export function analyzeSpeakingStyle(transcript, displaySpeakerNames = {}) {
       if (dur > 0 && dur < 600) speakingSeconds += dur; // sanity cap at 10 min per segment
     }
 
-    const wpm = speakingSeconds > 0
-      ? Math.round((totalWords / speakingSeconds) * 60)
-      : 0;
+    const wpm = speakingSeconds > 0 ? Math.round((totalWords / speakingSeconds) * 60) : 0;
 
     // Filler word count
     const allWords = segs
-      .map((s) => s.text || "")
-      .join(" ")
+      .map((s) => s.text || '')
+      .join(' ')
       .toLowerCase()
       .split(/\s+/)
       .filter(Boolean)
-      .map((w) => w.replace(/[.,!?;:…"«»„"]/g, ""));
+      .map((w) => w.replace(/[.,!?;:…"«»„"]/g, ''));
 
     const fillerCount = allWords.filter((w) => FILLER_WORDS_PL.has(w)).length;
     const fillerRate = totalWords > 0 ? Math.round((fillerCount / totalWords) * 100) : 0;

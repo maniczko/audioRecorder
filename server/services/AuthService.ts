@@ -1,5 +1,5 @@
-import { UserDraft } from "../lib/types.ts";
-import type { SessionPayload } from "../../src/shared/contracts.ts";
+import { UserDraft } from '../lib/types.ts';
+import type { SessionPayload } from '../../src/shared/contracts.ts';
 
 export default class AuthService {
   db: any;
@@ -19,7 +19,12 @@ export default class AuthService {
     return await this.db.requestPasswordReset(draft);
   }
 
-  async resetPasswordWithCode(draft: { email: string; code: string; newPassword?: string; confirmPassword?: string }) {
+  async resetPasswordWithCode(draft: {
+    email: string;
+    code: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }) {
     return await this.db.resetPasswordWithCode(draft);
   }
 
@@ -43,5 +48,3 @@ export default class AuthService {
     return await this.db.buildSessionPayload(userId, workspaceId);
   }
 }
-
-

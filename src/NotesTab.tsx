@@ -1,17 +1,17 @@
-import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import DOMPurify from "dompurify";
-import { formatDateTime } from "./lib/storage";
-import { EmptyState } from "./components/Skeleton";
-import TagInput from "./shared/TagInput";
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { formatDateTime } from './lib/storage';
+import { EmptyState } from './components/Skeleton';
+import TagInput from './shared/TagInput';
 import './NotesTabStyles.css';
 
 const ALLOWED_HTML = {
-  ALLOWED_TAGS: ["b", "i", "u", "em", "strong", "ul", "ol", "li", "p", "br"],
+  ALLOWED_TAGS: ['b', 'i', 'u', 'em', 'strong', 'ul', 'ol', 'li', 'p', 'br'],
   ALLOWED_ATTR: [],
 };
 
 function sanitizeHtml(html) {
-  return DOMPurify.sanitize(html || "", ALLOWED_HTML);
+  return DOMPurify.sanitize(html || '', ALLOWED_HTML);
 }
 
 /* ── helpers ─────────────────────────────────────────── */
@@ -34,19 +34,21 @@ function tagStyle(tag) {
 }
 
 function dateBucket(dateStr) {
-  if (!dateStr) return "Brak daty";
+  if (!dateStr) return 'Brak daty';
   const diff = (Date.now() - new Date(dateStr).getTime()) / 86400000;
-  if (diff < 7) return "Ten tydzień";
-  if (diff < 30) return "Ten miesiąc";
-  if (diff < 90) return "Ostatnie 3 miesiące";
-  return "Starsze";
+  if (diff < 7) return 'Ten tydzień';
+  if (diff < 30) return 'Ten miesiąc';
+  if (diff < 90) return 'Ostatnie 3 miesiące';
+  return 'Starsze';
 }
 
-const BUCKET_ORDER = ["Ten tydzień", "Ten miesiąc", "Ostatnie 3 miesiące", "Starsze", "Brak daty"];
+const BUCKET_ORDER = ['Ten tydzień', 'Ten miesiąc', 'Ostatnie 3 miesiące', 'Starsze', 'Brak daty'];
 
 function buildNote(meeting) {
   const recs = Array.isArray(meeting.recordings) ? meeting.recordings : [];
-  const latest = [...recs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const latest = [...recs].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )[0];
   const analysis = meeting.analysis || latest?.analysis || null;
   const markers = recs.flatMap((r) =>
     (Array.isArray(r.markers) ? r.markers : []).filter((m) => m.note || m.label)
@@ -54,12 +56,12 @@ function buildNote(meeting) {
 
   return {
     id: meeting.id,
-    title: meeting.title || "Bez tytułu",
-    date: meeting.startsAt || meeting.createdAt || "",
+    title: meeting.title || 'Bez tytułu',
+    date: meeting.startsAt || meeting.createdAt || '',
     tags: Array.isArray(meeting.tags) ? meeting.tags : [],
     attendees: Array.isArray(meeting.attendees) ? meeting.attendees : [],
-    context: meeting.context || "",
-    summary: analysis?.summary || "",
+    context: meeting.context || '',
+    summary: analysis?.summary || '',
     decisions: Array.isArray(analysis?.decisions) ? analysis.decisions : [],
     actionItems: Array.isArray(analysis?.actionItems) ? analysis.actionItems : [],
     followUps: Array.isArray(analysis?.followUps) ? analysis.followUps : [],
@@ -67,23 +69,25 @@ function buildNote(meeting) {
     hasAnalysis: Boolean(analysis),
     recordingCount: recs.length,
     markers,
-    createdAt: meeting.createdAt || "",
+    createdAt: meeting.createdAt || '',
   };
 }
 
 function groupNotes(notes, by) {
-  if (by === "none") return [{ key: "_all", label: "Wszystkie", items: notes }];
+  if (by === 'none') return [{ key: '_all', label: 'Wszystkie', items: notes }];
 
   const map = new Map();
   notes.forEach((note) => {
     const keys =
-      by === "tag"
-        ? note.tags.length ? note.tags : ["Bez tagu"]
-        : by === "date"
+      by === 'tag'
+        ? note.tags.length
+          ? note.tags
+          : ['Bez tagu']
+        : by === 'date'
           ? [dateBucket(note.date)]
           : note.attendees.length
             ? note.attendees.slice(0, 4)
-            : ["Bez uczestników"];
+            : ['Bez uczestników'];
 
     keys.forEach((k) => {
       if (!map.has(k)) map.set(k, []);
@@ -93,7 +97,7 @@ function groupNotes(notes, by) {
 
   const entries = [...map.entries()].map(([key, items]) => ({ key, label: key, items }));
 
-  if (by === "date") {
+  if (by === 'date') {
     entries.sort((a, b) => BUCKET_ORDER.indexOf(a.key) - BUCKET_ORDER.indexOf(b.key));
   } else {
     entries.sort((a, b) => b.items.length - a.items.length);
@@ -110,11 +114,11 @@ function WysiwygEditor({ onChange, placeholder }) {
   function exec(command) {
     ref.current?.focus();
     document.execCommand(command, false, null);
-    onChange(ref.current?.innerHTML || "");
+    onChange(ref.current?.innerHTML || '');
   }
 
   useEffect(() => {
-    if (ref.current) ref.current.innerHTML = "";
+    if (ref.current) ref.current.innerHTML = '';
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -124,7 +128,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Pogrubienie"
-          onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('bold');
+          }}
         >
           <strong>B</strong>
         </button>
@@ -132,7 +139,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Kursywa"
-          onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('italic');
+          }}
         >
           <em>I</em>
         </button>
@@ -140,7 +150,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Podkreślenie"
-          onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('underline');
+          }}
         >
           <u>U</u>
         </button>
@@ -149,7 +162,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Lista punktowana"
-          onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('insertUnorderedList');
+          }}
         >
           •
         </button>
@@ -157,7 +173,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Lista numerowana"
-          onMouseDown={(e) => { e.preventDefault(); exec("insertOrderedList"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('insertOrderedList');
+          }}
         >
           1.
         </button>
@@ -166,7 +185,10 @@ function WysiwygEditor({ onChange, placeholder }) {
           type="button"
           className="wysiwyg-btn"
           title="Wyczyść formatowanie"
-          onMouseDown={(e) => { e.preventDefault(); exec("removeFormat"); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec('removeFormat');
+          }}
         >
           Tx
         </button>
@@ -176,7 +198,7 @@ function WysiwygEditor({ onChange, placeholder }) {
         className="wysiwyg-body"
         contentEditable
         suppressContentEditableWarning
-        onInput={() => onChange(ref.current?.innerHTML || "")}
+        onInput={() => onChange(ref.current?.innerHTML || '')}
         data-placeholder={placeholder}
       />
     </div>
@@ -189,7 +211,7 @@ function NoteCard({ note, isActive, onSelect }) {
   return (
     <button
       type="button"
-      className={`note-card${isActive ? " active" : ""}`}
+      className={`note-card${isActive ? ' active' : ''}`}
       onClick={() => onSelect(isActive ? null : note.id)}
     >
       <div className="note-card-top">
@@ -197,7 +219,7 @@ function NoteCard({ note, isActive, onSelect }) {
           <span className="note-date">{formatDateTime(note.date)}</span>
           {note.recordingCount > 0 && (
             <span className="note-badge">
-              {note.recordingCount} {note.recordingCount === 1 ? "nagranie" : "nagrań"}
+              {note.recordingCount} {note.recordingCount === 1 ? 'nagranie' : 'nagrań'}
             </span>
           )}
         </div>
@@ -208,9 +230,7 @@ function NoteCard({ note, isActive, onSelect }) {
                 #{tag}
               </span>
             ))}
-            {note.tags.length > 3 && (
-              <span className="note-tag-more">+{note.tags.length - 3}</span>
-            )}
+            {note.tags.length > 3 && <span className="note-tag-more">+{note.tags.length - 3}</span>}
           </div>
         )}
       </div>
@@ -220,7 +240,9 @@ function NoteCard({ note, isActive, onSelect }) {
       {note.summary ? (
         <p className="note-card-preview">{note.summary}</p>
       ) : note.context ? (
-        <p className="note-card-preview note-card-context">{note.context.replace(/<[^>]*>/g, " ").slice(0, 120)}</p>
+        <p className="note-card-preview note-card-context">
+          {note.context.replace(/<[^>]*>/g, ' ').slice(0, 120)}
+        </p>
       ) : (
         <p className="note-card-preview empty">Brak podsumowania — nagraj spotkanie.</p>
       )}
@@ -244,9 +266,7 @@ function NoteCard({ note, isActive, onSelect }) {
             {note.markers.length} markerów
           </span>
         )}
-        {!note.hasAnalysis && (
-          <span className="note-stat dim">Brak analizy AI</span>
-        )}
+        {!note.hasAnalysis && <span className="note-stat dim">Brak analizy AI</span>}
       </div>
     </button>
   );
@@ -260,7 +280,10 @@ function NoteDetail({ note, onOpenMeeting }) {
   if (!note) {
     return (
       <aside className="notes-detail-panel">
-        <EmptyState title="Wybierz notatkę" message="Kliknij dowolną kartę, żeby zobaczyć pełną treść notatki." />
+        <EmptyState
+          title="Wybierz notatkę"
+          message="Kliknij dowolną kartę, żeby zobaczyć pełną treść notatki."
+        />
       </aside>
     );
   }
@@ -398,8 +421,8 @@ function NoteDetail({ note, onOpenMeeting }) {
               {note.markers.map((m) => (
                 <div key={m.id} className="notes-marker-item">
                   <span className="notes-marker-time">
-                    {String(Math.floor(Number(m.timestamp || 0) / 60)).padStart(2, "0")}:
-                    {String(Math.floor(Number(m.timestamp || 0) % 60)).padStart(2, "0")}
+                    {String(Math.floor(Number(m.timestamp || 0) / 60)).padStart(2, '0')}:
+                    {String(Math.floor(Number(m.timestamp || 0) % 60)).padStart(2, '0')}
                   </span>
                   <div className="notes-marker-body">
                     <span className="notes-marker-label">{m.label}</span>
@@ -434,8 +457,8 @@ function NoteDetail({ note, onOpenMeeting }) {
 /* ── NewNotePanel ─────────────────────────────────────── */
 
 function NewNotePanel({ onSave, onCancel, allTags }) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
   const [tags, setTags] = useState([]);
 
   function handleSave() {
@@ -489,9 +512,9 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
 /* ── NotesTab ─────────────────────────────────────────── */
 
 export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNote }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
-  const [groupBy, setGroupBy] = useState("date");
+  const [groupBy, setGroupBy] = useState('date');
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [showNewNote, setShowNewNote] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -500,7 +523,10 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
     () =>
       userMeetings
         .map(buildNote)
-        .sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()),
+        .sort(
+          (a, b) =>
+            new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
+        ),
     [userMeetings]
   );
 
@@ -513,20 +539,21 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   const filteredNotes = useMemo(() => {
     const q = deferredSearchQuery.toLowerCase().trim();
     return allNotes.filter((note) => {
-      if (selectedTags.length > 0 && !selectedTags.every((t) => note.tags.includes(t))) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => note.tags.includes(t)))
+        return false;
       if (!q) return true;
       const hay = [
         note.title,
         note.summary,
-        note.context.replace(/<[^>]*>/g, " "),
+        note.context.replace(/<[^>]*>/g, ' '),
         ...note.decisions,
         ...note.actionItems,
         ...note.followUps,
         ...note.tags,
         ...note.attendees,
-        ...note.markers.map((m) => `${m.label} ${m.note || ""}`),
+        ...note.markers.map((m) => `${m.label} ${m.note || ''}`),
       ]
-        .join(" ")
+        .join(' ')
         .toLowerCase();
       return hay.includes(q);
     });
@@ -540,11 +567,13 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   );
 
   function toggleTag(tag) {
-    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   }
 
   function saveNewNote({ title, context, tags }) {
-    if (typeof onCreateNote === "function") {
+    if (typeof onCreateNote === 'function') {
       onCreateNote({ title, context, tags });
     }
     setShowNewNote(false);
@@ -559,15 +588,17 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         <div className="notes-sidebar-actions">
           <button
             type="button"
-            className={showNewNote ? "secondary-button small" : "primary-button small"}
+            className={showNewNote ? 'secondary-button small' : 'primary-button small'}
             onClick={() => setShowNewNote((v) => !v)}
           >
-            {showNewNote ? "← Anuluj" : "+ Nowa notatka"}
+            {showNewNote ? '← Anuluj' : '+ Nowa notatka'}
           </button>
         </div>
 
         <div className="notes-search-wrap">
-          <span className="notes-search-icon" aria-hidden="true">⌕</span>
+          <span className="notes-search-icon" aria-hidden="true">
+            ⌕
+          </span>
           <input
             className="notes-search-input"
             type="search"
@@ -580,14 +611,14 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         <div className="notes-sidebar-stats">
           <div className="notes-count-badge">
             <strong>{filteredNotes.length}</strong>
-            <span>{filteredNotes.length === 1 ? "notatka" : "notatek"}</span>
+            <span>{filteredNotes.length === 1 ? 'notatka' : 'notatek'}</span>
           </div>
           {hasFilters && (
             <button
               type="button"
               className="ghost-button small"
               onClick={() => {
-                setSearchQuery("");
+                setSearchQuery('');
                 setSelectedTags([]);
               }}
             >
@@ -600,15 +631,15 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
           <div className="notes-sidebar-label">Grupuj według</div>
           <div className="notes-group-pills">
             {[
-              { key: "date", label: "Daty" },
-              { key: "tag", label: "Tagu" },
-              { key: "attendee", label: "Osoby" },
-              { key: "none", label: "Brak" },
+              { key: 'date', label: 'Daty' },
+              { key: 'tag', label: 'Tagu' },
+              { key: 'attendee', label: 'Osoby' },
+              { key: 'none', label: 'Brak' },
             ].map((opt) => (
               <button
                 key={opt.key}
                 type="button"
-                className={groupBy === opt.key ? "pill active" : "pill"}
+                className={groupBy === opt.key ? 'pill active' : 'pill'}
                 onClick={() => setGroupBy(opt.key)}
               >
                 {opt.label}
@@ -628,7 +659,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
                   <button
                     key={tag}
                     type="button"
-                    className={`notes-filter-tag${active ? " active" : ""}`}
+                    className={`notes-filter-tag${active ? ' active' : ''}`}
                     style={active ? tagStyle(tag) : {}}
                     onClick={() => toggleTag(tag)}
                   >
@@ -645,10 +676,14 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
       {/* ─ Main content ─────────────────────────────────── */}
       <main className="notes-main">
         {filteredNotes.length === 0 ? (
-          <EmptyState 
-            icon="📝" 
-            title={hasFilters ? "Brak wyników" : "Brak notatek"} 
-            message={hasFilters ? "Zmień wyszukiwaną frazę lub wyczyść filtry." : "Nagraj spotkanie i uruchom analizę, aby tu pojawiły się notatki."} 
+          <EmptyState
+            icon="📝"
+            title={hasFilters ? 'Brak wyników' : 'Brak notatek'}
+            message={
+              hasFilters
+                ? 'Zmień wyszukiwaną frazę lub wyczyść filtry.'
+                : 'Nagraj spotkanie i uruchom analizę, aby tu pojawiły się notatki.'
+            }
           />
         ) : (
           groups.map((group) => (

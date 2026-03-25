@@ -35,10 +35,16 @@ export default defineConfig({
         'src/**/*.d.ts',
       ],
       thresholds: {
-        lines: 28,
-        functions: 30,
-        statements: 28,
-        branches: 22,
+        lines: 80,
+        functions: 80,
+        statements: 80,
+        branches: 70,
+        global: {
+          lines: 80,
+          functions: 80,
+          statements: 80,
+          branches: 70,
+        },
       },
       // Generate coverage even on test failures
       reportOnFailure: true,

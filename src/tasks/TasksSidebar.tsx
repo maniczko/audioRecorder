@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { formatDateTime } from "../lib/storage";
+import { memo } from 'react';
+import { formatDateTime } from '../lib/storage';
 
 function TasksSidebar({
   sidebarLists,
@@ -37,7 +37,9 @@ function TasksSidebar({
                 <button
                   type="button"
                   key={item.id}
-                  className={selectedListId === item.id ? "todo-side-link active" : "todo-side-link"}
+                  className={
+                    selectedListId === item.id ? 'todo-side-link active' : 'todo-side-link'
+                  }
                   onClick={() => setSelectedListId(item.id)}
                 >
                   <span className="todo-side-icon">{item.icon}</span>
@@ -55,7 +57,11 @@ function TasksSidebar({
                 <button
                   type="button"
                   key={item.id}
-                  className={selectedListId === item.id ? "todo-side-link active workspace" : "todo-side-link workspace"}
+                  className={
+                    selectedListId === item.id
+                      ? 'todo-side-link active workspace'
+                      : 'todo-side-link workspace'
+                  }
                   onClick={() => setSelectedListId(item.id)}
                 >
                   <span className="todo-side-icon">{item.icon}</span>
@@ -64,7 +70,6 @@ function TasksSidebar({
                 </button>
               ))}
             </div>
-
           </div>
         </div>
       </div>
@@ -89,17 +94,22 @@ function TasksSidebar({
                 >
                   <strong>{task.title}</strong>
                   <span>
-                    Lokalnie: {task.googleSyncConflict?.localUpdatedAt ? formatDateTime(task.googleSyncConflict.localUpdatedAt) : "brak"}
+                    Lokalnie:{' '}
+                    {task.googleSyncConflict?.localUpdatedAt
+                      ? formatDateTime(task.googleSyncConflict.localUpdatedAt)
+                      : 'brak'}
                   </span>
                   <small>
-                    Google: {task.googleSyncConflict?.remoteUpdatedAt ? formatDateTime(task.googleSyncConflict.remoteUpdatedAt) : "brak"}
+                    Google:{' '}
+                    {task.googleSyncConflict?.remoteUpdatedAt
+                      ? formatDateTime(task.googleSyncConflict.remoteUpdatedAt)
+                      : 'brak'}
                   </small>
                 </button>
               ))}
             </div>
           </div>
         ) : null}
-
       </div>
     </aside>
   );

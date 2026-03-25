@@ -5,15 +5,15 @@
  * All functions here are IO-heavy but focused exclusively on the transcription concern.
  */
 
-import fs from "node:fs";
-import path from "node:path";
-import os from "node:os";
-import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
-import { spawn, exec } from "node:child_process";
-import { config } from "./config.ts";
-import { resolveConfiguredSttProviders, transcribeWithProviders } from "./stt/providers.ts";
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { spawn, exec } from 'node:child_process';
+import { config } from './config.ts';
+import { resolveConfiguredSttProviders, transcribeWithProviders } from './stt/providers.ts';
 import {
   clean,
   getRawWords,
@@ -24,29 +24,30 @@ import {
   CHUNK_DURATION_SECONDS,
   CHUNK_OVERLAP_SECONDS,
   MAX_FILE_SIZE_BYTES,
-} from "./audioPipeline.utils.ts";
+} from './audioPipeline.utils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const execPromise = promisify(exec);
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || "";
+const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
-const GROQ_API_KEY = config.GROQ_API_KEY || "";
-export const _sttUseGroq = config.VOICELOG_STT_PROVIDER === "groq" && !!GROQ_API_KEY;
-export const VERIFICATION_MODEL = _sttUseGroq ? "whisper-large-v3" : config.VERIFICATION_MODEL;
+const GROQ_API_KEY = config.GROQ_API_KEY || '';
+export const _sttUseGroq = config.VOICELOG_STT_PROVIDER === 'groq' && !!GROQ_API_KEY;
+export const VERIFICATION_MODEL = _sttUseGroq ? 'whisper-large-v3' : config.VERIFICATION_MODEL;
 // Auto-detect fallback: if GROQ_API_KEY is set and primary is openai (or vice versa),
 // enable fallback automatically instead of requiring VOICELOG_STT_FALLBACK_PROVIDER env var.
 const _explicitFallback = config.VOICELOG_STT_FALLBACK_PROVIDER;
-const _autoFallback: "openai" | "groq" | "none" = _explicitFallback !== "none"
-  ? _explicitFallback
-  : (config.VOICELOG_STT_PROVIDER === "openai" && GROQ_API_KEY)
-    ? "groq"
-    : (config.VOICELOG_STT_PROVIDER === "groq" && OPENAI_API_KEY)
-      ? "openai"
-      : "none";
+const _autoFallback: 'openai' | 'groq' | 'none' =
+  _explicitFallback !== 'none'
+    ? _explicitFallback
+    : config.VOICELOG_STT_PROVIDER === 'openai' && GROQ_API_KEY
+      ? 'groq'
+      : config.VOICELOG_STT_PROVIDER === 'groq' && OPENAI_API_KEY
+        ? 'openai'
+        : 'none';
 
 export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
   preferredProvider: config.VOICELOG_STT_PROVIDER,
@@ -55,16 +56,20 @@ export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
   openAiBaseUrl: OPENAI_BASE_URL,
   groqApiKey: GROQ_API_KEY,
   openAiModel: config.VERIFICATION_MODEL,
-  groqModel: "whisper-large-v3",
+  groqModel: 'whisper-large-v3',
 });
 
 // Log provider chain at startup so Railway boot logs show exactly what will be called
 if (STT_PROVIDER_CHAIN.length === 0) {
-  console.warn("[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GROQ_API_KEY.");
+  console.warn('[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GROQ_API_KEY.');
 } else {
-  console.log(`[stt] Provider chain: ${STT_PROVIDER_CHAIN.map(p => p.id).join(" → ")}${_autoFallback !== _explicitFallback ? ` (auto-detected ${_autoFallback} fallback)` : ""}`);
+  console.log(
+    `[stt] Provider chain: ${STT_PROVIDER_CHAIN.map((p) => p.id).join(' → ')}${_autoFallback !== _explicitFallback ? ` (auto-detected ${_autoFallback} fallback)` : ''}`
+  );
   STT_PROVIDER_CHAIN.forEach((p) =>
-    console.log(`[stt]   ${p.id}: model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + "..." : "MISSING"}`)
+    console.log(
+      `[stt]   ${p.id}: model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + '...' : 'MISSING'}`
+    )
   );
 }
 
@@ -72,14 +77,14 @@ const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const SILENCE_REMOVE = config.VOICELOG_SILENCE_REMOVE;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
 export const VAD_ENABLED = config.VAD_ENABLED;
-const VAD_SCRIPT = path.join(__dirname, "vad.py");
+const VAD_SCRIPT = path.join(__dirname, 'vad.py');
 const PYTHON_BINARY = config.PYTHON_BINARY;
-const DEBUG = process.env.VOICELOG_DEBUG === "true";
-const AUDIO_PREPROCESS_CACHE_VERSION = "v1";
+const DEBUG = process.env.VOICELOG_DEBUG === 'true';
+const AUDIO_PREPROCESS_CACHE_VERSION = 'v1';
 
 // Adaptive overlap configuration
-const MIN_OVERLAP_SECONDS = 5;      // Minimum overlap for silence
-const MAX_OVERLAP_SECONDS = 30;     // Maximum overlap for dense speech
+const MIN_OVERLAP_SECONDS = 5; // Minimum overlap for silence
+const MAX_OVERLAP_SECONDS = 30; // Maximum overlap for dense speech
 const SPEECH_DENSITY_THRESHOLD = 0.6; // 60% speech = high density
 
 // ── Path helpers ──────────────────────────────────────────────────────────────
@@ -94,7 +99,10 @@ function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): n
   }
 
   // Calculate speech density (percentage of time with speech)
-  const totalDuration = speechSegments.reduce((max, seg) => Math.max(max, seg.end || seg.endTimestamp || 0), 0);
+  const totalDuration = speechSegments.reduce(
+    (max, seg) => Math.max(max, seg.end || seg.endTimestamp || 0),
+    0
+  );
   if (totalDuration <= 0) return MIN_OVERLAP_SECONDS;
 
   const speechDuration = speechSegments.reduce((sum, seg) => {
@@ -116,33 +124,33 @@ function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): n
 }
 
 export function getUploadDir() {
-  return config.VOICELOG_UPLOAD_DIR || path.join(__dirname, "data", "uploads");
+  return config.VOICELOG_UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
 }
 
 function getPreprocessCacheDir() {
-  return path.join(getUploadDir(), ".cache", "preprocessed");
+  return path.join(getUploadDir(), '.cache', 'preprocessed');
 }
 
-export function buildAudioPreprocessCacheKey(asset: any, profile: "standard" | "enhanced") {
+export function buildAudioPreprocessCacheKey(asset: any, profile: 'standard' | 'enhanced') {
   const parts = [
     AUDIO_PREPROCESS_CACHE_VERSION,
     profile,
-    clean(asset?.id || ""),
-    clean(asset?.file_path || ""),
-    clean(asset?.updated_at || asset?.updatedAt || asset?.created_at || asset?.createdAt || ""),
+    clean(asset?.id || ''),
+    clean(asset?.file_path || ''),
+    clean(asset?.updated_at || asset?.updatedAt || asset?.created_at || asset?.createdAt || ''),
     String(asset?.size_bytes || asset?.sizeBytes || 0),
-    clean(asset?.content_type || ""),
+    clean(asset?.content_type || ''),
   ];
-  return crypto.createHash("sha256").update(parts.join("|")).digest("hex");
+  return crypto.createHash('sha256').update(parts.join('|')).digest('hex');
 }
 
-export function getPreprocessCachePath(cacheKey: string, profile: "standard" | "enhanced") {
+export function getPreprocessCachePath(cacheKey: string, profile: 'standard' | 'enhanced') {
   return path.join(getPreprocessCacheDir(), `${cacheKey}.${profile}.wav`);
 }
 
 function isPathInside(childPath: string, parentPath: string) {
   const relative = path.relative(path.resolve(parentPath), path.resolve(childPath));
-  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+  return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
 export function isPreprocessCacheFile(filePath: string) {
@@ -153,8 +161,8 @@ export function isPreprocessCacheFile(filePath: string) {
 
 export function resolveStoredAudioQuality(asset: any) {
   try {
-    const payload = JSON.parse(asset?.diarization_json || "{}");
-    return payload?.audioQuality && typeof payload.audioQuality === "object"
+    const payload = JSON.parse(asset?.diarization_json || '{}');
+    return payload?.audioQuality && typeof payload.audioQuality === 'object'
       ? payload.audioQuality
       : null;
   } catch (_) {
@@ -163,20 +171,20 @@ export function resolveStoredAudioQuality(asset: any) {
 }
 
 export async function analyzeAudioQuality(filePath: string, options: any = {}) {
-  if (options.signal?.aborted) return { error: "Aborted" };
+  if (options.signal?.aborted) return { error: 'Aborted' };
 
-  let tempFilePath = "";
+  let tempFilePath = '';
   try {
-    if (filePath && !filePath.includes(path.sep) && !filePath.includes("/")) {
-      const { downloadAudioFromStorage } = await import("./lib/supabaseStorage");
+    if (filePath && !filePath.includes(path.sep) && !filePath.includes('/')) {
+      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(filePath);
       const ext =
         {
-          "audio/webm": ".webm",
-          "audio/mpeg": ".mp3",
-          "audio/mp4": ".m4a",
-          "audio/wav": ".wav",
-        }[String(options.contentType || "").toLowerCase()] || ".bin";
+          'audio/webm': '.webm',
+          'audio/mpeg': '.mp3',
+          'audio/mp4': '.m4a',
+          'audio/wav': '.wav',
+        }[String(options.contentType || '').toLowerCase()] || '.bin';
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_analyze_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
@@ -184,10 +192,10 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
       filePath = tempFilePath;
     }
 
-    if (!fs.existsSync(filePath)) return { error: "File not found" };
+    if (!fs.existsSync(filePath)) return { error: 'File not found' };
 
     const ffprobeBinary = deriveFfprobeBinary();
-    let codec = "";
+    let codec = '';
     let sampleRateHz = 0;
     let channels = 0;
     let bitrateKbps = 0;
@@ -201,26 +209,23 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
         `"${ffprobeBinary}" -v quiet -print_format json -show_streams -show_format "${filePath}"`,
         { timeout: 30000, signal: options.signal }
       );
-      const parsed = JSON.parse(String(stdout || "{}"));
+      const parsed = JSON.parse(String(stdout || '{}'));
       const audioStream =
         (Array.isArray(parsed?.streams) ? parsed.streams : []).find(
-          (stream) => stream?.codec_type === "audio"
+          (stream) => stream?.codec_type === 'audio'
         ) ||
         (Array.isArray(parsed?.streams) ? parsed.streams[0] : null) ||
         {};
-      codec = clean(audioStream?.codec_name || parsed?.format?.format_name || "");
+      codec = clean(audioStream?.codec_name || parsed?.format?.format_name || '');
       sampleRateHz = parseDbNumber(audioStream?.sample_rate, 0);
       channels = parseDbNumber(audioStream?.channels, 0);
       bitrateKbps = Math.round(
         parseDbNumber(audioStream?.bit_rate || parsed?.format?.bit_rate, 0) / 1000
       );
-      durationSeconds = parseDbNumber(
-        audioStream?.duration || parsed?.format?.duration,
-        0
-      );
+      durationSeconds = parseDbNumber(audioStream?.duration || parsed?.format?.duration, 0);
     } catch (error: any) {
       if (!options.signal?.aborted) {
-        console.warn("[transcription] ffprobe audio analysis failed:", error?.message || error);
+        console.warn('[transcription] ffprobe audio analysis failed:', error?.message || error);
       }
     }
 
@@ -230,16 +235,16 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
         { timeout: 45000, signal: options.signal }
       );
       meanVolumeDb = parseDbNumber(
-        String(stderr || "").match(/mean_volume:\s*([-\d.]+)\s*dB/i)?.[1],
+        String(stderr || '').match(/mean_volume:\s*([-\d.]+)\s*dB/i)?.[1],
         meanVolumeDb
       );
       maxVolumeDb = parseDbNumber(
-        String(stderr || "").match(/max_volume:\s*([-\d.]+)\s*dB/i)?.[1],
+        String(stderr || '').match(/max_volume:\s*([-\d.]+)\s*dB/i)?.[1],
         maxVolumeDb
       );
     } catch (error: any) {
       if (!options.signal?.aborted) {
-        console.warn("[transcription] volumedetect analysis failed:", error?.message || error);
+        console.warn('[transcription] volumedetect analysis failed:', error?.message || error);
       }
     }
 
@@ -248,8 +253,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
         `"${FFMPEG_BINARY}" -i "${filePath}" -af "silencedetect=noise=-35dB:d=0.5" -f null -`,
         { timeout: 45000, signal: options.signal }
       );
-      const silenceDurations =
-        String(stderr || "").match(/silence_duration:\s*([0-9.]+)/gi) || [];
+      const silenceDurations = String(stderr || '').match(/silence_duration:\s*([0-9.]+)/gi) || [];
       const totalSilence = silenceDurations.reduce(
         (sum: number, entry: string) => sum + parseDbNumber(entry, 0),
         0
@@ -258,7 +262,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
         durationSeconds > 0 ? clamp(totalSilence / durationSeconds, 0, 1) : silenceRatio;
     } catch (error: any) {
       if (!options.signal?.aborted) {
-        console.warn("[transcription] silencedetect analysis failed:", error?.message || error);
+        console.warn('[transcription] silencedetect analysis failed:', error?.message || error);
       }
     }
 
@@ -270,25 +274,20 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
     else if (silenceRatio > 0.5) qualityScore -= 15;
     qualityScore = clamp(Math.round(qualityScore), 0, 100);
 
-    let qualityLabel: "good" | "fair" | "poor" = "good";
-    if (
-      (sampleRateHz > 0 && sampleRateHz < 12000) ||
-      meanVolumeDb < -32 ||
-      silenceRatio > 0.75
-    ) {
-      qualityLabel = "poor";
+    let qualityLabel: 'good' | 'fair' | 'poor' = 'good';
+    if ((sampleRateHz > 0 && sampleRateHz < 12000) || meanVolumeDb < -32 || silenceRatio > 0.75) {
+      qualityLabel = 'poor';
     } else if (
       (sampleRateHz > 0 && sampleRateHz < 16000) ||
       meanVolumeDb < -24 ||
       silenceRatio > 0.5
     ) {
-      qualityLabel = "fair";
+      qualityLabel = 'fair';
     }
 
-    const contentType = String(options.contentType || "").toLowerCase();
+    const contentType = String(options.contentType || '').toLowerCase();
     const enhancementRecommended =
-      qualityLabel !== "good" ||
-      ["audio/mpeg", "audio/mp4", "audio/ogg"].includes(contentType);
+      qualityLabel !== 'good' || ['audio/mpeg', 'audio/mp4', 'audio/ogg'].includes(contentType);
 
     return {
       codec,
@@ -303,7 +302,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
       qualityLabel,
       enhancementRecommended,
       enhancementApplied: false,
-      enhancementProfile: "none",
+      enhancementProfile: 'none',
     };
   } finally {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
@@ -319,24 +318,22 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
 export async function preprocessAudio(
   filePath: string,
   signal: any,
-  profile: "standard" | "enhanced" = "standard",
+  profile: 'standard' | 'enhanced' = 'standard',
   options: { cacheKey?: string; silenceRemove?: boolean } = {}
 ) {
   if (!AUDIO_PREPROCESS) return null;
   const cachePath = options.cacheKey
     ? getPreprocessCachePath(options.cacheKey, profile)
     : `${filePath}.prep.wav`;
-  const tmpPath = options.cacheKey
-    ? `${cachePath}.tmp-${crypto.randomUUID()}.wav`
-    : cachePath;
+  const tmpPath = options.cacheKey ? `${cachePath}.tmp-${crypto.randomUUID()}.wav` : cachePath;
   let filter =
-    profile === "enhanced"
-      ? "highpass=f=80,lowpass=f=10000,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1"
-      : "afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr";
+    profile === 'enhanced'
+      ? 'highpass=f=80,lowpass=f=10000,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1'
+      : 'afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr';
 
   if (options.silenceRemove) {
     filter +=
-      ",silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-35dB";
+      ',silenceremove=start_periods=1:start_duration=0.1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-35dB';
   }
 
   try {
@@ -352,7 +349,7 @@ export async function preprocessAudio(
           `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
           { timeout: 10000 }
         );
-        durationBefore = parseFloat(String(stdout || "0").trim()) || 0;
+        durationBefore = parseFloat(String(stdout || '0').trim()) || 0;
       } catch (_) {}
     }
 
@@ -369,7 +366,7 @@ export async function preprocessAudio(
           `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tmpPath}"`,
           { timeout: 10000 }
         );
-        const durationAfter = parseFloat(String(stdout || "0").trim()) || 0;
+        const durationAfter = parseFloat(String(stdout || '0').trim()) || 0;
         const removed = durationBefore - durationAfter;
         console.log(
           `[transcription] Silence removal: ${durationBefore.toFixed(1)}s → ${durationAfter.toFixed(1)}s (removed ${removed.toFixed(1)}s, ${durationBefore > 0 ? ((removed / durationBefore) * 100).toFixed(0) : 0}%)`
@@ -412,7 +409,7 @@ export async function requestAudioTranscription({
   signal,
 }: any) {
   if (!STT_PROVIDER_CHAIN.length) {
-    throw new Error("Brakuje skonfigurowanego providera STT.");
+    throw new Error('Brakuje skonfigurowanego providera STT.');
   }
   return transcribeWithProviders(STT_PROVIDER_CHAIN, (provider) => ({
     filePath,
@@ -423,9 +420,8 @@ export async function requestAudioTranscription({
     fields: {
       ...(fields || {}),
       // Groq only supports its own models (e.g. whisper-large-v3), not OpenAI model names
-      model: provider.id === "groq"
-        ? provider.defaultModel
-        : (fields?.model || provider.defaultModel),
+      model:
+        provider.id === 'groq' ? provider.defaultModel : fields?.model || provider.defaultModel,
     },
   }));
 }
@@ -435,7 +431,7 @@ export async function requestAudioTranscription({
 export async function runSileroVAD(audioPath: string, signal: any) {
   if (!VAD_ENABLED) return null;
   if (!fs.existsSync(VAD_SCRIPT)) {
-    console.warn("[transcription] vad.py not found, skipping Silero VAD.");
+    console.warn('[transcription] vad.py not found, skipping Silero VAD.');
     return null;
   }
 
@@ -443,32 +439,32 @@ export async function runSileroVAD(audioPath: string, signal: any) {
     const child = spawn(PYTHON_BINARY, [VAD_SCRIPT, audioPath], {
       signal,
       timeout: 120000,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    let stdout = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (data) => {
+    let stdout = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (data) => {
       stdout += data;
     });
 
-    child.on("error", (error: any) => {
-      console.warn("[transcription] Silero VAD spawn error:", error.message);
+    child.on('error', (error: any) => {
+      console.warn('[transcription] Silero VAD spawn error:', error.message);
       resolve(null);
     });
 
-    child.on("close", () => {
+    child.on('close', () => {
       try {
         const parsed = JSON.parse(stdout.trim());
         if (parsed?.error) {
-          console.warn("[transcription] Silero VAD returned error:", parsed.error);
+          console.warn('[transcription] Silero VAD returned error:', parsed.error);
           resolve(null);
           return;
         }
         resolve(Array.isArray(parsed) ? parsed : null);
       } catch (e: any) {
         if (!signal || !signal.aborted) {
-          console.warn("[transcription] Silero VAD JSON parse failed:", e.message);
+          console.warn('[transcription] Silero VAD JSON parse failed:', e.message);
         }
         resolve(null);
       }
@@ -488,30 +484,30 @@ function extractAudioSegmentMemory(
     const child = spawn(
       FFMPEG_BINARY,
       [
-        "-y",
-        "-i",
+        '-y',
+        '-i',
         filePath,
-        "-ss",
+        '-ss',
         String(start),
-        "-t",
+        '-t',
         String(duration),
-        "-ar",
-        "16000",
-        "-ac",
-        "1",
-        "-f",
-        "wav",
-        "pipe:1",
+        '-ar',
+        '16000',
+        '-ac',
+        '1',
+        '-f',
+        'wav',
+        'pipe:1',
       ],
-      { stdio: ["ignore", "pipe", "ignore"], signal }
+      { stdio: ['ignore', 'pipe', 'ignore'], signal }
     );
 
     const chunks: Buffer[] = [];
-    child.stdout.on("data", (chunk) => chunks.push(chunk));
-    child.on("close", () => {
+    child.stdout.on('data', (chunk) => chunks.push(chunk));
+    child.on('close', () => {
       resolve(Buffer.concat(chunks));
     });
-    child.on("error", (e) => {
+    child.on('error', (e) => {
       if (signal?.aborted) return resolve(Buffer.alloc(0));
       reject(e);
     });
@@ -542,12 +538,9 @@ export function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
     const words = getRawWords(payload);
     const adjusted = words.map((word) => ({
       ...word,
-      start:
-        Number(word?.start ?? word?.start_time ?? word?.offset ?? 0) + offsetSeconds,
+      start: Number(word?.start ?? word?.start_time ?? word?.offset ?? 0) + offsetSeconds,
       end:
-        Number(
-          word?.end ?? word?.end_time ?? word?.offset_end ?? word?.start ?? 0
-        ) + offsetSeconds,
+        Number(word?.end ?? word?.end_time ?? word?.offset_end ?? word?.start ?? 0) + offsetSeconds,
     }));
     const deduped = adjusted.filter((w) => w.start >= wordHighWater - 0.1);
     if (deduped.length > 0) {
@@ -557,8 +550,8 @@ export function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
   });
 
   const fullText = safePayloads
-    .map(({ payload }) => payload?.text || "")
-    .join(" ")
+    .map(({ payload }) => payload?.text || '')
+    .join(' ')
     .trim();
   const sttAttempts = attempts.flatMap(({ sttResult, diagnostics }) => {
     if (Array.isArray(sttResult?.attempts)) return sttResult.attempts;
@@ -570,8 +563,7 @@ export function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
     segments: allSegments,
     words: allWords,
     text: fullText,
-    sttProviderInfo:
-      attempts.find(({ sttResult }) => sttResult?.providerId)?.sttResult || null,
+    sttProviderInfo: attempts.find(({ sttResult }) => sttResult?.providerId)?.sttResult || null,
     transcriptionDiagnostics: {
       usedChunking: true,
       fileSizeBytes,
@@ -590,21 +582,19 @@ export function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
           !diagnostics?.hasWords &&
           !diagnostics?.hasText
       ).length,
-      chunksWithSegments: attempts.filter(({ diagnostics }) => diagnostics?.hasSegments)
-        .length,
+      chunksWithSegments: attempts.filter(({ diagnostics }) => diagnostics?.hasSegments).length,
       chunksWithWords: attempts.filter(({ diagnostics }) => diagnostics?.hasWords).length,
       chunksWithText: attempts.filter(({ diagnostics }) => diagnostics?.hasText).length,
-      chunksFlaggedSilentByVad: attempts.filter(
-        ({ diagnostics }) => diagnostics?.vadFlaggedSilent
-      ).length,
+      chunksFlaggedSilentByVad: attempts.filter(({ diagnostics }) => diagnostics?.vadFlaggedSilent)
+        .length,
       mergedSegmentsCount: allSegments.length,
       mergedWordsCount: allWords.length,
       mergedTextLength: fullText.length,
       lastChunkErrorMessage:
         [...attempts]
           .reverse()
-          .map(({ diagnostics }) => clean(diagnostics?.sttErrorMessage || ""))
-          .find(Boolean) || "",
+          .map(({ diagnostics }) => clean(diagnostics?.sttErrorMessage || ''))
+          .find(Boolean) || '',
       sttAttempts,
     },
   };
@@ -619,7 +609,7 @@ export async function transcribeInChunks(
   if (DEBUG) console.log(`[transcription] Starting in-memory concurrent chunking...`);
 
   const notify = (p: number, m: string) => {
-    if (typeof options.onProgress === "function") options.onProgress({ progress: p, message: m });
+    if (typeof options.onProgress === 'function') options.onProgress({ progress: p, message: m });
   };
 
   const payloads = [];
@@ -644,7 +634,7 @@ export async function transcribeInChunks(
             vadFlaggedSilent: false,
             sentToStt: false,
             sttFailed: false,
-            sttErrorMessage: "",
+            sttErrorMessage: '',
             hasSegments: false,
             hasWords: false,
             hasText: false,
@@ -665,41 +655,40 @@ export async function transcribeInChunks(
 
           let chunkSpeech: any = null;
           if (VAD_ENABLED) {
-            const tmpVad = path.join(
-              os.tmpdir(),
-              `vadsilero_${crypto.randomUUID()}.wav`
-            );
+            const tmpVad = path.join(os.tmpdir(), `vadsilero_${crypto.randomUUID()}.wav`);
             fs.writeFileSync(tmpVad, buffer);
             chunkSpeech = await runSileroVAD(tmpVad, options.signal);
             try {
               fs.unlinkSync(tmpVad);
             } catch (_) {}
           }
-          
+
           // Track speech segments for adaptive overlap calculation
           if (chunkSpeech && chunkSpeech.length > 0) {
-            allSpeechSegments = allSpeechSegments.concat(chunkSpeech.map((seg: any) => ({
-              start: (currentOffset * 1000) + seg.start,
-              end: (currentOffset * 1000) + seg.end,
-            })));
-            
+            allSpeechSegments = allSpeechSegments.concat(
+              chunkSpeech.map((seg: any) => ({
+                start: currentOffset * 1000 + seg.start,
+                end: currentOffset * 1000 + seg.end,
+              }))
+            );
+
             // Recalculate overlap based on accumulated speech density
             currentOverlap = calculateAdaptiveOverlap(allSpeechSegments, CHUNK_OVERLAP_SECONDS);
-            
+
             if (DEBUG) {
-              console.log(`[transcription] Adaptive overlap: ${currentOverlap.toFixed(1)}s (density-based)`);
+              console.log(
+                `[transcription] Adaptive overlap: ${currentOverlap.toFixed(1)}s (density-based)`
+              );
             }
           }
-          diagnostics.vadFlaggedSilent = Boolean(
-            chunkSpeech && chunkSpeech.length === 0
-          );
+          diagnostics.vadFlaggedSilent = Boolean(chunkSpeech && chunkSpeech.length === 0);
 
           try {
             diagnostics.sentToStt = true;
             const sttResult = await requestAudioTranscription({
               buffer,
               filename: `chunk_${currentOffset}.wav`,
-              contentType: "audio/wav",
+              contentType: 'audio/wav',
               fields,
               signal: options.signal,
             });
@@ -710,17 +699,15 @@ export async function transcribeInChunks(
             diagnostics.hasText = Boolean(
               clean(payload?.text || payload?.transcript || payload?.results?.text)
             );
-            diagnostics.providerId = sttResult?.providerId || "";
-            diagnostics.providerLabel = sttResult?.providerLabel || "";
-            diagnostics.providerModel = sttResult?.model || "";
+            diagnostics.providerId = sttResult?.providerId || '';
+            diagnostics.providerLabel = sttResult?.providerLabel || '';
+            diagnostics.providerModel = sttResult?.model || '';
             return { payload, offsetSeconds: currentOffset, diagnostics, sttResult };
           } catch (error: any) {
             diagnostics.sentToStt = true;
             diagnostics.sttFailed = true;
-            diagnostics.sttErrorMessage = clean(error?.message || "STT request failed");
-            diagnostics.sttAttempts = Array.isArray(error?.sttAttempts)
-              ? error.sttAttempts
-              : [];
+            diagnostics.sttErrorMessage = clean(error?.message || 'STT request failed');
+            diagnostics.sttAttempts = Array.isArray(error?.sttAttempts) ? error.sttAttempts : [];
             return { payload: null, offsetSeconds: currentOffset, diagnostics };
           }
         })()
@@ -750,15 +737,15 @@ export async function transcribeLiveChunk(
   contentType: string,
   options: any = {}
 ) {
-  if (!STT_PROVIDER_CHAIN.length) return "";
+  if (!STT_PROVIDER_CHAIN.length) return '';
   try {
     const sttResult = await requestAudioTranscription({
       filePath,
-      contentType: contentType || "audio/webm",
+      contentType: contentType || 'audio/webm',
       fields: {
         model: VERIFICATION_MODEL,
         language: AUDIO_LANGUAGE,
-        response_format: "json",
+        response_format: 'json',
         prompt: buildWhisperPrompt({
           meetingTitle: options.meetingTitle,
           participants: options.participants,
@@ -770,12 +757,12 @@ export async function transcribeLiveChunk(
       signal: options.signal,
     });
     const payload = sttResult?.payload || null;
-    return String(payload?.text || "").trim();
+    return String(payload?.text || '').trim();
   } catch (err: any) {
     if (!options.signal?.aborted) {
-      if (DEBUG) console.warn("[transcription] Live chunk transcription failed:", err.message);
+      if (DEBUG) console.warn('[transcription] Live chunk transcription failed:', err.message);
     }
-    return "";
+    return '';
   }
 }
 

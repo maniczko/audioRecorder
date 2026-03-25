@@ -8,8 +8,14 @@ import { registerServiceWorker } from './pwa';
 import { prepareHostedRuntime } from './runtime/browserRuntime';
 import reportWebVitals from './reportWebVitals';
 
-document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'dark');
-document.documentElement.setAttribute('data-layout', document.documentElement.getAttribute('data-layout') || 'default');
+document.documentElement.setAttribute(
+  'data-theme',
+  document.documentElement.getAttribute('data-theme') || 'dark'
+);
+document.documentElement.setAttribute(
+  'data-layout',
+  document.documentElement.getAttribute('data-layout') || 'default'
+);
 
 async function bootstrap() {
   await prepareHostedRuntime();

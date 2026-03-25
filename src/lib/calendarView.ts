@@ -1,15 +1,19 @@
 export const REMINDER_PRESETS = [
-  { value: 10, label: "10 min" },
-  { value: 30, label: "30 min" },
-  { value: 60, label: "1 godz." },
-  { value: 180, label: "3 godz." },
-  { value: 1440, label: "1 dzien" },
+  { value: 10, label: '10 min' },
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 godz.' },
+  { value: 180, label: '3 godz.' },
+  { value: 1440, label: '1 dzien' },
 ];
 
 function uniqueNumbers(values) {
-  return [...new Set((Array.isArray(values) ? values : []).map((value) => Number(value)).filter((value) => value > 0))].sort(
-    (left, right) => left - right
-  );
+  return [
+    ...new Set(
+      (Array.isArray(values) ? values : [])
+        .map((value) => Number(value))
+        .filter((value) => value > 0)
+    ),
+  ].sort((left, right) => left - right);
 }
 
 export function normalizeReminderOffsets(value) {
@@ -43,13 +47,13 @@ function sameDay(left, right) {
 }
 
 export function monthLabel(date) {
-  return new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' }).format(date);
 }
 
 export function weekdayLabels() {
   const base = new Date(2024, 0, 1);
   return Array.from({ length: 7 }, (_, index) =>
-    new Intl.DateTimeFormat("pl-PL", { weekday: "short" }).format(addDays(base, index))
+    new Intl.DateTimeFormat('pl-PL', { weekday: 'short' }).format(addDays(base, index))
   );
 }
 
@@ -82,7 +86,9 @@ function calculateEnd(value, durationMinutes = 0) {
     return value;
   }
 
-  return new Date(start.getTime() + Math.max(0, Number(durationMinutes) || 0) * 60 * 1000).toISOString();
+  return new Date(
+    start.getTime() + Math.max(0, Number(durationMinutes) || 0) * 60 * 1000
+  ).toISOString();
 }
 
 function calculateDurationMinutesBetween(startValue, endValue, fallbackMinutes = 30) {
@@ -92,18 +98,21 @@ function calculateDurationMinutesBetween(startValue, endValue, fallbackMinutes =
     return fallbackMinutes;
   }
 
-  return Math.max(15, Math.round((end.getTime() - start.getTime()) / (60 * 1000)) || fallbackMinutes);
+  return Math.max(
+    15,
+    Math.round((end.getTime() - start.getTime()) / (60 * 1000)) || fallbackMinutes
+  );
 }
 
 function entryParticipants(entry) {
-  if (entry.type === "meeting") {
+  if (entry.type === 'meeting') {
     return Array.isArray(entry.source?.attendees) ? entry.source.attendees : [];
   }
-  if (entry.type === "task") {
+  if (entry.type === 'task') {
     return [...(entry.source?.assignedTo || []), entry.source?.owner].filter(Boolean);
   }
   return (Array.isArray(entry.source?.attendees) ? entry.source.attendees : [])
-    .map((participant) => participant?.displayName || participant?.email || "")
+    .map((participant) => participant?.displayName || participant?.email || '')
     .filter(Boolean);
 }
 
@@ -115,23 +124,23 @@ export function buildCalendarEntries(meetings, googleEvents = [], tasks = [], ca
       return;
     }
 
-    const key = createEntryKey("meeting", meeting.id);
+    const key = createEntryKey('meeting', meeting.id);
     const durationMinutes = Number(calendarMeta[key]?.durationMinutes) || meeting.durationMinutes;
     entries.push({
       key,
       id: meeting.id,
-      type: "meeting",
+      type: 'meeting',
       title: meeting.title,
       startsAt: meeting.startsAt,
       endsAt: calculateEnd(meeting.startsAt, durationMinutes),
       durationMinutes,
       editable: true,
       reminders: normalizeReminderOffsets(calendarMeta[key]?.reminders),
-      colorTone: "meeting",
+      colorTone: 'meeting',
       source: meeting,
       participants: meeting.attendees || [],
-      googleEventId: calendarMeta[key]?.googleEventId || "",
-      timezone: calendarMeta[key]?.timezone || "",
+      googleEventId: calendarMeta[key]?.googleEventId || '',
+      timezone: calendarMeta[key]?.timezone || '',
     });
   });
 
@@ -140,23 +149,32 @@ export function buildCalendarEntries(meetings, googleEvents = [], tasks = [], ca
     if (!eventStart) {
       return;
     }
-    const eventEnd = event.end?.dateTime || event.end?.date || calculateEnd(eventStart, event.start?.date ? 24 * 60 : 30);
-    const durationMinutes = calculateDurationMinutesBetween(eventStart, eventEnd, event.start?.date ? 24 * 60 : 30);
+    const eventEnd =
+      event.end?.dateTime ||
+      event.end?.date ||
+      calculateEnd(eventStart, event.start?.date ? 24 * 60 : 30);
+    const durationMinutes = calculateDurationMinutesBetween(
+      eventStart,
+      eventEnd,
+      event.start?.date ? 24 * 60 : 30
+    );
     entries.push({
-      key: createEntryKey("google", event.id),
+      key: createEntryKey('google', event.id),
       id: event.id,
-      type: "google",
-      title: event.summary || "Google event",
+      type: 'google',
+      title: event.summary || 'Google event',
       startsAt: eventStart,
       endsAt: eventEnd,
       durationMinutes,
       editable: true,
       reminders: [],
-      colorTone: "google",
+      colorTone: 'google',
       source: event,
-      htmlLink: event.htmlLink || "",
-      participants: (event.attendees || []).map((attendee) => attendee.displayName || attendee.email).filter(Boolean),
-      timezone: event.start?.timeZone || event.end?.timeZone || "",
+      htmlLink: event.htmlLink || '',
+      participants: (event.attendees || [])
+        .map((attendee) => attendee.displayName || attendee.email)
+        .filter(Boolean),
+      timezone: event.start?.timeZone || event.end?.timeZone || '',
     });
   });
 
@@ -165,27 +183,30 @@ export function buildCalendarEntries(meetings, googleEvents = [], tasks = [], ca
       return;
     }
 
-    const key = createEntryKey("task", task.id);
+    const key = createEntryKey('task', task.id);
     const durationMinutes = Number(calendarMeta[key]?.durationMinutes) || 15;
     entries.push({
       key,
       id: task.id,
-      type: "task",
+      type: 'task',
       title: task.title,
       startsAt: task.dueDate,
       endsAt: calculateEnd(task.dueDate, durationMinutes),
       durationMinutes,
       editable: true,
       reminders: normalizeReminderOffsets(calendarMeta[key]?.reminders),
-      colorTone: "task",
+      colorTone: 'task',
       source: task,
       participants: [...(task.assignedTo || []), task.owner].filter(Boolean),
-      googleEventId: calendarMeta[key]?.googleEventId || "",
-      timezone: calendarMeta[key]?.timezone || "",
+      googleEventId: calendarMeta[key]?.googleEventId || '',
+      timezone: calendarMeta[key]?.timezone || '',
     });
   });
 
-  return entries.sort((left, right) => new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime());
+  return entries.sort(
+    (left, right) =>
+      new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime()
+  );
 }
 
 export function groupMeetingsByDay(meetings, googleEvents = [], tasks = [], calendarMeta = {}) {
@@ -213,32 +234,34 @@ export function isToday(date) {
 }
 
 export function isCurrentMonth(date, activeDate) {
-  return date.getMonth() === activeDate.getMonth() && date.getFullYear() === activeDate.getFullYear();
+  return (
+    date.getMonth() === activeDate.getMonth() && date.getFullYear() === activeDate.getFullYear()
+  );
 }
 
 export function formatCalendarEventTime(value) {
-  return new Intl.DateTimeFormat("pl-PL", {
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('pl-PL', {
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(new Date(value));
 }
 
 export function formatCalendarDayLabel(date, options = {}) {
-  return new Intl.DateTimeFormat("pl-PL", {
-    weekday: options.short ? "short" : "long",
-    day: "2-digit",
-    month: options.month ? "long" : "short",
+  return new Intl.DateTimeFormat('pl-PL', {
+    weekday: options.short ? 'short' : 'long',
+    day: '2-digit',
+    month: options.month ? 'long' : 'short',
   }).format(date);
 }
 
 export function toLocalDateTimeValue(value) {
   if (!value) {
-    return "";
+    return '';
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "";
+    return '';
   }
 
   const offset = date.getTimezoneOffset() * 60 * 1000;
@@ -293,7 +316,10 @@ export function buildUpcomingReminders(entries, now = new Date()) {
 }
 
 export function resizeCalendarEntry(entry, deltaMinutes) {
-  const nextDuration = Math.max(15, (Number(entry?.durationMinutes) || 30) + Number(deltaMinutes || 0));
+  const nextDuration = Math.max(
+    15,
+    (Number(entry?.durationMinutes) || 30) + Number(deltaMinutes || 0)
+  );
   const startsAt = entry?.startsAt || new Date().toISOString();
   return {
     startsAt,
@@ -305,7 +331,8 @@ export function resizeCalendarEntry(entry, deltaMinutes) {
 export function buildConflictMap(entries) {
   const conflictMap = {};
   const sorted = [...(Array.isArray(entries) ? entries : [])].sort(
-    (left, right) => new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime()
+    (left, right) =>
+      new Date(left.startsAt || 0).getTime() - new Date(right.startsAt || 0).getTime()
   );
 
   sorted.forEach((entry, index) => {
@@ -335,26 +362,44 @@ export function buildConflictMap(entries) {
   return conflictMap;
 }
 
-function resolveParticipantTimezone(participant, workspaceMembers, peopleProfiles, fallbackTimeZone) {
-  const normalizedParticipant = String(participant || "").trim().toLowerCase();
+function resolveParticipantTimezone(
+  participant,
+  workspaceMembers,
+  peopleProfiles,
+  fallbackTimeZone
+) {
+  const normalizedParticipant = String(participant || '')
+    .trim()
+    .toLowerCase();
   const memberMatch = (Array.isArray(workspaceMembers) ? workspaceMembers : []).find((member) => {
-    const values = [member.name, member.email, member.googleEmail].map((value) => String(value || "").trim().toLowerCase());
+    const values = [member.name, member.email, member.googleEmail].map((value) =>
+      String(value || '')
+        .trim()
+        .toLowerCase()
+    );
     return values.includes(normalizedParticipant);
   });
   if (memberMatch?.timezone) {
-    return { label: memberMatch.name || memberMatch.email || participant, timezone: memberMatch.timezone };
+    return {
+      label: memberMatch.name || memberMatch.email || participant,
+      timezone: memberMatch.timezone,
+    };
   }
 
   const profileMatch = (Array.isArray(peopleProfiles) ? peopleProfiles : []).find(
-    (profile) => String(profile.name || "").trim().toLowerCase() === normalizedParticipant
+    (profile) =>
+      String(profile.name || '')
+        .trim()
+        .toLowerCase() === normalizedParticipant
   );
   if (profileMatch?.timezone) {
     return { label: profileMatch.name || participant, timezone: profileMatch.timezone };
   }
 
   return {
-    label: String(participant || "").trim() || "Uczestnik",
-    timezone: fallbackTimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+    label: String(participant || '').trim() || 'Uczestnik',
+    timezone:
+      fallbackTimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw',
   };
 }
 
@@ -362,7 +407,7 @@ export function buildParticipantTimezoneSummary(
   entry,
   workspaceMembers = [],
   peopleProfiles = [],
-  fallbackTimeZone = "Europe/Warsaw"
+  fallbackTimeZone = 'Europe/Warsaw'
 ) {
   const start = entry?.startsAt ? new Date(entry.startsAt) : null;
   const end = entry?.endsAt ? new Date(entry.endsAt) : null;
@@ -370,24 +415,33 @@ export function buildParticipantTimezoneSummary(
     return [];
   }
 
-  return [...new Map(entryParticipants(entry).map((participant) => [String(participant).trim().toLowerCase(), participant])).values()]
-    .map((participant) => resolveParticipantTimezone(participant, workspaceMembers, peopleProfiles, fallbackTimeZone))
+  return [
+    ...new Map(
+      entryParticipants(entry).map((participant) => [
+        String(participant).trim().toLowerCase(),
+        participant,
+      ])
+    ).values(),
+  ]
+    .map((participant) =>
+      resolveParticipantTimezone(participant, workspaceMembers, peopleProfiles, fallbackTimeZone)
+    )
     .map((item) => ({
       ...item,
-      window: new Intl.DateTimeFormat("pl-PL", {
-        hour: "2-digit",
-        minute: "2-digit",
-        month: "short",
-        day: "2-digit",
+      window: new Intl.DateTimeFormat('pl-PL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        month: 'short',
+        day: '2-digit',
         timeZone: item.timezone,
       }).format(start),
-      range: `${new Intl.DateTimeFormat("pl-PL", {
-        hour: "2-digit",
-        minute: "2-digit",
+      range: `${new Intl.DateTimeFormat('pl-PL', {
+        hour: '2-digit',
+        minute: '2-digit',
         timeZone: item.timezone,
-      }).format(start)} - ${new Intl.DateTimeFormat("pl-PL", {
-        hour: "2-digit",
-        minute: "2-digit",
+      }).format(start)} - ${new Intl.DateTimeFormat('pl-PL', {
+        hour: '2-digit',
+        minute: '2-digit',
         timeZone: item.timezone,
       }).format(end)}`,
     }));

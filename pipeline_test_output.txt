@@ -1,0 +1,57 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+[90mstdout[2m | server/tests/pipeline.test.ts
+[22m[39m[stt] Provider chain: openai → groq (auto-detected groq fallback)
+[stt]   openai: model=gpt-4o-transcribe url=https://api.openai.com/v1/audio/transcriptions key=sk-proj-...
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when file_path is missing
+[22m[39m[stt] openai model=whisper-1 → POST https://api.openai.com/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when file_path is missing
+[22m[39m[stt] groq model=whisper-large-v3 → POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when workspace_id is missing
+[22m[39m[stt] openai model=whisper-1 → POST https://api.openai.com/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when workspace_id is missing
+[22m[39m[stt] groq model=whisper-large-v3 → POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when recording_id is missing
+[22m[39m[stt] openai model=whisper-1 → POST https://api.openai.com/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mthrows error when recording_id is missing
+[22m[39m[stt] groq model=whisper-large-v3 → POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mhandles signal abort
+[22m[39m[stt] openai model=whisper-1 → POST https://api.openai.com/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/pipeline.test.ts[2m > [22m[2mpipeline.ts - transcribeRecording[2m > [22m[2mtranscribeRecording()[2m > [22m[2mhandles signal abort
+[22m[39m[stt] groq model=whisper-large-v3 → POST https://api.groq.com/openai/v1/audio/transcriptions
+
+ [31m❯[39m server/tests/pipeline.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m17 failed[39m[2m)[22m[33m 1266[2mms[22m[39m
+[31m       [31m×[31m throws error when file_path is missing[39m[33m 436[2mms[22m[39m
+[31m       [31m×[31m throws error when workspace_id is missing[39m[32m 293[2mms[22m[39m
+[31m       [31m×[31m throws error when recording_id is missing[39m[33m 459[2mms[22m[39m
+[31m       [31m×[31m calls onProgress with initial status[39m[32m 18[2mms[22m[39m
+[31m       [31m×[31m handles standard profile attempt[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m handles enhanced profile retry[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m handles remote audio source (Supabase)[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m handles error when downloading remote audio fails[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m handles empty transcript result[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m handles transcription error[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m handles signal abort[39m[32m 14[2mms[22m[39m
+[31m       [31m×[31m cleans up temp files on completion[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m handles different content types[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m handles missing content_type[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m passes onProgress callback through attempts[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m handles multiple retry attempts[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m isRemoteAudioPath detects remote paths[39m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m17 failed[39m[22m[90m (17)[39m
+[2m     Errors [22m [1m[31m2 errors[39m[22m
+[2m   Start at [22m 19:36:40
+[2m   Duration [22m 3.59s[2m (transform 345ms, setup 89ms, import 1.82s, tests 1.27s, environment 0ms)[22m
+

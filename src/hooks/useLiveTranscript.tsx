@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 // ~6 × 900ms timeslice chunks ≈ 5.4 s of audio per request
 const CHUNK_WINDOW = 6;
@@ -22,7 +22,7 @@ export default function useLiveTranscript({
   transcribeLive,
   mimeType,
 }) {
-  const [caption, setCaption] = useState("");
+  const [caption, setCaption] = useState('');
   const inflightRef = useRef(false);
   // Keep a stable ref to the transcribeLive fn to avoid restarting the interval
   // every render when the caller passes an inline-bound function.
@@ -33,7 +33,7 @@ export default function useLiveTranscript({
 
   useEffect(() => {
     if (!isRecording || !enabled || !transcribeLive) {
-      setCaption("");
+      setCaption('');
       return undefined;
     }
 
@@ -43,7 +43,7 @@ export default function useLiveTranscript({
       if (allChunks.length < 2) return;
 
       const window = allChunks.slice(-CHUNK_WINDOW);
-      const blob = new Blob(window, { type: mimeType || "audio/webm" });
+      const blob = new Blob(window, { type: mimeType || 'audio/webm' });
       if (blob.size < 500) return;
 
       inflightRef.current = true;
@@ -59,9 +59,9 @@ export default function useLiveTranscript({
 
     return () => {
       clearInterval(id);
-      setCaption("");
+      setCaption('');
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, enabled, mimeType]);
 
   return caption;

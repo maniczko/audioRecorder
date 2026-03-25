@@ -1,30 +1,30 @@
 import './styles/recordings.css';
-import React from "react";
-import { formatDateTime } from "./lib/storage";
-import { EmptyState } from "./components/Skeleton";
-import { RecordingPipelineStatus } from "./components/RecordingPipelineStatus";
-import { ProgressBar } from "./components/ProgressBar";
+import React from 'react';
+import { formatDateTime } from './lib/storage';
+import { EmptyState } from './components/Skeleton';
+import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
+import { ProgressBar } from './components/ProgressBar';
 import './RecordingsTabStyles.css';
 
-import { createMediaService } from "./services/mediaService";
-import { Input } from "./ui/Input";
-import TagInput from "./shared/TagInput";
+import { createMediaService } from './services/mediaService';
+import { Input } from './ui/Input';
+import TagInput from './shared/TagInput';
 
 function formatPipelineDiagnostics(item) {
   const details = [];
-  const transcriptOutcome = String(item?.transcriptOutcome || "").trim();
-  const gitSha = String(item?.pipelineGitSha || "").trim();
-  const version = String(item?.pipelineVersion || "").trim();
-  const emptyReason = String(item?.emptyReason || "").trim();
-  const diagnostics = item?.transcriptionDiagnostics && typeof item.transcriptionDiagnostics === "object"
-    ? item.transcriptionDiagnostics
-    : null;
-  const audioQuality = item?.audioQuality && typeof item.audioQuality === "object"
-    ? item.audioQuality
-    : null;
+  const transcriptOutcome = String(item?.transcriptOutcome || '').trim();
+  const gitSha = String(item?.pipelineGitSha || '').trim();
+  const version = String(item?.pipelineVersion || '').trim();
+  const emptyReason = String(item?.emptyReason || '').trim();
+  const diagnostics =
+    item?.transcriptionDiagnostics && typeof item.transcriptionDiagnostics === 'object'
+      ? item.transcriptionDiagnostics
+      : null;
+  const audioQuality =
+    item?.audioQuality && typeof item.audioQuality === 'object' ? item.audioQuality : null;
 
-  if (transcriptOutcome === "empty") {
-    details.push("Pipeline: empty transcript");
+  if (transcriptOutcome === 'empty') {
+    details.push('Pipeline: empty transcript');
   }
   if (emptyReason) {
     details.push(`Reason: ${emptyReason}`);
@@ -34,7 +34,9 @@ function formatPipelineDiagnostics(item) {
     Number.isFinite(Number(diagnostics.chunksSentToStt)) &&
     Number.isFinite(Number(diagnostics.chunksAttempted))
   ) {
-    details.push(`Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
+    details.push(
+      `Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`
+    );
   }
   if (
     diagnostics &&
@@ -51,7 +53,9 @@ function formatPipelineDiagnostics(item) {
     Number.isFinite(Number(diagnostics.chunksWithText)) &&
     Number.isFinite(Number(diagnostics.chunksAttempted))
   ) {
-    details.push(`Chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
+    details.push(
+      `Chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`
+    );
   }
   if (gitSha) {
     details.push(`Build: ${gitSha.slice(0, 7)}`);
@@ -62,39 +66,45 @@ function formatPipelineDiagnostics(item) {
     details.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
   }
 
-  return details.join(" · ");
+  return details.join(' · ');
 }
 
 function getSelectedMeetingDiagnostics(selectedMeeting) {
-  if (!selectedMeeting) return "";
+  if (!selectedMeeting) return '';
   const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
   const latest =
-    recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) || recordings[0] || null;
+    recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) ||
+    recordings[0] ||
+    null;
   return formatPipelineDiagnostics(latest);
 }
 
 function getLatestRecording(selectedMeeting) {
   if (!selectedMeeting) return null;
   const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
-  return recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) || recordings[0] || null;
+  return (
+    recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) ||
+    recordings[0] ||
+    null
+  );
 }
 
 function RAGSearchPanel({ currentWorkspace }) {
-  const [query, setQuery] = React.useState("");
-  const [answer, setAnswer] = React.useState("");
+  const [query, setQuery] = React.useState('');
+  const [answer, setAnswer] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim() || !currentWorkspace?.id) return;
     setLoading(true);
-    setAnswer("");
+    setAnswer('');
     try {
       const ms = await createMediaService();
       const res = await ms.askRAG(currentWorkspace.id, query);
-      setAnswer(res?.answer || "Brak odpowiedzi");
-    } catch(err) {
-      setAnswer("Wystąpił błąd podczas przeszukiwania archiwalnych nagrań.");
+      setAnswer(res?.answer || 'Brak odpowiedzi');
+    } catch (err) {
+      setAnswer('Wystąpił błąd podczas przeszukiwania archiwalnych nagrań.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +116,10 @@ function RAGSearchPanel({ currentWorkspace }) {
         <div>
           <div className="eyebrow recordings-rag-eyebrow">AI RAG Memory</div>
           <h2>Zapytaj o Archiwum</h2>
-          <p className="soft-copy recordings-copy-tight">Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne ustalenia.</p>
+          <p className="soft-copy recordings-copy-tight">
+            Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne
+            ustalenia.
+          </p>
         </div>
       </div>
       <div className="panel-body">
@@ -118,23 +131,29 @@ function RAGSearchPanel({ currentWorkspace }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
           />
-          <button type="submit" className="primary-button recordings-rag-submit" disabled={loading || !query.trim()}>
-            {loading ? "Szukam w wektorach..." : "Wyciągnij informację"}
+          <button
+            type="submit"
+            className="primary-button recordings-rag-submit"
+            disabled={loading || !query.trim()}
+          >
+            {loading ? 'Szukam w wektorach...' : 'Wyciągnij informację'}
           </button>
         </form>
-        {answer && (
-          <div className="recordings-rag-answer">
-            {answer}
-          </div>
-        )}
+        {answer && <div className="recordings-rag-answer">{answer}</div>}
       </div>
     </section>
   );
 }
 
-function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewMeetingDraft, setActiveTab }) {
+function MeetingPicker({
+  selectedMeeting,
+  userMeetings,
+  selectMeeting,
+  startNewMeetingDraft,
+  setActiveTab,
+}) {
   const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const ref = React.useRef(null);
 
   React.useEffect(() => {
@@ -142,12 +161,13 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
     function onOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
   }, [open]);
 
   const sorted = [...userMeetings].sort(
-    (a, b) => new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
+    (a, b) =>
+      new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
   );
   const filtered = query.trim()
     ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
@@ -160,7 +180,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
         <div className="studio-picker-header-info">
           <div className="eyebrow">Studio</div>
           <h2 className="studio-picker-header-title">
-            {selectedMeeting ? selectedMeeting.title : "Wybierz spotkanie"}
+            {selectedMeeting ? selectedMeeting.title : 'Wybierz spotkanie'}
           </h2>
           {selectedMeeting && (
             <div className="studio-picker-header-meta">
@@ -170,17 +190,11 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
             </div>
           )}
           {meetingDiagnostics ? (
-            <div className="recordings-diagnostics-copy">
-              {meetingDiagnostics}
-            </div>
+            <div className="recordings-diagnostics-copy">{meetingDiagnostics}</div>
           ) : null}
         </div>
         <div className="studio-picker-header-actions">
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setOpen((v) => !v)}
-          >
+          <button type="button" className="ghost-button" onClick={() => setOpen((v) => !v)}>
             Zmień ▾
           </button>
           <button
@@ -188,7 +202,7 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
             className="secondary-button"
             onClick={() => {
               startNewMeetingDraft();
-              setActiveTab("studio");
+              setActiveTab('studio');
             }}
           >
             + Nowe
@@ -209,12 +223,12 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
                 <button
                   key={meeting.id}
                   type="button"
-                  className={`studio-picker-item${selectedMeeting?.id === meeting.id ? " active" : ""}`}
+                  className={`studio-picker-item${selectedMeeting?.id === meeting.id ? ' active' : ''}`}
                   onClick={() => {
                     selectMeeting(meeting);
                     setOpen(false);
-                    setQuery("");
-                    setActiveTab("studio");
+                    setQuery('');
+                    setActiveTab('studio');
                   }}
                 >
                   <span className="studio-picker-item-title">{meeting.title}</span>
@@ -231,15 +245,21 @@ function MeetingPicker({ selectedMeeting, userMeetings, selectMeeting, startNewM
   );
 }
 
-function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiveTab, onDeleteMeeting }) {
-  const [dateFilter, setDateFilter] = React.useState("");
+function UnifiedLibrary({
+  userMeetings,
+  selectedMeeting,
+  selectMeeting,
+  setActiveTab,
+  onDeleteMeeting,
+}) {
+  const [dateFilter, setDateFilter] = React.useState('');
   const [tagFilter, setTagFilter] = React.useState<string[]>([]);
 
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
     userMeetings.forEach((m) => {
       if (Array.isArray(m.tags)) {
-        m.tags.forEach(t => {
+        m.tags.forEach((t) => {
           if (t && t.trim()) tags.add(t.trim());
         });
       }
@@ -248,20 +268,24 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
   }, [userMeetings]);
 
   const sortedAndFiltered = React.useMemo(() => {
-    return [...userMeetings].filter(m => {
-      if (dateFilter) {
-        const d = m.startsAt || m.createdAt;
-        if (!d || !d.startsWith(dateFilter)) return false;
-      }
-      if (tagFilter && tagFilter.length > 0) {
-        if (!Array.isArray(m.tags)) return false;
-        const mt = m.tags.map(t=>t.trim());
-        if (!tagFilter.every(tf => mt.includes(tf))) return false;
-      }
-      return true;
-    }).sort(
-      (a, b) => new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
-    );
+    return [...userMeetings]
+      .filter((m) => {
+        if (dateFilter) {
+          const d = m.startsAt || m.createdAt;
+          if (!d || !d.startsWith(dateFilter)) return false;
+        }
+        if (tagFilter && tagFilter.length > 0) {
+          if (!Array.isArray(m.tags)) return false;
+          const mt = m.tags.map((t) => t.trim());
+          if (!tagFilter.every((tf) => mt.includes(tf))) return false;
+        }
+        return true;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.startsAt || b.createdAt).valueOf() -
+          new Date(a.startsAt || a.createdAt).valueOf()
+      );
   }, [userMeetings, dateFilter, tagFilter]);
 
   return (
@@ -272,9 +296,9 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
           <h2>Baza spotkań i nagrań</h2>
         </div>
         <div className="recordings-library-filters">
-          <Input 
-            type="date" 
-            className="studio-picker-search recordings-library-filter-control" 
+          <Input
+            type="date"
+            className="studio-picker-search recordings-library-filter-control"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           />
@@ -291,66 +315,81 @@ function UnifiedLibrary({ userMeetings, selectedMeeting, selectMeeting, setActiv
       </div>
       <div className="studio-recordings-table-wrap">
         {sortedAndFiltered.length ? (
-        <table className="studio-recordings-table">
-          <thead>
-            <tr>
-              <th>Spotkanie</th>
-              <th>Data i godzina</th>
-              <th>Czas trwania</th>
-              <th>Nagrania</th>
-              <th>Tagi</th>
-              <th className="recordings-library-actions-col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedAndFiltered.map((m) => (
-              <tr
-                key={m.id}
-                className={m.id === selectedMeeting?.id ? "active" : ""}
-                onClick={() => {
-                  selectMeeting(m);
-                  setActiveTab("studio");
-                }}
-              >
-                <td className="recordings-library-meeting">
-                  <strong>{m.title}</strong>
-                </td>
-                <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
-                <td>{m.durationMinutes} min</td>
-                <td>
-                  <span className="status-chip status-chip-sm">
-                    {(m.recordings || []).length}
-                  </span>
-                </td>
-                <td>
-                  <div className="recordings-library-tags">
-                    {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
-                      if (!t.trim()) return null;
-                      return <span key={idx} className="status-chip status-chip-sm recordings-library-tag-chip">{t.trim()}</span>
-                    })}
-                  </div>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    title="Usuń spotkanie i nagrania"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`Czy na pewno chcesz usunąć "${m.title}" i wszystkie powiązane nagrania?`)) {
-                        onDeleteMeeting?.(m.id);
-                      }
-                    }}
-                    className="recordings-library-delete-btn"
-                  >
-                    🗑️
-                  </button>
-                </td>
+          <table className="studio-recordings-table">
+            <thead>
+              <tr>
+                <th>Spotkanie</th>
+                <th>Data i godzina</th>
+                <th>Czas trwania</th>
+                <th>Nagrania</th>
+                <th>Tagi</th>
+                <th className="recordings-library-actions-col"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortedAndFiltered.map((m) => (
+                <tr
+                  key={m.id}
+                  className={m.id === selectedMeeting?.id ? 'active' : ''}
+                  onClick={() => {
+                    selectMeeting(m);
+                    setActiveTab('studio');
+                  }}
+                >
+                  <td className="recordings-library-meeting">
+                    <strong>{m.title}</strong>
+                  </td>
+                  <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
+                  <td>{m.durationMinutes} min</td>
+                  <td>
+                    <span className="status-chip status-chip-sm">
+                      {(m.recordings || []).length}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="recordings-library-tags">
+                      {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
+                        if (!t.trim()) return null;
+                        return (
+                          <span
+                            key={idx}
+                            className="status-chip status-chip-sm recordings-library-tag-chip"
+                          >
+                            {t.trim()}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      title="Usuń spotkanie i nagrania"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            `Czy na pewno chcesz usunąć "${m.title}" i wszystkie powiązane nagrania?`
+                          )
+                        ) {
+                          onDeleteMeeting?.(m.id);
+                        }
+                      }}
+                      className="recordings-library-delete-btn"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <EmptyState icon="🎙️" title="Brak nagrań" message="Brak spotkań spełniających kryteria wyszukiwania." />
+          <EmptyState
+            icon="🎙️"
+            title="Brak nagrań"
+            message="Brak spotkań spełniających kryteria wyszukiwania."
+          />
         )}
       </div>
     </section>
@@ -369,10 +408,10 @@ export default function RecordingsTab(props) {
     queueRecording,
     recordingQueue = [],
     activeQueueItem = null,
-    analysisStatus = "idle",
-    recordingMessage = "",
+    analysisStatus = 'idle',
+    recordingMessage = '',
     pipelineProgressPercent = 0,
-    pipelineStageLabel = "",
+    pipelineStageLabel = '',
     retryRecordingQueueItem,
     retryStoredRecording,
     deleteRecordingAndMeeting,
@@ -383,13 +422,14 @@ export default function RecordingsTab(props) {
   const mainFileInputRef = React.useRef(null);
   const showPipelineStatus =
     Boolean(recordingMessage) ||
-    ["queued", "uploading", "processing", "diarization", "review", "failed", "done"].includes(
-      String(analysisStatus || "")
+    ['queued', 'uploading', 'processing', 'diarization', 'review', 'failed', 'done'].includes(
+      String(analysisStatus || '')
     );
   const pendingImports = React.useMemo(
     () =>
       [...(Array.isArray(recordingQueue) ? recordingQueue : [])].sort(
-        (left, right) => new Date(right.createdAt || 0).valueOf() - new Date(left.createdAt || 0).valueOf()
+        (left, right) =>
+          new Date(right.createdAt || 0).valueOf() - new Date(left.createdAt || 0).valueOf()
       ),
     [recordingQueue]
   );
@@ -401,9 +441,9 @@ export default function RecordingsTab(props) {
     () => getLatestRecording(selectedMeeting),
     [selectedMeeting]
   );
-  const selectedMeetingHasEmptyTranscript = latestSelectedRecording?.transcriptOutcome === "empty";
+  const selectedMeetingHasEmptyTranscript = latestSelectedRecording?.transcriptOutcome === 'empty';
   const selectedMeetingEmptyDiagnostics = React.useMemo(() => {
-    if (!selectedMeetingHasEmptyTranscript) return "";
+    if (!selectedMeetingHasEmptyTranscript) return '';
     const diagnostics = latestSelectedRecording?.transcriptionDiagnostics || {};
     const parts = [];
     if (latestSelectedRecording?.emptyReason) {
@@ -413,13 +453,17 @@ export default function RecordingsTab(props) {
       Number.isFinite(Number(diagnostics.chunksSentToStt)) &&
       Number.isFinite(Number(diagnostics.chunksAttempted))
     ) {
-      parts.push(`Chunki wyslane do STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
+      parts.push(
+        `Chunki wyslane do STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`
+      );
     }
     if (
       Number.isFinite(Number(diagnostics.chunksWithText)) &&
       Number.isFinite(Number(diagnostics.chunksAttempted))
     ) {
-      parts.push(`Chunki z tekstem: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
+      parts.push(
+        `Chunki z tekstem: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`
+      );
     }
     if (latestSelectedRecording?.pipelineGitSha) {
       parts.push(`Build: ${String(latestSelectedRecording.pipelineGitSha).slice(0, 7)}`);
@@ -427,7 +471,7 @@ export default function RecordingsTab(props) {
     if (latestSelectedRecording?.audioQuality?.qualityLabel) {
       parts.push(`Jakosc audio: ${latestSelectedRecording.audioQuality.qualityLabel}`);
     }
-    return parts.join(" · ");
+    return parts.join(' · ');
   }, [latestSelectedRecording, selectedMeetingHasEmptyTranscript]);
 
   const handleMainFileUpload = async (e) => {
@@ -437,7 +481,7 @@ export default function RecordingsTab(props) {
       if (onCreateMeeting && queueRecording) {
         setIsUploading(true);
         setUploadProgress(5);
-        
+
         let progress = 5;
         const progressInterval = setInterval(() => {
           progress += Math.floor(Math.random() * 15) + 5;
@@ -446,27 +490,30 @@ export default function RecordingsTab(props) {
         }, 300);
 
         const newMeeting = await onCreateMeeting({
-          title: `Import: ${file.name.replace(/\.[^/.]+$/, "")}`,
-          context: "Zaimportowane nagranie audio z pliku.",
-          startsAt: new Date().toISOString()
+          title: `Import: ${file.name.replace(/\.[^/.]+$/, '')}`,
+          context: 'Zaimportowane nagranie audio z pliku.',
+          startsAt: new Date().toISOString(),
         });
-        
+
         const queuedId = await queueRecording(newMeeting.id, file);
 
         clearInterval(progressInterval);
         setUploadProgress(queuedId ? 100 : 0);
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
-          if (queuedId) {
-            selectMeeting(newMeeting);
-          }
-        }, queuedId ? 350 : 0);
+        setTimeout(
+          () => {
+            setIsUploading(false);
+            setUploadProgress(0);
+            if (queuedId) {
+              selectMeeting(newMeeting);
+            }
+          },
+          queuedId ? 350 : 0
+        );
       }
     } catch (_) {
       setIsUploading(false);
       setUploadProgress(0);
-      alert("Wystąpił błąd przy wgrywaniu pliku.");
+      alert('Wystąpił błąd przy wgrywaniu pliku.');
     }
   };
 
@@ -482,12 +529,26 @@ export default function RecordingsTab(props) {
               </div>
             </div>
           ) : (
-            <button 
+            <button
               className="hover-pop recordings-upload-trigger"
-              type="button" 
-              onClick={() => mainFileInputRef.current?.click()} 
+              type="button"
+              onClick={() => mainFileInputRef.current?.click()}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
               Wgraj własne nagranie
             </button>
           )}
@@ -502,11 +563,11 @@ export default function RecordingsTab(props) {
         </div>
         <div className="recordings-tab-picker-col">
           <MeetingPicker
-             selectedMeeting={selectedMeeting}
-             userMeetings={userMeetings}
-             selectMeeting={selectMeeting}
-             startNewMeetingDraft={startNewMeetingDraft}
-             setActiveTab={setActiveTab}
+            selectedMeeting={selectedMeeting}
+            userMeetings={userMeetings}
+            selectMeeting={selectMeeting}
+            startNewMeetingDraft={startNewMeetingDraft}
+            setActiveTab={setActiveTab}
           />
         </div>
       </header>
@@ -518,7 +579,7 @@ export default function RecordingsTab(props) {
               <div className="eyebrow">Pipeline</div>
               <h2 className="recordings-section-title">Status przetwarzania nagrania</h2>
               <p className="soft-copy recordings-copy-md">
-                {recordingMessage || "Nagranie jest aktualnie przetwarzane przez pipeline audio."}
+                {recordingMessage || 'Nagranie jest aktualnie przetwarzane przez pipeline audio.'}
               </p>
             </div>
           </div>
@@ -546,7 +607,8 @@ export default function RecordingsTab(props) {
               <div className="eyebrow">Diagnostyka</div>
               <h2>Brak wykrytej mowy</h2>
               <p className="soft-copy recordings-copy-md">
-                Nie wykryto wypowiedzi w nagraniu. Sprawdz audio albo ponow transkrypcje dla wybranego pliku.
+                Nie wykryto wypowiedzi w nagraniu. Sprawdz audio albo ponow transkrypcje dla
+                wybranego pliku.
               </p>
             </div>
           </div>
@@ -576,29 +638,33 @@ export default function RecordingsTab(props) {
               <div className="eyebrow">Import</div>
               <h2>Pliki wgrywane i przetwarzane</h2>
               <p className="soft-copy recordings-copy-md">
-                Nowo dodane pliki pojawiaja sie tutaj od razu, zanim trafia do finalnej listy nagran.
+                Nowo dodane pliki pojawiaja sie tutaj od razu, zanim trafia do finalnej listy
+                nagran.
               </p>
             </div>
           </div>
           <div className="panel-body recordings-pending-list">
             {pendingImports.map((item) => {
               const isActive = activeQueueItem?.recordingId === item.recordingId;
-              const progressPercent = isActive ? pipelineProgressPercent : item.status === "queued" ? 8 : 0;
+              const progressPercent = isActive
+                ? pipelineProgressPercent
+                : item.status === 'queued'
+                  ? 8
+                  : 0;
               const progressMessage = isActive
                 ? recordingMessage
-                : item.status === "failed"
+                : item.status === 'failed'
                   ? item.errorMessage
-                  : "Oczekiwanie na rozpoczecie przetwarzania...";
-              const stageLabel = isActive ? pipelineStageLabel : "Plik dodany do kolejki";
+                  : 'Oczekiwanie na rozpoczecie przetwarzania...';
+              const stageLabel = isActive ? pipelineStageLabel : 'Plik dodany do kolejki';
               const diagnostics = formatPipelineDiagnostics(item);
 
               return (
-                <div
-                  key={item.recordingId}
-                  className="pending-import-card recordings-pending-card"
-                >
+                <div key={item.recordingId} className="pending-import-card recordings-pending-card">
                   <div className="recordings-pending-meta">
-                    <div className="recordings-pending-title">{item.meetingTitle || "Nowy import"}</div>
+                    <div className="recordings-pending-title">
+                      {item.meetingTitle || 'Nowy import'}
+                    </div>
                     <div className="recordings-pending-date">
                       Dodano {formatDateTime(item.createdAt)}
                     </div>
@@ -610,16 +676,15 @@ export default function RecordingsTab(props) {
                     stageLabel={stageLabel}
                     errorMessage={item.errorMessage}
                     onRetry={
-                      (item.status === "failed" || item.status === "failed_permanent") && retryRecordingQueueItem
+                      (item.status === 'failed' || item.status === 'failed_permanent') &&
+                      retryRecordingQueueItem
                         ? () => retryRecordingQueueItem(item.recordingId)
                         : undefined
                     }
                     className="recordings-tab-pending-status"
                   />
                   {diagnostics ? (
-                    <div className="recordings-pending-diagnostics">
-                      {diagnostics}
-                    </div>
+                    <div className="recordings-pending-diagnostics">{diagnostics}</div>
                   ) : null}
                 </div>
               );
@@ -627,7 +692,7 @@ export default function RecordingsTab(props) {
           </div>
         </section>
       ) : null}
-      
+
       <main className="recordings-tab-content">
         <RAGSearchPanel currentWorkspace={currentWorkspace} />
         <UnifiedLibrary

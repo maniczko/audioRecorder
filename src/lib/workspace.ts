@@ -1,16 +1,22 @@
-import { createId } from "./storage";
-import { normalizeWorkspaceRole } from "./permissions";
+import { createId } from './storage';
+import { normalizeWorkspaceRole } from './permissions';
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
 function clean(value) {
-  return String(value || "").trim();
+  return String(value || '').trim();
 }
 
 function unique(values) {
-  return [...new Set(safeArray(values).map((value) => clean(value)).filter(Boolean))];
+  return [
+    ...new Set(
+      safeArray(values)
+        .map((value) => clean(value))
+        .filter(Boolean)
+    ),
+  ];
 }
 
 function nowIso() {
@@ -22,17 +28,17 @@ function generateInviteCode() {
 }
 
 export function normalizeWorkspaceCode(code) {
-  return clean(code).replace(/\s+/g, "").toUpperCase();
+  return clean(code).replace(/\s+/g, '').toUpperCase();
 }
 
 export function createWorkspace(name, ownerUserId) {
   const createdAt = nowIso();
   return {
-    id: createId("workspace"),
-    name: clean(name) || "Shared workspace",
+    id: createId('workspace'),
+    name: clean(name) || 'Shared workspace',
     ownerUserId,
     memberIds: ownerUserId ? [ownerUserId] : [],
-    memberRoles: ownerUserId ? { [ownerUserId]: "owner" } : {},
+    memberRoles: ownerUserId ? { [ownerUserId]: 'owner' } : {},
     inviteCode: generateInviteCode(),
     createdAt,
     updatedAt: createdAt,
@@ -48,7 +54,7 @@ export function addUserToWorkspace(workspaces, workspaceId, userId) {
           memberIds: unique([...(workspace.memberIds || []), userId]),
           memberRoles: {
             ...(workspace.memberRoles || {}),
-            [userId]: normalizeWorkspaceRole(workspace.memberRoles?.[userId] || "member"),
+            [userId]: normalizeWorkspaceRole(workspace.memberRoles?.[userId] || 'member'),
           },
           updatedAt: nowIso(),
         }
@@ -57,14 +63,14 @@ export function addUserToWorkspace(workspaces, workspaceId, userId) {
 
 export function getWorkspaceMemberRole(workspace, userId) {
   if (!workspace || !userId) {
-    return "";
+    return '';
   }
 
   if (workspace.ownerUserId === userId) {
-    return "owner";
+    return 'owner';
   }
 
-  return normalizeWorkspaceRole(workspace.memberRoles?.[userId] || "member");
+  return normalizeWorkspaceRole(workspace.memberRoles?.[userId] || 'member');
 }
 
 export function workspaceMembers(users, workspace) {
@@ -112,17 +118,27 @@ export function resolveWorkspaceForUser(user, workspaces, preferredWorkspaceId) 
 }
 
 function personalWorkspaceName(user) {
-  const name = clean(user?.name) || clean(user?.email) || "Workspace";
+  const name = clean(user?.name) || clean(user?.email) || 'Workspace';
   return `${name} workspace`;
 }
 
-export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks, taskBoards, session }) {
+export function migrateWorkspaceData({
+  users,
+  workspaces,
+  meetings,
+  manualTasks,
+  taskBoards,
+  session,
+}) {
   let changed = false;
   let nextUsers = safeArray(users).map((user) => ({ ...user }));
   let nextWorkspaces = safeArray(workspaces).map((workspace) => ({
     ...workspace,
     memberIds: unique(workspace.memberIds),
-    memberRoles: workspace.memberRoles && typeof workspace.memberRoles === "object" ? { ...workspace.memberRoles } : {},
+    memberRoles:
+      workspace.memberRoles && typeof workspace.memberRoles === 'object'
+        ? { ...workspace.memberRoles }
+        : {},
     inviteCode: normalizeWorkspaceCode(workspace.inviteCode) || generateInviteCode(),
   }));
   let nextMeetings = safeArray(meetings).map((meeting) => ({ ...meeting }));
@@ -157,7 +173,9 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
     }
 
     const defaultWorkspaceId =
-      user.defaultWorkspaceId && memberships.includes(user.defaultWorkspaceId) ? user.defaultWorkspaceId : memberships[0];
+      user.defaultWorkspaceId && memberships.includes(user.defaultWorkspaceId)
+        ? user.defaultWorkspaceId
+        : memberships[0];
 
     if (
       JSON.stringify(user.workspaceIds || []) !== JSON.stringify(memberships) ||
@@ -179,8 +197,8 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
     const nextMemberRoles = normalizedMemberIds.reduce((result, memberId) => {
       result[memberId] =
         memberId === workspace.ownerUserId
-          ? "owner"
-          : normalizeWorkspaceRole(workspace.memberRoles?.[memberId] || "member");
+          ? 'owner'
+          : normalizeWorkspaceRole(workspace.memberRoles?.[memberId] || 'member');
       return result;
     }, {});
     if (normalizedMemberIds.length !== (workspace.memberIds || []).length) {
@@ -193,7 +211,7 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
       ...workspace,
       memberIds: normalizedMemberIds,
       memberRoles: nextMemberRoles,
-      name: clean(workspace.name) || "Shared workspace",
+      name: clean(workspace.name) || 'Shared workspace',
       inviteCode: normalizeWorkspaceCode(workspace.inviteCode) || generateInviteCode(),
     };
   });
@@ -208,12 +226,12 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
       return meeting;
     }
 
-    const workspaceId = defaultWorkspaceByUserId[meeting.userId] || "";
+    const workspaceId = defaultWorkspaceByUserId[meeting.userId] || '';
     changed = true;
     return {
       ...meeting,
       workspaceId,
-      createdByUserId: meeting.createdByUserId || meeting.userId || "",
+      createdByUserId: meeting.createdByUserId || meeting.userId || '',
     };
   });
 
@@ -222,12 +240,12 @@ export function migrateWorkspaceData({ users, workspaces, meetings, manualTasks,
       return task;
     }
 
-    const workspaceId = defaultWorkspaceByUserId[task.userId] || "";
+    const workspaceId = defaultWorkspaceByUserId[task.userId] || '';
     changed = true;
     return {
       ...task,
       workspaceId,
-      createdByUserId: task.createdByUserId || task.userId || "",
+      createdByUserId: task.createdByUserId || task.userId || '',
     };
   });
 

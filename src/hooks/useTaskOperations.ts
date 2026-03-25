@@ -8,8 +8,8 @@ import {
   createTaskColumn,
   validateTaskDependencies,
   validateTaskCompletion,
-} from "../lib/tasks";
-import { normalizeTaskUpdatePayload } from "../lib/appState";
+} from '../lib/tasks';
+import { normalizeTaskUpdatePayload } from '../lib/appState';
 
 export default function useTaskOperations({
   currentUser,
@@ -28,13 +28,13 @@ export default function useTaskOperations({
     validateTaskCompletion(task, normalizedUpdates, taskCollection, taskColumns);
 
     const updatedAt = new Date().toISOString();
-    const actor = currentUser?.name || currentUser?.email || "Ty";
+    const actor = currentUser?.name || currentUser?.email || 'Ty';
     const nextTask = {
       ...task,
       ...normalizedUpdates,
       ...(task.googleTaskId && updates.googleSyncStatus === undefined
         ? {
-            googleSyncStatus: "local_changes",
+            googleSyncStatus: 'local_changes',
             googleLocalUpdatedAt: updatedAt,
             googleSyncConflict: null,
           }
@@ -44,7 +44,7 @@ export default function useTaskOperations({
     const syncPayload =
       task.googleTaskId && updates.googleSyncStatus === undefined
         ? {
-            googleSyncStatus: "local_changes",
+            googleSyncStatus: 'local_changes',
             googleLocalUpdatedAt: updatedAt,
             googleSyncConflict: null,
           }
@@ -60,14 +60,24 @@ export default function useTaskOperations({
       updatedAt,
     };
     const shouldCreateRecurringFollowUp =
-      !task.completed && nextPayload.completed && currentUser && currentWorkspaceId && nextTask.recurrence;
+      !task.completed &&
+      nextPayload.completed &&
+      currentUser &&
+      currentWorkspaceId &&
+      nextTask.recurrence;
 
     return {
       task,
       nextTask,
       nextPayload,
       recurringTask: shouldCreateRecurringFollowUp
-        ? createRecurringTaskFromTask(nextTask, currentUser.id, currentWorkspaceId, taskColumns, taskCollection)
+        ? createRecurringTaskFromTask(
+            nextTask,
+            currentUser.id,
+            currentWorkspaceId,
+            taskColumns,
+            taskCollection
+          )
         : null,
     };
   }
@@ -78,7 +88,7 @@ export default function useTaskOperations({
 
     const { nextPayload, nextTask, recurringTask } = prepareTaskMutation(task, updates);
 
-    if (task.sourceType === "manual" || task.sourceType === "google") {
+    if (task.sourceType === 'manual' || task.sourceType === 'google') {
       setManualTasks((previous) => [
         ...(recurringTask ? [recurringTask] : []),
         ...previous.map((item) =>
@@ -125,7 +135,9 @@ export default function useTaskOperations({
   }
 
   function moveTaskToColumn(taskId, columnId) {
-    const columnTasks = meetingTasks.filter((task) => task.id !== taskId && task.status === columnId);
+    const columnTasks = meetingTasks.filter(
+      (task) => task.id !== taskId && task.status === columnId
+    );
     updateTask(taskId, {
       status: columnId,
       order: getNextTaskOrderTop(columnTasks),
@@ -143,7 +155,9 @@ export default function useTaskOperations({
   }
 
   function bulkUpdateTasks(taskIds, updates) {
-    const selectedIds = [...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean))];
+    const selectedIds = [
+      ...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean)),
+    ];
     if (!selectedIds.length) return;
 
     const selectedSet = new Set(selectedIds);
@@ -164,12 +178,12 @@ export default function useTaskOperations({
     const recurringTasks = mutations.map((mutation) => mutation.recurringTask).filter(Boolean);
     const manualPayloads = new Map(
       mutations
-        .filter(({ task }) => task.sourceType === "manual" || task.sourceType === "google")
+        .filter(({ task }) => task.sourceType === 'manual' || task.sourceType === 'google')
         .map(({ task, nextPayload }) => [task.id, nextPayload])
     );
     const derivedPayloads = Object.fromEntries(
       mutations
-        .filter(({ task }) => task.sourceType !== "manual" && task.sourceType !== "google")
+        .filter(({ task }) => task.sourceType !== 'manual' && task.sourceType !== 'google')
         .map(({ task, nextPayload }) => [task.id, nextPayload])
     );
 
@@ -210,7 +224,9 @@ export default function useTaskOperations({
 
   function changeTaskColumn(columnId, updates) {
     if (!currentWorkspaceId) return;
-    const nextColumns = taskColumns.map((column) => (column.id === columnId ? { ...column, ...updates } : column));
+    const nextColumns = taskColumns.map((column) =>
+      column.id === columnId ? { ...column, ...updates } : column
+    );
     setTaskBoards((previous) => updateTaskColumns(previous, currentWorkspaceId, nextColumns));
   }
 
@@ -238,7 +254,7 @@ export default function useTaskOperations({
     const task = meetingTasks.find((item) => item.id === taskId);
     if (!task) return;
 
-    if (task.sourceType === "manual") {
+    if (task.sourceType === 'manual') {
       setManualTasks((previous) => previous.filter((item) => item.id !== taskId));
       return;
     }
@@ -254,9 +270,11 @@ export default function useTaskOperations({
   }
 
   function bulkDeleteTasks(taskIds) {
-    [...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean))].forEach((taskId) => {
-      deleteTask(taskId);
-    });
+    [...new Set((Array.isArray(taskIds) ? taskIds : []).map(String).filter(Boolean))].forEach(
+      (taskId) => {
+        deleteTask(taskId);
+      }
+    );
   }
 
   return {

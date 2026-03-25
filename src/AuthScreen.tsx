@@ -1,6 +1,6 @@
 import './styles/auth.css';
-import { formatDateTime } from "./lib/storage";
-import { APP_DATA_PROVIDER } from "./services/config";
+import { formatDateTime } from './lib/storage';
+import { APP_DATA_PROVIDER } from './services/config';
 import './AuthScreenStyles.css';
 
 export default function AuthScreen({
@@ -21,23 +21,23 @@ export default function AuthScreen({
   requestResetCode,
   completeReset,
 }) {
-  const isRegister = authMode === "register";
-  const isForgot = authMode === "forgot";
+  const isRegister = authMode === 'register';
+  const isForgot = authMode === 'forgot';
   const authValues = {
-    name: String(authDraft?.name || ""),
-    role: String(authDraft?.role || ""),
-    company: String(authDraft?.company || ""),
-    email: String(authDraft?.email || ""),
-    password: String(authDraft?.password || ""),
-    workspaceMode: authDraft?.workspaceMode === "join" ? "join" : "create",
-    workspaceName: String(authDraft?.workspaceName || ""),
-    workspaceCode: String(authDraft?.workspaceCode || ""),
+    name: String(authDraft?.name || ''),
+    role: String(authDraft?.role || ''),
+    company: String(authDraft?.company || ''),
+    email: String(authDraft?.email || ''),
+    password: String(authDraft?.password || ''),
+    workspaceMode: authDraft?.workspaceMode === 'join' ? 'join' : 'create',
+    workspaceName: String(authDraft?.workspaceName || ''),
+    workspaceCode: String(authDraft?.workspaceCode || ''),
   };
   const resetValues = {
-    email: String(resetDraft?.email || ""),
-    code: String(resetDraft?.code || ""),
-    newPassword: String(resetDraft?.newPassword || ""),
-    confirmPassword: String(resetDraft?.confirmPassword || ""),
+    email: String(resetDraft?.email || ''),
+    code: String(resetDraft?.code || ''),
+    newPassword: String(resetDraft?.newPassword || ''),
+    confirmPassword: String(resetDraft?.confirmPassword || ''),
   };
 
   function internalSubmit(event) {
@@ -57,8 +57,8 @@ export default function AuthScreen({
         <div className="eyebrow">VoiceLog OS</div>
         <h1>Meeting intelligence z kalendarzem i rozpoznawaniem rozmowcow.</h1>
         <p className="hero-copy">
-          Planujesz spotkania, logujesz sie lokalnie albo przez Google, a po nagraniu od razu widzisz kto co mowil,
-          jakie byly decyzje i czy odpowiedzi pokrywaja Twoje potrzeby.
+          Planujesz spotkania, logujesz sie lokalnie albo przez Google, a po nagraniu od razu
+          widzisz kto co mowil, jakie byly decyzje i czy odpowiedzi pokrywaja Twoje potrzeby.
         </p>
 
         <div className="hero-grid">
@@ -68,11 +68,16 @@ export default function AuthScreen({
           </article>
           <article className="feature-card">
             <h2>Calendar tab</h2>
-            <p>Masz miesieczny widok spotkan w stylu Google Calendar i szybkie wejscie do wydarzen.</p>
+            <p>
+              Masz miesieczny widok spotkan w stylu Google Calendar i szybkie wejscie do wydarzen.
+            </p>
           </article>
           <article className="feature-card">
             <h2>Need-based insights</h2>
-            <p>Do kazdego spotkania zapisujesz, co chcesz z niego wyciagnac, a analiza odpowiada na te potrzeby.</p>
+            <p>
+              Do kazdego spotkania zapisujesz, co chcesz z niego wyciagnac, a analiza odpowiada na
+              te potrzeby.
+            </p>
           </article>
         </div>
       </section>
@@ -81,16 +86,28 @@ export default function AuthScreen({
         <div className="panel-header">
           <div>
             <div className="eyebrow">Workspace access</div>
-            <h2>{isRegister ? "Stworz konto" : isForgot ? "Reset hasla" : "Zaloguj sie"}</h2>
+            <h2>{isRegister ? 'Stworz konto' : isForgot ? 'Reset hasla' : 'Zaloguj sie'}</h2>
           </div>
           <div className="mode-switch">
-            <button type="button" className={isRegister ? "pill active" : "pill"} onClick={() => setAuthMode("register")}>
+            <button
+              type="button"
+              className={isRegister ? 'pill active' : 'pill'}
+              onClick={() => setAuthMode('register')}
+            >
               Rejestracja
             </button>
-            <button type="button" className={authMode === "login" ? "pill active" : "pill"} onClick={() => setAuthMode("login")}>
+            <button
+              type="button"
+              className={authMode === 'login' ? 'pill active' : 'pill'}
+              onClick={() => setAuthMode('login')}
+            >
               Logowanie
             </button>
-            <button type="button" className={isForgot ? "pill active" : "pill"} onClick={() => setAuthMode("forgot")}>
+            <button
+              type="button"
+              className={isForgot ? 'pill active' : 'pill'}
+              onClick={() => setAuthMode('forgot')}
+            >
               Reset
             </button>
           </div>
@@ -117,9 +134,11 @@ export default function AuthScreen({
           <span>albo klasycznie</span>
         </div>
 
-        {APP_DATA_PROVIDER !== "remote" ? (
+        {APP_DATA_PROVIDER !== 'remote' ? (
           <div className="inline-alert info">
-            Ta instancja dziala w trybie lokalnym. Konta i sesja sa zapisane tylko w tej przegladarce, wiec po deployu na innym adresie albo po czyszczeniu storage mozesz nie widziec poprzedniego uzytkownika.
+            Ta instancja dziala w trybie lokalnym. Konta i sesja sa zapisane tylko w tej
+            przegladarce, wiec po deployu na innym adresie albo po czyszczeniu storage mozesz nie
+            widziec poprzedniego uzytkownika.
           </div>
         ) : null}
 
@@ -130,7 +149,9 @@ export default function AuthScreen({
               <input
                 type="email"
                 value={resetValues.email}
-                onChange={(event) => setResetDraft((previous) => ({ ...previous, email: event.target.value }))}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({ ...previous, email: event.target.value }))
+                }
                 placeholder="name@company.com"
               />
             </label>
@@ -143,7 +164,7 @@ export default function AuthScreen({
               <div className="inline-alert info">
                 W tej lokalnej wersji kod pokazujemy tutaj zamiast wysylki mailem:
                 <strong> {resetPreviewCode}</strong>
-                {resetExpiresAt ? ` (wazny do ${formatDateTime(resetExpiresAt)})` : ""}
+                {resetExpiresAt ? ` (wazny do ${formatDateTime(resetExpiresAt)})` : ''}
               </div>
             ) : null}
 
@@ -152,7 +173,9 @@ export default function AuthScreen({
               <input
                 type="text"
                 value={resetValues.code}
-                onChange={(event) => setResetDraft((previous) => ({ ...previous, code: event.target.value }))}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({ ...previous, code: event.target.value }))
+                }
               />
             </label>
             <label>
@@ -160,7 +183,9 @@ export default function AuthScreen({
               <input
                 type="password"
                 value={resetValues.newPassword}
-                onChange={(event) => setResetDraft((previous) => ({ ...previous, newPassword: event.target.value }))}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({ ...previous, newPassword: event.target.value }))
+                }
               />
             </label>
             <label>
@@ -168,7 +193,12 @@ export default function AuthScreen({
               <input
                 type="password"
                 value={resetValues.confirmPassword}
-                onChange={(event) => setResetDraft((previous) => ({ ...previous, confirmPassword: event.target.value }))}
+                onChange={(event) =>
+                  setResetDraft((previous) => ({
+                    ...previous,
+                    confirmPassword: event.target.value,
+                  }))
+                }
               />
             </label>
 
@@ -187,7 +217,9 @@ export default function AuthScreen({
                   <input
                     placeholder="np. Anna Nowak"
                     value={authValues.name}
-                    onChange={(event) => setAuthDraft((previous) => ({ ...previous, name: event.target.value }))}
+                    onChange={(event) =>
+                      setAuthDraft((previous) => ({ ...previous, name: event.target.value }))
+                    }
                   />
                 </label>
                 <div className="grid-2">
@@ -195,14 +227,18 @@ export default function AuthScreen({
                     <span>Rola</span>
                     <input
                       value={authValues.role}
-                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, role: event.target.value }))}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({ ...previous, role: event.target.value }))
+                      }
                     />
                   </label>
                   <label>
                     <span>Firma</span>
                     <input
                       value={authValues.company}
-                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, company: event.target.value }))}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({ ...previous, company: event.target.value }))
+                      }
                     />
                   </label>
                 </div>
@@ -215,7 +251,9 @@ export default function AuthScreen({
                 type="email"
                 placeholder="name@company.com"
                 value={authValues.email}
-                onChange={(event) => setAuthDraft((previous) => ({ ...previous, email: event.target.value }))}
+                onChange={(event) =>
+                  setAuthDraft((previous) => ({ ...previous, email: event.target.value }))
+                }
               />
             </label>
             <label>
@@ -224,7 +262,9 @@ export default function AuthScreen({
                 type="password"
                 placeholder="minimum 6 znakow"
                 value={authValues.password}
-                onChange={(event) => setAuthDraft((previous) => ({ ...previous, password: event.target.value }))}
+                onChange={(event) =>
+                  setAuthDraft((previous) => ({ ...previous, password: event.target.value }))
+                }
               />
             </label>
 
@@ -233,27 +273,40 @@ export default function AuthScreen({
                 <div className="workspace-choice">
                   <button
                     type="button"
-                    className={authValues.workspaceMode === "create" ? "choice-btn active" : "choice-btn"}
-                    onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "create" }))}
+                    className={
+                      authValues.workspaceMode === 'create' ? 'choice-btn active' : 'choice-btn'
+                    }
+                    onClick={() =>
+                      setAuthDraft((previous) => ({ ...previous, workspaceMode: 'create' }))
+                    }
                   >
                     Stworz workspace
                   </button>
                   <button
                     type="button"
-                    className={authValues.workspaceMode === "join" ? "choice-btn active" : "choice-btn"}
-                    onClick={() => setAuthDraft((previous) => ({ ...previous, workspaceMode: "join" }))}
+                    className={
+                      authValues.workspaceMode === 'join' ? 'choice-btn active' : 'choice-btn'
+                    }
+                    onClick={() =>
+                      setAuthDraft((previous) => ({ ...previous, workspaceMode: 'join' }))
+                    }
                   >
                     Dolacz kodem
                   </button>
                 </div>
 
-                {authValues.workspaceMode === "create" ? (
+                {authValues.workspaceMode === 'create' ? (
                   <label>
                     <span>Nazwa workspace</span>
                     <input
                       placeholder="np. Zespol sprzedazy"
                       value={authValues.workspaceName}
-                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, workspaceName: event.target.value }))}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({
+                          ...previous,
+                          workspaceName: event.target.value,
+                        }))
+                      }
                     />
                   </label>
                 ) : (
@@ -261,7 +314,12 @@ export default function AuthScreen({
                     <span>Kod zaproszenia</span>
                     <input
                       value={authValues.workspaceCode}
-                      onChange={(event) => setAuthDraft((previous) => ({ ...previous, workspaceCode: event.target.value }))}
+                      onChange={(event) =>
+                        setAuthDraft((previous) => ({
+                          ...previous,
+                          workspaceCode: event.target.value,
+                        }))
+                      }
                     />
                   </label>
                 )}
@@ -269,7 +327,7 @@ export default function AuthScreen({
             ) : null}
 
             <button type="submit" className="primary-button">
-              {isRegister ? "Wejdz do workspace" : "Zaloguj sie"}
+              {isRegister ? 'Wejdz do workspace' : 'Zaloguj sie'}
             </button>
 
             {authError ? <div className="inline-alert error">{authError}</div> : null}

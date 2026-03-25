@@ -1,21 +1,23 @@
-import fs from "node:fs";
-import path from "node:path";
-import vm from "node:vm";
-import { describe, expect, test, vi } from "vitest";
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { describe, expect, test, vi } from 'vitest';
 
 function loadServiceWorkerHarness() {
   const listeners: Record<string, (event: any) => void> = {};
   const cachePut = vi.fn().mockResolvedValue(undefined);
   const cachesMock = {
-    open: vi.fn().mockResolvedValue({ addAll: vi.fn().mockResolvedValue(undefined), put: cachePut }),
-    keys: vi.fn().mockResolvedValue(["voicelog-os-v1", "voicelog-os-v2"]),
+    open: vi
+      .fn()
+      .mockResolvedValue({ addAll: vi.fn().mockResolvedValue(undefined), put: cachePut }),
+    keys: vi.fn().mockResolvedValue(['voicelog-os-v1', 'voicelog-os-v2']),
     delete: vi.fn().mockResolvedValue(true),
     match: vi.fn().mockResolvedValue(null),
   };
   const networkResponse = {
     ok: true,
     bodyUsed: false,
-    type: "basic",
+    type: 'basic',
     clone: vi.fn(function clone() {
       return this;
     }),
@@ -27,9 +29,9 @@ function loadServiceWorkerHarness() {
     }),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn().mockResolvedValue(undefined) },
-    location: { origin: "https://app.example.test" },
+    location: { origin: 'https://app.example.test' },
   };
-  const source = fs.readFileSync(path.resolve("public/service-worker.js"), "utf8");
+  const source = fs.readFileSync(path.resolve('public/service-worker.js'), 'utf8');
 
   vm.runInNewContext(source, {
     self: selfMock,
@@ -44,20 +46,20 @@ function loadServiceWorkerHarness() {
   return { listeners, cachePut, selfMock, networkResponse };
 }
 
-describe("service-worker", () => {
-  test("reacts to skip waiting messages", () => {
+describe('service-worker', () => {
+  test('reacts to skip waiting messages', () => {
     const { listeners, selfMock } = loadServiceWorkerHarness();
 
-    listeners.message({ data: { type: "SKIP_WAITING" } });
+    listeners.message({ data: { type: 'SKIP_WAITING' } });
 
     expect(selfMock.skipWaiting).toHaveBeenCalledTimes(1);
   });
 
-  test("skips api fetches and caches regular asset responses", async () => {
+  test('skips api fetches and caches regular asset responses', async () => {
     const { listeners, cachePut, networkResponse } = loadServiceWorkerHarness();
     const skippedRespondWith = vi.fn();
     listeners.fetch({
-      request: { method: "GET", url: "http://localhost:4000/api/state", mode: "cors" },
+      request: { method: 'GET', url: 'http://localhost:4000/api/state', mode: 'cors' },
       respondWith: skippedRespondWith,
     });
 
@@ -65,7 +67,7 @@ describe("service-worker", () => {
 
     const respondWith = vi.fn();
     listeners.fetch({
-      request: { method: "GET", url: "https://app.example.test/assets/main.js", mode: "cors" },
+      request: { method: 'GET', url: 'https://app.example.test/assets/main.js', mode: 'cors' },
       respondWith,
     });
 
@@ -74,15 +76,15 @@ describe("service-worker", () => {
     expect(cachePut).toHaveBeenCalledTimes(1);
   });
 
-  test("skips cross-origin api requests so the worker does not intercept remote backend calls", () => {
+  test('skips cross-origin api requests so the worker does not intercept remote backend calls', () => {
     const { listeners } = loadServiceWorkerHarness();
     const respondWith = vi.fn();
 
     listeners.fetch({
       request: {
-        method: "GET",
-        url: "https://audiorecorder-production.up.railway.app/voice-profiles",
-        mode: "cors",
+        method: 'GET',
+        url: 'https://audiorecorder-production.up.railway.app/voice-profiles',
+        mode: 'cors',
       },
       respondWith,
     });

@@ -85,7 +85,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 400 when X-Workspace-Id is missing', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -96,7 +98,7 @@ describe('Media Routes - Additional Coverage', () => {
 
       const res = await app.request('/media/recordings/rec1/audio/chunk?index=0&total=1', {
         method: 'PUT',
-        headers: { 'Authorization': 'Bearer token' },
+        headers: { Authorization: 'Bearer token' },
         body: new ArrayBuffer(100),
       });
 
@@ -106,7 +108,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 400 when index/total parameters are invalid', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -118,7 +122,7 @@ describe('Media Routes - Additional Coverage', () => {
       const res = await app.request('/media/recordings/rec1/audio/chunk?index=abc&total=1', {
         method: 'PUT',
         headers: {
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: new ArrayBuffer(100),
@@ -130,7 +134,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 400 when total > 600', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -142,7 +148,7 @@ describe('Media Routes - Additional Coverage', () => {
       const res = await app.request('/media/recordings/rec1/audio/chunk?index=0&total=601', {
         method: 'PUT',
         headers: {
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: new ArrayBuffer(100),
@@ -154,7 +160,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 413 when chunk > 3MB', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -166,7 +174,7 @@ describe('Media Routes - Additional Coverage', () => {
       const res = await app.request('/media/recordings/rec1/audio/chunk?index=0&total=1', {
         method: 'PUT',
         headers: {
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: new ArrayBuffer(4 * 1024 * 1024),
@@ -178,7 +186,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 200 and saves chunk when valid', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -190,7 +200,7 @@ describe('Media Routes - Additional Coverage', () => {
       const res = await app.request('/media/recordings/rec1/audio/chunk?index=0&total=1', {
         method: 'PUT',
         headers: {
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: new ArrayBuffer(100),
@@ -222,7 +232,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 400 when workspaceId is missing', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -235,7 +247,7 @@ describe('Media Routes - Additional Coverage', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
         },
         body: JSON.stringify({ total: 1 }),
       });
@@ -246,7 +258,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 400 when total is missing or invalid', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -259,7 +273,7 @@ describe('Media Routes - Additional Coverage', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: JSON.stringify({}),
@@ -271,7 +285,9 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     test('returns 413 when assembled file > 100MB', async () => {
-      mockAuthService.getSession = vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
+      mockAuthService.getSession = vi
+        .fn()
+        .mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' });
 
       const app = createApp({
         authService: mockAuthService,
@@ -284,7 +300,7 @@ describe('Media Routes - Additional Coverage', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer token',
+          Authorization: 'Bearer token',
           'X-Workspace-Id': 'ws1',
         },
         body: JSON.stringify({ total: 1 }),

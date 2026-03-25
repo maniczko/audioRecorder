@@ -1,14 +1,14 @@
-import { createId } from "./storage";
-import { getSpeechRecognitionClass } from "./recording";
-import { signatureAroundTimestamp } from "./diarization";
+import { createId } from './storage';
+import { getSpeechRecognitionClass } from './recording';
+import { signatureAroundTimestamp } from './diarization';
 
 export const TRANSCRIPTION_PROVIDER = {
-  id: "browser-local",
-  label: "Browser STT + diarization + confidence scoring",
+  id: 'browser-local',
+  label: 'Browser STT + diarization + confidence scoring',
 };
 
 export function createBrowserTranscriptionController({
-  lang = "pl-PL",
+  lang = 'pl-PL',
   startTimeRef,
   transcriptRef,
   signatureTimelineRef,
@@ -28,15 +28,15 @@ export function createBrowserTranscriptionController({
 
   recognition.onerror = (event) => {
     // "no-speech" is benign (silence); "aborted" happens on programmatic stop — both are expected
-    if (event.error !== "no-speech" && event.error !== "aborted") {
-      console.error("Speech recognition error:", event.error);
-      if (typeof onError === "function") {
+    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      console.error('Speech recognition error:', event.error);
+      if (typeof onError === 'function') {
         const messages = {
-          "network": "Transkrypcja live niedostępna — sprawdź połączenie z internetem.",
-          "not-allowed": "Mikrofon zablokowany — sprawdź uprawnienia przeglądarki.",
-          "service-not-allowed": "Usługa rozpoznawania mowy niedostępna w tej przeglądarce.",
-          "language-not-supported": "Język pl-PL nie jest obsługiwany przez tę przeglądarkę.",
-          "aborted": null,
+          network: 'Transkrypcja live niedostępna — sprawdź połączenie z internetem.',
+          'not-allowed': 'Mikrofon zablokowany — sprawdź uprawnienia przeglądarki.',
+          'service-not-allowed': 'Usługa rozpoznawania mowy niedostępna w tej przeglądarce.',
+          'language-not-supported': 'Język pl-PL nie jest obsługiwany przez tę przeglądarkę.',
+          aborted: null,
         };
         const msg = messages[event.error];
         if (msg) onError(msg);
@@ -45,7 +45,7 @@ export function createBrowserTranscriptionController({
   };
 
   recognition.onresult = (event) => {
-    let interim = "";
+    let interim = '';
 
     for (let index = event.resultIndex; index < event.results.length; index += 1) {
       const result = event.results[index];
@@ -57,7 +57,7 @@ export function createBrowserTranscriptionController({
       if (result.isFinal) {
         const timestamp = (Date.now() - startTimeRef.current) / 1000;
         const segment = {
-          id: createId("segment"),
+          id: createId('segment'),
           text,
           timestamp,
           speakerId: 0,
@@ -66,7 +66,7 @@ export function createBrowserTranscriptionController({
         };
         transcriptRef.current = [...transcriptRef.current, segment];
         onSegmentsChange([...transcriptRef.current]);
-        onInterimChange("");
+        onInterimChange('');
       } else {
         interim += `${text} `;
       }

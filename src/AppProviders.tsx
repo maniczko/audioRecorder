@@ -1,11 +1,15 @@
-import { ReactNode, useState } from "react";
-import { GoogleProvider } from "./context/GoogleContext";
-import { MeetingsProvider } from "./context/MeetingsContext";
-import { RecorderProvider } from "./context/RecorderContext";
-import { WorkspaceProvider } from "./context/WorkspaceContext";
-import MeetingsSyncManager from "./components/MeetingsSyncManager";
+import { ReactNode, useState } from 'react';
+import { GoogleProvider } from './context/GoogleContext';
+import { MeetingsProvider } from './context/MeetingsContext';
+import { RecorderProvider } from './context/RecorderContext';
+import { WorkspaceProvider } from './context/WorkspaceContext';
+import MeetingsSyncManager from './components/MeetingsSyncManager';
 
-export default function AppProviders({ children }: { children: ReactNode | ((props: any) => ReactNode) }) {
+export default function AppProviders({
+  children,
+}: {
+  children: ReactNode | ((props: any) => ReactNode);
+}) {
   const [calendarMonth, setCalendarMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -16,7 +20,7 @@ export default function AppProviders({ children }: { children: ReactNode | ((pro
         <MeetingsSyncManager>
           <GoogleProvider calendarMonth={calendarMonth}>
             <RecorderProvider>
-              {typeof children === "function"
+              {typeof children === 'function'
                 ? (children as any)({ calendarMonth, setCalendarMonth })
                 : children}
             </RecorderProvider>

@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, readStorage, writeStorage } from "./storage";
+import { STORAGE_KEYS, readStorage, writeStorage } from './storage';
 
 export type WorkspaceSession = {
   userId: string;
@@ -6,16 +6,19 @@ export type WorkspaceSession = {
   token: string;
 };
 
-const WORKSPACE_STORE_KEY = "voicelog_workspace_store";
+const WORKSPACE_STORE_KEY = 'voicelog_workspace_store';
 
-function normalizeSession(candidate: any, options: { allowTokenOnly?: boolean } = {}): WorkspaceSession | null {
-  if (!candidate || typeof candidate !== "object") {
+function normalizeSession(
+  candidate: any,
+  options: { allowTokenOnly?: boolean } = {}
+): WorkspaceSession | null {
+  if (!candidate || typeof candidate !== 'object') {
     return null;
   }
 
-  const token = String(candidate.token || "").trim();
-  const userId = String(candidate.userId || "").trim();
-  const workspaceId = String(candidate.workspaceId || "").trim();
+  const token = String(candidate.token || '').trim();
+  const userId = String(candidate.userId || '').trim();
+  const workspaceId = String(candidate.workspaceId || '').trim();
 
   if (!token || (!userId && !options.allowTokenOnly)) {
     return null;

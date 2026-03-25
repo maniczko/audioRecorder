@@ -1,4 +1,4 @@
-import { clamp } from "./storage";
+import { clamp } from './storage';
 
 // ── Diarization tuning constants ────────────────────────────────────────────
 // Maximum number of distinct speaker clusters the browser-side diarizer will create.
@@ -83,13 +83,16 @@ export function summarizeSpectrum(data) {
   const centroidNorm = centroid / normalized.length;
 
   const spread = Math.sqrt(
-    normalized.reduce((sum, value, index) => sum + value * (index - centroid) * (index - centroid), 0) /
-      (normalized.reduce((sum, value) => sum + value, 0) || 1)
+    normalized.reduce(
+      (sum, value, index) => sum + value * (index - centroid) * (index - centroid),
+      0
+    ) / (normalized.reduce((sum, value) => sum + value, 0) || 1)
   );
 
   const bandSize = Math.max(1, Math.floor(values.length / 3));
   const lowBand = values.slice(0, bandSize).reduce((sum, value) => sum + value, 0) / total;
-  const midBand = values.slice(bandSize, bandSize * 2).reduce((sum, value) => sum + value, 0) / total;
+  const midBand =
+    values.slice(bandSize, bandSize * 2).reduce((sum, value) => sum + value, 0) / total;
   const highBand = values.slice(bandSize * 2).reduce((sum, value) => sum + value, 0) / total;
 
   return {
@@ -105,7 +108,9 @@ export function summarizeSpectrum(data) {
 export function signatureAroundTimestamp(timeline, timestamp) {
   const safeTimestamp = Number(timestamp || 0);
   const relevant = timeline.filter(
-    (frame) => frame.timestamp >= Math.max(0, safeTimestamp - 2.25) && frame.timestamp <= safeTimestamp + 0.35
+    (frame) =>
+      frame.timestamp >= Math.max(0, safeTimestamp - 2.25) &&
+      frame.timestamp <= safeTimestamp + 0.35
   );
 
   if (!relevant.length) {
@@ -127,7 +132,10 @@ function smoothAssignments(segments) {
     if (previous.speakerId === next.speakerId && previous.speakerId !== segment.speakerId) {
       const gapToPrevious = segment.timestamp - previous.timestamp;
       const gapToNext = next.timestamp - segment.timestamp;
-      if (gapToPrevious < SMOOTH_GAP_THRESHOLD_SECONDS && gapToNext < SMOOTH_GAP_THRESHOLD_SECONDS) {
+      if (
+        gapToPrevious < SMOOTH_GAP_THRESHOLD_SECONDS &&
+        gapToNext < SMOOTH_GAP_THRESHOLD_SECONDS
+      ) {
         return { ...segment, speakerId: previous.speakerId };
       }
     }
@@ -137,7 +145,7 @@ function smoothAssignments(segments) {
 }
 
 function repeatedPhrase(text) {
-  const words = String(text || "")
+  const words = String(text || '')
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean);
@@ -151,50 +159,53 @@ function repeatedPhrase(text) {
 }
 
 function verifySegment(segment, previousSegment) {
-  let score = typeof segment.rawConfidence === "number" && segment.rawConfidence > 0 ? segment.rawConfidence : 0.76;
+  let score =
+    typeof segment.rawConfidence === 'number' && segment.rawConfidence > 0
+      ? segment.rawConfidence
+      : 0.76;
   const reasons = [];
-  const cleanText = String(segment.text || "").trim();
+  const cleanText = String(segment.text || '').trim();
 
   if (!cleanText) {
     score -= 0.5;
-    reasons.push("brak rozpoznanego tekstu");
+    reasons.push('brak rozpoznanego tekstu');
   }
 
   if (cleanText.length < 8) {
     score -= 0.12;
-    reasons.push("bardzo krotki fragment");
+    reasons.push('bardzo krotki fragment');
   }
 
   if (/^(yyy+|eee+|hmm+|mmm+)$/i.test(cleanText)) {
     score -= 0.22;
-    reasons.push("brzmi jak wypelnienie lub szum");
+    reasons.push('brzmi jak wypelnienie lub szum');
   }
 
   if (repeatedPhrase(cleanText)) {
     score -= 0.16;
-    reasons.push("powtarzajace sie slowa");
+    reasons.push('powtarzajace sie slowa');
   }
 
   if (!segment.signature) {
     score -= 0.1;
-    reasons.push("brak sygnatury akustycznej");
+    reasons.push('brak sygnatury akustycznej');
   }
 
   if (segment.signature?.energy < MIN_ENERGY_THRESHOLD) {
     score -= 0.12;
-    reasons.push("niska energia dzwieku");
+    reasons.push('niska energia dzwieku');
   }
 
   if (previousSegment && previousSegment.text?.trim().toLowerCase() === cleanText.toLowerCase()) {
     score -= 0.14;
-    reasons.push("duplikat poprzedniego fragmentu");
+    reasons.push('duplikat poprzedniego fragmentu');
   }
 
   const verificationScore = clamp(score, 0, 1);
   return {
     ...segment,
     verificationScore,
-    verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? "verified" : "review",
+    verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? 'verified' : 'review',
     verificationReasons: reasons,
   };
 }
@@ -214,7 +225,10 @@ export function diarizeSegments(segments) {
       clusters.push({ id: 0, centroid: signature, sampleCount: signature ? 1 : 0 });
     } else if (!signature) {
       const previousGap = previous ? segment.timestamp - previous.timestamp : 0;
-      clusterId = previousGap > CLUSTER_GAP_THRESHOLD_SECONDS && clusters.length < MAX_SPEAKER_CLUSTERS ? clusters.length : clusters[Math.max(0, clusters.length - 1)].id;
+      clusterId =
+        previousGap > CLUSTER_GAP_THRESHOLD_SECONDS && clusters.length < MAX_SPEAKER_CLUSTERS
+          ? clusters.length
+          : clusters[Math.max(0, clusters.length - 1)].id;
       if (clusterId === clusters.length) {
         clusters.push({ id: clusterId, centroid: null, sampleCount: 0 });
       }
@@ -236,9 +250,12 @@ export function diarizeSegments(segments) {
         clusterId = best?.cluster.id ?? 0;
         const cluster = clusters.find((item) => item.id === clusterId);
         const safeCount = Math.max(1, cluster.sampleCount);
-        cluster.centroid = averageSignature(
-          [cluster.centroid, signature].filter(Boolean).flatMap((item) => Array(safeCount).fill(item).slice(0, 1))
-        ) || signature;
+        cluster.centroid =
+          averageSignature(
+            [cluster.centroid, signature]
+              .filter(Boolean)
+              .flatMap((item) => Array(safeCount).fill(item).slice(0, 1))
+          ) || signature;
         cluster.sampleCount += 1;
       }
     }
@@ -275,15 +292,14 @@ export function diarizeSegments(segments) {
     const previous = collection[index - 1];
     return {
       ...segment,
-      speakerId: segment.timestamp - previous.timestamp > GAP_NEW_SPEAKER_SECONDS
-        ? Math.min(previous.speakerId + 1, MAX_SPEAKER_CLUSTERS - 1)
-        : previous.speakerId,
+      speakerId:
+        segment.timestamp - previous.timestamp > GAP_NEW_SPEAKER_SECONDS
+          ? Math.min(previous.speakerId + 1, MAX_SPEAKER_CLUSTERS - 1)
+          : previous.speakerId,
     };
   });
 
-  const confidence = average(
-    withFallbackGaps.map((segment) => (segment.signature ? 0.82 : 0.48))
-  );
+  const confidence = average(withFallbackGaps.map((segment) => (segment.signature ? 0.82 : 0.48)));
 
   return {
     segments: withFallbackGaps,

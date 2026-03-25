@@ -1,14 +1,14 @@
-import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
-import useRecordingPipeline from "./useRecordingPipeline";
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import useRecordingPipeline from './useRecordingPipeline';
 
 const { mockStore } = vi.hoisted(() => ({
   mockStore: {
     recordingQueue: [],
-    analysisStatus: "idle",
-    recordingMessage: "",
+    analysisStatus: 'idle',
+    recordingMessage: '',
     pipelineProgressPercent: 0,
-    pipelineStageLabel: "",
+    pipelineStageLabel: '',
     isProcessingQueue: false,
     processQueue: vi.fn().mockResolvedValue(undefined),
     setAnalysisStatus: vi.fn(),
@@ -21,33 +21,35 @@ const { mockStore } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../store/recorderStore", () => ({
+vi.mock('../store/recorderStore', () => ({
   useRecorderStore: () => mockStore,
 }));
 
-vi.mock("../lib/recordingQueue", () => ({
+vi.mock('../lib/recordingQueue', () => ({
   buildRecordingQueueSummary: vi.fn((queue) => ({ total: queue.length })),
-  getRecordingQueueForMeeting: vi.fn((queue, meetingId) => queue.filter((item) => item.meetingId === meetingId)),
+  getRecordingQueueForMeeting: vi.fn((queue, meetingId) =>
+    queue.filter((item) => item.meetingId === meetingId)
+  ),
 }));
 
-describe("useRecordingPipeline", () => {
+describe('useRecordingPipeline', () => {
   beforeEach(() => {
     mockStore.recordingQueue = [];
-    mockStore.analysisStatus = "idle";
-    mockStore.recordingMessage = "";
+    mockStore.analysisStatus = 'idle';
+    mockStore.recordingMessage = '';
     mockStore.pipelineProgressPercent = 0;
-    mockStore.pipelineStageLabel = "";
+    mockStore.pipelineStageLabel = '';
     mockStore.isProcessingQueue = false;
     mockStore.processQueue.mockClear();
   });
 
-  test("triggers queue processing when hydration is finished", () => {
-    const userMeetingsRef = { current: [{ id: "m1", title: "Demo" }] };
+  test('triggers queue processing when hydration is finished', () => {
+    const userMeetingsRef = { current: [{ id: 'm1', title: 'Demo' }] };
     const attachCompletedRecording = vi.fn();
     const setCurrentSegments = vi.fn();
 
     // Simulate queue with items
-    mockStore.recordingQueue = [{ recordingId: "r1", meetingId: "m1" }];
+    mockStore.recordingQueue = [{ recordingId: 'r1', meetingId: 'm1' }];
 
     renderHook(() =>
       useRecordingPipeline({
@@ -62,8 +64,8 @@ describe("useRecordingPipeline", () => {
     expect(mockStore.recordingQueue).toBeDefined();
   });
 
-  test("does not process queue while remote state is hydrating", () => {
-    const userMeetingsRef = { current: [{ id: "m1", title: "Demo" }] };
+  test('does not process queue while remote state is hydrating', () => {
+    const userMeetingsRef = { current: [{ id: 'm1', title: 'Demo' }] };
 
     renderHook(() =>
       useRecordingPipeline({
@@ -77,10 +79,10 @@ describe("useRecordingPipeline", () => {
     expect(mockStore.processQueue).not.toHaveBeenCalled();
   });
 
-  test("exposes queue summary and meeting-specific queue accessors", () => {
+  test('exposes queue summary and meeting-specific queue accessors', () => {
     mockStore.recordingQueue = [
-      { recordingId: "r1", meetingId: "m1" },
-      { recordingId: "r2", meetingId: "m2" },
+      { recordingId: 'r1', meetingId: 'm1' },
+      { recordingId: 'r2', meetingId: 'm2' },
     ];
 
     const { result } = renderHook(() =>

@@ -1,13 +1,13 @@
-import { getWorkspacePermissions, normalizeWorkspaceRole } from "./permissions";
+import { getWorkspacePermissions, normalizeWorkspaceRole } from './permissions';
 
-describe("workspace permissions", () => {
-  test("normalizes unknown roles to member", () => {
-    expect(normalizeWorkspaceRole("viewer")).toBe("viewer");
-    expect(normalizeWorkspaceRole("something-else")).toBe("member");
+describe('workspace permissions', () => {
+  test('normalizes unknown roles to member', () => {
+    expect(normalizeWorkspaceRole('viewer')).toBe('viewer');
+    expect(normalizeWorkspaceRole('something-else')).toBe('member');
   });
 
-  test("returns read-only permissions for viewer", () => {
-    expect(getWorkspacePermissions("viewer")).toMatchObject({
+  test('returns read-only permissions for viewer', () => {
+    expect(getWorkspacePermissions('viewer')).toMatchObject({
       canEditWorkspace: false,
       canDeleteWorkspaceItems: false,
       canExportWorkspaceData: false,
@@ -16,8 +16,8 @@ describe("workspace permissions", () => {
     });
   });
 
-  test("returns management permissions for owner", () => {
-    expect(getWorkspacePermissions("owner")).toMatchObject({
+  test('returns management permissions for owner', () => {
+    expect(getWorkspacePermissions('owner')).toMatchObject({
       canEditWorkspace: true,
       canDeleteWorkspaceItems: true,
       canExportWorkspaceData: true,

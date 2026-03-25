@@ -9,7 +9,7 @@ export interface WorkspaceMembership {
   id: string;
   user_id: string;
   workspace_id: string;
-  member_role: "owner" | "admin" | "member";
+  member_role: 'owner' | 'admin' | 'member';
 }
 
 export interface TranscriptSegment {
@@ -41,10 +41,10 @@ export interface AudioQualityDiagnostics {
   maxVolumeDb?: number;
   silenceRatio?: number;
   qualityScore?: number;
-  qualityLabel?: "good" | "fair" | "poor";
+  qualityLabel?: 'good' | 'fair' | 'poor';
   enhancementRecommended?: boolean;
   enhancementApplied?: boolean;
-  enhancementProfile?: "none" | "standard" | "enhanced";
+  enhancementProfile?: 'none' | 'standard' | 'enhanced';
 }
 
 export interface TranscriptionDiagnostics {
@@ -64,7 +64,7 @@ export interface TranscriptionDiagnostics {
   mergedWordsCount?: number;
   mergedTextLength?: number;
   lastChunkErrorMessage?: string;
-  transcriptionProfileUsed?: "standard" | "enhanced";
+  transcriptionProfileUsed?: 'standard' | 'enhanced';
   transcriptionAttemptCount?: 1 | 2;
   sttAttempts?: SttProviderAttempt[];
 }
@@ -93,15 +93,22 @@ export interface TranscriptionQualityMetrics {
 
 export interface TranscriptionStatusPayload {
   recordingId: string;
-  pipelineStatus: "uploading" | "queued" | "processing" | "diarization" | "review" | "done" | "failed";
+  pipelineStatus:
+    | 'uploading'
+    | 'queued'
+    | 'processing'
+    | 'diarization'
+    | 'review'
+    | 'done'
+    | 'failed';
   enhancementsPending?: boolean;
-  postprocessStage?: "queued" | "running" | "done" | "failed" | "";
-  transcriptOutcome?: "normal" | "empty";
+  postprocessStage?: 'queued' | 'running' | 'done' | 'failed' | '';
+  transcriptOutcome?: 'normal' | 'empty';
   emptyReason?:
-    | "no_segments_from_stt"
-    | "segments_removed_by_vad"
-    | "segments_removed_as_hallucinations"
-    | "all_chunks_discarded_as_too_small";
+    | 'no_segments_from_stt'
+    | 'segments_removed_by_vad'
+    | 'segments_removed_as_hallucinations'
+    | 'all_chunks_discarded_as_too_small';
   userMessage?: string;
   pipelineVersion?: string;
   pipelineGitSha?: string;
@@ -175,7 +182,7 @@ export interface AiTask {
   owner?: string;
   assignedTo?: string;
   dueDate?: string;
-  priority?: "high" | "medium" | "low";
+  priority?: 'high' | 'medium' | 'low';
   tags?: string[];
   sourceType?: string;
   status?: string;
@@ -186,7 +193,7 @@ export interface MeetingTask {
   description?: string;
   owner?: string;
   dueDate?: string;
-  priority?: "high" | "medium" | "low";
+  priority?: 'high' | 'medium' | 'low';
   tags?: string[];
   sourceQuote?: string;
 }
@@ -198,7 +205,7 @@ export interface MeetingNeedAnswer {
 
 export interface MeetingRisk {
   risk: string;
-  severity?: "high" | "medium" | "low";
+  severity?: 'high' | 'medium' | 'low';
 }
 
 export interface MeetingTension {

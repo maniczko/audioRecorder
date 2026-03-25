@@ -1,5 +1,5 @@
-import { parentPort } from "node:worker_threads";
-import { DatabaseSync } from "node:sqlite";
+import { parentPort } from 'node:worker_threads';
+import { DatabaseSync } from 'node:sqlite';
 
 let db: any = null;
 
@@ -8,20 +8,20 @@ let db: any = null;
  * This function is pure and can be tested without database.
  */
 export function validateOperation(type: string, sql?: string): { valid: boolean; error?: string } {
-  const validTypes = ["init", "query", "get", "execute", "exec"];
-  
-  if (!type || typeof type !== "string") {
-    return { valid: false, error: "Invalid or missing message type" };
+  const validTypes = ['init', 'query', 'get', 'execute', 'exec'];
+
+  if (!type || typeof type !== 'string') {
+    return { valid: false, error: 'Invalid or missing message type' };
   }
-  
+
   if (!validTypes.includes(type)) {
     return { valid: false, error: `Unknown message type: ${type}` };
   }
-  
-  if (type !== "init" && !sql) {
-    return { valid: false, error: "SQL is required for this operation" };
+
+  if (type !== 'init' && !sql) {
+    return { valid: false, error: 'SQL is required for this operation' };
   }
-  
+
   return { valid: true };
 }
 
@@ -32,7 +32,7 @@ export function validateOperation(type: string, sql?: string): { valid: boolean;
 export function normalizeParams(params: any): any[] {
   if (!params) return [];
   if (Array.isArray(params)) return params;
-  if (typeof params === "object") return Object.values(params);
+  if (typeof params === 'object') return Object.values(params);
   return [params];
 }
 
@@ -44,14 +44,14 @@ export function formatResult(result: any): any {
   if (result === undefined || result === null) {
     return undefined;
   }
-  
+
   if (Array.isArray(result)) {
-    return result.map(row => {
-      if (row && typeof row === "object") {
+    return result.map((row) => {
+      if (row && typeof row === 'object') {
         const formatted: any = {};
         for (const key of Object.keys(row)) {
           if (row[key] instanceof Buffer) {
-            formatted[key] = row[key].toString("base64");
+            formatted[key] = row[key].toString('base64');
           } else {
             formatted[key] = row[key];
           }
@@ -61,11 +61,11 @@ export function formatResult(result: any): any {
       return row;
     });
   }
-  
+
   if (result instanceof Buffer) {
-    return result.toString("base64");
+    return result.toString('base64');
   }
-  
+
   return result;
 }
 
@@ -83,15 +83,15 @@ export function createErrorResponse(error: Error): { error: string } {
  */
 export function createSuccessResponse(result?: any, dbInstance?: any): { result?: any; db?: any } {
   const response: { result?: any; db?: any } = {};
-  
+
   if (result !== undefined) {
     response.result = result;
   }
-  
+
   if (dbInstance !== undefined) {
     response.db = dbInstance;
   }
-  
+
   return response;
 }
 
@@ -99,47 +99,50 @@ export function createSuccessResponse(result?: any, dbInstance?: any): { result?
  * Handles a message from the parent thread and returns the result.
  * This function is exported for testing purposes.
  */
-export function handleMessage(msg: any, currentDb: any): { result?: any; error?: string; db?: any } {
+export function handleMessage(
+  msg: any,
+  currentDb: any
+): { result?: any; error?: string; db?: any } {
   const { id, type, sql, params, dbPath } = msg;
-  
+
   try {
     // Validate operation type
     const validation = validateOperation(type, sql);
     if (!validation.valid) {
       throw new Error(validation.error!);
     }
-    
-    if (type === "init") {
-      if (!dbPath || typeof dbPath !== "string") {
-        throw new Error("Database path is required for initialization");
+
+    if (type === 'init') {
+      if (!dbPath || typeof dbPath !== 'string') {
+        throw new Error('Database path is required for initialization');
       }
-      
+
       const newDb = new DatabaseSync(dbPath);
-      newDb.exec("PRAGMA journal_mode = WAL;");
-      newDb.exec("PRAGMA foreign_keys = ON;");
-      return createSuccessResponse("ok", newDb);
+      newDb.exec('PRAGMA journal_mode = WAL;');
+      newDb.exec('PRAGMA foreign_keys = ON;');
+      return createSuccessResponse('ok', newDb);
     }
 
     if (!currentDb) {
-      throw new Error("SQLite DB not initialized in worker");
+      throw new Error('SQLite DB not initialized in worker');
     }
 
     const paramsArray = normalizeParams(params);
 
-    if (type === "query") {
+    if (type === 'query') {
       const stmt = currentDb.prepare(sql);
       const result = stmt.all(...paramsArray);
       return createSuccessResponse(formatResult(result));
-    } else if (type === "get") {
+    } else if (type === 'get') {
       const stmt = currentDb.prepare(sql);
       const result = stmt.get(...paramsArray);
       return createSuccessResponse(formatResult(result));
-    } else if (type === "execute") {
+    } else if (type === 'execute') {
       currentDb.prepare(sql).run(...paramsArray);
-      return createSuccessResponse("ok");
-    } else if (type === "exec") {
+      return createSuccessResponse('ok');
+    } else if (type === 'exec') {
       currentDb.exec(sql);
-      return createSuccessResponse("ok");
+      return createSuccessResponse('ok');
     } else {
       // This should never be reached due to validation above
       throw new Error(`Unknown message type: ${type}`);
@@ -151,7 +154,7 @@ export function handleMessage(msg: any, currentDb: any): { result?: any; error?:
 
 // Worker thread integration
 if (parentPort) {
-  parentPort.on("message", (msg) => {
+  parentPort.on('message', (msg) => {
     const response = handleMessage(msg, db);
 
     if (response.db) {
@@ -166,4 +169,11 @@ if (parentPort) {
   });
 }
 
-export default { handleMessage, validateOperation, normalizeParams, formatResult, createErrorResponse, createSuccessResponse };
+export default {
+  handleMessage,
+  validateOperation,
+  normalizeParams,
+  formatResult,
+  createErrorResponse,
+  createSuccessResponse,
+};

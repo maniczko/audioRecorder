@@ -1,32 +1,37 @@
-import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from "react";
-import { Virtuoso } from "react-virtuoso";
-import { useMeetingsCtx } from "../context/MeetingsContext";
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
+import { Virtuoso } from 'react-virtuoso';
+import { useMeetingsCtx } from '../context/MeetingsContext';
 
-import PropTypes from "prop-types";
-import { formatDateTime, formatDuration } from "../lib/storage";
-import { getSpeakerColor } from "../lib/speakerColors";
-import { labelSpeaker } from "../lib/recording";
-import { analyzeSpeakingStyle } from "../lib/speakerAnalysis";
-import { buildSketchnoteDataUrl, buildSketchnoteSvg } from "../lib/sketchnote";
-import { normalizeMeetingFeedback } from "../shared/meetingFeedback";
-import { apiRequest } from "../services/httpClient";
-import { remoteApiEnabled } from "../services/config";
-import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
+import PropTypes from 'prop-types';
+import { formatDateTime, formatDuration } from '../lib/storage';
+import { getSpeakerColor } from '../lib/speakerColors';
+import { labelSpeaker } from '../lib/recording';
+import { analyzeSpeakingStyle } from '../lib/speakerAnalysis';
+import { buildSketchnoteDataUrl, buildSketchnoteSvg } from '../lib/sketchnote';
+import { normalizeMeetingFeedback } from '../shared/meetingFeedback';
+import { apiRequest } from '../services/httpClient';
+import { remoteApiEnabled } from '../services/config';
+import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
 import './StudioMeetingViewStyles.css';
 
 // Lazy load AI Task Suggestions Panel for code splitting
-const AiTaskSuggestionsPanel = lazy(() => import("./AiTaskSuggestionsPanel"));
-
-
-
-
+const AiTaskSuggestionsPanel = lazy(() => import('./AiTaskSuggestionsPanel'));
 
 /**
  * Fireflies-style speaker picker dropdown for a single transcript segment.
  * Shows all existing speakers (checkmark on current), option to rename,
  * and option to add a new speaker slot.
  */
-function SpeakerDropdown({ seg, currentSpeakerId, speakers, nextSpeakerId, displaySpeakerNames, onReassign, onRename, onClose }) {
+function SpeakerDropdown({
+  seg,
+  currentSpeakerId,
+  speakers,
+  nextSpeakerId,
+  displaySpeakerNames,
+  onReassign,
+  onRename,
+  onClose,
+}) {
   const ref = useRef(null);
 
   // Close on outside click
@@ -34,15 +39,17 @@ function SpeakerDropdown({ seg, currentSpeakerId, speakers, nextSpeakerId, displ
     function handleOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) onClose();
     }
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, [onClose]);
 
   // Close on Escape
   useEffect(() => {
-    function handleKey(e) { if (e.key === "Escape") onClose(); }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    function handleKey(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
   return (
@@ -54,21 +61,46 @@ function SpeakerDropdown({ seg, currentSpeakerId, speakers, nextSpeakerId, displ
             key={sp.id}
             type="button"
             role="menuitem"
-            className={`ff-speaker-dropdown-item${isCurrent ? " current" : ""}`}
-            onClick={() => { if (!isCurrent) onReassign(sp.id); }}
+            className={`ff-speaker-dropdown-item${isCurrent ? ' current' : ''}`}
+            onClick={() => {
+              if (!isCurrent) onReassign(sp.id);
+            }}
           >
-            <span
-              className="ff-spk-dot"
-              style={{ background: getSpeakerColor(sp.id) }}
-            />
+            <span className="ff-spk-dot" style={{ background: getSpeakerColor(sp.id) }} />
             <span className="ff-spk-label">{sp.name}</span>
             {isCurrent ? (
-              <svg className="ff-spk-check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="ff-spk-check"
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 6l3 3 5-5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             ) : (
-              <svg className="ff-spk-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                <path d="M3 5h4M5 3l2 2-2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="ff-spk-arrow"
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 5h4M5 3l2 2-2 2"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             )}
           </button>
@@ -91,7 +123,12 @@ function SpeakerDropdown({ seg, currentSpeakerId, speakers, nextSpeakerId, displ
         onClick={() => onRename(currentSpeakerId)}
       >
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-          <path d="M1 8.5l1.5-1.5 5-5 1.5 1.5-5 5L1 10l.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+          <path
+            d="M1 8.5l1.5-1.5 5-5 1.5 1.5-5 5L1 10l.5-1.5z"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
         </svg>
         <span className="ff-spk-label">Zmień nazwę</span>
       </button>
@@ -124,23 +161,21 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
   const [coachingError, setCoachingError] = useState({});
   const [acousticMetrics, setAcousticMetrics] = useState({});
   const [acousticLoading, setAcousticLoading] = useState(false);
-  const [acousticError, setAcousticError] = useState("");
+  const [acousticError, setAcousticError] = useState('');
 
   async function fetchCoaching(speakerId) {
     if (!recordingId || loading[speakerId]) return;
     setLoading((p) => ({ ...p, [speakerId]: true }));
-    setCoachingError((p) => ({ ...p, [speakerId]: "" }));
+    setCoachingError((p) => ({ ...p, [speakerId]: '' }));
     try {
-      const speakerSegs = transcript.filter(
-        (s) => String(s.speakerId ?? "") === String(speakerId)
-      );
+      const speakerSegs = transcript.filter((s) => String(s.speakerId ?? '') === String(speakerId));
       const res = await apiRequest(`/media/recordings/${recordingId}/voice-coaching`, {
-        method: "POST",
+        method: 'POST',
         body: { speakerId, segments: speakerSegs },
       });
-      setCoaching((p) => ({ ...p, [speakerId]: res?.coaching || "" }));
+      setCoaching((p) => ({ ...p, [speakerId]: res?.coaching || '' }));
     } catch (err) {
-      setCoachingError((p) => ({ ...p, [speakerId]: err.message || "Błąd analizy głosu." }));
+      setCoachingError((p) => ({ ...p, [speakerId]: err.message || 'Błąd analizy głosu.' }));
     } finally {
       setLoading((p) => ({ ...p, [speakerId]: false }));
     }
@@ -149,25 +184,28 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
   async function fetchAcousticMetrics() {
     if (!recordingId || acousticLoading || Object.keys(acousticMetrics).length > 0) return;
     setAcousticLoading(true);
-    setAcousticError("");
+    setAcousticError('');
     try {
       const response = await apiRequest(`/media/recordings/${recordingId}/acoustic-features`, {
-        method: "POST",
+        method: 'POST',
       });
       setAcousticMetrics(
         Object.fromEntries(
-          (Array.isArray(response?.speakers) ? response.speakers : []).map((speaker) => [String(speaker.speakerId), speaker])
+          (Array.isArray(response?.speakers) ? response.speakers : []).map((speaker) => [
+            String(speaker.speakerId),
+            speaker,
+          ])
         )
       );
     } catch (err) {
-      setAcousticError(err.message || "Nie udalo sie pobrac metryk akustycznych.");
+      setAcousticError(err.message || 'Nie udalo sie pobrac metryk akustycznych.');
     } finally {
       setAcousticLoading(false);
     }
   }
 
-  function formatMetricValue(value, suffix = "") {
-    if (!Number.isFinite(Number(value))) return "-";
+  function formatMetricValue(value, suffix = '') {
+    if (!Number.isFinite(Number(value))) return '-';
     return `${Number(value).toFixed(Number(value) >= 100 ? 0 : 1)}${suffix}`;
   }
 
@@ -178,103 +216,102 @@ function VoiceSpeakerStats({ transcript, displaySpeakerNames, recordingId }) {
       {stats.map((stat) => {
         const metrics = acousticMetrics[stat.speakerId];
         return (
-        <div key={stat.speakerId} className="ff-voice-stat-card">
-          <div className="ff-voice-stat-header">
-            <span
-              className="ff-speaker-avatar"
-              style={{ background: getSpeakerColor(stat.speakerId) }}
-            >
-              {(stat.speakerName || "S")[0].toUpperCase()}
-            </span>
-            <strong className="ff-voice-stat-name">{stat.speakerName}</strong>
-          </div>
-          <div className="ff-voice-stat-metrics">
-            <span className="ff-voice-metric">
-              <strong>{stat.wpm || "—"}</strong>
-              <small>słów/min</small>
-            </span>
-            <span className="ff-voice-metric">
-              <strong>{formatDuration(stat.speakingSeconds)}</strong>
-              <small>czas mówienia</small>
-            </span>
-            <span className="ff-voice-metric">
-              <strong>{stat.turnCount}</strong>
-              <small>wypowiedzi</small>
-            </span>
-            {stat.fillerCount > 0 && (
-              <span className="ff-voice-metric warn">
-                <strong>{stat.fillerRate}%</strong>
-                <small>wypełniacze</small>
+          <div key={stat.speakerId} className="ff-voice-stat-card">
+            <div className="ff-voice-stat-header">
+              <span
+                className="ff-speaker-avatar"
+                style={{ background: getSpeakerColor(stat.speakerId) }}
+              >
+                {(stat.speakerName || 'S')[0].toUpperCase()}
               </span>
-            )}
-          </div>
-          {metrics ? (
-            <div className="ff-voice-acoustic-grid">
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics.f0Hz, " Hz")}</strong>
-                <small>F0</small>
-              </span>
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics.jitterLocal, "%")}</strong>
-                <small>jitter</small>
-              </span>
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics.shimmerLocalDb, " dB")}</strong>
-                <small>shimmer</small>
-              </span>
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics.hnrDb, " dB")}</strong>
-                <small>HNR</small>
-              </span>
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics?.formantsHz?.f1, " Hz")}</strong>
-                <small>F1</small>
-              </span>
-              <span className="ff-voice-metric">
-                <strong>{formatMetricValue(metrics?.formantsHz?.f2, " Hz")}</strong>
-                <small>F2</small>
-              </span>
+              <strong className="ff-voice-stat-name">{stat.speakerName}</strong>
             </div>
-          ) : null}
-          {coaching[stat.speakerId] ? (
-            <div className="ff-voice-coaching-text">{coaching[stat.speakerId]}</div>
-          ) : null}
-          {coachingError[stat.speakerId] ? (
-            <div className="ff-voice-coaching-error">{coachingError[stat.speakerId]}</div>
-          ) : null}
-          {acousticError ? (
-            <div className="ff-voice-coaching-error">{acousticError}</div>
-          ) : null}
-          {recordingId && remoteApiEnabled() ? (
-            <button
-              type="button"
-              className="ff-voice-coaching-btn"
-              onClick={() => fetchCoaching(stat.speakerId)}
-              disabled={loading[stat.speakerId]}
-            >
-              {loading[stat.speakerId]
-                ? "Analizuję głos…"
-                : coaching[stat.speakerId]
-                  ? "Odśwież analizę głosu"
-                  : "Analiza głosu AI"}
-            </button>
-          ) : null}
-          {recordingId && remoteApiEnabled() ? (
-            <button
-              type="button"
-              className="ff-voice-coaching-btn secondary"
-              onClick={fetchAcousticMetrics}
-              disabled={acousticLoading}
-            >
-              {acousticLoading
-                ? "Licze cechy akustyczne..."
-                : metrics
-                  ? "Metryki akustyczne gotowe"
-                  : "Cechy akustyczne"}
-            </button>
-          ) : null}
-        </div>
-      )})}
+            <div className="ff-voice-stat-metrics">
+              <span className="ff-voice-metric">
+                <strong>{stat.wpm || '—'}</strong>
+                <small>słów/min</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{formatDuration(stat.speakingSeconds)}</strong>
+                <small>czas mówienia</small>
+              </span>
+              <span className="ff-voice-metric">
+                <strong>{stat.turnCount}</strong>
+                <small>wypowiedzi</small>
+              </span>
+              {stat.fillerCount > 0 && (
+                <span className="ff-voice-metric warn">
+                  <strong>{stat.fillerRate}%</strong>
+                  <small>wypełniacze</small>
+                </span>
+              )}
+            </div>
+            {metrics ? (
+              <div className="ff-voice-acoustic-grid">
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics.f0Hz, ' Hz')}</strong>
+                  <small>F0</small>
+                </span>
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics.jitterLocal, '%')}</strong>
+                  <small>jitter</small>
+                </span>
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics.shimmerLocalDb, ' dB')}</strong>
+                  <small>shimmer</small>
+                </span>
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics.hnrDb, ' dB')}</strong>
+                  <small>HNR</small>
+                </span>
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics?.formantsHz?.f1, ' Hz')}</strong>
+                  <small>F1</small>
+                </span>
+                <span className="ff-voice-metric">
+                  <strong>{formatMetricValue(metrics?.formantsHz?.f2, ' Hz')}</strong>
+                  <small>F2</small>
+                </span>
+              </div>
+            ) : null}
+            {coaching[stat.speakerId] ? (
+              <div className="ff-voice-coaching-text">{coaching[stat.speakerId]}</div>
+            ) : null}
+            {coachingError[stat.speakerId] ? (
+              <div className="ff-voice-coaching-error">{coachingError[stat.speakerId]}</div>
+            ) : null}
+            {acousticError ? <div className="ff-voice-coaching-error">{acousticError}</div> : null}
+            {recordingId && remoteApiEnabled() ? (
+              <button
+                type="button"
+                className="ff-voice-coaching-btn"
+                onClick={() => fetchCoaching(stat.speakerId)}
+                disabled={loading[stat.speakerId]}
+              >
+                {loading[stat.speakerId]
+                  ? 'Analizuję głos…'
+                  : coaching[stat.speakerId]
+                    ? 'Odśwież analizę głosu'
+                    : 'Analiza głosu AI'}
+              </button>
+            ) : null}
+            {recordingId && remoteApiEnabled() ? (
+              <button
+                type="button"
+                className="ff-voice-coaching-btn secondary"
+                onClick={fetchAcousticMetrics}
+                disabled={acousticLoading}
+              >
+                {acousticLoading
+                  ? 'Licze cechy akustyczne...'
+                  : metrics
+                    ? 'Metryki akustyczne gotowe'
+                    : 'Cechy akustyczne'}
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -286,7 +323,7 @@ VoiceSpeakerStats.propTypes = {
 };
 
 function formatEmptyTranscriptDiagnostics(recording) {
-  if (!recording || recording.transcriptOutcome !== "empty") return "";
+  if (!recording || recording.transcriptOutcome !== 'empty') return '';
   const details = [];
   const diagnostics = recording.transcriptionDiagnostics || {};
   const audioQuality = recording.audioQuality || null;
@@ -298,19 +335,32 @@ function formatEmptyTranscriptDiagnostics(recording) {
     details.push(`Profil STT: ${diagnostics.transcriptionProfileUsed}`);
   }
   if (diagnostics.usedChunking) {
-    details.push("Chunking: tak");
+    details.push('Chunking: tak');
   }
-  if (Number.isFinite(Number(diagnostics.chunksSentToStt)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
-    details.push(`Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`);
+  if (
+    Number.isFinite(Number(diagnostics.chunksSentToStt)) &&
+    Number.isFinite(Number(diagnostics.chunksAttempted))
+  ) {
+    details.push(
+      `Chunks sent to STT: ${Number(diagnostics.chunksSentToStt)}/${Number(diagnostics.chunksAttempted)}`
+    );
   }
-  if (Number.isFinite(Number(diagnostics.chunksFailedAtStt)) && Number(diagnostics.chunksFailedAtStt) > 0) {
+  if (
+    Number.isFinite(Number(diagnostics.chunksFailedAtStt)) &&
+    Number(diagnostics.chunksFailedAtStt) > 0
+  ) {
     details.push(`Chunks failed at STT: ${Number(diagnostics.chunksFailedAtStt)}`);
   }
   if (diagnostics.lastChunkErrorMessage) {
     details.push(`STT error: ${diagnostics.lastChunkErrorMessage}`);
   }
-  if (Number.isFinite(Number(diagnostics.chunksWithText)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
-    details.push(`STT chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
+  if (
+    Number.isFinite(Number(diagnostics.chunksWithText)) &&
+    Number.isFinite(Number(diagnostics.chunksAttempted))
+  ) {
+    details.push(
+      `STT chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`
+    );
   }
   if (recording.emptyReason) {
     details.push(`Reason: ${recording.emptyReason}`);
@@ -319,11 +369,11 @@ function formatEmptyTranscriptDiagnostics(recording) {
     details.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
   }
 
-  return details.join(" · ");
+  return details.join(' · ');
 }
 
 function formatAudioQualityPanel(audioQuality) {
-  if (!audioQuality || typeof audioQuality !== "object") return "";
+  if (!audioQuality || typeof audioQuality !== 'object') return '';
   const parts = [];
 
   if (audioQuality.qualityLabel) {
@@ -332,11 +382,11 @@ function formatAudioQualityPanel(audioQuality) {
   if (Number.isFinite(Number(audioQuality.meanVolumeDb))) {
     parts.push(`Srednia glosnosc: ${Number(audioQuality.meanVolumeDb).toFixed(1)} dB`);
   }
-  if (typeof audioQuality.enhancementApplied === "boolean") {
-    parts.push(`Uzyto poprawy audio: ${audioQuality.enhancementApplied ? "tak" : "nie"}`);
+  if (typeof audioQuality.enhancementApplied === 'boolean') {
+    parts.push(`Uzyto poprawy audio: ${audioQuality.enhancementApplied ? 'tak' : 'nie'}`);
   }
 
-  return parts.join(" | ");
+  return parts.join(' | ');
 }
 
 function safeArray(value) {
@@ -345,15 +395,17 @@ function safeArray(value) {
 
 function normalizeAnalysisTask(task) {
   if (!task) return null;
-  const title = String(task.title || task.text || task.sourceQuote || "").trim();
+  const title = String(task.title || task.text || task.sourceQuote || '').trim();
   if (!title) return null;
   return {
     title,
-    description: String(task.description || task.sourceQuote || "").trim(),
-    owner: String(task.owner || task.assignee || "").trim(),
-    dueDate: String(task.dueDate || "").trim(),
-    priority: String(task.priority || "medium").trim() || "medium",
-    tags: safeArray(task.tags).map((tag) => String(tag).trim()).filter(Boolean),
+    description: String(task.description || task.sourceQuote || '').trim(),
+    owner: String(task.owner || task.assignee || '').trim(),
+    dueDate: String(task.dueDate || '').trim(),
+    priority: String(task.priority || 'medium').trim() || 'medium',
+    tags: safeArray(task.tags)
+      .map((tag) => String(tag).trim())
+      .filter(Boolean),
     sourceQuote: String(task.sourceQuote || task.text || title).trim(),
   };
 }
@@ -361,37 +413,72 @@ function normalizeAnalysisTask(task) {
 // ── DISC Radar Chart ─────────────────────────────────────────────────────────
 const DISC_AXES = [
   { key: 'D' as const, label: 'D', angle: -90, color: '#f17d72' },
-  { key: 'I' as const, label: 'I', angle:   0, color: '#f3ca72' },
-  { key: 'S' as const, label: 'S', angle:  90, color: '#67d59f' },
+  { key: 'I' as const, label: 'I', angle: 0, color: '#f3ca72' },
+  { key: 'S' as const, label: 'S', angle: 90, color: '#67d59f' },
   { key: 'C' as const, label: 'C', angle: 180, color: '#8db4ff' },
 ];
 
-function DiscRadarChart({ D = 0, I = 0, S = 0, C = 0 }: { D?: number; I?: number; S?: number; C?: number }) {
-  const cx = 60, cy = 60, maxR = 44;
+function DiscRadarChart({
+  D = 0,
+  I = 0,
+  S = 0,
+  C = 0,
+}: {
+  D?: number;
+  I?: number;
+  S?: number;
+  C?: number;
+}) {
+  const cx = 60,
+    cy = 60,
+    maxR = 44;
   const vals: Record<string, number> = { D, I, S, C };
   const pt = (angle: number, val: number) => {
     const r = (val / 100) * maxR;
     const rad = (angle * Math.PI) / 180;
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
   };
-  const polygon = DISC_AXES.map((ax, i) => {
-    const p = pt(ax.angle, vals[ax.key]);
-    return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-  }).join(' ') + ' Z';
-  const gridPath = (pct: number) => DISC_AXES.map((ax, i) => {
-    const p = pt(ax.angle, pct * 100);
-    return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-  }).join(' ') + ' Z';
+  const polygon =
+    DISC_AXES.map((ax, i) => {
+      const p = pt(ax.angle, vals[ax.key]);
+      return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }).join(' ') + ' Z';
+  const gridPath = (pct: number) =>
+    DISC_AXES.map((ax, i) => {
+      const p = pt(ax.angle, pct * 100);
+      return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }).join(' ') + ' Z';
   return (
-    <svg viewBox="0 0 120 120" width="120" height="120" className="disc-radar-svg" aria-label="DISC Radar">
+    <svg
+      viewBox="0 0 120 120"
+      width="120"
+      height="120"
+      className="disc-radar-svg"
+      aria-label="DISC Radar"
+    >
       {[0.25, 0.5, 0.75, 1].map((p) => (
         <path key={p} d={gridPath(p)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
       ))}
       {DISC_AXES.map((ax) => {
         const tip = pt(ax.angle, 100);
-        return <line key={ax.key} x1={cx} y1={cy} x2={tip.x} y2={tip.y} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />;
+        return (
+          <line
+            key={ax.key}
+            x1={cx}
+            y1={cy}
+            x2={tip.x}
+            y2={tip.y}
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth="1"
+          />
+        );
       })}
-      <path d={polygon} fill="rgba(117,214,196,0.15)" stroke="rgba(117,214,196,0.6)" strokeWidth="1.5" />
+      <path
+        d={polygon}
+        fill="rgba(117,214,196,0.15)"
+        stroke="rgba(117,214,196,0.6)"
+        strokeWidth="1.5"
+      />
       {DISC_AXES.map((ax) => {
         const p = pt(ax.angle, vals[ax.key]);
         return <circle key={ax.key} cx={p.x} cy={p.y} r="3" fill={ax.color} />;
@@ -399,8 +486,16 @@ function DiscRadarChart({ D = 0, I = 0, S = 0, C = 0 }: { D?: number; I?: number
       {DISC_AXES.map((ax) => {
         const p = pt(ax.angle, 110);
         return (
-          <text key={ax.key} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
-            fill={ax.color} fontSize="11" fontWeight="700">
+          <text
+            key={ax.key}
+            x={p.x}
+            y={p.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill={ax.color}
+            fontSize="11"
+            fontWeight="700"
+          >
             {ax.label}
           </text>
         );
@@ -410,14 +505,23 @@ function DiscRadarChart({ D = 0, I = 0, S = 0, C = 0 }: { D?: number; I?: number
 }
 
 const COMM_LABELS: Record<string, string> = {
-  analytical: 'analityczny', expressive: 'ekspresyjny',
-  diplomatic: 'dyplomatyczny', direct: 'bezpośredni',
+  analytical: 'analityczny',
+  expressive: 'ekspresyjny',
+  diplomatic: 'dyplomatyczny',
+  direct: 'bezpośredni',
 };
 const DECISION_LABELS: Record<string, string> = {
-  'data-driven': 'oparty na danych', intuitive: 'intuicyjny',
-  consensual: 'konsensualny', authoritative: 'autorytatywny',
+  'data-driven': 'oparty na danych',
+  intuitive: 'intuicyjny',
+  consensual: 'konsensualny',
+  authoritative: 'autorytatywny',
 };
-const DISC_COLORS: Record<string, string> = { D: '#f17d72', I: '#f3ca72', S: '#67d59f', C: '#8db4ff' };
+const DISC_COLORS: Record<string, string> = {
+  D: '#f17d72',
+  I: '#f3ca72',
+  S: '#67d59f',
+  C: '#8db4ff',
+};
 void DiscRadarChart;
 void COMM_LABELS;
 void DECISION_LABELS;
@@ -487,18 +591,18 @@ export default function StudioMeetingView({
   resetSilenceTimer,
 }) {
   const [addNeedOpen, setAddNeedOpen] = useState(false);
-  const [needDraft, setNeedDraft] = useState("");
+  const [needDraft, setNeedDraft] = useState('');
   const [addConcernOpen, setAddConcernOpen] = useState(false);
-  const [concernDraft, setConcernDraft] = useState("");
-  const [debriefCopyMessage, setDebriefCopyMessage] = useState("");
+  const [concernDraft, setConcernDraft] = useState('');
+  const [debriefCopyMessage, setDebriefCopyMessage] = useState('');
 
   const { meetings } = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleDraftValue, setTitleDraftValue] = useState("");
+  const [titleDraftValue, setTitleDraftValue] = useState('');
 
-  const [studioAnalysisTab, setStudioAnalysisTab] = useState("tasks"); // default to tasks based on user preference
+  const [studioAnalysisTab, setStudioAnalysisTab] = useState('tasks'); // default to tasks based on user preference
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [downloadTab, setDownloadTab] = useState('transcript'); // 'transcript', 'summary', 'audio'
   const [downloadFormat, setDownloadFormat] = useState('PDF');
@@ -508,11 +612,19 @@ export default function StudioMeetingView({
 
   const handleDownload = () => {
     const toSrtTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-        const ms = Math.floor((seconds % 1) * 1000).toString().padStart(3, '0');
-        return `${h}:${m}:${s},${ms}`;
+      const h = Math.floor(seconds / 3600)
+        .toString()
+        .padStart(2, '0');
+      const m = Math.floor((seconds % 3600) / 60)
+        .toString()
+        .padStart(2, '0');
+      const s = Math.floor(seconds % 60)
+        .toString()
+        .padStart(2, '0');
+      const ms = Math.floor((seconds % 1) * 1000)
+        .toString()
+        .padStart(3, '0');
+      return `${h}:${m}:${s},${ms}`;
     };
 
     if (downloadTab === 'audio') {
@@ -521,9 +633,13 @@ export default function StudioMeetingView({
         .then((res) => res.blob())
         .then((blob) => {
           const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
+          const a = document.createElement('a');
           a.href = url;
-          const safeTitle = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+          const safeTitle = (
+            selectedMeeting?.title ||
+            displayRecording?.title ||
+            'nagranie'
+          ).replace(/[^a-z0-9_-]/gi, '_');
           a.download = `${safeTitle}.mp3`;
           document.body.appendChild(a);
           a.click();
@@ -535,46 +651,55 @@ export default function StudioMeetingView({
     }
 
     if (downloadFormat === 'PDF' && exportMeetingPdfFile) {
-        exportMeetingPdfFile();
-        setIsDownloadModalOpen(false);
-        return;
+      exportMeetingPdfFile();
+      setIsDownloadModalOpen(false);
+      return;
     }
 
-    let content = "";
-    let filename = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+    let content = '';
+    let filename = (selectedMeeting?.title || displayRecording?.title || 'nagranie').replace(
+      /[^a-z0-9_-]/gi,
+      '_'
+    );
     const fullTranscript = displayRecording?.transcript || selectedMeeting?.transcript || [];
 
     if (downloadTab === 'transcript') {
-        if (downloadFormat === 'SRT') {
-            content = fullTranscript.map((s, i) => {
-                const start = toSrtTime(s.timestamp);
-                const end = toSrtTime(s.endTimestamp || s.timestamp + 2);
-                let text = s.text;
-                if (showSpeakerName) text = `${labelSpeaker(displaySpeakerNames, s.speakerId)}: ${text}`;
-                return `${i + 1}\n${start} --> ${end}\n${text}\n`;
-            }).join('\n');
-        } else {
-            content = fullTranscript.map(s => {
-                let line = "";
-                if (includeTimestamp) line += `[${formatDuration(Math.floor(s.timestamp))}] `;
-                if (showSpeakerName) line += `${labelSpeaker(displaySpeakerNames, s.speakerId)}: `;
-                line += s.text;
-                return line;
-            }).join('\n');
-        }
-        filename += "_transcript";
+      if (downloadFormat === 'SRT') {
+        content = fullTranscript
+          .map((s, i) => {
+            const start = toSrtTime(s.timestamp);
+            const end = toSrtTime(s.endTimestamp || s.timestamp + 2);
+            let text = s.text;
+            if (showSpeakerName)
+              text = `${labelSpeaker(displaySpeakerNames, s.speakerId)}: ${text}`;
+            return `${i + 1}\n${start} --> ${end}\n${text}\n`;
+          })
+          .join('\n');
+      } else {
+        content = fullTranscript
+          .map((s) => {
+            let line = '';
+            if (includeTimestamp) line += `[${formatDuration(Math.floor(s.timestamp))}] `;
+            if (showSpeakerName) line += `${labelSpeaker(displaySpeakerNames, s.speakerId)}: `;
+            line += s.text;
+            return line;
+          })
+          .join('\n');
+      }
+      filename += '_transcript';
     } else {
-        content = selectedMeeting?.summary || "Brak podsumowania.";
-        filename += "_summary";
+      content = selectedMeeting?.summary || 'Brak podsumowania.';
+      filename += '_summary';
     }
 
-    const blobType = (downloadFormat === 'JSON') ? 'application/json' : 'text/plain;charset=utf-8';
+    const blobType = downloadFormat === 'JSON' ? 'application/json' : 'text/plain;charset=utf-8';
     const ext = downloadFormat.toLowerCase();
-    const finalContent = downloadFormat === 'JSON' ? JSON.stringify({ title: filename, content }, null, 2) : content;
+    const finalContent =
+      downloadFormat === 'JSON' ? JSON.stringify({ title: filename, content }, null, 2) : content;
 
     const blob = new Blob([finalContent], { type: blobType });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `${filename}.${ext}`;
     document.body.appendChild(a);
@@ -584,28 +709,27 @@ export default function StudioMeetingView({
     setIsDownloadModalOpen(false);
   };
 
-  const [transcriptSearch, setTranscriptSearch] = useState("");
+  const [transcriptSearch, setTranscriptSearch] = useState('');
   // Speaker picker dropdown — tracks which segment's dropdown is open
   const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState(null);
   // Rename flow (triggered from within the dropdown)
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
-  const [renameValue, setRenameValue] = useState("");
+  const [renameValue, setRenameValue] = useState('');
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
   const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<any>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
-  const [sketchnoteUrl, setSketchnoteUrl] = useState("");
-  const [sketchnoteFallbackSvg, setSketchnoteFallbackSvg] = useState("");
+  const [sketchnoteUrl, setSketchnoteUrl] = useState('');
+  const [sketchnoteFallbackSvg, setSketchnoteFallbackSvg] = useState('');
   const [sketchnoteIsLocal, setSketchnoteIsLocal] = useState(false);
   const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
-  const [sketchnoteError, setSketchnoteError] = useState("");
-  const autoTaskSyncKeyRef = useRef("");
+  const [sketchnoteError, setSketchnoteError] = useState('');
+  const autoTaskSyncKeyRef = useRef('');
 
   const audioRef = useRef(null);
   const virtuosoRef = useRef(null);
   const autoLearnSpeakerProfiles = Boolean(currentUser?.autoLearnSpeakerProfiles);
-
 
   const [currentTime, setCurrentTime] = useState(0);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -615,8 +739,8 @@ export default function StudioMeetingView({
   const [playbackRate, setPlaybackRate] = useState(1);
 
   const analysisStatus = selectedMeetingQueue?.status;
-  const isQueued = ["queued", "uploading", "processing"].includes(analysisStatus) && !isRecording;
-  const isEmptyTranscript = selectedRecording?.transcriptOutcome === "empty";
+  const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
+  const isEmptyTranscript = selectedRecording?.transcriptOutcome === 'empty';
   const emptyTranscriptDiagnostics = useMemo(
     () => formatEmptyTranscriptDiagnostics(selectedRecording),
     [selectedRecording]
@@ -626,7 +750,9 @@ export default function StudioMeetingView({
     [selectedRecording?.audioQuality]
   );
   const autoTaskDrafts = useMemo(() => {
-    const analysisTasks = safeArray(studioAnalysis?.tasks).map(normalizeAnalysisTask).filter(Boolean);
+    const analysisTasks = safeArray(studioAnalysis?.tasks)
+      .map(normalizeAnalysisTask)
+      .filter(Boolean);
     if (analysisTasks.length) {
       return analysisTasks;
     }
@@ -636,12 +762,30 @@ export default function StudioMeetingView({
       .filter(Boolean);
   }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
 
-  const keyQuotes = useMemo(() => safeArray(studioAnalysis?.keyQuotes).slice(0, 3), [studioAnalysis?.keyQuotes]);
-  const followUps = useMemo(() => safeArray(studioAnalysis?.followUps).slice(0, 4), [studioAnalysis?.followUps]);
-  const risks = useMemo(() => safeArray(studioAnalysis?.risks).slice(0, 3), [studioAnalysis?.risks]);
-  const blockers = useMemo(() => safeArray(studioAnalysis?.blockers).slice(0, 3), [studioAnalysis?.blockers]);
-  const participantInsights = useMemo(() => safeArray(studioAnalysis?.participantInsights).slice(0, 4), [studioAnalysis?.participantInsights]);
-  const tensions = useMemo(() => safeArray(studioAnalysis?.tensions).slice(0, 3), [studioAnalysis?.tensions]);
+  const keyQuotes = useMemo(
+    () => safeArray(studioAnalysis?.keyQuotes).slice(0, 3),
+    [studioAnalysis?.keyQuotes]
+  );
+  const followUps = useMemo(
+    () => safeArray(studioAnalysis?.followUps).slice(0, 4),
+    [studioAnalysis?.followUps]
+  );
+  const risks = useMemo(
+    () => safeArray(studioAnalysis?.risks).slice(0, 3),
+    [studioAnalysis?.risks]
+  );
+  const blockers = useMemo(
+    () => safeArray(studioAnalysis?.blockers).slice(0, 3),
+    [studioAnalysis?.blockers]
+  );
+  const participantInsights = useMemo(
+    () => safeArray(studioAnalysis?.participantInsights).slice(0, 4),
+    [studioAnalysis?.participantInsights]
+  );
+  const tensions = useMemo(
+    () => safeArray(studioAnalysis?.tensions).slice(0, 3),
+    [studioAnalysis?.tensions]
+  );
   const aiDebrief = selectedMeeting?.aiDebrief || displayRecording?.aiDebrief || null;
   const feedbackTranscript = useMemo(() => {
     if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
@@ -700,30 +844,30 @@ export default function StudioMeetingView({
     }
 
     const lines = [
-      `Debrief AI: ${selectedMeeting?.title || "Spotkanie"}`,
-      "",
+      `Debrief AI: ${selectedMeeting?.title || 'Spotkanie'}`,
+      '',
       aiDebrief.summary,
-      "",
-      `Decyzje: ${(aiDebrief.decisions || []).join(" | ") || "Brak"}`,
-      `Ryzyka: ${(aiDebrief.risks || []).join(" | ") || "Brak"}`,
-      `Następne kroki: ${(aiDebrief.followUps || []).join(" | ") || "Brak"}`,
+      '',
+      `Decyzje: ${(aiDebrief.decisions || []).join(' | ') || 'Brak'}`,
+      `Ryzyka: ${(aiDebrief.risks || []).join(' | ') || 'Brak'}`,
+      `Następne kroki: ${(aiDebrief.followUps || []).join(' | ') || 'Brak'}`,
     ];
 
-    const text = lines.join("\n");
+    const text = lines.join('\n');
     try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
-        setDebriefCopyMessage("Skopiowano debrief do schowka.");
+        setDebriefCopyMessage('Skopiowano debrief do schowka.');
       } else {
-        setDebriefCopyMessage("Schowek nie jest dostępny w tej przeglądarce.");
+        setDebriefCopyMessage('Schowek nie jest dostępny w tej przeglądarce.');
       }
     } catch (error) {
-      setDebriefCopyMessage(String(error?.message || "Nie udało się skopiować debriefu."));
+      setDebriefCopyMessage(String(error?.message || 'Nie udało się skopiować debriefu.'));
     }
   }, [aiDebrief, selectedMeeting?.title]);
   const meetingTaskEntries = useMemo(() => {
-    const meetingId = String(selectedMeeting?.id || "").trim();
-    const recordingId = String(selectedRecording?.id || "").trim();
+    const meetingId = String(selectedMeeting?.id || '').trim();
+    const recordingId = String(selectedRecording?.id || '').trim();
 
     if (!meetingId && !recordingId) {
       return [];
@@ -731,14 +875,14 @@ export default function StudioMeetingView({
 
     return safeArray(meetingTasks)
       .filter((task) => {
-        const taskMeetingId = String(task?.sourceMeetingId || "").trim();
-        const taskRecordingId = String(task?.sourceRecordingId || "").trim();
-        const taskSourceType = String(task?.sourceType || "").trim();
+        const taskMeetingId = String(task?.sourceMeetingId || '').trim();
+        const taskRecordingId = String(task?.sourceRecordingId || '').trim();
+        const taskSourceType = String(task?.sourceType || '').trim();
 
         return Boolean(
           (meetingId && taskMeetingId === meetingId) ||
           (recordingId && taskRecordingId === recordingId) ||
-          (meetingId && taskSourceType === "meeting" && !taskMeetingId)
+          (meetingId && taskSourceType === 'meeting' && !taskMeetingId)
         );
       })
       .sort((a, b) => {
@@ -749,31 +893,31 @@ export default function StudioMeetingView({
   }, [meetingTasks, selectedMeeting?.id, selectedRecording?.id]);
 
   function openMeetingTaskDetails(taskId) {
-    if (!taskId || typeof onOpenTask !== "function") {
+    if (!taskId || typeof onOpenTask !== 'function') {
       return;
     }
 
-    onOpenTask({ taskId, mode: "detail" });
+    onOpenTask({ taskId, mode: 'detail' });
   }
 
   function goToTasksTab(taskId) {
-    if (typeof onOpenTask === "function") {
-      onOpenTask({ taskId, mode: "tab" });
+    if (typeof onOpenTask === 'function') {
+      onOpenTask({ taskId, mode: 'tab' });
       return;
     }
 
-    if (typeof setActiveTab === "function") {
-      setActiveTab("tasks");
+    if (typeof setActiveTab === 'function') {
+      setActiveTab('tasks');
     }
   }
   const summaryBullets = useMemo(() => {
     const bullets = [];
 
-    const summaryText = String(studioAnalysis?.summary || "").trim();
+    const summaryText = String(studioAnalysis?.summary || '').trim();
     if (summaryText) {
       bullets.push({
-        icon: "🧾",
-        label: "Podsumowanie",
+        icon: '🧾',
+        label: 'Podsumowanie',
         value: summaryText,
       });
     }
@@ -781,48 +925,55 @@ export default function StudioMeetingView({
     const decisionsText = safeArray(studioAnalysis?.decisions).slice(0, 3);
     if (decisionsText.length) {
       bullets.push({
-        icon: "✅",
-        label: "Decyzje",
-        value: decisionsText.length === 1 ? decisionsText[0] : decisionsText.join("; "),
+        icon: '✅',
+        label: 'Decyzje',
+        value: decisionsText.length === 1 ? decisionsText[0] : decisionsText.join('; '),
       });
     }
 
     const actionText = autoTaskDrafts.slice(0, 3).map((task) => task.title);
     if (actionText.length) {
       bullets.push({
-        icon: "📌",
-        label: "Action items",
-        value: actionText.length === 1 ? actionText[0] : actionText.join("; "),
+        icon: '📌',
+        label: 'Action items',
+        value: actionText.length === 1 ? actionText[0] : actionText.join('; '),
       });
     }
 
     const followUpText = followUps.slice(0, 3);
     if (followUpText.length) {
       bullets.push({
-        icon: "➡️",
-        label: "Następne kroki",
-        value: followUpText.length === 1 ? followUpText[0] : followUpText.join("; "),
+        icon: '➡️',
+        label: 'Następne kroki',
+        value: followUpText.length === 1 ? followUpText[0] : followUpText.join('; '),
       });
     }
 
     const riskItems = [...risks.map((item) => item.risk), ...blockers];
     if (riskItems.length) {
       bullets.push({
-        icon: "⚠️",
-        label: "Ryzyka / blokery",
-        value: riskItems.slice(0, 3).join("; "),
+        icon: '⚠️',
+        label: 'Ryzyka / blokery',
+        value: riskItems.slice(0, 3).join('; '),
       });
     }
 
     return bullets.slice(0, 5);
-  }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions, studioAnalysis?.summary]);
+  }, [
+    autoTaskDrafts,
+    blockers,
+    followUps,
+    risks,
+    studioAnalysis?.decisions,
+    studioAnalysis?.summary,
+  ]);
 
   const sketchnoteSummaryText = useMemo(() => {
     return String(
       studioAnalysis?.summary ||
         displayRecording?.diarization?.reviewSummary?.summary ||
         displayRecording?.diarization?.summary ||
-        ""
+        ''
     ).trim();
   }, [
     displayRecording?.diarization?.reviewSummary?.summary,
@@ -831,16 +982,25 @@ export default function StudioMeetingView({
   ]);
 
   useEffect(() => {
-    if (!selectedRecording?.id || typeof onCreateTask !== "function" || !autoTaskDrafts.length) {
+    if (!selectedRecording?.id || typeof onCreateTask !== 'function' || !autoTaskDrafts.length) {
       return;
     }
 
     const batchKey = [
       selectedRecording.id,
       autoTaskDrafts
-        .map((task) => [task.title, task.owner, task.dueDate, task.priority, task.tags.join(","), task.sourceQuote].join("|"))
-        .join("||"),
-    ].join("::");
+        .map((task) =>
+          [
+            task.title,
+            task.owner,
+            task.dueDate,
+            task.priority,
+            task.tags.join(','),
+            task.sourceQuote,
+          ].join('|')
+        )
+        .join('||'),
+    ].join('::');
 
     if (autoTaskSyncKeyRef.current === batchKey) {
       return;
@@ -848,8 +1008,19 @@ export default function StudioMeetingView({
 
     const existing = new Set(
       safeArray(meetingTasks)
-        .filter((task) => task.sourceRecordingId === selectedRecording.id || task.sourceMeetingId === selectedMeeting?.id)
-        .map((task) => `${String(task.title || "").trim().toLowerCase()}|${String(task.sourceQuote || "").trim().toLowerCase()}`)
+        .filter(
+          (task) =>
+            task.sourceRecordingId === selectedRecording.id ||
+            task.sourceMeetingId === selectedMeeting?.id
+        )
+        .map(
+          (task) =>
+            `${String(task.title || '')
+              .trim()
+              .toLowerCase()}|${String(task.sourceQuote || '')
+              .trim()
+              .toLowerCase()}`
+        )
     );
 
     autoTaskDrafts.forEach((task) => {
@@ -867,22 +1038,37 @@ export default function StudioMeetingView({
         priority: task.priority,
         tags: task.tags,
         notes: task.sourceQuote,
-        sourceType: "meeting",
-        sourceMeetingId: selectedMeeting?.id || "",
-        sourceMeetingTitle: selectedMeeting?.title || "",
-        sourceMeetingDate: selectedMeeting?.startsAt || selectedMeeting?.createdAt || "",
-        sourceRecordingId: selectedRecording?.id || "",
+        sourceType: 'meeting',
+        sourceMeetingId: selectedMeeting?.id || '',
+        sourceMeetingTitle: selectedMeeting?.title || '',
+        sourceMeetingDate: selectedMeeting?.startsAt || selectedMeeting?.createdAt || '',
+        sourceRecordingId: selectedRecording?.id || '',
       });
       existing.add(key);
     });
 
     autoTaskSyncKeyRef.current = batchKey;
-  }, [autoTaskDrafts, meetingTasks, onCreateTask, selectedMeeting?.createdAt, selectedMeeting?.id, selectedMeeting?.startsAt, selectedMeeting?.title, selectedRecording?.id]);
-  const queueLabel = analysisStatus === "uploading" ? "Wysyłanie audio…"
-    : analysisStatus === "processing" ? "Transkrypcja w toku…"
-    : "Nagranie w kolejce…";
+  }, [
+    autoTaskDrafts,
+    meetingTasks,
+    onCreateTask,
+    selectedMeeting?.createdAt,
+    selectedMeeting?.id,
+    selectedMeeting?.startsAt,
+    selectedMeeting?.title,
+    selectedRecording?.id,
+  ]);
+  const queueLabel =
+    analysisStatus === 'uploading'
+      ? 'Wysyłanie audio…'
+      : analysisStatus === 'processing'
+        ? 'Transkrypcja w toku…'
+        : 'Nagranie w kolejce…';
 
-  const transcript = useMemo(() => displayRecording?.transcript || [], [displayRecording?.transcript]);
+  const transcript = useMemo(
+    () => displayRecording?.transcript || [],
+    [displayRecording?.transcript]
+  );
 
   const speakerStats = useMemo(
     () => analyzeSpeakingStyle(transcript, displaySpeakerNames),
@@ -894,11 +1080,13 @@ export default function StudioMeetingView({
     [speakerStats]
   );
 
-  const activeSeg = useMemo(() => (
-    transcript.length && currentTime > 0
-      ? transcript.find((s) => s.timestamp <= currentTime && s.endTimestamp > currentTime) || null
-      : null
-  ), [transcript, currentTime]);
+  const activeSeg = useMemo(
+    () =>
+      transcript.length && currentTime > 0
+        ? transcript.find((s) => s.timestamp <= currentTime && s.endTimestamp > currentTime) || null
+        : null,
+    [transcript, currentTime]
+  );
 
   const filteredTranscript = useMemo(() => {
     const q = transcriptSearch.trim().toLowerCase();
@@ -910,53 +1098,62 @@ export default function StudioMeetingView({
   const uniqueSpeakers = useMemo(() => {
     const seen = new Map();
     for (const seg of transcript) {
-      const sid = String(seg.speakerId ?? "");
+      const sid = String(seg.speakerId ?? '');
       if (sid && !seen.has(sid)) seen.set(sid, labelSpeaker(displaySpeakerNames, sid));
     }
     return [...seen.entries()].map(([id, name]) => ({ id, name }));
   }, [transcript, displaySpeakerNames]);
 
   // Reassign a single segment to a different speaker
-  const reassignSegmentSpeaker = useCallback((segId, newSpeakerId) => {
-    if (typeof updateTranscriptSegment === "function") {
-      updateTranscriptSegment(segId, { speakerId: newSpeakerId });
-    }
-    setSpeakerDropdownSegId(null);
-  }, [updateTranscriptSegment]);
+  const reassignSegmentSpeaker = useCallback(
+    (segId, newSpeakerId) => {
+      if (typeof updateTranscriptSegment === 'function') {
+        updateTranscriptSegment(segId, { speakerId: newSpeakerId });
+      }
+      setSpeakerDropdownSegId(null);
+    },
+    [updateTranscriptSegment]
+  );
 
   const showVoiceProfileToast = useCallback((speakerName) => {
     setVoiceProfileToast(speakerName);
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       window.setTimeout(() => setVoiceProfileToast(null), 3500);
     }
   }, []);
 
-  const enrollSpeakerProfile = useCallback(async (speakerId, speakerName) => {
-    if (typeof autoCreateVoiceProfile !== "function") return false;
-    const enrolled = await autoCreateVoiceProfile(speakerId, speakerName);
-    if (enrolled) {
-      showVoiceProfileToast(speakerName);
-    }
-    return enrolled;
-  }, [autoCreateVoiceProfile, showVoiceProfileToast]);
+  const enrollSpeakerProfile = useCallback(
+    async (speakerId, speakerName) => {
+      if (typeof autoCreateVoiceProfile !== 'function') return false;
+      const enrolled = await autoCreateVoiceProfile(speakerId, speakerName);
+      if (enrolled) {
+        showVoiceProfileToast(speakerName);
+      }
+      return enrolled;
+    },
+    [autoCreateVoiceProfile, showVoiceProfileToast]
+  );
 
-  const commitSpeakerRename = useCallback((speakerId, speakerName) => {
-    const nextName = String(speakerName || "").trim();
-    if (!nextName || typeof renameSpeaker !== "function") return;
+  const commitSpeakerRename = useCallback(
+    (speakerId, speakerName) => {
+      const nextName = String(speakerName || '').trim();
+      if (!nextName || typeof renameSpeaker !== 'function') return;
 
-    renameSpeaker(speakerId, nextName);
-    if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(nextName)) return;
+      renameSpeaker(speakerId, nextName);
+      if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(nextName)) return;
 
-    if (autoLearnSpeakerProfiles) {
-      enrollSpeakerProfile(speakerId, nextName).catch(() => undefined);
-      return;
-    }
+      if (autoLearnSpeakerProfiles) {
+        enrollSpeakerProfile(speakerId, nextName).catch(() => undefined);
+        return;
+      }
 
-    setPendingVoiceProfileEnrollment({
-      speakerId,
-      speakerName: nextName,
-    });
-  }, [autoCreateVoiceProfile, autoLearnSpeakerProfiles, enrollSpeakerProfile, renameSpeaker]);
+      setPendingVoiceProfileEnrollment({
+        speakerId,
+        speakerName: nextName,
+      });
+    },
+    [autoCreateVoiceProfile, autoLearnSpeakerProfiles, enrollSpeakerProfile, renameSpeaker]
+  );
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
@@ -964,10 +1161,16 @@ export default function StudioMeetingView({
     setRediarizing(true);
     setRediarizeMsg(null);
     try {
-      const result = await apiRequest(`/media/recordings/${selectedRecording.id}/rediarize`, { method: "POST" });
-      if (result?.segments && typeof updateTranscriptSegment === "function") {
+      const result = await apiRequest(`/media/recordings/${selectedRecording.id}/rediarize`, {
+        method: 'POST',
+      });
+      if (result?.segments && typeof updateTranscriptSegment === 'function') {
         for (const seg of result.segments) {
-          if (seg.id) updateTranscriptSegment(seg.id, { speakerId: seg.speakerId, rawSpeakerLabel: seg.rawSpeakerLabel });
+          if (seg.id)
+            updateTranscriptSegment(seg.id, {
+              speakerId: seg.speakerId,
+              rawSpeakerLabel: seg.rawSpeakerLabel,
+            });
         }
         setRediarizeMsg(`Wykryto ${result.speakerCount} mówcę/mówców.`);
       }
@@ -981,13 +1184,13 @@ export default function StudioMeetingView({
   const handleGenerateSketchnote = useCallback(async () => {
     if (!selectedRecording?.id) return;
     setIsGeneratingSketchnote(true);
-    setSketchnoteError("");
+    setSketchnoteError('');
     const fallbackSvg = buildSketchnoteSvg(
-      sketchnoteSummaryText || "Podsumowanie spotkania",
+      sketchnoteSummaryText || 'Podsumowanie spotkania',
       summaryBullets
     );
     const fallbackSketchnoteUrl = buildSketchnoteDataUrl(
-      sketchnoteSummaryText || "Podsumowanie spotkania",
+      sketchnoteSummaryText || 'Podsumowanie spotkania',
       summaryBullets
     );
     setSketchnoteFallbackSvg(fallbackSvg);
@@ -995,55 +1198,81 @@ export default function StudioMeetingView({
     setSketchnoteUrl(fallbackSketchnoteUrl);
     try {
       const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, {
-        method: "POST",
+        method: 'POST',
         body: {
           summary: sketchnoteSummaryText,
-          decisions: safeArray(studioAnalysis?.decisions).map((d) => String(typeof d === "object" ? (d as any)?.title || (d as any)?.text || "" : d || "").trim()).filter(Boolean),
-          actionItems: autoTaskDrafts.slice(0, 6).map((t) => t.title).filter(Boolean),
+          decisions: safeArray(studioAnalysis?.decisions)
+            .map((d) =>
+              String(
+                typeof d === 'object' ? (d as any)?.title || (d as any)?.text || '' : d || ''
+              ).trim()
+            )
+            .filter(Boolean),
+          actionItems: autoTaskDrafts
+            .slice(0, 6)
+            .map((t) => t.title)
+            .filter(Boolean),
           followUps: followUps.slice(0, 4),
-          risks: risks.slice(0, 3).map((r: any) => typeof r === "object" ? r?.risk || r?.title || String(r) : String(r)),
+          risks: risks
+            .slice(0, 3)
+            .map((r: any) =>
+              typeof r === 'object' ? r?.risk || r?.title || String(r) : String(r)
+            ),
           blockers: blockers.slice(0, 3),
-          keyQuotes: safeArray(studioAnalysis?.keyQuotes).slice(0, 2).map((q: any) => typeof q === "object" ? q?.text || q?.quote || String(q) : String(q)),
+          keyQuotes: safeArray(studioAnalysis?.keyQuotes)
+            .slice(0, 2)
+            .map((q: any) =>
+              typeof q === 'object' ? q?.text || q?.quote || String(q) : String(q)
+            ),
         },
       });
       if (res?.sketchnoteUrl) {
         setSketchnoteUrl(res.sketchnoteUrl);
         setSketchnoteIsLocal(false);
-        setSketchnoteFallbackSvg("");
+        setSketchnoteFallbackSvg('');
         return;
       }
-      setSketchnoteError("Backend sketchnotki nie zwrócił obrazu. Pokazuję lokalny podgląd.");
+      setSketchnoteError('Backend sketchnotki nie zwrócił obrazu. Pokazuję lokalny podgląd.');
     } catch (err) {
       setSketchnoteError(
         err?.message
           ? `Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd: ${err.message}`
-          : "Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd."
+          : 'Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd.'
       );
     } finally {
       setIsGeneratingSketchnote(false);
     }
-  }, [selectedRecording?.id, sketchnoteSummaryText, summaryBullets, autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions, studioAnalysis?.keyQuotes]);
+  }, [
+    selectedRecording?.id,
+    sketchnoteSummaryText,
+    summaryBullets,
+    autoTaskDrafts,
+    blockers,
+    followUps,
+    risks,
+    studioAnalysis?.decisions,
+    studioAnalysis?.keyQuotes,
+  ]);
 
   useEffect(() => {
     if (displayRecording?.diarization?.sketchnoteUrl) {
       setSketchnoteUrl(displayRecording.diarization.sketchnoteUrl);
       setSketchnoteIsLocal(false);
-      setSketchnoteFallbackSvg("");
+      setSketchnoteFallbackSvg('');
     } else if (!sketchnoteIsLocal) {
-      setSketchnoteUrl("");
+      setSketchnoteUrl('');
     }
   }, [displayRecording?.diarization?.sketchnoteUrl, displayRecording?.id, sketchnoteIsLocal]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
     const nums = uniqueSpeakers
-      .map((s) => parseInt(String(s.id).replace(/\D/g, ""), 10))
+      .map((s) => parseInt(String(s.id).replace(/\D/g, ''), 10))
       .filter(Number.isFinite);
     const max = nums.length ? Math.max(...nums) : 0;
     return String(max + 1);
   }, [uniqueSpeakers]);
   void handleGenerateSketchnote;
-
 
   function togglePlay() {
     const a = audioRef.current;
@@ -1063,45 +1292,50 @@ export default function StudioMeetingView({
 
   useEffect(() => {
     if (virtuosoRef.current && activeSeg?.id) {
-       const index = filteredTranscript.findIndex(s => s.id === activeSeg.id);
-       if (index !== -1) {
-          virtuosoRef.current.scrollToIndex({
-            index,
-            align: 'center',
-            behavior: 'smooth'
-          });
-       }
+      const index = filteredTranscript.findIndex((s) => s.id === activeSeg.id);
+      if (index !== -1) {
+        virtuosoRef.current.scrollToIndex({
+          index,
+          align: 'center',
+          behavior: 'smooth',
+        });
+      }
     }
   }, [activeSeg?.id, filteredTranscript]);
-
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
-    function onTimeUpdate() { setCurrentTime(audio.currentTime || 0); }
-    function onDuration() { setAudioDuration(isFinite(audio.duration) ? audio.duration : 0); }
-    function onPlayPause() { setIsPlaying(!audio.paused); }
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("durationchange", onDuration);
-    audio.addEventListener("loadedmetadata", onDuration);
-    audio.addEventListener("play", onPlayPause);
-    audio.addEventListener("pause", onPlayPause);
-    audio.addEventListener("ended", onPlayPause);
+    function onTimeUpdate() {
+      setCurrentTime(audio.currentTime || 0);
+    }
+    function onDuration() {
+      setAudioDuration(isFinite(audio.duration) ? audio.duration : 0);
+    }
+    function onPlayPause() {
+      setIsPlaying(!audio.paused);
+    }
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('durationchange', onDuration);
+    audio.addEventListener('loadedmetadata', onDuration);
+    audio.addEventListener('play', onPlayPause);
+    audio.addEventListener('pause', onPlayPause);
+    audio.addEventListener('ended', onPlayPause);
     if (isFinite(audio.duration) && audio.duration > 0) setAudioDuration(audio.duration);
     return () => {
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("durationchange", onDuration);
-      audio.removeEventListener("loadedmetadata", onDuration);
-      audio.removeEventListener("play", onPlayPause);
-      audio.removeEventListener("pause", onPlayPause);
-      audio.removeEventListener("ended", onPlayPause);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('durationchange', onDuration);
+      audio.removeEventListener('loadedmetadata', onDuration);
+      audio.removeEventListener('play', onPlayPause);
+      audio.removeEventListener('pause', onPlayPause);
+      audio.removeEventListener('ended', onPlayPause);
     };
   }, [selectedRecordingAudioUrl]);
 
   useEffect(() => {
     if (!selectedRecording?.id || !hydrateRecordingAudio) return;
     if (selectedRecordingAudioUrl) return;
-    if (selectedRecordingAudioStatus === "loading") return;
+    if (selectedRecordingAudioStatus === 'loading') return;
     hydrateRecordingAudio(selectedRecording.id, { priority: true }).catch(() => {});
   }, [
     hydrateRecordingAudio,
@@ -1114,24 +1348,23 @@ export default function StudioMeetingView({
     isRecording ||
     Boolean(selectedRecording) ||
     isQueued ||
-    analysisStatus === "error" ||
-    analysisStatus === "failed";
+    analysisStatus === 'error' ||
+    analysisStatus === 'failed';
   const playerState = isRecording
-    ? "recording"
+    ? 'recording'
     : selectedRecording && !selectedRecordingAudioUrl
-      ? selectedRecordingAudioStatus === "error"
-        ? "audio-error"
-        : "loading-audio"
-      : (isQueued || analysisStatus === "error" || analysisStatus === "failed") && !selectedRecordingAudioUrl
-        ? "queued"
-        : "playback-ready";
+      ? selectedRecordingAudioStatus === 'error'
+        ? 'audio-error'
+        : 'loading-audio'
+      : (isQueued || analysisStatus === 'error' || analysisStatus === 'failed') &&
+          !selectedRecordingAudioUrl
+        ? 'queued'
+        : 'playback-ready';
   const playbackDuration = Math.max(0, Number(audioDuration || displayRecording?.duration || 0));
   const scrubberMax = Math.max(playbackDuration, 1);
   const scrubberValue = Math.min(scrubberMax, Math.max(0, Number(currentTime || 0)));
-  const scrubberProgress = scrubberMax > 0 ? Math.min(100, Math.max(0, (scrubberValue / scrubberMax) * 100)) : 0;
-
-
-
+  const scrubberProgress =
+    scrubberMax > 0 ? Math.min(100, Math.max(0, (scrubberValue / scrubberMax) * 100)) : 0;
 
   if (!selectedMeeting && !isRecording && !isQueued && !displayRecording && !selectedRecording) {
     return (
@@ -1139,7 +1372,10 @@ export default function StudioMeetingView({
         <div className="empty-workspace-inner">
           <div className="eyebrow">Studio</div>
           <h2>Brak aktywnego spotkania</h2>
-          <p>Przejdź do zakładki <strong>Nagrania</strong>, aby wybrać nagranie do analizy lub uruchom nagranie ad hoc.</p>
+          <p>
+            Przejdź do zakładki <strong>Nagrania</strong>, aby wybrać nagranie do analizy lub
+            uruchom nagranie ad hoc.
+          </p>
           <div className="button-row">
             <button
               type="button"
@@ -1162,19 +1398,38 @@ export default function StudioMeetingView({
             </button>
           </div>
           {recordingMessage && (
-            <div className={`ff-status-banner ff-status-banner-spaced${analysisStatus === "error" ? " ff-status-error" : ""}`}>
+            <div
+              className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+            >
               <div style={{ flex: 1 }}>
                 <span>{recordingMessage}</span>
-                {pipelineProgressPercent > 0 && pipelineProgressPercent < 100 && analysisStatus !== "error" && (
-                  <div style={{ height: 4, background: "rgba(255,255,255,0.1)", marginTop: 8, borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pipelineProgressPercent}%`, background: "var(--accent, #3b82f6)", transition: "width 0.3s ease" }} />
-                  </div>
-                )}
+                {pipelineProgressPercent > 0 &&
+                  pipelineProgressPercent < 100 &&
+                  analysisStatus !== 'error' && (
+                    <div
+                      style={{
+                        height: 4,
+                        background: 'rgba(255,255,255,0.1)',
+                        marginTop: 8,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${pipelineProgressPercent}%`,
+                          background: 'var(--accent, #3b82f6)',
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                  )}
               </div>
               <button
                 type="button"
                 className="ff-status-dismiss-btn"
-                onClick={() => setRecordingMessage("")}
+                onClick={() => setRecordingMessage('')}
                 aria-label="Zamknij powiadomienie"
               >
                 ×
@@ -1189,7 +1444,12 @@ export default function StudioMeetingView({
   return (
     <>
       {selectedRecordingAudioUrl ? (
-        <audio ref={audioRef} src={selectedRecordingAudioUrl} preload="metadata" className="ff-audio-hidden">
+        <audio
+          ref={audioRef}
+          src={selectedRecordingAudioUrl}
+          preload="metadata"
+          className="ff-audio-hidden"
+        >
           <track kind="captions" />
         </audio>
       ) : null}
@@ -1197,1002 +1457,1273 @@ export default function StudioMeetingView({
       <div className="ff-studio-split-view">
         {/* LEFT COLUMN: Actions, Briefs, Panels */}
         <div className="ff-studio-left-col">
-
-      {/* ═══════════════════════════════════════════
+          {/* ═══════════════════════════════════════════
            HEADER — title + subtitle
           ═══════════════════════════════════════════ */}
-      <div className="ff-header">
-        {isEditingTitle ? (
-          <input
-            autoFocus
-            className="ff-header-title-input ff-header-title-input-editing"
-            type="text"
-            value={titleDraftValue}
-            onChange={(e) => setTitleDraftValue(e.target.value)}
-            onBlur={() => {
-              setIsEditingTitle(false);
-              const val = titleDraftValue.trim();
-              if (!val) return;
-              if (isRecording && setMeetingDraft) {
-                setMeetingDraft({ ...meetingDraft, title: val });
-              } else if (selectedMeeting && updateMeeting && val !== selectedMeeting.title) {
-                updateMeeting(selectedMeeting.id, { title: val });
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") setIsEditingTitle(false);
-            }}
-          />
-        ) : (
-          <h1
-            className="ff-header-title ff-header-title-editable"
-            title="Kliknij, aby edytować nazwę"
-            onClick={() => {
-              setTitleDraftValue(
-                isRecording
-                  ? (meetingDraft?.title?.trim() || "Ad hoc")
-                  : (selectedMeeting?.title || "Ad hoc")
-              );
-              setIsEditingTitle(true);
-            }}
-          >
-            {isRecording
-              ? (meetingDraft?.title?.trim() || "Ad hoc")
-              : (selectedMeeting?.title || "Ad hoc")}
-            <svg
-              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className="ff-header-title-icon"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </h1>
-        )}
-        <p className="ff-header-sub">
-          {displayRecording
-            ? [
-                formatDateTime(displayRecording.recordedAt || displayRecording.createdAt || displayRecording.startsAt),
-                displayRecording.duration > 0 ? formatDuration(Math.floor(displayRecording.duration)) : null,
-                uniqueSpeakers.length > 0 ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? "mówca" : "mówców"}` : null,
-              ].filter(Boolean).join(" · ")
-            : formatDateTime(selectedMeeting?.startsAt || selectedMeeting?.createdAt || new Date().toISOString())
-          }
-        </p>
-      </div>
+          <div className="ff-header">
+            {isEditingTitle ? (
+              <input
+                autoFocus
+                className="ff-header-title-input ff-header-title-input-editing"
+                type="text"
+                value={titleDraftValue}
+                onChange={(e) => setTitleDraftValue(e.target.value)}
+                onBlur={() => {
+                  setIsEditingTitle(false);
+                  const val = titleDraftValue.trim();
+                  if (!val) return;
+                  if (isRecording && setMeetingDraft) {
+                    setMeetingDraft({ ...meetingDraft, title: val });
+                  } else if (selectedMeeting && updateMeeting && val !== selectedMeeting.title) {
+                    updateMeeting(selectedMeeting.id, { title: val });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                  if (e.key === 'Escape') setIsEditingTitle(false);
+                }}
+              />
+            ) : (
+              <h1
+                className="ff-header-title ff-header-title-editable"
+                title="Kliknij, aby edytować nazwę"
+                onClick={() => {
+                  setTitleDraftValue(
+                    isRecording
+                      ? meetingDraft?.title?.trim() || 'Ad hoc'
+                      : selectedMeeting?.title || 'Ad hoc'
+                  );
+                  setIsEditingTitle(true);
+                }}
+              >
+                {isRecording
+                  ? meetingDraft?.title?.trim() || 'Ad hoc'
+                  : selectedMeeting?.title || 'Ad hoc'}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ff-header-title-icon"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </h1>
+            )}
+            <p className="ff-header-sub">
+              {displayRecording
+                ? [
+                    formatDateTime(
+                      displayRecording.recordedAt ||
+                        displayRecording.createdAt ||
+                        displayRecording.startsAt
+                    ),
+                    displayRecording.duration > 0
+                      ? formatDuration(Math.floor(displayRecording.duration))
+                      : null,
+                    uniqueSpeakers.length > 0
+                      ? `${uniqueSpeakers.length} ${uniqueSpeakers.length === 1 ? 'mówca' : 'mówców'}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : formatDateTime(
+                    selectedMeeting?.startsAt ||
+                      selectedMeeting?.createdAt ||
+                      new Date().toISOString()
+                  )}
+            </p>
+          </div>
 
-      <div className="ff-intelligence-tabs ff-intelligence-tabs-shell">
-        {[
-          { id: 'summary', label: 'Podsumowanie spotkania' },
-          { id: 'needs', label: 'Potrzeby i obawy' },
-          { id: 'profile', label: 'Profil psychologiczny' },
-          { id: 'feedback', label: 'Twój feedback' },
-          { id: 'tasks', label: 'Zadania' }
-        ].map(t => (
-          <button
-            key={t.id}
-            type="button"
-            className={`ff-int-tab ${studioAnalysisTab === t.id ? 'active' : ''}`}
-            onClick={() => setStudioAnalysisTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+          <div className="ff-intelligence-tabs ff-intelligence-tabs-shell">
+            {[
+              { id: 'summary', label: 'Podsumowanie spotkania' },
+              { id: 'needs', label: 'Potrzeby i obawy' },
+              { id: 'profile', label: 'Profil psychologiczny' },
+              { id: 'feedback', label: 'Twój feedback' },
+              { id: 'tasks', label: 'Zadania' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`ff-int-tab ${studioAnalysisTab === t.id ? 'active' : ''}`}
+                onClick={() => setStudioAnalysisTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-      {/* ═══════════════════════════════════════════
+          {/* ═══════════════════════════════════════════
            TOOLBAR — Grupa 1: Eksport/Brief | Separator | Grupa 2: Nagrywanie
           ═══════════════════════════════════════════ */}
-      <div className="ff-toolbar" data-testid="studio-toolbar">
-
-        {/* ── Grupa 1: Zakładki/Eksport (zawsze widoczne) ── */}
-        <button type="button" className="ff-tb-btn" onClick={() => { setDownloadTab('summary'); setIsDownloadModalOpen(true); }}
-          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
-          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Notatki
-        </button>
-        <button type="button" className="ff-tb-btn" onClick={() => { setDownloadTab('transcript'); setIsDownloadModalOpen(true); }}
-          disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}>
-          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
-            <line x1="4" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            <line x1="4" y1="7.5" x2="10" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            <line x1="4" y1="10" x2="7" y2="10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          Transkrypt
-        </button>
-
-        <button
-          type="button"
-          className={`ff-tb-btn${briefOpen ? " active" : ""}`}
-          onClick={() => setBriefOpen((v) => !v)}
-        >
-          {briefOpen ? "− Brief" : "+ Brief"}
-        </button>
-
-        {/* ── Separator ── */}
-        <span className="ff-tb-sep" />
-
-        {/* ── Grupa 2: Akcje nagrywania ── */}
-        {isRecording ? (
-          <>
-            <button type="button" className="ff-tb-stop" onClick={stopRecording}>
-              <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
-              Stop
-            </button>
-            {setLiveTranscriptEnabled ? (
-              <button
-                type="button"
-                className={`ff-tb-cc${liveTranscriptEnabled ? " active" : ""}`}
-                onClick={() => setLiveTranscriptEnabled((p) => !p)}
-                title={liveTranscriptEnabled ? "Wyłącz Whisper CC" : "Włącz Whisper CC"}
-              >CC</button>
-            ) : null}
-            <span className="ff-tb-rec-badge">● REC</span>
-          </>
-        ) : isQueued ? (
-          <span className="ff-tb-queued">{queueLabel}</span>
-        ) : (
-          <>
+          <div className="ff-toolbar" data-testid="studio-toolbar">
+            {/* ── Grupa 1: Zakładki/Eksport (zawsze widoczne) ── */}
             <button
               type="button"
-              className="ff-tb-record"
-              onClick={() => startRecording()}
-              disabled={!currentWorkspacePermissions?.canRecordAudio}
+              className="ff-tb-btn"
+              onClick={() => {
+                setDownloadTab('summary');
+                setIsDownloadModalOpen(true);
+              }}
+              disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}
             >
-              <svg width="13" height="13" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path
+                  d="M7 1h6v6M13 1L7 7M5 3H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
-              Rozpocznij nagrywanie
+              Notatki
             </button>
-            <button type="button" className="ff-tb-lang" title="Język nagrania">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke="currentColor" strokeWidth="1.4" />
-                <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4" />
+            <button
+              type="button"
+              className="ff-tb-btn"
+              onClick={() => {
+                setDownloadTab('transcript');
+                setIsDownloadModalOpen(true);
+              }}
+              disabled={!displayRecording || !currentWorkspacePermissions?.canExportWorkspaceData}
+            >
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <rect
+                  x="2"
+                  y="2"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                />
+                <line
+                  x1="4"
+                  y1="5"
+                  x2="10"
+                  y2="5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="4"
+                  y1="7.5"
+                  x2="10"
+                  y2="7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="4"
+                  y1="10"
+                  x2="7"
+                  y2="10"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
               </svg>
-              PL
-              <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              Transkrypt
             </button>
-          </>
-        )}
-      </div>
 
-      {/* ═══════════════════════════════════════════
+            <button
+              type="button"
+              className={`ff-tb-btn${briefOpen ? ' active' : ''}`}
+              onClick={() => setBriefOpen((v) => !v)}
+            >
+              {briefOpen ? '− Brief' : '+ Brief'}
+            </button>
+
+            {/* ── Separator ── */}
+            <span className="ff-tb-sep" />
+
+            {/* ── Grupa 2: Akcje nagrywania ── */}
+            {isRecording ? (
+              <>
+                <button type="button" className="ff-tb-stop" onClick={stopRecording}>
+                  <svg
+                    width="9"
+                    height="9"
+                    viewBox="0 0 12 12"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <rect x="1" y="1" width="10" height="10" rx="2" />
+                  </svg>
+                  Stop
+                </button>
+                {setLiveTranscriptEnabled ? (
+                  <button
+                    type="button"
+                    className={`ff-tb-cc${liveTranscriptEnabled ? ' active' : ''}`}
+                    onClick={() => setLiveTranscriptEnabled((p) => !p)}
+                    title={liveTranscriptEnabled ? 'Wyłącz Whisper CC' : 'Włącz Whisper CC'}
+                  >
+                    CC
+                  </button>
+                ) : null}
+                <span className="ff-tb-rec-badge">● REC</span>
+              </>
+            ) : isQueued ? (
+              <span className="ff-tb-queued">{queueLabel}</span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="ff-tb-record"
+                  onClick={() => startRecording()}
+                  disabled={!currentWorkspacePermissions?.canRecordAudio}
+                >
+                  <svg width="13" height="13" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                    <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
+                    <path
+                      d="M3 10a8 8 0 0016 0"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <line
+                      x1="11"
+                      y1="18"
+                      x2="11"
+                      y2="21"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  Rozpocznij nagrywanie
+                </button>
+                <button type="button" className="ff-tb-lang" title="Język nagrania">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path
+                      d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                    <line
+                      x1="1.5"
+                      y1="8"
+                      x2="14.5"
+                      y2="8"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                  </svg>
+                  PL
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path
+                      d="M2.5 4l2.5 2.5L7.5 4"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* ═══════════════════════════════════════════
            RECORDING ACTIVE HERO — only when recording
           ═══════════════════════════════════════════ */}
 
-      {/* Live caption — shown when Speech Recognition returns interim text */}
-      {isRecording && liveText ? (
-        <div className="ff-live-block">
-          <span className="ff-live-block-dot" />
-          <p className="ff-live-block-text">{liveText}</p>
-        </div>
-      ) : isRecording && !speechRecognitionSupported && !liveTranscriptEnabled ? (
-        <div className="ff-status-banner ff-status-warn">
-          Transkrypcja live niedostępna — włącz CC, aby uzyskać podpisy na żywo przez Whisper.
-        </div>
-      ) : null}
-
-      {/* Recording / processing status message */}
-      {recordingMessage ? (
-        <div className={`ff-status-banner${analysisStatus === "error" ? " ff-status-error" : ""}`}>
-          <div style={{ flex: 1 }}>
-            <span>{recordingMessage}</span>
-            {pipelineProgressPercent > 0 && pipelineProgressPercent < 100 && analysisStatus !== "error" && (
-              <div style={{ height: 4, background: "rgba(255,255,255,0.1)", marginTop: 8, borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pipelineProgressPercent}%`, background: "var(--accent, #3b82f6)", transition: "width 0.3s ease" }} />
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            className="ff-status-dismiss-btn"
-            onClick={() => setRecordingMessage("")}
-            aria-label="Zamknij powiadomienie"
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-
-      {/* ── Brief panels ── */}
-      {isEmptyTranscript ? (
-        <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
-          <div className="ff-status-detail-stack">
-            <span>Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz audio w odtwarzaczu.</span>
-            {emptyTranscriptDiagnostics ? (
-              <span className="ff-status-detail-text">{emptyTranscriptDiagnostics}</span>
-            ) : null}
-            {selectedRecordingAudioQualitySummary ? (
-              <span className="ff-status-detail-text">{selectedRecordingAudioQualitySummary}</span>
-            ) : null}
-          </div>
-          {retryStoredRecording && selectedMeeting && selectedRecording ? (
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
-            >
-              Ponow transkrypcje
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="ff-panels">
-        {studioAnalysisTab === 'summary' && (
-          <section className="panel studio-analysis-summary-panel">
-            <div className="panel-header compact">
-              <div>
-                <div className="eyebrow">AI ? podsumowanie</div>
-                <h2>Podsumowanie spotkania</h2>
-              </div>
+          {/* Live caption — shown when Speech Recognition returns interim text */}
+          {isRecording && liveText ? (
+            <div className="ff-live-block">
+              <span className="ff-live-block-dot" />
+              <p className="ff-live-block-text">{liveText}</p>
             </div>
+          ) : isRecording && !speechRecognitionSupported && !liveTranscriptEnabled ? (
+            <div className="ff-status-banner ff-status-warn">
+              Transkrypcja live niedostępna — włącz CC, aby uzyskać podpisy na żywo przez Whisper.
+            </div>
+          ) : null}
 
-            {/* Share of Voice Visualizer */}
-            {speakerStats.length > 0 && (
-              <div className="ff-sov-card">
-                <div className="ff-sov-card-head">
-                  <h3>Udział w rozmowie (Share of Voice)</h3>
-                  <span>{speakerStats.length} uczestników</span>
-                </div>
-                <div className="ff-sov-visual">
-                  <div className="ff-sov-bar-track">
-                    {speakerStats.map((s) => (
+          {/* Recording / processing status message */}
+          {recordingMessage ? (
+            <div
+              className={`ff-status-banner${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+            >
+              <div style={{ flex: 1 }}>
+                <span>{recordingMessage}</span>
+                {pipelineProgressPercent > 0 &&
+                  pipelineProgressPercent < 100 &&
+                  analysisStatus !== 'error' && (
+                    <div
+                      style={{
+                        height: 4,
+                        background: 'rgba(255,255,255,0.1)',
+                        marginTop: 8,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                      }}
+                    >
                       <div
-                        key={s.speakerId}
-                        className="ff-sov-bar-segment"
                         style={{
-                          width: `${(s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100}%`,
-                          backgroundColor: getSpeakerColor(s.speakerId)
+                          height: '100%',
+                          width: `${pipelineProgressPercent}%`,
+                          background: 'var(--accent, #3b82f6)',
+                          transition: 'width 0.3s ease',
                         }}
-                        title={`${s.speakerName}: ${Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%`}
                       />
-                    ))}
-                  </div>
-                  <div className="ff-sov-legend">
-                    {speakerStats.map((s) => (
-                      <div key={s.speakerId} className="ff-sov-legend-item">
-                        <span className="ff-sov-dot" style={{ backgroundColor: getSpeakerColor(s.speakerId) }} />
-                        <span className="ff-sov-name">{s.speakerName}</span>
-                        <span className="ff-sov-time">{formatDuration(s.speakingSeconds)}</span>
-                        <span className="ff-sov-percent">{Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%</span>
-                      </div>
-                    ))}
+                    </div>
+                  )}
+              </div>
+              <button
+                type="button"
+                className="ff-status-dismiss-btn"
+                onClick={() => setRecordingMessage('')}
+                aria-label="Zamknij powiadomienie"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
+
+          {/* ── Brief panels ── */}
+          {isEmptyTranscript ? (
+            <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
+              <div className="ff-status-detail-stack">
+                <span>
+                  Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz
+                  audio w odtwarzaczu.
+                </span>
+                {emptyTranscriptDiagnostics ? (
+                  <span className="ff-status-detail-text">{emptyTranscriptDiagnostics}</span>
+                ) : null}
+                {selectedRecordingAudioQualitySummary ? (
+                  <span className="ff-status-detail-text">
+                    {selectedRecordingAudioQualitySummary}
+                  </span>
+                ) : null}
+              </div>
+              {retryStoredRecording && selectedMeeting && selectedRecording ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+                >
+                  Ponow transkrypcje
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="ff-panels">
+            {studioAnalysisTab === 'summary' && (
+              <section className="panel studio-analysis-summary-panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">AI ? podsumowanie</div>
+                    <h2>Podsumowanie spotkania</h2>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {studioAnalysis?.summary ? (
-              <div className="panel-body ff-summary-layout">
-                <div className="summary-hero">
-                  <div className="analysis-summary-text">{studioAnalysis.summary}</div>
-                  {summaryBullets.length ? (
-                    <ul className="summary-highlights">
-                      {summaryBullets.map((item) => (
-                        <li key={item.label} className="summary-highlight">
-                          <span className="summary-highlight-icon" aria-hidden="true">{item.icon}</span>
-                          <div className="summary-highlight-body">
-                            <strong>{item.label}:</strong> <span>{item.value}</span>
+                {/* Share of Voice Visualizer */}
+                {speakerStats.length > 0 && (
+                  <div className="ff-sov-card">
+                    <div className="ff-sov-card-head">
+                      <h3>Udział w rozmowie (Share of Voice)</h3>
+                      <span>{speakerStats.length} uczestników</span>
+                    </div>
+                    <div className="ff-sov-visual">
+                      <div className="ff-sov-bar-track">
+                        {speakerStats.map((s) => (
+                          <div
+                            key={s.speakerId}
+                            className="ff-sov-bar-segment"
+                            style={{
+                              width: `${(s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100}%`,
+                              backgroundColor: getSpeakerColor(s.speakerId),
+                            }}
+                            title={`${s.speakerName}: ${Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%`}
+                          />
+                        ))}
+                      </div>
+                      <div className="ff-sov-legend">
+                        {speakerStats.map((s) => (
+                          <div key={s.speakerId} className="ff-sov-legend-item">
+                            <span
+                              className="ff-sov-dot"
+                              style={{ backgroundColor: getSpeakerColor(s.speakerId) }}
+                            />
+                            <span className="ff-sov-name">{s.speakerName}</span>
+                            <span className="ff-sov-time">{formatDuration(s.speakingSeconds)}</span>
+                            <span className="ff-sov-percent">
+                              {Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%
+                            </span>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {studioAnalysis?.summary ? (
+                  <div className="panel-body ff-summary-layout">
+                    <div className="summary-hero">
+                      <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+                      {summaryBullets.length ? (
+                        <ul className="summary-highlights">
+                          {summaryBullets.map((item) => (
+                            <li key={item.label} className="summary-highlight">
+                              <span className="summary-highlight-icon" aria-hidden="true">
+                                {item.icon}
+                              </span>
+                              <div className="summary-highlight-body">
+                                <strong>{item.label}:</strong> <span>{item.value}</span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      <div className="sketchnote-section sketchnote-section-shell">
+                        <div className="sketchnote-header">
+                          <h3 className="sketchnote-title">🎨 Sketchnotka AI</h3>
+                          {!sketchnoteUrl && (
+                            <button
+                              type="button"
+                              className="primary-button"
+                              onClick={handleGenerateSketchnote}
+                              disabled={isGeneratingSketchnote || !selectedRecording?.id}
+                            >
+                              {isGeneratingSketchnote
+                                ? 'Generowanie...'
+                                : 'Wygeneruj sketchnotkę AI'}
+                            </button>
+                          )}
+                        </div>
+
+                        {sketchnoteError && (
+                          <div className="inline-alert error">{sketchnoteError}</div>
+                        )}
+
+                        {sketchnoteUrl || sketchnoteFallbackSvg ? (
+                          <div className="sketchnote-image-container sketchnote-image-frame">
+                            {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
+                              <div
+                                aria-label="Lokalna sketchnotka"
+                                dangerouslySetInnerHTML={{ __html: sketchnoteFallbackSvg }}
+                              />
+                            ) : (
+                              <img
+                                src={sketchnoteUrl}
+                                alt="AI Generated Sketchnote"
+                                className="sketchnote-image"
+                              />
+                            )}
+                            <button
+                              className="ghost-button sketchnote-regenerate-btn"
+                              onClick={handleGenerateSketchnote}
+                              disabled={isGeneratingSketchnote}
+                            >
+                              {isGeneratingSketchnote ? 'Generowanie...' : 'Generuj ponownie'}
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="soft-copy sketchnote-empty-copy">
+                            Wygeneruj wizualną notatkę podsumowującą to spotkanie. Jeśli backend AI
+                            jest niedostępny, pokażemy lokalny podgląd oparty na podsumowaniu i
+                            punktach ze spotkania.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {aiDebrief ? (
+                      <section className="summary-card summary-card-spaced">
+                        <div className="summary-card-head">
+                          <h3>Debrief AI</h3>
+                          <div className="summary-card-actions">
+                            <span>{aiDebrief.followUps?.length || 0}</span>
+                            <button type="button" className="ghost-button" onClick={copyAIDebrief}>
+                              Kopiuj
+                            </button>
+                            {exportMeetingPdfFile ? (
+                              <button
+                                type="button"
+                                className="ghost-button"
+                                onClick={exportMeetingPdfFile}
+                              >
+                                PDF
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="analysis-summary-text summary-copy-spaced">
+                          {aiDebrief.summary}
+                        </div>
+                        <div className="summary-grid summary-grid-tight">
+                          <section className="summary-card summary-card-flush">
+                            <div className="summary-card-head">
+                              <h3>Decyzje</h3>
+                              <span>{aiDebrief.decisions?.length || 0}</span>
+                            </div>
+                            {aiDebrief.decisions?.length ? (
+                              <ul className="analysis-list summary-list-tight">
+                                {aiDebrief.decisions.map((item, index) => (
+                                  <li key={`debrief-decision-${index}`}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="soft-copy">Brak jednoznacznych decyzji.</p>
+                            )}
+                          </section>
+                          <section className="summary-card summary-card-flush">
+                            <div className="summary-card-head">
+                              <h3>Ryzyka</h3>
+                              <span>{aiDebrief.risks?.length || 0}</span>
+                            </div>
+                            {aiDebrief.risks?.length ? (
+                              <ul className="analysis-list summary-list-tight">
+                                {aiDebrief.risks.map((item, index) => (
+                                  <li key={`debrief-risk-${index}`}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="soft-copy">Brak ryzyk do odnotowania.</p>
+                            )}
+                          </section>
+                          <section className="summary-card summary-card-flush">
+                            <div className="summary-card-head">
+                              <h3>Następne kroki</h3>
+                              <span>{aiDebrief.followUps?.length || 0}</span>
+                            </div>
+                            {aiDebrief.followUps?.length ? (
+                              <ul className="analysis-list summary-list-tight">
+                                {aiDebrief.followUps.map((item, index) => (
+                                  <li key={`debrief-followup-${index}`}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="soft-copy">Brak dodatkowych follow-upów.</p>
+                            )}
+                          </section>
+                        </div>
+                        {debriefCopyMessage ? (
+                          <div className="inline-alert info summary-alert-spaced">
+                            {debriefCopyMessage}
+                          </div>
+                        ) : null}
+                      </section>
+                    ) : null}
+
+                    <div className="summary-grid">
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Decyzje</h3>
+                          <span>{safeArray(studioAnalysis.decisions).length}</span>
+                        </div>
+                        {safeArray(studioAnalysis.decisions).length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {studioAnalysis.decisions.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak wykrytych decyzji.</p>
+                        )}
+                      </section>
+
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Nastepne kroki</h3>
+                          <span>{followUps.length}</span>
+                        </div>
+                        {followUps.length ? (
+                          <ul className="analysis-list summary-list-tight">
+                            {followUps.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak dodatkowych krokow.</p>
+                        )}
+                      </section>
+
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Ryzyka i blokery</h3>
+                          <span>{risks.length + blockers.length + tensions.length}</span>
+                        </div>
+                        {risks.length || blockers.length || tensions.length ? (
+                          <div className="summary-stack">
+                            {risks.map((item, i) => (
+                              <article key={`risk-${i}`} className="summary-pill-card danger">
+                                {item.risk}
+                              </article>
+                            ))}
+                            {blockers.map((item, i) => (
+                              <article key={`blocker-${i}`} className="summary-pill-card warning">
+                                {item}
+                              </article>
+                            ))}
+                            {tensions.map((item, i) => (
+                              <article key={`tension-${i}`} className="summary-pill-card">
+                                {item.topic ? <strong>{item.topic}</strong> : null}
+                                <span>
+                                  {Array.isArray(item.between) && item.between.length
+                                    ? item.between.join(' vs ')
+                                    : 'Sprawa do wyjaśnienia'}
+                                  {item.resolved ? ' - rozwiązane' : ' - otwarte'}
+                                </span>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="soft-copy">Brak ryzyk i blokad.</p>
+                        )}
+                      </section>
+
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Najwazniejsze cytaty</h3>
+                          <span>{keyQuotes.length}</span>
+                        </div>
+                        {keyQuotes.length ? (
+                          <div className="summary-quotes">
+                            {keyQuotes.map((item, i) => (
+                              <article key={`quote-${i}`} className="summary-quote">
+                                <p>{item.quote}</p>
+                                <small>
+                                  {item.speaker}
+                                  {item.why ? ` ? ${item.why}` : ''}
+                                </small>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="soft-copy">Brak wyraznych cytatow.</p>
+                        )}
+                      </section>
+
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Uczestnicy</h3>
+                          <span>{participantInsights.length}</span>
+                        </div>
+                        {participantInsights.length ? (
+                          <ul className="summary-participants-list">
+                            {participantInsights.map((insight, i) => (
+                              <li key={`${insight.speaker}-${i}`} className="summary-participant">
+                                <strong>{insight.speaker}</strong>
+                                {insight.mainTopic ? (
+                                  <span>{insight.mainTopic}</span>
+                                ) : (
+                                  <span className="soft-copy">Brak glownego tematu</span>
+                                )}
+                                {insight.stance ? <small>{insight.stance}</small> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak danych o uczestnikach.</p>
+                        )}
+                      </section>
+                    </div>
+                  </div>
+                ) : isEmptyTranscript ? (
+                  <div className="panel-body">
+                    <div className="analysis-summary-text">
+                      Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj
+                      ponownie innym formatem.
+                    </div>
+                    {selectedRecordingAudioQualitySummary ? (
+                      <div className="analysis-summary-diagnostics">
+                        {selectedRecordingAudioQualitySummary}
+                      </div>
+                    ) : null}
+                    {retryStoredRecording && selectedMeeting && selectedRecording ? (
+                      <div className="analysis-summary-retry">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+                        >
+                          Ponow transkrypcje
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="panel-body">
+                    <p className="soft-copy">
+                      Automatyczne podsumowanie AI pojawi sie po zakonczeniu analizy.
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+            {studioAnalysisTab === 'needs' && (
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Potrzeby i obawy</h2>
+                  </div>
+                </div>
+                <div className="brief-columns two-col">
+                  <div className="brief-col">
+                    <div className="brief-col-head">
+                      <span className="brief-col-label">Potrzeby</span>
+                      <button
+                        type="button"
+                        className="what-matters-add-btn"
+                        onClick={() => setAddNeedOpen((v) => !v)}
+                        title="Dodaj potrzebę"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {addNeedOpen && (
+                      <form
+                        className="what-matters-add-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!needDraft.trim()) return;
+                          const current = meetingDraft?.needs || '';
+                          const updated = current
+                            ? current.trim() + '\n' + needDraft.trim()
+                            : needDraft.trim();
+                          const newDraft = { ...meetingDraft, needs: updated };
+                          setMeetingDraft(() => newDraft);
+                          setNeedDraft('');
+                          setAddNeedOpen(false);
+                          saveMeeting(newDraft);
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          value={needDraft}
+                          onChange={(e) => setNeedDraft(e.target.value)}
+                          placeholder="np. Potrzebuję wybudować dom"
+                        />
+                        <button type="submit" className="ghost-button">
+                          Dodaj
+                        </button>
+                      </form>
+                    )}
+                    <ul className="clean-list">
+                      {(selectedMeeting?.needs || []).length ? (
+                        selectedMeeting?.needs.map((item) => <li key={item}>{item}</li>)
+                      ) : (
+                        <li className="soft-copy">Brak potrzeb.</li>
+                      )}
+                    </ul>
+                  </div>
+
+                  <div className="brief-col">
+                    <div className="brief-col-head">
+                      <span className="brief-col-label">Obawy</span>
+                      <button
+                        type="button"
+                        className="what-matters-add-btn concern"
+                        onClick={() => setAddConcernOpen((v) => !v)}
+                        title="Dodaj obawę"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {addConcernOpen && (
+                      <form
+                        className="what-matters-add-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!concernDraft.trim()) return;
+                          const current = meetingDraft?.concerns || '';
+                          const updated = current
+                            ? current.trim() + '\n' + concernDraft.trim()
+                            : concernDraft.trim();
+                          const newDraft = { ...meetingDraft, concerns: updated };
+                          setMeetingDraft(() => newDraft);
+                          setConcernDraft('');
+                          setAddConcernOpen(false);
+                          saveMeeting(newDraft);
+                        }}
+                      >
+                        <input
+                          autoFocus
+                          value={concernDraft}
+                          onChange={(e) => setConcernDraft(e.target.value)}
+                          placeholder="np. Mam ograniczony budżet"
+                        />
+                        <button type="submit" className="ghost-button">
+                          Dodaj
+                        </button>
+                      </form>
+                    )}
+                    <ul className="clean-list">
+                      {(selectedMeeting.concerns || []).length ? (
+                        (selectedMeeting.concerns || []).map((item) => <li key={item}>{item}</li>)
+                      ) : (
+                        <li className="soft-copy">Brak obaw.</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                {studioAnalysis?.answersToNeeds?.length > 0 && (
+                  <div className="analysis-section analysis-section-padded">
+                    <div className="eyebrow">AI — analiza potrzeb</div>
+                    <h3>Odpowiedzi na potrzeby</h3>
+                    <ul className="analysis-list">
+                      {studioAnalysis.answersToNeeds.map((item, i) => (
+                        <li key={i}>
+                          <strong className="analysis-need-label">{item.need}:</strong>{' '}
+                          {item.answer}
                         </li>
                       ))}
                     </ul>
-                  ) : null}
-                  <div className="sketchnote-section sketchnote-section-shell">
-                    <div className="sketchnote-header">
-                      <h3 className="sketchnote-title">
-                        🎨 Sketchnotka AI
-                      </h3>
-                      {!sketchnoteUrl && (
-                        <button
-                          type="button"
-                          className="primary-button"
-                          onClick={handleGenerateSketchnote}
-                          disabled={isGeneratingSketchnote || !selectedRecording?.id}
-                        >
-                          {isGeneratingSketchnote ? "Generowanie..." : "Wygeneruj sketchnotkę AI"}
-                        </button>
-                      )}
-                    </div>
+                  </div>
+                )}
+              </section>
+            )}
 
-                    {sketchnoteError && <div className="inline-alert error">{sketchnoteError}</div>}
-
-                    {sketchnoteUrl || sketchnoteFallbackSvg ? (
-                      <div className="sketchnote-image-container sketchnote-image-frame">
-                        {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
-                          <div
-                            aria-label="Lokalna sketchnotka"
-                            dangerouslySetInnerHTML={{ __html: sketchnoteFallbackSvg }}
-                          />
-                        ) : (
-                          <img
-                            src={sketchnoteUrl}
-                            alt="AI Generated Sketchnote"
-                            className="sketchnote-image"
-                          />
-                        )}
-                        <button
-                          className="ghost-button sketchnote-regenerate-btn"
-                          onClick={handleGenerateSketchnote}
-                          disabled={isGeneratingSketchnote}
-                        >
-                          {isGeneratingSketchnote ? "Generowanie..." : "Generuj ponownie"}
-                        </button>
-                      </div>
-                      ) : (
-                        <p className="soft-copy sketchnote-empty-copy">
-                          Wygeneruj wizualną notatkę podsumowującą to spotkanie. Jeśli backend AI jest niedostępny, pokażemy lokalny podgląd oparty na podsumowaniu i punktach ze spotkania.
-                        </p>
-                      )}
+            {studioAnalysisTab === 'profile' && (
+              <section className="panel studio-psychological-profile-panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">AI — profile</div>
+                    <h2>Profil psychologiczny</h2>
                   </div>
                 </div>
+                {studioAnalysis?.participantInsights?.length > 0 ? (
+                  <div className="panel-body">
+                    <div className="insights-grid-v2">
+                      {studioAnalysis.participantInsights.map((insight, i) => {
+                        const disc = insight.personality ?? {};
+                        const sentiment = insight.sentimentScore ?? 0;
+                        const sentColor =
+                          sentiment >= 70 ? '#67d59f' : sentiment >= 40 ? '#f3ca72' : '#f17d72';
+                        return (
+                          <article key={i} className="insight-card-v2">
+                            {/* Header */}
+                            <div className="icard-header">
+                              <div className="icard-identity">
+                                <h3 className="icard-name">{insight.speaker}</h3>
+                                {insight.meetingRole && (
+                                  <span className="icard-role-badge">{insight.meetingRole}</span>
+                                )}
+                              </div>
+                              {insight.sentimentScore != null && (
+                                <div
+                                  className="icard-sentiment"
+                                  title={`Zaangażowanie: ${sentiment}/100`}
+                                >
+                                  <span
+                                    className="icard-sentiment-dot"
+                                    style={{ background: sentColor }}
+                                  />
+                                  <span
+                                    className="icard-sentiment-val"
+                                    style={{ color: sentColor }}
+                                  >
+                                    {sentiment}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
 
-                {aiDebrief ? (
-                  <section className="summary-card summary-card-spaced">
-                    <div className="summary-card-head">
-                      <h3>Debrief AI</h3>
-                      <div className="summary-card-actions">
-                        <span>{aiDebrief.followUps?.length || 0}</span>
-                        <button type="button" className="ghost-button" onClick={copyAIDebrief}>
-                          Kopiuj
-                        </button>
-                        {exportMeetingPdfFile ? (
-                          <button type="button" className="ghost-button" onClick={exportMeetingPdfFile}>
-                            PDF
-                          </button>
+                            {/* DISC radar + bars */}
+                            {(disc.D != null ||
+                              disc.I != null ||
+                              disc.S != null ||
+                              disc.C != null) && (
+                              <div className="icard-disc-row">
+                                <DiscRadarChart D={disc.D} I={disc.I} S={disc.S} C={disc.C} />
+                                <div className="icard-disc-info">
+                                  {insight.discStyle && (
+                                    <div className="icard-disc-style">{insight.discStyle}</div>
+                                  )}
+                                  {insight.discDescription && (
+                                    <p className="icard-disc-desc">{insight.discDescription}</p>
+                                  )}
+                                  <div className="icard-disc-bars">
+                                    {(['D', 'I', 'S', 'C'] as const).map((k) => {
+                                      const v = disc[k] ?? 0;
+                                      return (
+                                        <div key={k} className="icard-disc-bar-row">
+                                          <span
+                                            className="icard-disc-bar-label"
+                                            style={{ color: DISC_COLORS[k] }}
+                                          >
+                                            {k}
+                                          </span>
+                                          <div className="icard-disc-bar-track">
+                                            <div
+                                              className="icard-disc-bar-fill"
+                                              style={{ width: `${v}%`, background: DISC_COLORS[k] }}
+                                            />
+                                          </div>
+                                          <span className="icard-disc-bar-val">{v}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Podejście */}
+                            {(insight.communicationStyle || insight.decisionStyle) && (
+                              <div className="icard-section">
+                                <div className="icard-section-label">Podejście</div>
+                                <div className="icard-approach-grid">
+                                  {insight.communicationStyle && (
+                                    <div className="icard-approach-item">
+                                      <span className="icard-approach-key">Komunikacja</span>
+                                      <span className="icard-approach-val">
+                                        {COMM_LABELS[insight.communicationStyle] ??
+                                          insight.communicationStyle}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {insight.decisionStyle && (
+                                    <div className="icard-approach-item">
+                                      <span className="icard-approach-key">Decyzje</span>
+                                      <span className="icard-approach-val">
+                                        {DECISION_LABELS[insight.decisionStyle] ??
+                                          insight.decisionStyle}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Pod presją */}
+                            {insight.stressResponse && (
+                              <div className="icard-section">
+                                <div className="icard-section-label">Pod presją</div>
+                                <p className="icard-section-body">{insight.stressResponse}</p>
+                              </div>
+                            )}
+
+                            {/* Jak pracować */}
+                            {(insight.workingWithTips?.length ?? 0) > 0 && (
+                              <div className="icard-section">
+                                <div className="icard-section-label">Jak pracować z tą osobą</div>
+                                <ul className="icard-tips-list">
+                                  {insight.workingWithTips!.map((tip, j) => (
+                                    <li key={j}>{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* W tym spotkaniu */}
+                            <div className="icard-section">
+                              <div className="icard-section-label">W tym spotkaniu</div>
+                              <div className="icard-meeting-row">
+                                {insight.talkRatio != null && (
+                                  <div className="icard-talk-ratio">
+                                    <span className="icard-talk-pct">
+                                      {(insight.talkRatio * 100).toFixed(0)}%
+                                    </span>
+                                    <span className="icard-talk-label">głosu</span>
+                                  </div>
+                                )}
+                                <div className="icard-meeting-text">
+                                  {insight.mainTopic && (
+                                    <div className="icard-main-topic">{insight.mainTopic}</div>
+                                  )}
+                                  {insight.stance && (
+                                    <div className="icard-stance">
+                                      Nastawienie: <strong>{insight.stance}</strong>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {insight.keyMoment && (
+                                <blockquote className="icard-key-moment">
+                                  „{insight.keyMoment}"
+                                </blockquote>
+                              )}
+                            </div>
+
+                            {/* Potrzeby i obawy */}
+                            {((insight.needs?.length ?? 0) > 0 ||
+                              (insight.concerns?.length ?? 0) > 0) && (
+                              <div className="icard-section">
+                                <div className="icard-section-label">Potrzeby i obawy</div>
+                                {(insight.needs?.length ?? 0) > 0 && (
+                                  <div className="icard-chips">
+                                    {insight.needs!.map((n, j) => (
+                                      <span key={j} className="icard-chip icard-chip--need">
+                                        {n}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {(insight.concerns?.length ?? 0) > 0 && (
+                                  <div className="icard-chips icard-chips--concerns">
+                                    {insight.concerns!.map((c, j) => (
+                                      <span key={j} className="icard-chip icard-chip--concern">
+                                        {c}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="panel-body">
+                    <p className="soft-copy">
+                      Analiza profilu psychologicznego uczestników pojawi się tutaj.
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {studioAnalysisTab === 'feedback' && (
+              <section className="panel studio-feedback-panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">AI — feedback</div>
+                    <h2>Twój feedback</h2>
+                  </div>
+                  <div
+                    className="feedback-score-badge"
+                    aria-label={`Ocena spotkania ${feedbackView.overallScore} na 10`}
+                  >
+                    {feedbackView.overallScore}/10
+                  </div>
+                </div>
+                <div className="panel-body feedback-panel-body">
+                  <div className="feedback-hero">
+                    <div className="feedback-score-card">
+                      <div className="feedback-score-ring">
+                        <span>{feedbackView.overallScore}</span>
+                        <small>/10</small>
+                      </div>
+                      <div className="feedback-score-copy">
+                        <div className="feedback-score-kicker">Ocena całego spotkania</div>
+                        <strong>{feedbackView.summary}</strong>
+                        {feedbackIsSparse ? (
+                          <p className="feedback-sparse-note">
+                            Za mało danych, aby ocenić dokładniej. Oceny są orientacyjne.
+                          </p>
+                        ) : null}
+                        {feedbackView.strengths?.length ? (
+                          <p className="feedback-mini-note">
+                            Najmocniejsze strony:{' '}
+                            <strong>{feedbackView.strengths.slice(0, 2).join(' · ')}</strong>
+                          </p>
                         ) : null}
                       </div>
                     </div>
-                    <div className="analysis-summary-text summary-copy-spaced">
-                      {aiDebrief.summary}
-                    </div>
-                    <div className="summary-grid summary-grid-tight">
-                      <section className="summary-card summary-card-flush">
-                        <div className="summary-card-head">
-                          <h3>Decyzje</h3>
-                          <span>{aiDebrief.decisions?.length || 0}</span>
-                        </div>
-                        {aiDebrief.decisions?.length ? (
-                          <ul className="analysis-list summary-list-tight">
-                            {aiDebrief.decisions.map((item, index) => (
-                              <li key={`debrief-decision-${index}`}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="soft-copy">Brak jednoznacznych decyzji.</p>
-                        )}
-                      </section>
-                      <section className="summary-card summary-card-flush">
-                        <div className="summary-card-head">
-                          <h3>Ryzyka</h3>
-                          <span>{aiDebrief.risks?.length || 0}</span>
-                        </div>
-                        {aiDebrief.risks?.length ? (
-                          <ul className="analysis-list summary-list-tight">
-                            {aiDebrief.risks.map((item, index) => (
-                              <li key={`debrief-risk-${index}`}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="soft-copy">Brak ryzyk do odnotowania.</p>
-                        )}
-                      </section>
-                      <section className="summary-card summary-card-flush">
-                        <div className="summary-card-head">
-                          <h3>Następne kroki</h3>
-                          <span>{aiDebrief.followUps?.length || 0}</span>
-                        </div>
-                        {aiDebrief.followUps?.length ? (
-                          <ul className="analysis-list summary-list-tight">
-                            {aiDebrief.followUps.map((item, index) => (
-                              <li key={`debrief-followup-${index}`}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="soft-copy">Brak dodatkowych follow-upów.</p>
-                        )}
-                      </section>
-                    </div>
-                    {debriefCopyMessage ? <div className="inline-alert info summary-alert-spaced">{debriefCopyMessage}</div> : null}
-                  </section>
-                ) : null}
 
-                <div className="summary-grid">
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Decyzje</h3>
-                      <span>{safeArray(studioAnalysis.decisions).length}</span>
+                    <div className="feedback-highlight-card">
+                      <div className="feedback-highlight-label">Najlepsza rzecz do poprawy</div>
+                      <p>
+                        {feedbackView.improvementAreas[0] ||
+                          feedbackView.whatCouldBeBetter[0] ||
+                          'Mocniej domykaj decyzje, ownera i termin po każdym ważnym wątku.'}
+                      </p>
                     </div>
-                    {safeArray(studioAnalysis.decisions).length ? (
-                      <ul className="analysis-list summary-list-tight">
-                        {studioAnalysis.decisions.map((item, i) => (
-                          <li key={i}>{item}</li>
+                  </div>
+
+                  <div className="feedback-grid">
+                    <article className="feedback-card feedback-card-good">
+                      <div className="feedback-card-head">
+                        <span className="feedback-card-icon success">✓</span>
+                        <h3>Co poszło dobrze</h3>
+                      </div>
+                      <ul className="feedback-list">
+                        {feedbackView.whatWentWell.map((item, index) => (
+                          <li key={`went-${index}`}>
+                            <strong>{item}</strong>
+                          </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="soft-copy">Brak wykrytych decyzji.</p>
-                    )}
-                  </section>
+                    </article>
 
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Nastepne kroki</h3>
-                      <span>{followUps.length}</span>
-                    </div>
-                    {followUps.length ? (
-                      <ul className="analysis-list summary-list-tight">
-                        {followUps.map((item, i) => (
-                          <li key={i}>{item}</li>
+                    <article className="feedback-card feedback-card-better">
+                      <div className="feedback-card-head">
+                        <span className="feedback-card-icon warning">↗</span>
+                        <h3>Co można poprawić</h3>
+                      </div>
+                      <ul className="feedback-list">
+                        {feedbackView.whatCouldBeBetter.map((item, index) => (
+                          <li key={`better-${index}`}>
+                            <strong>{item}</strong>
+                          </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="soft-copy">Brak dodatkowych krokow.</p>
-                    )}
-                  </section>
+                    </article>
 
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Ryzyka i blokery</h3>
-                      <span>{risks.length + blockers.length + tensions.length}</span>
-                    </div>
-                    {risks.length || blockers.length || tensions.length ? (
-                      <div className="summary-stack">
-                        {risks.map((item, i) => (
-                          <article key={`risk-${i}`} className="summary-pill-card danger">
-                            {item.risk}
-                          </article>
-                        ))}
-                        {blockers.map((item, i) => (
-                          <article key={`blocker-${i}`} className="summary-pill-card warning">
-                            {item}
-                          </article>
-                        ))}
-                        {tensions.map((item, i) => (
-                          <article key={`tension-${i}`} className="summary-pill-card">
-                            {item.topic ? <strong>{item.topic}</strong> : null}
-                            <span>
-                              {Array.isArray(item.between) && item.between.length ? item.between.join(" vs ") : "Sprawa do wyjaśnienia"}
-                              {item.resolved ? " - rozwiązane" : " - otwarte"}
-                            </span>
-                          </article>
-                        ))}
+                    <article className="feedback-card feedback-card-perception">
+                      <div className="feedback-card-head">
+                        <span className="feedback-card-icon info">👀</span>
+                        <h3>Jak możesz być odbierany</h3>
                       </div>
-                    ) : (
-                      <p className="soft-copy">Brak ryzyk i blokad.</p>
-                    )}
-                  </section>
-
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Najwazniejsze cytaty</h3>
-                      <span>{keyQuotes.length}</span>
-                    </div>
-                    {keyQuotes.length ? (
-                      <div className="summary-quotes">
-                        {keyQuotes.map((item, i) => (
-                          <article key={`quote-${i}`} className="summary-quote">
-                            <p>{item.quote}</p>
-                            <small>{item.speaker}{item.why ? ` ? ${item.why}` : ""}</small>
-                          </article>
+                      <ul className="feedback-list">
+                        {feedbackView.perceptionNotes.map((item, index) => (
+                          <li key={`perception-${index}`}>{item}</li>
                         ))}
-                      </div>
-                    ) : (
-                      <p className="soft-copy">Brak wyraznych cytatow.</p>
-                    )}
-                  </section>
+                      </ul>
+                    </article>
 
-                  <section className="summary-card">
-                    <div className="summary-card-head">
-                      <h3>Uczestnicy</h3>
-                      <span>{participantInsights.length}</span>
+                    <article className="feedback-card feedback-card-communication">
+                      <div className="feedback-card-head">
+                        <span className="feedback-card-icon accent">🗣</span>
+                        <h3>Jak przekazywać lepiej</h3>
+                      </div>
+                      <ul className="feedback-list">
+                        {feedbackView.communicationTips.map((item, index) => (
+                          <li key={`tip-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </article>
+                  </div>
+
+                  <div className="feedback-category-block">
+                    <div className="feedback-category-head">
+                      <h3>Oceny 1-10</h3>
+                      <span>Całe spotkanie, nie pojedyncze osoby</span>
                     </div>
-                    {participantInsights.length ? (
-                      <ul className="summary-participants-list">
-                        {participantInsights.map((insight, i) => (
-                          <li key={`${insight.speaker}-${i}`} className="summary-participant">
-                            <strong>{insight.speaker}</strong>
-                            {insight.mainTopic ? <span>{insight.mainTopic}</span> : <span className="soft-copy">Brak glownego tematu</span>}
-                            {insight.stance ? <small>{insight.stance}</small> : null}
+                    <div className="feedback-category-grid">
+                      {feedbackView.categoryScores.map((category) => (
+                        <article key={category.key} className="feedback-category-card">
+                          <div className="feedback-category-top">
+                            <div>
+                              <div className="feedback-category-label">{category.label}</div>
+                              <div className="feedback-category-observation">
+                                {category.observation}
+                              </div>
+                            </div>
+                            <div className="feedback-category-score">{category.score}/10</div>
+                          </div>
+                          <div className="feedback-category-tip">
+                            <strong>Co poprawić:</strong> {category.improvementTip}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="feedback-grid feedback-grid-bottom">
+                    <article className="feedback-card feedback-card-next">
+                      <div className="feedback-card-head">
+                        <span className="feedback-card-icon neutral">→</span>
+                        <h3>Następne kroki</h3>
+                      </div>
+                      <ul className="feedback-list">
+                        {feedbackView.nextSteps.map((item, index) => (
+                          <li key={`next-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </article>
+                  </div>
+                </div>
+              </section>
+            )}
+            {studioAnalysisTab === 'tasks' && (
+              <section className="panel studio-tasks-panel">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Zadania po spotkaniu</h2>
+                  </div>
+                </div>
+
+                <div className="panel-body">
+                  <section className="summary-card summary-card-wide studio-meeting-task-card">
+                    <div className="summary-card-head">
+                      <h3>Zadania utworzone z tego spotkania</h3>
+                      <span>{meetingTaskEntries.length}</span>
+                    </div>
+                    {meetingTaskEntries.length ? (
+                      <ul className="meeting-task-list">
+                        {meetingTaskEntries.map((task) => (
+                          <li key={task.id} className="meeting-task-item">
+                            <div className="meeting-task-open">
+                              <div className="meeting-task-title-row">
+                                <strong>{task.title}</strong>
+                                <span className="task-flag neutral">
+                                  {task.priority === 'high'
+                                    ? 'Wysoki'
+                                    : task.priority === 'low'
+                                      ? 'Niski'
+                                      : 'Sredni'}
+                                </span>
+                              </div>
+                              {task.description ? <p>{task.description}</p> : null}
+                              <div className="meeting-task-meta">
+                                {task.owner ? <span>@{task.owner}</span> : null}
+                                {task.dueDate ? <span>{task.dueDate}</span> : null}
+                                {task.tags?.length ? (
+                                  <span>{task.tags.map((tag) => `#${tag}`).join(' ')}</span>
+                                ) : null}
+                              </div>
+                              <div className="meeting-task-actions">
+                                <button
+                                  type="button"
+                                  className="meeting-task-link"
+                                  onClick={() => goToTasksTab(task.id)}
+                                >
+                                  Przejdź do zadań
+                                </button>
+                                <button
+                                  type="button"
+                                  className="meeting-task-link secondary"
+                                  onClick={() => openMeetingTaskDetails(task.id)}
+                                >
+                                  Otwórz szczegóły
+                                </button>
+                              </div>
+                            </div>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="soft-copy">Brak danych o uczestnikach.</p>
+                      <p className="soft-copy">Brak zapisanych zadan z tego spotkania.</p>
                     )}
                   </section>
                 </div>
-              </div>
-            ) : isEmptyTranscript ? (
-              <div className="panel-body">
-                <div className="analysis-summary-text">
-                  Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.
-                </div>
-                {selectedRecordingAudioQualitySummary ? (
-                  <div className="analysis-summary-diagnostics">
-                    {selectedRecordingAudioQualitySummary}
-                  </div>
-                ) : null}
-                {retryStoredRecording && selectedMeeting && selectedRecording ? (
-                  <div className="analysis-summary-retry">
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
-                    >
-                      Ponow transkrypcje
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="panel-body">
-                <p className="soft-copy">Automatyczne podsumowanie AI pojawi sie po zakonczeniu analizy.</p>
-              </div>
-            )}
-          </section>
-        )}
-        {studioAnalysisTab === 'needs' && (
-          <section className="panel">
-            <div className="panel-header compact">
-              <div>
-                <h2>Potrzeby i obawy</h2>
-              </div>
-            </div>
-            <div className="brief-columns two-col">
-              <div className="brief-col">
-                <div className="brief-col-head">
-                  <span className="brief-col-label">Potrzeby</span>
-                  <button
-                    type="button"
-                    className="what-matters-add-btn"
-                    onClick={() => setAddNeedOpen((v) => !v)}
-                    title="Dodaj potrzebę"
-                  >
-                    +
-                  </button>
-                </div>
-                {addNeedOpen && (
-                  <form
-                    className="what-matters-add-form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!needDraft.trim()) return;
-                      const current = (meetingDraft?.needs || "");
-                      const updated = current ? current.trim() + "\n" + needDraft.trim() : needDraft.trim();
-                      const newDraft = { ...meetingDraft, needs: updated };
-                      setMeetingDraft(() => newDraft);
-                      setNeedDraft("");
-                      setAddNeedOpen(false);
-                      saveMeeting(newDraft);
-                    }}
-                  >
-                    <input autoFocus value={needDraft} onChange={(e) => setNeedDraft(e.target.value)} placeholder="np. Potrzebuję wybudować dom" />
-                    <button type="submit" className="ghost-button">Dodaj</button>
-                  </form>
-                )}
-                <ul className="clean-list">
-                  {(selectedMeeting?.needs || []).length ? (
-                    selectedMeeting?.needs.map((item) => <li key={item}>{item}</li>)
-                  ) : (
-                    <li className="soft-copy">Brak potrzeb.</li>
-                  )}
-                </ul>
-              </div>
 
-              <div className="brief-col">
-                <div className="brief-col-head">
-                  <span className="brief-col-label">Obawy</span>
-                  <button
-                    type="button"
-                    className="what-matters-add-btn concern"
-                    onClick={() => setAddConcernOpen((v) => !v)}
-                    title="Dodaj obawę"
-                  >
-                    +
-                  </button>
-                </div>
-                {addConcernOpen && (
-                  <form
-                    className="what-matters-add-form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!concernDraft.trim()) return;
-                      const current = (meetingDraft?.concerns || "");
-                      const updated = current ? current.trim() + "\n" + concernDraft.trim() : concernDraft.trim();
-                      const newDraft = { ...meetingDraft, concerns: updated };
-                      setMeetingDraft(() => newDraft);
-                      setConcernDraft("");
-                      setAddConcernOpen(false);
-                      saveMeeting(newDraft);
-                    }}
-                  >
-                    <input autoFocus value={concernDraft} onChange={(e) => setConcernDraft(e.target.value)} placeholder="np. Mam ograniczony budżet" />
-                    <button type="submit" className="ghost-button">Dodaj</button>
-                  </form>
-                )}
-                <ul className="clean-list">
-                  {(selectedMeeting.concerns || []).length ? (
-                    (selectedMeeting.concerns || []).map((item) => <li key={item}>{item}</li>)
-                  ) : (
-                    <li className="soft-copy">Brak obaw.</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-
-            {studioAnalysis?.answersToNeeds?.length > 0 && (
-              <div className="analysis-section analysis-section-padded">
-                <div className="eyebrow">AI — analiza potrzeb</div>
-                <h3>Odpowiedzi na potrzeby</h3>
-                <ul className="analysis-list">
-                  {studioAnalysis.answersToNeeds.map((item, i) => (
-                    <li key={i}>
-                      <strong className="analysis-need-label">{item.need}:</strong> {item.answer}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-
-        {studioAnalysisTab === 'profile' && (
-          <section className="panel studio-psychological-profile-panel">
-            <div className="panel-header compact">
-              <div>
-                <div className="eyebrow">AI — profile</div>
-                <h2>Profil psychologiczny</h2>
-              </div>
-            </div>
-            {studioAnalysis?.participantInsights?.length > 0 ? (
-              <div className="panel-body">
-                <div className="insights-grid-v2">
-                  {studioAnalysis.participantInsights.map((insight, i) => {
-                    const disc = insight.personality ?? {};
-                    const sentiment = insight.sentimentScore ?? 0;
-                    const sentColor = sentiment >= 70 ? '#67d59f' : sentiment >= 40 ? '#f3ca72' : '#f17d72';
-                    return (
-                      <article key={i} className="insight-card-v2">
-
-                        {/* Header */}
-                        <div className="icard-header">
-                          <div className="icard-identity">
-                            <h3 className="icard-name">{insight.speaker}</h3>
-                            {insight.meetingRole && (
-                              <span className="icard-role-badge">{insight.meetingRole}</span>
-                            )}
-                          </div>
-                          {insight.sentimentScore != null && (
-                            <div className="icard-sentiment" title={`Zaangażowanie: ${sentiment}/100`}>
-                              <span className="icard-sentiment-dot" style={{ background: sentColor }} />
-                              <span className="icard-sentiment-val" style={{ color: sentColor }}>{sentiment}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* DISC radar + bars */}
-                        {(disc.D != null || disc.I != null || disc.S != null || disc.C != null) && (
-                          <div className="icard-disc-row">
-                            <DiscRadarChart D={disc.D} I={disc.I} S={disc.S} C={disc.C} />
-                            <div className="icard-disc-info">
-                              {insight.discStyle && <div className="icard-disc-style">{insight.discStyle}</div>}
-                              {insight.discDescription && <p className="icard-disc-desc">{insight.discDescription}</p>}
-                              <div className="icard-disc-bars">
-                                {(['D', 'I', 'S', 'C'] as const).map((k) => {
-                                  const v = disc[k] ?? 0;
-                                  return (
-                                    <div key={k} className="icard-disc-bar-row">
-                                      <span className="icard-disc-bar-label" style={{ color: DISC_COLORS[k] }}>{k}</span>
-                                      <div className="icard-disc-bar-track">
-                                        <div className="icard-disc-bar-fill" style={{ width: `${v}%`, background: DISC_COLORS[k] }} />
-                                      </div>
-                                      <span className="icard-disc-bar-val">{v}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Podejście */}
-                        {(insight.communicationStyle || insight.decisionStyle) && (
-                          <div className="icard-section">
-                            <div className="icard-section-label">Podejście</div>
-                            <div className="icard-approach-grid">
-                              {insight.communicationStyle && (
-                                <div className="icard-approach-item">
-                                  <span className="icard-approach-key">Komunikacja</span>
-                                  <span className="icard-approach-val">{COMM_LABELS[insight.communicationStyle] ?? insight.communicationStyle}</span>
-                                </div>
-                              )}
-                              {insight.decisionStyle && (
-                                <div className="icard-approach-item">
-                                  <span className="icard-approach-key">Decyzje</span>
-                                  <span className="icard-approach-val">{DECISION_LABELS[insight.decisionStyle] ?? insight.decisionStyle}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Pod presją */}
-                        {insight.stressResponse && (
-                          <div className="icard-section">
-                            <div className="icard-section-label">Pod presją</div>
-                            <p className="icard-section-body">{insight.stressResponse}</p>
-                          </div>
-                        )}
-
-                        {/* Jak pracować */}
-                        {(insight.workingWithTips?.length ?? 0) > 0 && (
-                          <div className="icard-section">
-                            <div className="icard-section-label">Jak pracować z tą osobą</div>
-                            <ul className="icard-tips-list">
-                              {insight.workingWithTips!.map((tip, j) => <li key={j}>{tip}</li>)}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* W tym spotkaniu */}
-                        <div className="icard-section">
-                          <div className="icard-section-label">W tym spotkaniu</div>
-                          <div className="icard-meeting-row">
-                            {insight.talkRatio != null && (
-                              <div className="icard-talk-ratio">
-                                <span className="icard-talk-pct">{(insight.talkRatio * 100).toFixed(0)}%</span>
-                                <span className="icard-talk-label">głosu</span>
-                              </div>
-                            )}
-                            <div className="icard-meeting-text">
-                              {insight.mainTopic && <div className="icard-main-topic">{insight.mainTopic}</div>}
-                              {insight.stance && (
-                                <div className="icard-stance">Nastawienie: <strong>{insight.stance}</strong></div>
-                              )}
-                            </div>
-                          </div>
-                          {insight.keyMoment && (
-                            <blockquote className="icard-key-moment">„{insight.keyMoment}"</blockquote>
-                          )}
-                        </div>
-
-                        {/* Potrzeby i obawy */}
-                        {((insight.needs?.length ?? 0) > 0 || (insight.concerns?.length ?? 0) > 0) && (
-                          <div className="icard-section">
-                            <div className="icard-section-label">Potrzeby i obawy</div>
-                            {(insight.needs?.length ?? 0) > 0 && (
-                              <div className="icard-chips">
-                                {insight.needs!.map((n, j) => <span key={j} className="icard-chip icard-chip--need">{n}</span>)}
-                              </div>
-                            )}
-                            {(insight.concerns?.length ?? 0) > 0 && (
-                              <div className="icard-chips icard-chips--concerns">
-                                {insight.concerns!.map((c, j) => <span key={j} className="icard-chip icard-chip--concern">{c}</span>)}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="panel-body">
-                <p className="soft-copy">Analiza profilu psychologicznego uczestników pojawi się tutaj.</p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {studioAnalysisTab === 'feedback' && (
-          <section className="panel studio-feedback-panel">
-            <div className="panel-header compact">
-              <div>
-                <div className="eyebrow">AI — feedback</div>
-                <h2>Twój feedback</h2>
-              </div>
-              <div className="feedback-score-badge" aria-label={`Ocena spotkania ${feedbackView.overallScore} na 10`}>
-                {feedbackView.overallScore}/10
-              </div>
-            </div>
-            <div className="panel-body feedback-panel-body">
-              <div className="feedback-hero">
-                <div className="feedback-score-card">
-                  <div className="feedback-score-ring">
-                    <span>{feedbackView.overallScore}</span>
-                    <small>/10</small>
-                  </div>
-                  <div className="feedback-score-copy">
-                    <div className="feedback-score-kicker">Ocena całego spotkania</div>
-                    <strong>{feedbackView.summary}</strong>
-                    {feedbackIsSparse ? (
-                      <p className="feedback-sparse-note">Za mało danych, aby ocenić dokładniej. Oceny są orientacyjne.</p>
-                    ) : null}
-                    {feedbackView.strengths?.length ? (
-                      <p className="feedback-mini-note">
-                        Najmocniejsze strony: <strong>{feedbackView.strengths.slice(0, 2).join(" · ")}</strong>
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="feedback-highlight-card">
-                  <div className="feedback-highlight-label">Najlepsza rzecz do poprawy</div>
-                  <p>{feedbackView.improvementAreas[0] || feedbackView.whatCouldBeBetter[0] || "Mocniej domykaj decyzje, ownera i termin po każdym ważnym wątku."}</p>
-                </div>
-              </div>
-
-              <div className="feedback-grid">
-                <article className="feedback-card feedback-card-good">
-                  <div className="feedback-card-head">
-                    <span className="feedback-card-icon success">✓</span>
-                    <h3>Co poszło dobrze</h3>
-                  </div>
-                  <ul className="feedback-list">
-                    {feedbackView.whatWentWell.map((item, index) => (
-                      <li key={`went-${index}`}><strong>{item}</strong></li>
-                    ))}
-                  </ul>
-                </article>
-
-                <article className="feedback-card feedback-card-better">
-                  <div className="feedback-card-head">
-                    <span className="feedback-card-icon warning">↗</span>
-                    <h3>Co można poprawić</h3>
-                  </div>
-                  <ul className="feedback-list">
-                    {feedbackView.whatCouldBeBetter.map((item, index) => (
-                      <li key={`better-${index}`}><strong>{item}</strong></li>
-                    ))}
-                  </ul>
-                </article>
-
-                <article className="feedback-card feedback-card-perception">
-                  <div className="feedback-card-head">
-                    <span className="feedback-card-icon info">👀</span>
-                    <h3>Jak możesz być odbierany</h3>
-                  </div>
-                  <ul className="feedback-list">
-                    {feedbackView.perceptionNotes.map((item, index) => (
-                      <li key={`perception-${index}`}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-
-                <article className="feedback-card feedback-card-communication">
-                  <div className="feedback-card-head">
-                    <span className="feedback-card-icon accent">🗣</span>
-                    <h3>Jak przekazywać lepiej</h3>
-                  </div>
-                  <ul className="feedback-list">
-                    {feedbackView.communicationTips.map((item, index) => (
-                      <li key={`tip-${index}`}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-              </div>
-
-              <div className="feedback-category-block">
-                <div className="feedback-category-head">
-                  <h3>Oceny 1-10</h3>
-                  <span>Całe spotkanie, nie pojedyncze osoby</span>
-                </div>
-                <div className="feedback-category-grid">
-                  {feedbackView.categoryScores.map((category) => (
-                    <article key={category.key} className="feedback-category-card">
-                      <div className="feedback-category-top">
-                        <div>
-                          <div className="feedback-category-label">{category.label}</div>
-                          <div className="feedback-category-observation">{category.observation}</div>
-                        </div>
-                        <div className="feedback-category-score">{category.score}/10</div>
-                      </div>
-                      <div className="feedback-category-tip">
-                        <strong>Co poprawić:</strong> {category.improvementTip}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div className="feedback-grid feedback-grid-bottom">
-                <article className="feedback-card feedback-card-next">
-                  <div className="feedback-card-head">
-                    <span className="feedback-card-icon neutral">→</span>
-                    <h3>Następne kroki</h3>
-                  </div>
-                  <ul className="feedback-list">
-                    {feedbackView.nextSteps.map((item, index) => (
-                      <li key={`next-${index}`}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-              </div>
-            </div>
-          </section>
-        )}
-        {studioAnalysisTab === 'tasks' && (
-          <section className="panel studio-tasks-panel">
-            <div className="panel-header compact">
-              <div>
-                <h2>Zadania po spotkaniu</h2>
-              </div>
-            </div>
-
-            <div className="panel-body">
-              <section className="summary-card summary-card-wide studio-meeting-task-card">
-                <div className="summary-card-head">
-                  <h3>Zadania utworzone z tego spotkania</h3>
-                  <span>{meetingTaskEntries.length}</span>
-                </div>
-                    {meetingTaskEntries.length ? (
-                  <ul className="meeting-task-list">
-                    {meetingTaskEntries.map((task) => (
-                      <li key={task.id} className="meeting-task-item">
-                        <div className="meeting-task-open">
-                          <div className="meeting-task-title-row">
-                            <strong>{task.title}</strong>
-                            <span className="task-flag neutral">
-                              {task.priority === "high" ? "Wysoki" : task.priority === "low" ? "Niski" : "Sredni"}
-                            </span>
-                          </div>
-                          {task.description ? <p>{task.description}</p> : null}
-                          <div className="meeting-task-meta">
-                            {task.owner ? <span>@{task.owner}</span> : null}
-                            {task.dueDate ? <span>{task.dueDate}</span> : null}
-                            {task.tags?.length ? <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
-                          </div>
-                          <div className="meeting-task-actions">
-                            <button type="button" className="meeting-task-link" onClick={() => goToTasksTab(task.id)}>
-                              Przejdź do zadań
-                            </button>
-                            <button type="button" className="meeting-task-link secondary" onClick={() => openMeetingTaskDetails(task.id)}>
-                              Otwórz szczegóły
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="soft-copy">Brak zapisanych zadan z tego spotkania.</p>
-                )}
+                <Suspense
+                  fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}
+                >
+                  <AiTaskSuggestionsPanel
+                    selectedRecording={selectedRecording}
+                    displaySpeakerNames={displaySpeakerNames}
+                    peopleProfiles={peopleProfiles}
+                    onCreateTask={onCreateTask}
+                    canEdit={currentWorkspacePermissions?.canEditWorkspace}
+                  />
+                </Suspense>
               </section>
-            </div>
-
-            <Suspense fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}>
-              <AiTaskSuggestionsPanel
-                selectedRecording={selectedRecording}
-                displaySpeakerNames={displaySpeakerNames}
-                peopleProfiles={peopleProfiles}
-                onCreateTask={onCreateTask}
-                canEdit={currentWorkspacePermissions?.canEditWorkspace}
-              />
-            </Suspense>
-          </section>
-        )}
-
-          </div>{/* /ff-panels */}
-        </div>{/* /ff-studio-left-col */}
+            )}
+          </div>
+          {/* /ff-panels */}
+        </div>
+        {/* /ff-studio-left-col */}
 
         {/* RIGHT COLUMN: Transcript */}
         <div className="ff-studio-right-col">
-
           {/* Section header */}
           <div className="ff-sticky-header ff-sticky-header-shell">
             <div className="ff-tabs ff-tabs-shell">
               <div className="ff-tabs-group">
-                <button className="ff-tab active" type="button">Transkrypcja</button>
+                <button className="ff-tab active" type="button">
+                  Transkrypcja
+                </button>
               </div>
 
               {transcript.length > 0 && remoteApiEnabled() && (
@@ -2203,27 +2734,42 @@ export default function StudioMeetingView({
                   disabled={rediarizing}
                   title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
                 >
-                  {rediarizing ? "…" : "Wykryj mówców"}
+                  {rediarizing ? '…' : 'Wykryj mówców'}
                 </button>
               )}
             </div>
 
-          {/* Search */}
-          <div className="ff-search-bar ff-search-bar-stretch">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              type="text"
-              placeholder="Find or Replace"
-              value={transcriptSearch}
-              onChange={(e) => setTranscriptSearch(e.target.value)}
-            />
-          </div>
+            {/* Search */}
+            <div className="ff-search-bar ff-search-bar-stretch">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Find or Replace"
+                value={transcriptSearch}
+                onChange={(e) => setTranscriptSearch(e.target.value)}
+              />
+            </div>
           </div>
 
           {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
 
           {voiceProfileToast ? (
-            <p className="ff-voice-profile-toast">✓ Profil głosowy zapisany dla <strong>{voiceProfileToast}</strong></p>
+            <p className="ff-voice-profile-toast">
+              ✓ Profil głosowy zapisany dla <strong>{voiceProfileToast}</strong>
+            </p>
           ) : null}
 
           {/* Voice analytics panel — collapsible, shown only when transcript is available */}
@@ -2241,10 +2787,19 @@ export default function StudioMeetingView({
                 </svg>
                 Voice analytics
                 <svg
-                  className={voiceStatsOpen ? "ff-chevron open" : "ff-chevron"}
-                  width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
+                  className={voiceStatsOpen ? 'ff-chevron open' : 'ff-chevron'}
+                  width="10"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  aria-hidden="true"
                 >
-                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  <path
+                    d="M2 4l3 3 3-3"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
               {voiceStatsOpen ? (
@@ -2267,14 +2822,16 @@ export default function StudioMeetingView({
                 itemContent={(index, seg) => {
                   const isActive = activeSeg?.id === seg.id;
                   const name = labelSpeaker(displaySpeakerNames, seg.speakerId);
-                  const letter = (name || "S")[0].toUpperCase();
+                  const letter = (name || 'S')[0].toUpperCase();
                   const color = getSpeakerColor(seg.speakerId);
                   return (
                     <div
                       key={seg.id}
-                      className={`fireflies-segment${isActive ? " active" : ""} fireflies-segment-spaced`}
+                      className={`fireflies-segment${isActive ? ' active' : ''} fireflies-segment-spaced`}
                     >
-                      <div className="fireflies-avatar" style={{ background: color }}>{letter}</div>
+                      <div className="fireflies-avatar" style={{ background: color }}>
+                        {letter}
+                      </div>
 
                       <div className="fireflies-content">
                         <div className="fireflies-header">
@@ -2291,8 +2848,10 @@ export default function StudioMeetingView({
                                   setRenamingSpeakerId(null);
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") (e.target as any).blur();
-                                  if (e.key === "Escape") { setRenamingSpeakerId(null); }
+                                  if (e.key === 'Enter') (e.target as any).blur();
+                                  if (e.key === 'Escape') {
+                                    setRenamingSpeakerId(null);
+                                  }
                                 }}
                               />
                             ) : (
@@ -2300,15 +2859,32 @@ export default function StudioMeetingView({
                                 <button
                                   type="button"
                                   className="ff-speaker-trigger"
-                                  onClick={() => setSpeakerDropdownSegId(speakerDropdownSegId === seg.id ? null : seg.id)}
+                                  onClick={() =>
+                                    setSpeakerDropdownSegId(
+                                      speakerDropdownSegId === seg.id ? null : seg.id
+                                    )
+                                  }
                                 >
                                   <span className="fireflies-speaker">{name}</span>
-                                  <svg className="fireflies-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                  <svg
+                                    className="fireflies-chevron"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="m6 9 6 6 6-6" />
+                                  </svg>
                                 </button>
                                 {speakerDropdownSegId === seg.id ? (
                                   <SpeakerDropdown
                                     seg={seg}
-                                    currentSpeakerId={String(seg.speakerId ?? "")}
+                                    currentSpeakerId={String(seg.speakerId ?? '')}
                                     speakers={uniqueSpeakers}
                                     nextSpeakerId={nextSpeakerId}
                                     displaySpeakerNames={displaySpeakerNames}
@@ -2328,7 +2904,9 @@ export default function StudioMeetingView({
                           <button
                             type="button"
                             className="fireflies-time"
-                            onClick={() => { if (audioRef.current) audioRef.current.currentTime = seg.timestamp; }}
+                            onClick={() => {
+                              if (audioRef.current) audioRef.current.currentTime = seg.timestamp;
+                            }}
                           >
                             {formatDuration(Math.floor(seg.timestamp))}
                           </button>
@@ -2337,22 +2915,55 @@ export default function StudioMeetingView({
                           <textarea
                             className="fireflies-textarea"
                             value={seg.text}
-                            onChange={(e) => updateTranscriptSegment(seg.id, { text: e.target.value })}
+                            onChange={(e) =>
+                              updateTranscriptSegment(seg.id, { text: e.target.value })
+                            }
                             rows={Math.max(1, Math.ceil(seg.text.length / 80))}
                             spellCheck="false"
                           />
                         </div>
 
                         <div className="fireflies-actions">
-                           <button type="button" className="icon-button" aria-label="Copy">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                            </button>
-                            <button type="button" className="icon-button" aria-label="Create Soundbite">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-                            </button>
-                            <label className="fireflies-select" title="Zaznacz">
-                              <input type="checkbox" />
-                            </label>
+                          <button type="button" className="icon-button" aria-label="Copy">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              viewBox="0 0 24 24"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-button"
+                            aria-label="Create Soundbite"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                              <line x1="12" x2="12" y1="19" y2="22" />
+                            </svg>
+                          </button>
+                          <label className="fireflies-select" title="Zaznacz">
+                            <input type="checkbox" />
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -2363,27 +2974,71 @@ export default function StudioMeetingView({
               <div className="ff-segments-empty">
                 {transcript.length ? (
                   <>
-                    <svg className="ff-empty-icon" width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                    <svg
+                      className="ff-empty-icon"
+                      width="36"
+                      height="36"
+                      viewBox="0 0 36 36"
+                      fill="none"
+                      aria-hidden="true"
+                    >
                       <circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.2" />
-                      <path d="M12 18h12M15 13h6M15 23h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                      <path
+                        d="M12 18h12M15 13h6M15 23h6"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                      />
                     </svg>
                     <p>Brak wyników wyszukiwania.</p>
                   </>
                 ) : (
                   <>
-                    <svg className="ff-empty-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                      <rect x="8" y="4" width="24" height="32" rx="4" stroke="currentColor" strokeWidth="1.3" />
-                      <path d="M14 13h12M14 19h12M14 25h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                      <path d="M8 28c3-3 6-1 8-4s3-5 4-5 2 3 4 5 5 1 8 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".45" />
+                    <svg
+                      className="ff-empty-icon"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 40 40"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <rect
+                        x="8"
+                        y="4"
+                        width="24"
+                        height="32"
+                        rx="4"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                      />
+                      <path
+                        d="M14 13h12M14 19h12M14 25h7"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M8 28c3-3 6-1 8-4s3-5 4-5 2 3 4 5 5 1 8 4"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        strokeLinecap="round"
+                        opacity=".45"
+                      />
                     </svg>
-                    <p>Brak transkrypcji<br />dla tego nagrania.</p>
+                    <p>
+                      Brak transkrypcji
+                      <br />
+                      dla tego nagrania.
+                    </p>
                   </>
                 )}
               </div>
             )}
           </div>
-      </div>{/* /ff-studio-right-col */}
-      </div>{/* /ff-studio-split-view */}
+        </div>
+        {/* /ff-studio-right-col */}
+      </div>
+      {/* /ff-studio-split-view */}
 
       {/* ═══════════════════════════════════════════
            RECORDING ACTIVE HERO — only when recording
@@ -2395,35 +3050,58 @@ export default function StudioMeetingView({
           ═══════════════════════════════════════════ */}
       {shouldShowPlayerBar && (
         <div className="ff-player-bar">
-          {playerState === "recording" ? (
+          {playerState === 'recording' ? (
             <div className="ff-player-status-wrap recording-active">
-               <div className="ff-rec-vis-row">
-                <div className="ff-rec-pulse-ring ff-rec-pulse-ring-sm" style={{ animation: isPaused ? 'none' : undefined }}>
+              <div className="ff-rec-vis-row">
+                <div
+                  className="ff-rec-pulse-ring ff-rec-pulse-ring-sm"
+                  style={{ animation: isPaused ? 'none' : undefined }}
+                >
                   <svg width="14" height="14" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                     <rect x="7" y="1" width="8" height="12" rx="4" fill="currentColor" />
-                    <path d="M3 10a8 8 0 0016 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <line x1="11" y1="18" x2="11" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path
+                      d="M3 10a8 8 0 0016 0"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <line
+                      x1="11"
+                      y1="18"
+                      x2="11"
+                      y2="21"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </div>
                 <div className="ff-rec-wave-inline ff-rec-wave-inline-sm">
                   {visualBars.slice(-18).map((h, i) => (
-                    <span key={i} className="ff-capture-bar" style={{
-                      height: Math.max(3, Math.round(h * 0.35)) + "px",
-                      opacity: isPaused ? 0.3 : 1
-                    }} />
+                    <span
+                      key={i}
+                      className="ff-capture-bar"
+                      style={{
+                        height: Math.max(3, Math.round(h * 0.35)) + 'px',
+                        opacity: isPaused ? 0.3 : 1,
+                      }}
+                    />
                   ))}
                 </div>
               </div>
 
-              <div className="ff-rec-timer-xl ff-rec-timer-xl-compact">{formatDuration(elapsed)}</div>
-
-              <div className={`ff-player-status-label ${isPaused ? "is-paused" : "is-recording"}`}>
-                {isPaused ? "Wstrzymano" : "Nagrywanie..."}
+              <div className="ff-rec-timer-xl ff-rec-timer-xl-compact">
+                {formatDuration(elapsed)}
               </div>
 
-              {voiceActivityStatus !== "unsupported" ? (
-                <div className={`ff-vad-pill ${voiceActivityStatus === "active" ? "active" : ""}`}>
-                  {voiceActivityStatus === "active" ? "VAD: glos wykryty" : "VAD: cisza"}
+              <div className={`ff-player-status-label ${isPaused ? 'is-paused' : 'is-recording'}`}>
+                {isPaused ? 'Wstrzymano' : 'Nagrywanie...'}
+              </div>
+
+              {voiceActivityStatus !== 'unsupported' ? (
+                <div className={`ff-vad-pill ${voiceActivityStatus === 'active' ? 'active' : ''}`}>
+                  {voiceActivityStatus === 'active' ? 'VAD: glos wykryty' : 'VAD: cisza'}
                 </div>
               ) : null}
 
@@ -2451,35 +3129,62 @@ export default function StudioMeetingView({
                   )}
                 </button>
                 <button type="button" className="ff-tb-stop" onClick={stopRecording}>
-                  <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" /></svg>
+                  <svg
+                    width="9"
+                    height="9"
+                    viewBox="0 0 12 12"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <rect x="1" y="1" width="10" height="10" rx="2" />
+                  </svg>
                   Zakończ
                 </button>
               </div>
               {silenceCountdown != null && (
                 <div className="ff-silence-countdown">
                   <span>Zatrzymanie za {silenceCountdown}s — cisza wykryta</span>
-                  <button type="button" className="ghost-button ff-silence-continue-btn" onClick={resetSilenceTimer}>
+                  <button
+                    type="button"
+                    className="ghost-button ff-silence-continue-btn"
+                    onClick={resetSilenceTimer}
+                  >
                     Kontynuuj
                   </button>
                 </div>
               )}
             </div>
-          ) : playerState === "queued" ? (
+          ) : playerState === 'queued' ? (
             <div className="ff-player-status-wrap">
               <RecordingPipelineStatus
-                status={analysisStatus === "error" || analysisStatus === "failed" || activeQueueItem?.status === "failed" ? "failed" : (activeQueueItem?.status || "processing")}
-                errorMessage={activeQueueItem?.errorMessage || (analysisStatus === "error" || analysisStatus === "failed" ? "Błąd analizy nagrania" : undefined)}
-                onRetry={activeQueueItem ? () => retryRecordingQueueItem(activeQueueItem.recordingId) : undefined}
+                status={
+                  analysisStatus === 'error' ||
+                  analysisStatus === 'failed' ||
+                  activeQueueItem?.status === 'failed'
+                    ? 'failed'
+                    : activeQueueItem?.status || 'processing'
+                }
+                errorMessage={
+                  activeQueueItem?.errorMessage ||
+                  (analysisStatus === 'error' || analysisStatus === 'failed'
+                    ? 'Błąd analizy nagrania'
+                    : undefined)
+                }
+                onRetry={
+                  activeQueueItem
+                    ? () => retryRecordingQueueItem(activeQueueItem.recordingId)
+                    : undefined
+                }
                 progressMessage={queueLabel}
                 progressPercent={pipelineProgressPercent}
                 stageLabel={pipelineStageLabel}
               />
             </div>
-          ) : playerState === "loading-audio" ? (
+          ) : playerState === 'loading-audio' ? (
             <div className="ff-player-status-wrap" data-testid="player-loading-audio">
               <span className="ff-player-time">Ladowanie audio...</span>
             </div>
-          ) : playerState === "audio-error" ? (
+          ) : playerState === 'audio-error' ? (
             <div className="ff-player-status-wrap" data-testid="player-audio-error">
               <span className="ff-player-time">Nie udalo sie zaladowac audio.</span>
               {selectedRecordingAudioError ? (
@@ -2491,7 +3196,10 @@ export default function StudioMeetingView({
                   className="ghost-button"
                   onClick={() => {
                     clearAudioHydrationError?.(selectedRecording.id);
-                    hydrateRecordingAudio(selectedRecording.id, { force: true, priority: true }).catch(() => {});
+                    hydrateRecordingAudio(selectedRecording.id, {
+                      force: true,
+                      priority: true,
+                    }).catch(() => {});
                   }}
                 >
                   Sprobuj ponownie
@@ -2531,28 +3239,97 @@ export default function StudioMeetingView({
                           audioRef.current.currentTime = nextValue;
                         }
                       }}
-                      style={{ "--ff-player-progress": `${scrubberProgress}%` }}
+                      style={{ '--ff-player-progress': `${scrubberProgress}%` }}
                     />
                   </div>
                 </div>
                 <div className="ff-player-controls">
-                  <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>{playbackRate}×</button>
-                  <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 15); }} title="-15s">
+                  <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>
+                    {playbackRate}×
+                  </button>
+                  <button
+                    type="button"
+                    className="ff-player-ctrl"
+                    onClick={() => {
+                      if (audioRef.current)
+                        audioRef.current.currentTime = Math.max(0, currentTime - 15);
+                    }}
+                    title="-15s"
+                  >
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                      <text x="4" y="12.5" fontSize="5.5" fill="currentColor" fontFamily="sans-serif" fontWeight="700">15</text>
+                      <path
+                        d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="4"
+                        y="12.5"
+                        fontSize="5.5"
+                        fill="currentColor"
+                        fontFamily="sans-serif"
+                        fontWeight="700"
+                      >
+                        15
+                      </text>
                     </svg>
                   </button>
-                  <button type="button" className="ff-player-play" onClick={togglePlay} aria-label={isPlaying ? "Pauza" : "Odtworsz"}>
-                    {isPlaying
-                      ? <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="4" height="12" rx="1.5" /><rect x="9" y="2" width="4" height="12" rx="1.5" /></svg>
-                      : <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2l10 6-10 6z" /></svg>
-                    }
+                  <button
+                    type="button"
+                    className="ff-player-play"
+                    onClick={togglePlay}
+                    aria-label={isPlaying ? 'Pauza' : 'Odtworsz'}
+                  >
+                    {isPlaying ? (
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="2" width="4" height="12" rx="1.5" />
+                        <rect x="9" y="2" width="4" height="12" rx="1.5" />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 2l10 6-10 6z" />
+                      </svg>
+                    )}
                   </button>
-                  <button type="button" className="ff-player-ctrl" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15); }} title="+15s">
+                  <button
+                    type="button"
+                    className="ff-player-ctrl"
+                    onClick={() => {
+                      if (audioRef.current)
+                        audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15);
+                    }}
+                    title="+15s"
+                  >
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                      <text x="4" y="12.5" fontSize="5.5" fill="currentColor" fontFamily="sans-serif" fontWeight="700">15</text>
+                      <path
+                        d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="4"
+                        y="12.5"
+                        fontSize="5.5"
+                        fill="currentColor"
+                        fontFamily="sans-serif"
+                        fontWeight="700"
+                      >
+                        15
+                      </text>
                     </svg>
                   </button>
                   <a
@@ -2565,9 +3342,13 @@ export default function StudioMeetingView({
                         .then((res) => res.blob())
                         .then((blob) => {
                           const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement("a");
+                          const a = document.createElement('a');
                           a.href = url;
-                          const safeTitle = (selectedMeeting?.title || displayRecording?.title || "nagranie").replace(/[^a-z0-9_-]/gi, '_');
+                          const safeTitle = (
+                            selectedMeeting?.title ||
+                            displayRecording?.title ||
+                            'nagranie'
+                          ).replace(/[^a-z0-9_-]/gi, '_');
                           a.download = `${safeTitle}.mp3`;
                           document.body.appendChild(a);
                           a.click();
@@ -2575,17 +3356,23 @@ export default function StudioMeetingView({
                           window.URL.revokeObjectURL(url);
                         })
                         .catch(() => {
-                          window.open(selectedRecordingAudioUrl, "_blank");
+                          window.open(selectedRecordingAudioUrl, '_blank');
                         });
                     }}
                     title="Pobierz MP3"
                   >
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M8 2v8M5 8l3 4 3-4M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                      <path
+                        d="M8 2v8M5 8l3 4 3-4M2 14h12"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </a>
                   <span className="ff-player-time-display">
-                    {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(playbackDuration))}
+                    {formatDuration(Math.floor(currentTime))} /{' '}
+                    {formatDuration(Math.floor(playbackDuration))}
                   </span>
                 </div>
               </div>
@@ -2598,18 +3385,29 @@ export default function StudioMeetingView({
           <div className="ff-modal-card ff-enrollment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="ff-modal-header">
               <h2 className="ff-modal-title">Zapisac probke glosu?</h2>
-              <button className="ff-modal-close" onClick={() => setPendingVoiceProfileEnrollment(null)}>x</button>
+              <button
+                className="ff-modal-close"
+                onClick={() => setPendingVoiceProfileEnrollment(null)}
+              >
+                x
+              </button>
             </div>
             <div className="ff-modal-body">
               <p className="ff-enrollment-copy">
-                Zmieniono nazwe mowcy na <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>. Mozemy zapisac te probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly lepiej rozpoznawane.
+                Zmieniono nazwe mowcy na{' '}
+                <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>. Mozemy zapisac te
+                probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly lepiej
+                rozpoznawane.
               </p>
               <p className="ff-enrollment-copy muted">
                 Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.
               </p>
             </div>
             <div className="ff-modal-footer">
-              <button className="ghost-button" onClick={() => setPendingVoiceProfileEnrollment(null)}>
+              <button
+                className="ghost-button"
+                onClick={() => setPendingVoiceProfileEnrollment(null)}
+              >
                 Pomin
               </button>
               <button
@@ -2632,33 +3430,43 @@ export default function StudioMeetingView({
           <div className="ff-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="ff-modal-header">
               <h2 className="ff-modal-title">Download Meeting</h2>
-              <button className="ff-modal-close" onClick={() => setIsDownloadModalOpen(false)}>×</button>
+              <button className="ff-modal-close" onClick={() => setIsDownloadModalOpen(false)}>
+                ×
+              </button>
             </div>
 
             <div className="ff-modal-tabs">
               <button
                 className={`ff-modal-tab-btn ${downloadTab === 'transcript' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('transcript')}
-              >Transcript</button>
+              >
+                Transcript
+              </button>
               <button
                 className={`ff-modal-tab-btn ${downloadTab === 'summary' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('summary')}
-              >Summary</button>
+              >
+                Summary
+              </button>
               <button
                 className={`ff-modal-tab-btn ${downloadTab === 'audio' ? 'active' : ''}`}
                 onClick={() => setDownloadTab('audio')}
-              >Audio</button>
+              >
+                Audio
+              </button>
             </div>
 
             <div className="ff-modal-body">
               {downloadTab !== 'audio' && (
                 <div className="ff-modal-format-grid">
-                  {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map(f => (
+                  {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map((f) => (
                     <button
                       key={f}
                       className={`ff-modal-format-btn ${downloadFormat === f ? 'active' : ''}`}
                       onClick={() => setDownloadFormat(f)}
-                    >{f}</button>
+                    >
+                      {f}
+                    </button>
                   ))}
                 </div>
               )}
@@ -2699,7 +3507,11 @@ export default function StudioMeetingView({
             </div>
 
             <div className="ff-modal-footer">
-              <button className="ff-modal-download-btn" onClick={handleDownload} disabled={downloadTab === 'audio' && !selectedRecordingAudioUrl}>
+              <button
+                className="ff-modal-download-btn"
+                onClick={handleDownload}
+                disabled={downloadTab === 'audio' && !selectedRecordingAudioUrl}
+              >
                 Download
               </button>
             </div>

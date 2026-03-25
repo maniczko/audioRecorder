@@ -1,24 +1,29 @@
-import "./App.css";
-import "./styles/reset.css";
-import "./styles/layout.css";
-import "./styles/animations.css";
-import "./styles/foundation.css";
-import "./styles/studio.css";
-import AuthScreen from "./AuthScreen";
-import CommandPalette from "./CommandPalette";
-import Topbar from "./Topbar";
-import TabRouter from "./TabRouter";
-import { useWorkspaceSelectors } from "./store/workspaceStore";
-import { useAuthStore } from "./store/authStore";
-import useUI from "./hooks/useUI";
-import { useGoogleCtx } from "./context/GoogleContext";
-import { SkeletonBanner, SkeletonList } from "./components/Skeleton";
-import { PageShell, Panel, Stack } from "./ui/LayoutPrimitives";
+import './App.css';
+import './styles/reset.css';
+import './styles/layout.css';
+import './styles/animations.css';
+import './styles/foundation.css';
+import './styles/studio.css';
+import AuthScreen from './AuthScreen';
+import CommandPalette from './CommandPalette';
+import Topbar from './Topbar';
+import TabRouter from './TabRouter';
+import { useWorkspaceSelectors } from './store/workspaceStore';
+import { useAuthStore } from './store/authStore';
+import useUI from './hooks/useUI';
+import { useGoogleCtx } from './context/GoogleContext';
+import { SkeletonBanner, SkeletonList } from './components/Skeleton';
+import { PageShell, Panel, Stack } from './ui/LayoutPrimitives';
 
 export default function AppShell({ calendarMonth, setCalendarMonth }) {
   const workspace = useWorkspaceSelectors();
   const auth = useAuthStore();
-  const { commandPaletteOpen, setCommandPaletteOpen, commandPaletteItems, handleCommandPaletteSelect } = useUI();
+  const {
+    commandPaletteOpen,
+    setCommandPaletteOpen,
+    commandPaletteItems,
+    handleCommandPaletteSelect,
+  } = useUI();
   const google = useGoogleCtx();
 
   if (workspace.isHydratingSession && !workspace.currentUser) {

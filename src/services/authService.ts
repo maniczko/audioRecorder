@@ -6,13 +6,13 @@ import {
   resetPasswordWithCode,
   updateUserProfile,
   upsertGoogleUser,
-} from "../lib/auth";
-import { apiRequest } from "./httpClient";
-import { APP_DATA_PROVIDER } from "./config";
+} from '../lib/auth';
+import { apiRequest } from './httpClient';
+import { APP_DATA_PROVIDER } from './config';
 
 function createLocalAuthService() {
   return {
-    mode: "local",
+    mode: 'local',
     register({ users, workspaces, draft }) {
       return registerUser(users, workspaces, draft);
     },
@@ -39,46 +39,46 @@ function createLocalAuthService() {
 
 function createRemoteAuthService() {
   return {
-    mode: "remote",
+    mode: 'remote',
     register({ draft }) {
-      return apiRequest("/auth/register", {
-        method: "POST",
+      return apiRequest('/auth/register', {
+        method: 'POST',
         body: draft,
       });
     },
     login({ draft }) {
-      return apiRequest("/auth/login", {
-        method: "POST",
+      return apiRequest('/auth/login', {
+        method: 'POST',
         body: draft,
       });
     },
     requestPasswordReset({ draft }) {
-      return apiRequest("/auth/password/reset/request", {
-        method: "POST",
+      return apiRequest('/auth/password/reset/request', {
+        method: 'POST',
         body: draft,
       });
     },
     resetPassword({ draft }) {
-      return apiRequest("/auth/password/reset/confirm", {
-        method: "POST",
+      return apiRequest('/auth/password/reset/confirm', {
+        method: 'POST',
         body: draft,
       });
     },
     updateProfile({ userId, updates }) {
       return apiRequest(`/users/${userId}/profile`, {
-        method: "PUT",
+        method: 'PUT',
         body: updates,
       });
     },
     changePassword({ userId, draft }) {
       return apiRequest(`/users/${userId}/password`, {
-        method: "POST",
+        method: 'POST',
         body: draft,
       });
     },
     signInWithGoogle({ profile }) {
-      return apiRequest("/auth/google", {
-        method: "POST",
+      return apiRequest('/auth/google', {
+        method: 'POST',
         body: profile,
       });
     },
@@ -86,5 +86,5 @@ function createRemoteAuthService() {
 }
 
 export function createAuthService() {
-  return APP_DATA_PROVIDER === "remote" ? createRemoteAuthService() : createLocalAuthService();
+  return APP_DATA_PROVIDER === 'remote' ? createRemoteAuthService() : createLocalAuthService();
 }

@@ -1,12 +1,12 @@
-import * as Sentry from "@sentry/node";
-import { config } from "./config.ts";
+import * as Sentry from '@sentry/node';
+import { config } from './config.ts';
 
-const IS_PROD = config.NODE_ENV === "production" || config.NODE_ENV === "staging";
+const IS_PROD = config.NODE_ENV === 'production' || config.NODE_ENV === 'staging';
 
 if (config.SENTRY_DSN) {
   Sentry.init({
     dsn: config.SENTRY_DSN,
-    environment: config.NODE_ENV || "development",
+    environment: config.NODE_ENV || 'development',
     tracesSampleRate: 1.0,
     debug: !IS_PROD,
   });
@@ -19,7 +19,7 @@ export const logger = {
   warn: (msg: string, meta: any = {}) => {
     console.warn(`[WARN] ${msg}`, Object.keys(meta).length ? meta : '');
     if (process.env.SENTRY_DSN) {
-      Sentry.captureMessage(msg, "warning");
+      Sentry.captureMessage(msg, 'warning');
     }
   },
   error: (msg: string, err: any = null) => {
@@ -27,8 +27,7 @@ export const logger = {
     if (process.env.SENTRY_DSN && err instanceof Error) {
       Sentry.captureException(err);
     } else if (process.env.SENTRY_DSN) {
-      Sentry.captureMessage(msg, "error");
+      Sentry.captureMessage(msg, 'error');
     }
-  }
+  },
 };
-

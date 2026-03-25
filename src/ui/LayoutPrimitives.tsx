@@ -1,38 +1,38 @@
-import type { CSSProperties, ElementType, PropsWithChildren, ReactNode } from "react";
+import type { CSSProperties, ElementType, PropsWithChildren, ReactNode } from 'react';
 
-type GapSize = "xs" | "sm" | "md" | "lg" | "xl";
-type Align = "start" | "center" | "end" | "stretch";
-type Justify = "start" | "center" | "end" | "between";
+type GapSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+type Align = 'start' | 'center' | 'end' | 'stretch';
+type Justify = 'start' | 'center' | 'end' | 'between';
 
 function cx(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
+  return values.filter(Boolean).join(' ');
 }
 
 function gapToken(size: GapSize) {
   switch (size) {
-    case "xs":
-      return "var(--space-2)";
-    case "sm":
-      return "var(--space-3)";
-    case "lg":
-      return "var(--layout-gap-lg)";
-    case "xl":
-      return "var(--layout-gap-xl)";
+    case 'xs':
+      return 'var(--space-2)';
+    case 'sm':
+      return 'var(--space-3)';
+    case 'lg':
+      return 'var(--layout-gap-lg)';
+    case 'xl':
+      return 'var(--layout-gap-xl)';
     default:
-      return "var(--layout-gap-md)";
+      return 'var(--layout-gap-md)';
   }
 }
 
 function justifyValue(value: Justify) {
   switch (value) {
-    case "center":
-      return "center";
-    case "end":
-      return "flex-end";
-    case "between":
-      return "space-between";
+    case 'center':
+      return 'center';
+    case 'end':
+      return 'flex-end';
+    case 'between':
+      return 'space-between';
     default:
-      return "flex-start";
+      return 'flex-start';
   }
 }
 
@@ -42,68 +42,68 @@ type PrimitiveProps<T extends ElementType> = PropsWithChildren<{
   style?: CSSProperties;
 }>;
 
-export function PageShell<T extends ElementType = "section">({
+export function PageShell<T extends ElementType = 'section'>({
   as,
   className,
   style,
   children,
 }: PrimitiveProps<T>) {
-  const Comp = (as || "section") as ElementType;
+  const Comp = (as || 'section') as ElementType;
   return (
-    <Comp className={cx("ui-page-shell", className)} style={style}>
+    <Comp className={cx('ui-page-shell', className)} style={style}>
       {children}
     </Comp>
   );
 }
 
-export function Panel<T extends ElementType = "section">({
+export function Panel<T extends ElementType = 'section'>({
   as,
   className,
   style,
   children,
 }: PrimitiveProps<T>) {
-  const Comp = (as || "section") as ElementType;
+  const Comp = (as || 'section') as ElementType;
   return (
-    <Comp className={cx("ui-panel", className)} style={style}>
+    <Comp className={cx('ui-panel', className)} style={style}>
       {children}
     </Comp>
   );
 }
 
-export function Stack<T extends ElementType = "div">({
+export function Stack<T extends ElementType = 'div'>({
   as,
   className,
   style,
   children,
-  gap = "md",
+  gap = 'md',
 }: PrimitiveProps<T> & { gap?: GapSize }) {
-  const Comp = (as || "div") as ElementType;
+  const Comp = (as || 'div') as ElementType;
   return (
     <Comp
-      className={cx("ui-stack", className)}
-      style={{ ...style, ["--ui-stack-gap" as string]: gapToken(gap) }}
+      className={cx('ui-stack', className)}
+      style={{ ...style, ['--ui-stack-gap' as string]: gapToken(gap) }}
     >
       {children}
     </Comp>
   );
 }
 
-export function Cluster<T extends ElementType = "div">({
+export function Cluster<T extends ElementType = 'div'>({
   as,
   className,
   style,
   children,
-  gap = "sm",
-  align = "center",
-  justify = "start",
+  gap = 'sm',
+  align = 'center',
+  justify = 'start',
 }: PrimitiveProps<T> & { gap?: GapSize; align?: Align; justify?: Justify }) {
-  const Comp = (as || "div") as ElementType;
+  const Comp = (as || 'div') as ElementType;
   return (
     <Comp
-      className={cx("ui-cluster", className)}
+      className={cx('ui-cluster', className)}
       style={{
         ...style,
-        ["--ui-cluster-gap" as string]: gapToken(gap),
+        ['--ui-cluster-gap' as string]: gapToken(gap),
         alignItems: align,
         justifyContent: justifyValue(justify),
       }}
@@ -127,13 +127,17 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cx("ui-page-header", className)}>
+    <header className={cx('ui-page-header', className)}>
       <div className="ui-page-header__copy">
         {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
         <h2 className="ui-page-header__title">{title}</h2>
         {description ? <p className="ui-page-header__description">{description}</p> : null}
       </div>
-      {actions ? <Cluster className="ui-page-header__actions" gap="sm" justify="end">{actions}</Cluster> : null}
+      {actions ? (
+        <Cluster className="ui-page-header__actions" gap="sm" justify="end">
+          {actions}
+        </Cluster>
+      ) : null}
     </header>
   );
 }
@@ -143,18 +147,18 @@ export function SplitPane({
   sidebar,
   main,
   aside,
-  sidebarWidth = "default",
+  sidebarWidth = 'default',
 }: {
   className?: string;
   sidebar?: ReactNode;
   main: ReactNode;
   aside?: ReactNode;
-  sidebarWidth?: "default" | "wide";
+  sidebarWidth?: 'default' | 'wide';
 }) {
-  const columns = aside ? "three" : sidebar ? "two" : "one";
+  const columns = aside ? 'three' : sidebar ? 'two' : 'one';
   return (
     <div
-      className={cx("ui-split-pane", className)}
+      className={cx('ui-split-pane', className)}
       data-columns={columns}
       data-sidebar-width={sidebarWidth}
     >

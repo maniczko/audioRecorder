@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Pre-push hook - runs tests before allowing push
+# This prevents pushing code with failing tests
+
+echo "Running server tests before push..."
+npm run test:server:retry
+
+if [ $? -ne 0 ]; then
+  echo "❌ Server tests failed! Push blocked."
+  echo "Fix the failing tests and try again."
+  exit 1
+fi
+
+echo "✅ Server tests passed! Push allowed."
+exit 0

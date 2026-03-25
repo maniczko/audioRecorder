@@ -1,46 +1,46 @@
 /* eslint-disable testing-library/no-unnecessary-act */
-import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 function buildDefaultDraft() {
   return {
-    email: "",
-    password: "",
-    name: "",
-    role: "",
-    company: "",
-    workspaceMode: "create",
-    workspaceName: "",
-    workspaceCode: "",
+    email: '',
+    password: '',
+    name: '',
+    role: '',
+    company: '',
+    workspaceMode: 'create',
+    workspaceName: '',
+    workspaceCode: '',
   };
 }
 
 function buildResetDraft() {
   return {
-    email: "",
-    code: "",
-    newPassword: "",
-    confirmPassword: "",
+    email: '',
+    code: '',
+    newPassword: '',
+    confirmPassword: '',
   };
 }
 
 async function renderAuthHarness({
-  provider = "local",
-  authMode = "login",
-  authError = "",
+  provider = 'local',
+  authMode = 'login',
+  authError = '',
   googleEnabled = true,
-  googleAuthMessage = "",
-  resetMessage = "",
-  resetPreviewCode = "",
-  resetExpiresAt = "",
+  googleAuthMessage = '',
+  resetMessage = '',
+  resetPreviewCode = '',
+  resetExpiresAt = '',
 } = {}) {
   vi.resetModules();
-  vi.doMock("./services/config", () => ({
+  vi.doMock('./services/config', () => ({
     APP_DATA_PROVIDER: provider,
   }));
 
-  const { default: AuthScreen } = await import("./AuthScreen");
+  const { default: AuthScreen } = await import('./AuthScreen');
   const submitAuth = vi.fn((event) => event?.preventDefault?.());
   const requestResetCode = vi.fn();
   const completeReset = vi.fn();
@@ -61,7 +61,7 @@ async function renderAuthHarness({
           setMode(nextMode);
         }}
         setAuthDraft={(updater) => {
-          setDraft((previous) => (typeof updater === "function" ? updater(previous) : updater));
+          setDraft((previous) => (typeof updater === 'function' ? updater(previous) : updater));
         }}
         submitAuth={submitAuth}
         googleEnabled={googleEnabled}
@@ -69,7 +69,9 @@ async function renderAuthHarness({
         googleAuthMessage={googleAuthMessage}
         resetDraft={resetDraft}
         setResetDraft={(updater) => {
-          setResetDraft((previous) => (typeof updater === "function" ? updater(previous) : updater));
+          setResetDraft((previous) =>
+            typeof updater === 'function' ? updater(previous) : updater
+          );
         }}
         resetMessage={resetMessage}
         resetPreviewCode={resetPreviewCode}
@@ -91,7 +93,7 @@ async function renderAuthHarness({
   };
 }
 
-describe("AuthScreen", () => {
+describe('AuthScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -101,50 +103,50 @@ describe("AuthScreen", () => {
     vi.resetModules();
   });
 
-  test("submits login flow after filling all fields", async () => {
+  test('submits login flow after filling all fields', async () => {
     const { submitAuth } = await renderAuthHarness();
 
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "jan@example.com" } });
-    fireEvent.change(screen.getByLabelText("Haslo"), { target: { value: "test-password" } });
-    fireEvent.click(screen.getByRole("button", { name: "Zaloguj sie" }));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jan@example.com' } });
+    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: 'test-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Zaloguj sie' }));
 
-    expect(screen.getByDisplayValue("jan@example.com")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("test-password")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('jan@example.com')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('test-password')).toBeInTheDocument();
     expect(submitAuth).toHaveBeenCalledTimes(1);
   });
 
-  test("supports full registration flow including join workspace mode", async () => {
-    const { submitAuth } = await renderAuthHarness({ authMode: "register" });
+  test('supports full registration flow including join workspace mode', async () => {
+    const { submitAuth } = await renderAuthHarness({ authMode: 'register' });
 
-    fireEvent.change(screen.getByLabelText("Imie i nazwisko"), { target: { value: "Anna Nowak" } });
-    fireEvent.change(screen.getByLabelText("Rola"), { target: { value: "Product Manager" } });
-    fireEvent.change(screen.getByLabelText("Firma"), { target: { value: "VoiceLog" } });
-    fireEvent.click(screen.getByRole("button", { name: "Dolacz kodem" }));
+    fireEvent.change(screen.getByLabelText('Imie i nazwisko'), { target: { value: 'Anna Nowak' } });
+    fireEvent.change(screen.getByLabelText('Rola'), { target: { value: 'Product Manager' } });
+    fireEvent.change(screen.getByLabelText('Firma'), { target: { value: 'VoiceLog' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Dolacz kodem' }));
 
     // Wait for the join mode inputs to appear
     await waitFor(() => {
-      expect(screen.getByLabelText("Kod zaproszenia")).toBeInTheDocument();
+      expect(screen.getByLabelText('Kod zaproszenia')).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText("Kod zaproszenia"), { target: { value: "AB12CD" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "anna@example.com" } });
-    fireEvent.change(screen.getByLabelText("Haslo"), { target: { value: "secret-123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
+    fireEvent.change(screen.getByLabelText('Kod zaproszenia'), { target: { value: 'AB12CD' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'anna@example.com' } });
+    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: 'secret-123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do workspace' }));
 
-    expect(screen.getByDisplayValue("Anna Nowak")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("AB12CD")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Anna Nowak')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('AB12CD')).toBeInTheDocument();
     expect(submitAuth).toHaveBeenCalledTimes(1);
   });
 
-  test("blocks registration submit when password is too short", async () => {
-    const { submitAuth } = await renderAuthHarness({ authMode: "register" });
+  test('blocks registration submit when password is too short', async () => {
+    const { submitAuth } = await renderAuthHarness({ authMode: 'register' });
 
-    fireEvent.change(screen.getByLabelText("Imie i nazwisko"), { target: { value: "Anna Nowak" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "anna@example.com" } });
-    fireEvent.change(screen.getByLabelText("Haslo"), { target: { value: "123" } });
+    fireEvent.change(screen.getByLabelText('Imie i nazwisko'), { target: { value: 'Anna Nowak' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'anna@example.com' } });
+    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: '123' } });
 
     // Click submit with short password - should not submit
-    fireEvent.click(screen.getByRole("button", { name: "Wejdz do workspace" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do workspace' }));
 
     // Password is too short, form should not submit
     await waitFor(() => {
@@ -152,30 +154,32 @@ describe("AuthScreen", () => {
     });
   });
 
-  test("supports forgot-password flow with request and completion actions", async () => {
+  test('supports forgot-password flow with request and completion actions', async () => {
     const { requestResetCode, completeReset, setAuthModeSpy } = await renderAuthHarness({
-      authMode: "login",
-      resetPreviewCode: "123456",
-      resetExpiresAt: "2026-03-21T10:30:00.000Z",
+      authMode: 'login',
+      resetPreviewCode: '123456',
+      resetExpiresAt: '2026-03-21T10:30:00.000Z',
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    expect(setAuthModeSpy).toHaveBeenCalledWith("forgot");
+    expect(setAuthModeSpy).toHaveBeenCalledWith('forgot');
 
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "anna@example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "Wyslij kod resetu" }));
-    fireEvent.change(screen.getByLabelText("Kod resetu"), { target: { value: "123456" } });
-    fireEvent.change(screen.getAllByLabelText("Nowe haslo")[0], { target: { value: "new-secret" } });
-    fireEvent.change(screen.getByLabelText("Potwierdz haslo"), { target: { value: "new-secret" } });
-    fireEvent.click(screen.getByRole("button", { name: "Zmien haslo" }));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'anna@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Wyslij kod resetu' }));
+    fireEvent.change(screen.getByLabelText('Kod resetu'), { target: { value: '123456' } });
+    fireEvent.change(screen.getAllByLabelText('Nowe haslo')[0], {
+      target: { value: 'new-secret' },
+    });
+    fireEvent.change(screen.getByLabelText('Potwierdz haslo'), { target: { value: 'new-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Zmien haslo' }));
 
     expect(screen.getByText(/W tej lokalnej wersji kod pokazujemy tutaj/)).toBeInTheDocument();
     expect(requestResetCode).toHaveBeenCalledTimes(1);
     expect(completeReset).toHaveBeenCalledTimes(1);
   });
 
-  test("shows local-session warning only in local provider mode", async () => {
+  test('shows local-session warning only in local provider mode', async () => {
     // This test requires refactoring AuthScreen to accept APP_DATA_PROVIDER as prop
     // For now, skip this test as it's a known limitation with module-level imports
     expect(true).toBe(true);

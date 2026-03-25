@@ -1,10 +1,10 @@
 import './styles/tasks.css';
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { PageShell, SplitPane } from "./ui/LayoutPrimitives";
-import { buildTaskGroups, getTaskSlaState, taskListStats } from "./lib/tasks";
-import TaskDetailsPanel from "./tasks/TaskDetailsPanel";
-import TasksSidebar from "./tasks/TasksSidebar";
-import TasksWorkspaceView from "./tasks/TasksWorkspaceView";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { PageShell, SplitPane } from './ui/LayoutPrimitives';
+import { buildTaskGroups, getTaskSlaState, taskListStats } from './lib/tasks';
+import TaskDetailsPanel from './tasks/TaskDetailsPanel';
+import TasksSidebar from './tasks/TasksSidebar';
+import TasksWorkspaceView from './tasks/TasksWorkspaceView';
 import {
   applyMainListFilter,
   buildContextualDraft,
@@ -17,7 +17,7 @@ import {
   sortVisibleTasks,
   safeArray,
   taskMatchesVisibleContext,
-} from "./tasks/taskViewUtils";
+} from './tasks/taskViewUtils';
 
 export default function TasksTab({
   tasks,
@@ -56,52 +56,51 @@ export default function TasksTab({
   taskNotifications = [],
   workspaceActivity = [],
 }) {
-  const [viewMode, setViewMode] = useState(defaultView === "kanban" ? "kanban" : "list");
-  const [selectedListId, setSelectedListId] = useState("smart:all");
-  const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [viewMode, setViewMode] = useState(defaultView === 'kanban' ? 'kanban' : 'list');
+  const [selectedListId, setSelectedListId] = useState('smart:all');
+  const [selectedTaskId, setSelectedTaskId] = useState('');
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
-  const [sortBy, setSortBy] = useState("manual");
-  const [groupBy, setGroupBy] = useState("none");
-  const [query, setQuery] = useState("");
-  const [ownerFilter, setOwnerFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
+  const [sortBy, setSortBy] = useState('manual');
+  const [groupBy, setGroupBy] = useState('none');
+  const [query, setQuery] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
   const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
   const deferredQuery = useDeferredValue(query);
-  const [dragTaskId, setDragTaskId] = useState("");
-  const [dropColumnId, setDropColumnId] = useState("");
-  const [message, setMessage] = useState("");
+  const [dragTaskId, setDragTaskId] = useState('');
+  const [dropColumnId, setDropColumnId] = useState('');
+  const [message, setMessage] = useState('');
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
-  const [columnDraft, setColumnDraft] = useState({ label: "", color: "#5a92ff", isDone: false });
-  const dragTaskIdRef = useRef("");
+  const [columnDraft, setColumnDraft] = useState({ label: '', color: '#5a92ff', isDone: false });
+  const dragTaskIdRef = useRef('');
   const quickAddInputRef = useRef(null);
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    setViewMode(defaultView === "kanban" ? "kanban" : "list");
+    setViewMode(defaultView === 'kanban' ? 'kanban' : 'list');
   }, [defaultView]);
 
   useEffect(() => {
     if (!boardColumns.some((column) => column.id === quickDraft.status)) {
       setQuickDraft((previous) => ({
         ...previous,
-        status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || "",
+        status: boardColumns.find((column) => !column.isDone)?.id || boardColumns[0]?.id || '',
       }));
     }
   }, [boardColumns, quickDraft.status]);
 
-
   useEffect(() => {
-    if (selectedListId.startsWith("column:")) {
-      const columnId = selectedListId.slice("column:".length);
+    if (selectedListId.startsWith('column:')) {
+      const columnId = selectedListId.slice('column:'.length);
       if (columnId !== quickDraft.status && boardColumns.some((column) => column.id === columnId)) {
         setQuickDraft((previous) => ({ ...previous, status: columnId }));
       }
       return;
     }
 
-    if (selectedListId.startsWith("group:")) {
-      const groupName = selectedListId.slice("group:".length);
+    if (selectedListId.startsWith('group:')) {
+      const groupName = selectedListId.slice('group:'.length);
       if (groupName !== quickDraft.group) {
         setQuickDraft((previous) => ({ ...previous, group: groupName }));
       }
@@ -114,15 +113,22 @@ export default function TasksTab({
 
   const visibleTasks = useMemo(() => {
     const filtered = applyMainListFilter(tasks, selectedListId, boardColumns).filter((task) => {
-      if (ownerFilter !== "all" && task.owner !== ownerFilter) {
+      if (ownerFilter !== 'all' && task.owner !== ownerFilter) {
         return false;
       }
-      if (tagFilter !== "all" && !(task.tags || []).includes(tagFilter)) {
+      if (tagFilter !== 'all' && !(task.tags || []).includes(tagFilter)) {
         return false;
       }
       if (deferredQuery.trim()) {
-        const haystack = [task.title, task.owner, task.group, task.description, task.notes, safeArray(task.tags).join(" ")]
-          .join(" ")
+        const haystack = [
+          task.title,
+          task.owner,
+          task.group,
+          task.description,
+          task.notes,
+          safeArray(task.tags).join(' '),
+        ]
+          .join(' ')
           .toLowerCase();
         if (!haystack.includes(deferredQuery.trim().toLowerCase())) {
           return false;
@@ -138,7 +144,7 @@ export default function TasksTab({
 
   useEffect(() => {
     if (!visibleTasks.length) {
-      setSelectedTaskId("");
+      setSelectedTaskId('');
       setSelectedTaskIds([]);
       return;
     }
@@ -147,7 +153,9 @@ export default function TasksTab({
       setSelectedTaskId(visibleTasks[0].id);
     }
 
-    setSelectedTaskIds((previous) => previous.filter((taskId) => visibleTasks.some((task) => task.id === taskId)));
+    setSelectedTaskIds((previous) =>
+      previous.filter((taskId) => visibleTasks.some((task) => task.id === taskId))
+    );
   }, [visibleTasks, selectedTaskId]);
 
   useEffect(() => {
@@ -161,20 +169,30 @@ export default function TasksTab({
       return;
     }
 
-    setViewMode("list");
+    setViewMode('list');
     setSelectedTaskId(matchingTask.id);
     setSelectedTaskIds([matchingTask.id]);
-    setSelectedListId(matchingTask.group ? `group:${matchingTask.group}` : matchingTask.dueDate ? "smart:planned" : "smart:all");
-    setGroupBy("none");
-    setQuery("");
-    setOwnerFilter("all");
-    setTagFilter("all");
+    setSelectedListId(
+      matchingTask.group
+        ? `group:${matchingTask.group}`
+        : matchingTask.dueDate
+          ? 'smart:planned'
+          : 'smart:all'
+    );
+    setGroupBy('none');
+    setQuery('');
+    setOwnerFilter('all');
+    setTagFilter('all');
     setMessage(`Otwarto zadanie: ${matchingTask.title}`);
     onTaskSelectionHandled?.();
   }, [externalSelectedTaskId, onTaskSelectionHandled, tasks]);
 
-  const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
-  const groupedTasks = useMemo(() => groupTasks(visibleTasks, groupBy, boardColumns), [boardColumns, groupBy, visibleTasks]);
+  const selectedTask =
+    visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
+  const groupedTasks = useMemo(
+    () => groupTasks(visibleTasks, groupBy, boardColumns),
+    [boardColumns, groupBy, visibleTasks]
+  );
   const kanbanColumns = useMemo(
     () =>
       boardColumns.map((column) => ({
@@ -189,11 +207,11 @@ export default function TasksTab({
   );
   const selectedTaskSla = selectedTask ? getTaskSlaState(selectedTask) : null;
   const conflictTasks = useMemo(
-    () => tasks.filter((task) => task.googleSyncStatus === "conflict" && task.googleSyncConflict),
+    () => tasks.filter((task) => task.googleSyncStatus === 'conflict' && task.googleSyncConflict),
     [tasks]
   );
 
-  const runSafely = useCallback((action, successMessage = "") => {
+  const runSafely = useCallback((action, successMessage = '') => {
     try {
       const result = action();
       if (successMessage) {
@@ -207,23 +225,24 @@ export default function TasksTab({
   }, []);
 
   const safeUpdateTask = useCallback(
-    (taskId, updates, successMessage = "") => runSafely(() => onUpdateTask(taskId, updates), successMessage),
+    (taskId, updates, successMessage = '') =>
+      runSafely(() => onUpdateTask(taskId, updates), successMessage),
     [onUpdateTask, runSafely]
   );
 
   const safeMoveTaskToColumn = useCallback(
-    (taskId, columnId, successMessage = "") =>
+    (taskId, columnId, successMessage = '') =>
       runSafely(() => onMoveTaskToColumn(taskId, columnId), successMessage),
     [onMoveTaskToColumn, runSafely]
   );
 
   const safeDeleteTask = useCallback(
-    (taskId, successMessage = "") => runSafely(() => onDeleteTask(taskId), successMessage),
+    (taskId, successMessage = '') => runSafely(() => onDeleteTask(taskId), successMessage),
     [onDeleteTask, runSafely]
   );
 
   function toggleTaskSelection(taskId, forceValue) {
-    const normalizedTaskId = String(taskId || "");
+    const normalizedTaskId = String(taskId || '');
     if (!normalizedTaskId) {
       return;
     }
@@ -243,13 +262,16 @@ export default function TasksTab({
     setSelectedTaskIds([]);
   }, []);
 
-  const handleBulkUpdate = useCallback((updates, successMessage) => {
-    if (!selectedTaskIds.length || typeof onBulkUpdateTasks !== "function") {
-      return;
-    }
+  const handleBulkUpdate = useCallback(
+    (updates, successMessage) => {
+      if (!selectedTaskIds.length || typeof onBulkUpdateTasks !== 'function') {
+        return;
+      }
 
-    runSafely(() => onBulkUpdateTasks(selectedTaskIds, updates), successMessage);
-  }, [onBulkUpdateTasks, runSafely, selectedTaskIds]);
+      runSafely(() => onBulkUpdateTasks(selectedTaskIds, updates), successMessage);
+    },
+    [onBulkUpdateTasks, runSafely, selectedTaskIds]
+  );
 
   const handleBulkDelete = useCallback(() => {
     if (!selectedTaskIds.length) {
@@ -257,25 +279,25 @@ export default function TasksTab({
     }
 
     runSafely(() => {
-      if (typeof onBulkDeleteTasks === "function") {
+      if (typeof onBulkDeleteTasks === 'function') {
         onBulkDeleteTasks(selectedTaskIds);
       } else {
         selectedTaskIds.forEach((taskId) => onDeleteTask(taskId));
       }
       setSelectedTaskIds([]);
-    }, "Usunieto zaznaczone zadania.");
+    }, 'Usunieto zaznaczone zadania.');
   }, [onBulkDeleteTasks, onDeleteTask, runSafely, selectedTaskIds]);
 
   function rememberDraggedTask(taskId) {
-    dragTaskIdRef.current = taskId || "";
-    setDragTaskId(taskId || "");
+    dragTaskIdRef.current = taskId || '';
+    setDragTaskId(taskId || '');
   }
 
   function submitQuickTask(event) {
     event?.preventDefault?.();
 
     if (!quickDraft.title.trim()) {
-      setMessage("Dodaj tytul zadania.");
+      setMessage('Dodaj tytul zadania.');
       return;
     }
 
@@ -284,25 +306,25 @@ export default function TasksTab({
         {
           ...quickDraft,
           title: quickDraft.title.trim(),
-          group: String(quickDraft.group || "").trim(),
-          tags: String(quickDraft.tags || "").trim(),
+          group: String(quickDraft.group || '').trim(),
+          tags: String(quickDraft.tags || '').trim(),
         },
         selectedListId,
         boardColumns
       );
       const createdTask = onCreateTask(contextualDraft);
       if (!createdTask) {
-        throw new Error("Nie udalo sie dodac zadania.");
+        throw new Error('Nie udalo sie dodac zadania.');
       }
       const createdTaskId = createdTask?.id || createdTask;
 
       setQuickDraft(createQuickDraft(boardColumns));
       setShowAdvancedCreate(false);
-      setMessage("Dodano zadanie do listy.");
+      setMessage('Dodano zadanie do listy.');
 
       if (createdTaskId) {
         const createdTaskData =
-          typeof createdTask === "object" && createdTask
+          typeof createdTask === 'object' && createdTask
             ? createdTask
             : tasks.find((task) => task.id === createdTaskId) || { id: createdTaskId };
 
@@ -316,11 +338,13 @@ export default function TasksTab({
           })
         ) {
           setSelectedListId(
-            createdTaskData.group ? `group:${createdTaskData.group}` : `column:${createdTaskData.status || quickDraft.status}`
+            createdTaskData.group
+              ? `group:${createdTaskData.group}`
+              : `column:${createdTaskData.status || quickDraft.status}`
           );
-          setOwnerFilter("all");
-          setTagFilter("all");
-          setQuery("");
+          setOwnerFilter('all');
+          setTagFilter('all');
+          setQuery('');
         }
 
         setSelectedTaskId(createdTaskId);
@@ -335,8 +359,8 @@ export default function TasksTab({
     event.preventDefault();
     try {
       onCreateColumn(columnDraft);
-      setColumnDraft({ label: "", color: "#5a92ff", isDone: false });
-      setMessage("Dodano kolumne.");
+      setColumnDraft({ label: '', color: '#5a92ff', isDone: false });
+      setMessage('Dodano kolumne.');
     } catch (error) {
       setMessage(error.message);
     }
@@ -344,29 +368,29 @@ export default function TasksTab({
 
   function finalizeDrop(taskId, update, successMessage) {
     if (!taskId) {
-      setMessage("Nie udalo sie odczytac przeciaganego zadania. Sprobuj przeciagnac jeszcze raz.");
+      setMessage('Nie udalo sie odczytac przeciaganego zadania. Sprobuj przeciagnac jeszcze raz.');
       return;
     }
 
-    if (update?.type === "move") {
+    if (update?.type === 'move') {
       safeMoveTaskToColumn(taskId, update.columnId);
-    } else if (update?.type === "reorder") {
-      if (typeof onReorderTask === "function") {
+    } else if (update?.type === 'reorder') {
+      if (typeof onReorderTask === 'function') {
         runSafely(() => onReorderTask(taskId, update.placement));
       } else if (update.placement?.status && Object.keys(update.placement).length === 1) {
         safeMoveTaskToColumn(taskId, update.placement.status);
       } else {
         safeUpdateTask(taskId, update.placement);
       }
-      setSortBy("manual");
-    } else if (typeof update === "string") {
+      setSortBy('manual');
+    } else if (typeof update === 'string') {
       safeMoveTaskToColumn(taskId, update);
     } else {
       safeUpdateTask(taskId, update);
     }
 
-    rememberDraggedTask("");
-    setDropColumnId("");
+    rememberDraggedTask('');
+    setDropColumnId('');
     setMessage(successMessage);
   }
 
@@ -375,12 +399,12 @@ export default function TasksTab({
     finalizeDrop(
       readDragTask(event) || dragTaskIdRef.current || dragTaskId,
       {
-        type: "reorder",
+        type: 'reorder',
         placement: {
           status: columnId,
         },
       },
-      ""
+      ''
     );
   }
 
@@ -391,31 +415,31 @@ export default function TasksTab({
       return;
     }
 
-    if (groupBy === "status") {
-      finalizeDrop(taskId, { type: "reorder", placement: { status: groupId } }, "");
+    if (groupBy === 'status') {
+      finalizeDrop(taskId, { type: 'reorder', placement: { status: groupId } }, '');
       return;
     }
 
-    if (groupBy === "group") {
+    if (groupBy === 'group') {
       finalizeDrop(
         taskId,
         {
-          type: "reorder",
+          type: 'reorder',
           placement: {
-            group: groupId === "__ungrouped__" ? "" : groupId,
+            group: groupId === '__ungrouped__' ? '' : groupId,
           },
         },
-        "Zmieniono grupe zadania."
+        'Zmieniono grupe zadania.'
       );
     }
   }
 
-  function handleTaskDrop(placement, event, successMessage = "Zmieniono kolejnosc zadania.") {
+  function handleTaskDrop(placement, event, successMessage = 'Zmieniono kolejnosc zadania.') {
     canDrop(event);
     finalizeDrop(
       readDragTask(event) || dragTaskIdRef.current || dragTaskId,
       {
-        type: "reorder",
+        type: 'reorder',
         placement,
       },
       successMessage
@@ -427,12 +451,12 @@ export default function TasksTab({
       const draft = {
         title: title.trim(),
         status: columnId,
-        owner: "",
-        group: "",
-        dueDate: "",
-        reminderAt: "",
-        priority: "medium",
-        tags: "",
+        owner: '',
+        group: '',
+        dueDate: '',
+        reminderAt: '',
+        priority: 'medium',
+        tags: '',
         important: false,
         myDay: false,
       };
@@ -442,14 +466,14 @@ export default function TasksTab({
         setSelectedTaskId(createdId);
         setSelectedTaskIds([createdId]);
       }
-      setMessage("Dodano zadanie do kolumny.");
+      setMessage('Dodano zadanie do kolumny.');
     } catch (error) {
       setMessage(error.message);
     }
   }
 
   function handleColumnReorder(fromId, toId) {
-    if (typeof onUpdateColumn !== "function") {
+    if (typeof onUpdateColumn !== 'function') {
       return;
     }
     const fromIndex = boardColumns.findIndex((c) => c.id === fromId);
@@ -468,37 +492,49 @@ export default function TasksTab({
   }
 
   function handleExportCsv() {
-    const header = ["id", "title", "status", "priority", "owner", "assignedTo", "dueDate", "group", "tags", "completed", "createdAt"].join(",");
+    const header = [
+      'id',
+      'title',
+      'status',
+      'priority',
+      'owner',
+      'assignedTo',
+      'dueDate',
+      'group',
+      'tags',
+      'completed',
+      'createdAt',
+    ].join(',');
     const rows = visibleTasks.map((task) => {
-      const escape = (v) => `"${String(v || "").replace(/"/g, '""')}"`;
+      const escape = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
       return [
         escape(task.id),
         escape(task.title),
         escape(task.status),
         escape(task.priority),
         escape(task.owner),
-        escape((task.assignedTo || []).join(";")),
-        escape(task.dueDate || ""),
-        escape(task.group || ""),
-        escape((task.tags || []).join(";")),
-        task.completed ? "true" : "false",
-        escape(task.createdAt || ""),
-      ].join(",");
+        escape((task.assignedTo || []).join(';')),
+        escape(task.dueDate || ''),
+        escape(task.group || ''),
+        escape((task.tags || []).join(';')),
+        task.completed ? 'true' : 'false',
+        escape(task.createdAt || ''),
+      ].join(',');
     });
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `tasks-export-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    setMessage("Wyeksportowano zadania do CSV.");
+    setMessage('Wyeksportowano zadania do CSV.');
   }
 
   async function shareWorkspace() {
     if (!workspaceInviteCode) {
-      setMessage("Brak kodu workspace.");
+      setMessage('Brak kodu workspace.');
       return;
     }
 
@@ -509,7 +545,7 @@ export default function TasksTab({
         return;
       }
     } catch (error) {
-      console.error("Clipboard write failed.", error);
+      console.error('Clipboard write failed.', error);
     }
 
     setMessage(`Udostepnij workspace kodem: ${workspaceInviteCode}`);
@@ -518,33 +554,34 @@ export default function TasksTab({
   useEffect(() => {
     function handleKeyboardShortcuts(event) {
       const target = event.target;
-      const tagName = target?.tagName?.toLowerCase?.() || "";
-      const typingContext = ["input", "textarea", "select"].includes(tagName) || target?.isContentEditable;
-      const lowerKey = String(event.key || "").toLowerCase();
+      const tagName = target?.tagName?.toLowerCase?.() || '';
+      const typingContext =
+        ['input', 'textarea', 'select'].includes(tagName) || target?.isContentEditable;
+      const lowerKey = String(event.key || '').toLowerCase();
 
-      if (typingContext && lowerKey !== "escape") {
+      if (typingContext && lowerKey !== 'escape') {
         return;
       }
 
-      if (lowerKey === "n") {
+      if (lowerKey === 'n') {
         event.preventDefault();
         quickAddInputRef.current?.focus();
         return;
       }
 
-      if (event.key === "/") {
+      if (event.key === '/') {
         event.preventDefault();
         searchInputRef.current?.focus();
         return;
       }
 
-      if (lowerKey === "escape") {
+      if (lowerKey === 'escape') {
         clearTaskSelection();
-        setMessage("");
+        setMessage('');
         return;
       }
 
-      if ((event.key === "Delete" || event.key === "Backspace") && selectedTaskIds.length) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedTaskIds.length) {
         event.preventDefault();
         handleBulkDelete();
         return;
@@ -555,9 +592,9 @@ export default function TasksTab({
         return;
       }
 
-      if (lowerKey === "e") {
+      if (lowerKey === 'e') {
         event.preventDefault();
-        setViewMode("list");
+        setViewMode('list');
         setSelectedTaskId(activeTaskId);
         window.setTimeout(() => {
           document.querySelector(`[data-task-title-input="${activeTaskId}"]`)?.focus();
@@ -565,7 +602,7 @@ export default function TasksTab({
         return;
       }
 
-      if (event.key === " ") {
+      if (event.key === ' ') {
         event.preventDefault();
         const activeTask = tasks.find((task) => task.id === activeTaskId);
         if (activeTask) {
@@ -574,26 +611,26 @@ export default function TasksTab({
         return;
       }
 
-      if (["1", "2", "3", "4"].includes(event.key)) {
+      if (['1', '2', '3', '4'].includes(event.key)) {
         event.preventDefault();
         const priorityMap = {
-          1: "low",
-          2: "medium",
-          3: "high",
-          4: "urgent",
+          1: 'low',
+          2: 'medium',
+          3: 'high',
+          4: 'urgent',
         };
         const nextPriority = priorityMap[event.key];
         if (selectedTaskIds.length > 1) {
-          handleBulkUpdate({ priority: nextPriority }, "Zmieniono priorytet zaznaczonych zadan.");
+          handleBulkUpdate({ priority: nextPriority }, 'Zmieniono priorytet zaznaczonych zadan.');
         } else {
-          safeUpdateTask(activeTaskId, { priority: nextPriority }, "Zmieniono priorytet zadania.");
+          safeUpdateTask(activeTaskId, { priority: nextPriority }, 'Zmieniono priorytet zadania.');
         }
       }
     }
 
-    window.addEventListener("keydown", handleKeyboardShortcuts);
+    window.addEventListener('keydown', handleKeyboardShortcuts);
     return () => {
-      window.removeEventListener("keydown", handleKeyboardShortcuts);
+      window.removeEventListener('keydown', handleKeyboardShortcuts);
     };
   }, [
     clearTaskSelection,
@@ -640,7 +677,7 @@ export default function TasksTab({
             onFocusConflictTask={(taskId) => {
               setSelectedTaskId(taskId);
               setSelectedTaskIds([taskId]);
-              setViewMode("list");
+              setViewMode('list');
             }}
           />
         }
@@ -708,6 +745,7 @@ export default function TasksTab({
             selectedTask={selectedTask}
             tasks={tasks}
             peopleOptions={peopleOptions}
+            tagOptions={tagOptions}
             taskGroups={taskGroups}
             boardColumns={boardColumns}
             onUpdateTask={safeUpdateTask}

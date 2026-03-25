@@ -1,6 +1,6 @@
-const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
-const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
-const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
+const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
+const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const TASKS_SCOPE = 'https://www.googleapis.com/auth/tasks';
 
 let googleScriptPromise = null;
 
@@ -9,13 +9,13 @@ let googleScriptPromise = null;
 // the known variable names directly.
 export const GOOGLE_CLIENT_ID: string =
   (import.meta.env?.VITE_GOOGLE_CLIENT_ID as string) ||
-  (typeof process !== "undefined" ? (process.env?.REACT_APP_GOOGLE_CLIENT_ID ?? "") : "") ||
-  "";
-export const IS_GOOGLE_DEMO_MODE = GOOGLE_CLIENT_ID === "demo";
+  (typeof process !== 'undefined' ? (process.env?.REACT_APP_GOOGLE_CLIENT_ID ?? '') : '') ||
+  '';
+export const IS_GOOGLE_DEMO_MODE = GOOGLE_CLIENT_ID === 'demo';
 
 function loadGoogleScript() {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("Google Identity Services are not available on the server."));
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Google Identity Services are not available on the server.'));
   }
 
   if (window.google?.accounts) {
@@ -29,17 +29,17 @@ function loadGoogleScript() {
   googleScriptPromise = new Promise((resolve, reject) => {
     const existing = window.document.querySelector(`script[src="${GOOGLE_SCRIPT_SRC}"]`);
     if (existing) {
-      existing.addEventListener("load", () => resolve(window.google));
-      existing.addEventListener("error", () => reject(new Error("Failed to load Google script.")));
+      existing.addEventListener('load', () => resolve(window.google));
+      existing.addEventListener('error', () => reject(new Error('Failed to load Google script.')));
       return;
     }
 
-    const script = window.document.createElement("script");
+    const script = window.document.createElement('script');
     script.src = GOOGLE_SCRIPT_SRC;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve(window.google);
-    script.onerror = () => reject(new Error("Failed to load Google script."));
+    script.onerror = () => reject(new Error('Failed to load Google script.'));
     window.document.head.appendChild(script);
   });
 
@@ -47,20 +47,22 @@ function loadGoogleScript() {
 }
 
 function decodeJwtPayload(token) {
-  const base64Url = String(token || "").split(".")[1] || "";
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+  const base64Url = String(token || '').split('.')[1] || '';
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
   const decoded = window.atob(padded);
   return JSON.parse(decoded);
 }
 
 export async function renderGoogleSignInButton(container, callback) {
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error("Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).");
+    throw new Error(
+      'Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).'
+    );
   }
 
   if (!container) {
-    throw new Error("Missing Google button container.");
+    throw new Error('Missing Google button container.');
   }
 
   if (IS_GOOGLE_DEMO_MODE) {
@@ -70,20 +72,23 @@ export async function renderGoogleSignInButton(container, callback) {
         <span>Continue with Demo Google</span>
       </button>
     `;
-    const btn = container.querySelector(".google-demo-button");
+    const btn = container.querySelector('.google-demo-button');
     btn.onclick = () => {
-      callback({
-        email: "demo.user@example.com",
-        name: "Demo User",
-        picture: "https://ui-avatars.com/api/?name=Demo+User&background=random",
-        sub: "demo-123",
-      }, { credential: "mock-credential" });
+      callback(
+        {
+          email: 'demo.user@example.com',
+          name: 'Demo User',
+          picture: 'https://ui-avatars.com/api/?name=Demo+User&background=random',
+          sub: 'demo-123',
+        },
+        { credential: 'mock-credential' }
+      );
     };
     return;
   }
 
   const google = await loadGoogleScript();
-  container.innerHTML = "";
+  container.innerHTML = '';
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -95,13 +100,13 @@ export async function renderGoogleSignInButton(container, callback) {
   });
 
   google.accounts.id.renderButton(container, {
-    type: "standard",
-    theme: "outline",
-    text: "continue_with",
-    size: "large",
-    shape: "pill",
+    type: 'standard',
+    theme: 'outline',
+    text: 'continue_with',
+    size: 'large',
+    shape: 'pill',
     width: 280,
-    logo_alignment: "left",
+    logo_alignment: 'left',
   });
 }
 
@@ -114,15 +119,17 @@ export async function requestGoogleCalendarAccess({ loginHint } = {}) {
 
 async function requestGoogleAccess({ loginHint, scope }) {
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error("Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).");
+    throw new Error(
+      'Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).'
+    );
   }
 
   if (IS_GOOGLE_DEMO_MODE) {
     return Promise.resolve({
-      access_token: "mock-google-token",
+      access_token: 'mock-google-token',
       expires_in: 3600,
       scope,
-      token_type: "Bearer",
+      token_type: 'Bearer',
     });
   }
 
@@ -132,7 +139,7 @@ async function requestGoogleAccess({ loginHint, scope }) {
     const tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
       scope,
-      prompt: "consent",
+      prompt: 'consent',
       login_hint: loginHint || undefined,
       callback: (response) => {
         if (response.error) {
@@ -156,21 +163,24 @@ export async function requestGoogleTasksAccess({ loginHint } = {}) {
 
 export async function fetchPrimaryCalendarEvents(accessToken, { timeMin, timeMax }) {
   const params = new URLSearchParams({
-    singleEvents: "true",
-    orderBy: "startTime",
-    maxResults: "100",
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '100',
     timeMin: timeMin || new Date().toISOString(),
   });
 
   if (timeMax) {
-    params.set("timeMax", timeMax);
+    params.set('timeMax', timeMax);
   }
 
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Google Calendar API returned ${response.status}.`);
@@ -184,7 +194,7 @@ async function requestGoogleCalendar(accessToken, path, options = {}) {
     ...options,
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(options.headers || {}),
     },
   });
@@ -199,9 +209,9 @@ async function requestGoogleCalendar(accessToken, path, options = {}) {
 function normalizeGoogleEventAttendees(attendees = []) {
   return (Array.isArray(attendees) ? attendees : [])
     .map((attendee) => ({
-      email: String(attendee?.email || "").trim(),
-      displayName: String(attendee?.displayName || "").trim(),
-      responseStatus: attendee?.responseStatus || "needsAction",
+      email: String(attendee?.email || '').trim(),
+      displayName: String(attendee?.displayName || '').trim(),
+      responseStatus: attendee?.responseStatus || 'needsAction',
     }))
     .filter((attendee) => attendee.email);
 }
@@ -212,16 +222,16 @@ export function buildGoogleCalendarEventPayload(entry, options = {}) {
     ? {
         useDefault: false,
         overrides: options.reminders.map((minutes) => ({
-          method: "popup",
+          method: 'popup',
           minutes: Number(minutes),
         })),
       }
     : undefined;
 
   return {
-    summary: entry.title || options.summary || "VoiceLog event",
-    description: options.description || "",
-    location: options.location || "",
+    summary: entry.title || options.summary || 'VoiceLog event',
+    description: options.description || '',
+    location: options.location || '',
     start: {
       dateTime: new Date(entry.startsAt).toISOString(),
     },
@@ -234,25 +244,32 @@ export function buildGoogleCalendarEventPayload(entry, options = {}) {
 }
 
 export async function createGoogleCalendarEvent(accessToken, event) {
-  return requestGoogleCalendar(accessToken, "/calendars/primary/events", {
-    method: "POST",
+  return requestGoogleCalendar(accessToken, '/calendars/primary/events', {
+    method: 'POST',
     body: JSON.stringify(event),
   });
 }
 
 export async function updateGoogleCalendarEvent(accessToken, eventId, updates) {
-  return requestGoogleCalendar(accessToken, `/calendars/primary/events/${encodeURIComponent(eventId)}`, {
-    method: "PATCH",
-    body: JSON.stringify(updates),
-  });
+  return requestGoogleCalendar(
+    accessToken,
+    `/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    }
+  );
 }
 
 export async function fetchGoogleTaskLists(accessToken) {
-  const response = await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await fetch(
+    'https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100',
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Google Tasks API returned ${response.status} while loading task lists.`);
@@ -263,15 +280,18 @@ export async function fetchGoogleTaskLists(accessToken) {
 
 export async function fetchGoogleTasks(accessToken, taskListId) {
   const params = new URLSearchParams({
-    showCompleted: "true",
-    showHidden: "true",
-    maxResults: "100",
+    showCompleted: 'true',
+    showHidden: 'true',
+    maxResults: '100',
   });
-  const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await fetch(
+    `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Google Tasks API returned ${response.status} while loading tasks.`);
@@ -282,10 +302,10 @@ export async function fetchGoogleTasks(accessToken, taskListId) {
 
 export async function createGoogleTask(accessToken, taskListId, task) {
   const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(task),
   });
@@ -298,14 +318,17 @@ export async function createGoogleTask(accessToken, taskListId, task) {
 }
 
 export async function updateGoogleTask(accessToken, taskListId, taskId, updates) {
-  const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks/${taskId}`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(updates),
-  });
+  const response = await fetch(
+    `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks/${taskId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Google Tasks API returned ${response.status} while updating a task.`);
@@ -315,13 +338,13 @@ export async function updateGoogleTask(accessToken, taskListId, taskId, updates)
 }
 
 export function signOutGoogleSession() {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return;
   }
 
   try {
     window.google?.accounts?.id?.disableAutoSelect();
   } catch (error) {
-    console.error("Unable to disable Google auto-select.", error);
+    console.error('Unable to disable Google auto-select.', error);
   }
 }

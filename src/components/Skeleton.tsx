@@ -1,11 +1,11 @@
-import React from "react";
-import "./skeleton.css";
+import React from 'react';
+import './skeleton.css';
 
-export function SkeletonBanner({ height = 120, className = "" }) {
+export function SkeletonBanner({ height = 120, className = '' }) {
   return <div className={`skeleton skeleton-banner ${className}`} style={{ height }} />;
 }
 
-export function SkeletonCard({ lines = 3, className = "" }) {
+export function SkeletonCard({ lines = 3, className = '' }) {
   return (
     <div className={`skeleton-card ${className}`}>
       <div className="skeleton skeleton-title" />
@@ -16,7 +16,7 @@ export function SkeletonCard({ lines = 3, className = "" }) {
   );
 }
 
-export function SkeletonList({ items = 5, lines = 2, className = "" }) {
+export function SkeletonList({ items = 5, lines = 2, className = '' }) {
   return (
     <div className={`skeleton-list ${className}`}>
       {Array.from({ length: items }).map((_, i) => (
@@ -26,12 +26,12 @@ export function SkeletonList({ items = 5, lines = 2, className = "" }) {
   );
 }
 
-export function ErrorState({ error, onRetry, className = "" }: any) {
+export function ErrorState({ error, onRetry, className = '' }: any) {
   return (
     <div className={`ff-state-box error-state ${className}`}>
       <div className="ff-state-icon">⚠️</div>
       <div className="ff-state-title">Wystąpił błąd</div>
-      <p className="ff-state-desc">{String(error || "Coś poszło nie tak.")}</p>
+      <p className="ff-state-desc">{String(error || 'Coś poszło nie tak.')}</p>
       {onRetry && (
         <button type="button" className="ff-state-action primary-button" onClick={onRetry}>
           Spróbuj ponownie
@@ -41,7 +41,14 @@ export function ErrorState({ error, onRetry, className = "" }: any) {
   );
 }
 
-export function EmptyState({ icon = "📄", title = "Brak danych", message = "", action, actionText = "Utwórz", className = "" }: any) {
+export function EmptyState({
+  icon = '📄',
+  title = 'Brak danych',
+  message = '',
+  action,
+  actionText = 'Utwórz',
+  className = '',
+}: any) {
   return (
     <div className={`ff-state-box empty-state ${className}`}>
       <div className="ff-state-icon">{icon}</div>
@@ -56,7 +63,7 @@ export function EmptyState({ icon = "📄", title = "Brak danych", message = "",
   );
 }
 
-export function LoadingScreen({ message = "Wczytywanie...", className = "" }: any) {
+export function LoadingScreen({ message = 'Wczytywanie...', className = '' }: any) {
   return (
     <div className={`ff-state-box loading-state ${className}`}>
       <div className="ff-state-spinner" />

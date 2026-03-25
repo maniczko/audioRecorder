@@ -11,14 +11,14 @@ export interface UserProfile {
   preferredInsights: string[];
   notifyDailyDigest: boolean;
   autoTaskCapture: boolean;
-  preferredTaskView: "kanban" | "list";
+  preferredTaskView: 'kanban' | 'list';
 }
 
 export interface UserDraft extends Partial<UserProfile> {
   email: string;
   password?: string;
   name: string;
-  workspaceMode?: "join" | "create";
+  workspaceMode?: 'join' | 'create';
   workspaceCode?: string;
   workspaceName?: string;
   // Google fields
@@ -52,7 +52,7 @@ export interface MediaAsset {
   file_path: string;
   content_type: string;
   size_bytes: number;
-  transcription_status: "queued" | "processing" | "completed" | "failed";
+  transcription_status: 'queued' | 'processing' | 'completed' | 'failed';
   transcript_json: string;
   diarization_json: string;
   created_at: string;
@@ -69,10 +69,10 @@ export interface AudioQualityDiagnostics {
   maxVolumeDb?: number;
   silenceRatio?: number;
   qualityScore?: number;
-  qualityLabel?: "good" | "fair" | "poor";
+  qualityLabel?: 'good' | 'fair' | 'poor';
   enhancementRecommended?: boolean;
   enhancementApplied?: boolean;
-  enhancementProfile?: "none" | "standard" | "enhanced";
+  enhancementProfile?: 'none' | 'standard' | 'enhanced';
 }
 
 export interface TranscriptionDiagnostics {
@@ -92,7 +92,7 @@ export interface TranscriptionDiagnostics {
   mergedWordsCount?: number;
   mergedTextLength?: number;
   lastChunkErrorMessage?: string;
-  transcriptionProfileUsed?: "standard" | "enhanced";
+  transcriptionProfileUsed?: 'standard' | 'enhanced';
   transcriptionAttemptCount?: 1 | 2;
   sttAttempts?: SttProviderAttempt[];
 }
@@ -122,13 +122,13 @@ export interface TranscriptionQualityMetrics {
 export interface TranscriptionResult {
   pipelineStatus?: string;
   enhancementsPending?: boolean;
-  postprocessStage?: "queued" | "running" | "done" | "failed" | "";
-  transcriptOutcome?: "normal" | "empty";
+  postprocessStage?: 'queued' | 'running' | 'done' | 'failed' | '';
+  transcriptOutcome?: 'normal' | 'empty';
   emptyReason?:
-    | "no_segments_from_stt"
-    | "segments_removed_by_vad"
-    | "segments_removed_as_hallucinations"
-    | "all_chunks_discarded_as_too_small";
+    | 'no_segments_from_stt'
+    | 'segments_removed_by_vad'
+    | 'segments_removed_as_hallucinations'
+    | 'all_chunks_discarded_as_too_small';
   userMessage?: string;
   pipelineVersion?: string;
   pipelineGitSha?: string;

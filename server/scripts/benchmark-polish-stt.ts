@@ -1,8 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
-import { config } from "../config.ts";
-import { resolveConfiguredSttProviders, transcribeWithProviders, type SttProvider } from "../stt/providers.ts";
-import { computeWerProxy, clean } from "../audioPipeline.utils.ts";
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from '../config.ts';
+import {
+  resolveConfiguredSttProviders,
+  transcribeWithProviders,
+  type SttProvider,
+} from '../stt/providers.ts';
+import { computeWerProxy, clean } from '../audioPipeline.utils.ts';
 
 interface BenchmarkManifestEntry {
   id: string;
@@ -18,9 +22,9 @@ interface BenchmarkManifest {
 }
 
 function loadManifest(manifestPath: string): BenchmarkManifest {
-  const parsed = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  const parsed = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (!parsed || !Array.isArray(parsed.items)) {
-    throw new Error("Manifest benchmarku musi zawierac tablice items.");
+    throw new Error('Manifest benchmarku musi zawierac tablice items.');
   }
   return parsed as BenchmarkManifest;
 }
@@ -30,7 +34,7 @@ function resolveReferenceText(item: BenchmarkManifestEntry, manifestDir: string)
     return clean(item.referenceText);
   }
   if (item.transcriptPath) {
-    return clean(fs.readFileSync(path.resolve(manifestDir, item.transcriptPath), "utf8"));
+    return clean(fs.readFileSync(path.resolve(manifestDir, item.transcriptPath), 'utf8'));
   }
   throw new Error(`Brak referenceText albo transcriptPath dla ${item.id}.`);
 }
@@ -43,7 +47,11 @@ function resolveAudioPath(item: BenchmarkManifestEntry, manifestDir: string) {
   return audioPath;
 }
 
-async function benchmarkProvider(provider: SttProvider, items: BenchmarkManifestEntry[], manifestDir: string) {
+async function benchmarkProvider(
+  provider: SttProvider,
+  items: BenchmarkManifestEntry[],
+  manifestDir: string
+) {
   const rows = [];
 
   for (const item of items) {
@@ -54,16 +62,16 @@ async function benchmarkProvider(provider: SttProvider, items: BenchmarkManifest
     try {
       const result = await transcribeWithProviders([provider], (activeProvider) => ({
         filePath: audioPath,
-        contentType: item.contentType || "audio/wav",
+        contentType: item.contentType || 'audio/wav',
         fields: {
           model: activeProvider.defaultModel,
           language: config.AUDIO_LANGUAGE,
-          response_format: "verbose_json",
+          response_format: 'verbose_json',
           temperature: 0,
         },
       }));
 
-      const hypothesis = clean(result?.payload?.text || result?.payload?.transcript || "");
+      const hypothesis = clean(result?.payload?.text || result?.payload?.transcript || '');
       rows.push({
         id: item.id,
         providerId: provider.id,
@@ -97,7 +105,7 @@ async function benchmarkProvider(provider: SttProvider, items: BenchmarkManifest
 async function main() {
   const manifestPath = process.argv[2];
   if (!manifestPath) {
-    throw new Error("Uzycie: pnpm exec tsx server/scripts/benchmark-polish-stt.ts <manifest.json>");
+    throw new Error('Uzycie: pnpm exec tsx server/scripts/benchmark-polish-stt.ts <manifest.json>');
   }
 
   const resolvedManifestPath = path.resolve(process.cwd(), manifestPath);
@@ -111,11 +119,11 @@ async function main() {
     openAiBaseUrl: config.VOICELOG_OPENAI_BASE_URL,
     groqApiKey: config.GROQ_API_KEY,
     openAiModel: config.VERIFICATION_MODEL,
-    groqModel: "whisper-large-v3",
+    groqModel: 'whisper-large-v3',
   }).filter((provider) => provider.isAvailable());
 
   if (!providers.length) {
-    throw new Error("Brak skonfigurowanego providera STT do benchmarku.");
+    throw new Error('Brak skonfigurowanego providera STT do benchmarku.');
   }
 
   const allRows = [];
@@ -126,7 +134,9 @@ async function main() {
 
   const summary = providers.map((provider) => {
     const providerRows = allRows.filter((row) => row.providerId === provider.id);
-    const successfulRows = providerRows.filter((row) => row.success && typeof row.werProxy === "number");
+    const successfulRows = providerRows.filter(
+      (row) => row.success && typeof row.werProxy === 'number'
+    );
     const averageWerProxy = successfulRows.length
       ? successfulRows.reduce((sum, row) => sum + Number(row.werProxy), 0) / successfulRows.length
       : null;
@@ -144,13 +154,19 @@ async function main() {
     };
   });
 
-  console.log(JSON.stringify({
-    datasetName: manifest.datasetName || path.basename(resolvedManifestPath),
-    language: config.AUDIO_LANGUAGE,
-    generatedAt: new Date().toISOString(),
-    summary,
-    rows: allRows,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        datasetName: manifest.datasetName || path.basename(resolvedManifestPath),
+        language: config.AUDIO_LANGUAGE,
+        generatedAt: new Date().toISOString(),
+        summary,
+        rows: allRows,
+      },
+      null,
+      2
+    )
+  );
 }
 
 main().catch((error) => {

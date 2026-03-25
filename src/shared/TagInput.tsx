@@ -1,17 +1,17 @@
-import { useState, useRef, useMemo } from "react";
-import "./TagInput.css";
+import { useState, useRef, useMemo } from 'react';
+import './TagInput.css';
 
 export default function TagInput({
   tags = [],
   suggestions = [],
   onChange,
-  placeholder = "Dodaj tag...",
+  placeholder = 'Dodaj tag...',
 }) {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef(null);
 
-  const normalizedTags = useMemo(() => Array.isArray(tags) ? tags : [], [tags]);
+  const normalizedTags = useMemo(() => (Array.isArray(tags) ? tags : []), [tags]);
 
   const filteredSuggestions = useMemo(() => {
     const query = inputValue.trim().toLowerCase();
@@ -29,12 +29,14 @@ export default function TagInput({
     !normalizedTags.some((t) => t.toLowerCase() === inputValue.trim().toLowerCase());
 
   function addTag(tag) {
-    const normalized = String(tag || "").trim().replace(/,$/, "");
+    const normalized = String(tag || '')
+      .trim()
+      .replace(/,$/, '');
     if (!normalized) return;
     if (!normalizedTags.some((t) => t.toLowerCase() === normalized.toLowerCase())) {
       onChange([...normalizedTags, normalized]);
     }
-    setInputValue("");
+    setInputValue('');
     inputRef.current?.focus();
   }
 
@@ -43,12 +45,12 @@ export default function TagInput({
   }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       if (inputValue.trim()) addTag(inputValue);
-    } else if (e.key === "Backspace" && !inputValue && normalizedTags.length > 0) {
+    } else if (e.key === 'Backspace' && !inputValue && normalizedTags.length > 0) {
       removeTag(normalizedTags[normalizedTags.length - 1]);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setIsFocused(false);
       inputRef.current?.blur();
     }
@@ -56,7 +58,7 @@ export default function TagInput({
 
   return (
     <div
-      className={`tag-input-container ${isFocused ? "focused" : ""}`}
+      className={`tag-input-container ${isFocused ? 'focused' : ''}`}
       onClick={() => inputRef.current?.focus()}
     >
       <div className="tag-input-tokens">
@@ -84,7 +86,7 @@ export default function TagInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           onKeyDown={handleKeyDown}
-          placeholder={normalizedTags.length === 0 ? placeholder : ""}
+          placeholder={normalizedTags.length === 0 ? placeholder : ''}
         />
       </div>
 
@@ -103,18 +105,21 @@ export default function TagInput({
               <span className="tag-input-option-icon">#</span> {s}
             </button>
           ))}
-          {canCreate && !filteredSuggestions.some(s => s.toLowerCase() === inputValue.trim().toLowerCase()) && (
-            <button
-              type="button"
-              className="tag-input-option create"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                addTag(inputValue);
-              }}
-            >
-              Utwórz: <strong>#{inputValue.trim()}</strong>
-            </button>
-          )}
+          {canCreate &&
+            !filteredSuggestions.some(
+              (s) => s.toLowerCase() === inputValue.trim().toLowerCase()
+            ) && (
+              <button
+                type="button"
+                className="tag-input-option create"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(inputValue);
+                }}
+              >
+                Utwórz: <strong>#{inputValue.trim()}</strong>
+              </button>
+            )}
         </div>
       )}
     </div>

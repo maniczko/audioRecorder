@@ -1,7 +1,7 @@
-import { createId } from "../lib/storage";
-import { attachRecording } from "../lib/meeting";
-import { apiRequest } from "../services/httpClient";
-import { remoteApiEnabled } from "../services/config";
+import { createId } from '../lib/storage';
+import { attachRecording } from '../lib/meeting';
+import { apiRequest } from '../services/httpClient';
+import { remoteApiEnabled } from '../services/config';
 
 export default function useRecordingActions({
   currentUser,
@@ -32,8 +32,12 @@ export default function useRecordingActions({
         return {
           ...meeting,
           recordings: nextRecordings,
-          speakerNames: isLatestRecording ? nextSelectedRecording.speakerNames : meeting.speakerNames,
-          speakerCount: isLatestRecording ? nextSelectedRecording.speakerCount : meeting.speakerCount,
+          speakerNames: isLatestRecording
+            ? nextSelectedRecording.speakerNames
+            : meeting.speakerNames,
+          speakerCount: isLatestRecording
+            ? nextSelectedRecording.speakerCount
+            : meeting.speakerCount,
           updatedAt: new Date().toISOString(),
         };
       })
@@ -43,8 +47,10 @@ export default function useRecordingActions({
   function buildTranscriptReviewSummary(transcript) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
     return {
-      needsReview: safeTranscript.filter((segment) => segment.verificationStatus === "review").length,
-      approved: safeTranscript.filter((segment) => segment.verificationStatus === "verified").length,
+      needsReview: safeTranscript.filter((segment) => segment.verificationStatus === 'review')
+        .length,
+      approved: safeTranscript.filter((segment) => segment.verificationStatus === 'verified')
+        .length,
     };
   }
 
@@ -57,7 +63,7 @@ export default function useRecordingActions({
           id: String(marker?.id || createId(`marker_${index}`)),
           timestamp,
           label: String(marker?.label || `Marker ${index + 1}`).trim() || `Marker ${index + 1}`,
-          note: String(marker?.note || "").trim(),
+          note: String(marker?.note || '').trim(),
           createdAt: marker?.createdAt || new Date().toISOString(),
         };
       })
@@ -68,7 +74,9 @@ export default function useRecordingActions({
   function finalizeRecordingTranscript(recording, transcript, overrides = {}) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
     const speakerNames = { ...(recording.speakerNames || {}), ...(overrides.speakerNames || {}) };
-    const uniqueSpeakerIds = [...new Set(safeTranscript.map((s) => String(s.speakerId)).filter(Boolean))];
+    const uniqueSpeakerIds = [
+      ...new Set(safeTranscript.map((s) => String(s.speakerId)).filter(Boolean)),
+    ];
     uniqueSpeakerIds.forEach((sid) => {
       if (!speakerNames[sid]) speakerNames[sid] = `Speaker ${Number(sid) + 1}`;
     });
@@ -92,7 +100,9 @@ export default function useRecordingActions({
         return {
           ...m,
           speakerNames:
-            m.latestRecordingId === selectedRecording.id ? { ...m.speakerNames, [String(speakerId)]: nextValue } : m.speakerNames,
+            m.latestRecordingId === selectedRecording.id
+              ? { ...m.speakerNames, [String(speakerId)]: nextValue }
+              : m.speakerNames,
           recordings: m.recordings.map((r) =>
             r.id !== selectedRecording.id
               ? r
@@ -102,7 +112,10 @@ export default function useRecordingActions({
                   analysis: r.analysis
                     ? {
                         ...r.analysis,
-                        speakerLabels: { ...(r.analysis.speakerLabels || r.speakerNames), [String(speakerId)]: nextValue },
+                        speakerLabels: {
+                          ...(r.analysis.speakerLabels || r.speakerNames),
+                          [String(speakerId)]: nextValue,
+                        },
                       }
                     : r.analysis,
                 }
@@ -120,8 +133,10 @@ export default function useRecordingActions({
           : {
               ...s,
               ...updates,
-              verificationStatus: updates.verificationStatus || (updates.text ? "verified" : s.verificationStatus),
-              verificationReasons: updates.verificationReasons || (updates.text ? [] : s.verificationReasons),
+              verificationStatus:
+                updates.verificationStatus || (updates.text ? 'verified' : s.verificationStatus),
+              verificationReasons:
+                updates.verificationReasons || (updates.text ? [] : s.verificationReasons),
             }
       );
       return finalizeRecordingTranscript(recording, transcript);
@@ -137,7 +152,12 @@ export default function useRecordingActions({
           ? {
               ...s,
               speakerId: Number(nextSpeakerId),
-              verificationReasons: [...new Set([...(s.verificationReasons || []), "speaker zmieniony recznie dla zakresu"])],
+              verificationReasons: [
+                ...new Set([
+                  ...(s.verificationReasons || []),
+                  'speaker zmieniony recznie dla zakresu',
+                ]),
+              ],
             }
           : s
       );
@@ -162,27 +182,42 @@ export default function useRecordingActions({
       const merged = {
         ...firstS,
         text: sorted
-          .map(({ s }) => String(s.text || "").trim())
+          .map(({ s }) => String(s.text || '').trim())
           .filter(Boolean)
-          .join(" ")
-          .replace(/\s+/g, " ")
+          .join(' ')
+          .replace(/\s+/g, ' ')
           .trim(),
         timestamp: firstS.timestamp,
-        endTimestamp: lastS.endTimestamp || lastS.timestamp || firstS.endTimestamp || firstS.timestamp,
+        endTimestamp:
+          lastS.endTimestamp || lastS.timestamp || firstS.endTimestamp || firstS.timestamp,
         speakerId: firstS.speakerId,
-        rawConfidence: sorted.reduce((sum, { s }) => sum + Number(s.rawConfidence || 0), 0) / sorted.length,
-        verificationScore: sorted.reduce((sum, { s }) => sum + Number(s.verificationScore || 0), 0) / sorted.length,
-        verificationStatus: sorted.some(({ s }) => s.verificationStatus === "review") ? "review" : "verified",
-        verificationReasons: [...new Set(sorted.flatMap(({ s }) => s.verificationReasons || []).concat("polaczono recznie z kilku segmentow"))],
+        rawConfidence:
+          sorted.reduce((sum, { s }) => sum + Number(s.rawConfidence || 0), 0) / sorted.length,
+        verificationScore:
+          sorted.reduce((sum, { s }) => sum + Number(s.verificationScore || 0), 0) / sorted.length,
+        verificationStatus: sorted.some(({ s }) => s.verificationStatus === 'review')
+          ? 'review'
+          : 'verified',
+        verificationReasons: [
+          ...new Set(
+            sorted
+              .flatMap(({ s }) => s.verificationReasons || [])
+              .concat('polaczono recznie z kilku segmentow')
+          ),
+        ],
         verificationEvidence: {
           comparisonText: sorted
-            .map(({ s }) => s.verificationEvidence?.comparisonText || "")
+            .map(({ s }) => s.verificationEvidence?.comparisonText || '')
             .filter(Boolean)
-            .join(" "),
+            .join(' '),
         },
       };
 
-      const nextTranscript = [...transcript.slice(0, firstI), merged, ...transcript.slice(lastI + 1)];
+      const nextTranscript = [
+        ...transcript.slice(0, firstI),
+        merged,
+        ...transcript.slice(lastI + 1),
+      ];
       return finalizeRecordingTranscript(recording, nextTranscript);
     });
   }
@@ -193,8 +228,11 @@ export default function useRecordingActions({
       const idx = transcript.findIndex((s) => s.id === segmentId);
       if (idx === -1) return recording;
       const s = transcript[idx];
-      const text = String(s.text || "");
-      const normalizedSplit = Math.max(1, Math.min(text.length - 1, Number(splitIndex) || Math.floor(text.length / 2)));
+      const text = String(s.text || '');
+      const normalizedSplit = Math.max(
+        1,
+        Math.min(text.length - 1, Number(splitIndex) || Math.floor(text.length / 2))
+      );
       const leftT = text.slice(0, normalizedSplit).trim();
       const rightT = text.slice(normalizedSplit).trim();
       if (!leftT || !rightT) return recording;
@@ -203,11 +241,32 @@ export default function useRecordingActions({
       const endT = Number(s.endTimestamp || s.timestamp || startT + 2) || startT + 2;
       const ratio = normalizedSplit / Math.max(text.length, 1);
       const midT = startT + (endT - startT) * ratio;
-      const reasons = [...new Set([...(s.verificationReasons || []), "podzielono recznie - sprawdz ponownie"])];
-      const leftS = { ...s, text: leftT, endTimestamp: midT, verificationStatus: "review", verificationReasons: reasons };
-      const rightS = { ...s, id: createId("segment"), text: rightT, timestamp: midT, endTimestamp: endT, verificationStatus: "review", verificationReasons: reasons };
+      const reasons = [
+        ...new Set([...(s.verificationReasons || []), 'podzielono recznie - sprawdz ponownie']),
+      ];
+      const leftS = {
+        ...s,
+        text: leftT,
+        endTimestamp: midT,
+        verificationStatus: 'review',
+        verificationReasons: reasons,
+      };
+      const rightS = {
+        ...s,
+        id: createId('segment'),
+        text: rightT,
+        timestamp: midT,
+        endTimestamp: endT,
+        verificationStatus: 'review',
+        verificationReasons: reasons,
+      };
 
-      const nextTranscript = [...transcript.slice(0, idx), leftS, rightS, ...transcript.slice(idx + 1)];
+      const nextTranscript = [
+        ...transcript.slice(0, idx),
+        leftS,
+        rightS,
+        ...transcript.slice(idx + 1),
+      ];
       return finalizeRecordingTranscript(recording, nextTranscript);
     });
   }
@@ -216,7 +275,16 @@ export default function useRecordingActions({
     if (!selectedRecording) return;
     updateSelectedRecording((r) =>
       finalizeRecordingTranscript(r, r.transcript || [], {
-        markers: normalizeRecordingMarkers([...(r.markers || []), { id: createId("marker"), timestamp: marker?.timestamp, label: marker?.label, note: marker?.note, createdAt: new Date().toISOString() }]),
+        markers: normalizeRecordingMarkers([
+          ...(r.markers || []),
+          {
+            id: createId('marker'),
+            timestamp: marker?.timestamp,
+            label: marker?.label,
+            note: marker?.note,
+            createdAt: new Date().toISOString(),
+          },
+        ]),
       })
     );
   }
@@ -225,7 +293,9 @@ export default function useRecordingActions({
     if (!selectedRecording || !markerId) return;
     updateSelectedRecording((r) =>
       finalizeRecordingTranscript(r, r.transcript || [], {
-        markers: normalizeRecordingMarkers((r.markers || []).map((m) => (m.id !== markerId ? m : { ...m, ...updates }))),
+        markers: normalizeRecordingMarkers(
+          (r.markers || []).map((m) => (m.id !== markerId ? m : { ...m, ...updates }))
+        ),
       })
     );
   }
@@ -241,25 +311,59 @@ export default function useRecordingActions({
 
   function addMeetingComment(meetingId, text, authorName) {
     const now = new Date().toISOString();
-    const comment = { id: createId("comment"), text: String(text || "").trim(), author: String(authorName || "Ty"), createdAt: now, mentions: (String(text || "").match(/@(\w+)/g) || []).map((m) => m.slice(1)) };
-    const activity = { id: createId("meeting_activity"), type: "comment", actorName: String(authorName || "Ty"), message: text.length > 80 ? text.slice(0, 77) + "..." : text, createdAt: now };
+    const comment = {
+      id: createId('comment'),
+      text: String(text || '').trim(),
+      author: String(authorName || 'Ty'),
+      createdAt: now,
+      mentions: (String(text || '').match(/@(\w+)/g) || []).map((m) => m.slice(1)),
+    };
+    const activity = {
+      id: createId('meeting_activity'),
+      type: 'comment',
+      actorName: String(authorName || 'Ty'),
+      message: text.length > 80 ? text.slice(0, 77) + '...' : text,
+      createdAt: now,
+    };
     setMeetings((prev) =>
-      prev.map((m) => (m.id !== meetingId ? m : { ...m, comments: [...(Array.isArray(m.comments) ? m.comments : []), comment], activity: [...(Array.isArray(m.activity) ? m.activity : []), activity] }))
+      prev.map((m) =>
+        m.id !== meetingId
+          ? m
+          : {
+              ...m,
+              comments: [...(Array.isArray(m.comments) ? m.comments : []), comment],
+              activity: [...(Array.isArray(m.activity) ? m.activity : []), activity],
+            }
+      )
     );
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
-    const aiTags = (recording.analysis?.suggestedTags || []).map((t) => String(t).toLowerCase().trim()).filter(Boolean);
+    const aiTags = (recording.analysis?.suggestedTags || [])
+      .map((t) => String(t).toLowerCase().trim())
+      .filter(Boolean);
     setMeetings((prev) =>
       prev.map((m) => {
         if (m.id !== recordingMeetingId) return m;
         const base = attachRecording(m, recording);
         const existingTags = new Set((m.tags || []).map((t) => String(t).toLowerCase()));
-        const mergedTags = aiTags.length ? [...(m.tags || []), ...aiTags.filter((t) => !existingTags.has(t))] : m.tags || [];
+        const mergedTags = aiTags.length
+          ? [...(m.tags || []), ...aiTags.filter((t) => !existingTags.has(t))]
+          : m.tags || [];
         return {
           ...base,
           tags: mergedTags,
-          activity: [...(m.activity || []), { id: createId("meeting_activity"), type: "recording", actorId: currentUser?.id || "", actorName: currentUser?.name || currentUser?.email || "Ty", message: "Dodano nowe nagranie do spotkania.", createdAt: new Date().toISOString() }],
+          activity: [
+            ...(m.activity || []),
+            {
+              id: createId('meeting_activity'),
+              type: 'recording',
+              actorId: currentUser?.id || '',
+              actorName: currentUser?.name || currentUser?.email || 'Ty',
+              message: 'Dodano nowe nagranie do spotkania.',
+              createdAt: new Date().toISOString(),
+            },
+          ],
         };
       })
     );
@@ -268,28 +372,43 @@ export default function useRecordingActions({
   }
 
   function rescheduleMeeting(meetingId, startsAt) {
-    setMeetings((prev) => prev.map((m) => (m.id !== meetingId ? m : { ...m, startsAt, updatedAt: new Date().toISOString() })));
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id !== meetingId ? m : { ...m, startsAt, updatedAt: new Date().toISOString() }
+      )
+    );
   }
 
   function renameTag(oldTag, newTag) {
     const norm = newTag.trim().toLowerCase();
     if (!norm || norm === oldTag) return;
-    setMeetings((prev) => prev.map((m) => ({ ...m, tags: (m.tags || []).map((t) => (t === oldTag ? norm : t)) })));
-    setManualTasks((prev) => prev.map((t) => ({ ...t, tags: (t.tags || []).map((tag) => (tag === oldTag ? norm : tag)) })));
+    setMeetings((prev) =>
+      prev.map((m) => ({ ...m, tags: (m.tags || []).map((t) => (t === oldTag ? norm : t)) }))
+    );
+    setManualTasks((prev) =>
+      prev.map((t) => ({ ...t, tags: (t.tags || []).map((tag) => (tag === oldTag ? norm : tag)) }))
+    );
   }
 
   function deleteTag(tag) {
-    setMeetings((prev) => prev.map((m) => ({ ...m, tags: (m.tags || []).filter((t) => t !== tag) })));
-    setManualTasks((prev) => prev.map((t) => ({ ...t, tags: (t.tags || []).filter((existing) => existing !== tag) })));
+    setMeetings((prev) =>
+      prev.map((m) => ({ ...m, tags: (m.tags || []).filter((t) => t !== tag) }))
+    );
+    setManualTasks((prev) =>
+      prev.map((t) => ({ ...t, tags: (t.tags || []).filter((existing) => existing !== tag) }))
+    );
   }
 
-  async function autoCreateVoiceProfile(speakerId: string | number, speakerName: string): Promise<boolean> {
+  async function autoCreateVoiceProfile(
+    speakerId: string | number,
+    speakerName: string
+  ): Promise<boolean> {
     if (!selectedRecording?.id || !remoteApiEnabled()) return false;
     // Don't create profile for generic auto-labels like "Speaker 1"
     if (/^speaker\s*\d+$/i.test(speakerName.trim())) return false;
     try {
       await apiRequest(`/media/recordings/${selectedRecording.id}/voice-profiles/from-speaker`, {
-        method: "POST",
+        method: 'POST',
         body: { speakerId: String(speakerId), speakerName: speakerName.trim() },
       });
       return true;

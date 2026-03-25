@@ -1,5 +1,5 @@
-import type { WorkspaceStatePayload } from "../shared/contracts";
-import { normalizeWorkspaceState } from "../shared/contracts";
+import type { WorkspaceStatePayload } from '../shared/contracts';
+import { normalizeWorkspaceState } from '../shared/contracts';
 
 export interface WorkspaceBackupPayload {
   version: 1;
@@ -25,7 +25,7 @@ function nowIso() {
 }
 
 function clean(value: unknown) {
-  return String(value || "").trim();
+  return String(value || '').trim();
 }
 
 function stableJson(value: unknown) {
@@ -44,7 +44,7 @@ function mergeCollectionById(current: unknown[] = [], incoming: unknown[] = []) 
   });
 
   incoming.forEach((item: any) => {
-    if (!item || typeof item !== "object") {
+    if (!item || typeof item !== 'object') {
       return;
     }
     const id = clean(item.id);
@@ -68,10 +68,16 @@ function mergeCollectionById(current: unknown[] = [], incoming: unknown[] = []) 
 
 function diffCountById(current: unknown[] = [], incoming: unknown[] = []) {
   const currentIds = new Set(current.map((item: any) => clean(item?.id)).filter(Boolean));
-  return incoming.reduce((count, item: any) => count + (currentIds.has(clean(item?.id)) ? 0 : 1), 0);
+  return incoming.reduce(
+    (count, item: any) => count + (currentIds.has(clean(item?.id)) ? 0 : 1),
+    0
+  );
 }
 
-function diffObjectCount(current: Record<string, unknown> = {}, incoming: Record<string, unknown> = {}) {
+function diffObjectCount(
+  current: Record<string, unknown> = {},
+  incoming: Record<string, unknown> = {}
+) {
   let count = 0;
   const keys = new Set([...Object.keys(current || {}), ...Object.keys(incoming || {})]);
   keys.forEach((key) => {
@@ -95,7 +101,7 @@ export function buildWorkspaceBackup(
     version: 1,
     exportedAt: nowIso(),
     workspaceId: clean(workspaceId),
-    workspaceName: clean(workspaceName) || "Workspace",
+    workspaceName: clean(workspaceName) || 'Workspace',
     state: normalizeWorkspaceState(state),
   };
 }
@@ -106,22 +112,22 @@ export function stringifyWorkspaceBackup(payload: WorkspaceBackupPayload) {
 
 export function parseWorkspaceBackup(raw: string) {
   if (!raw) {
-    throw new Error("Plik backupu jest pusty.");
+    throw new Error('Plik backupu jest pusty.');
   }
 
   let parsed: any;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error("Plik backupu nie jest poprawnym JSON.");
+    throw new Error('Plik backupu nie jest poprawnym JSON.');
   }
 
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("Nieprawidlowy format backupu.");
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Nieprawidlowy format backupu.');
   }
 
   if (Number(parsed.version) !== 1) {
-    throw new Error("Nieobslugiwany format backupu.");
+    throw new Error('Nieobslugiwany format backupu.');
   }
 
   const state = normalizeWorkspaceState(parsed.state || {});
@@ -130,12 +136,15 @@ export function parseWorkspaceBackup(raw: string) {
     version: 1 as const,
     exportedAt: clean(parsed.exportedAt),
     workspaceId: clean(parsed.workspaceId),
-    workspaceName: clean(parsed.workspaceName) || "Workspace",
+    workspaceName: clean(parsed.workspaceName) || 'Workspace',
     state,
   };
 }
 
-export function previewWorkspaceBackupImport(currentState: Partial<WorkspaceStatePayload>, backupState: Partial<WorkspaceStatePayload>): WorkspaceBackupPreview {
+export function previewWorkspaceBackupImport(
+  currentState: Partial<WorkspaceStatePayload>,
+  backupState: Partial<WorkspaceStatePayload>
+): WorkspaceBackupPreview {
   const current = normalizeWorkspaceState(currentState);
   const incoming = normalizeWorkspaceState(backupState);
 
@@ -145,15 +154,27 @@ export function previewWorkspaceBackupImport(currentState: Partial<WorkspaceStat
     vocabularyToAdd: Array.isArray(incoming.vocabulary)
       ? incoming.vocabulary.filter((item) => !current.vocabulary.includes(item)).length
       : 0,
-    taskStateKeysToUpdate: diffObjectCount(current.taskState as Record<string, unknown>, incoming.taskState as Record<string, unknown>),
-    taskBoardsToUpdate: diffObjectCount(current.taskBoards as Record<string, unknown>, incoming.taskBoards as Record<string, unknown>),
-    calendarMetaToUpdate: diffObjectCount(current.calendarMeta as Record<string, unknown>, incoming.calendarMeta as Record<string, unknown>),
+    taskStateKeysToUpdate: diffObjectCount(
+      current.taskState as Record<string, unknown>,
+      incoming.taskState as Record<string, unknown>
+    ),
+    taskBoardsToUpdate: diffObjectCount(
+      current.taskBoards as Record<string, unknown>,
+      incoming.taskBoards as Record<string, unknown>
+    ),
+    calendarMetaToUpdate: diffObjectCount(
+      current.calendarMeta as Record<string, unknown>,
+      incoming.calendarMeta as Record<string, unknown>
+    ),
     meetingsTotal: incoming.meetings.length,
     manualTasksTotal: incoming.manualTasks.length,
   };
 }
 
-export function mergeWorkspaceBackup(currentState: Partial<WorkspaceStatePayload>, backupState: Partial<WorkspaceStatePayload>) {
+export function mergeWorkspaceBackup(
+  currentState: Partial<WorkspaceStatePayload>,
+  backupState: Partial<WorkspaceStatePayload>
+) {
   const current = normalizeWorkspaceState(currentState);
   const incoming = normalizeWorkspaceState(backupState);
 
@@ -172,7 +193,9 @@ export function mergeWorkspaceBackup(currentState: Partial<WorkspaceStatePayload
       ...(current.calendarMeta as Record<string, unknown>),
       ...(incoming.calendarMeta as Record<string, unknown>),
     },
-    vocabulary: Array.from(new Set([...(current.vocabulary || []), ...(incoming.vocabulary || [])])),
+    vocabulary: Array.from(
+      new Set([...(current.vocabulary || []), ...(incoming.vocabulary || [])])
+    ),
     updatedAt: current.updatedAt,
   });
 }

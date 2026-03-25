@@ -1,0 +1,61 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m❯[39m server/tests/stt/stt.providers.extended.test.ts [2m([22m[2m25 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 47[2mms[22m[39m
+       [32m✓[39m builds provider chain with Groq preferred[32m 5[2mms[22m[39m
+       [32m✓[39m builds provider chain with OpenAI preferred[32m 1[2mms[22m[39m
+       [32m✓[39m skips unavailable providers in chain[32m 1[2mms[22m[39m
+       [32m✓[39m handles missing fallback provider[32m 1[2mms[22m[39m
+       [32m✓[39m handles same preferred and fallback provider[32m 1[2mms[22m[39m
+       [32m✓[39m uses default OpenAI base URL when not specified[32m 0[2mms[22m[39m
+       [32m✓[39m uses custom OpenAI base URL when specified[32m 0[2mms[22m[39m
+       [32m✓[39m uses default models when not specified[32m 0[2mms[22m[39m
+       [32m✓[39m uses custom models when specified[32m 1[2mms[22m[39m
+       [32m✓[39m provider isAvailable returns true with API key[32m 0[2mms[22m[39m
+       [32m✓[39m provider isAvailable returns false without API key[32m 0[2mms[22m[39m
+       [32m✓[39m provider label is descriptive[32m 0[2mms[22m[39m
+       [32m✓[39m returns successful transcription from first available provider[32m 2[2mms[22m[39m
+       [32m✓[39m tries fallback provider when first fails[32m 1[2mms[22m[39m
+[31m       [31m×[31m skips unavailable providers[39m[32m 18[2mms[22m[39m
+[31m       [31m×[31m throws error when all providers fail[39m[32m 3[2mms[22m[39m
+       [32m✓[39m records attempt duration[32m 1[2mms[22m[39m
+[31m       [31m×[31m records error message on failure[39m[32m 2[2mms[22m[39m
+       [32m✓[39m uses provider default model when not specified in request[32m 1[2mms[22m[39m
+       [32m✓[39m uses request model when specified[32m 1[2mms[22m[39m
+[31m       [31m×[31m handles empty providers array[39m[32m 2[2mms[22m[39m
+       [32m✓[39m includes provider label in result[32m 1[2mms[22m[39m
+       [32m✓[39m includes all attempts in result[32m 1[2mms[22m[39m
+       [32m✓[39m Groq provider has correct configuration[32m 0[2mms[22m[39m
+       [32m✓[39m OpenAI provider has correct configuration[32m 0[2mms[22m[39m
+ [31m❯[39m server/tests/lib/rag.coverage.test.ts [2m([22m[2m25 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 36[2mms[22m[39m
+       [32m✓[39m creates retriever with default options[32m 3[2mms[22m[39m
+       [32m✓[39m creates retriever with custom options[32m 1[2mms[22m[39m
+       [32m✓[39m retrieves relevant chunks for a query[32m 3[2mms[22m[39m
+       [32m✓[39m returns empty array when no chunks match minScore[32m 1[2mms[22m[39m
+       [32m✓[39m limits results to topK[32m 1[2mms[22m[39m
+       [32m✓[39m handles empty chunks array[32m 1[2mms[22m[39m
+       [32m✓[39m handles chunks with missing embedding_json[32m 2[2mms[22m[39m
+     [32m✓[39m builds context string from chunks[32m 1[2mms[22m[39m
+     [32m✓[39m handles empty chunks array[32m 0[2mms[22m[39m
+     [32m✓[39m handles chunks with missing fields[32m 0[2mms[22m[39m
+     [32m✓[39m handles null input[32m 0[2mms[22m[39m
+     [32m✓[39m throws error when API key is missing[32m 1[2mms[22m[39m
+     [32m✓[39m throws error when API key is empty string[32m 1[2mms[22m[39m
+[31m     [31m×[31m uses VOICELOG_OPENAI_API_KEY if available[39m[32m 12[2mms[22m[39m
+     [32m✓[39m builds context with chunks[32m 1[2mms[22m[39m
+     [32m✓[39m handles empty chunks[32m 1[2mms[22m[39m
+     [32m✓[39m uses custom base URL if configured[32m 0[2mms[22m[39m
+     [32m✓[39m handles array content in response[32m 1[2mms[22m[39m
+     [32m✓[39m handles object content with text property[32m 0[2mms[22m[39m
+     [32m✓[39m handles null content[32m 1[2mms[22m[39m
+     [32m✓[39m includes metadata in model invoke[32m 1[2mms[22m[39m
+     [32m✓[39m returns 1 for identical vectors[32m 0[2mms[22m[39m
+     [32m✓[39m returns 0 for orthogonal vectors[32m 0[2mms[22m[39m
+     [32m✓[39m returns 0 when one vector is zero[32m 0[2mms[22m[39m
+     [32m✓[39m handles vectors of different lengths[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m45 passed[39m[22m[90m (50)[39m
+[2m   Start at [22m 16:32:53
+[2m   Duration [22m 1.85s[2m (transform 320ms, setup 192ms, import 857ms, tests 83ms, environment 0ms)[22m
+

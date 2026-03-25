@@ -9,4 +9,4 @@
  *
  * This file re-exports everything so existing imports keep working.
  */
-export * from "./pipeline.ts";
+export * from './pipeline.ts';

@@ -1,8 +1,8 @@
-import { memo } from "react";
-import { TASK_PRIORITIES } from "../lib/tasks";
+import { memo } from 'react';
+import { TASK_PRIORITIES } from '../lib/tasks';
 import './TaskChartsViewStyles.css';
 
-const PRIORITY_COLORS = { urgent: "#f17d72", high: "#f3ca72", medium: "#75d6c4", low: "#8db4ff" };
+const PRIORITY_COLORS = { urgent: '#f17d72', high: '#f3ca72', medium: '#75d6c4', low: '#8db4ff' };
 
 function DonutChart({ title, segments, total }) {
   const R = 52;
@@ -25,7 +25,14 @@ function DonutChart({ title, segments, total }) {
       <h3 className="chart-title">{title}</h3>
       <div className="chart-donut-body">
         <svg viewBox="0 0 140 140" width="140" height="140" aria-label={`Wykres kołowy: ${title}`}>
-          <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--surface-2, #2a2a3a)" strokeWidth={strokeWidth} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={R}
+            fill="none"
+            stroke="var(--surface-2, #2a2a3a)"
+            strokeWidth={strokeWidth}
+          />
           {arcs.map((arc) => (
             <circle
               key={arc.label}
@@ -69,7 +76,9 @@ function BarChart({ title, bars, maxValue }) {
         {bars.length ? (
           bars.map((bar) => (
             <div key={bar.label} className="chart-bar-row">
-              <span className="chart-bar-label" title={bar.label}>{bar.label}</span>
+              <span className="chart-bar-label" title={bar.label}>
+                {bar.label}
+              </span>
               <div className="chart-bar-track">
                 <div
                   className="chart-bar-fill"
@@ -105,15 +114,14 @@ function TaskChartsView({ tasks, boardColumns }) {
   const prioritySegments = TASK_PRIORITIES.map((p) => ({
     label: p.label,
     value: tasks.filter((t) => t.priority === p.id).length,
-    color: PRIORITY_COLORS[p.id] || "#8db4ff",
+    color: PRIORITY_COLORS[p.id] || '#8db4ff',
   })).filter((s) => s.value > 0);
 
   const personMap = new Map();
   tasks
     .filter((t) => !t.completed)
     .forEach((t) => {
-      const people =
-        t.assignedTo?.length ? t.assignedTo : t.owner ? [t.owner] : ["Nieprzypisane"];
+      const people = t.assignedTo?.length ? t.assignedTo : t.owner ? [t.owner] : ['Nieprzypisane'];
       people.forEach((p) => personMap.set(p, (personMap.get(p) || 0) + 1));
     });
   const personBars = [...personMap.entries()]
@@ -123,39 +131,56 @@ function TaskChartsView({ tasks, boardColumns }) {
       label,
       value,
       color: [
-        "#5a92ff", "#8a6bff", "#67d59f", "#34c5b5",
-        "#f3ca72", "#f3a46e", "#f17d72", "#e879a0",
+        '#5a92ff',
+        '#8a6bff',
+        '#67d59f',
+        '#34c5b5',
+        '#f3ca72',
+        '#f3a46e',
+        '#f17d72',
+        '#e879a0',
       ][i % 8],
     }));
 
   const dueBars = [
     {
-      label: "Po terminie",
-      color: "#f17d72",
-      value: tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() < now).length,
+      label: 'Po terminie',
+      color: '#f17d72',
+      value: tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() < now)
+        .length,
     },
     {
-      label: "Dzisiaj",
-      color: "#f3ca72",
+      label: 'Dzisiaj',
+      color: '#f3ca72',
       value: tasks.filter(
-        (t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() >= now && new Date(t.dueDate).getTime() < now + day
+        (t) =>
+          !t.completed &&
+          t.dueDate &&
+          new Date(t.dueDate).getTime() >= now &&
+          new Date(t.dueDate).getTime() < now + day
       ).length,
     },
     {
-      label: "Ten tydzien",
-      color: "#75d6c4",
+      label: 'Ten tydzien',
+      color: '#75d6c4',
       value: tasks.filter(
-        (t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() >= now + day && new Date(t.dueDate).getTime() < now + 7 * day
+        (t) =>
+          !t.completed &&
+          t.dueDate &&
+          new Date(t.dueDate).getTime() >= now + day &&
+          new Date(t.dueDate).getTime() < now + 7 * day
       ).length,
     },
     {
-      label: "Pozniej",
-      color: "#67d59f",
-      value: tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() >= now + 7 * day).length,
+      label: 'Pozniej',
+      color: '#67d59f',
+      value: tasks.filter(
+        (t) => !t.completed && t.dueDate && new Date(t.dueDate).getTime() >= now + 7 * day
+      ).length,
     },
     {
-      label: "Bez terminu",
-      color: "#8db4ff",
+      label: 'Bez terminu',
+      color: '#8db4ff',
       value: tasks.filter((t) => !t.dueDate).length,
     },
   ];
@@ -178,6 +203,5 @@ function TaskChartsView({ tasks, boardColumns }) {
 
 // Memoize chart view to prevent re-renders when tasks haven't changed
 export default memo(TaskChartsView, (prevProps, nextProps) => {
-  return prevProps.tasks === nextProps.tasks &&
-    prevProps.boardColumns === nextProps.boardColumns;
+  return prevProps.tasks === nextProps.tasks && prevProps.boardColumns === nextProps.boardColumns;
 });

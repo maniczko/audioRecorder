@@ -1,0 +1,119 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns analysis result when transcription service returns data
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [9.7ms] {
+  requestId: [32m'a2ee91f5-283c-4af1-827b-445ecefd413e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'9.74'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns no-key mode when analysis returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [1.4ms] {
+  requestId: [32m'10fc8042-db21-4821-8d00-61737cb8f400'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.40'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 401 [2.5ms] {
+  requestId: [32m'3d8455b9-855b-4773-9101-710f14d0c134'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'2.48'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when X-Workspace-Id is missing
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [2.8ms] {
+  requestId: [32m'972e567c-b1a0-4511-8fb1-0b990560d28d'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.84'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when index/total parameters are invalid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.5ms] {
+  requestId: [32m'e65bf3c2-4385-44c0-b6ac-0f9adfcc0981'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.54'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when total > 600
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.1ms] {
+  requestId: [32m'7dbe80e5-502b-42bc-a475-6d23a2fb1e40'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.09'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 413 when chunk > 3MB
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 413 [6.8ms] {
+  requestId: [32m'8f3e2e13-59ab-4686-ac9b-d34279cb8151'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'6.85'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 200 and saves chunk when valid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 200 [15.2ms] {
+  requestId: [32m'7207a432-8008-4818-bef9-95d2ac4f38a8'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'15.16'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 401 [0.7ms] {
+  requestId: [32m'996902b6-60c4-46c7-846e-701c3f6ecf21'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'0.75'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when workspaceId is missing
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [1.9ms] {
+  requestId: [32m'32d5c8c5-6056-4db4-9251-5e6a868b42f2'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.92'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when total is missing or invalid
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [1.1ms] {
+  requestId: [32m'8ec84259-0cc4-4f6d-8d83-407fe8b05786'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.08'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 413 when assembled file > 100MB
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [6.1ms] {
+  requestId: [32m'4a7bcb55-af0e-4d26-95a9-f91a6787a44f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'6.10'[39m
+}
+
+ [32m✓[39m server/tests/routes/media.additional.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 6683[2mms[22m[39m
+       [33m[2m✓[22m[39m returns analysis result when transcription service returns data [33m 6383[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 09:34:27
+[2m   Duration [22m 8.97s[2m (transform 717ms, setup 219ms, import 90ms, tests 6.68s, environment 0ms)[22m
+

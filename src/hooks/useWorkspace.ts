@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import useStoredState from "./useStoredState";
-import { STORAGE_KEYS } from "../lib/storage";
-import { resolveWorkspaceForUser, workspaceMembers } from "../lib/workspace";
-import { getWorkspacePermissions } from "../lib/permissions";
-import { createStateService } from "../services/stateService";
-import { createWorkspaceService } from "../services/workspaceService";
-import { onUnauthorized } from "../services/httpClient";
+import { useEffect, useMemo, useState } from 'react';
+import useStoredState from './useStoredState';
+import { STORAGE_KEYS } from '../lib/storage';
+import { resolveWorkspaceForUser, workspaceMembers } from '../lib/workspace';
+import { getWorkspacePermissions } from '../lib/permissions';
+import { createStateService } from '../services/stateService';
+import { createWorkspaceService } from '../services/workspaceService';
+import { onUnauthorized } from '../services/httpClient';
 
 export default function useWorkspace() {
   const [users, setUsers] = useStoredState(STORAGE_KEYS.users, []);
@@ -13,30 +13,38 @@ export default function useWorkspace() {
   const [workspaces, setWorkspaces] = useStoredState(STORAGE_KEYS.workspaces, []);
   const stateService = useMemo(() => createStateService(), []);
   const workspaceService = useMemo(() => createWorkspaceService(), []);
-  const [isHydratingSession, setIsHydratingSession] = useState(stateService.mode === "remote" && Boolean(session?.token));
-  const [sessionError, setSessionError] = useState("");
+  const [isHydratingSession, setIsHydratingSession] = useState(
+    stateService.mode === 'remote' && Boolean(session?.token)
+  );
+  const [sessionError, setSessionError] = useState('');
 
   const currentUser = users.find((user) => user.id === session?.userId) || null;
   const currentUserId = currentUser?.id || null;
   const currentWorkspaceId = currentUser
     ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId)
     : null;
-  const currentWorkspace = workspaces.find((workspace) => workspace.id === currentWorkspaceId) || null;
+  const currentWorkspace =
+    workspaces.find((workspace) => workspace.id === currentWorkspaceId) || null;
   const currentWorkspaceMembers = workspaceMembers(users, currentWorkspace);
-  const currentWorkspaceRole = currentWorkspace?.memberRole || currentWorkspaceMembers.find((user) => user.id === currentUserId)?.workspaceMemberRole || "member";
+  const currentWorkspaceRole =
+    currentWorkspace?.memberRole ||
+    currentWorkspaceMembers.find((user) => user.id === currentUserId)?.workspaceMemberRole ||
+    'member';
   const currentWorkspacePermissions = useMemo(
     () => getWorkspacePermissions(currentWorkspaceRole),
     [currentWorkspaceRole]
   );
   const availableWorkspaces = useMemo(
     () =>
-      currentUser ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id)) : [],
+      currentUser
+        ? workspaces.filter((workspace) => (workspace.memberIds || []).includes(currentUser.id))
+        : [],
     [currentUser, workspaces]
   );
 
   useEffect(() => {
     return onUnauthorized(() => {
-      console.warn("Session expired. Logging out.");
+      console.warn('Session expired. Logging out.');
       setSession(null);
     });
   }, [setSession]);
@@ -57,20 +65,20 @@ export default function useWorkspace() {
   }, [currentUser, currentWorkspaceId, session?.workspaceId, setSession]);
 
   useEffect(() => {
-    if (stateService.mode !== "remote") {
+    if (stateService.mode !== 'remote') {
       setIsHydratingSession(false);
       return;
     }
 
     if (!session?.token || !session?.userId) {
       setIsHydratingSession(false);
-      setSessionError("");
+      setSessionError('');
       return;
     }
 
     let cancelled = false;
     setIsHydratingSession(true);
-    setSessionError("");
+    setSessionError('');
 
     stateService
       .bootstrap(session.workspaceId)
@@ -118,7 +126,15 @@ export default function useWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [session?.token, session?.userId, session?.workspaceId, setSession, setUsers, setWorkspaces, stateService]);
+  }, [
+    session?.token,
+    session?.userId,
+    session?.workspaceId,
+    setSession,
+    setUsers,
+    setWorkspaces,
+    stateService,
+  ]);
 
   function switchWorkspace(workspaceId) {
     if (!workspaceId || workspaceId === currentWorkspaceId) {

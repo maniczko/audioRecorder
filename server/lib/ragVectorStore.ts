@@ -1,7 +1,7 @@
-import crypto from "node:crypto";
-import { Document, type DocumentInterface } from "@langchain/core/documents";
-import { VectorStore } from "@langchain/core/vectorstores";
-import type { EmbeddingsInterface } from "@langchain/core/embeddings";
+import crypto from 'node:crypto';
+import { Document, type DocumentInterface } from '@langchain/core/documents';
+import { VectorStore } from '@langchain/core/vectorstores';
+import type { EmbeddingsInterface } from '@langchain/core/embeddings';
 
 type RagChunkRow = {
   id: string;
@@ -26,15 +26,17 @@ type RagVectorStoreOptions = {
       embedding: number[];
       createdAt: string;
     }): Promise<void>;
-    saveRagChunks?(chunks: Array<{
-      id: string;
-      workspaceId: string;
-      recordingId: string;
-      speakerName: string;
-      text: string;
-      embedding: number[];
-      createdAt: string;
-    }>): Promise<void>;
+    saveRagChunks?(
+      chunks: Array<{
+        id: string;
+        workspaceId: string;
+        recordingId: string;
+        speakerName: string;
+        text: string;
+        embedding: number[];
+        createdAt: string;
+      }>
+    ): Promise<void>;
   };
   embedTextChunks: (texts: string[]) => Promise<number[][]>;
   topK?: number;
@@ -59,7 +61,7 @@ function magnitude(a: number[]) {
 
 function safeJsonArray(value: string) {
   try {
-    const parsed = JSON.parse(value || "[]");
+    const parsed = JSON.parse(value || '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch (_) {
     return [];
@@ -68,12 +70,12 @@ function safeJsonArray(value: string) {
 
 function buildDocument(row: RagChunkRow, score: number) {
   return new Document({
-    pageContent: row.text || "",
+    pageContent: row.text || '',
     metadata: {
       id: row.id,
-      workspaceId: row.workspace_id || "",
-      recordingId: row.recording_id || "",
-      speakerName: row.speaker_name || "",
+      workspaceId: row.workspace_id || '',
+      recordingId: row.recording_id || '',
+      speakerName: row.speaker_name || '',
       score,
     },
   });
@@ -98,7 +100,7 @@ class FunctionEmbeddingsAdapter implements EmbeddingsInterface {
 
 export class RagVectorStore extends VectorStore {
   private workspaceId: string;
-  private db: RagVectorStoreOptions["db"];
+  private db: RagVectorStoreOptions['db'];
   private topK: number;
   private minScore: number;
 
@@ -111,15 +113,20 @@ export class RagVectorStore extends VectorStore {
   }
 
   static lc_name() {
-    return "RagVectorStore";
+    return 'RagVectorStore';
   }
 
   _vectorstoreType() {
-    return "rag";
+    return 'rag';
   }
 
   async addVectors(vectors: number[][], documents: DocumentInterface[]) {
-    if (!Array.isArray(vectors) || !Array.isArray(documents) || !vectors.length || !documents.length) {
+    if (
+      !Array.isArray(vectors) ||
+      !Array.isArray(documents) ||
+      !vectors.length ||
+      !documents.length
+    ) {
       return [];
     }
 
@@ -127,19 +134,19 @@ export class RagVectorStore extends VectorStore {
     const payload = documents.map((document, index) => {
       const metadata = document.metadata || {};
       return {
-        id: String(metadata.id || `rag_${crypto.randomUUID().replace(/-/g, "")}`),
+        id: String(metadata.id || `rag_${crypto.randomUUID().replace(/-/g, '')}`),
         workspaceId: String(metadata.workspaceId || this.workspaceId),
-        recordingId: String(metadata.recordingId || metadata.recording_id || ""),
-        speakerName: String(metadata.speakerName || metadata.speaker_name || ""),
-        text: String(document.pageContent || ""),
+        recordingId: String(metadata.recordingId || metadata.recording_id || ''),
+        speakerName: String(metadata.speakerName || metadata.speaker_name || ''),
+        text: String(document.pageContent || ''),
         embedding: vectors[index] || [],
         createdAt: String(metadata.createdAt || metadata.created_at || now),
       };
     });
 
-    if (typeof this.db.saveRagChunks === "function") {
+    if (typeof this.db.saveRagChunks === 'function') {
       await this.db.saveRagChunks(payload);
-    } else if (typeof this.db.saveRagChunk === "function") {
+    } else if (typeof this.db.saveRagChunk === 'function') {
       for (const chunk of payload) {
         await this.db.saveRagChunk(chunk);
       }
@@ -149,7 +156,9 @@ export class RagVectorStore extends VectorStore {
   }
 
   async addDocuments(documents: DocumentInterface[]) {
-    const vectors = await this.embeddings.embedDocuments(documents.map((doc) => String(doc.pageContent || "")));
+    const vectors = await this.embeddings.embedDocuments(
+      documents.map((doc) => String(doc.pageContent || ''))
+    );
     return this.addVectors(vectors, documents);
   }
 
@@ -176,6 +185,8 @@ export class RagVectorStore extends VectorStore {
     return scored
       .filter((item) => item.score > this.minScore)
       .slice(0, k)
-      .map((item) => [buildDocument(item.row, item.score), item.score] as [DocumentInterface, number]);
+      .map(
+        (item) => [buildDocument(item.row, item.score), item.score] as [DocumentInterface, number]
+      );
   }
 }

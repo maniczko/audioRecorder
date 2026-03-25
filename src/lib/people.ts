@@ -3,52 +3,65 @@ function safeArray(value) {
 }
 
 function uniqueStrings(items) {
-  return [...new Set(safeArray(items).map((item) => String(item || "").trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      safeArray(items)
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 function normalizeWhitespace(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function slugify(value) {
   return normalizeWhitespace(value)
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ł/g, "l")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function includesName(collection, name) {
   const normalized = normalizeWhitespace(name).toLowerCase();
-  return safeArray(collection).some((item) => normalizeWhitespace(item).toLowerCase() === normalized);
+  return safeArray(collection).some(
+    (item) => normalizeWhitespace(item).toLowerCase() === normalized
+  );
 }
 
 function personOwnsTask(task, name) {
   const owner = normalizeWhitespace(task.owner).toLowerCase();
   const target = normalizeWhitespace(name).toLowerCase();
-  return Boolean(owner && target && (owner === target || owner.includes(target) || target.includes(owner)));
+  return Boolean(
+    owner && target && (owner === target || owner.includes(target) || target.includes(owner))
+  );
 }
 
 function inferTraits(meetings, tasks, needs, outputs) {
-  const signals = `${needs.join(" ")} ${outputs.join(" ")} ${meetings.map((meeting) => meeting.context || "").join(" ")}`.toLowerCase();
+  const signals =
+    `${needs.join(' ')} ${outputs.join(' ')} ${meetings.map((meeting) => meeting.context || '').join(' ')}`.toLowerCase();
   const traits = [];
 
   if (tasks.length >= 4) {
-    traits.push("czesto przejmuje ownership i follow-upy");
+    traits.push('czesto przejmuje ownership i follow-upy');
   }
   if (meetings.length >= 4) {
-    traits.push("regularnie uczestniczy w kluczowych spotkaniach");
+    traits.push('regularnie uczestniczy w kluczowych spotkaniach');
   }
   if (/ryzyk|plan|harmonogram|deadline|termin/.test(signals)) {
-    traits.push("pilnuje planu i terminów");
+    traits.push('pilnuje planu i terminów');
   }
   if (/budżet|budzet|koszt|rentown|zakres/.test(signals)) {
-    traits.push("patrzy na decyzje przez pryzmat kosztu i zakresu");
+    traits.push('patrzy na decyzje przez pryzmat kosztu i zakresu');
   }
   if (/klient|użytkownik|uzytkownik|feedback|potrzeb/.test(signals)) {
-    traits.push("wnosi perspektywę potrzeb i oczekiwań");
+    traits.push('wnosi perspektywę potrzeb i oczekiwań');
   }
 
   return traits.slice(0, 3);
@@ -56,9 +69,9 @@ function inferTraits(meetings, tasks, needs, outputs) {
 
 function personSummary(name, meetings, tasks, needs, outputs) {
   const traits = inferTraits(meetings, tasks, needs, outputs);
-  const firstTrait = traits[0] || "bierze udział w spotkaniach roboczych";
-  const firstNeed = needs[0] || "jasne ustalenia";
-  const firstOutput = outputs[0] || "konkretne kolejne kroki";
+  const firstTrait = traits[0] || 'bierze udział w spotkaniach roboczych';
+  const firstNeed = needs[0] || 'jasne ustalenia';
+  const firstOutput = outputs[0] || 'konkretne kolejne kroki';
 
   return `${name} ${firstTrait}. Najczęściej oczekuje: ${firstNeed}. Po spotkaniach najbardziej liczą się dla tej osoby: ${firstOutput}.`;
 }
@@ -66,7 +79,11 @@ function personSummary(name, meetings, tasks, needs, outputs) {
 export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembers = []) {
   const names = uniqueStrings([
     currentUser?.name,
-    ...safeArray(workspaceMembers).flatMap((member) => [member.name, member.email, member.googleEmail]),
+    ...safeArray(workspaceMembers).flatMap((member) => [
+      member.name,
+      member.email,
+      member.googleEmail,
+    ]),
     ...safeArray(meetings).flatMap((meeting) => [
       ...safeArray(meeting.attendees),
       ...Object.values(meeting.speakerNames || {}),
@@ -83,20 +100,42 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
             includesName(meeting.attendees, name) ||
             includesName(Object.values(meeting.speakerNames || {}), name) ||
             includesName(Object.values(meeting.analysis?.speakerLabels || {}), name) ||
-            normalizeWhitespace(currentUser?.name).toLowerCase() === normalizeWhitespace(name).toLowerCase()
+            normalizeWhitespace(currentUser?.name).toLowerCase() ===
+              normalizeWhitespace(name).toLowerCase()
         )
-        .sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime());
+        .sort(
+          (left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime()
+        );
 
       const personTasks = safeArray(tasks)
         .filter((task) => personOwnsTask(task, name))
-        .sort((left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime());
+        .sort(
+          (left, right) =>
+            new Date(right.updatedAt || right.createdAt).getTime() -
+            new Date(left.updatedAt || left.createdAt).getTime()
+        );
 
-      const aiNeeds = uniqueStrings(personMeetings.flatMap((meeting) => meeting.analysis?.participantInsights?.find(p => p.speaker === name)?.needs || []));
-      const aiConcerns = uniqueStrings(personMeetings.flatMap((meeting) => meeting.analysis?.participantInsights?.find(p => p.speaker === name)?.concerns || []));
+      const aiNeeds = uniqueStrings(
+        personMeetings.flatMap(
+          (meeting) =>
+            meeting.analysis?.participantInsights?.find((p) => p.speaker === name)?.needs || []
+        )
+      );
+      const aiConcerns = uniqueStrings(
+        personMeetings.flatMap(
+          (meeting) =>
+            meeting.analysis?.participantInsights?.find((p) => p.speaker === name)?.concerns || []
+        )
+      );
 
-      const needs = uniqueStrings([...personMeetings.flatMap((meeting) => meeting.needs || []), ...aiNeeds]);
+      const needs = uniqueStrings([
+        ...personMeetings.flatMap((meeting) => meeting.needs || []),
+        ...aiNeeds,
+      ]);
       const concerns = aiConcerns;
-      const outputs = uniqueStrings(personMeetings.flatMap((meeting) => meeting.desiredOutputs || []));
+      const outputs = uniqueStrings(
+        personMeetings.flatMap((meeting) => meeting.desiredOutputs || [])
+      );
       const tags = uniqueStrings([
         ...personMeetings.flatMap((meeting) => meeting.tags || []),
         ...personTasks.flatMap((task) => task.tags || []),
@@ -104,7 +143,9 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
       const nextMeeting =
         [...personMeetings]
           .filter((meeting) => new Date(meeting.startsAt).getTime() >= Date.now())
-          .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())[0] || null;
+          .sort(
+            (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+          )[0] || null;
       const workspaceMemberMatch = safeArray(workspaceMembers).find((member) => {
         const normalizedTarget = normalizeWhitespace(name).toLowerCase();
         return [member.name, member.email, member.googleEmail]
@@ -114,13 +155,13 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
 
       const sentimentHistory = [...personMeetings]
         .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-        .map(m => {
-          const insight = m.analysis?.participantInsights?.find(p => p.speaker === name);
+        .map((m) => {
+          const insight = m.analysis?.participantInsights?.find((p) => p.speaker === name);
           if (insight && typeof insight.sentimentScore === 'number') {
             return {
               date: m.startsAt,
               title: m.title,
-              score: insight.sentimentScore
+              score: insight.sentimentScore,
             };
           }
           return null;
@@ -144,9 +185,10 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         traits: inferTraits(personMeetings, personTasks, needs, outputs),
         timezone:
           workspaceMemberMatch?.timezone ||
-          (normalizeWhitespace(currentUser?.name).toLowerCase() === normalizeWhitespace(name).toLowerCase()
+          (normalizeWhitespace(currentUser?.name).toLowerCase() ===
+          normalizeWhitespace(name).toLowerCase()
             ? currentUser?.timezone
-            : ""),
+            : ''),
       };
     })
     .filter((person) => person.name)

@@ -1,25 +1,25 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { resolveConfiguredSttProviders, transcribeWithProviders } from "../stt/providers.ts";
-import * as httpClientModule from "../lib/httpClient.ts";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolveConfiguredSttProviders, transcribeWithProviders } from '../stt/providers.ts';
+import * as httpClientModule from '../lib/httpClient.ts';
 
-describe("stt providers", () => {
+describe('stt providers', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("builds provider chain with explicit fallback", () => {
+  it('builds provider chain with explicit fallback', () => {
     const providers = resolveConfiguredSttProviders({
-      preferredProvider: "groq",
-      fallbackProvider: "openai",
-      groqApiKey: "groq-key",
-      openAiApiKey: "openai-key",
-      openAiBaseUrl: "https://api.openai.test/v1",
+      preferredProvider: 'groq',
+      fallbackProvider: 'openai',
+      groqApiKey: 'groq-key',
+      openAiApiKey: 'openai-key',
+      openAiBaseUrl: 'https://api.openai.test/v1',
     });
 
-    expect(providers.map((provider) => provider.id)).toEqual(["groq", "openai"]);
+    expect(providers.map((provider) => provider.id)).toEqual(['groq', 'openai']);
   });
 
-  it("skips unavailable providers in chain", () => {
+  it('skips unavailable providers in chain', () => {
     // Clear environment variables for this test
     const originalGroqKey = process.env.GROQ_API_KEY;
     const originalOpenAiKey = process.env.OPENAI_API_KEY;
@@ -28,11 +28,11 @@ describe("stt providers", () => {
     delete process.env.OPENAI_API_KEY;
 
     const providers = resolveConfiguredSttProviders({
-      preferredProvider: "groq",
-      fallbackProvider: "openai",
+      preferredProvider: 'groq',
+      fallbackProvider: 'openai',
       groqApiKey: undefined, // No Groq key
-      openAiApiKey: "openai-key", // But we have OpenAI key
-      openAiBaseUrl: "https://api.openai.test/v1",
+      openAiApiKey: 'openai-key', // But we have OpenAI key
+      openAiBaseUrl: 'https://api.openai.test/v1',
     });
 
     // Restore environment
@@ -42,57 +42,57 @@ describe("stt providers", () => {
     // Both providers are in the chain, but only OpenAI is available
     // The isAvailable() check happens at transcribe time, not at configuration time
     expect(providers).toHaveLength(2);
-    expect(providers[0].id).toBe("groq");
+    expect(providers[0].id).toBe('groq');
     expect(providers[0].isAvailable()).toBe(false); // Groq not available
-    expect(providers[1].id).toBe("openai");
+    expect(providers[1].id).toBe('openai');
     expect(providers[1].isAvailable()).toBe(true); // OpenAI available
   });
 
-  it("handles missing fallback provider", () => {
+  it('handles missing fallback provider', () => {
     const providers = resolveConfiguredSttProviders({
-      preferredProvider: "openai",
-      fallbackProvider: "none",
-      openAiApiKey: "openai-key",
-      openAiBaseUrl: "https://api.openai.test/v1",
+      preferredProvider: 'openai',
+      fallbackProvider: 'none',
+      openAiApiKey: 'openai-key',
+      openAiBaseUrl: 'https://api.openai.test/v1',
     });
 
     expect(providers).toHaveLength(1);
-    expect(providers[0].id).toBe("openai");
+    expect(providers[0].id).toBe('openai');
   });
 });
 
-describe("stt providers — HTTP behavior", () => {
+describe('stt providers — HTTP behavior', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   function makeProvider(overrides: Partial<{ apiKey: string; baseUrl: string }> = {}) {
     const [provider] = resolveConfiguredSttProviders({
-      preferredProvider: "openai",
-      openAiApiKey: overrides.apiKey ?? "test-key",
-      openAiBaseUrl: overrides.baseUrl ?? "https://api.openai.test/v1",
+      preferredProvider: 'openai',
+      openAiApiKey: overrides.apiKey ?? 'test-key',
+      openAiBaseUrl: overrides.baseUrl ?? 'https://api.openai.test/v1',
     });
     return provider;
   }
 
   function makeRequest(signal?: AbortSignal) {
     return {
-      buffer: Buffer.from("fake-audio"),
-      filename: "chunk.wav",
-      contentType: "audio/wav",
-      fields: { model: "gpt-4o-transcribe", language: "pl" },
+      buffer: Buffer.from('fake-audio'),
+      filename: 'chunk.wav',
+      contentType: 'audio/wav',
+      fields: { model: 'gpt-4o-transcribe', language: 'pl' },
       signal,
     };
   }
 
-  it("makes POST to correct URL with Authorization header", async () => {
-    const httpClientSpy = vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
+  it('makes POST to correct URL with Authorization header', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,
       status: 200,
-      statusText: "OK",
+      statusText: 'OK',
       headers: new Headers(),
       text: async () => '{"text":"Hello world"}',
-      json: async () => ({ text: "Hello world" }),
+      json: async () => ({ text: 'Hello world' }),
     } as any);
 
     const provider = makeProvider();
@@ -100,19 +100,19 @@ describe("stt providers — HTTP behavior", () => {
 
     expect(httpClientSpy).toHaveBeenCalledOnce();
     const [url, opts] = httpClientSpy.mock.calls[0];
-    expect(url).toBe("https://api.openai.test/v1/audio/transcriptions");
-    expect(opts?.method).toBe("POST");
-    expect((opts?.headers as any)?.Authorization).toBe("Bearer test-key");
+    expect(url).toBe('https://api.openai.test/v1/audio/transcriptions');
+    expect(opts?.method).toBe('POST');
+    expect((opts?.headers as any)?.Authorization).toBe('Bearer test-key');
   });
 
-  it("passes request.signal to httpClient", async () => {
-    const httpClientSpy = vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
+  it('passes request.signal to httpClient', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,
       status: 200,
-      statusText: "OK",
+      statusText: 'OK',
       headers: new Headers(),
       text: async () => '{"text":"Hello"}',
-      json: async () => ({ text: "Hello" }),
+      json: async () => ({ text: 'Hello' }),
     } as any);
 
     const controller = new AbortController();
@@ -123,76 +123,80 @@ describe("stt providers — HTTP behavior", () => {
     expect(opts?.signal).toBe(controller.signal);
   });
 
-  it("throws with API error message on HTTP 401", async () => {
-    vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
+  it('throws with API error message on HTTP 401', async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: false,
       status: 401,
-      statusText: "Unauthorized",
+      statusText: 'Unauthorized',
       headers: new Headers(),
       text: async () => '{"error":{"message":"Invalid API key provided."}}',
-      json: async () => ({ error: { message: "Invalid API key provided." } }),
-    } as any);
-
-    const provider = makeProvider();
-    await expect(provider.transcribeAudio(makeRequest())).rejects.toThrow("Invalid API key provided.");
-  });
-
-  it("throws with fallback message on HTTP 400 with non-JSON body", async () => {
-    vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-      headers: new Headers(),
-      text: async () => "bad request",
-      json: async () => { throw new Error("not json"); },
+      json: async () => ({ error: { message: 'Invalid API key provided.' } }),
     } as any);
 
     const provider = makeProvider();
     await expect(provider.transcribeAudio(makeRequest())).rejects.toThrow(
-      "STT audio request failed with status 400."
+      'Invalid API key provided.'
     );
   });
 
-  it("transcribeWithProviders falls through to second provider on first failure", async () => {
+  it('throws with fallback message on HTTP 400 with non-JSON body', async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      headers: new Headers(),
+      text: async () => 'bad request',
+      json: async () => {
+        throw new Error('not json');
+      },
+    } as any);
+
+    const provider = makeProvider();
+    await expect(provider.transcribeAudio(makeRequest())).rejects.toThrow(
+      'STT audio request failed with status 400.'
+    );
+  });
+
+  it('transcribeWithProviders falls through to second provider on first failure', async () => {
     const providers = resolveConfiguredSttProviders({
-      preferredProvider: "groq",
-      fallbackProvider: "openai",
-      groqApiKey: "groq-key",
-      openAiApiKey: "openai-key",
-      openAiBaseUrl: "https://api.openai.test/v1",
+      preferredProvider: 'groq',
+      fallbackProvider: 'openai',
+      groqApiKey: 'groq-key',
+      openAiApiKey: 'openai-key',
+      openAiBaseUrl: 'https://api.openai.test/v1',
     });
 
     let callIndex = 0;
-    vi.spyOn(httpClientModule, "httpClient").mockImplementation(async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockImplementation(async () => {
       callIndex++;
       if (callIndex === 1) {
-        throw new Error("Groq network error");
+        throw new Error('Groq network error');
       }
       return {
         ok: true,
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: new Headers(),
         text: async () => '{"text":"Fallback result"}',
-        json: async () => ({ text: "Fallback result" }),
+        json: async () => ({ text: 'Fallback result' }),
       } as any;
     });
 
     const result = await transcribeWithProviders(providers, (_provider) => makeRequest());
-    expect(result.providerId).toBe("openai");
+    expect(result.providerId).toBe('openai');
     expect(result.attempts).toHaveLength(2);
     expect(result.attempts[0].success).toBe(false);
     expect(result.attempts[1].success).toBe(true);
   });
 
-  it("createFormData appends file with correct name", async () => {
-    const httpClientSpy = vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
+  it('createFormData appends file with correct name', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,
       status: 200,
-      statusText: "OK",
+      statusText: 'OK',
       headers: new Headers(),
       text: async () => '{"text":"ok"}',
-      json: async () => ({ text: "ok" }),
+      json: async () => ({ text: 'ok' }),
     } as any);
 
     const provider = makeProvider();
@@ -201,84 +205,85 @@ describe("stt providers — HTTP behavior", () => {
     const [, opts] = httpClientSpy.mock.calls[0];
     const body = opts?.body as FormData;
     expect(body).toBeInstanceOf(FormData);
-    const file = body.get("file") as File;
+    const file = body.get('file') as File;
     expect(file).toBeInstanceOf(File);
-    expect(file.name).toBe("chunk.wav");
-    expect(file.type).toBe("audio/wav");
+    expect(file.name).toBe('chunk.wav');
+    expect(file.type).toBe('audio/wav');
   });
 
-  it("createFormData appends array fields with [] suffix", async () => {
-    const httpClientSpy = vi.spyOn(httpClientModule, "httpClient").mockResolvedValue({
+  it('createFormData appends array fields with [] suffix', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,
       status: 200,
-      statusText: "OK",
+      statusText: 'OK',
       headers: new Headers(),
       text: async () => '{"text":"ok"}',
-      json: async () => ({ text: "ok" }),
+      json: async () => ({ text: 'ok' }),
     } as any);
 
     const provider = makeProvider();
     await provider.transcribeAudio({
-      buffer: Buffer.from("fake-audio"),
-      filename: "chunk.wav",
-      contentType: "audio/wav",
-      fields: { model: "gpt-4o-transcribe", timestamp_granularities: ["segment", "word"] },
+      buffer: Buffer.from('fake-audio'),
+      filename: 'chunk.wav',
+      contentType: 'audio/wav',
+      fields: { model: 'gpt-4o-transcribe', timestamp_granularities: ['segment', 'word'] },
     });
 
     const [, opts] = httpClientSpy.mock.calls[0];
     const body = opts?.body as FormData;
-    expect(body.getAll("timestamp_granularities[]")).toEqual(["segment", "word"]);
+    expect(body.getAll('timestamp_granularities[]')).toEqual(['segment', 'word']);
   });
 });
 
-describe("stt providers — Groq model override in requestFactory", () => {
+describe('stt providers — Groq model override in requestFactory', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("uses Groq provider.defaultModel (whisper-large-v3) when fields.model is an OpenAI model", async () => {
+  it('uses Groq provider.defaultModel (whisper-large-v3) when fields.model is an OpenAI model', async () => {
     const providers = resolveConfiguredSttProviders({
-      preferredProvider: "openai",
-      fallbackProvider: "groq",
-      openAiApiKey: "openai-key",
-      openAiBaseUrl: "https://api.openai.test/v1",
-      groqApiKey: "groq-key",
+      preferredProvider: 'openai',
+      fallbackProvider: 'groq',
+      openAiApiKey: 'openai-key',
+      openAiBaseUrl: 'https://api.openai.test/v1',
+      groqApiKey: 'groq-key',
     });
 
     let callCount = 0;
-    vi.spyOn(httpClientModule, "httpClient").mockImplementation(async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockImplementation(async () => {
       callCount++;
       if (callCount === 1) {
-        throw new Error("OpenAI network error");
+        throw new Error('OpenAI network error');
       }
       return {
         ok: true,
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         headers: new Headers(),
         text: async () => '{"text":"Groq result"}',
-        json: async () => ({ text: "Groq result" }),
+        json: async () => ({ text: 'Groq result' }),
       } as any;
     });
 
     // Simulate the requestFactory logic from transcription.ts:requestAudioTranscription
     const result = await transcribeWithProviders(providers, (provider) => ({
-      buffer: Buffer.from("fake-audio"),
-      filename: "chunk.wav",
-      contentType: "audio/wav",
+      buffer: Buffer.from('fake-audio'),
+      filename: 'chunk.wav',
+      contentType: 'audio/wav',
       fields: {
-        model: provider.id === "groq"
-          ? provider.defaultModel          // whisper-large-v3
-          : "whisper-1",                   // OpenAI model
-        language: "pl",
+        model:
+          provider.id === 'groq'
+            ? provider.defaultModel // whisper-large-v3
+            : 'whisper-1', // OpenAI model
+        language: 'pl',
       },
     }));
 
-    expect(result.providerId).toBe("groq");
+    expect(result.providerId).toBe('groq');
 
     // The second httpClient call is for Groq — verify it got whisper-large-v3
     const groqCall = vi.mocked(httpClientModule.httpClient).mock.calls[1];
     const groqBody = groqCall[1]?.body as FormData;
-    expect(groqBody.get("model")).toBe("whisper-large-v3");
+    expect(groqBody.get('model')).toBe('whisper-large-v3');
   });
 });

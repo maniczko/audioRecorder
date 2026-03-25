@@ -1,21 +1,23 @@
-import { createId } from "./storage";
+import { createId } from './storage';
 import {
   addUserToWorkspace,
   createWorkspace,
   normalizeWorkspaceCode,
   resolveWorkspaceForUser,
-} from "./workspace";
+} from './workspace';
 
 function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
+  return String(email || '')
+    .trim()
+    .toLowerCase();
 }
 
 function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ""));
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
 }
 
 function normalizeLines(value) {
-  return String(value || "")
+  return String(value || '')
     .split(/\r?\n|,/)
     .map((item) => item.trim())
     .filter(Boolean);
@@ -40,90 +42,94 @@ function copyUserWorkspaceIds(user, workspaceId) {
       }
     : {
         workspaceIds: [],
-        defaultWorkspaceId: "",
+        defaultWorkspaceId: '',
       };
 }
 
 export async function hashSecret(secret) {
-  const safeSecret = String(secret || "");
+  const safeSecret = String(secret || '');
 
-  if (typeof window === "undefined" || !window.crypto?.subtle) {
+  if (typeof window === 'undefined' || !window.crypto?.subtle) {
     return fallbackHash(safeSecret);
   }
 
   const encoded = new TextEncoder().encode(safeSecret);
-  const buffer = await window.crypto.subtle.digest("SHA-256", encoded);
-  return Array.from(new Uint8Array(buffer), (value) => value.toString(16).padStart(2, "0")).join("");
+  const buffer = await window.crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(buffer), (value) => value.toString(16).padStart(2, '0')).join(
+    ''
+  );
 }
 
 export async function registerUser(existingUsers, existingWorkspaces, draft) {
   const email = normalizeEmail(draft.email);
-  const password = String(draft.password || "");
-  const name = String(draft.name || "").trim();
-  const workspaceMode = draft.workspaceMode === "join" ? "join" : "create";
-  const workspaceName = String(draft.workspaceName || "").trim();
+  const password = String(draft.password || '');
+  const name = String(draft.name || '').trim();
+  const workspaceMode = draft.workspaceMode === 'join' ? 'join' : 'create';
+  const workspaceName = String(draft.workspaceName || '').trim();
   const inviteCode = normalizeWorkspaceCode(draft.workspaceCode);
 
   if (!email || !password || !name) {
-    throw new Error("Uzupelnij imie, email i haslo.");
+    throw new Error('Uzupelnij imie, email i haslo.');
   }
 
   if (!isValidEmail(email)) {
-    throw new Error("Podaj poprawny adres email.");
+    throw new Error('Podaj poprawny adres email.');
   }
 
   if (password.length < 6) {
-    throw new Error("Haslo musi miec przynajmniej 6 znakow.");
+    throw new Error('Haslo musi miec przynajmniej 6 znakow.');
   }
 
   if (existingUsers.some((user) => normalizeEmail(user.email) === email)) {
-    throw new Error("Konto z takim adresem juz istnieje.");
+    throw new Error('Konto z takim adresem juz istnieje.');
   }
 
-  let workspaceId = "";
+  let workspaceId = '';
   let workspaces = Array.isArray(existingWorkspaces) ? [...existingWorkspaces] : [];
 
-  if (workspaceMode === "join") {
+  if (workspaceMode === 'join') {
     if (!inviteCode) {
-      throw new Error("Podaj kod workspace, aby dolaczyc.");
+      throw new Error('Podaj kod workspace, aby dolaczyc.');
     }
-    const workspace = workspaces.find((item) => normalizeWorkspaceCode(item.inviteCode) === inviteCode);
+    const workspace = workspaces.find(
+      (item) => normalizeWorkspaceCode(item.inviteCode) === inviteCode
+    );
     if (!workspace) {
-      throw new Error("Nie znaleziono workspace o takim kodzie.");
+      throw new Error('Nie znaleziono workspace o takim kodzie.');
     }
     workspaceId = workspace.id;
   } else {
-    const workspace = createWorkspace(workspaceName || `${name} workspace`, "");
+    const workspace = createWorkspace(workspaceName || `${name} workspace`, '');
     workspaceId = workspace.id;
     workspaces = [...workspaces, workspace];
   }
 
   const passwordHash = await hashSecret(password);
   const user = {
-    id: createId("user"),
+    id: createId('user'),
     email,
     passwordHash,
     name,
-    role: String(draft.role || "").trim(),
-    company: String(draft.company || "").trim(),
-    timezone: draft.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+    role: String(draft.role || '').trim(),
+    company: String(draft.company || '').trim(),
+    timezone: draft.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw',
     googleEmail: email,
-    phone: "",
-    location: "",
-    team: "",
-    bio: "",
-    avatarUrl: "",
+    phone: '',
+    location: '',
+    team: '',
+    bio: '',
+    avatarUrl: '',
     preferredInsights: [],
     notifyDailyDigest: true,
     autoTaskCapture: true,
     autoLearnSpeakerProfiles: false,
-    preferredTaskView: "list",
-    provider: "local",
+    preferredTaskView: 'list',
+    provider: 'local',
     ...copyUserWorkspaceIds(null, workspaceId),
     createdAt: new Date().toISOString(),
   };
 
-  if (workspaceMode === "create") {
+  if (workspaceMode === 'create') {
     workspaces = workspaces.map((workspace) =>
       workspace.id !== workspaceId
         ? workspace
@@ -131,7 +137,7 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
             ...workspace,
             ownerUserId: user.id,
             memberIds: [user.id],
-            memberRoles: { [user.id]: "owner" },
+            memberRoles: { [user.id]: 'owner' },
             updatedAt: new Date().toISOString(),
           }
     );
@@ -149,37 +155,42 @@ export async function registerUser(existingUsers, existingWorkspaces, draft) {
 
 export async function loginUser(existingUsers, existingWorkspaces, draft) {
   const email = normalizeEmail(draft.email);
-  const password = String(draft.password || "");
+  const password = String(draft.password || '');
   const passwordHash = await hashSecret(password);
   const userByEmail = existingUsers.find((candidate) => normalizeEmail(candidate.email) === email);
 
   if (!email || !password) {
-    throw new Error("Uzupelnij email i haslo.");
+    throw new Error('Uzupelnij email i haslo.');
   }
 
   if (userByEmail && !userByEmail.passwordHash) {
-    throw new Error("To konto korzysta z logowania Google. Uzyj przycisku Google.");
+    throw new Error('To konto korzysta z logowania Google. Uzyj przycisku Google.');
   }
 
   const user = existingUsers.find(
-    (candidate) => normalizeEmail(candidate.email) === email && candidate.passwordHash === passwordHash
+    (candidate) =>
+      normalizeEmail(candidate.email) === email && candidate.passwordHash === passwordHash
   );
 
   if (!user) {
-    throw new Error("Niepoprawny email lub haslo.");
+    throw new Error('Niepoprawny email lub haslo.');
   }
 
-  const requestedWorkspaceId = String(draft.workspaceId || "").trim();
+  const requestedWorkspaceId = String(draft.workspaceId || '').trim();
   if (requestedWorkspaceId) {
-    const allowedWorkspaceId = resolveWorkspaceForUser(user, existingWorkspaces, requestedWorkspaceId);
+    const allowedWorkspaceId = resolveWorkspaceForUser(
+      user,
+      existingWorkspaces,
+      requestedWorkspaceId
+    );
     if (allowedWorkspaceId !== requestedWorkspaceId) {
-      throw new Error("Nie masz dostepu do wybranego workspace.");
+      throw new Error('Nie masz dostepu do wybranego workspace.');
     }
   }
 
   const workspaceId = resolveWorkspaceForUser(user, existingWorkspaces, requestedWorkspaceId);
   if (!workspaceId) {
-    throw new Error("To konto nie jest jeszcze przypiete do zadnego workspace.");
+    throw new Error('To konto nie jest jeszcze przypiete do zadnego workspace.');
   }
 
   return {
@@ -193,21 +204,21 @@ export function updateUserProfile(existingUsers, userId, updates) {
     user.id === userId
       ? {
           ...user,
-          name: String(updates.name || "").trim(),
-          role: String(updates.role || "").trim(),
-          company: String(updates.company || "").trim(),
+          name: String(updates.name || '').trim(),
+          role: String(updates.role || '').trim(),
+          company: String(updates.company || '').trim(),
           timezone: updates.timezone || user.timezone,
-          googleEmail: String(updates.googleEmail || "").trim(),
-          phone: String(updates.phone || "").trim(),
-          location: String(updates.location || "").trim(),
-          team: String(updates.team || "").trim(),
-          bio: String(updates.bio || "").trim(),
-          avatarUrl: String(updates.avatarUrl || "").trim(),
+          googleEmail: String(updates.googleEmail || '').trim(),
+          phone: String(updates.phone || '').trim(),
+          location: String(updates.location || '').trim(),
+          team: String(updates.team || '').trim(),
+          bio: String(updates.bio || '').trim(),
+          avatarUrl: String(updates.avatarUrl || '').trim(),
           preferredInsights: normalizeLines(updates.preferredInsights),
           notifyDailyDigest: Boolean(updates.notifyDailyDigest),
           autoTaskCapture: Boolean(updates.autoTaskCapture),
           autoLearnSpeakerProfiles: Boolean(updates.autoLearnSpeakerProfiles),
-          preferredTaskView: updates.preferredTaskView === "kanban" ? "kanban" : "list",
+          preferredTaskView: updates.preferredTaskView === 'kanban' ? 'kanban' : 'list',
           updatedAt: new Date().toISOString(),
         }
       : user
@@ -215,34 +226,34 @@ export function updateUserProfile(existingUsers, userId, updates) {
 }
 
 export async function changeUserPassword(existingUsers, userId, draft) {
-  const currentPassword = String(draft.currentPassword || "");
-  const newPassword = String(draft.newPassword || "");
-  const confirmPassword = String(draft.confirmPassword || "");
+  const currentPassword = String(draft.currentPassword || '');
+  const newPassword = String(draft.newPassword || '');
+  const confirmPassword = String(draft.confirmPassword || '');
   const user = existingUsers.find((candidate) => candidate.id === userId);
 
   if (!user) {
-    throw new Error("Nie znaleziono konta.");
+    throw new Error('Nie znaleziono konta.');
   }
 
   if (!user.passwordHash) {
-    throw new Error("Haslem tego konta zarzadza Google.");
+    throw new Error('Haslem tego konta zarzadza Google.');
   }
 
   if (!currentPassword || !newPassword || !confirmPassword) {
-    throw new Error("Uzupelnij wszystkie pola hasla.");
+    throw new Error('Uzupelnij wszystkie pola hasla.');
   }
 
   if (newPassword.length < 6) {
-    throw new Error("Nowe haslo musi miec przynajmniej 6 znakow.");
+    throw new Error('Nowe haslo musi miec przynajmniej 6 znakow.');
   }
 
   if (newPassword !== confirmPassword) {
-    throw new Error("Nowe hasla nie sa identyczne.");
+    throw new Error('Nowe hasla nie sa identyczne.');
   }
 
   const currentHash = await hashSecret(currentPassword);
   if (currentHash !== user.passwordHash) {
-    throw new Error("Aktualne haslo jest niepoprawne.");
+    throw new Error('Aktualne haslo jest niepoprawne.');
   }
 
   const nextHash = await hashSecret(newPassword);
@@ -262,11 +273,11 @@ export async function requestPasswordReset(existingUsers, draft) {
   const user = existingUsers.find((candidate) => normalizeEmail(candidate.email) === email);
 
   if (!user) {
-    throw new Error("Nie znaleziono konta z takim adresem.");
+    throw new Error('Nie znaleziono konta z takim adresem.');
   }
 
   if (!user.passwordHash) {
-    throw new Error("To konto korzysta z logowania Google. Reset hasla wykonaj w Google.");
+    throw new Error('To konto korzysta z logowania Google. Reset hasla wykonaj w Google.');
   }
 
   const recoveryCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -291,38 +302,38 @@ export async function requestPasswordReset(existingUsers, draft) {
 
 export async function resetPasswordWithCode(existingUsers, draft) {
   const email = normalizeEmail(draft.email);
-  const code = String(draft.code || "").trim();
-  const newPassword = String(draft.newPassword || "");
-  const confirmPassword = String(draft.confirmPassword || "");
+  const code = String(draft.code || '').trim();
+  const newPassword = String(draft.newPassword || '');
+  const confirmPassword = String(draft.confirmPassword || '');
   const user = existingUsers.find((candidate) => normalizeEmail(candidate.email) === email);
 
   if (!user) {
-    throw new Error("Nie znaleziono konta z takim adresem.");
+    throw new Error('Nie znaleziono konta z takim adresem.');
   }
 
   if (!code || !newPassword || !confirmPassword) {
-    throw new Error("Uzupelnij email, kod i oba pola hasla.");
+    throw new Error('Uzupelnij email, kod i oba pola hasla.');
   }
 
   if (newPassword.length < 6) {
-    throw new Error("Nowe haslo musi miec przynajmniej 6 znakow.");
+    throw new Error('Nowe haslo musi miec przynajmniej 6 znakow.');
   }
 
   if (newPassword !== confirmPassword) {
-    throw new Error("Nowe hasla nie sa identyczne.");
+    throw new Error('Nowe hasla nie sa identyczne.');
   }
 
   if (!user.recoveryCodeHash || !user.recoveryCodeExpiresAt) {
-    throw new Error("Najpierw popros o kod resetu.");
+    throw new Error('Najpierw popros o kod resetu.');
   }
 
   if (new Date(user.recoveryCodeExpiresAt).getTime() < Date.now()) {
-    throw new Error("Kod resetu wygasl. Wygeneruj nowy.");
+    throw new Error('Kod resetu wygasl. Wygeneruj nowy.');
   }
 
   const codeHash = await hashSecret(code);
   if (codeHash !== user.recoveryCodeHash) {
-    throw new Error("Kod resetu jest niepoprawny.");
+    throw new Error('Kod resetu jest niepoprawny.');
   }
 
   const passwordHash = await hashSecret(newPassword);
@@ -332,8 +343,8 @@ export async function resetPasswordWithCode(existingUsers, draft) {
       : {
           ...candidate,
           passwordHash,
-          recoveryCodeHash: "",
-          recoveryCodeExpiresAt: "",
+          recoveryCodeHash: '',
+          recoveryCodeExpiresAt: '',
           updatedAt: new Date().toISOString(),
         }
   );
@@ -357,8 +368,8 @@ export function upsertGoogleUser(existingUsers, existingWorkspaces, googleProfil
             name: googleProfile.name || existingUser.name,
             googleEmail: email,
             googleSub: googleProfile.sub || existingUser.googleSub,
-            avatarUrl: googleProfile.picture || existingUser.avatarUrl || "",
-            provider: "google",
+            avatarUrl: googleProfile.picture || existingUser.avatarUrl || '',
+            provider: 'google',
             updatedAt: new Date().toISOString(),
           }
     );
@@ -371,28 +382,31 @@ export function upsertGoogleUser(existingUsers, existingWorkspaces, googleProfil
     };
   }
 
-  const workspace = createWorkspace(`${googleProfile.given_name || googleProfile.name || "Google"} workspace`, "");
+  const workspace = createWorkspace(
+    `${googleProfile.given_name || googleProfile.name || 'Google'} workspace`,
+    ''
+  );
   const user = {
-    id: createId("user"),
+    id: createId('user'),
     email,
     passwordHash: null,
-    name: String(googleProfile.name || googleProfile.given_name || "Google user").trim(),
-    role: "",
-    company: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+    name: String(googleProfile.name || googleProfile.given_name || 'Google user').trim(),
+    role: '',
+    company: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw',
     googleEmail: email,
-    googleSub: googleProfile.sub || "",
-    avatarUrl: googleProfile.picture || "",
+    googleSub: googleProfile.sub || '',
+    avatarUrl: googleProfile.picture || '',
     preferredInsights: [],
-    phone: "",
-    location: "",
-    team: "",
-    bio: "",
+    phone: '',
+    location: '',
+    team: '',
+    bio: '',
     notifyDailyDigest: true,
     autoTaskCapture: true,
     autoLearnSpeakerProfiles: false,
-    preferredTaskView: "list",
-    provider: "google",
+    preferredTaskView: 'list',
+    provider: 'google',
     ...copyUserWorkspaceIds(null, workspace.id),
     createdAt: new Date().toISOString(),
   };
@@ -402,7 +416,7 @@ export function upsertGoogleUser(existingUsers, existingWorkspaces, googleProfil
       ...workspace,
       ownerUserId: user.id,
       memberIds: [user.id],
-      memberRoles: { [user.id]: "owner" },
+      memberRoles: { [user.id]: 'owner' },
     },
   ];
 

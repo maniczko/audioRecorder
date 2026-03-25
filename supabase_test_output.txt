@@ -1,0 +1,45 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+ [31m❯[39m server/tests/lib/supabaseStorage.test.ts [2m([22m[2m35 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 47825[2mms[22m[39m
+[31m       [31m×[31m creates Supabase client when credentials are configured[39m[32m 8[2mms[22m[39m
+       [32m✓[39m exports supabase client instance[32m 1[2mms[22m[39m
+[31m       [31m×[31m creates bucket if not exists[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m does not create bucket if already created[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m logs warning if bucket already exists[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m logs warning if bucket creation fails[39m[32m 1[2mms[22m[39m
+       [32m✓[39m uploads buffer to Supabase Storage[32m 2[2mms[22m[39m
+       [32m✓[39m returns null when Supabase is not configured[32m 0[2mms[22m[39m
+       [32m✓[39m sanitizes recording ID with special characters[32m 1[2mms[22m[39m
+       [32m✓[39m handles empty recording ID[32m 1[2mms[22m[39m
+       [32m✓[39m throws error when upload fails[32m 3[2mms[22m[39m
+       [32m✓[39m handles different content types[32m 1[2mms[22m[39m
+       [32m✓[39m handles different file extensions[32m 1[2mms[22m[39m
+       [32m✓[39m uploads with upsert enabled[32m 0[2mms[22m[39m
+       [32m✓[39m uploads file to Supabase Storage[32m 1[2mms[22m[39m
+       [32m✓[39m returns null when Supabase is not configured[32m 0[2mms[22m[39m
+[31m       [31m×[31m sanitizes recording ID[39m[32m 4[2mms[22m[39m
+       [32m✓[39m throws error when upload fails[32m 1[2mms[22m[39m
+       [32m✓[39m handles different file extensions[32m 1[2mms[22m[39m
+       [32m✓[39m downloads file from Supabase Storage[32m 1[2mms[22m[39m
+       [32m✓[39m throws error when Supabase is not configured[32m 0[2mms[22m[39m
+       [32m✓[39m throws error when download fails[32m 1[2mms[22m[39m
+       [32m✓[39m handles different file paths[32m 0[2mms[22m[39m
+       [32m✓[39m deletes file from Supabase Storage[32m 0[2mms[22m[39m
+       [32m✓[39m throws error when Supabase is not configured[32m 0[2mms[22m[39m
+[31m       [31m×[31m logs warning but does not throw when delete fails[39m[32m 1[2mms[22m[39m
+       [32m✓[39m handles multiple file deletions[32m 0[2mms[22m[39m
+       [32m✓[39m handles different file paths[32m 0[2mms[22m[39m
+       [32m✓[39m upload then download flow[32m 1[2mms[22m[39m
+       [32m✓[39m upload then delete flow[32m 1[2mms[22m[39m
+       [32m✓[39m error handling in upload-download-delete flow[32m 1[2mms[22m[39m
+[31m       [31m×[31m handles very large buffer[39m[33m 47787[2mms[22m[39m
+       [32m✓[39m handles empty buffer[32m 0[2mms[22m[39m
+       [32m✓[39m handles special characters in file path[32m 0[2mms[22m[39m
+       [32m✓[39m handles null/undefined inputs gracefully[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m27 passed[39m[22m[90m (35)[39m
+[2m   Start at [22m 19:14:52
+[2m   Duration [22m 48.55s[2m (transform 139ms, setup 79ms, import 258ms, tests 47.82s, environment 0ms)[22m
+

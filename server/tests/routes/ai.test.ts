@@ -1,6 +1,6 @@
-import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 
-describe("AI Routes", () => {
+describe('AI Routes', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
   let mockAuthService: any;
   let mockWorkspaceService: any;
@@ -10,19 +10,19 @@ describe("AI Routes", () => {
     vi.resetModules();
 
     mockAuthService = {
-      getSession: vi.fn().mockResolvedValue({ userId: "u1", workspaceId: "ws1" }),
+      getSession: vi.fn().mockResolvedValue({ userId: 'u1', workspaceId: 'ws1' }),
     };
     mockWorkspaceService = {
-      getMembership: vi.fn().mockResolvedValue({ role: "owner" }),
+      getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
     };
     mockTranscriptionService = {};
 
-    const { createApp } = await import("../../app.ts");
+    const { createApp } = await import('../../app.ts');
     app = createApp({
       authService: mockAuthService,
       workspaceService: mockWorkspaceService,
       transcriptionService: mockTranscriptionService,
-      config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
     });
   }, 15000);
 
@@ -30,167 +30,169 @@ describe("AI Routes", () => {
     vi.restoreAllMocks();
   });
 
-  describe("POST /ai/person-profile", () => {
-    test("returns no-key mode when ANTHROPIC_API_KEY is not configured", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "");
+  describe('POST /ai/person-profile', () => {
+    test('returns no-key mode when ANTHROPIC_API_KEY is not configured', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
 
-      const res = await app.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: "Anna",
-          meetings: [{ id: "m1" }],
-          allSegments: Array(10).fill({ text: "test", meetingTitle: "Meeting" }),
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
     });
 
-    test("returns no-key mode when personName is missing", async () => {
-      const res = await app.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    test('returns no-key mode when personName is missing', async () => {
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          meetings: [{ id: "m1" }],
-          allSegments: Array(10).fill({ text: "test", meetingTitle: "Meeting" }),
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
     });
 
-    test("returns no-key mode when allSegments has less than 5 items", async () => {
-      const res = await app.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    test('returns no-key mode when allSegments has less than 5 items', async () => {
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: "Anna",
-          meetings: [{ id: "m1" }],
-          allSegments: [{ text: "test", meetingTitle: "Meeting" }],
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: [{ text: 'test', meetingTitle: 'Meeting' }],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
     });
 
-    test("calls Anthropic API and returns parsed profile when API key is configured", async () => {
+    test('calls Anthropic API and returns parsed profile when API key is configured', async () => {
       // stubEnv must happen before resetModules+import so config reads the key
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
-      vi.stubEnv("ANTHROPIC_MODEL", "claude-sonnet-4-6");
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+      vi.stubEnv('ANTHROPIC_MODEL', 'claude-sonnet-4-6');
       vi.resetModules();
-      const { createApp: createAppWithKey } = await import("../../app.ts");
+      const { createApp: createAppWithKey } = await import('../../app.ts');
       const appWithKey = createAppWithKey({
         authService: mockAuthService,
         workspaceService: mockWorkspaceService,
         transcriptionService: mockTranscriptionService,
-        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
       });
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          content: [{
-            text: JSON.stringify({
-              disc: { D: 65, I: 45, S: 70, C: 55 },
-              discStyle: "SC — stabilny",
-              discDescription: "Opis stylu",
-              values: [{ value: "bezpieczeństwo", icon: "🛡️", quote: "cytat" }],
-              communicationStyle: "analytical",
-              decisionStyle: "data-driven",
-              conflictStyle: "collaborative",
-              listeningStyle: "active",
-              stressResponse: "Reaguje spokojnie",
-              workingWithTips: ["Wskazówka 1"],
-              communicationDos: ["Co robić"],
-              communicationDonts: ["Czego unikać"],
-              redFlags: ["Wzorzec"],
-              coachingNote: "Obserwacja",
-            }),
-          }],
+          content: [
+            {
+              text: JSON.stringify({
+                disc: { D: 65, I: 45, S: 70, C: 55 },
+                discStyle: 'SC — stabilny',
+                discDescription: 'Opis stylu',
+                values: [{ value: 'bezpieczeństwo', icon: '🛡️', quote: 'cytat' }],
+                communicationStyle: 'analytical',
+                decisionStyle: 'data-driven',
+                conflictStyle: 'collaborative',
+                listeningStyle: 'active',
+                stressResponse: 'Reaguje spokojnie',
+                workingWithTips: ['Wskazówka 1'],
+                communicationDos: ['Co robić'],
+                communicationDonts: ['Czego unikać'],
+                redFlags: ['Wzorzec'],
+                coachingNote: 'Obserwacja',
+              }),
+            },
+          ],
         }),
       });
 
-      const res = await appWithKey.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await appWithKey.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: "Anna",
-          meetings: [{ id: "m1", title: "Meeting" }],
-          allSegments: Array(10).fill({ text: "test statement", meetingTitle: "Meeting" }),
+          personName: 'Anna',
+          meetings: [{ id: 'm1', title: 'Meeting' }],
+          allSegments: Array(10).fill({ text: 'test statement', meetingTitle: 'Meeting' }),
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("anthropic");
+      expect(json.mode).toBe('anthropic');
       expect(json.meetingsAnalyzed).toBe(1);
       expect(json.disc).toBeDefined();
-      expect(json.discStyle).toBe("SC — stabilny");
+      expect(json.discStyle).toBe('SC — stabilny');
     });
 
-    test("returns no-key mode when Anthropic API fails", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns no-key mode when Anthropic API fails', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const res = await app.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: "Anna",
-          meetings: [{ id: "m1" }],
-          allSegments: Array(10).fill({ text: "test", meetingTitle: "Meeting" }),
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
     });
 
-    test("returns no-key mode when Anthropic returns non-JSON response", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns no-key mode when Anthropic returns non-JSON response', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          content: [{ text: "This is not JSON" }],
+          content: [{ text: 'This is not JSON' }],
         }),
       });
 
-      const res = await app.request("/ai/person-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: "Anna",
-          meetings: [{ id: "m1" }],
-          allSegments: Array(10).fill({ text: "test", meetingTitle: "Meeting" }),
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
     });
   });
 
-  describe("POST /ai/suggest-tasks", () => {
-    test("returns empty tasks when ANTHROPIC_API_KEY is not configured", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "");
+  describe('POST /ai/suggest-tasks', () => {
+    test('returns empty tasks when ANTHROPIC_API_KEY is not configured', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
 
-      const res = await app.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: [{ speakerName: "Anna", text: "We need to finish the report" }],
-          people: [{ name: "Anna" }],
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
@@ -199,13 +201,13 @@ describe("AI Routes", () => {
       expect(json.tasks).toEqual([]);
     });
 
-    test("returns empty tasks when transcript is empty", async () => {
-      const res = await app.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    test('returns empty tasks when transcript is empty', async () => {
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: [],
-          people: [{ name: "Anna" }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
@@ -214,67 +216,69 @@ describe("AI Routes", () => {
       expect(json.tasks).toEqual([]);
     });
 
-    test("calls Anthropic API and returns extracted tasks when API key is configured", async () => {
+    test('calls Anthropic API and returns extracted tasks when API key is configured', async () => {
       // stubEnv must happen before resetModules+import so config reads the key
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
       vi.resetModules();
-      const { createApp: createAppWithKey } = await import("../../app.ts");
+      const { createApp: createAppWithKey } = await import('../../app.ts');
       const appWithKey = createAppWithKey({
         authService: mockAuthService,
         workspaceService: mockWorkspaceService,
         transcriptionService: mockTranscriptionService,
-        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
       });
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              tasks: [
-                {
-                  title: "Finish report",
-                  description: "Complete the quarterly report by Friday",
-                  owner: "Anna",
-                  dueDate: "2026-03-27",
-                  priority: "high",
-                  tags: ["urgent", "report"],
-                },
-              ],
-            }),
-          }],
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                tasks: [
+                  {
+                    title: 'Finish report',
+                    description: 'Complete the quarterly report by Friday',
+                    owner: 'Anna',
+                    dueDate: '2026-03-27',
+                    priority: 'high',
+                    tags: ['urgent', 'report'],
+                  },
+                ],
+              }),
+            },
+          ],
         }),
       });
 
-      const res = await appWithKey.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await appWithKey.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: [{ speakerName: "Anna", text: "We need to finish the report by Friday" }],
-          people: [{ name: "Anna" }],
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report by Friday' }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json.tasks).toHaveLength(1);
-      expect(json.tasks[0].title).toBe("Finish report");
-      expect(json.tasks[0].owner).toBe("Anna");
-      expect(json.tasks[0].priority).toBe("high");
+      expect(json.tasks[0].title).toBe('Finish report');
+      expect(json.tasks[0].owner).toBe('Anna');
+      expect(json.tasks[0].priority).toBe('high');
     });
 
-    test("returns empty tasks when Anthropic API fails", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns empty tasks when Anthropic API fails', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const res = await app.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: [{ speakerName: "Anna", text: "We need to finish the report" }],
-          people: [{ name: "Anna" }],
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
@@ -283,22 +287,22 @@ describe("AI Routes", () => {
       expect(json.tasks).toEqual([]);
     });
 
-    test("returns empty tasks when Anthropic returns non-JSON response", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns empty tasks when Anthropic returns non-JSON response', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          content: [{ text: "This is not JSON" }],
+          content: [{ text: 'This is not JSON' }],
         }),
       });
 
-      const res = await app.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: [{ speakerName: "Anna", text: "We need to finish the report" }],
-          people: [{ name: "Anna" }],
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
@@ -307,8 +311,8 @@ describe("AI Routes", () => {
       expect(json.tasks).toEqual([]);
     });
 
-    test("returns empty tasks when response has no tasks array", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns empty tasks when response has no tasks array', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -317,12 +321,12 @@ describe("AI Routes", () => {
         }),
       });
 
-      const res = await app.request("/ai/suggest-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: [{ speakerName: "Anna", text: "We need to finish the report" }],
-          people: [{ name: "Anna" }],
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
         }),
       });
 
@@ -332,123 +336,129 @@ describe("AI Routes", () => {
     });
   });
 
-  describe("POST /ai/search", () => {
-    test("returns no-key mode when ANTHROPIC_API_KEY is not configured", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "");
+  describe('POST /ai/search', () => {
+    test('returns no-key mode when ANTHROPIC_API_KEY is not configured', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
       vi.resetModules();
-      const { createApp: createAppWithoutKey } = await import("../../app.ts");
+      const { createApp: createAppWithoutKey } = await import('../../app.ts');
       const appWithoutKey = createAppWithoutKey({
         authService: mockAuthService,
         workspaceService: mockWorkspaceService,
         transcriptionService: mockTranscriptionService,
-        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
       });
 
-      const res = await appWithoutKey.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await appWithoutKey.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "spotkanie o budzecie",
+          query: 'spotkanie o budzecie',
           items: [
-            { id: "meeting-1", title: "Budzet kwartalny", subtitle: "Plan finansowy", type: "meeting", group: "Spotkania" },
+            {
+              id: 'meeting-1',
+              title: 'Budzet kwartalny',
+              subtitle: 'Plan finansowy',
+              type: 'meeting',
+              group: 'Spotkania',
+            },
           ],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
       expect(json.matches).toEqual([]);
     });
 
-    test("returns no-key mode when query is empty or too short", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns no-key mode when query is empty or too short', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
-      const res = await app.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "a",
-          items: [{ id: "meeting-1", title: "Budzet" }],
+          query: 'a',
+          items: [{ id: 'meeting-1', title: 'Budzet' }],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
       expect(json.matches).toEqual([]);
     });
 
-    test("returns no-key mode when items are empty", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns no-key mode when items are empty', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
-      const res = await app.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "wazny dokument",
+          query: 'wazny dokument',
           items: [],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
       expect(json.matches).toEqual([]);
     });
 
-    test("returns empty matches when Anthropic API fails", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    test('returns empty matches when Anthropic API fails', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const res = await app.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "spotkanie o budzecie",
-          items: [{ id: "1", title: "T" }],
+          query: 'spotkanie o budzecie',
+          items: [{ id: '1', title: 'T' }],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
       expect(json.matches).toEqual([]);
     });
 
-    test("returns empty matches when Anthropic returns non-JSON response", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('returns empty matches when Anthropic returns non-JSON response', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          content: [{ text: "No json here" }],
+          content: [{ text: 'No json here' }],
         }),
       });
 
-      const res = await app.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "spotkanie o budzecie",
-          items: [{ id: "1", title: "T" }],
+          query: 'spotkanie o budzecie',
+          items: [{ id: '1', title: 'T' }],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("no-key");
+      expect(json.mode).toBe('no-key');
       expect(json.matches).toEqual([]);
     });
 
-    test("calls Anthropic API and returns ranked matches when API key is configured", async () => {
-      vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    test('calls Anthropic API and returns ranked matches when API key is configured', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
       vi.resetModules();
-      const { createApp: createAppWithKey } = await import("../../app.ts");
+      const { createApp: createAppWithKey } = await import('../../app.ts');
       const appWithKey = createAppWithKey({
         authService: mockAuthService,
         workspaceService: mockWorkspaceService,
         transcriptionService: mockTranscriptionService,
-        config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
       });
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -458,9 +468,9 @@ describe("AI Routes", () => {
             {
               text: JSON.stringify({
                 matches: [
-                  { id: "task-2", reason: "Semantycznie pasuje", score: 94 },
-                  { id: "meeting-1", reason: "Pasuje do opisu", score: 88 },
-                  { id: "unknown-id", reason: "ID not in list", score: 90 },
+                  { id: 'task-2', reason: 'Semantycznie pasuje', score: 94 },
+                  { id: 'meeting-1', reason: 'Pasuje do opisu', score: 88 },
+                  { id: 'unknown-id', reason: 'ID not in list', score: 90 },
                 ],
               }),
             },
@@ -468,31 +478,43 @@ describe("AI Routes", () => {
         }),
       });
 
-      const res = await appWithKey.request("/ai/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await appWithKey.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: "przypomnienie o follow-upie po spotkaniu",
+          query: 'przypomnienie o follow-upie po spotkaniu',
           items: [
-            { id: "meeting-1", title: "Budzet kwartalny", subtitle: "Plan finansowy", type: "meeting", group: "Spotkania" },
-            { id: "task-2", title: "Wyslac raport", subtitle: "Do piatku", type: "task", group: "Zadania" },
-            { id: "task-3", title: "Empty title" }
+            {
+              id: 'meeting-1',
+              title: 'Budzet kwartalny',
+              subtitle: 'Plan finansowy',
+              type: 'meeting',
+              group: 'Spotkania',
+            },
+            {
+              id: 'task-2',
+              title: 'Wyslac raport',
+              subtitle: 'Do piatku',
+              type: 'task',
+              group: 'Zadania',
+            },
+            { id: 'task-3', title: 'Empty title' },
           ],
         }),
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.mode).toBe("anthropic");
+      expect(json.mode).toBe('anthropic');
       expect(json.matches).toHaveLength(2);
-      expect(json.matches[0].id).toBe("task-2");
-      expect(json.matches[0].reason).toBe("Semantycznie pasuje");
-      expect(json.matches[1].id).toBe("meeting-1");
+      expect(json.matches[0].id).toBe('task-2');
+      expect(json.matches[0].reason).toBe('Semantycznie pasuje');
+      expect(json.matches[1].id).toBe('meeting-1');
     });
   });
 });
 
 async function createApp(config: any) {
-  const { createApp } = await import("../../app.ts");
+  const { createApp } = await import('../../app.ts');
   return createApp(config);
 }

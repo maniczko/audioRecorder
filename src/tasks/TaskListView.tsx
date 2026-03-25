@@ -1,27 +1,22 @@
-import PropTypes from "prop-types";
-import { memo } from "react";
-import {
-  canDrop,
-  formatListDueDate,
-  handleCardKeyDown,
-  writeDragTask,
-} from "./taskViewUtils";
-import { getTaskAssigneeSummary } from "../lib/tasks";
+import PropTypes from 'prop-types';
+import { memo } from 'react';
+import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
+import { getTaskAssigneeSummary } from '../lib/tasks';
 
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
 }
 
-function buildPlacement(groupBy, groupId, previousTaskId = "", nextTaskId = "") {
+function buildPlacement(groupBy, groupId, previousTaskId = '', nextTaskId = '') {
   return {
-    ...(groupBy === "status" ? { status: groupId } : {}),
-    ...(groupBy === "group" ? { group: groupId === "__ungrouped__" ? "" : groupId } : {}),
+    ...(groupBy === 'status' ? { status: groupId } : {}),
+    ...(groupBy === 'group' ? { group: groupId === '__ungrouped__' ? '' : groupId } : {}),
     previousTaskId,
     nextTaskId,
   };
 }
 
-function DropLine({ placement, onDropTask, label = "Upusc tutaj zadanie" }) {
+function DropLine({ placement, onDropTask, label = 'Upusc tutaj zadanie' }) {
   return (
     <div
       className="todo-row-dropzone"
@@ -36,7 +31,7 @@ function TaskListView({
   groupedTasks,
   allTasks,
   groupBy,
-  sortBy = "manual",
+  sortBy = 'manual',
   setSortBy = () => {},
   selectedTask,
   selectedTaskIds,
@@ -55,28 +50,52 @@ function TaskListView({
     <div className="todo-table-wrap">
       <div className="todo-table-head">
         <span />
-        <button type="button" className={`todo-col-sort-btn${sortBy === "title" || sortBy === "owner" ? " active" : ""}`} onClick={() => setSortBy(sortBy === "title" ? "owner" : "title")}>
-          Tytul i osoby {sortBy === "title" ? "↑" : sortBy === "owner" ? "↑" : ""}
+        <button
+          type="button"
+          className={`todo-col-sort-btn${sortBy === 'title' || sortBy === 'owner' ? ' active' : ''}`}
+          onClick={() => setSortBy(sortBy === 'title' ? 'owner' : 'title')}
+        >
+          Tytul i osoby {sortBy === 'title' ? '↑' : sortBy === 'owner' ? '↑' : ''}
         </button>
-        <button type="button" className={`todo-col-sort-btn${sortBy === "due" ? " active" : ""}`} onClick={() => setSortBy("due")}>
-          Termin {sortBy === "due" ? "↑" : ""}
+        <button
+          type="button"
+          className={`todo-col-sort-btn${sortBy === 'due' ? ' active' : ''}`}
+          onClick={() => setSortBy('due')}
+        >
+          Termin {sortBy === 'due' ? '↑' : ''}
         </button>
-        <button type="button" className={`todo-col-sort-btn${sortBy === "updated" ? " active" : ""}`} onClick={() => setSortBy("updated")}>
-          Status {sortBy === "updated" ? "↑" : ""}
+        <button
+          type="button"
+          className={`todo-col-sort-btn${sortBy === 'updated' ? ' active' : ''}`}
+          onClick={() => setSortBy('updated')}
+        >
+          Status {sortBy === 'updated' ? '↑' : ''}
         </button>
-        <button type="button" className={`todo-col-sort-btn${sortBy === "priority" ? " active" : ""}`} onClick={() => setSortBy("priority")}>
-          Priorytet {sortBy === "priority" ? "↑" : ""}
+        <button
+          type="button"
+          className={`todo-col-sort-btn${sortBy === 'priority' ? ' active' : ''}`}
+          onClick={() => setSortBy('priority')}
+        >
+          Priorytet {sortBy === 'priority' ? '↑' : ''}
         </button>
       </div>
 
       {groupedTasks.map((group) => (
         <section
           key={group.id}
-          className={groupBy === "status" || groupBy === "group" ? "todo-table-group dropzone" : "todo-table-group"}
-          onDragOver={groupBy === "status" || groupBy === "group" ? canDrop : undefined}
-          onDrop={groupBy === "status" || groupBy === "group" ? (event) => handleGroupDrop(group.id, event) : undefined}
+          className={
+            groupBy === 'status' || groupBy === 'group'
+              ? 'todo-table-group dropzone'
+              : 'todo-table-group'
+          }
+          onDragOver={groupBy === 'status' || groupBy === 'group' ? canDrop : undefined}
+          onDrop={
+            groupBy === 'status' || groupBy === 'group'
+              ? (event) => handleGroupDrop(group.id, event)
+              : undefined
+          }
         >
-          {groupBy !== "none" ? (
+          {groupBy !== 'none' ? (
             <div className="todo-group-label">
               <strong>{group.label}</strong>
               <span>{group.tasks.length}</span>
@@ -86,9 +105,9 @@ function TaskListView({
           {group.tasks.length ? (
             <>
               <DropLine
-                placement={buildPlacement(groupBy, group.id, "", group.tasks[0]?.id || "")}
+                placement={buildPlacement(groupBy, group.id, '', group.tasks[0]?.id || '')}
                 onDropTask={handleTaskDrop}
-                label={`Upusc na poczatku sekcji ${group.label || "zadan"}`}
+                label={`Upusc na poczatku sekcji ${group.label || 'zadan'}`}
               />
 
               {group.tasks.map((task, index) => {
@@ -103,7 +122,7 @@ function TaskListView({
                     <div
                       role="button"
                       tabIndex={0}
-                      className={isActive ? "todo-table-row active" : "todo-table-row"}
+                      className={isActive ? 'todo-table-row active' : 'todo-table-row'}
                       data-selected={isSelected}
                       draggable
                       onDragStart={(event) => {
@@ -111,9 +130,11 @@ function TaskListView({
                         setDragTaskId(task.id);
                         writeDragTask(event, task.id);
                       }}
-                      onDragEnd={() => setDragTaskId("")}
+                      onDragEnd={() => setDragTaskId('')}
                       onClick={() => setSelectedTaskId(task.id)}
-                      onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
+                      onKeyDown={(event) =>
+                        handleCardKeyDown(event, () => setSelectedTaskId(task.id))
+                      }
                     >
                       <div className="todo-row-tools">
                         <span
@@ -126,11 +147,13 @@ function TaskListView({
                             writeDragTask(event, task.id);
                           }}
                         >
-                          {"\u22EE"}
+                          {'\u22EE'}
                         </span>
                         <button
                           type="button"
-                          className={task.completed ? "todo-task-circle completed" : "todo-task-circle"}
+                          className={
+                            task.completed ? 'todo-task-circle completed' : 'todo-task-circle'
+                          }
                           onClick={(event) => {
                             event.stopPropagation();
                             onUpdateTask(task.id, { completed: !task.completed });
@@ -142,13 +165,13 @@ function TaskListView({
                         <strong>{task.title}</strong>
                         <small>
                           {assigneeSummary}
-                          {hasMoreAssignees ? " | zespolowe" : ""}
-                          {task.reminderAt ? " | przypomnienie" : ""}
+                          {hasMoreAssignees ? ' | zespolowe' : ''}
+                          {task.reminderAt ? ' | przypomnienie' : ''}
                         </small>
                       </span>
 
                       <span className="todo-date">
-                        {formatListDueDate(task.dueDate) || "Brak terminu"}
+                        {formatListDueDate(task.dueDate) || 'Brak terminu'}
                       </span>
 
                       <span className="todo-status-cell">
@@ -159,32 +182,37 @@ function TaskListView({
                         <div className="todo-inline-actions">
                           <button
                             type="button"
-                            className={task.myDay ? "todo-star active" : "todo-star"}
+                            className={task.myDay ? 'todo-star active' : 'todo-star'}
                             onClick={(event) => {
                               event.stopPropagation();
                               onUpdateTask(task.id, { myDay: !task.myDay });
                             }}
                             title="Dodaj do My Day"
                           >
-                            {"+"}
+                            {'+'}
                           </button>
                           <button
                             type="button"
-                            className={task.important ? "todo-star active" : "todo-star"}
+                            className={task.important ? 'todo-star active' : 'todo-star'}
                             onClick={(event) => {
                               event.stopPropagation();
                               onUpdateTask(task.id, { important: !task.important });
                             }}
                             title="Oznacz jako wazne"
                           >
-                            {"\u2605"}
+                            {'\u2605'}
                           </button>
                         </div>
                       </span>
                     </div>
 
                     <DropLine
-                      placement={buildPlacement(groupBy, group.id, nextTaskId, group.tasks[index + 1]?.id || "")}
+                      placement={buildPlacement(
+                        groupBy,
+                        group.id,
+                        nextTaskId,
+                        group.tasks[index + 1]?.id || ''
+                      )}
                       onDropTask={handleTaskDrop}
                       label={`Upusc po zadaniu ${task.title}`}
                     />
@@ -193,9 +221,14 @@ function TaskListView({
               })}
 
               <DropLine
-                placement={buildPlacement(groupBy, group.id, group.tasks[group.tasks.length - 1]?.id || "", "")}
+                placement={buildPlacement(
+                  groupBy,
+                  group.id,
+                  group.tasks[group.tasks.length - 1]?.id || '',
+                  ''
+                )}
                 onDropTask={handleTaskDrop}
-                label={`Upusc na koncu sekcji ${group.label || "zadan"}`}
+                label={`Upusc na koncu sekcji ${group.label || 'zadan'}`}
               />
             </>
           ) : (
@@ -230,7 +263,9 @@ TaskListView.propTypes = {
 // Memoize the entire list view to prevent unnecessary re-renders
 export default memo(TaskListView, (prevProps, nextProps) => {
   // Only re-render if groupedTasks length or selectedTaskIds change
-  return prevProps.groupedTasks === nextProps.groupedTasks &&
+  return (
+    prevProps.groupedTasks === nextProps.groupedTasks &&
     prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
-    prevProps.selectedTask === nextProps.selectedTask;
+    prevProps.selectedTask === nextProps.selectedTask
+  );
 });

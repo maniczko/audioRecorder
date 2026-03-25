@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
-import { useWorkspaceSelectors, useWorkspaceStore } from "../store/workspaceStore";
+import { createContext, useContext } from 'react';
+import { useWorkspaceSelectors, useWorkspaceStore } from '../store/workspaceStore';
 
 const WorkspaceContext = createContext<any>(null);
 
@@ -36,7 +36,7 @@ export function WorkspaceProvider({ children }) {
 export function useWorkspaceCtx() {
   const ctx = useContext(WorkspaceContext);
   if (!ctx) {
-    throw new Error("useWorkspaceCtx must be used within WorkspaceProvider");
+    throw new Error('useWorkspaceCtx must be used within WorkspaceProvider');
   }
   return ctx;
 }

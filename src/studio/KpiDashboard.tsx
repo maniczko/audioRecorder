@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
-import { buildWorkspaceKpiDashboard } from "../lib/kpi";
+import { useMemo, useState } from 'react';
+import { buildWorkspaceKpiDashboard } from '../lib/kpi';
 import './KpiDashboardStyles.css';
 
-function KpiCard({ label, value, tone = "info" }) {
+function KpiCard({ label, value, tone = 'info' }) {
   return (
     <article className={`workspace-kpi-card ${tone}`}>
       <span>{label}</span>
@@ -11,13 +11,9 @@ function KpiCard({ label, value, tone = "info" }) {
   );
 }
 
-export default function KpiDashboard({
-  workspaceName,
-  meetings,
-  tasks,
-}) {
+export default function KpiDashboard({ workspaceName, meetings, tasks }) {
   const [rangeDays, setRangeDays] = useState(30);
-  const [trend, setTrend] = useState("weekly");
+  const [trend, setTrend] = useState('weekly');
 
   const dashboard = useMemo(
     () =>
@@ -40,7 +36,7 @@ export default function KpiDashboard({
           <h2>Spotkania i follow-upy</h2>
         </div>
         <div className="status-cluster">
-          <span className="status-chip">{workspaceName || "Workspace"}</span>
+          <span className="status-chip">{workspaceName || 'Workspace'}</span>
           <span className="status-chip">{dashboard.meetings} spotkan w zakresie</span>
         </div>
       </div>
@@ -48,7 +44,12 @@ export default function KpiDashboard({
       <div className="workspace-kpi-toolbar">
         <label>
           <span>Zakres dat</span>
-          <select value={String(rangeDays)} onChange={(event) => setRangeDays(event.target.value === "all" ? "all" : Number(event.target.value))}>
+          <select
+            value={String(rangeDays)}
+            onChange={(event) =>
+              setRangeDays(event.target.value === 'all' ? 'all' : Number(event.target.value))
+            }
+          >
             <option value="7">7 dni</option>
             <option value="30">30 dni</option>
             <option value="90">90 dni</option>
@@ -56,10 +57,18 @@ export default function KpiDashboard({
           </select>
         </label>
         <div className="review-filter-group">
-          <button type="button" className={trend === "weekly" ? "pill active" : "pill"} onClick={() => setTrend("weekly")}>
+          <button
+            type="button"
+            className={trend === 'weekly' ? 'pill active' : 'pill'}
+            onClick={() => setTrend('weekly')}
+          >
             Tygodniowo
           </button>
-          <button type="button" className={trend === "monthly" ? "pill active" : "pill"} onClick={() => setTrend("monthly")}>
+          <button
+            type="button"
+            className={trend === 'monthly' ? 'pill active' : 'pill'}
+            onClick={() => setTrend('monthly')}
+          >
             Miesiecznie
           </button>
         </div>
@@ -69,7 +78,11 @@ export default function KpiDashboard({
         <KpiCard label="Decyzje" value={dashboard.kpis.decisions} />
         <KpiCard label="Otwarte taski" value={dashboard.kpis.openTasks} />
         <KpiCard label="Po terminie" value={dashboard.kpis.overdue} tone="danger" />
-        <KpiCard label="Taski po spotkaniach" value={dashboard.kpis.tasksAfterMeetings} tone="warning" />
+        <KpiCard
+          label="Taski po spotkaniach"
+          value={dashboard.kpis.tasksAfterMeetings}
+          tone="warning"
+        />
       </div>
 
       <div className="workspace-kpi-trend">
@@ -80,17 +93,23 @@ export default function KpiDashboard({
               <div className="workspace-kpi-bars">
                 <span
                   className="workspace-kpi-bar meetings"
-                  style={{ height: `${Math.max((point.meetings / maxBarValue) * 100, point.meetings ? 12 : 0)}%` }}
+                  style={{
+                    height: `${Math.max((point.meetings / maxBarValue) * 100, point.meetings ? 12 : 0)}%`,
+                  }}
                   title={`Spotkania: ${point.meetings}`}
                 />
                 <span
                   className="workspace-kpi-bar decisions"
-                  style={{ height: `${Math.max((point.decisions / maxBarValue) * 100, point.decisions ? 12 : 0)}%` }}
+                  style={{
+                    height: `${Math.max((point.decisions / maxBarValue) * 100, point.decisions ? 12 : 0)}%`,
+                  }}
                   title={`Decyzje: ${point.decisions}`}
                 />
                 <span
                   className="workspace-kpi-bar tasks"
-                  style={{ height: `${Math.max((point.tasks / maxBarValue) * 100, point.tasks ? 12 : 0)}%` }}
+                  style={{
+                    height: `${Math.max((point.tasks / maxBarValue) * 100, point.tasks ? 12 : 0)}%`,
+                  }}
                   title={`Taski: ${point.tasks}`}
                 />
               </div>

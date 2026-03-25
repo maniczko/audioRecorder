@@ -1,11 +1,11 @@
 /**
  * ragRetriever.ts
- * 
+ *
  * RAG (Retrieval-Augmented Generation) chunk retriever.
  * Retrieves relevant chunks from the database based on semantic similarity.
  */
 
-import type { RagVectorStore } from "./ragVectorStore.ts";
+import type { RagVectorStore } from './ragVectorStore.ts';
 
 interface RagChunk {
   id: string;
@@ -44,15 +44,15 @@ function cosineSimilarity(a: number[], b: number[]): number {
   const dotProduct = a.reduce((sum, val, i) => sum + val * (b[i] || 0), 0);
   const normA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
   const normB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  
+
   if (normA === 0 || normB === 0) return 0;
   return dotProduct / (normA * normB);
 }
 
 export class RagChunkRetriever {
   private workspaceId: string;
-  private db: RagChunkRetrieverOptions["db"];
-  private embedTextChunks: RagChunkRetrieverOptions["embedTextChunks"];
+  private db: RagChunkRetrieverOptions['db'];
+  private embedTextChunks: RagChunkRetrieverOptions['embedTextChunks'];
   private topK: number;
   private minScore: number;
 

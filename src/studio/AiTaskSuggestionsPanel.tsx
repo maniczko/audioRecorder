@@ -1,10 +1,10 @@
-import { useState, memo } from "react";
-import { suggestTasksFromTranscript } from "../lib/aiTaskSuggestions";
-import { createId } from "../lib/storage";
+import { useState, memo } from 'react';
+import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
+import { createId } from '../lib/storage';
 import './AiTaskSuggestionsPanelStyles.css';
 
-const PRIORITY_LABELS = { high: "Wysoki", medium: "Sredni", low: "Niski" };
-const PRIORITY_FLAGS = { high: "overdue", medium: "in-progress", low: "neutral" };
+const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
+const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
 
 function AiTaskSuggestionsPanel({
   selectedRecording,
@@ -13,8 +13,8 @@ function AiTaskSuggestionsPanel({
   onCreateTask,
   canEdit = true,
 }) {
-  const [status, setStatus] = useState("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({});
@@ -25,12 +25,12 @@ function AiTaskSuggestionsPanel({
   }
 
   async function handleGenerate() {
-    if (!selectedRecording || status === "loading") {
+    if (!selectedRecording || status === 'loading') {
       return;
     }
 
-    setStatus("loading");
-    setErrorMessage("");
+    setStatus('loading');
+    setErrorMessage('');
     setSuggestions([]);
 
     try {
@@ -42,31 +42,31 @@ function AiTaskSuggestionsPanel({
       }));
 
       const results = await suggestTasksFromTranscript(enrichedTranscript, peopleProfiles);
-      setSuggestions(results.map((task) => ({ ...task, _id: createId("sug") })));
-      setStatus("done");
+      setSuggestions(results.map((task) => ({ ...task, _id: createId('sug') })));
+      setStatus('done');
     } catch (error) {
-      console.error("AI suggestion error:", error);
-      setErrorMessage(error.message || "Blad generowania sugestii");
-      setStatus("error");
+      console.error('AI suggestion error:', error);
+      setErrorMessage(error.message || 'Blad generowania sugestii');
+      setStatus('error');
     }
   }
 
   function handleApprove(suggestion) {
-    if (typeof onCreateTask !== "function") {
+    if (typeof onCreateTask !== 'function') {
       return;
     }
 
     onCreateTask({
-      title: suggestion.title || "Zadanie AI",
-      description: suggestion.description || "",
-      assignedTo: suggestion.owner || "",
+      title: suggestion.title || 'Zadanie AI',
+      description: suggestion.description || '',
+      assignedTo: suggestion.owner || '',
       dueDate: suggestion.dueDate || null,
-      priority: suggestion.priority || "medium",
+      priority: suggestion.priority || 'medium',
       tags: Array.isArray(suggestion.tags) ? suggestion.tags : [],
-      sourceType: "ai-suggestion",
-      sourceMeetingId: selectedRecording?.meetingId || "",
-      sourceRecordingId: selectedRecording?.id || "",
-      sourceMeetingTitle: selectedRecording?.meetingTitle || "Spotkanie",
+      sourceType: 'ai-suggestion',
+      sourceMeetingId: selectedRecording?.meetingId || '',
+      sourceRecordingId: selectedRecording?.id || '',
+      sourceMeetingTitle: selectedRecording?.meetingTitle || 'Spotkanie',
     });
 
     setSuggestions((previous) => previous.filter((s) => s._id !== suggestion._id));
@@ -103,15 +103,15 @@ function AiTaskSuggestionsPanel({
           type="button"
           className="primary-button"
           onClick={handleGenerate}
-          disabled={!selectedRecording || status === "loading" || !canEdit}
+          disabled={!selectedRecording || status === 'loading' || !canEdit}
         >
-          {status === "loading" ? "Generowanie..." : "Generuj sugestie AI"}
+          {status === 'loading' ? 'Generowanie...' : 'Generuj sugestie AI'}
         </button>
       </div>
 
-      {status === "error" ? <div className="inline-alert error">{errorMessage}</div> : null}
+      {status === 'error' ? <div className="inline-alert error">{errorMessage}</div> : null}
 
-      {status === "done" && suggestions.length === 0 ? (
+      {status === 'done' && suggestions.length === 0 ? (
         <div className="inline-alert success">
           Brak nowych sugestii — wszystkie zatwierdzone lub brak zadan w transkrypcji.
         </div>
@@ -125,13 +125,13 @@ function AiTaskSuggestionsPanel({
               <article key={suggestion._id} className="ai-suggestion-card editing">
                 <input
                   className="ai-suggestion-input"
-                  value={editDraft.title || ""}
+                  value={editDraft.title || ''}
                   onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))}
                   placeholder="Tytul zadania"
                 />
                 <textarea
                   className="ai-suggestion-textarea"
-                  value={editDraft.description || ""}
+                  value={editDraft.description || ''}
                   onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))}
                   rows={2}
                   placeholder="Opis"
@@ -139,18 +139,18 @@ function AiTaskSuggestionsPanel({
                 <div className="ai-suggestion-meta-row">
                   <input
                     className="ai-suggestion-input"
-                    value={editDraft.owner || ""}
+                    value={editDraft.owner || ''}
                     onChange={(e) => setEditDraft((d) => ({ ...d, owner: e.target.value }))}
                     placeholder="Osoba odpowiedzialna"
                   />
                   <input
                     className="ai-suggestion-input"
                     type="date"
-                    value={editDraft.dueDate || ""}
+                    value={editDraft.dueDate || ''}
                     onChange={(e) => setEditDraft((d) => ({ ...d, dueDate: e.target.value }))}
                   />
                   <select
-                    value={editDraft.priority || "medium"}
+                    value={editDraft.priority || 'medium'}
                     onChange={(e) => setEditDraft((d) => ({ ...d, priority: e.target.value }))}
                   >
                     <option value="high">Wysoki</option>
@@ -172,9 +172,9 @@ function AiTaskSuggestionsPanel({
                 <div className="ai-suggestion-header">
                   <strong className="ai-suggestion-title">{suggestion.title}</strong>
                   <span
-                    className={`task-flag ${PRIORITY_FLAGS[suggestion.priority] || "in-progress"}`}
+                    className={`task-flag ${PRIORITY_FLAGS[suggestion.priority] || 'in-progress'}`}
                   >
-                    {PRIORITY_LABELS[suggestion.priority] || "Sredni"}
+                    {PRIORITY_LABELS[suggestion.priority] || 'Sredni'}
                   </span>
                   <span className="task-flag neutral ai-badge">AI</span>
                 </div>
@@ -230,6 +230,8 @@ function AiTaskSuggestionsPanel({
 
 // Memoize to prevent unnecessary re-renders when parent updates
 export default memo(AiTaskSuggestionsPanel, (prevProps, nextProps) => {
-  return prevProps.selectedRecording === nextProps.selectedRecording &&
-    prevProps.displaySpeakerNames === nextProps.displaySpeakerNames;
+  return (
+    prevProps.selectedRecording === nextProps.selectedRecording &&
+    prevProps.displaySpeakerNames === nextProps.displaySpeakerNames
+  );
 });

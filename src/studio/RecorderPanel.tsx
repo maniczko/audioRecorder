@@ -1,4 +1,4 @@
-import { formatDuration } from "../lib/storage";
+import { formatDuration } from '../lib/storage';
 import './RecorderPanelStyles.css';
 
 export default function RecorderPanel({
@@ -18,17 +18,17 @@ export default function RecorderPanel({
   canRecord = true,
 }) {
   const statusLabel =
-    analysisStatus === "uploading"
-      ? "Uploading"
-      : analysisStatus === "queued"
-        ? "Queued"
-        : analysisStatus === "processing"
-          ? "Processing"
-          : analysisStatus === "done"
-            ? "Done"
-            : analysisStatus === "error"
-              ? "Error"
-              : "Ready";
+    analysisStatus === 'uploading'
+      ? 'Uploading'
+      : analysisStatus === 'queued'
+        ? 'Queued'
+        : analysisStatus === 'processing'
+          ? 'Processing'
+          : analysisStatus === 'done'
+            ? 'Done'
+            : analysisStatus === 'error'
+              ? 'Error'
+              : 'Ready';
 
   return (
     <section className="panel recorder-panel">
@@ -38,14 +38,16 @@ export default function RecorderPanel({
           <h2>Live capture</h2>
         </div>
         <div className="status-cluster">
-          <span className={isRecording ? "live-pill recording" : "live-pill"}>{isRecording ? "REC" : "Idle"}</span>
+          <span className={isRecording ? 'live-pill recording' : 'live-pill'}>
+            {isRecording ? 'REC' : 'Idle'}
+          </span>
           <span className="live-pill subtle">{statusLabel}</span>
         </div>
       </div>
 
       <div className="recorder-body">
         <div className="timer">{formatDuration(elapsed)}</div>
-        <div className={`visualizer${isRecording ? " visualizer-active" : ""}`}>
+        <div className={`visualizer${isRecording ? ' visualizer-active' : ''}`}>
           {isRecording ? (
             <>
               <div className="visualizer-pulse-ring visualizer-pulse-ring-1" />
@@ -55,7 +57,10 @@ export default function RecorderPanel({
                   <span
                     key={index}
                     className="bar bar-live"
-                    style={{ "--bar-h": `${Math.max(4, height)}px`, "--bar-delay": `${(index % 8) * 0.06}s` }}
+                    style={{
+                      '--bar-h': `${Math.max(4, height)}px`,
+                      '--bar-delay': `${(index % 8) * 0.06}s`,
+                    }}
                   />
                 ))}
               </div>
@@ -70,25 +75,30 @@ export default function RecorderPanel({
         <div className="button-row align-center">
           <button
             type="button"
-            className={isRecording ? "danger-button" : "primary-button"}
+            className={isRecording ? 'danger-button' : 'primary-button'}
             onClick={isRecording ? stopRecording : () => startRecording()}
             disabled={!canRecord}
           >
-            {isRecording ? "Stop recording" : "Start recording"}
+            {isRecording ? 'Stop recording' : 'Start recording'}
           </button>
           {!isRecording ? (
-            <button type="button" className="ghost-button" onClick={() => startRecording({ adHoc: true })} disabled={!canRecord}>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => startRecording({ adHoc: true })}
+              disabled={!canRecord}
+            >
               Nagranie ad hoc
             </button>
           ) : null}
           <div className="microcopy">
             {!canRecord
-              ? "Ta rola ma dostep tylko do podgladu. Nagrywanie i edycja sa zablokowane."
-              : recordPermission === "denied"
-              ? "Mikrofon zablokowany. Odblokuj go przy pasku adresu."
-              : speechRecognitionSupported
-                ? "Live transcript wlacza sie automatycznie."
-                : "Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review."}
+              ? 'Ta rola ma dostep tylko do podgladu. Nagrywanie i edycja sa zablokowane.'
+              : recordPermission === 'denied'
+                ? 'Mikrofon zablokowany. Odblokuj go przy pasku adresu.'
+                : speechRecognitionSupported
+                  ? 'Live transcript wlacza sie automatycznie.'
+                  : 'Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review.'}
           </div>
         </div>
         {liveText ? <div className="live-text">Na zywo: {liveText}</div> : null}
@@ -102,13 +112,13 @@ export default function RecorderPanel({
             <small>
               {activeQueueItem.errorMessage
                 ? activeQueueItem.errorMessage
-                : activeQueueItem.status === "uploading"
-                  ? "Wysylamy audio na serwer."
-                  : activeQueueItem.status === "processing"
-                    ? "Serwer przetwarza STT i diarization."
-                    : "Nagranie czeka na kolejke."}
+                : activeQueueItem.status === 'uploading'
+                  ? 'Wysylamy audio na serwer.'
+                  : activeQueueItem.status === 'processing'
+                    ? 'Serwer przetwarza STT i diarization.'
+                    : 'Nagranie czeka na kolejke.'}
             </small>
-            {activeQueueItem.status === "failed" ? (
+            {activeQueueItem.status === 'failed' ? (
               <button
                 type="button"
                 className="ghost-button"
@@ -121,7 +131,9 @@ export default function RecorderPanel({
           </div>
         ) : null}
         {selectedMeetingQueue.length ? (
-          <div className="microcopy">W kolejce dla tego spotkania: {selectedMeetingQueue.length}</div>
+          <div className="microcopy">
+            W kolejce dla tego spotkania: {selectedMeetingQueue.length}
+          </div>
         ) : null}
       </div>
     </section>

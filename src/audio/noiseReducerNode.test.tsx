@@ -1,24 +1,24 @@
-import { vi, describe, test, expect } from "vitest";
-import { ensureNoiseReducerWorklet } from "./noiseReducerNode";
+import { vi, describe, test, expect } from 'vitest';
+import { ensureNoiseReducerWorklet } from './noiseReducerNode';
 
-vi.mock("simple-rnnoise-wasm", () => ({
+vi.mock('simple-rnnoise-wasm', () => ({
   RNNoiseNode: {
     register: vi.fn().mockResolvedValue(undefined),
   },
   rnnoise_loadAssets: vi.fn((value) => value),
 }));
 
-vi.mock("simple-rnnoise-wasm/rnnoise.wasm?url", () => ({
-  default: "/assets/rnnoise.wasm",
+vi.mock('simple-rnnoise-wasm/rnnoise.wasm?url', () => ({
+  default: '/assets/rnnoise.wasm',
 }));
 
-vi.mock("simple-rnnoise-wasm/rnnoise.worklet.js?url", () => ({
-  default: "/assets/rnnoise.worklet.js",
+vi.mock('simple-rnnoise-wasm/rnnoise.worklet.js?url', () => ({
+  default: '/assets/rnnoise.worklet.js',
 }));
 
-describe("ensureNoiseReducerWorklet", () => {
-  test("loads the worklet separately for different audio contexts", async () => {
-    const { RNNoiseNode } = await import("simple-rnnoise-wasm");
+describe('ensureNoiseReducerWorklet', () => {
+  test('loads the worklet separately for different audio contexts', async () => {
+    const { RNNoiseNode } = await import('simple-rnnoise-wasm');
     vi.mocked(RNNoiseNode.register).mockClear();
     const audioContext = {
       audioWorklet: {
@@ -35,8 +35,8 @@ describe("ensureNoiseReducerWorklet", () => {
     expect(RNNoiseNode.register).toHaveBeenCalledTimes(1);
   });
 
-  test("reuses the same load promise for one audio context", async () => {
-    const { RNNoiseNode } = await import("simple-rnnoise-wasm");
+  test('reuses the same load promise for one audio context', async () => {
+    const { RNNoiseNode } = await import('simple-rnnoise-wasm');
     vi.mocked(RNNoiseNode.register).mockClear();
     const firstContext = {
       audioWorklet: {

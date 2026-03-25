@@ -1,11 +1,22 @@
 export function normalizeRecordingPipelineStatus(value) {
-  if (value === "completed") {
-    return "done";
+  if (value === 'completed') {
+    return 'done';
   }
-  if (["uploading", "queued", "processing", "diarization", "review", "failed", "failed_permanent", "done"].includes(String(value || ""))) {
+  if (
+    [
+      'uploading',
+      'queued',
+      'processing',
+      'diarization',
+      'review',
+      'failed',
+      'failed_permanent',
+      'done',
+    ].includes(String(value || ''))
+  ) {
     return value;
   }
-  return "queued";
+  return 'queued';
 }
 
 export function createRecordingQueueItem({
@@ -20,20 +31,20 @@ export function createRecordingQueueItem({
   return {
     id: recordingId,
     recordingId,
-    meetingId: meetingId || meeting?.id || "",
-    workspaceId: meeting?.workspaceId || "",
-    meetingTitle: meeting?.title || "Spotkanie",
+    meetingId: meetingId || meeting?.id || '',
+    workspaceId: meeting?.workspaceId || '',
+    meetingTitle: meeting?.title || 'Spotkanie',
     meetingSnapshot: meeting || null,
-    mimeType: mimeType || "audio/webm",
+    mimeType: mimeType || 'audio/webm',
     rawSegments: Array.isArray(rawSegments) ? rawSegments : [],
     duration: Number(duration) || 0,
-    status: "queued",
+    status: 'queued',
     uploaded: false,
     attempts: 0,
     retryCount: 0,
     backoffUntil: 0,
-    lastErrorMessage: "",
-    errorMessage: "",
+    lastErrorMessage: '',
+    errorMessage: '',
     createdAt,
     updatedAt: createdAt,
   };
@@ -53,8 +64,8 @@ export function normalizeRecordingQueue(queue = []) {
         attempts: Math.max(0, Number(item.attempts) || 0),
         retryCount: Math.max(0, Number(item.retryCount) || 0),
         backoffUntil: Math.max(0, Number(item.backoffUntil) || 0),
-        lastErrorMessage: String(item.lastErrorMessage || ""),
-        errorMessage: String(item.errorMessage || ""),
+        lastErrorMessage: String(item.lastErrorMessage || ''),
+        errorMessage: String(item.errorMessage || ''),
         rawSegments: Array.isArray(item.rawSegments) ? item.rawSegments : [],
         duration: Math.max(0, Number(item.duration) || 0),
         createdAt: item.createdAt || new Date().toISOString(),
@@ -62,7 +73,9 @@ export function normalizeRecordingQueue(queue = []) {
       };
     })
     .filter(Boolean)
-    .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
+    .sort(
+      (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
+    );
 }
 
 export function upsertRecordingQueueItem(queue, nextItem) {
@@ -107,7 +120,7 @@ export function getRecordingQueueForMeeting(queue, meetingId) {
 
 export function getNextPendingRecordingQueueItem(queue) {
   return normalizeRecordingQueue(queue).find((item) =>
-    ["queued", "uploading", "processing"].includes(item.status)
+    ['queued', 'uploading', 'processing'].includes(item.status)
   );
 }
 
@@ -115,7 +128,7 @@ export function getNextProcessableRecordingQueueItem(queue, canProcess = (item) 
   const now = Date.now();
   return normalizeRecordingQueue(queue).find(
     (item) =>
-      ["uploading", "queued", "processing", "diarization"].includes(item.status) &&
+      ['uploading', 'queued', 'processing', 'diarization'].includes(item.status) &&
       now >= (item.backoffUntil || 0) &&
       canProcess(item)
   );

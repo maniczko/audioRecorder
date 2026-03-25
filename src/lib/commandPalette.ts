@@ -1,9 +1,17 @@
 function normalizeText(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function normalizeKeywords(values) {
-  return [...new Set((Array.isArray(values) ? values : [values]).map((value) => normalizeText(value).toLowerCase()).filter(Boolean))];
+  return [
+    ...new Set(
+      (Array.isArray(values) ? values : [values])
+        .map((value) => normalizeText(value).toLowerCase())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 function scoreMatch(item, query) {
@@ -12,7 +20,7 @@ function scoreMatch(item, query) {
   }
 
   const normalizedQuery = normalizeText(query).toLowerCase();
-  const haystack = [item.title, item.subtitle, ...(item.keywords || [])].join(" ").toLowerCase();
+  const haystack = [item.title, item.subtitle, ...(item.keywords || [])].join(' ').toLowerCase();
   if (!haystack.includes(normalizedQuery)) {
     return -1;
   }
@@ -31,10 +39,10 @@ function scoreMatch(item, query) {
 function tabItem(id, title, subtitle) {
   return {
     id: `tab:${id}`,
-    type: "tab",
+    type: 'tab',
     title,
     subtitle,
-    group: "Zakladki",
+    group: 'Zakladki',
     keywords: normalizeKeywords([title, subtitle, id]),
     payload: { tabId: id },
     weight: 10,
@@ -43,19 +51,19 @@ function tabItem(id, title, subtitle) {
 
 export function buildCommandPaletteItems({ meetings = [], tasks = [], people = [] }) {
   const tabs = [
-    tabItem("studio", "Studio", "Spotkania, nagrania i analiza"),
-    tabItem("calendar", "Kalendarz", "Planer spotkan i terminow"),
-    tabItem("tasks", "Zadania", "Lista zadan i kanban"),
-    tabItem("people", "Osoby", "Profile osob i historia wspolpracy"),
-    tabItem("profile", "Profil", "Ustawienia konta i integracje"),
+    tabItem('studio', 'Studio', 'Spotkania, nagrania i analiza'),
+    tabItem('calendar', 'Kalendarz', 'Planer spotkan i terminow'),
+    tabItem('tasks', 'Zadania', 'Lista zadan i kanban'),
+    tabItem('people', 'Osoby', 'Profile osob i historia wspolpracy'),
+    tabItem('profile', 'Profil', 'Ustawienia konta i integracje'),
   ];
 
   const meetingItems = meetings.map((meeting) => ({
     id: `meeting:${meeting.id}`,
-    type: "meeting",
-    title: meeting.title || "Spotkanie",
-    subtitle: meeting.context || "Spotkanie",
-    group: "Spotkania",
+    type: 'meeting',
+    title: meeting.title || 'Spotkanie',
+    subtitle: meeting.context || 'Spotkanie',
+    group: 'Spotkania',
     keywords: normalizeKeywords([
       meeting.title,
       meeting.context,
@@ -69,10 +77,11 @@ export function buildCommandPaletteItems({ meetings = [], tasks = [], people = [
 
   const taskItems = tasks.map((task) => ({
     id: `task:${task.id}`,
-    type: "task",
-    title: task.title || "Zadanie",
-    subtitle: [task.owner, task.group, task.sourceMeetingTitle].filter(Boolean).join(" • ") || "Zadanie",
-    group: "Zadania",
+    type: 'task',
+    title: task.title || 'Zadanie',
+    subtitle:
+      [task.owner, task.group, task.sourceMeetingTitle].filter(Boolean).join(' • ') || 'Zadanie',
+    group: 'Zadania',
     keywords: normalizeKeywords([
       task.title,
       task.description,
@@ -88,10 +97,10 @@ export function buildCommandPaletteItems({ meetings = [], tasks = [], people = [
 
   const peopleItems = people.map((person) => ({
     id: `person:${person.id}`,
-    type: "person",
-    title: person.name || "Osoba",
+    type: 'person',
+    title: person.name || 'Osoba',
     subtitle: person.summary || `${person.meetings?.length || 0} spotkan`,
-    group: "Osoby",
+    group: 'Osoby',
     keywords: normalizeKeywords([
       person.name,
       person.summary,

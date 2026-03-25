@@ -1,12 +1,12 @@
-const DB_NAME = "voicelog-audio";
-const STORE_NAME = "recordings";
+const DB_NAME = 'voicelog-audio';
+const STORE_NAME = 'recordings';
 const DB_VERSION = 1;
 const MAX_BLOB_BYTES = 500 * 1024 * 1024; // 500 MB hard cap
 const QUOTA_WARN_BYTES = 10 * 1024 * 1024; // warn if <10 MB free
 const STORAGE_WARN_RATIO = 0.8;
 
 async function getStorageEstimate() {
-  if (typeof navigator === "undefined" || !navigator.storage?.estimate) {
+  if (typeof navigator === 'undefined' || !navigator.storage?.estimate) {
     return null;
   }
 
@@ -32,16 +32,20 @@ async function checkStorageQuota(blobSize) {
   }
 
   if (blobSize > MAX_BLOB_BYTES) {
-    throw new Error(`Plik audio (${Math.round(blobSize / 1024 / 1024)} MB) przekracza limit ${MAX_BLOB_BYTES / 1024 / 1024} MB.`);
+    throw new Error(
+      `Plik audio (${Math.round(blobSize / 1024 / 1024)} MB) przekracza limit ${MAX_BLOB_BYTES / 1024 / 1024} MB.`
+    );
   }
 
   if (estimate.freeBytes < QUOTA_WARN_BYTES) {
-    throw new Error(`Za mało miejsca w przeglądarce (zostało ${Math.round(estimate.freeBytes / 1024 / 1024)} MB). Zwolnij miejsce i spróbuj ponownie.`);
+    throw new Error(
+      `Za mało miejsca w przeglądarce (zostało ${Math.round(estimate.freeBytes / 1024 / 1024)} MB). Zwolnij miejsce i spróbuj ponownie.`
+    );
   }
 }
 
 function hasIndexedDb() {
-  return typeof indexedDB !== "undefined";
+  return typeof indexedDB !== 'undefined';
 }
 
 function openDatabase() {
@@ -87,7 +91,7 @@ export async function saveAudioBlob(recordingId, blob) {
 
   await checkStorageQuota(blob.size || 0);
 
-  await withStore("readwrite", (store) => {
+  await withStore('readwrite', (store) => {
     store.put(blob, recordingId);
   });
 }
@@ -103,7 +107,7 @@ export async function getAudioBlob(recordingId) {
   }
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
+    const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(recordingId);
 
@@ -117,7 +121,7 @@ export async function deleteAudioBlob(recordingId) {
     return;
   }
 
-  await withStore("readwrite", (store) => {
+  await withStore('readwrite', (store) => {
     store.delete(recordingId);
   });
 }
@@ -129,7 +133,7 @@ export async function listStoredAudioSizes() {
   }
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
+    const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const items = [];
     const request = store.openCursor();
@@ -144,9 +148,9 @@ export async function listStoredAudioSizes() {
 
       const value = cursor.value;
       items.push({
-        recordingId: String(cursor.key || ""),
+        recordingId: String(cursor.key || ''),
         sizeBytes: Number(value?.size || 0),
-        mimeType: String(value?.type || ""),
+        mimeType: String(value?.type || ''),
       });
       cursor.continue();
     };

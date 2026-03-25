@@ -1,0 +1,96 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mc:/Users/user/new/audioRecorder[39m
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mPUT /users/:userId/profile updates only current user profile
+[22m[39m[INFO] [REQ] PUT /users/u1/profile - 200 [5.3ms] {
+  requestId: [32m'fc8dae0b-502c-4afa-a31d-95ab13040506'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u1/profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'5.30'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] PUT /users/u2/profile - 403 [0.6ms] {
+  requestId: [32m'ac409004-71d1-4bc0-8a74-3cfefb154488'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u2/profile'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.64'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] POST /users/u2/password - 403 [0.6ms] {
+  requestId: [32m'1242a929-3b28-4539-832f-38510cda7613'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/users/u2/password'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.56'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 200 [1.0ms] {
+  requestId: [32m'33cab9a0-4105-42b9-b884-9fdd2325c06a'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.98'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 403 [0.4ms] {
+  requestId: [32m'd73970f9-ccca-4838-83cb-b19ac3975e12'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.43'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 400 [1.2ms] {
+  requestId: [32m'832840e3-c544-49d7-9f05-d5eadc962255'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.24'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 200 [1.5ms] {
+  requestId: [32m'19b279df-5f29-4b4b-93aa-6b196fb884ed'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.46'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 500 [1.0ms] {
+  requestId: [32m'd54a80ea-15bc-4ef9-bc91-67d9d01bfbed'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.01'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mreturns LLM answer when OpenAI key is configured
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 500 [54.9ms] {
+  requestId: [32m'407a77b0-ea5d-4be5-8705-9a0305ba7f82'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'54.93'[39m
+}
+
+ [31m❯[39m server/tests/routes/workspaces.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 218[2mms[22m[39m
+     [32m✓[39m PUT /users/:userId/profile updates only current user profile[32m 58[2mms[22m[39m
+     [32m✓[39m blocks profile and password changes for other users[32m 18[2mms[22m[39m
+     [32m✓[39m updates workspace member roles only for owner/admin memberships[32m 23[2mms[22m[39m
+     [32m✓[39m handles RAG ask validation, no-results and LLM failure paths[32m 18[2mms[22m[39m
+[31m     [31m×[31m returns LLM answer when OpenAI key is configured[39m[32m 97[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 07:59:49
+[2m   Duration [22m 4.23s[2m (transform 420ms, setup 89ms, import 3.12s, tests 218ms, environment 0ms)[22m
+

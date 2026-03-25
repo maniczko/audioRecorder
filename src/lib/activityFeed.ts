@@ -4,20 +4,25 @@ function toTimestamp(value) {
 }
 
 function resolveActorName(actorName, actorId, workspaceMembers = [], users = []) {
-  if (String(actorName || "").trim()) {
+  if (String(actorName || '').trim()) {
     return String(actorName).trim();
   }
 
-  const match = [...(Array.isArray(workspaceMembers) ? workspaceMembers : []), ...(Array.isArray(users) ? users : [])].find(
-    (item) => item?.id === actorId
-  );
-  return match?.name || match?.email || "System";
+  const match = [
+    ...(Array.isArray(workspaceMembers) ? workspaceMembers : []),
+    ...(Array.isArray(users) ? users : []),
+  ].find((item) => item?.id === actorId);
+  return match?.name || match?.email || 'System';
 }
 
 function latestEntry(entries = []) {
-  return [...(Array.isArray(entries) ? entries : [])].sort(
-    (left, right) => toTimestamp(right.createdAt || right.timestamp) - toTimestamp(left.createdAt || left.timestamp)
-  )[0] || null;
+  return (
+    [...(Array.isArray(entries) ? entries : [])].sort(
+      (left, right) =>
+        toTimestamp(right.createdAt || right.timestamp) -
+        toTimestamp(left.createdAt || left.timestamp)
+    )[0] || null
+  );
 }
 
 export function getMeetingActivityEntries(meeting, workspaceMembers = [], users = []) {
@@ -27,15 +32,15 @@ export function getMeetingActivityEntries(meeting, workspaceMembers = [], users 
 
   const explicitEntries = Array.isArray(meeting.activity)
     ? meeting.activity.map((entry) => ({
-        id: entry.id || `${meeting.id}:${entry.type || "meeting"}`,
-      entityId: meeting.id,
-      entityType: "meeting",
-      type: entry.type || "updated",
-      title: meeting.title,
-      actor: resolveActorName(entry.actorName, entry.actorId, workspaceMembers, users),
-      message: entry.message || "Zmieniono spotkanie.",
+        id: entry.id || `${meeting.id}:${entry.type || 'meeting'}`,
+        entityId: meeting.id,
+        entityType: 'meeting',
+        type: entry.type || 'updated',
+        title: meeting.title,
+        actor: resolveActorName(entry.actorName, entry.actorId, workspaceMembers, users),
+        message: entry.message || 'Zmieniono spotkanie.',
         createdAt: entry.createdAt || meeting.updatedAt || meeting.createdAt,
-        tone: entry.type === "recording" ? "info" : "neutral",
+        tone: entry.type === 'recording' ? 'info' : 'neutral',
       }))
     : [];
 
@@ -43,18 +48,18 @@ export function getMeetingActivityEntries(meeting, workspaceMembers = [], users 
     return explicitEntries;
   }
 
-  const fallbackActor = resolveActorName("", meeting.createdByUserId, workspaceMembers, users);
+  const fallbackActor = resolveActorName('', meeting.createdByUserId, workspaceMembers, users);
   const entries = [
     {
       id: `${meeting.id}:created`,
       entityId: meeting.id,
-      entityType: "meeting",
-      type: "created",
+      entityType: 'meeting',
+      type: 'created',
       title: meeting.title,
       actor: fallbackActor,
-      message: "Utworzono spotkanie.",
+      message: 'Utworzono spotkanie.',
       createdAt: meeting.createdAt,
-      tone: "neutral",
+      tone: 'neutral',
     },
   ];
 
@@ -62,13 +67,13 @@ export function getMeetingActivityEntries(meeting, workspaceMembers = [], users 
     entries.push({
       id: `${meeting.id}:updated`,
       entityId: meeting.id,
-      entityType: "meeting",
-      type: "updated",
+      entityType: 'meeting',
+      type: 'updated',
       title: meeting.title,
       actor: fallbackActor,
-      message: "Zmieniono brief spotkania.",
+      message: 'Zmieniono brief spotkania.',
       createdAt: meeting.updatedAt,
-      tone: "info",
+      tone: 'info',
     });
   }
 
@@ -86,15 +91,15 @@ export function getTaskActivityEntries(task) {
 
   const historyEntries = Array.isArray(task.history)
     ? task.history.map((entry) => ({
-        id: entry.id || `${task.id}:${entry.type || "task"}`,
+        id: entry.id || `${task.id}:${entry.type || 'task'}`,
         entityId: task.id,
-        entityType: "task",
-        type: entry.type || "updated",
+        entityType: 'task',
+        type: entry.type || 'updated',
         title: task.title,
-        actor: entry.actor || "System",
-        message: entry.message || "Zmieniono zadanie.",
+        actor: entry.actor || 'System',
+        message: entry.message || 'Zmieniono zadanie.',
         createdAt: entry.createdAt || task.updatedAt || task.createdAt,
-        tone: entry.type === "comment" ? "info" : entry.type === "status" ? "warning" : "neutral",
+        tone: entry.type === 'comment' ? 'info' : entry.type === 'status' ? 'warning' : 'neutral',
       }))
     : [];
 
@@ -106,13 +111,13 @@ export function getTaskActivityEntries(task) {
     {
       id: `${task.id}:created`,
       entityId: task.id,
-      entityType: "task",
-      type: "created",
+      entityType: 'task',
+      type: 'created',
       title: task.title,
-      actor: task.createdByUserId || "System",
-      message: "Utworzono zadanie.",
+      actor: task.createdByUserId || 'System',
+      message: 'Utworzono zadanie.',
       createdAt: task.createdAt || task.updatedAt,
-      tone: "neutral",
+      tone: 'neutral',
     },
   ];
 }
@@ -121,11 +126,21 @@ export function getTaskLastActivity(task) {
   return latestEntry(getTaskActivityEntries(task));
 }
 
-export function buildWorkspaceActivityFeed(meetings = [], tasks = [], workspaceMembers = [], users = [], limit = 18) {
+export function buildWorkspaceActivityFeed(
+  meetings = [],
+  tasks = [],
+  workspaceMembers = [],
+  users = [],
+  limit = 18
+) {
   return [
-    ...(Array.isArray(meetings) ? meetings : []).flatMap((meeting) => getMeetingActivityEntries(meeting, workspaceMembers, users)),
+    ...(Array.isArray(meetings) ? meetings : []).flatMap((meeting) =>
+      getMeetingActivityEntries(meeting, workspaceMembers, users)
+    ),
     ...(Array.isArray(tasks) ? tasks : []).flatMap((task) =>
-      getTaskActivityEntries(task).filter((entry) => ["created", "status", "comment", "updated"].includes(entry.type))
+      getTaskActivityEntries(task).filter((entry) =>
+        ['created', 'status', 'comment', 'updated'].includes(entry.type)
+      )
     ),
   ]
     .sort((left, right) => toTimestamp(right.createdAt) - toTimestamp(left.createdAt))

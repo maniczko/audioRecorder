@@ -1,6 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
-import { httpClient } from "../lib/httpClient.ts";
+import fs from 'node:fs';
+import path from 'node:path';
+import { httpClient } from '../lib/httpClient.ts';
 
 export interface SttAudioRequest {
   filePath?: string;
@@ -21,7 +21,7 @@ export interface SttProviderAttempt {
 }
 
 export interface SttProvider {
-  id: "openai" | "groq";
+  id: 'openai' | 'groq';
   label: string;
   apiKey: string;
   baseUrl: string;
@@ -41,12 +41,13 @@ export interface SttProviderRunResult {
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024;
 
 function ensureAudioBuffer(request: SttAudioRequest) {
-  const audioBuffer = request.buffer || (request.filePath ? fs.readFileSync(request.filePath) : null);
+  const audioBuffer =
+    request.buffer || (request.filePath ? fs.readFileSync(request.filePath) : null);
   if (!audioBuffer) {
-    throw new Error("Brakuje audio buffer albo filePath dla STT request.");
+    throw new Error('Brakuje audio buffer albo filePath dla STT request.');
   }
   if (audioBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
-    throw new Error("Plik audio przekracza limit 24 MB dla API transkrypcji.");
+    throw new Error('Plik audio przekracza limit 24 MB dla API transkrypcji.');
   }
   return audioBuffer;
 }
@@ -54,15 +55,18 @@ function ensureAudioBuffer(request: SttAudioRequest) {
 function createFormData(request: SttAudioRequest) {
   const audioBuffer = ensureAudioBuffer(request);
   const form = new FormData();
-  const safeFilename = request.filename || (request.filePath ? path.basename(request.filePath) : "audio.wav");
+  const safeFilename =
+    request.filename || (request.filePath ? path.basename(request.filePath) : 'audio.wav');
 
   form.append(
-    "file",
-    new File([audioBuffer], safeFilename, { type: request.contentType || "application/octet-stream" }) as any
+    'file',
+    new File([audioBuffer], safeFilename, {
+      type: request.contentType || 'application/octet-stream',
+    }) as any
   );
 
   Object.entries(request.fields || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === "") {
+    if (value === undefined || value === null || value === '') {
       return;
     }
 
@@ -73,7 +77,7 @@ function createFormData(request: SttAudioRequest) {
       return;
     }
 
-    form.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+    form.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
   });
 
   return form;
@@ -99,7 +103,7 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
   let response: Awaited<ReturnType<typeof httpClient>>;
   try {
     response = await httpClient(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${provider.apiKey}`,
       },
@@ -108,8 +112,8 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
       timeout: 120000,
     });
   } catch (err: any) {
-    const cause = err?.cause?.message || err?.cause?.code || "";
-    const detail = cause ? ` (cause: ${cause})` : "";
+    const cause = err?.cause?.message || err?.cause?.code || '';
+    const detail = cause ? ` (cause: ${cause})` : '';
     console.warn(`[stt] ${provider.id} network error: ${err?.message}${detail} url=${url}`);
     throw err;
   }
@@ -117,8 +121,11 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
   const rawBody = await response.text();
   if (!response.ok) {
     const payload = parseJsonResponse(rawBody);
-    const msg = payload?.error?.message || `STT audio request failed with status ${response.status}.`;
-    console.warn(`[stt] ${provider.id} failed: status=${response.status} body=${rawBody.slice(0, 300)}`);
+    const msg =
+      payload?.error?.message || `STT audio request failed with status ${response.status}.`;
+    console.warn(
+      `[stt] ${provider.id} failed: status=${response.status} body=${rawBody.slice(0, 300)}`
+    );
     throw new Error(msg);
   }
 
@@ -126,7 +133,7 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
 }
 
 function createProvider(config: {
-  id: "openai" | "groq";
+  id: 'openai' | 'groq';
   label: string;
   apiKey: string;
   baseUrl: string;
@@ -144,8 +151,8 @@ function createProvider(config: {
 }
 
 export function resolveConfiguredSttProviders(input: {
-  preferredProvider: "openai" | "groq";
-  fallbackProvider?: "openai" | "groq" | "none";
+  preferredProvider: 'openai' | 'groq';
+  fallbackProvider?: 'openai' | 'groq' | 'none';
   openAiApiKey?: string;
   openAiBaseUrl?: string;
   groqApiKey?: string;
@@ -154,24 +161,28 @@ export function resolveConfiguredSttProviders(input: {
 }) {
   const registry = {
     openai: createProvider({
-      id: "openai",
-      label: "OpenAI STT",
-      apiKey: input.openAiApiKey || "",
-      baseUrl: input.openAiBaseUrl || "https://api.openai.com/v1",
-      defaultModel: input.openAiModel || "gpt-4o-transcribe",
+      id: 'openai',
+      label: 'OpenAI STT',
+      apiKey: input.openAiApiKey || '',
+      baseUrl: input.openAiBaseUrl || 'https://api.openai.com/v1',
+      defaultModel: input.openAiModel || 'gpt-4o-transcribe',
     }),
     groq: createProvider({
-      id: "groq",
-      label: "Groq Whisper",
-      apiKey: input.groqApiKey || "",
-      baseUrl: "https://api.groq.com/openai/v1",
-      defaultModel: input.groqModel || "whisper-large-v3",
+      id: 'groq',
+      label: 'Groq Whisper',
+      apiKey: input.groqApiKey || '',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      defaultModel: input.groqModel || 'whisper-large-v3',
     }),
   } as const;
 
   const sequence: SttProvider[] = [];
   sequence.push(registry[input.preferredProvider]);
-  if (input.fallbackProvider && input.fallbackProvider !== "none" && input.fallbackProvider !== input.preferredProvider) {
+  if (
+    input.fallbackProvider &&
+    input.fallbackProvider !== 'none' &&
+    input.fallbackProvider !== input.preferredProvider
+  ) {
     sequence.push(registry[input.fallbackProvider]);
   }
 
@@ -220,7 +231,7 @@ export async function transcribeWithProviders(
     }
   }
 
-  const finalError = lastError || new Error("Brak skonfigurowanego providera STT.");
+  const finalError = lastError || new Error('Brak skonfigurowanego providera STT.');
   (finalError as any).sttAttempts = attempts;
   throw finalError;
 }

@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useState } from 'react';
 import './TaskScheduleViewStyles.css';
 
-const WEEKDAYS_PL = ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"];
+const WEEKDAYS_PL = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
 const MONTHS_PL = [
-  "Sty", "Lut", "Mar", "Kwi", "Maj", "Cze",
-  "Lip", "Sie", "Wrz", "Paz", "Lis", "Gru",
+  'Sty',
+  'Lut',
+  'Mar',
+  'Kwi',
+  'Maj',
+  'Cze',
+  'Lip',
+  'Sie',
+  'Wrz',
+  'Paz',
+  'Lis',
+  'Gru',
 ];
 
 function startOfDay(date) {
@@ -35,11 +45,11 @@ function mondayOf(date) {
 }
 
 export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, onUpdateTask }) {
-  const [viewRange, setViewRange] = useState("2w");
+  const [viewRange, setViewRange] = useState('2w');
   const today = startOfDay(new Date());
 
-  const anchor = viewRange === "2w" ? mondayOf(today) : today;
-  const dayCount = viewRange === "2w" ? 14 : 35;
+  const anchor = viewRange === '2w' ? mondayOf(today) : today;
+  const dayCount = viewRange === '2w' ? 14 : 35;
   const days = buildDays(anchor, dayCount);
 
   const tasksWithDue = tasks.filter((t) => t.dueDate && !t.completed);
@@ -55,14 +65,14 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
   });
 
   function handleTaskDragStart(event, taskId) {
-    event.dataTransfer.setData("text/plain", taskId);
-    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData('text/plain', taskId);
+    event.dataTransfer.effectAllowed = 'move';
   }
 
   function handleDayDrop(event, targetDay) {
     event.preventDefault();
-    const taskId = event.dataTransfer.getData("text/plain");
-    if (!taskId || typeof onUpdateTask !== "function") {
+    const taskId = event.dataTransfer.getData('text/plain');
+    if (!taskId || typeof onUpdateTask !== 'function') {
       return;
     }
     const newDue = new Date(targetDay);
@@ -70,7 +80,7 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
     onUpdateTask(taskId, { dueDate: newDue.toISOString() });
   }
 
-  const isWeekMode = viewRange === "2w";
+  const isWeekMode = viewRange === '2w';
 
   return (
     <div className="task-schedule-view">
@@ -78,15 +88,15 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
         <div className="todo-view-switch" role="tablist">
           <button
             type="button"
-            className={viewRange === "2w" ? "todo-view-button active" : "todo-view-button"}
-            onClick={() => setViewRange("2w")}
+            className={viewRange === '2w' ? 'todo-view-button active' : 'todo-view-button'}
+            onClick={() => setViewRange('2w')}
           >
             2 tygodnie
           </button>
           <button
             type="button"
-            className={viewRange === "5w" ? "todo-view-button active" : "todo-view-button"}
-            onClick={() => setViewRange("5w")}
+            className={viewRange === '5w' ? 'todo-view-button active' : 'todo-view-button'}
+            onClick={() => setViewRange('5w')}
           >
             5 tygodni
           </button>
@@ -94,7 +104,7 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
         <small className="schedule-hint">Przeciagnij zadanie na dzien aby zmienic termin.</small>
       </div>
 
-      <div className={`schedule-grid ${isWeekMode ? "schedule-grid-14" : "schedule-grid-35"}`}>
+      <div className={`schedule-grid ${isWeekMode ? 'schedule-grid-14' : 'schedule-grid-35'}`}>
         {days.map((day) => {
           const isToday = day.getTime() === today.getTime();
           const isPast = day.getTime() < today.getTime();
@@ -104,13 +114,13 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
           return (
             <div
               key={day.getTime()}
-              className={`schedule-day${isToday ? " today" : ""}${isPast ? " past" : ""}${isWeekend ? " weekend" : ""}`}
+              className={`schedule-day${isToday ? ' today' : ''}${isPast ? ' past' : ''}${isWeekend ? ' weekend' : ''}`}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleDayDrop(e, day)}
             >
               <div className="schedule-day-header">
                 <span className="schedule-weekday">{WEEKDAYS_PL[day.getDay()]}</span>
-                <span className={`schedule-date-num${isToday ? " today" : ""}`}>
+                <span className={`schedule-date-num${isToday ? ' today' : ''}`}>
                   {day.getDate()}
                 </span>
                 {day.getDate() === 1 ? (
@@ -123,7 +133,7 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
                     key={task.id}
                     type="button"
                     draggable
-                    className={`schedule-task-chip${selectedTask?.id === task.id ? " active" : ""}${task.important ? " important" : ""}`}
+                    className={`schedule-task-chip${selectedTask?.id === task.id ? ' active' : ''}${task.important ? ' important' : ''}`}
                     onClick={() => onSelectTask?.(task.id)}
                     onDragStart={(e) => handleTaskDragStart(e, task.id)}
                     title={task.title}
@@ -148,7 +158,7 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
               <button
                 key={task.id}
                 type="button"
-                className={`schedule-task-chip unscheduled${selectedTask?.id === task.id ? " active" : ""}`}
+                className={`schedule-task-chip unscheduled${selectedTask?.id === task.id ? ' active' : ''}`}
                 onClick={() => onSelectTask?.(task.id)}
                 title={task.title}
               >

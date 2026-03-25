@@ -16,7 +16,7 @@ describe('notifications library', () => {
           title: 'Zadanie 1',
           minutes: 15,
           remindAt: '2026-03-20T15:00:00Z',
-          entryId: 'task1'
+          entryId: 'task1',
         },
         {
           id: 'rem2',
@@ -24,8 +24,8 @@ describe('notifications library', () => {
           title: 'Google Event',
           minutes: 10,
           remindAt: '2026-03-20T14:50:00Z',
-          entryId: 'google1'
-        }
+          entryId: 'google1',
+        },
       ];
 
       const result = buildWorkspaceNotifications({ reminders });
@@ -41,13 +41,13 @@ describe('notifications library', () => {
         {
           task: { id: 't1', title: 'Task 1', createdAt: '2026-03-20T10:00:00Z' },
           sla: { id: 'sla1', tone: 'danger', label: 'Overdue' },
-          dependencies: { blocking: false }
+          dependencies: { blocking: false },
         },
         {
           task: { id: 't2', title: 'Task 2', createdAt: '2026-03-20T09:00:00Z' },
           sla: { id: 'sla2', tone: 'warning', label: 'Soon' },
-          dependencies: { blocking: true, unresolved: [{ title: 'Dependency' }] }
-        }
+          dependencies: { blocking: true, unresolved: [{ title: 'Dependency' }] },
+        },
       ];
 
       const result = buildWorkspaceNotifications({ taskNotifications });
@@ -65,14 +65,14 @@ describe('notifications library', () => {
     const items = [
       { id: '1', deliverAt: '2026-03-20T14:50:00Z' },
       { id: '2', deliverAt: '2026-03-20T14:55:00Z' },
-      { id: '3', deliverAt: '2026-03-20T15:10:00Z' }
+      { id: '3', deliverAt: '2026-03-20T15:10:00Z' },
     ];
 
     test('should filter out delivered items', () => {
       const deliveredIds = ['1'];
       const now = new Date('2026-03-20T15:00:00Z');
       const result = getBrowserNotificationCandidates(items, deliveredIds, now);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('2');
     });
@@ -80,15 +80,13 @@ describe('notifications library', () => {
     test('should only return items before now + 1 minute', () => {
       const now = new Date('2026-03-20T14:53:00Z');
       const result = getBrowserNotificationCandidates(items, [], now);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('1');
     });
 
     test('should limit output to 3 items', () => {
-      const manyItems = [
-        { id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }
-      ];
+      const manyItems = [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }];
       const result = getBrowserNotificationCandidates(manyItems, [], new Date());
       expect(result).toHaveLength(3);
     });

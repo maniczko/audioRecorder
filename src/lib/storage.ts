@@ -1,21 +1,21 @@
-import { get, set, del } from "idb-keyval";
+import { get, set, del } from 'idb-keyval';
 
-const isBrowser = typeof window !== "undefined";
+const isBrowser = typeof window !== 'undefined';
 
 export const STORAGE_KEYS = {
-  users: "voicelog.users.v3",
-  session: "voicelog.session.v3",
-  workspaces: "voicelog.workspaces.v1",
-  meetings: "voicelog.meetings.v3",
-  taskState: "voicelog.taskState.v1",
-  manualTasks: "voicelog.manualTasks.v1",
-  taskBoards: "voicelog.taskBoards.v1",
-  calendarMeta: "voicelog.calendarMeta.v1",
-  meetingDrafts: "voicelog.meetingDrafts.v1",
-  personNotes: "voicelog.personNotes.v1",
-  notificationState: "voicelog.notificationState.v1",
-  recordingQueue: "voicelog.recordingQueue.v1",
-  vocabulary: "voicelog.vocabulary.v1",
+  users: 'voicelog.users.v3',
+  session: 'voicelog.session.v3',
+  workspaces: 'voicelog.workspaces.v1',
+  meetings: 'voicelog.meetings.v3',
+  taskState: 'voicelog.taskState.v1',
+  manualTasks: 'voicelog.manualTasks.v1',
+  taskBoards: 'voicelog.taskBoards.v1',
+  calendarMeta: 'voicelog.calendarMeta.v1',
+  meetingDrafts: 'voicelog.meetingDrafts.v1',
+  personNotes: 'voicelog.personNotes.v1',
+  notificationState: 'voicelog.notificationState.v1',
+  recordingQueue: 'voicelog.recordingQueue.v1',
+  vocabulary: 'voicelog.vocabulary.v1',
 };
 
 export function readStorage(key, fallbackValue) {
@@ -97,7 +97,7 @@ export const idbJSONStorage = {
   },
 };
 
-export function createId(prefix = "id") {
+export function createId(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
 }
 
@@ -107,33 +107,33 @@ export function clamp(value, min, max) {
 
 export function formatDuration(seconds) {
   const total = Math.max(0, Math.floor(seconds || 0));
-  const mins = String(Math.floor(total / 60)).padStart(2, "0");
-  const secs = String(total % 60).padStart(2, "0");
+  const mins = String(Math.floor(total / 60)).padStart(2, '0');
+  const secs = String(total % 60).padStart(2, '0');
   return `${mins}:${secs}`;
 }
 
 export function formatDateTime(value) {
   if (!value) {
-    return "No date";
+    return 'No date';
   }
 
   const date = new Date(value);
-  return new Intl.DateTimeFormat("pl-PL", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 
-export function downloadTextFile(filename, contents, mimeType = "text/plain;charset=utf-8") {
+export function downloadTextFile(filename, contents, mimeType = 'text/plain;charset=utf-8') {
   if (!isBrowser) {
     return;
   }
 
   const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
-  const link = window.document.createElement("a");
+  const link = window.document.createElement('a');
   link.href = url;
   link.download = filename;
   link.click();

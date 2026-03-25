@@ -1,7 +1,7 @@
-import { renderHook, act } from "@testing-library/react";
-import useAudioHardware from "./useAudioHardware";
+import { renderHook, act } from '@testing-library/react';
+import useAudioHardware from './useAudioHardware';
 
-describe("useAudioHardware", () => {
+describe('useAudioHardware', () => {
   let originalMediaDevices;
   let originalMediaRecorder;
   let originalAudioContext;
@@ -22,14 +22,14 @@ describe("useAudioHardware", () => {
 
     global.MediaRecorder = class {
       constructor() {
-        this.state = "inactive";
-        this.mimeType = "audio/webm";
+        this.state = 'inactive';
+        this.mimeType = 'audio/webm';
       }
       start() {
-        this.state = "recording";
+        this.state = 'recording';
       }
       stop() {
-        this.state = "inactive";
+        this.state = 'inactive';
         if (this.onstop) this.onstop();
       }
       static isTypeSupported() {
@@ -65,7 +65,7 @@ describe("useAudioHardware", () => {
     jest.useRealTimers();
   });
 
-  test("starts and stops recording", async () => {
+  test('starts and stops recording', async () => {
     const onRecordingStop = jest.fn();
     const mockMediaService = {
       createLiveController: () => ({
@@ -73,7 +73,7 @@ describe("useAudioHardware", () => {
         start: jest.fn(),
         stop: jest.fn(),
         clearHandlers: jest.fn(),
-      })
+      }),
     };
 
     const { result } = renderHook(() =>
@@ -87,11 +87,11 @@ describe("useAudioHardware", () => {
     );
 
     await act(async () => {
-      await result.current.startRecording("m1");
+      await result.current.startRecording('m1');
     });
-    
+
     expect(result.current.isRecording).toBe(true);
-    
+
     act(() => {
       jest.advanceTimersByTime(1000);
     });

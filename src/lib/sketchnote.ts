@@ -1,16 +1,18 @@
 function escapeXml(value: string) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function wrapText(text: string, limit = 48) {
-  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const words = String(text || '')
+    .split(/\s+/)
+    .filter(Boolean);
   const lines: string[] = [];
-  let current = "";
+  let current = '';
 
   words.forEach((word) => {
     const next = current ? `${current} ${word}` : word;
@@ -29,16 +31,22 @@ function wrapText(text: string, limit = 48) {
   return lines.slice(0, 3);
 }
 
-export function buildSketchnoteSvg(summaryText: string, bullets: Array<{ label: string; value: string; icon?: string }> = []) {
-  const title = escapeXml(String(summaryText || "").trim() || "Podsumowanie spotkania");
+export function buildSketchnoteSvg(
+  summaryText: string,
+  bullets: Array<{ label: string; value: string; icon?: string }> = []
+) {
+  const title = escapeXml(String(summaryText || '').trim() || 'Podsumowanie spotkania');
   const entries = bullets.slice(0, 4);
   const bodyLines = entries.flatMap((item) => [
-    `${item.icon || "•"} ${item.label}`,
+    `${item.icon || '•'} ${item.label}`,
     ...wrapText(item.value, 42).map((line) => `  ${line}`),
   ]);
   const textBlocks = bodyLines
-    .map((line, index) => `<text x="48" y="${170 + index * 28}" font-size="${line.startsWith("  ") ? 20 : 24}" font-weight="${line.startsWith("  ") ? 400 : 700}" fill="#1f2937">${escapeXml(line.trim())}</text>`)
-    .join("");
+    .map(
+      (line, index) =>
+        `<text x="48" y="${170 + index * 28}" font-size="${line.startsWith('  ') ? 20 : 24}" font-weight="${line.startsWith('  ') ? 400 : 700}" fill="#1f2937">${escapeXml(line.trim())}</text>`
+    )
+    .join('');
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Sketchnotka spotkania">
@@ -70,11 +78,14 @@ export function buildSketchnoteSvg(summaryText: string, bullets: Array<{ label: 
   `.trim();
 }
 
-export function buildSketchnoteDataUrl(summaryText: string, bullets: Array<{ label: string; value: string; icon?: string }> = []) {
+export function buildSketchnoteDataUrl(
+  summaryText: string,
+  bullets: Array<{ label: string; value: string; icon?: string }> = []
+) {
   const svg = buildSketchnoteSvg(summaryText, bullets);
   const encoded =
-    typeof btoa === "function"
+    typeof btoa === 'function'
       ? btoa(unescape(encodeURIComponent(svg)))
-      : Buffer.from(svg).toString("base64");
+      : Buffer.from(svg).toString('base64');
   return `data:image/svg+xml;base64,${encoded}`;
 }

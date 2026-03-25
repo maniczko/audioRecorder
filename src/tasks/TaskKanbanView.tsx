@@ -1,26 +1,32 @@
-import { memo, useState } from "react";
-import { getTaskDependencyDetails } from "../lib/tasks";
-import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from "./taskViewUtils";
-import { getTaskLastActivity } from "../lib/activityFeed";
+import { memo, useState } from 'react';
+import { getTaskDependencyDetails } from '../lib/tasks';
+import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
+import { getTaskLastActivity } from '../lib/activityFeed';
 import './TaskKanbanViewStyles.css';
 
 const COVER_COLORS = [
-  { id: "none", label: "Brak", value: "" },
-  { id: "red", label: "Czerwony", value: "#f17d72" },
-  { id: "pink", label: "Rozowy", value: "#e879a0" },
-  { id: "orange", label: "Pomaranczowy", value: "#f3a46e" },
-  { id: "yellow", label: "Zolty", value: "#f3ca72" },
-  { id: "green", label: "Zielony", value: "#67d59f" },
-  { id: "teal", label: "Morski", value: "#34c5b5" },
-  { id: "blue", label: "Niebieski", value: "#5a92ff" },
-  { id: "purple", label: "Fioletowy", value: "#8a6bff" },
+  { id: 'none', label: 'Brak', value: '' },
+  { id: 'red', label: 'Czerwony', value: '#f17d72' },
+  { id: 'pink', label: 'Rozowy', value: '#e879a0' },
+  { id: 'orange', label: 'Pomaranczowy', value: '#f3a46e' },
+  { id: 'yellow', label: 'Zolty', value: '#f3ca72' },
+  { id: 'green', label: 'Zielony', value: '#67d59f' },
+  { id: 'teal', label: 'Morski', value: '#34c5b5' },
+  { id: 'blue', label: 'Niebieski', value: '#5a92ff' },
+  { id: 'purple', label: 'Fioletowy', value: '#8a6bff' },
 ];
 
 export { COVER_COLORS };
 
 const TAG_PALETTE = [
-  "#c11574", "#8b5cf6", "#0284c7", "#0891b2",
-  "#059669", "#65a30d", "#d97706", "#dc2626",
+  '#c11574',
+  '#8b5cf6',
+  '#0284c7',
+  '#0891b2',
+  '#059669',
+  '#65a30d',
+  '#d97706',
+  '#dc2626',
 ];
 
 function tagColor(tag) {
@@ -40,11 +46,11 @@ function avatarBg(name) {
 }
 
 function initials(name) {
-  return (name || "?")
+  return (name || '?')
     .split(/\s+/)
-    .map((w) => w[0] || "")
+    .map((w) => w[0] || '')
     .slice(0, 2)
-    .join("")
+    .join('')
     .toUpperCase();
 }
 
@@ -59,34 +65,36 @@ function SubtaskProgress({ subtasks }) {
       <div className="kanban-subtask-bar">
         <div className="kanban-subtask-fill" style={{ width: `${pct}%` }} />
       </div>
-      <span>{done}/{subtasks.length}</span>
+      <span>
+        {done}/{subtasks.length}
+      </span>
     </div>
   );
 }
 
-function DropSlot({ placement, onDropTask, onDragEnter, label = "Upusc tutaj zadanie" }) {
+function DropSlot({ placement, onDropTask, onDragEnter, label = 'Upusc tutaj zadanie' }) {
   return (
     <div
       className="todo-kanban-drop-slot"
       aria-label={label}
       onDragOver={canDrop}
       onDragEnter={onDragEnter}
-      onDrop={(event) => onDropTask(placement, event, "Zmieniono kolejnosc zadania w kolumnie.")}
+      onDrop={(event) => onDropTask(placement, event, 'Zmieniono kolejnosc zadania w kolumnie.')}
     />
   );
 }
 
 function QuickAddInput({ columnId, onAdd, onCancel }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
 
   function handleKeyDown(event) {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       event.preventDefault();
       if (value.trim()) {
         onAdd(columnId, value.trim());
       }
     }
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       onCancel();
     }
   }
@@ -145,7 +153,7 @@ function KanbanCard({
       <article
         role="button"
         tabIndex={0}
-        className={`todo-kanban-card${isActive ? " active" : ""}${task.completed ? " completed" : ""}`}
+        className={`todo-kanban-card${isActive ? ' active' : ''}${task.completed ? ' completed' : ''}`}
         data-selected={isSelected}
         title="Przeciagnij zadanie"
         draggable
@@ -155,7 +163,7 @@ function KanbanCard({
           writeDragTask(event, task.id);
         }}
         onDragEnd={() => {
-          setDragTaskId("");
+          setDragTaskId('');
         }}
         onClick={() => setSelectedTaskId(task.id)}
         onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
@@ -168,8 +176,8 @@ function KanbanCard({
           <div className="todo-kanban-title">
             <button
               type="button"
-              className={`todo-task-circle${task.completed ? " completed" : ""}`}
-              aria-label={task.completed ? "Otworz ponownie" : "Zakoncz zadanie"}
+              className={`todo-task-circle${task.completed ? ' completed' : ''}`}
+              aria-label={task.completed ? 'Otworz ponownie' : 'Zakoncz zadanie'}
               onClick={(event) => {
                 event.stopPropagation();
                 onUpdateTask(task.id, { completed: !task.completed });
@@ -179,8 +187,8 @@ function KanbanCard({
           </div>
           <button
             type="button"
-            className={`todo-star inline${task.important ? " active" : ""}`}
-            aria-label={task.important ? "Usun waznosc" : "Oznacz jako wazne"}
+            className={`todo-star inline${task.important ? ' active' : ''}`}
+            aria-label={task.important ? 'Usun waznosc' : 'Oznacz jako wazne'}
             onClick={(event) => {
               event.stopPropagation();
               onUpdateTask(task.id, { important: !task.important });
@@ -192,7 +200,7 @@ function KanbanCard({
 
         {task.description ? (
           <p className="kanban-card-description">
-            {task.description.length > 80 ? task.description.slice(0, 80) + "…" : task.description}
+            {task.description.length > 80 ? task.description.slice(0, 80) + '…' : task.description}
           </p>
         ) : null}
 
@@ -236,21 +244,27 @@ function KanbanCard({
 
           <div className="kanban-card-flags">
             {task.dueDate ? (
-              <span className="kanban-due-date">
-                {formatListDueDate(task.dueDate)}
-              </span>
+              <span className="kanban-due-date">{formatListDueDate(task.dueDate)}</span>
             ) : null}
             {task.recurrence ? (
-              <span className="kanban-flag-icon" title="Cykliczne">↻</span>
+              <span className="kanban-flag-icon" title="Cykliczne">
+                ↻
+              </span>
             ) : null}
             {task.reminderAt ? (
-              <span className="kanban-flag-icon" title="Przypomnienie">⏰</span>
+              <span className="kanban-flag-icon" title="Przypomnienie">
+                ⏰
+              </span>
             ) : null}
             {(task.comments?.length || 0) > 0 ? (
-              <span className="kanban-flag-icon" title={`${task.comments.length} komentarzy`}>💬</span>
+              <span className="kanban-flag-icon" title={`${task.comments.length} komentarzy`}>
+                💬
+              </span>
             ) : null}
             {dependencyState.blocking ? (
-              <span className="kanban-flag-icon tone-warning" title="Blokowane">⛔</span>
+              <span className="kanban-flag-icon tone-warning" title="Blokowane">
+                ⛔
+              </span>
             ) : null}
           </div>
         </div>
@@ -260,14 +274,13 @@ function KanbanCard({
             {lastActivity.actor}: {lastActivity.message}
           </small>
         ) : null}
-
       </article>
 
       <DropSlot
         placement={{
           status: columnId,
           previousTaskId: task.id,
-          nextTaskId: columnTasks[index + 1]?.id || "",
+          nextTaskId: columnTasks[index + 1]?.id || '',
         }}
         onDropTask={onDropTask}
         onDragEnter={onDragEnter}
@@ -283,30 +296,33 @@ function buildSwimlanes(tasks, kanbanColumns, swimlaneGroupBy) {
   tasks.forEach((task) => {
     let keys = [];
 
-    if (swimlaneGroupBy === "person") {
-      const people =
-        task.assignedTo?.length ? task.assignedTo : task.owner ? [task.owner] : ["Nieprzypisane"];
+    if (swimlaneGroupBy === 'person') {
+      const people = task.assignedTo?.length
+        ? task.assignedTo
+        : task.owner
+          ? [task.owner]
+          : ['Nieprzypisane'];
       keys = people;
-    } else if (swimlaneGroupBy === "priority") {
-      const labelMap = { urgent: "Krytyczny", high: "Wysoki", medium: "Sredni", low: "Niski" };
-      keys = [labelMap[task.priority] || "Sredni"];
-    } else if (swimlaneGroupBy === "label") {
-      keys = task.tags?.length ? task.tags : ["Bez etykiety"];
-    } else if (swimlaneGroupBy === "due") {
+    } else if (swimlaneGroupBy === 'priority') {
+      const labelMap = { urgent: 'Krytyczny', high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
+      keys = [labelMap[task.priority] || 'Sredni'];
+    } else if (swimlaneGroupBy === 'label') {
+      keys = task.tags?.length ? task.tags : ['Bez etykiety'];
+    } else if (swimlaneGroupBy === 'due') {
       const now = Date.now();
       const day = 86400000;
       if (!task.dueDate) {
-        keys = ["Bez terminu"];
+        keys = ['Bez terminu'];
       } else {
         const t = new Date(task.dueDate).getTime();
         if (t < now) {
-          keys = ["Po terminie"];
+          keys = ['Po terminie'];
         } else if (t < now + 7 * day) {
-          keys = ["Ten tydzien"];
+          keys = ['Ten tydzien'];
         } else if (t < now + 14 * day) {
-          keys = ["Przyszly tydzien"];
+          keys = ['Przyszly tydzien'];
         } else {
-          keys = ["Pozniej"];
+          keys = ['Pozniej'];
         }
       }
     }
@@ -354,13 +370,13 @@ function ColumnBody({
       className="todo-kanban-body"
       onDragOver={canDrop}
       onDragEnter={() => setDropColumnId(column.id)}
-      onDragLeave={() => setDropColumnId((prev) => (prev === column.id ? "" : prev))}
+      onDragLeave={() => setDropColumnId((prev) => (prev === column.id ? '' : prev))}
       onDrop={(event) => handleDrop(column.id, event)}
     >
       {tasks.length ? (
         <>
           <DropSlot
-            placement={{ status: column.id, nextTaskId: tasks[0]?.id || "" }}
+            placement={{ status: column.id, nextTaskId: tasks[0]?.id || '' }}
             onDropTask={handleTaskDrop}
             onDragEnter={() => setDropColumnId(column.id)}
             label={`Upusc na poczatku kolumny ${column.label}`}
@@ -379,7 +395,7 @@ function ColumnBody({
               setDragTaskId={(id) => {
                 setDragTaskId(id);
                 if (!id) {
-                  setDropColumnId("");
+                  setDropColumnId('');
                 }
               }}
               dragTaskId={dragTaskId}
@@ -401,9 +417,9 @@ function ColumnBody({
           columnId={column.id}
           onAdd={(colId, title) => {
             onQuickAddToColumn?.(colId, title);
-            setQuickAddColumnId("");
+            setQuickAddColumnId('');
           }}
-          onCancel={() => setQuickAddColumnId("")}
+          onCancel={() => setQuickAddColumnId('')}
         />
       ) : (
         <button
@@ -433,35 +449,35 @@ function TaskKanbanView({
   dragTaskId,
   onUpdateTask,
   onMoveTaskToColumn,
-  swimlaneGroupBy = "none",
+  swimlaneGroupBy = 'none',
   onQuickAddToColumn,
   onReorderColumns,
-  sortBy = "manual",
+  sortBy = 'manual',
   setSortBy = () => {},
 }) {
-  const [quickAddColumnId, setQuickAddColumnId] = useState("");
-  const [dragHeaderId, setDragHeaderId] = useState("");
+  const [quickAddColumnId, setQuickAddColumnId] = useState('');
+  const [dragHeaderId, setDragHeaderId] = useState('');
 
   const swimlanes =
-    swimlaneGroupBy && swimlaneGroupBy !== "none"
+    swimlaneGroupBy && swimlaneGroupBy !== 'none'
       ? buildSwimlanes(allTasks, kanbanColumns, swimlaneGroupBy)
       : null;
 
   function handleHeaderDragStart(event, columnId) {
-    event.dataTransfer.setData("text/plain", `header:${columnId}`);
+    event.dataTransfer.setData('text/plain', `header:${columnId}`);
     setDragHeaderId(columnId);
   }
 
   function handleHeaderDrop(event, targetColumnId) {
     event.preventDefault();
-    const data = event.dataTransfer.getData("text/plain");
-    if (data.startsWith("header:") && typeof onReorderColumns === "function") {
-      const fromId = data.slice("header:".length);
+    const data = event.dataTransfer.getData('text/plain');
+    if (data.startsWith('header:') && typeof onReorderColumns === 'function') {
+      const fromId = data.slice('header:'.length);
       if (fromId !== targetColumnId) {
         onReorderColumns(fromId, targetColumnId);
       }
     }
-    setDragHeaderId("");
+    setDragHeaderId('');
   }
 
   const sharedBodyProps = {
@@ -490,29 +506,38 @@ function TaskKanbanView({
         <div className="swimlane-header-row">
           <div className="swimlane-lane-cell swimlane-lane-header-spacer" />
           {kanbanColumns.map((col, index) => {
-            const wipExceeded = col.wipLimit && allTasks.filter((t) => t.status === col.id).length >= col.wipLimit;
+            const wipExceeded =
+              col.wipLimit && allTasks.filter((t) => t.status === col.id).length >= col.wipLimit;
             const count = allTasks.filter((t) => t.status === col.id).length;
             return (
               <div
                 key={col.id}
-                className={`swimlane-col-header${dragHeaderId === col.id ? " dragging" : ""}${wipExceeded ? " wip-exceeded" : ""}`}
-                style={{ "--column-color": col.color }}
-                draggable={typeof onReorderColumns === "function"}
+                className={`swimlane-col-header${dragHeaderId === col.id ? ' dragging' : ''}${wipExceeded ? ' wip-exceeded' : ''}`}
+                style={{ '--column-color': col.color }}
+                draggable={typeof onReorderColumns === 'function'}
                 onDragStart={(e) => handleHeaderDragStart(e, col.id)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleHeaderDrop(e, col.id)}
-                title={typeof onReorderColumns === "function" ? "Przeciagnij aby zmienic kolejnosc" : undefined}
+                title={
+                  typeof onReorderColumns === 'function'
+                    ? 'Przeciagnij aby zmienic kolejnosc'
+                    : undefined
+                }
               >
                 <strong>{col.label}</strong>
-                <span className={`wip-count${wipExceeded ? " exceeded" : ""}`}>
-                  {count}{col.wipLimit ? `/${col.wipLimit}` : ""}
+                <span className={`wip-count${wipExceeded ? ' exceeded' : ''}`}>
+                  {count}
+                  {col.wipLimit ? `/${col.wipLimit}` : ''}
                 </span>
                 {index === 0 && (
                   <select
                     className="kanban-col-sort"
                     value={sortBy}
                     onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => { e.stopPropagation(); setSortBy(e.target.value); }}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setSortBy(e.target.value);
+                    }}
                     title="Sortuj karty"
                   >
                     <option value="manual">Ręcznie</option>
@@ -536,7 +561,10 @@ function TaskKanbanView({
             </div>
             <div className="swimlane-cols">
               {lane.columns.map((col) => (
-                <div key={col.id} className={`swimlane-col${dropColumnId === col.id ? " drop" : ""}`}>
+                <div
+                  key={col.id}
+                  className={`swimlane-col${dropColumnId === col.id ? ' drop' : ''}`}
+                >
                   <ColumnBody column={col} tasks={col.tasks} {...sharedBodyProps} />
                 </div>
               ))}
@@ -555,27 +583,35 @@ function TaskKanbanView({
           <section
             key={column.id}
             data-testid={`column-${column.id}`}
-            className={`todo-kanban-column${dropColumnId === column.id ? " drop" : ""}${wipExceeded ? " wip-exceeded" : ""}`}
+            className={`todo-kanban-column${dropColumnId === column.id ? ' drop' : ''}${wipExceeded ? ' wip-exceeded' : ''}`}
           >
             <header
               className="todo-kanban-header"
-              style={{ "--column-color": column.color }}
-              draggable={typeof onReorderColumns === "function"}
+              style={{ '--column-color': column.color }}
+              draggable={typeof onReorderColumns === 'function'}
               onDragStart={(e) => handleHeaderDragStart(e, column.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleHeaderDrop(e, column.id)}
-              title={typeof onReorderColumns === "function" ? "Przeciagnij aby zmienic kolejnosc" : undefined}
+              title={
+                typeof onReorderColumns === 'function'
+                  ? 'Przeciagnij aby zmienic kolejnosc'
+                  : undefined
+              }
             >
               <strong>{column.label}</strong>
-              <span className={`wip-count${wipExceeded ? " exceeded" : ""}`}>
-                {column.tasks.length}{column.wipLimit ? `/${column.wipLimit}` : ""}
+              <span className={`wip-count${wipExceeded ? ' exceeded' : ''}`}>
+                {column.tasks.length}
+                {column.wipLimit ? `/${column.wipLimit}` : ''}
               </span>
               {index === 0 && (
                 <select
                   className="kanban-col-sort"
                   value={sortBy}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => { e.stopPropagation(); setSortBy(e.target.value); }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setSortBy(e.target.value);
+                  }}
                   title="Sortuj karty"
                 >
                   <option value="manual">Ręcznie</option>
@@ -597,7 +633,9 @@ function TaskKanbanView({
 
 export default memo(TaskKanbanView, (prevProps, nextProps) => {
   // Only re-render if boardColumns or selectedTaskIds change
-  return prevProps.boardColumns === nextProps.boardColumns &&
+  return (
+    prevProps.boardColumns === nextProps.boardColumns &&
     prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
-    prevProps.selectedTask === nextProps.selectedTask;
+    prevProps.selectedTask === nextProps.selectedTask
+  );
 });

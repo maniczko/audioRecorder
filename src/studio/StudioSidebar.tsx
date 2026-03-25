@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
-import { formatDateTime, formatDuration } from "../lib/storage";
-import { RecordingPipelineStatus } from "../components/RecordingPipelineStatus";
-import TagInput from "../shared/TagInput";
+import { useState, useRef } from 'react';
+import { formatDateTime, formatDuration } from '../lib/storage';
+import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
+import TagInput from '../shared/TagInput';
 import './StudioSidebarStyles.css';
 
 export default function StudioSidebar({
@@ -24,8 +24,8 @@ export default function StudioSidebar({
   onClose,
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
-  const [activeSection, setActiveSection] = useState("basic");
-  const [attendeeInput, setAttendeeInput] = useState("");
+  const [activeSection, setActiveSection] = useState('basic');
+  const [attendeeInput, setAttendeeInput] = useState('');
   const [showAttendeeSuggestions, setShowAttendeeSuggestions] = useState(false);
   const attendeeWrapRef = useRef(null);
 
@@ -35,7 +35,7 @@ export default function StudioSidebar({
         <div className="panel-header compact">
           <div>
             <div className="eyebrow">Meeting brief</div>
-            <h2>{selectedMeeting ? "Edytuj spotkanie" : "Nowe spotkanie"}</h2>
+            <h2>{selectedMeeting ? 'Edytuj spotkanie' : 'Nowe spotkanie'}</h2>
           </div>
           <button type="button" className="ghost-button" onClick={startNewMeetingDraft}>
             + Nowe
@@ -45,27 +45,31 @@ export default function StudioSidebar({
         <div className="brief-tab-bar">
           <button
             type="button"
-            className={activeSection === "basic" ? "brief-tab active" : "brief-tab"}
-            onClick={() => setActiveSection("basic")}
+            className={activeSection === 'basic' ? 'brief-tab active' : 'brief-tab'}
+            onClick={() => setActiveSection('basic')}
           >
             Podstawowe
           </button>
           <button
             type="button"
-            className={activeSection === "advanced" ? "brief-tab active" : "brief-tab"}
-            onClick={() => setActiveSection("advanced")}
+            className={activeSection === 'advanced' ? 'brief-tab active' : 'brief-tab'}
+            onClick={() => setActiveSection('advanced')}
           >
             Szczegóły
           </button>
         </div>
 
-        {activeSection === "basic" ? (
+        {activeSection === 'basic' ? (
           <div className="stack-form brief-form-section">
             <label>
-              <span>Tytuł <span className="required-star">*</span></span>
+              <span>
+                Tytuł <span className="required-star">*</span>
+              </span>
               <input
                 value={meetingDraft.title}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))
+                }
                 placeholder="np. Spotkanie z klientem"
                 disabled={!canEditWorkspace}
               />
@@ -75,7 +79,9 @@ export default function StudioSidebar({
               <textarea
                 rows="3"
                 value={meetingDraft.context}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))
+                }
                 placeholder="O czym będzie to spotkanie?"
                 disabled={!canEditWorkspace}
               />
@@ -85,7 +91,9 @@ export default function StudioSidebar({
               <input
                 type="datetime-local"
                 value={meetingDraft.startsAt}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))
+                }
                 disabled={!canEditWorkspace}
               />
             </label>
@@ -93,10 +101,17 @@ export default function StudioSidebar({
               <span>Czas trwania</span>
               <div className="duration-picker">
                 <select
-                  value={[15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) ? String(meetingDraft.durationMinutes) : "custom"}
+                  value={
+                    [15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes))
+                      ? String(meetingDraft.durationMinutes)
+                      : 'custom'
+                  }
                   onChange={(event) => {
-                    if (event.target.value !== "custom") {
-                      setMeetingDraft((previous) => ({ ...previous, durationMinutes: Number(event.target.value) }));
+                    if (event.target.value !== 'custom') {
+                      setMeetingDraft((previous) => ({
+                        ...previous,
+                        durationMinutes: Number(event.target.value),
+                      }));
                     }
                   }}
                   disabled={!canEditWorkspace}
@@ -113,7 +128,12 @@ export default function StudioSidebar({
                     min="5"
                     step="5"
                     value={meetingDraft.durationMinutes}
-                    onChange={(event) => setMeetingDraft((previous) => ({ ...previous, durationMinutes: event.target.value }))}
+                    onChange={(event) =>
+                      setMeetingDraft((previous) => ({
+                        ...previous,
+                        durationMinutes: event.target.value,
+                      }))
+                    }
                     disabled={!canEditWorkspace}
                     placeholder="min"
                     className="duration-custom-input"
@@ -124,25 +144,30 @@ export default function StudioSidebar({
             <div className="brief-attendees-field">
               <span className="brief-field-label">Uczestnicy</span>
               <div className="brief-attendees-chips">
-                {(meetingDraft.attendees || "").split("\n").filter(Boolean).map((name) => (
-                  <span key={name} className="brief-attendee-chip">
-                    {name}
-                    <button
-                      type="button"
-                      className="brief-attendee-remove"
-                      onClick={() =>
-                        setMeetingDraft((previous) => ({
-                          ...previous,
-                          attendees: (previous.attendees || "")
-                            .split("\n")
-                            .filter((n) => n.trim() && n.trim() !== name.trim())
-                            .join("\n"),
-                        }))
-                      }
-                      disabled={!canEditWorkspace}
-                    >×</button>
-                  </span>
-                ))}
+                {(meetingDraft.attendees || '')
+                  .split('\n')
+                  .filter(Boolean)
+                  .map((name) => (
+                    <span key={name} className="brief-attendee-chip">
+                      {name}
+                      <button
+                        type="button"
+                        className="brief-attendee-remove"
+                        onClick={() =>
+                          setMeetingDraft((previous) => ({
+                            ...previous,
+                            attendees: (previous.attendees || '')
+                              .split('\n')
+                              .filter((n) => n.trim() && n.trim() !== name.trim())
+                              .join('\n'),
+                          }))
+                        }
+                        disabled={!canEditWorkspace}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
               </div>
               {canEditWorkspace && (
                 <div className="brief-attendee-input-wrap" ref={attendeeWrapRef}>
@@ -153,18 +178,18 @@ export default function StudioSidebar({
                       setShowAttendeeSuggestions(true);
                     }}
                     onKeyDown={(e) => {
-                      if ((e.key === "Enter" || e.key === ",") && attendeeInput.trim()) {
+                      if ((e.key === 'Enter' || e.key === ',') && attendeeInput.trim()) {
                         e.preventDefault();
-                        const name = attendeeInput.trim().replace(/,$/, "");
+                        const name = attendeeInput.trim().replace(/,$/, '');
                         setMeetingDraft((previous) => ({
                           ...previous,
                           attendees: previous.attendees
-                            ? previous.attendees.trim() + "\n" + name
+                            ? previous.attendees.trim() + '\n' + name
                             : name,
                         }));
-                        setAttendeeInput("");
+                        setAttendeeInput('');
                         setShowAttendeeSuggestions(false);
-                      } else if (e.key === "Escape") {
+                      } else if (e.key === 'Escape') {
                         setShowAttendeeSuggestions(false);
                       }
                     }}
@@ -173,38 +198,47 @@ export default function StudioSidebar({
                     placeholder="Dodaj uczestnika..."
                     className="brief-attendee-input"
                   />
-                  {showAttendeeSuggestions && peopleOptions.filter((p) =>
-                    p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
-                    !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)
-                  ).length > 0 && (
-                    <div className="attendee-suggestions-dropdown">
-                      {peopleOptions
-                        .filter((p) =>
-                          p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
-                          !(meetingDraft.attendees || "").split("\n").map((n) => n.trim()).includes(p)
-                        )
-                        .map((person) => (
-                          <button
-                            key={person}
-                            type="button"
-                            className="attendee-suggestion-item"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setMeetingDraft((previous) => ({
-                                ...previous,
-                                attendees: previous.attendees
-                                  ? previous.attendees.trim() + "\n" + person
-                                  : person,
-                              }));
-                              setAttendeeInput("");
-                              setShowAttendeeSuggestions(false);
-                            }}
-                          >
-                            {person}
-                          </button>
-                        ))}
-                    </div>
-                  )}
+                  {showAttendeeSuggestions &&
+                    peopleOptions.filter(
+                      (p) =>
+                        p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
+                        !(meetingDraft.attendees || '')
+                          .split('\n')
+                          .map((n) => n.trim())
+                          .includes(p)
+                    ).length > 0 && (
+                      <div className="attendee-suggestions-dropdown">
+                        {peopleOptions
+                          .filter(
+                            (p) =>
+                              p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
+                              !(meetingDraft.attendees || '')
+                                .split('\n')
+                                .map((n) => n.trim())
+                                .includes(p)
+                          )
+                          .map((person) => (
+                            <button
+                              key={person}
+                              type="button"
+                              className="attendee-suggestion-item"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setMeetingDraft((previous) => ({
+                                  ...previous,
+                                  attendees: previous.attendees
+                                    ? previous.attendees.trim() + '\n' + person
+                                    : person,
+                                }));
+                                setAttendeeInput('');
+                                setShowAttendeeSuggestions(false);
+                              }}
+                            >
+                              {person}
+                            </button>
+                          ))}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -212,23 +246,30 @@ export default function StudioSidebar({
               <span className="brief-field-label">Tagi</span>
               {canEditWorkspace ? (
                 <TagInput
-                  tags={(meetingDraft.tags || "").split(",").map(t => t.trim()).filter(Boolean)}
+                  tags={(meetingDraft.tags || '')
+                    .split(',')
+                    .map((t) => t.trim())
+                    .filter(Boolean)}
                   suggestions={tagOptions}
                   onChange={(newTags) => {
                     setMeetingDraft((previous) => ({
                       ...previous,
-                      tags: newTags.join(", "),
+                      tags: newTags.join(', '),
                     }));
                   }}
                   placeholder="Dodaj tag..."
                 />
               ) : (
                 <div className="brief-attendees-chips">
-                  {(meetingDraft.tags || "").split(",").map(t => t.trim()).filter(Boolean).map((tag) => (
-                    <span key={tag} className="brief-attendee-chip">
-                      {tag}
-                    </span>
-                  ))}
+                  {(meetingDraft.tags || '')
+                    .split(',')
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .map((tag) => (
+                      <span key={tag} className="brief-attendee-chip">
+                        {tag}
+                      </span>
+                    ))}
                 </div>
               )}
             </div>
@@ -240,8 +281,10 @@ export default function StudioSidebar({
               <textarea
                 rows="3"
                 value={meetingDraft.needs}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))}
-                placeholder={"np. Potrzebuję wybudować dom\nChcę refinansować kredyt"}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))
+                }
+                placeholder={'np. Potrzebuję wybudować dom\nChcę refinansować kredyt'}
                 disabled={!canEditWorkspace}
               />
             </label>
@@ -250,8 +293,13 @@ export default function StudioSidebar({
               <textarea
                 rows="3"
                 value={meetingDraft.desiredOutputs}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, desiredOutputs: event.target.value }))}
-                placeholder={"np. Kolejne kroki\nOwnerzy zadan"}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({
+                    ...previous,
+                    desiredOutputs: event.target.value,
+                  }))
+                }
+                placeholder={'np. Kolejne kroki\nOwnerzy zadan'}
                 disabled={!canEditWorkspace}
               />
             </label>
@@ -259,7 +307,9 @@ export default function StudioSidebar({
               <span>Lokalizacja</span>
               <input
                 value={meetingDraft.location}
-                onChange={(event) => setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))}
+                onChange={(event) =>
+                  setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))
+                }
                 placeholder="np. Sala konferencyjna A"
                 disabled={!canEditWorkspace}
               />
@@ -268,20 +318,29 @@ export default function StudioSidebar({
         )}
 
         <div className="button-row brief-actions">
-          <button type="button" className="primary-button" onClick={() => {
-            saveMeeting();
-            if (onClose) onClose();
-          }} disabled={!canEditWorkspace || !meetingDraft.title?.trim()}>
-            {isDetachedMeetingDraft ? "Utwórz spotkanie" : "Zapisz zmiany"}
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => {
+              saveMeeting();
+              if (onClose) onClose();
+            }}
+            disabled={!canEditWorkspace || !meetingDraft.title?.trim()}
+          >
+            {isDetachedMeetingDraft ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
           </button>
-          <button type="button" className="ghost-button" onClick={() => {
-            clearMeetingDraft();
-            if (onClose) onClose();
-          }} disabled={!canEditWorkspace}>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              clearMeetingDraft();
+              if (onClose) onClose();
+            }}
+            disabled={!canEditWorkspace}
+          >
             Anuluj
           </button>
         </div>
-
       </section>
 
       <RecordingsSidebarPanel
@@ -295,11 +354,19 @@ export default function StudioSidebar({
   );
 }
 
-function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordingId, selectMeeting, setSelectedRecordingId }) {
-  const [search, setSearch] = useState("");
+function RecordingsSidebarPanel({
+  userMeetings,
+  selectedMeeting,
+  selectedRecordingId,
+  selectMeeting,
+  setSelectedRecordingId,
+}) {
+  const [search, setSearch] = useState('');
 
   const allRecordings = userMeetings
-    .flatMap((m) => (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title })))
+    .flatMap((m) =>
+      (m.recordings || []).map((r) => ({ ...r, meetingId: m.id, meetingTitle: m.title }))
+    )
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const filtered = search.trim()
@@ -337,7 +404,7 @@ function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordi
           return (
             <li
               key={rec.id}
-              className={`sidebar-recording-item${isActive ? " active" : ""}${isMeetingActive ? " meeting-active" : ""}`}
+              className={`sidebar-recording-item${isActive ? ' active' : ''}${isMeetingActive ? ' meeting-active' : ''}`}
               onClick={() => {
                 const meeting = userMeetings.find((m) => m.id === rec.meetingId);
                 if (meeting && selectMeeting) selectMeeting(meeting);
@@ -348,14 +415,12 @@ function RecordingsSidebarPanel({ userMeetings, selectedMeeting, selectedRecordi
               <div className="sidebar-recording-meta">
                 <span>{formatDateTime(rec.createdAt)}</span>
                 <span>{formatDuration(rec.duration)}</span>
-                <RecordingPipelineStatus status={rec.pipelineStatus || "done"} />
+                <RecordingPipelineStatus status={rec.pipelineStatus || 'done'} />
               </div>
             </li>
           );
         })}
-        {filtered.length === 0 && (
-          <li className="sidebar-recording-empty">Brak wyników</li>
-        )}
+        {filtered.length === 0 && <li className="sidebar-recording-empty">Brak wyników</li>}
       </ul>
     </section>
   );

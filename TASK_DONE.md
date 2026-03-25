@@ -1,6 +1,14 @@
 # TASK_DONE
 
-Zrealizowane zadania przeniesione z TASK_QUEUE.md.
+## Zrealizowane Zadania
+
+## [201] testy ai/routes.ts
+Status: `done`
+Cel: podniesc coverage AI routes z 26% do 80%+. Zakończono na pokryciu 92.04% ze 100% obługą fallbacków/sieci.
+Zakres: `/ai/person-profile`, `/ai/suggest-tasks`, `/ai/search`, fallbacki i timeouty.
+---
+
+ przeniesione z TASK_QUEUE.md.
 
 ---
 

@@ -15,7 +15,7 @@ function withinRange(value, rangeDays) {
     return false;
   }
 
-  if (!rangeDays || rangeDays === "all") {
+  if (!rangeDays || rangeDays === 'all') {
     return true;
   }
 
@@ -30,53 +30,58 @@ function meetingDecisionCount(meeting) {
 }
 
 function taskAfterMeeting(task) {
-  return task?.sourceType === "meeting" || Boolean(task?.sourceMeetingId);
+  return task?.sourceType === 'meeting' || Boolean(task?.sourceMeetingId);
 }
 
 function bucketKey(date, trend) {
   const safeDate = normalizeDate(date);
   if (!safeDate) {
-    return "";
+    return '';
   }
 
-  if (trend === "monthly") {
-    return `${safeDate.getFullYear()}-${String(safeDate.getMonth() + 1).padStart(2, "0")}`;
+  if (trend === 'monthly') {
+    return `${safeDate.getFullYear()}-${String(safeDate.getMonth() + 1).padStart(2, '0')}`;
   }
 
   const weekStart = new Date(safeDate);
   const day = weekStart.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   weekStart.setDate(weekStart.getDate() + diff);
-  return `${weekStart.getFullYear()}-W${String(Math.ceil((weekStart.getDate() + new Date(weekStart.getFullYear(), weekStart.getMonth(), 1).getDay()) / 7)).padStart(2, "0")}`;
+  return `${weekStart.getFullYear()}-W${String(Math.ceil((weekStart.getDate() + new Date(weekStart.getFullYear(), weekStart.getMonth(), 1).getDay()) / 7)).padStart(2, '0')}`;
 }
 
 function bucketLabel(key, trend) {
   if (!key) {
-    return "";
+    return '';
   }
 
-  if (trend === "monthly") {
-    const [year, month] = key.split("-");
+  if (trend === 'monthly') {
+    const [year, month] = key.split('-');
     return `${month}.${year}`;
   }
 
-  return key.replace("-W", " / W");
+  return key.replace('-W', ' / W');
 }
 
 export function buildWorkspaceKpiDashboard(meetings = [], tasks = [], options = {}) {
   const rangeDays = options.rangeDays || 30;
-  const trend = options.trend === "monthly" ? "monthly" : "weekly";
+  const trend = options.trend === 'monthly' ? 'monthly' : 'weekly';
   const filteredMeetings = (Array.isArray(meetings) ? meetings : []).filter((meeting) =>
     withinRange(meeting.startsAt || meeting.updatedAt || meeting.createdAt, rangeDays)
   );
   const filteredTasks = (Array.isArray(tasks) ? tasks : []).filter((task) =>
-    withinRange(task.dueDate || task.sourceMeetingDate || task.updatedAt || task.createdAt, rangeDays)
+    withinRange(
+      task.dueDate || task.sourceMeetingDate || task.updatedAt || task.createdAt,
+      rangeDays
+    )
   );
 
   const kpis = {
     decisions: filteredMeetings.reduce((sum, meeting) => sum + meetingDecisionCount(meeting), 0),
     openTasks: filteredTasks.filter((task) => !task.completed).length,
-    overdue: filteredTasks.filter((task) => !task.completed && normalizeDate(task.dueDate)?.getTime() < Date.now()).length,
+    overdue: filteredTasks.filter(
+      (task) => !task.completed && normalizeDate(task.dueDate)?.getTime() < Date.now()
+    ).length,
     tasksAfterMeetings: filteredTasks.filter((task) => taskAfterMeeting(task)).length,
   };
 
@@ -101,7 +106,10 @@ export function buildWorkspaceKpiDashboard(meetings = [], tasks = [], options = 
   });
 
   filteredTasks.forEach((task) => {
-    const key = bucketKey(task.dueDate || task.sourceMeetingDate || task.updatedAt || task.createdAt, trend);
+    const key = bucketKey(
+      task.dueDate || task.sourceMeetingDate || task.updatedAt || task.createdAt,
+      trend
+    );
     if (!key) {
       return;
     }
@@ -118,7 +126,9 @@ export function buildWorkspaceKpiDashboard(meetings = [], tasks = [], options = 
     trendMap.set(key, current);
   });
 
-  const trendPoints = [...trendMap.values()].sort((left, right) => left.key.localeCompare(right.key));
+  const trendPoints = [...trendMap.values()].sort((left, right) =>
+    left.key.localeCompare(right.key)
+  );
 
   return {
     rangeDays,

@@ -1,4 +1,4 @@
-import { createId } from "./storage";
+import { createId } from './storage';
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -8,7 +8,7 @@ function uniqueList(values, fallback = [], limit = 5) {
   const seen = new Set();
   const result = [];
   [...safeArray(values), ...safeArray(fallback)].forEach((item) => {
-    const text = String(item || "").trim();
+    const text = String(item || '').trim();
     if (!text) {
       return;
     }
@@ -24,7 +24,7 @@ function uniqueList(values, fallback = [], limit = 5) {
 
 function joinSentence(items, fallback) {
   const list = uniqueList(items, [], 3);
-  return list.length ? list.join(" · ") : fallback;
+  return list.length ? list.join(' · ') : fallback;
 }
 
 export function buildMeetingAIDebrief(meeting, analysis) {
@@ -39,21 +39,21 @@ export function buildMeetingAIDebrief(meeting, analysis) {
   const actionItems = uniqueList(safeAnalysis.actionItems, [], 5);
 
   const summaryParts = [
-    safeAnalysis.summary || "Spotkanie zostało przetworzone i przygotowano wstępny debrief.",
+    safeAnalysis.summary || 'Spotkanie zostało przetworzone i przygotowano wstępny debrief.',
     decisions.length
-      ? `Kluczowe decyzje: ${joinSentence(decisions, "Brak jednoznacznych decyzji")}.`
-      : "Nie wykryto jednoznacznych decyzji.",
+      ? `Kluczowe decyzje: ${joinSentence(decisions, 'Brak jednoznacznych decyzji')}.`
+      : 'Nie wykryto jednoznacznych decyzji.',
     risks.length
-      ? `Ryzyka: ${joinSentence(risks, "Brak istotnych ryzyk")}.`
-      : "Nie wykryto istotnych ryzyk.",
+      ? `Ryzyka: ${joinSentence(risks, 'Brak istotnych ryzyk')}.`
+      : 'Nie wykryto istotnych ryzyk.',
     followUps.length
-      ? `Następne kroki: ${joinSentence(followUps, "Brak dodatkowych follow-upów")}.`
-      : "Brak dodatkowych follow-upów.",
+      ? `Następne kroki: ${joinSentence(followUps, 'Brak dodatkowych follow-upów')}.`
+      : 'Brak dodatkowych follow-upów.',
   ];
 
   return {
-    meetingTitle: meeting?.title || "",
-    summary: summaryParts.join(" "),
+    meetingTitle: meeting?.title || '',
+    summary: summaryParts.join(' '),
     decisions,
     risks,
     followUps,
@@ -63,7 +63,7 @@ export function buildMeetingAIDebrief(meeting, analysis) {
 }
 
 export function parseList(text) {
-  return String(text || "")
+  return String(text || '')
     .split(/\r?\n|,/)
     .map((item) => item.trim())
     .filter(Boolean);
@@ -73,12 +73,12 @@ export function createMeeting(userId, draft, options = {}) {
   const now = new Date().toISOString();
 
   return {
-    id: createId("meeting"),
+    id: createId('meeting'),
     userId,
-    workspaceId: options.workspaceId || draft.workspaceId || "",
+    workspaceId: options.workspaceId || draft.workspaceId || '',
     createdByUserId: options.createdByUserId || userId,
-    title: String(draft.title || "").trim() || "Nowe spotkanie",
-    context: String(draft.context || "").trim(),
+    title: String(draft.title || '').trim() || 'Nowe spotkanie',
+    context: String(draft.context || '').trim(),
     startsAt: draft.startsAt || new Date().toISOString(),
     durationMinutes: Number(draft.durationMinutes) > 0 ? Number(draft.durationMinutes) : 45,
     attendees: parseList(draft.attendees),
@@ -86,7 +86,7 @@ export function createMeeting(userId, draft, options = {}) {
     needs: parseList(draft.needs),
     concerns: parseList(draft.concerns),
     desiredOutputs: parseList(draft.desiredOutputs),
-    location: String(draft.location || "").trim(),
+    location: String(draft.location || '').trim(),
     recordings: [],
     latestRecordingId: null,
     analysis: null,
@@ -95,11 +95,11 @@ export function createMeeting(userId, draft, options = {}) {
     speakerCount: 0,
     activity: [
       {
-        id: createId("meeting_activity"),
-        type: "created",
+        id: createId('meeting_activity'),
+        type: 'created',
         actorId: options.createdByUserId || userId,
-        actorName: options.createdByUserName || "",
-        message: "Utworzono spotkanie.",
+        actorName: options.createdByUserName || '',
+        message: 'Utworzono spotkanie.',
         createdAt: now,
       },
     ],
@@ -111,18 +111,19 @@ export function createMeeting(userId, draft, options = {}) {
 export function updateMeeting(meeting, draft) {
   return {
     ...meeting,
-    workspaceId: draft.workspaceId || meeting.workspaceId || "",
-    createdByUserId: meeting.createdByUserId || meeting.userId || "",
-    title: String(draft.title || "").trim() || meeting.title,
-    context: String(draft.context || "").trim(),
+    workspaceId: draft.workspaceId || meeting.workspaceId || '',
+    createdByUserId: meeting.createdByUserId || meeting.userId || '',
+    title: String(draft.title || '').trim() || meeting.title,
+    context: String(draft.context || '').trim(),
     startsAt: draft.startsAt || meeting.startsAt,
-    durationMinutes: Number(draft.durationMinutes) > 0 ? Number(draft.durationMinutes) : meeting.durationMinutes,
+    durationMinutes:
+      Number(draft.durationMinutes) > 0 ? Number(draft.durationMinutes) : meeting.durationMinutes,
     attendees: parseList(draft.attendees),
     tags: parseList(draft.tags),
     needs: parseList(draft.needs),
     concerns: parseList(draft.concerns),
     desiredOutputs: parseList(draft.desiredOutputs),
-    location: String(draft.location || "").trim(),
+    location: String(draft.location || '').trim(),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -158,35 +159,38 @@ export function createEmptyMeetingDraft() {
     .slice(0, 16);
 
   return {
-    title: "",
-    context: "",
+    title: '',
+    context: '',
     startsAt: localIso,
     durationMinutes: 45,
-    attendees: "",
-    tags: "",
-    needs: "",
-    desiredOutputs: "",
-    location: "",
+    attendees: '',
+    tags: '',
+    needs: '',
+    desiredOutputs: '',
+    location: '',
   };
 }
 
 export function meetingToDraft(meeting) {
   const startsAt = meeting.startsAt
-    ? new Date(new Date(meeting.startsAt).getTime() - new Date(meeting.startsAt).getTimezoneOffset() * 60 * 1000)
+    ? new Date(
+        new Date(meeting.startsAt).getTime() -
+          new Date(meeting.startsAt).getTimezoneOffset() * 60 * 1000
+      )
         .toISOString()
         .slice(0, 16)
-    : "";
+    : '';
 
   return {
     title: meeting.title,
     context: meeting.context,
     startsAt,
     durationMinutes: meeting.durationMinutes,
-    attendees: (meeting.attendees || []).join("\n"),
-    tags: (meeting.tags || []).join("\n"),
-    needs: (meeting.needs || []).join("\n"),
-    concerns: (meeting.concerns || []).join("\n"),
-    desiredOutputs: (meeting.desiredOutputs || []).join("\n"),
-    location: meeting.location || "",
+    attendees: (meeting.attendees || []).join('\n'),
+    tags: (meeting.tags || []).join('\n'),
+    needs: (meeting.needs || []).join('\n'),
+    concerns: (meeting.concerns || []).join('\n'),
+    desiredOutputs: (meeting.desiredOutputs || []).join('\n'),
+    location: meeting.location || '',
   };
 }

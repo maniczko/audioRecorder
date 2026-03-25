@@ -1,8 +1,8 @@
-import { act, renderHook } from "@testing-library/react";
-import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
-import useLiveTranscript from "./useLiveTranscript";
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
+import useLiveTranscript from './useLiveTranscript';
 
-describe("useLiveTranscript", () => {
+describe('useLiveTranscript', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -12,9 +12,15 @@ describe("useLiveTranscript", () => {
     vi.clearAllMocks();
   });
 
-  test("polls chunks and updates caption when transcription succeeds", async () => {
-    const transcribeLive = vi.fn().mockResolvedValue("Nowy podpis");
-    const chunksRef = { current: [new Blob(["a".repeat(400)]), new Blob(["b".repeat(400)]), new Blob(["c".repeat(400)])] };
+  test('polls chunks and updates caption when transcription succeeds', async () => {
+    const transcribeLive = vi.fn().mockResolvedValue('Nowy podpis');
+    const chunksRef = {
+      current: [
+        new Blob(['a'.repeat(400)]),
+        new Blob(['b'.repeat(400)]),
+        new Blob(['c'.repeat(400)]),
+      ],
+    };
 
     const { result } = renderHook(() =>
       useLiveTranscript({
@@ -22,7 +28,7 @@ describe("useLiveTranscript", () => {
         isRecording: true,
         enabled: true,
         transcribeLive,
-        mimeType: "audio/webm",
+        mimeType: 'audio/webm',
       })
     );
 
@@ -31,10 +37,10 @@ describe("useLiveTranscript", () => {
     });
 
     expect(transcribeLive).toHaveBeenCalledTimes(1);
-    expect(result.current).toBe("Nowy podpis");
+    expect(result.current).toBe('Nowy podpis');
   });
 
-  test("does not start a second request while previous transcription is inflight", async () => {
+  test('does not start a second request while previous transcription is inflight', async () => {
     let resolveRequest: ((value: string) => void) | null = null;
     const transcribeLive = vi.fn(
       () =>
@@ -42,7 +48,13 @@ describe("useLiveTranscript", () => {
           resolveRequest = resolve;
         })
     );
-    const chunksRef = { current: [new Blob(["a".repeat(400)]), new Blob(["b".repeat(400)]), new Blob(["c".repeat(400)])] };
+    const chunksRef = {
+      current: [
+        new Blob(['a'.repeat(400)]),
+        new Blob(['b'.repeat(400)]),
+        new Blob(['c'.repeat(400)]),
+      ],
+    };
 
     renderHook(() =>
       useLiveTranscript({
@@ -50,7 +62,7 @@ describe("useLiveTranscript", () => {
         isRecording: true,
         enabled: true,
         transcribeLive,
-        mimeType: "audio/webm",
+        mimeType: 'audio/webm',
       })
     );
 
@@ -61,14 +73,20 @@ describe("useLiveTranscript", () => {
     expect(transcribeLive).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      resolveRequest?.("Podpis po czasie");
+      resolveRequest?.('Podpis po czasie');
       await Promise.resolve();
     });
   });
 
-  test("clears caption on cleanup and when disabled", async () => {
-    const transcribeLive = vi.fn().mockResolvedValue("Podpis");
-    const chunksRef = { current: [new Blob(["a".repeat(400)]), new Blob(["b".repeat(400)]), new Blob(["c".repeat(400)])] };
+  test('clears caption on cleanup and when disabled', async () => {
+    const transcribeLive = vi.fn().mockResolvedValue('Podpis');
+    const chunksRef = {
+      current: [
+        new Blob(['a'.repeat(400)]),
+        new Blob(['b'.repeat(400)]),
+        new Blob(['c'.repeat(400)]),
+      ],
+    };
 
     const { result, rerender, unmount } = renderHook(
       ({ isRecording, enabled }) =>
@@ -77,7 +95,7 @@ describe("useLiveTranscript", () => {
           isRecording,
           enabled,
           transcribeLive,
-          mimeType: "audio/webm",
+          mimeType: 'audio/webm',
         }),
       {
         initialProps: { isRecording: true, enabled: true },
@@ -87,10 +105,10 @@ describe("useLiveTranscript", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    expect(result.current).toBe("Podpis");
+    expect(result.current).toBe('Podpis');
 
     rerender({ isRecording: true, enabled: false });
-    expect(result.current).toBe("");
+    expect(result.current).toBe('');
 
     unmount();
     expect(transcribeLive).toHaveBeenCalledTimes(1);

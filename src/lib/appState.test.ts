@@ -11,7 +11,13 @@ describe('appState library', () => {
   });
 
   test('buildProfileDraft should map user fields', () => {
-    const user = { name: 'Jan', email: 'jan@ex.com', preferredInsights: ['a', 'b'], preferredTaskView: 'kanban', autoLearnSpeakerProfiles: true };
+    const user = {
+      name: 'Jan',
+      email: 'jan@ex.com',
+      preferredInsights: ['a', 'b'],
+      preferredTaskView: 'kanban',
+      autoLearnSpeakerProfiles: true,
+    };
     const draft = buildProfileDraft(user);
     expect(draft.name).toBe('Jan');
     expect(draft.googleEmail).toBe('jan@ex.com');
@@ -23,14 +29,14 @@ describe('appState library', () => {
   describe('normalizeTaskUpdatePayload', () => {
     const columns = [
       { id: 'todo', isDone: false },
-      { id: 'done', isDone: true }
+      { id: 'done', isDone: true },
     ];
     const previousTask = {
       id: 't1',
       title: 'Old Title',
       status: 'todo',
       completed: false,
-      owner: 'Jan'
+      owner: 'Jan',
     };
 
     test('should update basic fields', () => {
@@ -49,7 +55,11 @@ describe('appState library', () => {
       expect(result.status).toBe('done');
 
       // Set completed to false manually, should move to todo
-      const result2 = normalizeTaskUpdatePayload({ ...previousTask, status: 'done', completed: true }, { completed: false }, columns);
+      const result2 = normalizeTaskUpdatePayload(
+        { ...previousTask, status: 'done', completed: true },
+        { completed: false },
+        columns
+      );
       expect(result2.status).toBe('todo');
       expect(result2.completed).toBe(false);
     });
@@ -70,7 +80,11 @@ describe('appState library', () => {
 
     test('should handle owner vs assignedTo priority', () => {
       // If owner is updated, it should be first in assignedTo
-      const result = normalizeTaskUpdatePayload(previousTask, { owner: 'Marek', assignedTo: ['Anna'] }, columns);
+      const result = normalizeTaskUpdatePayload(
+        previousTask,
+        { owner: 'Marek', assignedTo: ['Anna'] },
+        columns
+      );
       expect(result.owner).toBe('Marek');
       expect(result.assignedTo[0]).toBe('Marek');
       expect(result.assignedTo).toContain('Anna');

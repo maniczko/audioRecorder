@@ -1,6 +1,6 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
-import useRecorder from "./useRecorder";
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import useRecorder from './useRecorder';
 
 const {
   mediaServiceMode,
@@ -13,7 +13,7 @@ const {
   getAudioStorageEstimateMock,
   listStoredSizesMock,
 } = vi.hoisted(() => ({
-  mediaServiceMode: { current: "remote" },
+  mediaServiceMode: { current: 'remote' },
   pipelineState: {
     recordingQueue: [],
     getMeetingQueue: vi.fn(() => []),
@@ -21,10 +21,10 @@ const {
     setPipelineProgress: vi.fn(),
     setRecordingMessage: vi.fn(),
     setRecordingQueue: vi.fn(),
-    recordingMessage: "",
-    analysisStatus: "idle",
+    recordingMessage: '',
+    analysisStatus: 'idle',
     pipelineProgressPercent: 0,
-    pipelineStageLabel: "",
+    pipelineStageLabel: '',
     retryRecordingQueueItem: vi.fn(),
     updateQueueItem: vi.fn(),
     removeQueueItem: vi.fn(),
@@ -37,55 +37,55 @@ const {
   },
   hardwareState: {
     chunksRef: { current: [] as Blob[] },
-    mimeTypeRef: { current: "audio/webm" },
+    mimeTypeRef: { current: 'audio/webm' },
     isRecording: false,
     startRecording: vi.fn(),
     cleanupRecorder: vi.fn(),
     stopRecording: vi.fn(),
     canRecord: true,
   },
-  liveTranscriptValue: { current: "" },
+  liveTranscriptValue: { current: '' },
   saveAudioBlobMock: vi.fn(),
   deleteRecordingBlobMock: vi.fn(),
   getAudioStorageEstimateMock: vi.fn(),
   listStoredSizesMock: vi.fn(),
 }));
 
-vi.mock("../services/mediaService", () => ({
+vi.mock('../services/mediaService', () => ({
   createMediaService: () => ({
     mode: mediaServiceMode.current,
     supportsLiveTranscription: () => false,
-    transcribeLiveChunk: vi.fn().mockResolvedValue(""),
+    transcribeLiveChunk: vi.fn().mockResolvedValue(''),
   }),
 }));
 
-vi.mock("../lib/audioStore", () => ({
+vi.mock('../lib/audioStore', () => ({
   saveAudioBlob: (...args: any[]) => saveAudioBlobMock(...args),
   deleteRecordingBlob: (...args: any[]) => deleteRecordingBlobMock(...args),
   getAudioStorageEstimate: (...args: any[]) => getAudioStorageEstimateMock(...args),
   listStoredSizes: (...args: any[]) => listStoredSizesMock(...args),
 }));
 
-vi.mock("./useRecordingPipeline", () => ({
+vi.mock('./useRecordingPipeline', () => ({
   default: () => pipelineState,
 }));
 
-vi.mock("./useAudioHydration", () => ({
+vi.mock('./useAudioHydration', () => ({
   default: () => hydrationState,
 }));
 
-vi.mock("./useAudioHardware", () => ({
+vi.mock('./useAudioHardware', () => ({
   default: (_options: any) => hardwareState,
 }));
 
-vi.mock("./useLiveTranscript", () => ({
+vi.mock('./useLiveTranscript', () => ({
   default: () => liveTranscriptValue.current,
 }));
 
-describe("useRecorder", () => {
+describe('useRecorder', () => {
   beforeEach(() => {
-    mediaServiceMode.current = "remote";
-    liveTranscriptValue.current = "";
+    mediaServiceMode.current = 'remote';
+    liveTranscriptValue.current = '';
     pipelineState.getMeetingQueue.mockReturnValue([]);
     pipelineState.setAnalysisStatus.mockReset();
     pipelineState.setPipelineProgress.mockReset();
@@ -110,8 +110,8 @@ describe("useRecorder", () => {
     listStoredSizesMock.mockResolvedValue([]);
   });
 
-  test("creates ad hoc meeting when no meeting is selected and starts recording", () => {
-    const createAdHocMeeting = vi.fn(() => ({ id: "meeting-ad-hoc" }));
+  test('creates ad hoc meeting when no meeting is selected and starts recording', () => {
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc' }));
     const selectMeeting = vi.fn();
 
     const { result } = renderHook(() =>
@@ -130,17 +130,17 @@ describe("useRecorder", () => {
     });
 
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
-    expect(selectMeeting).toHaveBeenCalledWith({ id: "meeting-ad-hoc" });
-    expect(hardwareState.startRecording).toHaveBeenCalledWith("meeting-ad-hoc");
+    expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc' });
+    expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
   });
 
-  test("bridges server live transcript into live text in remote mode", async () => {
-    liveTranscriptValue.current = "Serwerowy podpis";
+  test('bridges server live transcript into live text in remote mode', async () => {
+    liveTranscriptValue.current = 'Serwerowy podpis';
 
     const { result, rerender } = renderHook(() =>
       useRecorder({
-        selectedMeeting: { id: "m1" },
-        userMeetings: [{ id: "m1" }],
+        selectedMeeting: { id: 'm1' },
+        userMeetings: [{ id: 'm1' }],
         createAdHocMeeting: vi.fn(),
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
@@ -149,14 +149,14 @@ describe("useRecorder", () => {
 
     rerender();
 
-    expect(result.current.liveText).toBe("Serwerowy podpis");
+    expect(result.current.liveText).toBe('Serwerowy podpis');
   });
 
-  test("resets recorder state and cleans up hardware", () => {
+  test('resets recorder state and cleans up hardware', () => {
     const { result } = renderHook(() =>
       useRecorder({
-        selectedMeeting: { id: "m1" },
-        userMeetings: [{ id: "m1" }],
+        selectedMeeting: { id: 'm1' },
+        userMeetings: [{ id: 'm1' }],
         createAdHocMeeting: vi.fn(),
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
@@ -167,43 +167,43 @@ describe("useRecorder", () => {
       result.current.resetRecorderState();
     });
 
-    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith("");
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith('');
     expect(hardwareState.cleanupRecorder).toHaveBeenCalledTimes(1);
   });
 
-  test("queues imported file immediately with persisted blob and queue status", async () => {
+  test('queues imported file immediately with persisted blob and queue status', async () => {
     saveAudioBlobMock.mockResolvedValue(undefined);
 
     const { result } = renderHook(() =>
       useRecorder({
-        selectedMeeting: { id: "m1", title: "Demo import", workspaceId: "ws1" },
-        userMeetings: [{ id: "m1", title: "Demo import", workspaceId: "ws1" }],
+        selectedMeeting: { id: 'm1', title: 'Demo import', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo import', workspaceId: 'ws1' }],
         createAdHocMeeting: vi.fn(),
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
       })
     );
 
-    const file = new File(["audio"], "demo-call.webm", { type: "audio/webm" });
+    const file = new File(['audio'], 'demo-call.webm', { type: 'audio/webm' });
 
     await act(async () => {
-      await result.current.queueRecording("m1", file);
+      await result.current.queueRecording('m1', file);
     });
 
     expect(hydrationState.registerAudioUrl).toHaveBeenCalledTimes(1);
     expect(saveAudioBlobMock).toHaveBeenCalledTimes(1);
     expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
-    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith("queued");
-    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(8, "Plik dodany do kolejki");
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('queued');
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(8, 'Plik dodany do kolejki');
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
-      "Plik dodany do kolejki. Rozpoczynamy wgrywanie..."
+      'Plik dodany do kolejki. Rozpoczynamy wgrywanie...'
     );
   });
 
-  test("loads audio storage stats and removes stored audio blobs", async () => {
+  test('loads audio storage stats and removes stored audio blobs', async () => {
     listStoredSizesMock
       .mockResolvedValueOnce([
-        { recordingId: "rec-1", sizeBytes: 85 * 1024 * 1024, mimeType: "audio/webm" },
+        { recordingId: 'rec-1', sizeBytes: 85 * 1024 * 1024, mimeType: 'audio/webm' },
       ])
       .mockResolvedValueOnce([]);
     getAudioStorageEstimateMock
@@ -224,8 +224,8 @@ describe("useRecorder", () => {
 
     const { result } = renderHook(() =>
       useRecorder({
-        selectedMeeting: { id: "m1", title: "Demo import", workspaceId: "ws1" },
-        userMeetings: [{ id: "m1", title: "Demo import", workspaceId: "ws1" }],
+        selectedMeeting: { id: 'm1', title: 'Demo import', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo import', workspaceId: 'ws1' }],
         createAdHocMeeting: vi.fn(),
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
@@ -237,14 +237,14 @@ describe("useRecorder", () => {
     });
 
     expect(result.current.audioStorageState.isNearQuota).toBe(true);
-    expect(result.current.audioStorageState.warningMessage).toContain("85%");
+    expect(result.current.audioStorageState.warningMessage).toContain('85%');
 
     await act(async () => {
-      await result.current.deleteStoredRecordingAudio("rec-1");
+      await result.current.deleteStoredRecordingAudio('rec-1');
     });
 
-    expect(deleteRecordingBlobMock).toHaveBeenCalledWith("rec-1");
-    expect(hydrationState.removeAudioUrl).toHaveBeenCalledWith("rec-1");
+    expect(deleteRecordingBlobMock).toHaveBeenCalledWith('rec-1');
+    expect(hydrationState.removeAudioUrl).toHaveBeenCalledWith('rec-1');
     expect(listStoredSizesMock).toHaveBeenCalled();
     expect(result.current.audioStorageState.items).toEqual([]);
   });

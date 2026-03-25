@@ -1,14 +1,17 @@
-import fs from "node:fs";
+import fs from 'node:fs';
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const rateLimitMap = new Map();
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap) {
-    if (now > entry.resetAt) rateLimitMap.delete(key);
-  }
-}, 5 * 60 * 1000).unref();
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitMap) {
+      if (now > entry.resetAt) rateLimitMap.delete(key);
+    }
+  },
+  5 * 60 * 1000
+).unref();
 
 export function checkRateLimit(ip: string, route: string, max = 10) {
   const key = `${ip}:${route}`;
@@ -23,52 +26,68 @@ export function checkRateLimit(ip: string, route: string, max = 10) {
   entry.count += 1;
   if (entry.count > max) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    const error = new Error("Zbyt wiele prob. Sprobuj ponownie za chwile.") as any;
+    const error = new Error('Zbyt wiele prob. Sprobuj ponownie za chwile.') as any;
     error.statusCode = 429;
     error.retryAfter = retryAfter;
     throw error;
   }
 }
 
-export function corsHeaders(requestOrigin: string, allowedOrigins = "http://localhost:3000") {
-  const allowed = allowedOrigins.split(",").map(s => s.trim()).filter(Boolean);
-  const allowAny = allowed.includes("*");
-  const src = String(requestOrigin || "");
+export function corsHeaders(requestOrigin: string, allowedOrigins = 'http://localhost:3000') {
+  const allowed = allowedOrigins
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowAny = allowed.includes('*');
+  const src = String(requestOrigin || '');
   const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(src);
   const isVercel = /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(src);
-  
+
   const origin = isLocalhost || isVercel || allowAny || allowed.includes(src) ? src : allowed[0];
-  
+
   return {
-    "Access-Control-Allow-Origin": origin,
-    "Vary": "Origin",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id, X-Speaker-Name",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    'Access-Control-Allow-Origin': origin,
+    Vary: 'Origin',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Workspace-Id, X-Meeting-Id, X-Speaker-Name',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   };
 }
 
 export function securityHeaders() {
   return {
-    "Content-Security-Policy": "default-src 'none'",
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
+    'Content-Security-Policy': "default-src 'none'",
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
   };
 }
 
-export function sendJson(response: any, statusCode: number, payload: any, origin: string, allowedOrigins: string) {
+export function sendJson(
+  response: any,
+  statusCode: number,
+  payload: any,
+  origin: string,
+  allowedOrigins: string
+) {
   response.writeHead(statusCode, {
     ...corsHeaders(origin, allowedOrigins),
     ...securityHeaders(),
-    "Content-Type": "application/json; charset=utf-8",
+    'Content-Type': 'application/json; charset=utf-8',
   });
   response.end(JSON.stringify(payload));
 }
 
-export function sendText(response: any, statusCode: number, body: string, origin: string, allowedOrigins: string) {
+export function sendText(
+  response: any,
+  statusCode: number,
+  body: string,
+  origin: string,
+  allowedOrigins: string
+) {
   response.writeHead(statusCode, {
     ...corsHeaders(origin, allowedOrigins),
     ...securityHeaders(),
-    "Content-Type": "text/plain; charset=utf-8",
+    'Content-Type': 'text/plain; charset=utf-8',
   });
   response.end(body);
 }
@@ -88,10 +107,10 @@ export function readJsonBody(request: any, maxBytes = 1024 * 1024) {
       received = 0;
     };
 
-    request.on("data", (chunk: any) => {
+    request.on('data', (chunk: any) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
-        const error = new Error("Ładunek JSON przekracza maksymalny rozmiar.") as any;
+        const error = new Error('Ładunek JSON przekracza maksymalny rozmiar.') as any;
         error.statusCode = 413;
         cleanup();
         reject(error);
@@ -100,24 +119,24 @@ export function readJsonBody(request: any, maxBytes = 1024 * 1024) {
       }
       chunks.push(chunk);
     });
-    request.on("end", () => {
+    request.on('end', () => {
       if (!chunks.length) return resolve({});
       try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
       } catch (e) {
-        reject(new Error("Invalid JSON payload."));
+        reject(new Error('Invalid JSON payload.'));
       } finally {
         cleanup();
       }
     });
-    request.on("error", (err: any) => {
+    request.on('error', (err: any) => {
       cleanup();
       reject(err);
     });
-    request.on("close", () => {
+    request.on('close', () => {
       if (!request.complete) {
         cleanup();
-        reject(new Error("Request closed or aborted by client"));
+        reject(new Error('Request closed or aborted by client'));
       }
     });
   });
@@ -133,12 +152,12 @@ export function readBinaryBody(request: any, maxBytes = 100 * 1024 * 1024) {
       received = 0;
     };
 
-    request.on("data", (chunk: any) => {
+    request.on('data', (chunk: any) => {
       received += chunk.byteLength;
       if (received > maxBytes) {
-        request.removeAllListeners("data");
+        request.removeAllListeners('data');
         request.resume();
-        const error = new Error("Przesłany plik przekracza maksymalny rozmiar.") as any;
+        const error = new Error('Przesłany plik przekracza maksymalny rozmiar.') as any;
         error.statusCode = 413;
         cleanup();
         reject(error);
@@ -146,27 +165,26 @@ export function readBinaryBody(request: any, maxBytes = 100 * 1024 * 1024) {
       }
       chunks.push(chunk);
     });
-    request.on("end", () => {
+    request.on('end', () => {
       const buf = Buffer.concat(chunks);
       cleanup();
       resolve(buf);
     });
-    request.on("error", (err: any) => {
+    request.on('error', (err: any) => {
       cleanup();
       reject(err);
     });
-    request.on("close", () => {
+    request.on('close', () => {
       if (!request.complete) {
         cleanup();
-        reject(new Error("Request closed or aborted by client"));
+        reject(new Error('Request closed or aborted by client'));
       }
     });
   });
 }
 
 export function getBearerToken(request: any) {
-  const header = String(request.headers.authorization || "");
-  if (!header.startsWith("Bearer ")) return "";
+  const header = String(request.headers.authorization || '');
+  if (!header.startsWith('Bearer ')) return '';
   return header.slice(7).trim();
 }
-

@@ -11,11 +11,11 @@
  * onnxruntime-web ≥1.17 is available in this project.
  */
 
-const FRAME_S = 0.05;                // 50ms analysis window
-const SPEECH_THRESHOLD_DB = -42;     // RMS threshold below which a frame is "silent"
-const MIN_SILENCE_REMOVE_S = 2.0;    // Only strip silence gaps longer than this
-const PRE_PAD_S = 0.25;              // Keep 250ms before each speech onset
-const POST_PAD_S = 0.35;             // Keep 350ms after each speech offset
+const FRAME_S = 0.05; // 50ms analysis window
+const SPEECH_THRESHOLD_DB = -42; // RMS threshold below which a frame is "silent"
+const MIN_SILENCE_REMOVE_S = 2.0; // Only strip silence gaps longer than this
+const PRE_PAD_S = 0.25; // Keep 250ms before each speech onset
+const POST_PAD_S = 0.35; // Keep 350ms after each speech offset
 
 export interface VadFilterResult {
   /** Filtered (or original) blob ready for upload */
@@ -30,19 +30,21 @@ export interface VadFilterResult {
 function encodeWAV(samples: Float32Array, sampleRate: number): ArrayBuffer {
   const buf = new ArrayBuffer(44 + samples.length * 4);
   const v = new DataView(buf);
-  const write = (off: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
-  write(0, "RIFF");
+  const write = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i));
+  };
+  write(0, 'RIFF');
   v.setUint32(4, 36 + samples.length * 4, true);
-  write(8, "WAVE");
-  write(12, "fmt ");
+  write(8, 'WAVE');
+  write(12, 'fmt ');
   v.setUint32(16, 16, true);
-  v.setUint16(20, 3, true);   // IEEE float
-  v.setUint16(22, 1, true);   // mono
+  v.setUint16(20, 3, true); // IEEE float
+  v.setUint16(22, 1, true); // mono
   v.setUint32(24, sampleRate, true);
   v.setUint32(28, sampleRate * 4, true);
   v.setUint16(32, 4, true);
   v.setUint16(34, 32, true);
-  write(36, "data");
+  write(36, 'data');
   v.setUint32(40, samples.length * 4, true);
   for (let i = 0; i < samples.length; i++) v.setFloat32(44 + i * 4, samples[i], true);
   return buf;
@@ -109,8 +111,12 @@ export async function filterSilence(blob: Blob): Promise<VadFilterResult> {
     let segStart = -1;
     for (let f = 0; f <= frameCount; f++) {
       const active = f < frameCount && expanded[f];
-      if (active && segStart < 0) { segStart = f; }
-      else if (!active && segStart >= 0) { segs.push({ start: segStart, end: f }); segStart = -1; }
+      if (active && segStart < 0) {
+        segStart = f;
+      } else if (!active && segStart >= 0) {
+        segs.push({ start: segStart, end: f });
+        segStart = -1;
+      }
     }
 
     if (segs.length === 0) return fallback(originalDurationS);
@@ -139,11 +145,11 @@ export async function filterSilence(blob: Blob): Promise<VadFilterResult> {
     }
 
     const wavBuf = encodeWAV(combined, sampleRate);
-    const filteredBlob = new Blob([wavBuf], { type: "audio/wav" });
+    const filteredBlob = new Blob([wavBuf], { type: 'audio/wav' });
 
     return { blob: filteredBlob, originalDurationS, filteredDurationS, removedS };
   } catch (err) {
-    console.warn("[vadFilter] filterSilence error:", err);
+    console.warn('[vadFilter] filterSilence error:', err);
     return fallback();
   }
 }

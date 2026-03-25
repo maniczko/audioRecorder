@@ -1,58 +1,104 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import StudioMeetingView from "./StudioMeetingView";
-import React from "react";
-import { vi } from "vitest";
-import AppProviders from "../AppProviders";
+import { fireEvent, render, screen } from '@testing-library/react';
+import StudioMeetingView from './StudioMeetingView';
+import React from 'react';
+import { vi } from 'vitest';
+import AppProviders from '../AppProviders';
 
 // Mock dependencies that we don't need to test for basic rendering
-vi.mock("./RecorderPanel", () => ({ default: () => <div data-testid="recorder-panel" /> }));
-vi.mock("./StudioSidebar", () => ({ default: () => <div data-testid="studio-sidebar" /> }));
-vi.mock("./AiTaskSuggestionsPanel", () => ({ default: () => <div data-testid="ai-task-suggestions" /> }));
-vi.mock("../services/config", () => ({
-  APP_DATA_PROVIDER: "local",
-  MEDIA_PIPELINE_PROVIDER: "local",
-  API_BASE_URL: "",
+vi.mock('./RecorderPanel', () => ({ default: () => <div data-testid="recorder-panel" /> }));
+vi.mock('./StudioSidebar', () => ({ default: () => <div data-testid="studio-sidebar" /> }));
+vi.mock('./AiTaskSuggestionsPanel', () => ({
+  default: () => <div data-testid="ai-task-suggestions" />,
+}));
+vi.mock('../services/config', () => ({
+  APP_DATA_PROVIDER: 'local',
+  MEDIA_PIPELINE_PROVIDER: 'local',
+  API_BASE_URL: '',
   apiBaseUrlConfigured: () => false,
   remoteApiEnabled: () => false,
 }));
 
 function renderWithContext(ui: React.ReactElement) {
-  return render(
-    <AppProviders>
-      {ui}
-    </AppProviders>
-  );
+  return render(<AppProviders>{ui}</AppProviders>);
 }
 
-describe("StudioMeetingView", () => {
+describe('StudioMeetingView', () => {
   const sampleFeedback = {
     overallScore: 8,
-    summary: "Spotkanie było konkretne i dobrze prowadzone.",
-    strengths: ["Były decyzje", "Był konkretny kierunek", "Atmosfera była spokojna"],
-    improvementAreas: ["Mocniej domykaj ownera i termin"],
-    perceptionNotes: ["Możesz być odbierany jako konkretny i zadaniowy"],
-    communicationTips: ["Skracaj wstępy", "Po decyzji podsumuj ownera i termin"],
-    nextSteps: ["Spisz ustalenia", "Przypisz właścicieli", "Ustal termin follow-upu"],
-    whatWentWell: ["Rozmowa prowadziła do ustaleń", "Było miejsce na pytania"],
-    whatCouldBeBetter: ["Domknij więcej tematów jednym zdaniem"],
+    summary: 'Spotkanie było konkretne i dobrze prowadzone.',
+    strengths: ['Były decyzje', 'Był konkretny kierunek', 'Atmosfera była spokojna'],
+    improvementAreas: ['Mocniej domykaj ownera i termin'],
+    perceptionNotes: ['Możesz być odbierany jako konkretny i zadaniowy'],
+    communicationTips: ['Skracaj wstępy', 'Po decyzji podsumuj ownera i termin'],
+    nextSteps: ['Spisz ustalenia', 'Przypisz właścicieli', 'Ustal termin follow-upu'],
+    whatWentWell: ['Rozmowa prowadziła do ustaleń', 'Było miejsce na pytania'],
+    whatCouldBeBetter: ['Domknij więcej tematów jednym zdaniem'],
     categoryScores: [
-      { key: "facilitation", label: "Prowadzenie spotkania", score: 8, observation: "Było konkretnie", improvementTip: "Domykaj tematy szybciej" },
-      { key: "expertise", label: "Wiedza merytoryczna", score: 7, observation: "Było merytorycznie", improvementTip: "Podawaj więcej przykładów" },
-      { key: "clarity", label: "Jasność wypowiedzi", score: 9, observation: "Przekaz był czytelny", improvementTip: "Zostawaj przy krótszych blokach" },
-      { key: "structure", label: "Struktura i organizacja", score: 8, observation: "Struktura była widoczna", improvementTip: "Dopisz ownera do każdej decyzji" },
-      { key: "listening", label: "Słuchanie i reagowanie", score: 7, observation: "Było miejsce na odpowiedzi", improvementTip: "Częściej parafrazuj" },
-      { key: "closing", label: "Domykanie ustaleń", score: 8, observation: "Ustalenia były domykane", improvementTip: "Zapisuj terminy od razu" },
-      { key: "pace", label: "Tempo i zarządzanie czasem", score: 7, observation: "Tempo było w porządku", improvementTip: "Pilnuj krótszych podsumowań" },
-      { key: "collaboration", label: "Współpraca i atmosfera", score: 8, observation: "Atmosfera była dobra", improvementTip: "Oddawaj częściej głos" },
+      {
+        key: 'facilitation',
+        label: 'Prowadzenie spotkania',
+        score: 8,
+        observation: 'Było konkretnie',
+        improvementTip: 'Domykaj tematy szybciej',
+      },
+      {
+        key: 'expertise',
+        label: 'Wiedza merytoryczna',
+        score: 7,
+        observation: 'Było merytorycznie',
+        improvementTip: 'Podawaj więcej przykładów',
+      },
+      {
+        key: 'clarity',
+        label: 'Jasność wypowiedzi',
+        score: 9,
+        observation: 'Przekaz był czytelny',
+        improvementTip: 'Zostawaj przy krótszych blokach',
+      },
+      {
+        key: 'structure',
+        label: 'Struktura i organizacja',
+        score: 8,
+        observation: 'Struktura była widoczna',
+        improvementTip: 'Dopisz ownera do każdej decyzji',
+      },
+      {
+        key: 'listening',
+        label: 'Słuchanie i reagowanie',
+        score: 7,
+        observation: 'Było miejsce na odpowiedzi',
+        improvementTip: 'Częściej parafrazuj',
+      },
+      {
+        key: 'closing',
+        label: 'Domykanie ustaleń',
+        score: 8,
+        observation: 'Ustalenia były domykane',
+        improvementTip: 'Zapisuj terminy od razu',
+      },
+      {
+        key: 'pace',
+        label: 'Tempo i zarządzanie czasem',
+        score: 7,
+        observation: 'Tempo było w porządku',
+        improvementTip: 'Pilnuj krótszych podsumowań',
+      },
+      {
+        key: 'collaboration',
+        label: 'Współpraca i atmosfera',
+        score: 8,
+        observation: 'Atmosfera była dobra',
+        improvementTip: 'Oddawaj częściej głos',
+      },
     ],
   };
 
   const defaultProps = {
-    selectedMeeting: { id: "m1", title: "Test Meeting", tags: [], needs: [], concerns: [] },
+    selectedMeeting: { id: 'm1', title: 'Test Meeting', tags: [], needs: [], concerns: [] },
     displayRecording: { transcript: [], duration: 60 },
-    studioAnalysis: { summary: "", decisions: [], actionItems: [] },
+    studioAnalysis: { summary: '', decisions: [], actionItems: [] },
     isRecording: false,
-    analysisStatus: "idle",
+    analysisStatus: 'idle',
     activeQueueItem: null,
     selectedMeetingQueue: null,
     elapsed: 0,
@@ -60,20 +106,20 @@ describe("StudioMeetingView", () => {
     stopRecording: vi.fn(),
     startRecording: vi.fn(),
     retryRecordingQueueItem: vi.fn(),
-    recordPermission: "granted",
+    recordPermission: 'granted',
     speechRecognitionSupported: true,
-    liveText: "",
+    liveText: '',
     liveTranscriptEnabled: false,
     setLiveTranscriptEnabled: vi.fn(),
-    recordingMessage: "",
+    recordingMessage: '',
     pipelineProgressPercent: 0,
-    pipelineStageLabel: "",
+    pipelineStageLabel: '',
     setRecordingMessage: vi.fn(),
     selectedRecording: null,
     displaySpeakerNames: {},
     selectedRecordingAudioUrl: null,
-    selectedRecordingAudioError: "",
-    selectedRecordingAudioStatus: "idle",
+    selectedRecordingAudioError: '',
+    selectedRecordingAudioStatus: 'idle',
     hydrateRecordingAudio: vi.fn(() => Promise.resolve(null)),
     clearAudioHydrationError: vi.fn(),
     selectedRecordingId: null,
@@ -83,16 +129,21 @@ describe("StudioMeetingView", () => {
     exportMeetingPdfFile: vi.fn(),
     startNewMeetingDraft: vi.fn(),
     selectMeeting: vi.fn(),
-    currentWorkspacePermissions: { canEditMeeting: true, canRecordAudio: true, canExportWorkspaceData: true, canEditWorkspace: true },
-    currentWorkspaceRole: "owner",
-    currentWorkspace: { id: "w1", name: "Work" },
+    currentWorkspacePermissions: {
+      canEditMeeting: true,
+      canRecordAudio: true,
+      canExportWorkspaceData: true,
+      canEditWorkspace: true,
+    },
+    currentWorkspaceRole: 'owner',
+    currentWorkspace: { id: 'w1', name: 'Work' },
     userMeetings: [],
     meetingTasks: [],
     onCreateTask: vi.fn(),
     peopleProfiles: [],
     addMeetingComment: vi.fn(),
-    currentUserName: "User",
-    meetingDraft: { title: "" },
+    currentUserName: 'User',
+    meetingDraft: { title: '' },
     setMeetingDraft: vi.fn(),
     saveMeeting: vi.fn(),
     renameSpeaker: vi.fn(),
@@ -104,42 +155,42 @@ describe("StudioMeetingView", () => {
     setActiveTab: vi.fn(),
   };
 
-  test("renders without crashing", () => {
+  test('renders without crashing', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Test Meeting/i)).toBeInTheDocument();
   });
 
-  test("renders the player bar when there is a message or recording", () => {
-    const props = { ...defaultProps, recordingMessage: "Test Message", analysisStatus: "error" };
+  test('renders the player bar when there is a message or recording', () => {
+    const props = { ...defaultProps, recordingMessage: 'Test Message', analysisStatus: 'error' };
     renderWithContext(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
   });
 
-  test("renders player shell while selected recording audio is loading", () => {
+  test('renders player shell while selected recording audio is loading', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
-        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+        selectedRecording={{ id: 'rec1', transcript: [], duration: 60 }}
         selectedRecordingAudioStatus="loading"
       />
     );
 
-    expect(screen.getByTestId("player-loading-audio")).toBeInTheDocument();
+    expect(screen.getByTestId('player-loading-audio')).toBeInTheDocument();
     expect(screen.getByText(/Ladowanie audio/i)).toBeInTheDocument();
   });
 
-  test("shows empty transcript banner and retry action", () => {
+  test('shows empty transcript banner and retry action', () => {
     const retryStoredRecording = vi.fn();
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         selectedRecording={{
-          id: "rec-empty",
+          id: 'rec-empty',
           transcript: [],
           duration: 60,
-          transcriptOutcome: "empty",
-          emptyReason: "no_segments_from_stt",
-          pipelineGitSha: "abcdef1",
+          transcriptOutcome: 'empty',
+          emptyReason: 'no_segments_from_stt',
+          pipelineGitSha: 'abcdef1',
           transcriptionDiagnostics: {
             usedChunking: true,
             chunksWithText: 0,
@@ -150,56 +201,63 @@ describe("StudioMeetingView", () => {
       />
     );
 
-    expect(screen.getByTestId("empty-transcript-banner")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: /Ponow transkrypcje/i })[0]);
+    expect(screen.getByTestId('empty-transcript-banner')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Ponow transkrypcje/i })[0]);
     expect(retryStoredRecording).toHaveBeenCalled();
     expect(screen.getByText(/Build: abcdef1/i)).toBeInTheDocument();
   });
 
-  test("shows summary fallback for empty transcript", () => {
+  test('shows summary fallback for empty transcript', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
-        studioAnalysis={{ summary: "", decisions: [], actionItems: [] }}
+        studioAnalysis={{ summary: '', decisions: [], actionItems: [] }}
         selectedRecording={{
-          id: "rec-empty",
+          id: 'rec-empty',
           transcript: [],
           duration: 60,
-          transcriptOutcome: "empty",
+          transcriptOutcome: 'empty',
         }}
       />
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Podsumowanie spotkania/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /Podsumowanie spotkania/i })[0]);
     expect(
-      screen.getByText(/Nie wykryto wypowiedzi w nagraniu\. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem\./i)
+      screen.getByText(
+        /Nie wykryto wypowiedzi w nagraniu\. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem\./i
+      )
     ).toBeInTheDocument();
   });
 
-  test("renders playback scrubber and lets user seek audio", () => {
+  test('renders playback scrubber and lets user seek audio', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         displayRecording={{ transcript: [], duration: 120 }}
-        selectedRecording={{ id: "rec-audio", transcript: [], duration: 120 }}
+        selectedRecording={{ id: 'rec-audio', transcript: [], duration: 120 }}
         selectedRecordingAudioUrl="blob:test-audio"
       />
     );
 
-    const slider = screen.getByRole("slider", { name: /Pozycja odtwarzania/i });
+    const slider = screen.getByRole('slider', { name: /Pozycja odtwarzania/i });
     expect(slider).toBeInTheDocument();
-    fireEvent.change(slider, { target: { value: "42" } });
-    expect(screen.getByText("00:42 / 02:00")).toBeInTheDocument();
+    fireEvent.change(slider, { target: { value: '42' } });
+    expect(screen.getByText('00:42 / 02:00')).toBeInTheDocument();
   });
 
-  test("renders empty state when no meeting selected", () => {
-    const props = { ...defaultProps, selectedMeeting: null, displayRecording: null, selectedRecording: null };
+  test('renders empty state when no meeting selected', () => {
+    const props = {
+      ...defaultProps,
+      selectedMeeting: null,
+      displayRecording: null,
+      selectedRecording: null,
+    };
     renderWithContext(<StudioMeetingView {...props} />);
     const els = screen.getAllByText(/Brak aktywnego spotkania/i);
     expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders analysis tabs", () => {
+  test('renders analysis tabs', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getAllByText(/Podsumowanie spotkania/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Potrzeby i obawy/i).length).toBeGreaterThan(0);
@@ -207,16 +265,20 @@ describe("StudioMeetingView", () => {
     expect(screen.getAllByText(/feedback/i).length).toBeGreaterThan(0);
   });
 
-
-  test("renders detailed feedback cards and category scores", () => {
+  test('renders detailed feedback cards and category scores', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
-        studioAnalysis={{ summary: "Spotkanie konkretne", decisions: [], actionItems: [], feedback: sampleFeedback }}
+        studioAnalysis={{
+          summary: 'Spotkanie konkretne',
+          decisions: [],
+          actionItems: [],
+          feedback: sampleFeedback,
+        }}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    fireEvent.click(screen.getByRole('button', { name: /feedback/i }));
 
     expect(screen.getByLabelText(/Ocena spotkania 8 na 10/i)).toBeInTheDocument();
     expect(screen.getByText(/Co można poprawić/i)).toBeInTheDocument();
@@ -224,25 +286,30 @@ describe("StudioMeetingView", () => {
     expect(screen.getByText(/Następne kroki/i)).toBeInTheDocument();
   });
 
-  test("builds fallback feedback for older analyses without feedback", () => {
+  test('builds fallback feedback for older analyses without feedback', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         displayRecording={{
           transcript: [
-            { text: "Ustalmy plan działania.", speakerId: 0, timestamp: 0, endTimestamp: 4 },
-            { text: "Potrzebujemy decyzji do jutra.", speakerId: 1, timestamp: 5, endTimestamp: 9 },
-            { text: "Przypiszmy właściciela i termin.", speakerId: 0, timestamp: 10, endTimestamp: 14 },
+            { text: 'Ustalmy plan działania.', speakerId: 0, timestamp: 0, endTimestamp: 4 },
+            { text: 'Potrzebujemy decyzji do jutra.', speakerId: 1, timestamp: 5, endTimestamp: 9 },
+            {
+              text: 'Przypiszmy właściciela i termin.',
+              speakerId: 0,
+              timestamp: 10,
+              endTimestamp: 14,
+            },
           ],
           duration: 60,
         }}
         studioAnalysis={{
-          summary: "Rozmowa o planie działania i decyzjach.",
-          decisions: ["Decyzja o planie"],
-          actionItems: ["Przypisać właściciela"],
+          summary: 'Rozmowa o planie działania i decyzjach.',
+          decisions: ['Decyzja o planie'],
+          actionItems: ['Przypisać właściciela'],
           tasks: [],
-          followUps: ["Sprawdzić postęp"],
-          participantInsights: [{ speaker: "Alice", mainTopic: "Plan", stance: "proactive" }],
+          followUps: ['Sprawdzić postęp'],
+          participantInsights: [{ speaker: 'Alice', mainTopic: 'Plan', stance: 'proactive' }],
           risks: [],
           blockers: [],
           tensions: [],
@@ -251,61 +318,61 @@ describe("StudioMeetingView", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    fireEvent.click(screen.getByRole('button', { name: /feedback/i }));
 
     expect(screen.getByText(/Oceny 1-10/i)).toBeInTheDocument();
     expect(screen.getByText(/Prowadzenie spotkania/i)).toBeInTheDocument();
     expect(screen.getByText(/Jak możesz być odbierany/i)).toBeInTheDocument();
   });
 
-  test("renders toolbar buttons", () => {
+  test('renders toolbar buttons', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Notatki/i)).toBeInTheDocument();
     expect(screen.getByText(/Transkrypt/i)).toBeInTheDocument();
     expect(screen.getByText(/Rozpocznij nagrywanie/i)).toBeInTheDocument();
   });
 
-  test("shows recording controls when isRecording is true", () => {
+  test('shows recording controls when isRecording is true', () => {
     const props = { ...defaultProps, isRecording: true };
     renderWithContext(<StudioMeetingView {...props} />);
     expect(screen.getByText(/Stop/i)).toBeInTheDocument();
     expect(screen.getByText(/● REC/i)).toBeInTheDocument();
   });
-  test("shows meeting tasks in the tasks tab", () => {
+  test('shows meeting tasks in the tasks tab', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         meetingTasks={[
           {
-            id: "task_1",
-            title: "Przygotuj follow-up",
-            description: "Wyslij podsumowanie po rozmowie",
-            owner: "Anna Nowak",
-            dueDate: "2026-03-23T10:00:00.000Z",
-            priority: "high",
-            tags: ["follow-up"],
-            sourceType: "meeting",
-            sourceMeetingId: "m1",
-            sourceMeetingTitle: "Test Meeting",
-            sourceMeetingDate: "2026-03-22T09:00:00.000Z",
-            sourceRecordingId: "rec1",
-            sourceQuote: "",
-            createdAt: "2026-03-22T09:10:00.000Z",
-            updatedAt: "2026-03-22T09:10:00.000Z",
+            id: 'task_1',
+            title: 'Przygotuj follow-up',
+            description: 'Wyslij podsumowanie po rozmowie',
+            owner: 'Anna Nowak',
+            dueDate: '2026-03-23T10:00:00.000Z',
+            priority: 'high',
+            tags: ['follow-up'],
+            sourceType: 'meeting',
+            sourceMeetingId: 'm1',
+            sourceMeetingTitle: 'Test Meeting',
+            sourceMeetingDate: '2026-03-22T09:00:00.000Z',
+            sourceRecordingId: 'rec1',
+            sourceQuote: '',
+            createdAt: '2026-03-22T09:10:00.000Z',
+            updatedAt: '2026-03-22T09:10:00.000Z',
           },
         ]}
-        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+        selectedRecording={{ id: 'rec1', transcript: [], duration: 60 }}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Zadania/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Zadania/i }));
 
-    expect(screen.getByText("Przygotuj follow-up")).toBeInTheDocument();
-    expect(screen.getByText("@Anna Nowak")).toBeInTheDocument();
-    expect(screen.getByText("Wysoki")).toBeInTheDocument();
+    expect(screen.getByText('Przygotuj follow-up')).toBeInTheDocument();
+    expect(screen.getByText('@Anna Nowak')).toBeInTheDocument();
+    expect(screen.getByText('Wysoki')).toBeInTheDocument();
   });
 
-  test("task actions can navigate to tasks and open task details", () => {
+  test('task actions can navigate to tasks and open task details', () => {
     const onOpenTask = vi.fn();
     const setActiveTab = vi.fn();
     renderWithContext(
@@ -315,50 +382,54 @@ describe("StudioMeetingView", () => {
         setActiveTab={setActiveTab}
         meetingTasks={[
           {
-            id: "task_1",
-            title: "Przygotuj follow-up",
-            description: "Wyslij podsumowanie po rozmowie",
-            owner: "Anna Nowak",
-            dueDate: "2026-03-23T10:00:00.000Z",
-            priority: "high",
-            tags: ["follow-up"],
-            sourceType: "meeting",
-            sourceMeetingId: "m1",
-            sourceMeetingTitle: "Test Meeting",
-            sourceMeetingDate: "2026-03-22T09:00:00.000Z",
-            sourceRecordingId: "rec1",
-            sourceQuote: "",
-            createdAt: "2026-03-22T09:10:00.000Z",
-            updatedAt: "2026-03-22T09:10:00.000Z",
+            id: 'task_1',
+            title: 'Przygotuj follow-up',
+            description: 'Wyslij podsumowanie po rozmowie',
+            owner: 'Anna Nowak',
+            dueDate: '2026-03-23T10:00:00.000Z',
+            priority: 'high',
+            tags: ['follow-up'],
+            sourceType: 'meeting',
+            sourceMeetingId: 'm1',
+            sourceMeetingTitle: 'Test Meeting',
+            sourceMeetingDate: '2026-03-22T09:00:00.000Z',
+            sourceRecordingId: 'rec1',
+            sourceQuote: '',
+            createdAt: '2026-03-22T09:10:00.000Z',
+            updatedAt: '2026-03-22T09:10:00.000Z',
           },
         ]}
-        selectedRecording={{ id: "rec1", transcript: [], duration: 60 }}
+        selectedRecording={{ id: 'rec1', transcript: [], duration: 60 }}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Przejdź do zadań/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Otwórz szczegóły/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Przejdź do zadań/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Otwórz szczegóły/i }));
 
-    expect(onOpenTask).toHaveBeenCalledWith({ taskId: "task_1", mode: "tab" });
-    expect(onOpenTask).toHaveBeenCalledWith({ taskId: "task_1", mode: "detail" });
+    expect(onOpenTask).toHaveBeenCalledWith({ taskId: 'task_1', mode: 'tab' });
+    expect(onOpenTask).toHaveBeenCalledWith({ taskId: 'task_1', mode: 'detail' });
   });
 
-  test("renders participants as a list", () => {
+  test('renders participants as a list', () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         studioAnalysis={{
-          summary: "Podsumowanie spotkania",
+          summary: 'Podsumowanie spotkania',
           decisions: [],
           actionItems: [],
-          participantInsights: [{ speaker: "Alice", mainTopic: "Budzet", stance: "ostrozna" }],
+          participantInsights: [{ speaker: 'Alice', mainTopic: 'Budzet', stance: 'ostrozna' }],
         }}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Podsumowanie spotkania/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Podsumowanie spotkania/i }));
 
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.getAllByRole("list").some((item) => item.className.includes("summary-participants-list"))).toBe(true);
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('list')
+        .some((item) => item.className.includes('summary-participants-list'))
+    ).toBe(true);
   });
 });

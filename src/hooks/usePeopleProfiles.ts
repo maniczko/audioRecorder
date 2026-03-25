@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import useStoredState from "./useStoredState";
-import { STORAGE_KEYS } from "../lib/storage";
-import { buildPeopleProfiles } from "../lib/people";
-import { analyzePersonProfile } from "../lib/analysis";
+import { useMemo } from 'react';
+import useStoredState from './useStoredState';
+import { STORAGE_KEYS } from '../lib/storage';
+import { buildPeopleProfiles } from '../lib/people';
+import { analyzePersonProfile } from '../lib/analysis';
 
 export default function usePeopleProfiles({
   userMeetings,
@@ -13,7 +13,12 @@ export default function usePeopleProfiles({
   const [personNotes, setPersonNotes] = useStoredState(STORAGE_KEYS.personNotes, {});
 
   const peopleProfiles = useMemo(() => {
-    const base = buildPeopleProfiles(userMeetings, meetingTasks, currentUser, currentWorkspaceMembers);
+    const base = buildPeopleProfiles(
+      userMeetings,
+      meetingTasks,
+      currentUser,
+      currentWorkspaceMembers
+    );
     return base.map((profile) => {
       const overrides = personNotes[profile.id];
       if (!overrides) return profile;
@@ -46,12 +51,12 @@ export default function usePeopleProfiles({
         };
         const targetLower = profile.name.toLowerCase();
         const entry = Object.entries(names).find(([, name]) => {
-          const nl = String(name || "").toLowerCase();
+          const nl = String(name || '').toLowerCase();
           return (
             nl === targetLower ||
             nl.includes(targetLower) ||
             targetLower.includes(nl) ||
-            (targetLower.split(" ")[0].length > 2 && nl.split(" ")[0] === targetLower.split(" ")[0])
+            (targetLower.split(' ')[0].length > 2 && nl.split(' ')[0] === targetLower.split(' ')[0])
           );
         });
         if (!entry) continue;

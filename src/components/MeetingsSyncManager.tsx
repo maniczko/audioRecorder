@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import useWorkspaceData from "../hooks/useWorkspaceData";
+import { ReactNode } from 'react';
+import useWorkspaceData from '../hooks/useWorkspaceData';
 
 export default function MeetingsSyncManager({ children }: { children?: ReactNode }) {
   useWorkspaceData();

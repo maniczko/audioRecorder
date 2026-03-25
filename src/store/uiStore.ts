@@ -1,20 +1,20 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { getBrowserNotificationCandidates } from "../lib/notifications";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { getBrowserNotificationCandidates } from '../lib/notifications';
 
 export const useUIStore = create<any>()(
   persist(
     (set, get) => ({
-      activeTab: "studio",
-      tabHistory: ["studio"],
-      theme: "dark",
-      layoutPreset: "default",
-      pendingTaskId: "",
-      pendingPersonId: "",
+      activeTab: 'studio',
+      tabHistory: ['studio'],
+      theme: 'dark',
+      layoutPreset: 'default',
+      pendingTaskId: '',
+      pendingPersonId: '',
       commandPaletteOpen: false,
       notificationCenterOpen: false,
       notificationState: { dismissedIds: [], deliveredIds: [] },
-      notificationPermission: "unsupported",
+      notificationPermission: 'unsupported',
 
       setActiveTab: (tab: string) => {
         const { activeTab, tabHistory } = get();
@@ -30,12 +30,12 @@ export const useUIStore = create<any>()(
       },
 
       setTheme: (theme: string) => {
-        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.setAttribute('data-theme', theme);
         set({ theme });
       },
 
       setLayoutPreset: (layoutPreset: string) => {
-        document.documentElement.setAttribute("data-layout", layoutPreset);
+        document.documentElement.setAttribute('data-layout', layoutPreset);
         set({ layoutPreset });
       },
 
@@ -44,36 +44,45 @@ export const useUIStore = create<any>()(
       setCommandPaletteOpen: (open: boolean) => set({ commandPaletteOpen: open }),
       setNotificationCenterOpen: (open: boolean) => set({ notificationCenterOpen: open }),
 
-      setNotificationPermission: (permission: string) => set({ notificationPermission: permission }),
+      setNotificationPermission: (permission: string) =>
+        set({ notificationPermission: permission }),
 
       updateNotificationState: (updater: any) =>
         set((state: any) => ({
-          notificationState: typeof updater === "function" ? updater(state.notificationState) : updater,
+          notificationState:
+            typeof updater === 'function' ? updater(state.notificationState) : updater,
         })),
 
       dismissNotification: (notificationId: string) => {
         set((state: any) => ({
           notificationState: {
             ...state.notificationState,
-            dismissedIds: [...new Set([...(state.notificationState.dismissedIds || []), notificationId])],
+            dismissedIds: [
+              ...new Set([...(state.notificationState.dismissedIds || []), notificationId]),
+            ],
           },
         }));
       },
 
       requestBrowserNotificationPermission: async () => {
-        if (typeof window === "undefined" || !window.Notification?.requestPermission) return;
-        if (get().notificationPermission === "granted") return;
+        if (typeof window === 'undefined' || !window.Notification?.requestPermission) return;
+        if (get().notificationPermission === 'granted') return;
         try {
           const nextPermission = await window.Notification.requestPermission();
           set({ notificationPermission: nextPermission });
         } catch (error) {
-          console.error("Unable to request notification permission.", error);
+          console.error('Unable to request notification permission.', error);
         }
       },
 
       deliverBrowserNotifications: (items: any[]) => {
         const { notificationPermission, notificationState } = get();
-        if (notificationPermission !== "granted" || typeof window === "undefined" || !window.Notification) return;
+        if (
+          notificationPermission !== 'granted' ||
+          typeof window === 'undefined' ||
+          !window.Notification
+        )
+          return;
 
         const candidates = getBrowserNotificationCandidates(items, notificationState.deliveredIds);
         if (!candidates.length) return;
@@ -82,20 +91,25 @@ export const useUIStore = create<any>()(
           try {
             new window.Notification(item.title, { body: item.body, tag: item.id });
           } catch (error) {
-            console.error("Browser notification failed.", error);
+            console.error('Browser notification failed.', error);
           }
         });
 
         set((state: any) => ({
           notificationState: {
             ...state.notificationState,
-            deliveredIds: [...new Set([...(state.notificationState.deliveredIds || []), ...candidates.map((i: any) => i.id)])],
+            deliveredIds: [
+              ...new Set([
+                ...(state.notificationState.deliveredIds || []),
+                ...candidates.map((i: any) => i.id),
+              ]),
+            ],
           },
         }));
       },
     }),
     {
-      name: "voicelog_ui_store",
+      name: 'voicelog_ui_store',
       partialize: (state) => ({
         theme: state.theme,
         layoutPreset: state.layoutPreset,
@@ -103,9 +117,9 @@ export const useUIStore = create<any>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.theme) {
-          document.documentElement.setAttribute("data-theme", state.theme);
+          document.documentElement.setAttribute('data-theme', state.theme);
         }
-        document.documentElement.setAttribute("data-layout", state?.layoutPreset || "default");
+        document.documentElement.setAttribute('data-layout', state?.layoutPreset || 'default');
       },
     }
   )

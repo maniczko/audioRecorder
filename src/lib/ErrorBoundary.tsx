@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component } from 'react';
 import './ErrorBoundaryStyles.css';
 
 export default class ErrorBoundary extends Component {
@@ -12,7 +12,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error(`[ErrorBoundary:${this.props.label || "App"}]`, error, info?.componentStack);
+    console.error(`[ErrorBoundary:${this.props.label || 'App'}]`, error, info?.componentStack);
     this.setState({ info });
   }
 
@@ -23,7 +23,7 @@ export default class ErrorBoundary extends Component {
         <div className="error-boundary-fallback">
           <div className="error-boundary-inner">
             <div className="eyebrow">Błąd widoku</div>
-            <h3>{this.props.label || "Widok"}</h3>
+            <h3>{this.props.label || 'Widok'}</h3>
             <p>Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć widok lub przeładuj stronę.</p>
             <button
               type="button"
@@ -35,7 +35,7 @@ export default class ErrorBoundary extends Component {
             {isDev && (
               <pre className="error-boundary-stack">
                 {String(this.state.error)}
-                {"\n"}
+                {'\n'}
                 {this.state.info?.componentStack}
               </pre>
             )}
