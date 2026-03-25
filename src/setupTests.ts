@@ -1,12 +1,15 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { vi, afterEach } from 'vitest';
+import { vi, afterEach, Mock } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
-/* eslint-disable no-undef */
-window.jest = vi;
+// Mock jest global with vitest for compatibility
+declare global {
+  // eslint-disable-next-line no-var
+  var jest: typeof vi;
+}
+
 globalThis.jest = vi;
-/* eslint-enable no-undef */
 
 // Global cleanup after each test to prevent memory leaks and test interference
 afterEach(() => {
@@ -16,29 +19,29 @@ afterEach(() => {
 });
 
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
-  clearRect: jest.fn(),
-  createLinearGradient: jest.fn(() => ({
-    addColorStop: jest.fn(),
+  clearRect: vi.fn(),
+  createLinearGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
   })),
-  fillRect: jest.fn(),
-  beginPath: jest.fn(),
-  moveTo: jest.fn(),
-  lineTo: jest.fn(),
-  closePath: jest.fn(),
-  fill: jest.fn(),
-  save: jest.fn(),
-  restore: jest.fn(),
-  stroke: jest.fn(),
-}));
+  fillRect: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  stroke: vi.fn(),
+})) as Mock;
 
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 if (!window.URL.createObjectURL) {
-  window.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+  window.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
 }
 
 if (!window.URL.revokeObjectURL) {
-  window.URL.revokeObjectURL = jest.fn();
+  window.URL.revokeObjectURL = vi.fn();
 }
 
 // Mock react-virtuoso to render all items in tests using standard JS (no JSX)
@@ -46,16 +49,14 @@ vi.mock('react-virtuoso', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    Virtuoso: ({ data, itemContent, style }) => {
+    Virtuoso: ({ data, itemContent, style }: any) => {
       return React.createElement(
         'div',
         { style },
-        data.map((item, index) =>
+        (data as any[]).map((item, index) =>
           React.createElement('div', { key: index }, itemContent(index, item))
         )
       );
     },
   };
 });
-
-

@@ -67,14 +67,18 @@
     "cleanup:disk:urgent": "node scripts/cleanup-disk-space.js 1",
     "build": "vite build",
     "turbo:build": "turbo run build",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\" \"server/**/*.{ts,js}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\" \"server/**/*.{ts,js}\"",
+    "commitlint": "commitlint --edit",
     "lint": "eslint src --max-warnings=0 --ignore-pattern '**/*.test.tsx' --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
     "lint:fix": "eslint src --fix --ignore-pattern '**/*.test.tsx' --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
     "lint:all": "eslint src --max-warnings=0",
     "turbo:lint": "turbo run lint",
     "test": "npm run lint && vitest run",
-    "test:fix": "npm run lint:fix && vitest run",
+    "test:fix": "npm run lint:fix && npm run format && vitest run",
     "test:retry": "vitest run --retry=3 --reporter=verbose",
-    "test:coverage:fix": "npm run lint:fix && npm run test:coverage",
+    "test:smart-retry": "node scripts/smart-retry.js",
+    "test:coverage:fix": "npm run lint:fix && npm run format && npm run test:coverage",
     "turbo:test": "turbo run test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -93,6 +97,7 @@
     "test:workflows": "node scripts/validate-vercel-workflows.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "prepare": "husky"
   },
   "eslintConfig": {
@@ -133,10 +138,12 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
+      "prettier --write",
       "eslint --fix",
       "vitest related --run --retry=3"
     ],
     "server/**/*.{js,ts}": [
+      "prettier --write",
       "eslint --fix",
       "vitest related --run --retry=3"
     ]

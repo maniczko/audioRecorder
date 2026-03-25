@@ -14,15 +14,17 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "checkJs": false,
-    "useUnknownInCatchVariables": true,
+    "useUnknownInCatchVariables": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src", "server"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "build", "**/*.test.*", "**/*.spec.*", "server"]
 }

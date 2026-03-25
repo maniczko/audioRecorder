@@ -1,12 +1,12 @@
-const PREVIEW_CLEANUP_KEY = "voicelog.preview-runtime-cleanup.v1";
-const PREVIEW_BUILD_KEY = "voicelog.preview-runtime-build.v1";
+const PREVIEW_CLEANUP_KEY = 'voicelog.preview-runtime-cleanup.v1';
+const PREVIEW_BUILD_KEY = 'voicelog.preview-runtime-build.v1';
 
 function isLocalhost(hostname: string) {
-  return /^(localhost|127\.0\.0\.1)$/i.test(String(hostname || ""));
+  return /^(localhost|127\.0\.0\.1)$/i.test(String(hostname || ''));
 }
 
 export function isHostedPreviewHost(hostname: string) {
-  return /\.vercel\.app$/i.test(String(hostname || ""));
+  return /\.vercel\.app$/i.test(String(hostname || ''));
 }
 
 export function shouldEnableServiceWorker(hostname: string) {
@@ -16,10 +16,10 @@ export function shouldEnableServiceWorker(hostname: string) {
 function readBuildId() {
   try {
     // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
-    const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
-    return String(env?.VITE_VERCEL_GIT_COMMIT_SHA || env?.VITE_BUILD_ID || "").trim();
+    const env = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+    return String(env?.VITE_VERCEL_GIT_COMMIT_SHA || env?.VITE_BUILD_ID || '').trim();
   } catch (_) {
-    return "";
+    return '';
   }
 }
 
@@ -51,12 +51,14 @@ export async function prepareHostedRuntime({
 
   if (cachesRef) {
     const cacheKeys = await cachesRef.keys();
-    await Promise.all(cacheKeys.filter((key) => key.startsWith("voicelog-os-")).map((key) => cachesRef.delete(key)));
+    await Promise.all(
+      cacheKeys.filter((key) => key.startsWith('voicelog-os-')).map((key) => cachesRef.delete(key))
+    );
   }
 
   const hadController = Boolean(serviceWorkerRef.controller || registrations.length);
-  const alreadyReloaded = sessionStorageRef.getItem(PREVIEW_CLEANUP_KEY) === "done";
-  const previousBuildId = String(sessionStorageRef.getItem(PREVIEW_BUILD_KEY) || "");
+  const alreadyReloaded = sessionStorageRef.getItem(PREVIEW_CLEANUP_KEY) === 'done';
+  const previousBuildId = String(sessionStorageRef.getItem(PREVIEW_BUILD_KEY) || '');
   const buildChanged = Boolean(buildId && previousBuildId && previousBuildId !== buildId);
 
   if (buildId) {
@@ -64,7 +66,7 @@ export async function prepareHostedRuntime({
   }
 
   if ((hadController || buildChanged) && !alreadyReloaded) {
-    sessionStorageRef.setItem(PREVIEW_CLEANUP_KEY, "done");
+    sessionStorageRef.setItem(PREVIEW_CLEANUP_KEY, 'done');
     reload();
     return { cleaned: true, reloaded: true };
   }
