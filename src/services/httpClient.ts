@@ -88,7 +88,11 @@ function normalizeApiErrorMessage(message = "", status?: number) {
     return "Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.";
   }
 
-  if (status === 502) {
+  if (status === 429) {
+    return "Zbyt wiele prob. Sprobuj ponownie za chwile.";
+  }
+
+  if (status === 502 || status === 503) {
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
 

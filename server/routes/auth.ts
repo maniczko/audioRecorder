@@ -52,7 +52,7 @@ export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewa
     workspaceId: z.string().optional()
   });
 
-  router.post("/login", applyRateLimit("auth"), zValidator("json", loginSchema), async (c) => {
+  router.post("/login", applyRateLimit("auth-login", 20), zValidator("json", loginSchema), async (c) => {
     const data = c.req.valid("json");
     const result = await authService.loginUser(data);
     return c.json(result, 200);
