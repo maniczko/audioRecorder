@@ -96,15 +96,23 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
   const model = (request.fields as any)?.model || provider.defaultModel;
   console.log(`[stt] ${provider.id} model=${model} → POST ${url}`);
 
-  const response = await httpClient(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${provider.apiKey}`,
-    },
-    body: createFormData(request),
-    signal: request.signal,
-    timeout: 120000,
-  });
+  let response: Awaited<ReturnType<typeof httpClient>>;
+  try {
+    response = await httpClient(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${provider.apiKey}`,
+      },
+      body: createFormData(request),
+      signal: request.signal,
+      timeout: 120000,
+    });
+  } catch (err: any) {
+    const cause = err?.cause?.message || err?.cause?.code || "";
+    const detail = cause ? ` (cause: ${cause})` : "";
+    console.warn(`[stt] ${provider.id} network error: ${err?.message}${detail} url=${url}`);
+    throw err;
+  }
 
   const rawBody = await response.text();
   if (!response.ok) {

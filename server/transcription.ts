@@ -47,6 +47,15 @@ export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
   groqModel: "whisper-large-v3",
 });
 
+// Log provider chain at startup so Railway boot logs show exactly what will be called
+if (STT_PROVIDER_CHAIN.length === 0) {
+  console.warn("[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GROQ_API_KEY.");
+} else {
+  STT_PROVIDER_CHAIN.forEach((p) =>
+    console.log(`[stt] Provider ready: ${p.id} model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + "..." : "MISSING"}`)
+  );
+}
+
 const AUDIO_PREPROCESS = config.AUDIO_PREPROCESS;
 const SILENCE_REMOVE = config.VOICELOG_SILENCE_REMOVE;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
