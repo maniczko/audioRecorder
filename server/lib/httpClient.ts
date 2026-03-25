@@ -8,8 +8,6 @@
  * Node.js 22+ fetch has built-in connection pooling.
  */
 
-// Keep-alive configuration
-const KEEP_ALIVE_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
 
 interface FetchOptions {
@@ -93,9 +91,6 @@ export async function httpClient(
         method,
         headers: {
           ...(isFormData ? {} : { "Content-Type": "application/json" }),
-          "User-Agent": "VoiceLog-API/1.0",
-          "Connection": "keep-alive",
-          "Keep-Alive": `timeout=${KEEP_ALIVE_TIMEOUT / 1000}, max=${MAX_RETRIES}`,
           ...headers,
         },
         body: isFormData ? body : (body && typeof body !== "string" ? JSON.stringify(body) : body),
