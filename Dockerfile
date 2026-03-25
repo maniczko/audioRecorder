@@ -65,7 +65,10 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy uv from official image (use version tag instead of digest for reliability)
 COPY --from=ghcr.io/astral-sh/uv:0.5.20 /uv /uvx /usr/local/bin/
 
-RUN uv venv /opt/venv
+# Install system Python so venv uses /usr/bin/python3 (same path as runtime stage)
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/*
+
+RUN uv venv /opt/venv --python python3
 
 # Cache PyTorch in separate stage for faster builds
 RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu
