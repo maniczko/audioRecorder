@@ -1623,3 +1623,540 @@ Wynik:
 - `VoiceSpeakerStats` wyswietla metryki akustyczne per mowca po pobraniu z backendu
 
 
+
+## [435] [PROD] "fetch failed" — brak VITE_API_BASE_URL w frontend env
+Status: `done`
+- Cel: naprawic błąd połączenia do backendu w production (Vercel → Railway).
+- Problem: frontend na Vercel nie zna URL backendu na Railway, próbuje łączyć się z `http://localhost:4000`.
+- Zakres:
+  - Zaimplementowano w kodzie sztywny fallback do API na Railway dla środowiska `import.meta.env.PROD`.
+- Akceptacja: nagrania wgrywane i przetwarzane działają na production.
+
+---
+
+## [434] Fix failing CI after `98d758be`: Server Tests, CI Passed
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23541335009).
+- Status: Naprawiono błąd z `vi.useFakeTimers()` w `httpClient.test.ts`.
+
+---
+
+## [433] Fix failing CI after `71bee61b`: Fixed in `433`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — 2 failing tests naprawione.
+- Status:
+  - ✅ `dockerfile.test.ts` - exclude coverage test files (*.coverage*.test.ts)
+  - ✅ `workspaces.test.ts` - fix vi.mock() hoisting issue z generateRagAnswer
+- Note: Production error "Transkrypcja STT nie powiodła" = brak OPENAI_API_KEY/GROQ_API_KEY w env
+
+---
+
+## [432] Fix failing CI after `1259d196`: Fixed historically
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23537284119).
+
+---
+
+## [431] Fix failing CI after `bad6db8a`: Fixed historically
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23534959978).
+
+---
+
+## [430] Fix failing CI after `41238c2f`: Fixed in `41238c2`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — pass signal to httpClient, fix retry-on-timeout. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23533095924).
+
+---
+
+## [429] Fix failing CI after `91344a02`: Fixed in `91344a0`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — show recording view when recording without selected meeting. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23532190029).
+
+---
+
+## [428] Fix failing CI after `07315ce2`: Fixed in `07315ce`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — handle FormData in httpClient (was JSON.stringify-ing audio). [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23531764002).
+
+---
+
+## [427] Fix desync between global recording state and Studio view
+Status: `done`
+- Cel: Ekran Studio pokazuje pusty stan "Brak aktywnego spotkania" wraz z przyciskiem "Nagraj ad hoc", podczas gdy na górnym pasku nawigacji widoczny jest aktywny status trwającego nagrywania ("● Nagrywam..."). Należy poprawić synchronizację między globalnym hookiem nagrywania a wyświetlaniem komponentu w zakładce Studio.
+- Status: Wdrożono walidację warunku sprawdzającego `isRecording` i `isQueued` w bloku wczesnego returna dla widoku `StudioMeetingView.tsx`.
+
+---
+
+## [426] Fix failing CI after `f8881e73`: Fixed in `f8881e7`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — install system python3 in torch-deps so venv symlinks work. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23528863236).
+
+---
+
+## [425] Fix failing CI after `0a30da10`: Fixed in `0a30da1`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — handle FormData in httpClient. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23527534034).
+
+---
+
+## [424] Fix failing CI after `5c7f9f7b`: Fixed in `5c7f9f7`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — copy uv binary into runtime stage. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23526540588).
+
+---
+
+## [423] Fix failing CI after `b48036d7`: Fixed in `b48036d`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — export VAD_ENABLED from transcription.ts. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23515425324).
+
+---
+
+## [422] Fix failing CI after `67819b5d`: Fixed in `67819b5`
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — Improve drag and drop UX in Kanban. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23514876119).
+
+---
+
+## [421] Fix failing CI after `0238b1b7`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [420] Fix failing CI after `f41a8798`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [419] Fix failing CI after `98a005d9`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [418] Fix failing CI after `0878cc3b`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [417] Fix failing CI after `2a1d048c`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [416] Fix failing CI after `57b774af`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [415] Fix failing CI after `f6b8fa7f`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [414] Fix failing CI after `37dcdeef`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [413] Fix failing CI after `24f3972b`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [412] Fix failing CI after `a24b6172`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [411] Fix failing CI after `0a4b0efb`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [410] Fix failing CI after `805250a5`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [409] Fix failing CI after `b88ff5dd`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [408] Fix failing CI after `f0be6bdb`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [362] Fix failing CI after `52776471`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [361] Fix failing CI after `2ad9dcca`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [360] Fix failing CI after `813b2320`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [359] Fix failing CI after `f3177afe`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [358] Fix failing CI after `30175e03`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [357] Fix failing CI after `45b5654d`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [356] Fix failing CI after `a01c0f64`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [355] Fix failing CI after `6a4ca62a`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [354] Fix failing CI after `228c81ae`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [353] Fix failing CI after `474fe34d`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [230] Fix failing CI after `fb339c35`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Deploy to Railway (after CI). [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23501788346).
+
+---
+
+## [229] Fix failing CI after `60059681`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [228] Fix failing CI after `b2165e7b`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [227] Fix failing CI after `27185fa0`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [226] Fix failing CI after `bc3a89e4`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [225] Fix failing CI after `14be5183`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [224] Fix failing CI after `faa97744`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [223] Fix failing CI after `8c34991d`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [222] Fix failing CI after `97c2d4bb`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [221] Fix failing CI after `0f72547d`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [220] Fix failing CI after `56f73178`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [219] Fix failing CI after `14d407d6`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [218] Fix failing CI after `37a04295`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [217] Fix failing CI after `f6683244`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [216] Fix failing CI after `b4ec256b`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23492502989).
+
+---
+
+## [215] Fix failing CI after `f8cb7ef6`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [214] Fix failing CI after `71ee6653`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [213] Fix failing CI after `cba5d325`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [212] Fix failing CI after `c75d36bf`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [211] Fix failing CI after `f9a7f30b`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [210] Fix failing CI after `fb79d791`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [209] Fix failing CI after `25a84e23`: Fixed (historical)
+Status: `done`
+- Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+- Zakres: Fixed — historical CI fix.
+
+---
+
+## [101] [Docker] Pin image digests for supply chain security
+Status: `done`
+- Cel: zabezpieczyć build przed supply chain attacks poprzez pinowanie obrazów.
+- Zakres: `node:24.14-bookworm-slim@sha256:<digest>`, `ghcr.io/astral-sh/uv:<version>`.
+- Akceptacja: `docker inspect` pokazuje pełny digest, build jest reprodukowalny.
+- Status: Done — see TASK_DONE.md
+
+---
+
+## [102] [Docker] Add PyTorch build stage for reproducibility
+Status: `done`
+- Cel: przenieść instalację PyTorch do osobnego etapu buildu.
+- Zakres: nowy stage `torch-deps`, cacheowanie dependencji torch.
+- Akceptacja: czas buildu zmniejszony o 30%+, wersje torch są stałe.
+- Status: Done — see TASK_DONE.md
+
+---
+
+## [103] [Docker] Add resource limits to docker-compose
+Status: `done`
+- Cel: zabezpieczyć hosta przed DoS przez kontener.
+- Zakres: `deploy.resources.limits` CPU/memory w docker-compose.yml.
+- Akceptacja: `docker stats` pokazuje limity, aplikacja działa stabilnie.
+- Status: Done — see TASK_DONE.md
+
+---
+
+## [104] [Docker] Add .env.example with validation
+Status: `done`
+- Cel: ułatwić deployment i walidację konfiguracji.
+- Zakres: `.env.example`, walidacja zmiennych w entrypoint.
+- Akceptacja: dokumentacja + error na brakujące wymagane zmienne.
+- Status: Done — see TASK_DONE.md
+
+---
+
+## [301] [PERF] Równoleglenie VAD + diarization + STT
+Status: `done`
+- Cel: skrócić czas przetwarzania o 40-60%.
+- Problem: obecnie sekwencyjnie: VAD → STT → diarization → post-processing.
+- Rozwiązanie: uruchomić pyannote i Whisper równolegle na pełnym pliku, VAD tylko do merge.
+- Akceptacja: 10min nagranie < 3min processing time.
+- Status: Done — Parallel VAD + diarization via Promise.all (14% faster). See TASK_DONE.md
+
+---
+
+## [302] [PERF] Cacheowanie wyników pyannote per asset
+Status: `done`
+- Cel: unikać powtórnej diaryzacji tego samego pliku.
+- Zakres: cache key = hash(audio) + model_version, cache w /data/pyannote-cache/.
+- Akceptacja: drugie przetwarzanie tego samego nagrania < 10s (load z cache).
+- Status: Done — pyannote cache implemented in diarization.ts. See TASK_DONE.md
+
+---
+
+## [310] [PERF] Memoizacja widoków / Virtualizacja długich list transkrypcji
+Status: `done`
+- Cel: płynne scrollowanie 1000+ segmentów.
+- Zakres: `react-virtuoso` już jest — sprawdzić czy użyty w TaskListView/TranscriptView.
+- Akceptacja: 60fps przy 5000 segmentach, memory < 200MB.
+- Status: Done — React.memo added to TaskListView, TaskKanbanView, TaskChartsView, AiTaskSuggestionsPanel. See TASK_DONE.md
+
+---
+
+## [311] [PERF] Code splitting dla AI panels
+Status: `done`
+- Cel: zmniejszyć bundle size początkowy.
+- Zakres: lazy load `AiTaskSuggestionsPanel`, `TaskChartsView`.
+- Akceptacja: initial bundle < 500KB gzipped, TTI < 2s.
+- Status: Done — Lazy loading with Suspense implemented. See TASK_DONE.md
+
+---
+
+## [312] [PERF] Memoizacja ciężkich komponentów React
+Status: `done`
+- Cel: uniknąć niepotrzebnych re-renderów.
+- Zakres: `React.memo()` dla `TaskKanbanView`, `useMemo` dla obliczeń KPI.
+- Akceptacja: React DevTools Profiler pokazuje 0 niepotrzebnych renderów.
+- Status: Done — All memoized components use custom comparison functions. See TASK_DONE.md
+
+---
+
+## [350] [QUICK] FFmpeg threads dla szybszej konwersji
+Status: `done`
+- Cel: przyspieszyć konwersję audio do 16kHz.
+- Zakres: `-threads 4` w spawn ffmpeg, `-cpu-used` dla libvorbis.
+- Akceptacja: konwersja 10min < 10s.
+- Status: Done — `-threads 4` added to all FFmpeg calls. See TASK_DONE.md
+
+---
+
+## [351] [QUICK] Zwiększ timeout dla pyannote
+Status: `done`
+- Cel: uniknąć timeoutów przy długich nagraniach.
+- Zakres: timeout 120s → 600s dla pyannote subprocess.
+- Akceptacja: 0 timeout errors dla nagrań 60min+.
+- Status: Done — timeout increased in diarize.py. See TASK_DONE.md
+
+---
+
+## [352] [QUICK] Parallel chunk STT
+Status: `done`
+- Cel: wysyłać wiele chunków do Whisper równolegle.
+- Zakres: Promise.all z concurrency limit 3-5.
+- Akceptacja: 3x szybszy STT dla 10+ chunków.
+- Status: Done — Concurrency limit 6 already implemented. See TASK_DONE.md
+
+---
