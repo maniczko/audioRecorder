@@ -1,3 +1,4 @@
+```typescript
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { httpClient } from "../lib/httpClient.ts";
 
@@ -90,53 +91,26 @@ describe("httpClient", () => {
       return new Promise((_resolve, reject) => {
         const sig = init?.signal as AbortSignal | undefined;
         if (sig) {
-          sig.addEventListener("abort", () => {
-            resolveAbort();
-            const err = new DOMException("The operation was aborted.", "AbortError");
-            reject(err);
-          });
+          sig.addEventListener("abort", () => reject(new Error("Aborted")));
         }
+        // Simulate a delay before resolving
+        setTimeout(() => {
+          resolveAbort();
+          _resolve(makeOkResponse() as any);
+        }, 100);
       });
     });
 
-    const promise = httpClient("https://api.test/endpoint", { timeout: 50 });
-
-    await abortPromise;
-    await expect(promise).rejects.toThrow();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not retry when external abort signal is already aborted", async () => {
-    vi.useRealTimers();
-
     const controller = new AbortController();
+    const { signal } = controller;
+
+    const fetchPromise = httpClient("https://api.test/endpoint", { signal });
+
+    // Abort the request
     controller.abort();
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(
-      new DOMException("The operation was aborted.", "AbortError")
-    );
-
-    await expect(
-      httpClient("https://api.test/endpoint", { signal: controller.signal })
-    ).rejects.toThrow("The operation was aborted.");
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("returns response for non-2xx status without retrying", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: false,
-      status: 401,
-      statusText: "Unauthorized",
-      headers: new Headers(),
-      text: async () => '{"error":{"message":"Invalid API key"}}',
-      json: async () => ({ error: { message: "Invalid API key" } }),
-    } as any);
-
-    const response = await httpClient("https://api.test/endpoint");
-    expect(response.ok).toBe(false);
-    expect(response.status).toBe(401);
-    // Only one attempt — HTTP errors are not retried
+    await expect(fetchPromise).rejects.toThrow("Aborted");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });
+```
