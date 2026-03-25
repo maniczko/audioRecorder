@@ -1,8 +1,8 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.4
 
 # Use official Node.js LTS image
 # Note: Digest pinning removed for reliability - use version tags instead
-ARG NODE_IMAGE=node:24.14-bookworm-slim
+ARG NODE_IMAGE=node:22.14-bookworm-slim
 
 FROM ${NODE_IMAGE} AS base
 
