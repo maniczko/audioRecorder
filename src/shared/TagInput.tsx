@@ -89,7 +89,7 @@ export default function TagInput({
       </div>
 
       {isFocused && (filteredSuggestions.length > 0 || canCreate) && (
-        <div className="tag-input-dropdown">
+        <div className="tag-input-dropdown" onMouseDown={(e) => e.preventDefault()}>
           {filteredSuggestions.map((s) => (
             <button
               key={s}

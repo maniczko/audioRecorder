@@ -1,6 +1,7 @@
 import { Suspense, lazy, memo, useState } from "react";
 import { TASK_PRIORITIES } from "../lib/tasks";
 import TaskScheduleView from "./TaskScheduleView";
+import TagInput from "../shared/TagInput";
 import './TasksWorkspaceViewStyles.css';
 
 const TaskKanbanView = lazy(() => import("./TaskKanbanView"));
@@ -279,11 +280,14 @@ function TasksWorkspaceView({
                 </label>
                 <label>
                   <span>Tagi</span>
-                  <input
-                    value={quickDraft.tags}
-                    onChange={(event) => setQuickDraft((previous) => ({ ...previous, tags: event.target.value }))}
-                    placeholder="klient, budzet"
-                  />
+                  <div style={{ flex: 1 }}>
+                    <TagInput
+                      tags={(quickDraft.tags || "").split(",").map((t: string) => t.trim()).filter(Boolean)}
+                      suggestions={tagOptions}
+                      onChange={(newTags: string[]) => setQuickDraft((p: any) => ({ ...p, tags: newTags.join(", ") }))}
+                      placeholder="Dodaj tag..."
+                    />
+                  </div>
                 </label>
                 <label className="todo-inline-check">
                   <input

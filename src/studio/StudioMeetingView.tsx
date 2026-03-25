@@ -1779,8 +1779,8 @@ export default function StudioMeetingView({
                   </form>
                 )}
                 <ul className="clean-list">
-                  {(selectedMeeting.needs || []).length ? (
-                    selectedMeeting.needs.map((item) => <li key={item}>{item}</li>)
+                  {(selectedMeeting?.needs || []).length ? (
+                    selectedMeeting?.needs.map((item) => <li key={item}>{item}</li>)
                   ) : (
                     <li className="soft-copy">Brak potrzeb.</li>
                   )}

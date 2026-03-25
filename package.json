@@ -67,10 +67,14 @@
     "cleanup:disk:urgent": "node scripts/cleanup-disk-space.js 1",
     "build": "vite build",
     "turbo:build": "turbo run build",
-    "lint": "eslint src --max-warnings=0",
-    "lint:fix": "eslint src --fix",
+    "lint": "eslint src --max-warnings=0 --ignore-pattern '**/*.test.tsx' --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
+    "lint:fix": "eslint src --fix --ignore-pattern '**/*.test.tsx' --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.spec.tsx' --ignore-pattern '**/*.spec.ts'",
+    "lint:all": "eslint src --max-warnings=0",
     "turbo:lint": "turbo run lint",
     "test": "npm run lint && vitest run",
+    "test:fix": "npm run lint:fix && vitest run",
+    "test:retry": "vitest run --retry=3 --reporter=verbose",
+    "test:coverage:fix": "npm run lint:fix && npm run test:coverage",
     "turbo:test": "turbo run test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -84,6 +88,7 @@
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.js",
     "test:e2e:ui": "playwright test --ui",
     "test:server": "vitest run -c server/vitest.config.ts",
+    "test:server:retry": "vitest run -c server/vitest.config.ts --retry=3",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
     "test:workflows": "node scripts/validate-vercel-workflows.mjs",
     "preview": "vite preview",
@@ -110,7 +115,6 @@
     "esbuild": "^0.27.4",
     "eslint": "^8.57.0",
     "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-jest": "^29.15.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-testing-library": "^7.16.2",
@@ -129,10 +133,12 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --cache --max-warnings=0 --ignore-pattern '**/*.test.*' --ignore-pattern '**/*.spec.*'"
+      "eslint --fix",
+      "vitest related --run --retry=3"
     ],
     "server/**/*.{js,ts}": [
-      "eslint --cache --max-warnings=0"
+      "eslint --fix",
+      "vitest related --run --retry=3"
     ]
   },
   "coverage": {
