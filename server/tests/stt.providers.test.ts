@@ -26,7 +26,7 @@ describe("stt providers", () => {
     const providers = resolveConfiguredSttProviders({
       preferredProvider: "groq",
       fallbackProvider: "openai",
-      groqApiKey: "", // No Groq key
+      groqApiKey: undefined, // No Groq key
       openAiApiKey: "openai-key",
       openAiBaseUrl: "https://api.openai.test/v1",
     });
