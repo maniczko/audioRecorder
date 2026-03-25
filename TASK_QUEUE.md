@@ -24,6 +24,10 @@ Kolejnosc prac:
 
 ### Gemini High
 
+- `429` [P1] `todo` - Fix failing CI after `91344a02`: Server Tests, CI Passed
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23532190029).
+
 - `428` [P1] `todo` - Fix failing CI after `07315ce2`: Server Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23531764002).
