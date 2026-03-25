@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../app.ts';
 
-// Import and mock generateRagAnswer - must be at top level for hoisting
-const mockGenerateRagAnswer = vi.fn();
+// vi.hoisted ensures the variable exists before vi.mock's hoisted factory runs
+const { mockGenerateRagAnswer } = vi.hoisted(() => ({
+  mockGenerateRagAnswer: vi.fn(),
+}));
 vi.mock('../../lib/ragAnswer.ts', () => ({
   generateRagAnswer: mockGenerateRagAnswer,
 }));
