@@ -9,7 +9,17 @@ import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 import { useGoogleCtx } from './context/GoogleContext';
 import { SkeletonBanner, SkeletonList } from './components/Skeleton';
-import { Mic, Library, Calendar, CheckSquare, Users, Search, Play, Square, AudioLines, Brain } from 'lucide-react';
+import {
+  Mic,
+  Library,
+  Calendar,
+  CheckSquare,
+  Users,
+  Search,
+  Play,
+  Square,
+  Brain,
+} from 'lucide-react';
 
 export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   const workspace = useWorkspaceSelectors();
@@ -65,16 +75,29 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
     <div className="app-shell-modern">
       {/* Sidebar */}
       <aside className="modern-sidebar">
-        <div 
-          className="modern-brand" 
-          onClick={ui.openStudio} 
-          role="button" 
-          tabIndex={0} 
+        <div
+          className="modern-brand"
+          onClick={ui.openStudio}
+          role="button"
+          tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && ui.openStudio()}
+        >
           <div className="modern-brand-logo" style={{ color: '#74d0bf' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 64 64" fill="none">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 64 64"
+              fill="none"
+            >
               <defs>
-                <radialGradient id="bg" cx="0" cy="0" r="1" gradientTransform="translate(32 28) rotate(90) scale(30)">
+                <radialGradient
+                  id="bg"
+                  cx="0"
+                  cy="0"
+                  r="1"
+                  gradientTransform="translate(32 28) rotate(90) scale(30)"
+                >
                   <stop offset="0" stopColor="#faf7e8" />
                   <stop offset="1" stopColor="#f3efdb" />
                 </radialGradient>
@@ -98,13 +121,30 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                 <g fill="#314d27" strokeWidth="0">
                   <circle cx="24.5" cy="28.3" r="2.1" />
                   <circle cx="39.5" cy="28.3" r="2.1" />
-                  <path d="M29 31.8c1.1-1.5 2-2.2 3-2.2s1.9.7 3 2.2c-.8 1.3-1.8 2-3 2s-2.2-.7-3-2Z" fill="#faf7e8" stroke="#314d27" strokeWidth="1.8" />
+                  <path
+                    d="M29 31.8c1.1-1.5 2-2.2 3-2.2s1.9.7 3 2.2c-.8 1.3-1.8 2-3 2s-2.2-.7-3-2Z"
+                    fill="#faf7e8"
+                    stroke="#314d27"
+                    strokeWidth="1.8"
+                  />
                   <rect x="29.2" y="40.4" width="2.1" height="6.1" rx="1" />
                   <rect x="32.7" y="40.4" width="2.1" height="6.1" rx="1" />
                 </g>
                 <g transform="rotate(24 21 49)">
-                  <path d="M18.4 44.6c0-2.1 1.7-3.8 3.8-3.8 2.1 0 3.8 1.7 3.8 3.8v5.8h-7.6v-5.8Z" fill="#f3efdb" strokeWidth="2.8" />
-                  <rect x="21" y="50.4" width="2.4" height="6.1" rx="1.2" fill="#314d27" strokeWidth="0" />
+                  <path
+                    d="M18.4 44.6c0-2.1 1.7-3.8 3.8-3.8 2.1 0 3.8 1.7 3.8 3.8v5.8h-7.6v-5.8Z"
+                    fill="#f3efdb"
+                    strokeWidth="2.8"
+                  />
+                  <rect
+                    x="21"
+                    y="50.4"
+                    width="2.4"
+                    height="6.1"
+                    rx="1.2"
+                    fill="#314d27"
+                    strokeWidth="0"
+                  />
                   <path d="M16.4 44.1c0-3.2 2.6-5.8 5.8-5.8s5.8 2.6 5.8 5.8" strokeWidth="2.8" />
                   <path d="M17.8 43.2h8.8" strokeWidth="2.1" />
                   <path d="M18.8 46.1h6.8" strokeWidth="2.1" />
@@ -195,8 +235,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
       {/* Main Content Area */}
       <main className="modern-main">
         <header className="modern-header">
-          <div className="modern-header-left">
-          </div>
+          <div className="modern-header-left"></div>
 
           <div className="modern-header-right">
             <button className="modern-search-btn" onClick={() => ui.setCommandPaletteOpen(true)}>
@@ -223,7 +262,11 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             />
 
             <button
-              className={recorder.isRecording ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20' : 'modern-record-btn bg-gradient-to-br from-teal-400 to-sky-400 text-slate-900 shadow-[0_4px_14px_rgba(116,208,191,0.25)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(116,208,191,0.4)]'}
+              className={
+                recorder.isRecording
+                  ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20'
+                  : 'modern-record-btn bg-gradient-to-br from-teal-400 to-sky-400 text-slate-900 shadow-[0_4px_14px_rgba(116,208,191,0.25)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(116,208,191,0.4)]'
+              }
               onClick={() => {
                 if (recorder.isRecording) {
                   recorder.stopRecording();

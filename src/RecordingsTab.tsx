@@ -5,7 +5,6 @@ import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
 import './RecordingsTabStyles.css';
 
-import { createMediaService } from './services/mediaService';
 import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
@@ -89,7 +88,6 @@ function getLatestRecording(selectedMeeting) {
     null
   );
 }
-
 
 function MeetingPicker({
   selectedMeeting,
@@ -257,7 +255,7 @@ function UnifiedLibrary({
             bVal = new Date(b.startsAt || b.createdAt).valueOf();
             break;
         }
-        
+
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -294,14 +292,37 @@ function UnifiedLibrary({
           <table className="studio-recordings-table">
             <thead>
               <tr>
-                <th onClick={() => handleSort('title')} className="sortable-th" style={{ width: '35%' }}>
-                  Spotkanie {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                <th
+                  onClick={() => handleSort('title')}
+                  className="sortable-th"
+                  style={{ width: '35%' }}
+                >
+                  Spotkanie{' '}
+                  {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
                 </th>
-                <th onClick={() => handleSort('startsAt')} className="sortable-th" style={{ width: '20%' }}>
-                  Data i godzina {sortConfig.key === 'startsAt' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                <th
+                  onClick={() => handleSort('startsAt')}
+                  className="sortable-th"
+                  style={{ width: '20%' }}
+                >
+                  Data i godzina{' '}
+                  {sortConfig.key === 'startsAt'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : null}
                 </th>
-                <th onClick={() => handleSort('durationMinutes')} className="sortable-th" style={{ width: '15%' }}>
-                  Czas trwania {sortConfig.key === 'durationMinutes' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
+                <th
+                  onClick={() => handleSort('durationMinutes')}
+                  className="sortable-th"
+                  style={{ width: '15%' }}
+                >
+                  Czas trwania{' '}
+                  {sortConfig.key === 'durationMinutes'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : null}
                 </th>
                 <th style={{ width: '25%' }}>Tagi</th>
                 <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
@@ -340,7 +361,21 @@ function UnifiedLibrary({
                       }}
                       className="recordings-library-delete-btn"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                        />
+                      </svg>
                     </button>
                   </td>
                 </tr>
@@ -361,7 +396,9 @@ function UnifiedLibrary({
           <div className="recordings-delete-modal">
             <h3>Usuwanie spotkania</h3>
             <p>
-              Czy na pewno chcesz usunąć spotkanie <strong>"{meetingToDelete.title}"</strong> oraz wszystkie powiązane nagrania z archiwalnej bazy wektorowej? Zmian tych nie można cofnąć.
+              Czy na pewno chcesz usunąć spotkanie <strong>"{meetingToDelete.title}"</strong> oraz
+              wszystkie powiązane nagrania z archiwalnej bazy wektorowej? Zmian tych nie można
+              cofnąć.
             </p>
             <div className="recordings-delete-modal-actions">
               <button
@@ -689,7 +726,6 @@ export default function RecordingsTab(props) {
       ) : null}
 
       <main className="recordings-tab-content">
-
         <UnifiedLibrary
           userMeetings={userMeetings}
           selectedMeeting={selectedMeeting}
