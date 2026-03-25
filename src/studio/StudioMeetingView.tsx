@@ -306,6 +306,9 @@ function formatEmptyTranscriptDiagnostics(recording) {
   if (Number.isFinite(Number(diagnostics.chunksFailedAtStt)) && Number(diagnostics.chunksFailedAtStt) > 0) {
     details.push(`Chunks failed at STT: ${Number(diagnostics.chunksFailedAtStt)}`);
   }
+  if (diagnostics.lastChunkErrorMessage) {
+    details.push(`STT error: ${diagnostics.lastChunkErrorMessage}`);
+  }
   if (Number.isFinite(Number(diagnostics.chunksWithText)) && Number.isFinite(Number(diagnostics.chunksAttempted))) {
     details.push(`STT chunks with text: ${Number(diagnostics.chunksWithText)}/${Number(diagnostics.chunksAttempted)}`);
   }

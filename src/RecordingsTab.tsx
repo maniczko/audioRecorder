@@ -43,6 +43,9 @@ function formatPipelineDiagnostics(item) {
   ) {
     details.push(`Chunks failed at STT: ${Number(diagnostics.chunksFailedAtStt)}`);
   }
+  if (diagnostics?.lastChunkErrorMessage) {
+    details.push(`STT error: ${diagnostics.lastChunkErrorMessage}`);
+  }
   if (
     diagnostics &&
     Number.isFinite(Number(diagnostics.chunksWithText)) &&
