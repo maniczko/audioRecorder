@@ -140,6 +140,14 @@ export async function httpClient(
     }
   }
 
+  // Enrich the error message with the underlying cause (e.g., ECONNRESET, DNS failure)
+  // so it surfaces in UI diagnostics instead of bare "fetch failed".
+  if (lastError) {
+    const cause = (lastError as any)?.cause?.message || (lastError as any)?.cause?.code || "";
+    if (cause && !lastError.message.includes(cause)) {
+      lastError.message = `${lastError.message} (${cause})`;
+    }
+  }
   throw lastError || new Error("Request failed after retries");
 }
 

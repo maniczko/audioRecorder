@@ -37,9 +37,20 @@ const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 const GROQ_API_KEY = config.GROQ_API_KEY || "";
 export const _sttUseGroq = config.VOICELOG_STT_PROVIDER === "groq" && !!GROQ_API_KEY;
 export const VERIFICATION_MODEL = _sttUseGroq ? "whisper-large-v3" : config.VERIFICATION_MODEL;
+// Auto-detect fallback: if GROQ_API_KEY is set and primary is openai (or vice versa),
+// enable fallback automatically instead of requiring VOICELOG_STT_FALLBACK_PROVIDER env var.
+const _explicitFallback = config.VOICELOG_STT_FALLBACK_PROVIDER;
+const _autoFallback: "openai" | "groq" | "none" = _explicitFallback !== "none"
+  ? _explicitFallback
+  : (config.VOICELOG_STT_PROVIDER === "openai" && GROQ_API_KEY)
+    ? "groq"
+    : (config.VOICELOG_STT_PROVIDER === "groq" && OPENAI_API_KEY)
+      ? "openai"
+      : "none";
+
 export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
   preferredProvider: config.VOICELOG_STT_PROVIDER,
-  fallbackProvider: config.VOICELOG_STT_FALLBACK_PROVIDER,
+  fallbackProvider: _autoFallback,
   openAiApiKey: OPENAI_API_KEY,
   openAiBaseUrl: OPENAI_BASE_URL,
   groqApiKey: GROQ_API_KEY,
@@ -51,8 +62,9 @@ export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
 if (STT_PROVIDER_CHAIN.length === 0) {
   console.warn("[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GROQ_API_KEY.");
 } else {
+  console.log(`[stt] Provider chain: ${STT_PROVIDER_CHAIN.map(p => p.id).join(" → ")}${_autoFallback !== _explicitFallback ? ` (auto-detected ${_autoFallback} fallback)` : ""}`);
   STT_PROVIDER_CHAIN.forEach((p) =>
-    console.log(`[stt] Provider ready: ${p.id} model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + "..." : "MISSING"}`)
+    console.log(`[stt]   ${p.id}: model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + "..." : "MISSING"}`)
   );
 }
 
