@@ -107,6 +107,10 @@ Kolejnosc prac:
 
 ### Gemini High
 
+- `413` [P1] `todo` - Fix failing CI after `8d0fdbaa`: Frontend Tests, Validate Workflow Guards, Build, Lint, Server Tests, Security Audit, E2E Smoke Tests, CI Passed
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: Frontend Tests, Validate Workflow Guards, Build, Lint, Server Tests, Security Audit, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23565715072).
+
 - `412` [P1] `todo` - Fix failing CI after `b0e7a825`: E2E Smoke Tests, Lint, Server Tests, Validate Workflow Guards, Build, Security Audit, Frontend Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: E2E Smoke Tests, Lint, Server Tests, Validate Workflow Guards, Build, Security Audit, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23561497477).
