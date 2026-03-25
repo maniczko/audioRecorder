@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app.ts";
 
 // Import and mock generateRagAnswer
-const mockGenerateRagAnswer = vi.fn();
 vi.mock("../../lib/ragAnswer.ts", () => ({
-  generateRagAnswer: mockGenerateRagAnswer,
+  generateRagAnswer: vi.fn(),
 }));
+
+// Import the mocked function after vi.mock
+const { generateRagAnswer } = await import("../../lib/ragAnswer.ts");
 
 describe("Workspace Routes", () => {
   let app: ReturnType<typeof createApp>;
@@ -48,7 +50,7 @@ describe("Workspace Routes", () => {
       queryRAG: vi.fn(),
     };
     global.fetch = vi.fn();
-    mockGenerateRagAnswer.mockClear();
+    vi.mocked(generateRagAnswer).mockClear();
   });
 
   afterEach(() => {
@@ -179,7 +181,7 @@ describe("Workspace Routes", () => {
     expect((await emptyRes.json()).answer).toMatch(/Brak danych/);
 
     mockTranscriptionService.queryRAG.mockResolvedValueOnce([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
-    mockGenerateRagAnswer.mockRejectedValueOnce(new Error("Brak klucza API do RAG LLMa."));
+    vi.mocked(generateRagAnswer).mockRejectedValueOnce(new Error("Brak klucza API do RAG LLMa."));
     const errorRes = await app.request("/workspaces/ws1/rag/ask", {
       method: "POST",
       headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
@@ -191,7 +193,7 @@ describe("Workspace Routes", () => {
 
   it("returns LLM answer when OpenAI key is configured", async () => {
     mockTranscriptionService.queryRAG.mockResolvedValue([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
-    mockGenerateRagAnswer.mockResolvedValueOnce("Odpowiedz z RAG.");
+    vi.mocked(generateRagAnswer).mockResolvedValueOnce("Odpowiedz z RAG.");
     app = createApp(
       {
         authService: mockAuthService,
@@ -216,7 +218,7 @@ describe("Workspace Routes", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ answer: "Odpowiedz z RAG." });
-    expect(mockGenerateRagAnswer).toHaveBeenCalledWith(
+    expect(generateRagAnswer).toHaveBeenCalledWith(
       expect.objectContaining({
         question: "Co ustalono?",
         chunks: [{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }],

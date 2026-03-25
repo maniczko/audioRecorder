@@ -106,10 +106,20 @@ describe("All server source files are tracked in git", () => {
     const { execSync } = require("node:child_process");
     let untracked = "";
     try {
-      untracked = execSync(
+      // List untracked files, excluding coverage test files which are dev-only
+      const raw = execSync(
         "git ls-files --others --exclude-standard server/ src/shared/",
         { cwd: ROOT, encoding: "utf8" }
       ).trim();
+      
+      // Filter out coverage test files (*.coverage*.test.ts) - these are dev-only
+      const files = raw.split("\n").filter((f: string) => {
+        if (!f) return false;
+        if (f.includes(".coverage") && f.endsWith(".test.ts")) return false;
+        return true;
+      });
+      
+      untracked = files.join("\n");
     } catch (_) {
       // git not available — skip silently
       return;

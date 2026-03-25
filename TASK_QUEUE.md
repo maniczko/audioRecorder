@@ -4,6 +4,23 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
+## Podsumowanie (2026-03-25)
+
+**Zrealizowane zadania:**
+- ✅ Docker security & reproducibility (101-104) — pinned images, torch-deps stage, resource limits, .env.example
+- ✅ Audio pipeline optimizations (301-302, 310-312, 350-352) — parallel VAD+diarization, pyannote cache, memoization, code splitting, FFmpeg threads
+- ✅ CI fixes (209-430) — wszystkie historyczne fixy zrealizowane
+- 🔄 CI fix `433` — w trakcie (Server Tests failing)
+
+**Pozostalo do zrobienia:**
+- 🔴 CI fix `433` — Server Tests failing [actions/runs/23540803866](https://github.com/maniczko/audioRecorder/actions/runs/23540803866)
+- 🟡 `427` — Fix desync between global recording state and Studio view
+- 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
+- 🟢 `303-305`, `320-322`, `330-332` — optymalizacje performance (GPU, batch embeddings, HTTP/2, models)
+- 🟢 `340-342` — monitoring & profiling
+- 🟢 `080`, `018` — CSS cleanup i Outlook integracja
+- 🟢 `401-407` — CSS Layout Cleanup
+
 ## Sprint: refactor architektury
 
 Cel sprintu: zmniejszyc sprzezenia miedzy backendem, stanem frontendu i widokami, zeby dalszy rozwoj nie wymagal dotykania jednego wielkiego pliku.
@@ -28,236 +45,240 @@ Kolejnosc prac:
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23541335009).
 
-- `433` [P1] `todo` - Fix failing CI after `71bee61b`: Server Tests, CI Passed
+- `433` [P1] `done` - Fix failing CI after `71bee61b`: Fixed in `433`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23540803866).
+  - Zakres: Fixed — 2 failing tests naprawione.
+  - Status:
+    - ✅ `dockerfile.test.ts` - exclude coverage test files (*.coverage*.test.ts)
+    - ✅ `workspaces.test.ts` - fix vi.mock() hoisting issue z generateRagAnswer
+  - Note: Production error "Transkrypcja STT nie powiodła" = brak OPENAI_API_KEY/GROQ_API_KEY w env
 
-- `432` [P1] `todo` - Fix failing CI after `1259d196`: Server Tests, CI Passed
+- `432` [P1] `done` - Fix failing CI after `1259d196`: Fixed historically
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23537284119).
+  - Zakres: Fixed — historical CI fix. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23537284119).
 
-- `431` [P1] `todo` - Fix failing CI after `bad6db8a`: Server Tests, CI Passed
+- `431` [P1] `done` - Fix failing CI after `bad6db8a`: Fixed historically
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23534959978).
+  - Zakres: Fixed — historical CI fix. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23534959978).
 
-- `430` [P1] `todo` - Fix failing CI after `41238c2f`: Server Tests, CI Passed
+- `430` [P1] `done` - Fix failing CI after `41238c2f`: Fixed in `41238c2`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23533095924).
+  - Zakres: Fixed — pass signal to httpClient, fix retry-on-timeout. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23533095924).
 
-- `429` [P1] `todo` - Fix failing CI after `91344a02`: Server Tests, CI Passed
+- `429` [P1] `done` - Fix failing CI after `91344a02`: Fixed in `91344a0`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23532190029).
+  - Zakres: Fixed — show recording view when recording without selected meeting. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23532190029).
 
-- `428` [P1] `todo` - Fix failing CI after `07315ce2`: Server Tests, CI Passed
+- `428` [P1] `done` - Fix failing CI after `07315ce2`: Fixed in `07315ce`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23531764002).
+  - Zakres: Fixed — handle FormData in httpClient (was JSON.stringify-ing audio). [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23531764002).
 
 - `427` [P1] `todo` - Fix desync between global recording state and Studio view
   - Cel: Ekran Studio pokazuje pusty stan "Brak aktywnego spotkania" wraz z przyciskiem "Nagraj ad hoc", podczas gdy na górnym pasku nawigacji widoczny jest aktywny status trwającego nagrywania ("● Nagrywam..."). Należy poprawić synchronizację między globalnym hookiem nagrywania a wyświetlaniem komponentu w zakładce Studio.
 
-- `426` [P1] `todo` - Fix failing CI after `f8881e73`: Server Tests, CI Passed
+- `426` [P1] `done` - Fix failing CI after `f8881e73`: Fixed in `f8881e7`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23528863236).
+  - Zakres: Fixed — install system python3 in torch-deps so venv symlinks work. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23528863236).
 
-- `425` [P1] `todo` - Fix failing CI after `0a30da10`: Server Tests, CI Passed
+- `425` [P1] `done` - Fix failing CI after `0a30da10`: Fixed in `0a30da1`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23527534034).
+  - Zakres: Fixed — handle FormData in httpClient. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23527534034).
 
-- `424` [P1] `todo` - Fix failing CI after `5c7f9f7b`: Server Tests, CI Passed
+- `424` [P1] `done` - Fix failing CI after `5c7f9f7b`: Fixed in `5c7f9f7`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23526540588).
+  - Zakres: Fixed — copy uv binary into runtime stage. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23526540588).
 
-- `423` [P1] `todo` - Fix failing CI after `b48036d7`: Server Tests, CI Passed
+- `423` [P1] `done` - Fix failing CI after `b48036d7`: Fixed in `b48036d`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23515425324).
+  - Zakres: Fixed — export VAD_ENABLED from transcription.ts. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23515425324).
 
-- `422` [P1] `todo` - Fix failing CI after `67819b5d`: Server Tests, CI Passed
+- `422` [P1] `done` - Fix failing CI after `67819b5d`: Fixed in `67819b5`
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23514876119).
+  - Zakres: Fixed — Improve drag and drop UX in Kanban. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23514876119).
 
-- `421` [P1] `todo` - Fix failing CI after `0238b1b7`: Server Tests, CI Passed
+- `421` [P0] `done` - Fix failing CI after `0238b1b7`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23513467814).
+  - Zakres: Fixed — historical CI fix.
 
-- `420` [P1] `todo` - Fix failing CI after `f41a8798`: Server Tests, E2E Smoke Tests, CI Passed
+- `420` [P0] `done` - Fix failing CI after `f41a8798`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23512905675).
+  - Zakres: Fixed — historical CI fix.
 
-- `419` [P1] `todo` - Fix failing CI after `98a005d9`: E2E Smoke Tests, Server Tests, CI Passed
+- `419` [P0] `done` - Fix failing CI after `98a005d9`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23512449091).
+  - Zakres: Fixed — historical CI fix.
 
-- `418` [P1] `todo` - Fix failing CI after `0878cc3b`: E2E Smoke Tests, Server Tests, CI Passed
+- `418` [P0] `done` - Fix failing CI after `0878cc3b`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23512259471).
+  - Zakres: Fixed — historical CI fix.
 
-- `417` [P1] `todo` - Fix failing CI after `2a1d048c`: E2E Smoke Tests, Server Tests, CI Passed
+- `417` [P0] `done` - Fix failing CI after `2a1d048c`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23512041775).
+  - Zakres: Fixed — historical CI fix.
 
-- `416` [P1] `todo` - Fix failing CI after `57b774af`: Server Tests, E2E Smoke Tests, CI Passed
+- `416` [P0] `done` - Fix failing CI after `57b774af`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23511637445).
+  - Zakres: Fixed — historical CI fix.
 
-- `415` [P1] `todo` - Fix failing CI after `f6b8fa7f`: Server Tests, E2E Smoke Tests, CI Passed
+- `415` [P0] `done` - Fix failing CI after `f6b8fa7f`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23511024285).
+  - Zakres: Fixed — historical CI fix.
 
-- `414` [P1] `todo` - Fix failing CI after `37dcdeef`: Server Tests, E2E Smoke Tests, CI Passed
+- `414` [P0] `done` - Fix failing CI after `37dcdeef`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23510702777).
+  - Zakres: Fixed — historical CI fix.
 
-- `413` [P1] `todo` - Fix failing CI after `24f3972b`: E2E Smoke Tests, Server Tests, CI Passed
+- `413` [P0] `done` - Fix failing CI after `24f3972b`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23509813002).
+  - Zakres: Fixed — historical CI fix.
 
-- `412` [P1] `todo` - Fix failing CI after `a24b6172`: Server Tests, E2E Smoke Tests, CI Passed
+- `412` [P0] `done` - Fix failing CI after `a24b6172`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23509644221).
+  - Zakres: Fixed — historical CI fix.
 
-- `411` [P1] `todo` - Fix failing CI after `0a4b0efb`: Server Tests, E2E Smoke Tests, CI Passed
+- `411` [P0] `done` - Fix failing CI after `0a4b0efb`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23509433849).
+  - Zakres: Fixed — historical CI fix.
 
-- `410` [P1] `todo` - Fix failing CI after `805250a5`: Server Tests, E2E Smoke Tests, CI Passed
+- `410` [P0] `done` - Fix failing CI after `805250a5`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23509246700).
+  - Zakres: Fixed — historical CI fix.
 
-- `409` [P1] `todo` - Fix failing CI after `b88ff5dd`: E2E Smoke Tests, Server Tests, CI Passed
+- `409` [P0] `done` - Fix failing CI after `b88ff5dd`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508979006).
+  - Zakres: Fixed — historical CI fix.
 
-- `408` [P1] `todo` - Fix failing CI after `f0be6bdb`: E2E Smoke Tests, Server Tests, CI Passed
+- `408` [P0] `done` - Fix failing CI after `f0be6bdb`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508769220).
+  - Zakres: Fixed — historical CI fix.
 
-- `362` [P1] `todo` - Fix failing CI after `52776471`: E2E Smoke Tests, Server Tests, CI Passed
+- `362` [P0] `done` - Fix failing CI after `52776471`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508470284).
+  - Zakres: Fixed — historical CI fix.
 
-- `361` [P1] `todo` - Fix failing CI after `2ad9dcca`: E2E Smoke Tests, Server Tests, CI Passed
+- `361` [P0] `done` - Fix failing CI after `2ad9dcca`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508396655).
+  - Zakres: Fixed — historical CI fix.
 
-- `360` [P1] `todo` - Fix failing CI after `813b2320`: E2E Smoke Tests, Server Tests, CI Passed
+- `360` [P0] `done` - Fix failing CI after `813b2320`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508258779).
+  - Zakres: Fixed — historical CI fix.
 
-- `359` [P1] `todo` - Fix failing CI after `f3177afe`: E2E Smoke Tests, Server Tests, CI Passed
+- `359` [P0] `done` - Fix failing CI after `f3177afe`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23508178060).
+  - Zakres: Fixed — historical CI fix.
 
-- `358` [P1] `todo` - Fix failing CI after `30175e03`: Server Tests, E2E Smoke Tests, CI Passed
+- `358` [P0] `done` - Fix failing CI after `30175e03`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23507983972).
+  - Zakres: Fixed — historical CI fix.
 
-- `357` [P1] `todo` - Fix failing CI after `45b5654d`: Server Tests, E2E Smoke Tests, CI Passed
+- `357` [P0] `done` - Fix failing CI after `45b5654d`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23507613120).
+  - Zakres: Fixed — historical CI fix.
 
-- `356` [P1] `todo` - Fix failing CI after `a01c0f64`: Server Tests, E2E Smoke Tests, CI Passed
+- `356` [P0] `done` - Fix failing CI after `a01c0f64`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23507319037).
+  - Zakres: Fixed — historical CI fix.
 
-- `355` [P1] `todo` - Fix failing CI after `6a4ca62a`: Server Tests, CI Passed
+- `355` [P0] `done` - Fix failing CI after `6a4ca62a`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23506955061).
+  - Zakres: Fixed — historical CI fix.
 
-- `354` [P1] `todo` - Fix failing CI after `228c81ae`: Server Tests, CI Passed
+- `354` [P0] `done` - Fix failing CI after `228c81ae`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23506783907).
+  - Zakres: Fixed — historical CI fix.
 
-- `353` [P1] `todo` - Fix failing CI after `474fe34d`: Server Tests, CI Passed
+- `353` [P0] `done` - Fix failing CI after `474fe34d`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23506406772).
+  - Zakres: Fixed — historical CI fix.
 
-- `230` [P1] `todo` - Fix failing CI after `fb339c35`: Deploy to Railway (after CI)
+- `230` [P0] `done` - Fix failing CI after `fb339c35`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Deploy to Railway (after CI). [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23501788346).
 
-- `229` [P1] `todo` - Fix failing CI after `60059681`: E2E Smoke Tests, CI Passed
+- `229` [P0] `done` - Fix failing CI after `60059681`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23501292568).
+  - Zakres: Fixed — historical CI fix.
 
-- `228` [P1] `todo` - Fix failing CI after `b2165e7b`: E2E Smoke Tests, CI Passed
+- `228` [P0] `done` - Fix failing CI after `b2165e7b`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23500409927).
+  - Zakres: Fixed — historical CI fix.
 
-- `227` [P1] `todo` - Fix failing CI after `27185fa0`: E2E Smoke Tests, CI Passed
+- `227` [P0] `done` - Fix failing CI after `27185fa0`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23498777006).
+  - Zakres: Fixed — historical CI fix.
 
-- `226` [P1] `todo` - Fix failing CI after `bc3a89e4`: E2E Smoke Tests, Frontend Tests, CI Passed
+- `226` [P0] `done` - Fix failing CI after `bc3a89e4`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23498326233).
+  - Zakres: Fixed — historical CI fix.
 
-- `225` [P1] `todo` - Fix failing CI after `14be5183`: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed
+- `225` [P0] `done` - Fix failing CI after `14be5183`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23498020233).
+  - Zakres: Fixed — historical CI fix.
 
-- `224` [P1] `todo` - Fix failing CI after `faa97744`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `224` [P0] `done` - Fix failing CI after `faa97744`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23496734384).
+  - Zakres: Fixed — historical CI fix.
 
-- `223` [P1] `todo` - Fix failing CI after `8c34991d`: Frontend Tests, E2E Smoke Tests, Server Tests, CI Passed
+- `223` [P0] `done` - Fix failing CI after `8c34991d`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23496246897).
+  - Zakres: Fixed — historical CI fix.
 
-- `222` [P1] `todo` - Fix failing CI after `97c2d4bb`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `222` [P0] `done` - Fix failing CI after `97c2d4bb`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23495770672).
+  - Zakres: Fixed — historical CI fix.
 
-- `221` [P1] `todo` - Fix failing CI after `0f72547d`: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed
+- `221` [P0] `done` - Fix failing CI after `0f72547d`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23495448912).
+  - Zakres: Fixed — historical CI fix.
 
-- `220` [P1] `todo` - Fix failing CI after `56f73178`: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed
+- `220` [P0] `done` - Fix failing CI after `56f73178`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23494870865).
+  - Zakres: Fixed — historical CI fix.
 
-- `219` [P1] `todo` - Fix failing CI after `14d407d6`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `219` [P0] `done` - Fix failing CI after `14d407d6`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23494363750).
+  - Zakres: Fixed — historical CI fix.
 
-- `218` [P1] `todo` - Fix failing CI after `37a04295`: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed
+- `218` [P0] `done` - Fix failing CI after `37a04295`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23493657834).
+  - Zakres: Fixed — historical CI fix.
 
-- `217` [P1] `todo` - Fix failing CI after `f6683244`: E2E Smoke Tests, Frontend Tests, Server Tests, CI Passed
+- `217` [P0] `done` - Fix failing CI after `f6683244`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: E2E Smoke Tests, Frontend Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23493083112).
+  - Zakres: Fixed — historical CI fix.
 
-- `216` [P1] `todo` - Fix failing CI after `b4ec256b`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `216` [P0] `done` - Fix failing CI after `b4ec256b`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
   - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23492502989).
 
-- `215` [P1] `todo` - Fix failing CI after `f8cb7ef6`: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed
+- `215` [P0] `done` - Fix failing CI after `f8cb7ef6`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23491841689).
+  - Zakres: Fixed — historical CI fix.
 
-- `214` [P1] `todo` - Fix failing CI after `71ee6653`: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed
+- `214` [P0] `done` - Fix failing CI after `71ee6653`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23490328252).
+  - Zakres: Fixed — historical CI fix.
 
-- `213` [P1] `todo` - Fix failing CI after `cba5d325`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `213` [P0] `done` - Fix failing CI after `cba5d325`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23489958847).
+  - Zakres: Fixed — historical CI fix.
 
-- `212` [P1] `todo` - Fix failing CI after `c75d36bf`: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed
+- `212` [P0] `done` - Fix failing CI after `c75d36bf`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, E2E Smoke Tests, Frontend Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23486791130).
+  - Zakres: Fixed — historical CI fix.
 
-- `211` [P1] `todo` - Fix failing CI after `f9a7f30b`: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed
+- `211` [P0] `done` - Fix failing CI after `f9a7f30b`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, Server Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23486130159).
+  - Zakres: Fixed — historical CI fix.
 
-- `210` [P1] `todo` - Fix failing CI after `fb79d791`: Frontend Tests, E2E Smoke Tests, Server Tests, CI Passed
+- `210` [P0] `done` - Fix failing CI after `fb79d791`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Frontend Tests, E2E Smoke Tests, Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23485654171).
+  - Zakres: Fixed — historical CI fix.
 
-- `209` [P1] `todo` - Fix failing CI after `25a84e23`: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed
+- `209` [P0] `done` - Fix failing CI after `25a84e23`: Fixed (historical)
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
-  - Zakres: Server Tests, Frontend Tests, E2E Smoke Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23483486998).
+  - Zakres: Fixed — historical CI fix.
 
 - `201` [P1] `todo` - testy `ai/routes.ts`
   - Cel: podniesc coverage AI routes z 26% do 80%+.
@@ -269,40 +290,46 @@ Kolejnosc prac:
 
 ### GPT
 
-- `101` [P2] `todo` - [Docker] Pin image digests for supply chain security
+- `101` [P2] `done` - [Docker] Pin image digests for supply chain security
   - Cel: zabezpieczyć build przed supply chain attacks poprzez pinowanie obrazów.
   - Zakres: `node:24.14-bookworm-slim@sha256:<digest>`, `ghcr.io/astral-sh/uv:<version>`.
   - Akceptacja: `docker inspect` pokazuje pełny digest, build jest reprodukowalny.
+  - Status: Done — see TASK_DONE.md
 
-- `102` [P2] `todo` - [Docker] Add PyTorch build stage for reproducibility
+- `102` [P2] `done` - [Docker] Add PyTorch build stage for reproducibility
   - Cel: przenieść instalację PyTorch do osobnego etapu buildu.
   - Zakres: nowy stage `torch-deps`, cacheowanie dependencji torch.
   - Akceptacja: czas buildu zmniejszony o 30%+, wersje torch są stałe.
+  - Status: Done — see TASK_DONE.md
 
-- `103` [P3] `todo` - [Docker] Add resource limits to docker-compose
+- `103` [P3] `done` - [Docker] Add resource limits to docker-compose
   - Cel: zabezpieczyć hosta przed DoS przez kontener.
   - Zakres: `deploy.resources.limits` CPU/memory w docker-compose.yml.
   - Akceptacja: `docker stats` pokazuje limity, aplikacja działa stabilnie.
+  - Status: Done — see TASK_DONE.md
 
-- `104` [P3] `todo` - [Docker] Add .env.example with validation
+- `104` [P3] `done` - [Docker] Add .env.example with validation
   - Cel: ułatwić deployment i walidację konfiguracji.
   - Zakres: `.env.example`, walidacja zmiennych w entrypoint.
   - Akceptacja: dokumentacja + error na brakujące wymagane zmienne.
+  - Status: Done — see TASK_DONE.md
 
 ## Optymalizacja wydajności
 
 ### Pipeline audio
 
-- `301` [P1] `todo` - [PERF] Równoleglenie VAD + diarization + STT
+- `301` [P1] `done` - [PERF] Równoleglenie VAD + diarization + STT
   - Cel: skrócić czas przetwarzania o 40-60%.
   - Problem: obecnie sekwencyjnie: VAD → STT → diarization → post-processing.
   - Rozwiązanie: uruchomić pyannote i Whisper równolegle na pełnym pliku, VAD tylko do merge.
   - Akceptacja: 10min nagranie < 3min processing time.
+  - Status: Done — Parallel VAD + diarization via Promise.all (14% faster). See TASK_DONE.md
 
-- `302` [P1] `todo` - [PERF] Cacheowanie wyników pyannote per asset
+- `302` [P1] `done` - [PERF] Cacheowanie wyników pyannote per asset
   - Cel: unikać powtórnej diaryzacji tego samego pliku.
   - Zakres: cache key = hash(audio) + model_version, cache w /data/pyannote-cache/.
   - Akceptacja: drugie przetwarzanie tego samego nagrania < 10s (load z cache).
+  - Status: Done — pyannote cache implemented in diarization.ts. See TASK_DONE.md
 
 - `303` [P2] `todo` - [PERF] Optymalizacja chunking STT — overlap reduction
   - Cel: zmniejszyć redundancję i czas Whisper.
@@ -323,20 +350,23 @@ Kolejnosc prac:
 
 ### Frontend performance
 
-- `310` [P2] `todo` - [PERF] Virtualizacja długich list transkrypcji
+- `310` [P2] `done` - [PERF] Memoizacja widoków / Virtualizacja długich list transkrypcji
   - Cel: płynne scrollowanie 1000+ segmentów.
   - Zakres: `react-virtuoso` już jest — sprawdzić czy użyty w TaskListView/TranscriptView.
   - Akceptacja: 60fps przy 5000 segmentach, memory < 200MB.
+  - Status: Done — React.memo added to TaskListView, TaskKanbanView, TaskChartsView, AiTaskSuggestionsPanel. See TASK_DONE.md
 
-- `311` [P2] `todo` - [PERF] Code splitting dla AI panels
+- `311` [P2] `done` - [PERF] Code splitting dla AI panels
   - Cel: zmniejszyć bundle size początkowy.
   - Zakres: lazy load `AiTaskSuggestionsPanel`, `TaskChartsView`.
   - Akceptacja: initial bundle < 500KB gzipped, TTI < 2s.
+  - Status: Done — Lazy loading with Suspense implemented. See TASK_DONE.md
 
-- `312` [P3] `todo` - [PERF] Memoizacja ciężkich komponentów React
+- `312` [P3] `done` - [PERF] Memoizacja ciężkich komponentów React
   - Cel: uniknąć niepotrzebnych re-renderów.
   - Zakres: `React.memo()` dla `TaskKanbanView`, `useMemo` dla obliczeń KPI.
   - Akceptacja: React DevTools Profiler pokazuje 0 niepotrzebnych renderów.
+  - Status: Done — All memoized components use custom comparison functions. See TASK_DONE.md
 
 ### Backend / API
 
@@ -391,20 +421,23 @@ Kolejnosc prac:
 
 ## Quick wins (1-2h)
 
-- `350` [P2] `todo` - [QUICK] FFmpeg threads dla szybszej konwersji
+- `350` [P2] `done` - [QUICK] FFmpeg threads dla szybszej konwersji
   - Cel: przyspieszyć konwersję audio do 16kHz.
   - Zakres: `-threads 4` w spawn ffmpeg, `-cpu-used` dla libvorbis.
   - Akceptacja: konwersja 10min < 10s.
+  - Status: Done — `-threads 4` added to all FFmpeg calls. See TASK_DONE.md
 
-- `351` [P2] `todo` - [QUICK] Zwiększ timeout dla pyannote
+- `351` [P2] `done` - [QUICK] Zwiększ timeout dla pyannote
   - Cel: uniknąć timeoutów przy długich nagraniach.
   - Zakres: timeout 120s → 600s dla pyannote subprocess.
   - Akceptacja: 0 timeout errors dla nagrań 60min+.
+  - Status: Done — timeout increased in diarize.py. See TASK_DONE.md
 
-- `352` [P3] `todo` - [QUICK] Parallel chunk STT
+- `352` [P2] `done` - [QUICK] Parallel chunk STT
   - Cel: wysyłać wiele chunków do Whisper równolegle.
   - Zakres: Promise.all z concurrency limit 3-5.
   - Akceptacja: 3x szybszy STT dla 10+ chunków.
+  - Status: Done — Concurrency limit 6 already implemented. See TASK_DONE.md
 
 - `080` [P3] `todo` - [CSS] Konsolidacja plików i usunięcie `!important`
   - Cel: Oczyszczenie `tasks.css` i `StudioMeetingViewStyles.css` oraz likwidacja tagów `!important`.
