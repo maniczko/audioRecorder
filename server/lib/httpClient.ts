@@ -41,14 +41,15 @@ export async function httpClient(
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      const mergedSignal = signal 
+      timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const mergedSignal = signal
         ? AbortSignal.any([signal, controller.signal])
         : controller.signal;
-      
+
       const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
       const response = await fetch(url, {
         method,
@@ -62,9 +63,9 @@ export async function httpClient(
         body: isFormData ? body : (body && typeof body !== "string" ? JSON.stringify(body) : body),
         signal: mergedSignal,
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       return {
         ok: response.ok,
         status: response.status,
@@ -75,12 +76,13 @@ export async function httpClient(
       };
     } catch (error: any) {
       lastError = error;
-      
-      // Don't retry on abort
-      if (signal?.aborted) {
+      clearTimeout(timeoutId);
+
+      // Don't retry on external abort OR internal timeout
+      if (signal?.aborted || controller.signal.aborted) {
         throw error;
       }
-      
+
       // Wait before retry (exponential backoff)
       if (attempt < MAX_RETRIES - 1) {
         await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt)));

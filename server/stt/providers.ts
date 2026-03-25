@@ -92,20 +92,26 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
     throw new Error(`STT provider ${provider.id} nie jest skonfigurowany.`);
   }
 
-  // [320] Use HTTP client with keep-alive and connection pooling
-  const response = await httpClient(`${provider.baseUrl}/audio/transcriptions`, {
+  const url = `${provider.baseUrl}/audio/transcriptions`;
+  const model = (request.fields as any)?.model || provider.defaultModel;
+  console.log(`[stt] ${provider.id} model=${model} → POST ${url}`);
+
+  const response = await httpClient(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${provider.apiKey}`,
     },
     body: createFormData(request),
+    signal: request.signal,
     timeout: 120000,
   });
 
   const rawBody = await response.text();
   if (!response.ok) {
     const payload = parseJsonResponse(rawBody);
-    throw new Error(payload?.error?.message || `STT audio request failed with status ${response.status}.`);
+    const msg = payload?.error?.message || `STT audio request failed with status ${response.status}.`;
+    console.warn(`[stt] ${provider.id} failed: status=${response.status} body=${rawBody.slice(0, 300)}`);
+    throw new Error(msg);
   }
 
   return parseJsonResponse(rawBody);
