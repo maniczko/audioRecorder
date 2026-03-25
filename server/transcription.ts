@@ -178,13 +178,16 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
     if (filePath && !filePath.includes(path.sep) && !filePath.includes('/')) {
       const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(filePath);
+      const baseMime = String(options.contentType || '').toLowerCase().split(';')[0].trim();
       const ext =
         {
           'audio/webm': '.webm',
           'audio/mpeg': '.mp3',
           'audio/mp4': '.m4a',
           'audio/wav': '.wav',
-        }[String(options.contentType || '').toLowerCase()] || '.bin';
+          'audio/ogg': '.ogg',
+          'audio/flac': '.flac',
+        }[baseMime] || '.webm';
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_analyze_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });

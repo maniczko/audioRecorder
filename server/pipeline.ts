@@ -136,13 +136,16 @@ async function runTranscriptionAttempt(
       notify(10, 'Pobieranie nagrania z bazy danych...');
       const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(workingFilePath);
+      const baseMime = String(asset.content_type || '').toLowerCase().split(';')[0].trim();
       const ext =
         {
           'audio/webm': '.webm',
           'audio/mpeg': '.mp3',
           'audio/mp4': '.m4a',
           'audio/wav': '.wav',
-        }[String(asset.content_type || '').toLowerCase()] || '.bin';
+          'audio/ogg': '.ogg',
+          'audio/flac': '.flac',
+        }[baseMime] || '.webm';
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
@@ -810,13 +813,16 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     try {
       const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(asset.file_path);
+      const baseMime = String(asset.content_type || '').toLowerCase().split(';')[0].trim();
       const ext =
         {
           'audio/webm': '.webm',
           'audio/mpeg': '.mp3',
           'audio/mp4': '.m4a',
           'audio/wav': '.wav',
-        }[String(asset.content_type || '').toLowerCase()] || '.bin';
+          'audio/ogg': '.ogg',
+          'audio/flac': '.flac',
+        }[baseMime] || '.webm';
       const uploadDir = getUploadDir();
       sourceTempPath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(sourceTempPath), { recursive: true });

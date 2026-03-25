@@ -969,10 +969,11 @@ export class Database {
   }: any): Promise<MediaAsset | null> {
     const safeRecordingId = String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
     if (!safeRecordingId) throw new Error('Nieprawidłowy identyfikator nagrania.');
+    const baseMime = String(contentType || '').toLowerCase().split(';')[0].trim();
     const extension =
-      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav' }[
-        String(contentType || '').toLowerCase()
-      ] || '.bin';
+      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav', 'audio/ogg': '.ogg', 'audio/flac': '.flac', 'audio/x-m4a': '.m4a', 'audio/mp3': '.mp3' }[
+        baseMime
+      ] || '.webm';
 
     let storagePath: string;
 
@@ -1052,10 +1053,11 @@ export class Database {
     if (!safeRecordingId) throw new Error('Nieprawidlowy identyfikator nagrania.');
     if (!filePath || !fs.existsSync(filePath)) throw new Error('Plik zrodlowy nie istnieje.');
 
+    const baseMime = String(contentType || '').toLowerCase().split(';')[0].trim();
     const extension =
-      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav' }[
-        String(contentType || '').toLowerCase()
-      ] || '.bin';
+      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav', 'audio/ogg': '.ogg', 'audio/flac': '.flac', 'audio/x-m4a': '.m4a', 'audio/mp3': '.mp3' }[
+        baseMime
+      ] || '.webm';
     const fileStats = await fs.promises.stat(filePath);
     let storagePath: string;
 

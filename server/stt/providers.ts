@@ -52,11 +52,21 @@ function ensureAudioBuffer(request: SttAudioRequest) {
   return audioBuffer;
 }
 
+const VALID_STT_EXTENSIONS = new Set(['.flac', '.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.ogg', '.opus', '.wav', '.webm']);
+
+function ensureValidSttFilename(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  if (VALID_STT_EXTENSIONS.has(ext)) return filename;
+  // Replace unrecognized extension with .webm so the API accepts it
+  return ext ? filename.slice(0, -ext.length) + '.webm' : filename + '.webm';
+}
+
 function createFormData(request: SttAudioRequest) {
   const audioBuffer = ensureAudioBuffer(request);
   const form = new FormData();
-  const safeFilename =
+  const rawFilename =
     request.filename || (request.filePath ? path.basename(request.filePath) : 'audio.wav');
+  const safeFilename = ensureValidSttFilename(rawFilename);
 
   form.append(
     'file',

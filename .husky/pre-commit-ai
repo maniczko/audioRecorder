@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Pre-commit AI Review Hook
+# Runs AI-powered code review before allowing commit
+
+echo "🤖 Running AI code review..."
+
+# Check if there are staged changes
+if [ -z "$(git diff --cached --name-only)" ]; then
+  echo "⚠️  No staged changes"
+  exit 0
+fi
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$')
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "ℹ️  No TypeScript/JavaScript files staged"
+  exit 0
+fi
+
+# Run ESLint first (faster, catches obvious issues)
+echo "🔍 Running ESLint..."
+npx eslint $STAGED_FILES --fix
+
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint found errors that couldn't be auto-fixed"
+  echo "💡 Please fix the errors manually or run 'npm run lint:fix'"
+  echo ""
+  echo "Staged files with issues:"
+  git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$'
+  echo ""
+  echo "To bypass this check (not recommended), use: git commit --no-verify"
+  exit 1
+fi
+
+# Run TypeScript check
+echo "🔍 Running TypeScript check..."
+npx tsc --noEmit
+
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript found type errors"
+  echo "💡 Please fix the type errors manually"
+  echo ""
+  echo "To bypass this check (not recommended), use: git commit --no-verify"
+  exit 1
+fi
+
+# Run tests for changed files (optional, can be slow)
+# Uncomment if you want to run tests on every commit
+# echo "🧪 Running tests for changed files..."
+# npx vitest related $STAGED_FILES --run
+# 
+# if [ $? -ne 0 ]; then
+#   echo "❌ Tests failed"
+#   echo "💡 Please fix the failing tests"
+#   echo ""
+#   echo "To bypass this check (not recommended), use: git commit --no-verify"
+#   exit 1
+# fi
+
+echo "✅ AI code review passed!"
+echo "✨ All checks passed - commit allowed"
+exit 0

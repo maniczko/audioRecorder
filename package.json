@@ -76,6 +76,7 @@
     "turbo:lint": "turbo run lint",
     "test": "npm run lint && vitest run",
     "test:fix": "npm run lint:fix && npm run format && vitest run",
+    "test:ai-fix": "npm run lint:fix && npm run format && npm run test:smart-retry",
     "test:retry": "vitest run --retry=3 --reporter=verbose",
     "test:smart-retry": "node scripts/smart-retry.js",
     "test:coverage:fix": "npm run lint:fix && npm run format && npm run test:coverage",
