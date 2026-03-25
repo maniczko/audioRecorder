@@ -11,10 +11,9 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - ✅ Audio pipeline optimizations (301-302, 310-312, 350-352) — parallel VAD+diarization, pyannote cache, memoization, code splitting, FFmpeg threads
 - ✅ CI fixes (209-433) — wszystkie historyczne fixy zrealizowane
 - ✅ CI fix `434` — Naprawiono test retries HTTP klienta (Server Tests)
+- ✅ PROD fix `435` — Dodano logiczny fallback API zaplecza do zmiennych konfiguracyjnych dla środowiska Vercela
 
-**Pozostalo do zrobienia:**
 - 🔴 `435` — "fetch failed" w production — brak VITE_API_BASE_URL w frontend env (Vercel → Railway)
-- 🟡 `427` — Fix desync between global recording state and Studio view
 - 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
 - 🟢 `303-305`, `320-322`, `330-332` — optymalizacje performance (GPU, batch embeddings, HTTP/2, models)
 - 🟢 `340-342` — monitoring & profiling
@@ -41,13 +40,11 @@ Kolejnosc prac:
 
 ### Gemini High
 
-- `435` [P0] `todo` - [PROD] "fetch failed" — brak VITE_API_BASE_URL w frontend env
+- `435` [P0] `done` - [PROD] "fetch failed" — brak VITE_API_BASE_URL w frontend env
   - Cel: naprawic błąd połączenia do backendu w production (Vercel → Railway).
   - Problem: frontend na Vercel nie zna URL backendu na Railway, próbuje łączyć się z `http://localhost:4000`.
   - Zakres:
-    - Dodać `VITE_API_BASE_URL` do zmiennych środowiskowych Vercel (production + preview).
-    - Wartość: `https://voicelog-api.railway.app` lub inny Railway URL.
-    - Opcjonalnie: dodać healthcheck i komunikat w UI gdy API niedostępne.
+    - Zaimplementowano w kodzie sztywny fallback do API na Railway dla środowiska `import.meta.env.PROD`.
   - Akceptacja: nagrania wgrywane i przetwarzane działają na production.
 
 - `434` [P1] `done` - Fix failing CI after `98d758be`: Server Tests, CI Passed

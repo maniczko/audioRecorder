@@ -2,6 +2,7 @@ import type {
   MeetingAnalysis,
 } from "../shared/types";
 import { analyzeSpeakingStyle } from "./speakerAnalysis";
+import { API_BASE_URL } from "../services/config";
 import {
   buildMeetingFeedbackFallback,
   buildMeetingFeedbackSchemaExample,
@@ -10,7 +11,6 @@ import {
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Import lazily to avoid circular deps — apiRequest reads from localStorage for the session token
 let _apiRequest = null;

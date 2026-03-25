@@ -1,5 +1,5 @@
+import { API_BASE_URL } from "../services/config";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Import lazily to avoid circular deps
 let _apiRequest: ((path: string, opts?: any) => Promise<any>) | null = null;

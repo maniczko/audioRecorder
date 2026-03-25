@@ -32,7 +32,12 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
 );
 
 const RAW_API_BASE_URL = String(
-  readEnv("VITE_API_BASE_URL") || readEnv("REACT_APP_API_BASE_URL") || "http://localhost:4000"
+  readEnv("VITE_API_BASE_URL") || 
+  readEnv("REACT_APP_API_BASE_URL") || 
+  // @ts-ignore
+  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.PROD 
+    ? "https://audiorecorder-production.up.railway.app" 
+    : "http://localhost:4000")
 ).trim();
 
 export const API_BASE_URL = RAW_API_BASE_URL;
