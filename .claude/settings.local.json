@@ -63,7 +63,8 @@
       "Bash(gh api:*)",
       "Bash(railway whoami:*)",
       "Bash(railway environment:*)",
-      "Bash(python -m json.tool)"
+      "Bash(python -m json.tool)",
+      "Bash(pip install:*)"
     ]
   }
 }

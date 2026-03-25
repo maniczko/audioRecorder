@@ -49,16 +49,17 @@ export async function httpClient(
         ? AbortSignal.any([signal, controller.signal])
         : controller.signal;
       
+      const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
       const response = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
+          ...(isFormData ? {} : { "Content-Type": "application/json" }),
           "User-Agent": "VoiceLog-API/1.0",
           "Connection": "keep-alive",
           "Keep-Alive": `timeout=${KEEP_ALIVE_TIMEOUT / 1000}, max=${MAX_RETRIES}`,
           ...headers,
         },
-        body: body && typeof body !== "string" ? JSON.stringify(body) : body,
+        body: isFormData ? body : (body && typeof body !== "string" ? JSON.stringify(body) : body),
         signal: mergedSignal,
       });
       

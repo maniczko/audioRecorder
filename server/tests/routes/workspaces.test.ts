@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app.ts";
-import { generateRagAnswer } from "../../lib/ragAnswer.ts";
 
+// Import and mock generateRagAnswer
+const mockGenerateRagAnswer = vi.fn();
 vi.mock("../../lib/ragAnswer.ts", () => ({
-  generateRagAnswer: vi.fn(),
+  generateRagAnswer: mockGenerateRagAnswer,
 }));
 
 describe("Workspace Routes", () => {
@@ -47,6 +48,7 @@ describe("Workspace Routes", () => {
       queryRAG: vi.fn(),
     };
     global.fetch = vi.fn();
+    mockGenerateRagAnswer.mockClear();
   });
 
   afterEach(() => {
@@ -177,7 +179,7 @@ describe("Workspace Routes", () => {
     expect((await emptyRes.json()).answer).toMatch(/Brak danych/);
 
     mockTranscriptionService.queryRAG.mockResolvedValueOnce([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
-    vi.mocked(generateRagAnswer).mockRejectedValueOnce(new Error("Brak klucza API do RAG LLMa."));
+    mockGenerateRagAnswer.mockRejectedValueOnce(new Error("Brak klucza API do RAG LLMa."));
     const errorRes = await app.request("/workspaces/ws1/rag/ask", {
       method: "POST",
       headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
@@ -189,7 +191,7 @@ describe("Workspace Routes", () => {
 
   it("returns LLM answer when OpenAI key is configured", async () => {
     mockTranscriptionService.queryRAG.mockResolvedValue([{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }]);
-    vi.mocked(generateRagAnswer).mockResolvedValueOnce("Odpowiedz z RAG.");
+    mockGenerateRagAnswer.mockResolvedValueOnce("Odpowiedz z RAG.");
     app = createApp(
       {
         authService: mockAuthService,
@@ -214,7 +216,7 @@ describe("Workspace Routes", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ answer: "Odpowiedz z RAG." });
-    expect(generateRagAnswer).toHaveBeenCalledWith(
+    expect(mockGenerateRagAnswer).toHaveBeenCalledWith(
       expect.objectContaining({
         question: "Co ustalono?",
         chunks: [{ recording_id: "rec1", speaker_name: "Anna", text: "Ustalono plan." }],

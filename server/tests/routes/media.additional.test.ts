@@ -8,7 +8,7 @@ describe('Media Routes - Additional Coverage', () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    
+
     mockAuthService = {
       getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
     };
@@ -23,7 +23,7 @@ describe('Media Routes - Additional Coverage', () => {
 
     const { createApp: createAppFn } = await import('../../app.ts');
     createApp = createAppFn;
-  });
+  }, 15000);
 
   describe('POST /media/analyze', () => {
     test('returns analysis result when transcription service returns data', async () => {

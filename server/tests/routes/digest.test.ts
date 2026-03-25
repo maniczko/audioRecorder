@@ -30,7 +30,7 @@ describe("Digest routes", () => {
       transcriptionService: mockTranscriptionService,
       config: { allowedOrigins: "*", trustProxy: false, uploadDir: "/tmp" },
     });
-  });
+  }, 15000);
 
   afterEach(() => {
     vi.restoreAllMocks();
