@@ -27,8 +27,8 @@ export function createBrowserTranscriptionController({
   recognition.lang = lang;
 
   recognition.onerror = (event) => {
-    // "no-speech" is benign (silence), everything else is a real error
-    if (event.error !== "no-speech") {
+    // "no-speech" is benign (silence); "aborted" happens on programmatic stop — both are expected
+    if (event.error !== "no-speech" && event.error !== "aborted") {
       console.error("Speech recognition error:", event.error);
       if (typeof onError === "function") {
         const messages = {
