@@ -5,8 +5,6 @@ import { getHostedRuntimeBuildId, isHostedPreviewHost } from "../runtime/browser
 const unauthorizedHandlers = new Set();
 let previewRuntimeStatus = "unknown";
 let buildIdMismatchLogged = false;
-const HOSTED_PREVIEW_RUNTIME_MESSAGE =
-  "Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.";
 const HOSTED_PREVIEW_STALE_MESSAGE =
   "Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.";
 
@@ -101,9 +99,6 @@ function normalizeApiErrorMessage(message = "", status?: number) {
   }
 
   if (isTransportFailureMessage(message)) {
-    if (isHostedPreviewRuntime() && previewRuntimeStatus === "healthy") {
-      return HOSTED_PREVIEW_RUNTIME_MESSAGE;
-    }
     return "Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.";
   }
 

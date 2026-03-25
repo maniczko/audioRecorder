@@ -80,9 +80,9 @@ describe("Security & Payload Limits", () => {
 
   // 4. Rate Limiting test
   it("POST /auth/login - 429 Too Many Requests after exceeding limit", async () => {
-    // In our middleware `applyRateLimit("auth", 10)` means 10 requests allowed
+    // applyRateLimit("auth-login", 20) means 20 requests allowed per minute
     let any429 = false;
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 25; i++) {
         const res = await app.request("/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
