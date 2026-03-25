@@ -12,13 +12,13 @@ export function getSttModelForProcessingMode(processingMode: "fast" | "full"): s
   if (processingMode === "fast") {
     // Fast mode: use smaller model for quicker transcription
     // Can be configured via VOICELOG_STT_MODEL_FAST env var
-    // Examples: "openai/whisper-1", "groq/whisper-large-v3-turbo", "groq/whisper-large-v3"
-    return config.VOICELOG_STT_MODEL_FAST || "openai/whisper-1";
+    // Examples: "whisper-1", "groq/whisper-large-v3-turbo", "groq/whisper-large-v3"
+    return config.VOICELOG_STT_MODEL_FAST || "whisper-1";
   }
 
   // Full mode: use larger model for better accuracy
   // Can be configured via VOICELOG_STT_MODEL_FULL env var
-  return config.VOICELOG_STT_MODEL_FULL || "openai/whisper-1";
+  return config.VOICELOG_STT_MODEL_FULL || "whisper-1";
 }
 
 export function shouldUseFastModel(processingMode: string): boolean {

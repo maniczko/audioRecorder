@@ -230,3 +230,55 @@ describe("stt providers — HTTP behavior", () => {
     expect(body.getAll("timestamp_granularities[]")).toEqual(["segment", "word"]);
   });
 });
+
+describe("stt providers — Groq model override in requestFactory", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("uses Groq provider.defaultModel (whisper-large-v3) when fields.model is an OpenAI model", async () => {
+    const providers = resolveConfiguredSttProviders({
+      preferredProvider: "openai",
+      fallbackProvider: "groq",
+      openAiApiKey: "openai-key",
+      openAiBaseUrl: "https://api.openai.test/v1",
+      groqApiKey: "groq-key",
+    });
+
+    let callCount = 0;
+    vi.spyOn(httpClientModule, "httpClient").mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error("OpenAI network error");
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
+        text: async () => '{"text":"Groq result"}',
+        json: async () => ({ text: "Groq result" }),
+      } as any;
+    });
+
+    // Simulate the requestFactory logic from transcription.ts:requestAudioTranscription
+    const result = await transcribeWithProviders(providers, (provider) => ({
+      buffer: Buffer.from("fake-audio"),
+      filename: "chunk.wav",
+      contentType: "audio/wav",
+      fields: {
+        model: provider.id === "groq"
+          ? provider.defaultModel          // whisper-large-v3
+          : "whisper-1",                   // OpenAI model
+        language: "pl",
+      },
+    }));
+
+    expect(result.providerId).toBe("groq");
+
+    // The second httpClient call is for Groq — verify it got whisper-large-v3
+    const groqCall = vi.mocked(httpClientModule.httpClient).mock.calls[1];
+    const groqBody = groqCall[1]?.body as FormData;
+    expect(groqBody.get("model")).toBe("whisper-large-v3");
+  });
+});

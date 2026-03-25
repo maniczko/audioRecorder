@@ -401,7 +401,10 @@ export async function requestAudioTranscription({
     signal,
     fields: {
       ...(fields || {}),
-      model: fields?.model || provider.defaultModel,
+      // Groq only supports its own models (e.g. whisper-large-v3), not OpenAI model names
+      model: provider.id === "groq"
+        ? provider.defaultModel
+        : (fields?.model || provider.defaultModel),
     },
   }));
 }
