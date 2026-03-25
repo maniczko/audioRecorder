@@ -24,6 +24,10 @@ Kolejnosc prac:
 
 ### Gemini High
 
+- `428` [P1] `todo` - Fix failing CI after `07315ce2`: Server Tests, CI Passed
+  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
+  - Zakres: Server Tests, CI Passed. [Logi CI](https://github.com/maniczko/audioRecorder/actions/runs/23531764002).
+
 - `427` [P1] `todo` - Fix desync between global recording state and Studio view
   - Cel: Ekran Studio pokazuje pusty stan "Brak aktywnego spotkania" wraz z przyciskiem "Nagraj ad hoc", podczas gdy na górnym pasku nawigacji widoczny jest aktywny status trwającego nagrywania ("● Nagrywam..."). Należy poprawić synchronizację między globalnym hookiem nagrywania a wyświetlaniem komponentu w zakładce Studio.
 
