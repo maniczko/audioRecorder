@@ -9,11 +9,12 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 **Zrealizowane zadania:**
 - ✅ Docker security & reproducibility (101-104) — pinned images, torch-deps stage, resource limits, .env.example
 - ✅ Audio pipeline optimizations (301-302, 310-312, 350-352) — parallel VAD+diarization, pyannote cache, memoization, code splitting, FFmpeg threads
-- ✅ CI fixes (209-430) — wszystkie historyczne fixy zrealizowane
-- 🔄 CI fix `433` — w trakcie (Server Tests failing)
+- ✅ CI fixes (209-433) — wszystkie historyczne fixy zrealizowane
+- 🔄 CI fix `434` — w trakcie (Server Tests)
 
 **Pozostalo do zrobienia:**
-- 🔴 CI fix `433` — Server Tests failing [actions/runs/23540803866](https://github.com/maniczko/audioRecorder/actions/runs/23540803866)
+- 🔴 `435` — "fetch failed" w production — brak VITE_API_BASE_URL w frontend env (Vercel → Railway)
+- 🔴 CI fix `434` — Server Tests [actions/runs/23541335009](https://github.com/maniczko/audioRecorder/actions/runs/23541335009)
 - 🟡 `427` — Fix desync between global recording state and Studio view
 - 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
 - 🟢 `303-305`, `320-322`, `330-332` — optymalizacje performance (GPU, batch embeddings, HTTP/2, models)
@@ -40,6 +41,15 @@ Kolejnosc prac:
 - Brak otwartych zadan.
 
 ### Gemini High
+
+- `435` [P0] `todo` - [PROD] "fetch failed" — brak VITE_API_BASE_URL w frontend env
+  - Cel: naprawic błąd połączenia do backendu w production (Vercel → Railway).
+  - Problem: frontend na Vercel nie zna URL backendu na Railway, próbuje łączyć się z `http://localhost:4000`.
+  - Zakres:
+    - Dodać `VITE_API_BASE_URL` do zmiennych środowiskowych Vercel (production + preview).
+    - Wartość: `https://voicelog-api.railway.app` lub inny Railway URL.
+    - Opcjonalnie: dodać healthcheck i komunikat w UI gdy API niedostępne.
+  - Akceptacja: nagrania wgrywane i przetwarzane działają na production.
 
 - `434` [P1] `todo` - Fix failing CI after `98d758be`: Server Tests, CI Passed
   - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.
