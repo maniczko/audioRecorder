@@ -15,7 +15,7 @@ export function shouldEnableServiceWorker(hostname: string) {
 
 function readBuildId() {
   try {
-    // @ts-ignore
+    // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
     const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
     return String(env?.VITE_VERCEL_GIT_COMMIT_SHA || env?.VITE_BUILD_ID || "").trim();
   } catch (_) {

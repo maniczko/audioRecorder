@@ -5,6 +5,43 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./src ./public ./package.json ./pnpm-lock.yaml ./index.html ./vite.config.js",
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=()"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "header": "Host",
+          "value": "(.*)"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://api.openai.com https://api.anthropic.com https://api.google.com https://generativelanguage.googleapis.com https://api.groq.com https://api.together.xyz; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+        }
+      ]
+    },
+    {
       "source": "/",
       "headers": [
         {

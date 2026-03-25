@@ -1,0 +1,9 @@
+# Test files (except lint-staged)
+coverage/
+
+# Build
+build/
+dist/
+
+# Node modules
+node_modules/

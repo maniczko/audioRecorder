@@ -83,6 +83,19 @@ export default defineConfig(async () => {
     },
     build: {
       outDir: 'build',
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) return 'vendor-react';
+              if (id.includes('langchain')) return 'vendor-langchain';
+              if (id.includes('lucide') || id.includes('class-variance') || id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui';
+              if (id.includes('web-vitals') || id.includes('zod') || id.includes('zustand') || id.includes('idb-keyval') || id.includes('dompurify')) return 'vendor-utils';
+              if (id.includes('geist')) return 'vendor-fonts';
+            }
+          }
+        }
+      }
     },
     define: {
       'process.env.REACT_APP_DATA_PROVIDER': JSON.stringify(dataProvider),

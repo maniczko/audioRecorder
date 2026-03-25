@@ -14,9 +14,9 @@ import App from "./App";
 import { registerUser } from "./lib/auth";
 import { STORAGE_KEYS } from "./lib/storage";
 
-// @ts-ignore
+// @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
 if (typeof import.meta !== "undefined" && import.meta.env) {
-  // @ts-ignore
+  // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
   import.meta.env.VITE_DATA_PROVIDER = "local";
 }
 

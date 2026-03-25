@@ -684,7 +684,7 @@ export class Database {
     await this._execute("UPDATE users SET recovery_code_hash = ?, recovery_code_expires_at = ?, updated_at = ? WHERE id = ?", [this._hashRecoveryCode(recoveryCode), expiresAt, this.nowIso(), row.id]);
 
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[DEV] Password reset code for ${email}: ${recoveryCode} (expires ${expiresAt})`);
+      console.log(`[DEV] Password reset requested for ${email} (expires ${expiresAt})`);
     }
     return { expiresAt };
   }
