@@ -57,6 +57,7 @@ function isRetryableNetworkError(error: any): boolean {
   const msg = String(error?.message || "").toLowerCase();
   return (
     msg.includes("fetch failed") ||
+    msg.includes("failed to fetch") ||
     msg.includes("network") ||
     msg.includes("timeout") ||
     msg.includes("econnreset") ||
