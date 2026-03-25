@@ -1,3 +1,4 @@
+```typescript
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveConfiguredSttProviders } from "../stt/providers.ts";
 
@@ -41,7 +42,7 @@ describe("stt providers", () => {
   it("handles missing fallback provider", () => {
     const providers = resolveConfiguredSttProviders({
       preferredProvider: "openai",
-      fallbackProvider: "none",
+      fallbackProvider: undefined, // Change from 'none' to undefined
       openAiApiKey: "openai-key",
       openAiBaseUrl: "https://api.openai.test/v1",
     });
@@ -50,3 +51,4 @@ describe("stt providers", () => {
     expect(providers[0].id).toBe("openai");
   });
 });
+```
