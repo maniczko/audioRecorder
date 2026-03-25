@@ -193,7 +193,7 @@ describe("StudioMeetingView", () => {
   });
 
   test("renders empty state when no meeting selected", () => {
-    const props = { ...defaultProps, selectedMeeting: null };
+    const props = { ...defaultProps, selectedMeeting: null, displayRecording: null, selectedRecording: null };
     renderWithContext(<StudioMeetingView {...props} />);
     const els = screen.getAllByText(/Brak aktywnego spotkania/i);
     expect(els.length).toBeGreaterThanOrEqual(1);

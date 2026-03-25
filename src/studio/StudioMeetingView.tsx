@@ -1130,7 +1130,7 @@ export default function StudioMeetingView({
 
 
 
-  if (!selectedMeeting) {
+  if (!selectedMeeting && !isRecording && !isQueued && !displayRecording && !selectedRecording) {
     return (
       <section className="hero-panel empty-workspace">
         <div className="empty-workspace-inner">
