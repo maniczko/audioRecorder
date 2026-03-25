@@ -225,30 +225,47 @@ export default function useAudioHardware({
 
       const noiseReducer = await createNoiseReducerNode(audioContext);
       let recordStream = stream;
+      let noiseReductionEnabled = false;
+      
       if (noiseReducer) {
-        const destination = audioContext.createMediaStreamDestination();
-        source.connect(noiseReducer);
-        noiseReducer.connect(analyser);
-        noiseReducer.connect(destination);
-        recordStream = destination.stream;
-        noiseReducerRef.current = noiseReducer;
-        if (isRnnoiseNode(noiseReducer)) {
-          setVoiceActivityStatus('idle');
-          noiseReducer.onstatus = (event) => {
-            const vadProbability = Number(event?.data?.vadProb ?? 0);
-            setVoiceActivityStatus(vadProbability >= 0.55 ? 'active' : 'idle');
-          };
-          requestNoiseReducerStatus(noiseReducer);
-          vadIntervalRef.current = window.setInterval(() => {
+        try {
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(noiseReducer);
+          noiseReducer.connect(analyser);
+          noiseReducer.connect(destination);
+          recordStream = destination.stream;
+          noiseReducerRef.current = noiseReducer;
+          noiseReductionEnabled = true;
+          
+          console.log('[NoiseReducer] RNNoise node created successfully');
+          
+          if (isRnnoiseNode(noiseReducer)) {
+            setVoiceActivityStatus('idle');
+            noiseReducer.onstatus = (event) => {
+              const vadProbability = Number(event?.data?.vadProb ?? 0);
+              setVoiceActivityStatus(vadProbability >= 0.55 ? 'active' : 'idle');
+            };
             requestNoiseReducerStatus(noiseReducer);
-          }, 350);
-        } else {
+            vadIntervalRef.current = window.setInterval(() => {
+              requestNoiseReducerStatus(noiseReducer);
+            }, 350);
+          } else {
+            console.log('[NoiseReducer] Using fallback noise reducer');
+            setVoiceActivityStatus('unsupported');
+          }
+        } catch (error) {
+          console.error('[NoiseReducer] Error connecting noise reducer:', error);
+          source.connect(analyser);
           setVoiceActivityStatus('unsupported');
         }
       } else {
+        console.warn('[NoiseReducer] Noise reducer not available, using raw audio');
         source.connect(analyser);
         setVoiceActivityStatus('unsupported');
       }
+      
+      // Store whether noise reduction is active for debugging
+      (window as any).__NOISE_REDUCTION_ENABLED = noiseReductionEnabled;
 
       streamRef.current = stream;
       audioContextRef.current = audioContext;

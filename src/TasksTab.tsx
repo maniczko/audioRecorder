@@ -741,22 +741,90 @@ export default function TasksTab({
           />
         }
         aside={
-          <TaskDetailsPanel
-            selectedTask={selectedTask}
-            tasks={tasks}
-            peopleOptions={peopleOptions}
-            tagOptions={tagOptions}
-            taskGroups={taskGroups}
-            boardColumns={boardColumns}
-            onUpdateTask={safeUpdateTask}
-            onMoveTaskToColumn={safeMoveTaskToColumn}
-            onDeleteTask={safeDeleteTask}
-            onOpenMeeting={onOpenMeeting}
-            currentUserName={currentUserName}
-            onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
-          />
+          viewMode !== 'kanban' ? (
+            <TaskDetailsPanel
+              selectedTask={selectedTask}
+              tasks={tasks}
+              peopleOptions={peopleOptions}
+              tagOptions={tagOptions}
+              taskGroups={taskGroups}
+              boardColumns={boardColumns}
+              onUpdateTask={safeUpdateTask}
+              onMoveTaskToColumn={safeMoveTaskToColumn}
+              onDeleteTask={safeDeleteTask}
+              onOpenMeeting={onOpenMeeting}
+              currentUserName={currentUserName}
+              onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
+            />
+          ) : null
         }
       />
+      {viewMode === 'kanban' && selectedTask && (
+        <div 
+          className="ff-modal-overlay" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedTaskId('');
+          }}
+          style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div 
+            className="ff-modal-content" 
+            style={{ 
+              padding: 0, 
+              width: '420px', 
+              maxWidth: '90vw',
+              height: '85vh', 
+              display: 'flex', 
+              position: 'relative',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: 'var(--surface-0)'
+            }}
+          >
+             <button
+              className="ff-modal-close"
+              type="button"
+              onClick={() => setSelectedTaskId('')}
+              style={{ 
+                position: 'absolute', 
+                top: 12, 
+                right: 12, 
+                zIndex: 10, 
+                background: 'var(--surface-2)', 
+                borderRadius: '50%', 
+                border: '1px solid var(--border)', 
+                cursor: 'pointer', 
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Zamknij"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              <TaskDetailsPanel
+                selectedTask={selectedTask}
+                tasks={tasks}
+                peopleOptions={peopleOptions}
+                tagOptions={tagOptions}
+                taskGroups={taskGroups}
+                boardColumns={boardColumns}
+                onUpdateTask={safeUpdateTask}
+                onMoveTaskToColumn={safeMoveTaskToColumn}
+                onDeleteTask={safeDeleteTask}
+                onOpenMeeting={onOpenMeeting}
+                currentUserName={currentUserName}
+                onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }

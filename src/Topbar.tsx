@@ -16,7 +16,7 @@ export default function Topbar() {
     <header className="topbar ui-topbar">
       <div className="topbar-title">
         <div>
-          <div className="eyebrow">VoiceLog OS</div>
+          <div className="eyebrow">VoiceBóbr</div>
           <h1>Meeting intelligence studio</h1>
         </div>
         <Cluster className="tab-switcher" gap="sm">

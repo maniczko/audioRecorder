@@ -54,7 +54,7 @@ export default function AuthScreen({
       <div className="backdrop-orb backdrop-orb-right" />
 
       <section className="auth-hero">
-        <div className="eyebrow">VoiceLog OS</div>
+        <div className="eyebrow">VoiceBóbr</div>
         <h1>Meeting intelligence z kalendarzem i rozpoznawaniem rozmowcow.</h1>
         <p className="hero-copy">
           Planujesz spotkania, logujesz sie lokalnie albo przez Google, a po nagraniu od razu

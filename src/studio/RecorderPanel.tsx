@@ -16,6 +16,8 @@ export default function RecorderPanel({
   liveText,
   recordingMessage,
   canRecord = true,
+  noiseReductionEnabled = true,
+  onToggleNoiseReduction,
 }) {
   const statusLabel =
     analysisStatus === 'uploading'
@@ -29,6 +31,9 @@ export default function RecorderPanel({
             : analysisStatus === 'error'
               ? 'Error'
               : 'Ready';
+
+  // Check if noise reduction is actually working
+  const isNoiseReductionActive = typeof window !== 'undefined' && (window as any).__NOISE_REDUCTION_ENABLED;
 
   return (
     <section className="panel recorder-panel">
@@ -91,6 +96,18 @@ export default function RecorderPanel({
               Nagranie ad hoc
             </button>
           ) : null}
+          
+          {/* Noise Reduction Toggle */}
+          <button
+            type="button"
+            className={`ghost-button ${noiseReductionEnabled ? 'active' : ''}`}
+            onClick={onToggleNoiseReduction}
+            title={noiseReductionEnabled ? 'Noise reduction WLACZONY - czyszczenie szumow' : 'Noise reduction WYLACZONY'}
+            disabled={!canRecord || isRecording}
+          >
+            {noiseReductionEnabled ? '🔇 Szumy: ON' : '🎤 Szumy: OFF'}
+          </button>
+          
           <div className="microcopy">
             {!canRecord
               ? 'Ta rola ma dostep tylko do podgladu. Nagrywanie i edycja sa zablokowane.'
@@ -99,6 +116,9 @@ export default function RecorderPanel({
                 : speechRecognitionSupported
                   ? 'Live transcript wlacza sie automatycznie.'
                   : 'Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review.'}
+            {isNoiseReductionActive && (
+              <span className="noise-reduction-status"> ✅ Noise reduction aktywny</span>
+            )}
           </div>
         </div>
         {liveText ? <div className="live-text">Na zywo: {liveText}</div> : null}

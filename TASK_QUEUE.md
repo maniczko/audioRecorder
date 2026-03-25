@@ -4,7 +4,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-03-25)
+## Podsumowanie (2026-03-25 21:15)
 
 **Zrealizowane zadania:**
 - ✅ Docker security & reproducibility (101-104) — pinned images, torch-deps stage, resource limits, .env.example
@@ -13,6 +13,23 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - ✅ CI fix `434` — Naprawiono test retries HTTP klienta (Server Tests)
 - ✅ PROD fix `435` — Dodano logiczny fallback API zaplecza do zmiennych konfiguracyjnych dla środowiska Vercela
 - ✅ UX fix `427` — Naprawiono pusty stan w oknie Studio występujący podczas aktywnego nagrywania
+- ✅ **Automated Changelog** — conventional-changelog-cli wdrożony
+- ✅ **Bundle Size Monitoring** — workflow monitoringu rozmiaru bundle
+- ✅ **GitHub Error Fetcher** — automatyczne pobieranie błędów z GitHub Actions
+
+**GitHub Actions Status (ostatnie 7 dni):**
+- **Total Runs:** 100
+- **Failed:** 45 (45%)
+- **Cancelled:** 5 (5%)
+- **Successful:** 36 (36%)
+
+**Główne przyczyny błędów:**
+1. Dependabot workflows — 404/302 errors (permission issues)
+2. Vercel Preview Deployment — timeouty
+3. E2E Playwright Tests — timeouty (10min za mało)
+4. CI Pipeline — dependabot branch conflicts
+
+**Pełna lista błędów:** [`github-errors/github-errors-2026-03-25T21-14-57-111Z.md`](github-errors/github-errors-2026-03-25T21-14-57-111Z.md)
 
 **Pozostalo do zrobienia:**
 - 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
@@ -20,6 +37,55 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - 🟢 `340-342` — monitoring & profiling
 - 🟢 `080`, `018` — CSS cleanup i Outlook integracja
 - 🟢 `401-407` — CSS Layout Cleanup
+- 🔴 **CI/CD Fixes** — naprawa dependabot workflows, E2E timeouty
+
+### GitHub Actions Failures (Last 7 Days)
+
+**Priority 1 - Critical (affecting main branch):**
+
+| # | Workflow | Branch | Commit | Time | URL |
+|---|----------|--------|--------|------|-----|
+| 436 | CI Pipeline | main | b0e7a82 | 20:04 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561497477) |
+| 435 | E2E Playwright Tests | main | b0e7a82 | 20:04 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561497487) |
+| 434 | Backend Production Smoke | main | b0e7a82 | 20:04 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561497467) |
+| 433 | CI Pipeline | main | df5f85d | 19:35 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23560312793) |
+| 432 | Backend Production Smoke | main | df5f85d | 19:35 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23560312795) |
+| 431 | E2E Playwright Tests | main | df5f85d | 19:35 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23560312758) |
+| 430 | CI Pipeline | main | 10e2fa3 | 19:05 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23559054188) |
+| 429 | Backend Production Smoke | main | 10e2fa3 | 19:05 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23559054290) |
+| 428 | E2E Playwright Tests | main | 10e2fa3 | 19:05 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23559054226) |
+| 427 | CI Pipeline | main | 84b044a | 18:53 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23558514152) |
+| 426 | Backend Production Smoke | main | 84b044a | 18:53 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23558514222) |
+| 425 | E2E Playwright Tests | main | 84b044a | 18:53 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23558514209) |
+
+**Priority 2 - High (Dependabot auto-fix workflows):**
+
+| # | Workflow | Branch | Commit | Time | URL |
+|---|----------|--------|--------|------|-----|
+| - | Auto-merge Dependabot | dependabot/... | d73df04 | 20:12 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561831347) |
+| - | auto-fix.yml | dependabot/... | d73df04 | 20:12 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561829407) |
+| - | Code Review | dependabot/... | 0c8c702 | 20:10 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561716905) |
+| - | CI Pipeline | dependabot/... | 0c8c702 | 20:10 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561716868) |
+| - | auto-fix.yml | dependabot/... | 0c8c702 | 20:09 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561714687) |
+
+**Priority 3 - Medium (Vercel deployments):**
+
+| # | Workflow | Branch | Commit | Time | URL |
+|---|----------|--------|--------|------|-----|
+| - | Preview Deployment | dependabot/... | 0c8c702 | 20:10 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23561716874) |
+| - | Production Deployment | main | f048a2b | 16:23 | [Run](https://github.com/maniczko/audioRecorder/actions/runs/23551884541) |
+
+**Pattern Analysis:**
+- **Dependabot workflows failing:** Permission/token issues (302 errors)
+- **E2E Tests:** Timeout after 10min (need 20min)
+- **Vercel Deployments:** Intermittent failures
+- **Main branch CI:** 11 failures w ostatnich 24h
+
+**Recommended Actions:**
+1. 🔧 Fix Dependabot workflow permissions (actions:write, issues:write)
+2. ⏱️ Increase E2E timeout to 20min
+3. 🔐 Regenerate GitHub tokens for auto-fix workflows
+4. 📊 Add workflow status badges to README
 
 ## Sprint: refactor architektury
 

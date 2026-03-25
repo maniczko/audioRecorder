@@ -90,61 +90,6 @@ function getLatestRecording(selectedMeeting) {
   );
 }
 
-function RAGSearchPanel({ currentWorkspace }) {
-  const [query, setQuery] = React.useState('');
-  const [answer, setAnswer] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!query.trim() || !currentWorkspace?.id) return;
-    setLoading(true);
-    setAnswer('');
-    try {
-      const ms = await createMediaService();
-      const res = await ms.askRAG(currentWorkspace.id, query);
-      setAnswer(res?.answer || 'Brak odpowiedzi');
-    } catch (err) {
-      setAnswer('Wystąpił błąd podczas przeszukiwania archiwalnych nagrań.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <section className="panel recordings-rag-panel">
-      <div className="panel-header compact recordings-panel-header-flat">
-        <div>
-          <div className="eyebrow recordings-rag-eyebrow">AI RAG Memory</div>
-          <h2>Zapytaj o Archiwum</h2>
-          <p className="soft-copy recordings-copy-tight">
-            Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne
-            ustalenia.
-          </p>
-        </div>
-      </div>
-      <div className="panel-body">
-        <form onSubmit={handleSearch} className="recordings-rag-form">
-          <Input
-            className="recordings-rag-input"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
-          />
-          <button
-            type="submit"
-            className="primary-button recordings-rag-submit"
-            disabled={loading || !query.trim()}
-          >
-            {loading ? 'Szukam w wektorach...' : 'Wyciągnij informację'}
-          </button>
-        </form>
-        {answer && <div className="recordings-rag-answer">{answer}</div>}
-      </div>
-    </section>
-  );
-}
 
 function MeetingPicker({
   selectedMeeting,
@@ -349,20 +294,17 @@ function UnifiedLibrary({
           <table className="studio-recordings-table">
             <thead>
               <tr>
-                <th onClick={() => handleSort('title')} className="sortable-th">
+                <th onClick={() => handleSort('title')} className="sortable-th" style={{ width: '35%' }}>
                   Spotkanie {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
                 </th>
-                <th onClick={() => handleSort('startsAt')} className="sortable-th">
+                <th onClick={() => handleSort('startsAt')} className="sortable-th" style={{ width: '20%' }}>
                   Data i godzina {sortConfig.key === 'startsAt' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
                 </th>
-                <th onClick={() => handleSort('durationMinutes')} className="sortable-th">
+                <th onClick={() => handleSort('durationMinutes')} className="sortable-th" style={{ width: '15%' }}>
                   Czas trwania {sortConfig.key === 'durationMinutes' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
                 </th>
-                <th onClick={() => handleSort('recordingsCount')} className="sortable-th">
-                  Nagrania {sortConfig.key === 'recordingsCount' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
-                </th>
-                <th>Tagi</th>
-                <th className="recordings-library-actions-col"></th>
+                <th style={{ width: '25%' }}>Tagi</th>
+                <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -380,11 +322,6 @@ function UnifiedLibrary({
                   </td>
                   <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
                   <td>{m.durationMinutes} min</td>
-                  <td>
-                    <span className="status-chip status-chip-sm">
-                      {(m.recordings || []).length}
-                    </span>
-                  </td>
                   <td>
                     <div className="recordings-library-tags">
                       {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
@@ -752,7 +689,7 @@ export default function RecordingsTab(props) {
       ) : null}
 
       <main className="recordings-tab-content">
-        <RAGSearchPanel currentWorkspace={currentWorkspace} />
+
         <UnifiedLibrary
           userMeetings={userMeetings}
           selectedMeeting={selectedMeeting}

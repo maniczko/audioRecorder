@@ -376,6 +376,11 @@
   width: auto;
   padding: 6px 12px;
   border-radius: 6px;
+  cursor: pointer;
+}
+
+input[type="date"].recordings-library-filter-control::-webkit-calendar-picker-indicator {
+  cursor: pointer;
 }
 
 .recordings-library-actions-col {

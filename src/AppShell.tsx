@@ -32,7 +32,7 @@ export default function AppShell({ calendarMonth, setCalendarMonth }) {
         <Panel as="div" className="topbar">
           <div className="topbar-title">
             <div>
-              <div className="eyebrow">VoiceLog OS</div>
+              <div className="eyebrow">VoiceBóbr</div>
               <h1>Ladowanie srodowiska...</h1>
             </div>
           </div>

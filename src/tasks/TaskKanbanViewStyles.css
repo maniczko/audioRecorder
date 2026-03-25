@@ -117,3 +117,11 @@
 .swimlane-col.drop {
   background: rgba(90, 146, 255, 0.06);
 }
+
+.todo-kanban-column.drop {
+  background: rgba(117, 214, 196, 0.08);
+  border: 1px dashed rgba(117, 214, 196, 0.4);
+  filter: brightness(1.1);
+  box-shadow: inset 0 0 10px rgba(117, 214, 196, 0.05);
+  border-radius: 8px;
+}

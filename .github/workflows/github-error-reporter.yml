@@ -1,0 +1,116 @@
+name: GitHub Error Reporter
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Number of days to look back'
+        required: false
+        default: '7'
+        type: number
+      create_issue:
+        description: 'Create GitHub issue for failures'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  fetch-errors:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Fetch GitHub Errors
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          DAYS_BACK: ${{ github.event.inputs.days_back || 7 }}
+        run: node scripts/fetch-github-errors.js --verbose
+      
+      - name: Upload error reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: github-error-reports
+          path: github-errors/
+          retention-days: 30
+      
+      - name: Create Issue for Failures
+        if: ${{ github.event.inputs.create_issue != 'false' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find the latest markdown report
+            const reportsDir = path.join(process.cwd(), 'github-errors');
+            let mdFile = null;
+            
+            if (fs.existsSync(reportsDir)) {
+              const files = fs.readdirSync(reportsDir)
+                .filter(f => f.endsWith('.md'))
+                .sort()
+                .reverse();
+              
+              if (files.length > 0) {
+                mdFile = fs.readFileSync(path.join(reportsDir, files[0]), 'utf8');
+              }
+            }
+            
+            // Check if there are failures
+            const hasFailures = mdFile && mdFile.includes('### Failed Workflows');
+            
+            if (hasFailures) {
+              // Find existing open issue
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'automated-error-report',
+              });
+              
+              if (issues.length > 0) {
+                // Update existing issue
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issues[0].number,
+                  body: mdFile,
+                });
+                
+                console.log('✅ Updated existing error report issue #' + issues[0].number);
+              } else {
+                // Create new issue
+                const { data: issue } = await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: '🚨 GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
+                  body: mdFile,
+                  labels: ['automated-error-report', 'ci/cd'],
+                });
+                
+                console.log('✅ Created new error report issue #' + issue.number);
+              }
+            } else {
+              console.log('✅ No failures found, no issue needed');
+            }
