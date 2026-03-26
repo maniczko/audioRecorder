@@ -1,0 +1,544 @@
+{
+  "generated": "2026-03-26T17:14:27.719Z",
+  "repository": "maniczko/audioRecorder",
+  "period": "7 days",
+  "summary": {
+    "totalRuns": 100,
+    "failedRuns": 59,
+    "cancelledRuns": 1,
+    "successfulRuns": 28
+  },
+  "failures": [
+    {
+      "runId": 23607898419,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "585ec6e",
+      "createdAt": "2026-03-26T17:12:49Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23607898419",
+      "errors": []
+    },
+    {
+      "runId": 23607897686,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "585ec6e",
+      "createdAt": "2026-03-26T17:12:48Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23607897686",
+      "errors": []
+    },
+    {
+      "runId": 23604003662,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "17cfad2",
+      "createdAt": "2026-03-26T15:52:21Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23604003662",
+      "errors": []
+    },
+    {
+      "runId": 23604003725,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "17cfad2",
+      "createdAt": "2026-03-26T15:52:21Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23604003725",
+      "errors": []
+    },
+    {
+      "runId": 23604003786,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "17cfad2",
+      "createdAt": "2026-03-26T15:52:21Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23604003786",
+      "errors": []
+    },
+    {
+      "runId": 23604003688,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "17cfad2",
+      "createdAt": "2026-03-26T15:52:21Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23604003688",
+      "errors": []
+    },
+    {
+      "runId": 23604002751,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "17cfad2",
+      "createdAt": "2026-03-26T15:52:20Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23604002751",
+      "errors": []
+    },
+    {
+      "runId": 23599412962,
+      "runName": "AI Auto-Fix",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:17Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599412962",
+      "errors": []
+    },
+    {
+      "runId": 23599413046,
+      "runName": "Optimized CI",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:17Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599413046",
+      "errors": []
+    },
+    {
+      "runId": 23599412980,
+      "runName": "Code Review",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:17Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599412980",
+      "errors": []
+    },
+    {
+      "runId": 23599412952,
+      "runName": "Bundle Size Monitor",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:17Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599412952",
+      "errors": []
+    },
+    {
+      "runId": 23599413048,
+      "runName": "CI Pipeline",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:17Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599413048",
+      "errors": []
+    },
+    {
+      "runId": 23599411541,
+      "runName": "Bundle Size Monitor",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:16Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599411541",
+      "errors": []
+    },
+    {
+      "runId": 23599411508,
+      "runName": "Code Review",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:16Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599411508",
+      "errors": []
+    },
+    {
+      "runId": 23599410074,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "gpt-fix-164-1774528992",
+      "commit": "7cf6d6a",
+      "createdAt": "2026-03-26T14:21:14Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23599410074",
+      "errors": []
+    },
+    {
+      "runId": 23594810355,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "fc73a03",
+      "createdAt": "2026-03-26T12:41:06Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23594810355",
+      "errors": []
+    },
+    {
+      "runId": 23594810560,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "fc73a03",
+      "createdAt": "2026-03-26T12:41:06Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23594810560",
+      "errors": []
+    },
+    {
+      "runId": 23594810604,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "fc73a03",
+      "createdAt": "2026-03-26T12:41:06Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23594810604",
+      "errors": []
+    },
+    {
+      "runId": 23594810317,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "fc73a03",
+      "createdAt": "2026-03-26T12:41:06Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23594810317",
+      "errors": []
+    },
+    {
+      "runId": 23594809678,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "fc73a03",
+      "createdAt": "2026-03-26T12:41:05Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23594809678",
+      "errors": []
+    },
+    {
+      "runId": 23592047412,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "d53a1b0",
+      "createdAt": "2026-03-26T11:31:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23592047412",
+      "errors": []
+    },
+    {
+      "runId": 23592047394,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "d53a1b0",
+      "createdAt": "2026-03-26T11:31:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23592047394",
+      "errors": []
+    },
+    {
+      "runId": 23592047404,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "d53a1b0",
+      "createdAt": "2026-03-26T11:31:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23592047404",
+      "errors": []
+    },
+    {
+      "runId": 23592047416,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "d53a1b0",
+      "createdAt": "2026-03-26T11:31:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23592047416",
+      "errors": []
+    },
+    {
+      "runId": 23592046948,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "d53a1b0",
+      "createdAt": "2026-03-26T11:31:55Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23592046948",
+      "errors": []
+    },
+    {
+      "runId": 23591726037,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "ea0149f",
+      "createdAt": "2026-03-26T11:23:43Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23591726037",
+      "errors": []
+    },
+    {
+      "runId": 23591726057,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "ea0149f",
+      "createdAt": "2026-03-26T11:23:43Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23591726057",
+      "errors": []
+    },
+    {
+      "runId": 23591726015,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "ea0149f",
+      "createdAt": "2026-03-26T11:23:43Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23591726015",
+      "errors": []
+    },
+    {
+      "runId": 23591726059,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "ea0149f",
+      "createdAt": "2026-03-26T11:23:43Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23591726059",
+      "errors": []
+    },
+    {
+      "runId": 23591725567,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "ea0149f",
+      "createdAt": "2026-03-26T11:23:42Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23591725567",
+      "errors": []
+    },
+    {
+      "runId": 23588426883,
+      "runName": "GitHub Error Reporter",
+      "branch": "main",
+      "commit": "f2a0dd2",
+      "createdAt": "2026-03-26T10:01:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23588426883",
+      "errors": []
+    },
+    {
+      "runId": 23583458540,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "750a2b8",
+      "createdAt": "2026-03-26T07:53:58Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23583458540",
+      "errors": []
+    },
+    {
+      "runId": 23583458527,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "750a2b8",
+      "createdAt": "2026-03-26T07:53:58Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23583458527",
+      "errors": []
+    },
+    {
+      "runId": 23583458478,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "750a2b8",
+      "createdAt": "2026-03-26T07:53:58Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23583458478",
+      "errors": []
+    },
+    {
+      "runId": 23583458525,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "750a2b8",
+      "createdAt": "2026-03-26T07:53:58Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23583458525",
+      "errors": []
+    },
+    {
+      "runId": 23583457944,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "750a2b8",
+      "createdAt": "2026-03-26T07:53:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23583457944",
+      "errors": []
+    },
+    {
+      "runId": 23574114833,
+      "runName": "Auto Security Patches",
+      "branch": "main",
+      "commit": "6356846",
+      "createdAt": "2026-03-26T02:13:28Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23574114833",
+      "errors": []
+    },
+    {
+      "runId": 23565865385,
+      "runName": "Bundle Size Monitor",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865385",
+      "errors": []
+    },
+    {
+      "runId": 23565865379,
+      "runName": "AI Auto-Fix",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865379",
+      "errors": []
+    },
+    {
+      "runId": 23565865417,
+      "runName": "Preview Deployment (Vercel)",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865417",
+      "errors": []
+    },
+    {
+      "runId": 23565865418,
+      "runName": "Code Review",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865418",
+      "errors": []
+    },
+    {
+      "runId": 23565865425,
+      "runName": "Optimized CI",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865425",
+      "errors": []
+    },
+    {
+      "runId": 23565865396,
+      "runName": "CI Pipeline",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:47Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565865396",
+      "errors": []
+    },
+    {
+      "runId": 23565863522,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "3ef602e",
+      "createdAt": "2026-03-25T21:48:44Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565863522",
+      "errors": []
+    },
+    {
+      "runId": 23565715050,
+      "runName": "Optimized CI",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715050",
+      "errors": []
+    },
+    {
+      "runId": 23565715080,
+      "runName": "Docker Build",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715080",
+      "errors": []
+    },
+    {
+      "runId": 23565715064,
+      "runName": "Bundle Size Monitor",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715064",
+      "errors": []
+    },
+    {
+      "runId": 23565715072,
+      "runName": "CI Pipeline",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715072",
+      "errors": []
+    },
+    {
+      "runId": 23565715083,
+      "runName": "Backend Production Smoke",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715083",
+      "errors": []
+    },
+    {
+      "runId": 23565715028,
+      "runName": "E2E Playwright Tests",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:57Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565715028",
+      "errors": []
+    },
+    {
+      "runId": 23565714448,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "main",
+      "commit": "8d0fdba",
+      "createdAt": "2026-03-25T21:44:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23565714448",
+      "errors": []
+    },
+    {
+      "runId": 23561831347,
+      "runName": "Auto-merge Dependabot",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "d73df04",
+      "createdAt": "2026-03-25T20:12:39Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561831347",
+      "errors": []
+    },
+    {
+      "runId": 23561829407,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "dependabot/npm_and_yarn/development-dependencies-76ab91e9be",
+      "commit": "d73df04",
+      "createdAt": "2026-03-25T20:12:36Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561829407",
+      "errors": []
+    },
+    {
+      "runId": 23561716874,
+      "runName": "Preview Deployment (Vercel)",
+      "branch": "dependabot/npm_and_yarn/production-dependencies-76bc3a8b74",
+      "commit": "0c8c702",
+      "createdAt": "2026-03-25T20:10:00Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561716874",
+      "errors": []
+    },
+    {
+      "runId": 23561716905,
+      "runName": "Code Review",
+      "branch": "dependabot/npm_and_yarn/production-dependencies-76bc3a8b74",
+      "commit": "0c8c702",
+      "createdAt": "2026-03-25T20:10:00Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561716905",
+      "errors": []
+    },
+    {
+      "runId": 23561716868,
+      "runName": "CI Pipeline",
+      "branch": "dependabot/npm_and_yarn/production-dependencies-76bc3a8b74",
+      "commit": "0c8c702",
+      "createdAt": "2026-03-25T20:10:00Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561716868",
+      "errors": []
+    },
+    {
+      "runId": 23561714687,
+      "runName": ".github/workflows/auto-fix.yml",
+      "branch": "dependabot/npm_and_yarn/production-dependencies-76bc3a8b74",
+      "commit": "0c8c702",
+      "createdAt": "2026-03-25T20:09:56Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561714687",
+      "errors": []
+    },
+    {
+      "runId": 23561499974,
+      "runName": "github_actions in /. - Update #1292291206",
+      "branch": "main",
+      "commit": "b0e7a82",
+      "createdAt": "2026-03-25T20:04:43Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561499974",
+      "errors": []
+    },
+    {
+      "runId": 23561499367,
+      "runName": "github_actions in /. - Update #1292291201",
+      "branch": "main",
+      "commit": "b0e7a82",
+      "createdAt": "2026-03-25T20:04:42Z",
+      "htmlUrl": "https://github.com/maniczko/audioRecorder/actions/runs/23561499367",
+      "errors": []
+    }
+  ]
+}

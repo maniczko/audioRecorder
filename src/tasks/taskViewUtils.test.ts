@@ -123,8 +123,7 @@ describe('drag helpers', () => {
   it('readDragTask reads from custom type first', () => {
     const event = {
       dataTransfer: {
-        getData: (type) =>
-          type === 'application/x-voicelog-task' ? 'task-abc' : 'task-fallback',
+        getData: (type) => (type === 'application/x-voicelog-task' ? 'task-abc' : 'task-fallback'),
       },
     };
     expect(readDragTask(event)).toBe('task-abc');
@@ -149,21 +148,21 @@ describe('drag helpers', () => {
 /* ------------------------------------------------------------------ */
 describe('handleCardKeyDown', () => {
   it('calls callback on Enter', () => {
-    const cb = jest.fn();
-    const event = { key: 'Enter', preventDefault: jest.fn() };
+    const cb = vi.fn();
+    const event = { key: 'Enter', preventDefault: vi.fn() };
     handleCardKeyDown(event, cb);
     expect(cb).toHaveBeenCalled();
     expect(event.preventDefault).toHaveBeenCalled();
   });
   it('calls callback on Space', () => {
-    const cb = jest.fn();
-    const event = { key: ' ', preventDefault: jest.fn() };
+    const cb = vi.fn();
+    const event = { key: ' ', preventDefault: vi.fn() };
     handleCardKeyDown(event, cb);
     expect(cb).toHaveBeenCalled();
   });
   it('does not call callback on other keys', () => {
-    const cb = jest.fn();
-    const event = { key: 'a', preventDefault: jest.fn() };
+    const cb = vi.fn();
+    const event = { key: 'a', preventDefault: vi.fn() };
     handleCardKeyDown(event, cb);
     expect(cb).not.toHaveBeenCalled();
   });
@@ -176,7 +175,14 @@ describe('sortVisibleTasks', () => {
   const tasks = [
     { id: '1', title: 'Bravo', priority: 'low', owner: 'Zoe', dueDate: '2026-03-10', order: 2 },
     { id: '2', title: 'Alpha', priority: 'high', owner: 'Ana', dueDate: '2026-01-05', order: 1 },
-    { id: '3', title: 'Charlie', priority: 'medium', owner: 'Mia', dueDate: '2026-06-20', order: 3 },
+    {
+      id: '3',
+      title: 'Charlie',
+      priority: 'medium',
+      owner: 'Mia',
+      dueDate: '2026-06-20',
+      order: 3,
+    },
   ];
 
   it('sorts by title alphabetically', () => {
@@ -243,9 +249,33 @@ describe('groupTasks', () => {
 describe('applyMainListFilter', () => {
   const columns = [{ id: 'col1' }, { id: 'col2' }];
   const tasks = [
-    { id: '1', important: true, dueDate: '2099-01-01', completed: false, status: 'col1', group: 'A', myDay: true },
-    { id: '2', important: false, dueDate: '', completed: true, status: 'col2', group: 'B', myDay: false },
-    { id: '3', important: false, dueDate: '2020-01-01', completed: false, status: 'col1', group: 'A', myDay: false },
+    {
+      id: '1',
+      important: true,
+      dueDate: '2099-01-01',
+      completed: false,
+      status: 'col1',
+      group: 'A',
+      myDay: true,
+    },
+    {
+      id: '2',
+      important: false,
+      dueDate: '',
+      completed: true,
+      status: 'col2',
+      group: 'B',
+      myDay: false,
+    },
+    {
+      id: '3',
+      important: false,
+      dueDate: '2020-01-01',
+      completed: false,
+      status: 'col1',
+      group: 'A',
+      myDay: false,
+    },
   ];
 
   it('returns all tasks for smart:all', () => {

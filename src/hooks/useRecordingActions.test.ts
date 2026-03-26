@@ -2,10 +2,10 @@ import { renderHook, act } from '@testing-library/react';
 import useRecordingActions from './useRecordingActions';
 
 describe('useRecordingActions', () => {
-  const mockSetMeetings = jest.fn();
-  const mockSetManualTasks = jest.fn();
-  const mockSetSelectedMeetingId = jest.fn();
-  const mockSetSelectedRecordingId = jest.fn();
+  const mockSetMeetings = vi.fn();
+  const mockSetManualTasks = vi.fn();
+  const mockSetSelectedMeetingId = vi.fn();
+  const mockSetSelectedRecordingId = vi.fn();
 
   const currentUser = { id: 'u1', name: 'User' };
   const baseMeeting = {
@@ -28,7 +28,7 @@ describe('useRecordingActions', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function setupHook(meetingOverride = baseMeeting, recordingOverride = baseMeeting.recordings[0]) {

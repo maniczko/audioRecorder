@@ -69,6 +69,7 @@ export default defineConfig(async () => {
     },
     server: {
       port: 3000,
+      strictPort: true,
       proxy: {
         '/voice-profiles': {
           target: 'http://localhost:4000',

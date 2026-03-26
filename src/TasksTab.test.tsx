@@ -8,10 +8,10 @@ function createDataTransfer() {
   return {
     dropEffect: 'move',
     effectAllowed: 'move',
-    setData: jest.fn((type, value) => {
+    setData: vi.fn((type, value) => {
       store[type] = value;
     }),
-    getData: jest.fn((type) => store[type] || ''),
+    getData: vi.fn((type) => store[type] || ''),
   };
 }
 
@@ -55,29 +55,29 @@ function renderTasksTab(overrides = {}) {
       { id: 'todo', label: 'Do zrobienia', color: '#5a92ff', isDone: false, system: true },
       { id: 'done', label: 'Zakonczone', color: '#67d59f', isDone: true, system: true },
     ],
-    onCreateTask: jest.fn(),
-    onUpdateTask: jest.fn(),
-    onDeleteTask: jest.fn(),
-    onMoveTaskToColumn: jest.fn(),
-    onReorderTask: jest.fn(),
-    onCreateColumn: jest.fn(),
-    onUpdateColumn: jest.fn(),
-    onDeleteColumn: jest.fn(),
-    onOpenMeeting: jest.fn(),
+    onCreateTask: vi.fn(),
+    onUpdateTask: vi.fn(),
+    onDeleteTask: vi.fn(),
+    onMoveTaskToColumn: vi.fn(),
+    onReorderTask: vi.fn(),
+    onCreateColumn: vi.fn(),
+    onUpdateColumn: vi.fn(),
+    onDeleteColumn: vi.fn(),
+    onOpenMeeting: vi.fn(),
     defaultView: 'kanban',
     googleTasksEnabled: false,
     googleTasksStatus: 'idle',
     googleTasksMessage: '',
     googleTaskLists: [],
     selectedGoogleTaskListId: '',
-    onSelectGoogleTaskList: jest.fn(),
-    onConnectGoogleTasks: jest.fn(),
-    onImportGoogleTasks: jest.fn(),
-    onExportGoogleTasks: jest.fn(),
+    onSelectGoogleTaskList: vi.fn(),
+    onConnectGoogleTasks: vi.fn(),
+    onImportGoogleTasks: vi.fn(),
+    onExportGoogleTasks: vi.fn(),
     workspaceName: 'Produkt',
     workspaceInviteCode: 'ABC123',
     externalSelectedTaskId: '',
-    onTaskSelectionHandled: jest.fn(),
+    onTaskSelectionHandled: vi.fn(),
     currentUserName: 'Anna',
     ...overrides,
   };
@@ -115,7 +115,7 @@ describe('TasksTab', () => {
     };
     const { props } = renderTasksTab({
       defaultView: 'list',
-      onCreateTask: jest.fn().mockReturnValue(createdTask),
+      onCreateTask: vi.fn().mockReturnValue(createdTask),
     });
 
     // Type in inline quick add input and press Enter
@@ -175,7 +175,7 @@ describe('TasksTab', () => {
     // Task creation error handling is tested through component unit tests
     const { props } = renderTasksTab({
       defaultView: 'list',
-      onCreateTask: jest.fn().mockReturnValue(null),
+      onCreateTask: vi.fn().mockReturnValue(null),
     });
 
     await userEvent.type(screen.getByPlaceholderText('Dodaj zadanie'), 'Felerne zadanie');

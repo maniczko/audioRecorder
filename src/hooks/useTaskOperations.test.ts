@@ -2,12 +2,12 @@ import { renderHook, act } from '@testing-library/react';
 import useTaskOperations from './useTaskOperations';
 
 describe('useTaskOperations', () => {
-  const mockSetManualTasks = jest.fn();
-  const mockSetTaskState = jest.fn();
-  const mockSetTaskBoards = jest.fn();
+  const mockSetManualTasks = vi.fn();
+  const mockSetTaskState = vi.fn();
+  const mockSetTaskBoards = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const baseProps = {

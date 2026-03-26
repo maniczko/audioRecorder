@@ -29,11 +29,11 @@ export function Tooltip({ content, children, delay = 300, placement = 'top' }: T
   return (
     <BaseTooltip.Provider delay={delay}>
       <BaseTooltip.Root>
-        <BaseTooltip.Trigger asChild>{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */ (children as any)}</BaseTooltip.Trigger>
+        <BaseTooltip.Trigger render={children} />
         <BaseTooltip.Portal>
           <BaseTooltip.Positioner
             side={placement.split('-')[0] as any}
-            align={placement.split('-')[1] as any || 'center'}
+            align={(placement.split('-')[1] as any) || 'center'}
             sideOffset={4}
           >
             <BaseTooltip.Popup className="CustomTooltipPopup">

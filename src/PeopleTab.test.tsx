@@ -43,14 +43,14 @@ describe('PeopleTab', () => {
 
   const defaultProps = {
     profiles: mockProfiles,
-    onOpenMeeting: jest.fn(),
-    onOpenTask: jest.fn(),
-    onCreateTask: jest.fn(),
-    onCreateMeeting: jest.fn(),
-    onUpdatePersonNotes: jest.fn(),
-    onAnalyzePersonProfile: jest.fn(),
+    onOpenMeeting: vi.fn(),
+    onOpenTask: vi.fn(),
+    onCreateTask: vi.fn(),
+    onCreateMeeting: vi.fn(),
+    onUpdatePersonNotes: vi.fn(),
+    onAnalyzePersonProfile: vi.fn(),
     externalSelectedPersonId: '',
-    onPersonSelectionHandled: jest.fn(),
+    onPersonSelectionHandled: vi.fn(),
   };
 
   test('renders profile sidebar and selected person details', async () => {

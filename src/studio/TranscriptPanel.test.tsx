@@ -43,10 +43,10 @@ function renderTranscriptPanel(overrides = {}) {
       1: 'Bartek',
     },
     selectedRecordingAudioUrl: '',
-    updateTranscriptSegment: jest.fn(),
-    assignSpeakerToTranscriptSegments: jest.fn(),
-    mergeTranscriptSegments: jest.fn(),
-    splitTranscriptSegment: jest.fn(),
+    updateTranscriptSegment: vi.fn(),
+    assignSpeakerToTranscriptSegments: vi.fn(),
+    mergeTranscriptSegments: vi.fn(),
+    splitTranscriptSegment: vi.fn(),
     ...overrides,
   };
 

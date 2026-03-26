@@ -30,27 +30,27 @@ describe('RecordingsTab', () => {
   const defaultProps = {
     userMeetings: mockMeetings,
     selectedMeeting: null,
-    selectMeeting: jest.fn(),
-    startNewMeetingDraft: jest.fn(),
+    selectMeeting: vi.fn(),
+    startNewMeetingDraft: vi.fn(),
     selectedRecordingId: '',
-    setSelectedRecordingId: jest.fn(),
-    setActiveTab: jest.fn(),
-    onCreateMeeting: jest.fn(async (draft) => ({
+    setSelectedRecordingId: vi.fn(),
+    setActiveTab: vi.fn(),
+    onCreateMeeting: vi.fn(async (draft) => ({
       id: 'meeting_import',
       title: draft.title,
       startsAt: draft.startsAt,
       durationMinutes: 30,
       recordings: [],
     })),
-    queueRecording: jest.fn(async () => 'rec_import'),
+    queueRecording: vi.fn(async () => 'rec_import'),
     recordingQueue: [],
     activeQueueItem: null,
     analysisStatus: 'idle',
     recordingMessage: '',
     pipelineProgressPercent: 0,
     pipelineStageLabel: '',
-    retryRecordingQueueItem: jest.fn(),
-    retryStoredRecording: jest.fn(),
+    retryRecordingQueueItem: vi.fn(),
+    retryStoredRecording: vi.fn(),
   };
 
   test('renders empty state when no meetings are provided', () => {

@@ -402,6 +402,7 @@ describe('StudioMeetingView', () => {
         selectedRecording={{ id: 'rec1', transcript: [], duration: 60 }}
       />
     );
+    fireEvent.click(screen.getByRole('button', { name: /Zadania/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /Przejdź do zadań/i }));
     fireEvent.click(screen.getByRole('button', { name: /Otwórz szczegóły/i }));
@@ -423,13 +424,11 @@ describe('StudioMeetingView', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Podsumowanie spotkania/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Profil psychologiczny/i }));
 
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(
-      screen
-        .getAllByRole('list')
-        .some((item) => item.className.includes('summary-participants-list'))
+      screen.getAllByRole('heading').some((item) => item.className.includes('icard-name'))
     ).toBe(true);
   });
 });

@@ -7,16 +7,16 @@ describe('useAudioHardware', () => {
   let originalAudioContext;
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
 
     originalMediaDevices = navigator.mediaDevices;
     originalMediaRecorder = global.MediaRecorder;
     originalAudioContext = global.AudioContext || global.webkitAudioContext;
 
     navigator.mediaDevices = {
-      getUserMedia: jest.fn().mockResolvedValue({
-        getTracks: () => [{ stop: jest.fn() }],
+      getUserMedia: vi.fn().mockResolvedValue({
+        getTracks: () => [{ stop: vi.fn() }],
       }),
     };
 
@@ -39,13 +39,13 @@ describe('useAudioHardware', () => {
 
     global.AudioContext = class {
       createMediaStreamSource() {
-        return { connect: jest.fn() };
+        return { connect: vi.fn() };
       }
       createAnalyser() {
         return {
           frequencyBinCount: 1024,
-          getByteFrequencyData: jest.fn(),
-          connect: jest.fn(),
+          getByteFrequencyData: vi.fn(),
+          connect: vi.fn(),
         };
       }
       createMediaStreamDestination() {
@@ -61,18 +61,18 @@ describe('useAudioHardware', () => {
     navigator.mediaDevices = originalMediaDevices;
     global.MediaRecorder = originalMediaRecorder;
     global.AudioContext = originalAudioContext;
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
   });
 
   test('starts and stops recording', async () => {
-    const onRecordingStop = jest.fn();
+    const onRecordingStop = vi.fn();
     const mockMediaService = {
       createLiveController: () => ({
-        setOnEnd: jest.fn(),
-        start: jest.fn(),
-        stop: jest.fn(),
-        clearHandlers: jest.fn(),
+        setOnEnd: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        clearHandlers: vi.fn(),
       }),
     };
 
@@ -80,9 +80,9 @@ describe('useAudioHardware', () => {
       useAudioHardware({
         mediaService: mockMediaService,
         onRecordingStop,
-        onSegmentsChange: jest.fn(),
-        onInterimChange: jest.fn(),
-        onMessageChange: jest.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
       })
     );
 
@@ -93,7 +93,7 @@ describe('useAudioHardware', () => {
     expect(result.current.isRecording).toBe(true);
 
     act(() => {
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     });
 
     act(() => {
