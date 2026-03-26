@@ -2,6 +2,36 @@
 
 ## Zrealizowane Zadania
 
+## [2026-03-26 18:00] TASK_QUEUE-188: Layout & CI Fixes
+Status: `done`
+Completed by: Qwen Code
+
+### Fixed Issues:
+- ✅ **CSP Error** - dodano `*.railway.app` do `connect-src` w vercel.json
+- ✅ **Tasks Tab Layout** - naprawiono empty space po prawej stronie
+  - Dodano `.tasks-layout.ms-todo[data-columns="two"]` z proper grid-template-columns
+- ✅ **selectedTaskSla ReferenceError** - usunięto nieużywaną zmienną z TasksTab.tsx i TasksSidebar.tsx
+- ✅ **Lazy Loading Tests** - dodano 9 testów dla createLazyComponent (src/TabRouter.test.tsx)
+- ✅ **CI Husky Issue** - dodano `CI: true` do env w ci.yml aby wyłączyć husky hooks w CI
+
+### Files Changed:
+- vercel.json (CSP update: added `*.railway.app`)
+- src/styles/tasks.css (added data-columns="two" rule)
+- src/TasksTab.tsx (removed selectedTaskSla prop)
+- src/tasks/TasksSidebar.tsx (removed selectedTaskSla from props)
+- src/TabRouter.tsx (exported createLazyComponent)
+- src/TabRouter.test.tsx (NEW FILE - 9 tests)
+- .github/workflows/ci.yml (added CI: true env)
+- TASK_QUEUE.md (updated with GitHub Actions status)
+
+### Test Results:
+- ✅ Lint: 0 errors
+- ✅ TypeScript: 0 errors
+- ✅ Server Tests: 585 passed, 14 skipped
+- ✅ TabRouter Tests: 9 passed
+
+---
+
 ## [2026-03-26] Optymalizacje performance (303, 304, 305)
 Status: `done`
 

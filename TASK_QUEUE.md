@@ -38,6 +38,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - Wszystkie krytyczne zadania CI/CD zostały naprawione ✅
 - CSS Layout Cleanup zakończony ✅
 - TaskDetailsPanel pokryty testami ✅
+- TASK_QUEUE-188 (Layout & CI Fixes) zakończony ✅
 - Pozostałe zadania są niskiego priorytetu i mogą być realizowane w wolnym czasie
 
 ---
