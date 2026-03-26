@@ -1,10 +1,6 @@
 const PREVIEW_CLEANUP_KEY = 'voicelog.preview-runtime-cleanup.v1';
 const PREVIEW_BUILD_KEY = 'voicelog.preview-runtime-build.v1';
 
-function isLocalhost(hostname: string) {
-  return /^(localhost|127\.0\.0\.1)$/i.test(String(hostname || ''));
-}
-
 export function isHostedPreviewHost(hostname: string) {
   return /\.vercel\.app$/i.test(String(hostname || ''));
 }
