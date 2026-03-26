@@ -42,14 +42,29 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ---
 
-## GitHub Actions Status (2026-03-26 17:14)
+## GitHub Actions Status (2026-03-26 17:50)
 
-**❌ 59 workflow failures w ostatnich 7 dniach**
+**❌ 61 workflow failures w ostatnich 7 dniach (29 sukcesów)**
+
+### Dzisiejsze failures (2026-03-26):
+
+| Workflow | Commit | Time | Status |
+|----------|--------|------|--------|
+| Backend Production Smoke | 585ec6e | 17:12 | ❌ |
+| Optimized CI | 585ec6e | 17:12 | ❌ |
+| CI Pipeline | 585ec6e | 17:12 | ❌ |
+| E2E Playwright Tests | 585ec6e | 17:12 | ❌ |
+| auto-fix.yml | 585ec6e | 17:12 | ❌ |
+| E2E Playwright Tests | 17cfad2 | 15:52 | ❌ |
+| Backend Production Smoke | 17cfad2 | 15:52 | ❌ |
+| CI Pipeline | 17cfad2 | 15:52 | ❌ |
+| Optimized CI | 17cfad2 | 15:52 | ❌ |
+| auto-fix.yml | 17cfad2 | 15:52 | ❌ |
 
 ### Główne przyczyny błędów:
-1. **302 Errors** - GitHub API nie zwraca logów dla starych workflow (problem z tokenem/permissions)
+1. **302 Errors** - GitHub API nie zwraca logów dla workflow (problem z tokenem/permissions)
 2. **Dependabot workflows** - Permission issues (actions:write, issues:write)
-3. **CSP Errors** - Naprawione: dodano `*.railway.app` do connect-src
+3. **CSP Errors** - ✅ Naprawione: dodano `*.railway.app` do connect-src
 
 ### Naprawione dzisiaj:
 - ✅ **CSP** - dodano Railway API do allowed connections w vercel.json
@@ -60,4 +75,5 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 ### Wymagane działania:
 - 🔧 **Regenerate GitHub Token** - obecny token nie ma dostępu do logów workflow
 - 🔧 **Update Dependabot Permissions** - dodać `actions: write` i `issues: write` do workflow
+- 🔍 **Investigate CI failures** - sprawdzić dlaczego CI Pipeline, E2E Tests i Backend Smoke failują na commitach 585ec6e i 17cfad2
 
