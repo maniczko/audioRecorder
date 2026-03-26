@@ -6,6 +6,7 @@ import { createWorkspacesRoutes } from '../routes/workspaces.ts';
 import { createMediaRoutes, createTranscribeRoutes } from '../routes/media.ts';
 import { createAiRoutes } from '../routes/ai.ts';
 import { registerHealthRoute } from './health.ts';
+import { MetricsService } from '../services/MetricsService.ts';
 
 export function registerAppRoutes(
   app: Hono<any>,
@@ -13,6 +14,26 @@ export function registerAppRoutes(
   middlewares: AppMiddlewares
 ) {
   registerHealthRoute(app);
+
+  app.get('/metrics', async (c) => {
+    const metrics = await MetricsService.getPrometheusMetrics();
+    return c.text(metrics);
+  });
+
+  app.get('/api/admin/metrics', (c) => {
+    const summary = MetricsService.getJsonSummary();
+    return c.json(summary);
+  });
+
+  app.get('/api/admin/heapdump', async (c) => {
+    const v8 = await import('node:v8');
+    const path = await import('node:path');
+    const filename = `heap-${Date.now()}.heapsnapshot`;
+    const filepath = path.join(process.cwd(), filename);
+    v8.writeHeapSnapshot(filepath);
+    return c.json({ message: 'Heap snapshot created', file: filepath });
+  });
+
   app.route('/auth', createAuthRoutes(services, middlewares));
   app.route('/', createWorkspacesRoutes(services, middlewares));
   app.route('/media', createMediaRoutes(services, middlewares));

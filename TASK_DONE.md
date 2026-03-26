@@ -2,6 +2,26 @@
 
 ## Zrealizowane Zadania
 
+## [2026-03-26] Optymalizacje performance (303, 304, 305)
+Status: `done`
+
+### 303 [PERF] Optymalizacja chunking STT — overlap reduction
+- Cel: zmniejszyć redundancję i czas Whisper.
+- Problem: `CHUNK_OVERLAP_SECONDS` może dublować 10-15% audio.
+- Rozwiązanie: adaptacyjny overlap (0.5s dla ciszy, 2s dla mowy).
+- Akceptacja: redukcja tokenów Whisper o 20%+. (Zrealizowane)
+
+### 304 [PERF] GPU acceleration dla pyannote w Docker
+- Cel: przyspieszyć diaryzację 5-10x.
+- Zakres: NVIDIA runtime w docker-compose, CUDA base image, torch z GPU.
+- Akceptacja: diarization 10min nagrania < 60s na GPU vs 600s CPU. (Zrealizowane)
+
+### 305 [PERF] Batch embedding speaker clips
+- Cel: przyspieszyć generowanie embeddingów głosów.
+- Problem: pojedyncze zapytania do API per speaker clip.
+- Rozwiązanie: batchować wszystkie clipy jednego spotkania w jednym requeście.
+- Akceptacja: redukcja zapytań embeddings z N→1 per meeting. (Zrealizowane)
+
 ## [2026-03-26 12:00] CSS Layout Cleanup - Final Summary (#401-407)
 Status: `done`
 Completed by: Qwen Code

@@ -26,7 +26,6 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 ### Pozostałe zadania (niski priorytet)
 
 - 🟡 `208` — coverage ProfileTab.tsx (cel: 2% → 60%)
-- 🟡 `303-305` — optymalizacje performance (GPU acceleration, batch embeddings, STT overlap reduction)
 - 🟡 `018` — Outlook / Microsoft To Do integracja
 - 🟡 `403` — Migrate inline styles to CSS variables (155 inline styles do refaktoryzacji)
 - 🟡 `341` — Memory profiling w production (clinic.js, 0x profiling)
