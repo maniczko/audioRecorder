@@ -129,6 +129,13 @@ async function runTranscriptionAttempt(
   let prepPath = options.preprocessedFilePath || '';
   const preprocessCacheKey = options.preprocessCacheKey || '';
 
+  // Performance metrics tracking (#340) — declared outside try so finally can access it
+  const pipelineMetrics = {
+    requestId: options.requestId || 'internal-pipeline',
+    stages: {} as Record<string, number>,
+    total: 0,
+  };
+
   try {
     if (!workingFilePath) throw new Error('Brak ścieżki do pliku audio.');
 
@@ -136,7 +143,10 @@ async function runTranscriptionAttempt(
       notify(10, 'Pobieranie nagrania z bazy danych...');
       const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(workingFilePath);
-      const baseMime = String(asset.content_type || '').toLowerCase().split(';')[0].trim();
+      const baseMime = String(asset.content_type || '')
+        .toLowerCase()
+        .split(';')[0]
+        .trim();
       const ext =
         {
           'audio/webm': '.webm',
@@ -283,12 +293,7 @@ async function runTranscriptionAttempt(
 
       const reqId = options.requestId || 'internal-pipeline';
 
-      // Performance metrics tracking (#340)
-      const pipelineMetrics = {
-        requestId: reqId,
-        stages: {} as Record<string, number>,
-        total: 0,
-      };
+      pipelineMetrics.requestId = reqId;
       const stageStart = (name: string) => performance.now();
       const stageEnd = (name: string, start: number) => {
         const duration = performance.now() - start;
@@ -350,10 +355,10 @@ async function runTranscriptionAttempt(
                   : getRawWords(whisperPayload).length > 0
                     ? 0
                     : clean(
-                      whisperPayload?.text ||
-                      whisperPayload?.transcript ||
-                      whisperPayload?.results?.text
-                    )
+                          whisperPayload?.text ||
+                            whisperPayload?.transcript ||
+                            whisperPayload?.results?.text
+                        )
                       ? 0
                       : 1,
               chunksWithSegments:
@@ -388,7 +393,7 @@ async function runTranscriptionAttempt(
               error?.transcriptionDiagnostics?.lastChunkErrorMessage || error?.message || ''
             ),
             ...(error?.transcriptionDiagnostics &&
-              typeof error.transcriptionDiagnostics === 'object'
+            typeof error.transcriptionDiagnostics === 'object'
               ? error.transcriptionDiagnostics
               : {}),
           };
@@ -638,7 +643,7 @@ async function runTranscriptionAttempt(
           } finally {
             try {
               fs.unlinkSync(clipPath);
-            } catch (_) { }
+            } catch (_) {}
           }
         }
       }
@@ -760,38 +765,41 @@ async function runTranscriptionAttempt(
       // Log total pipeline metrics (#340)
       if (pipelineMetrics && pipelineMetrics.total > 0) {
         logger.info(`[Metrics] Pipeline Total Duration`, {
-          requestId: reqId,
+          requestId: pipelineMetrics.requestId,
           recordingId: asset.id,
           totalDurationMs: parseFloat(pipelineMetrics.total.toFixed(2)),
           stages: pipelineMetrics.stages,
-          p50: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
-            Math.floor(Object.keys(pipelineMetrics.stages).length / 2)
-          ] || 0,
-          p95: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
-            Math.floor(Object.keys(pipelineMetrics.stages).length * 0.95)
-          ] || 0,
-          p99: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
-            Math.floor(Object.keys(pipelineMetrics.stages).length * 0.99)
-          ] || 0,
+          p50:
+            Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+              Math.floor(Object.keys(pipelineMetrics.stages).length / 2)
+            ] || 0,
+          p95:
+            Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+              Math.floor(Object.keys(pipelineMetrics.stages).length * 0.95)
+            ] || 0,
+          p99:
+            Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+              Math.floor(Object.keys(pipelineMetrics.stages).length * 0.99)
+            ] || 0,
         });
       }
 
       if (prepPath && !isPreprocessCacheFile(prepPath)) {
         try {
           fs.unlinkSync(prepPath);
-        } catch (_) { }
+        } catch (_) {}
       }
       if (normFilePath) {
         try {
           fs.unlinkSync(normFilePath);
-        } catch (_) { }
+        } catch (_) {}
       }
     }
   } finally {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-      } catch (_) { }
+      } catch (_) {}
     }
   }
 }
@@ -844,7 +852,10 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     try {
       const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
       const buffer = await downloadAudioFromStorage(asset.file_path);
-      const baseMime = String(asset.content_type || '').toLowerCase().split(';')[0].trim();
+      const baseMime = String(asset.content_type || '')
+        .toLowerCase()
+        .split(';')[0]
+        .trim();
       const ext =
         {
           'audio/webm': '.webm',
@@ -942,7 +953,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     if (sourceTempPath && fs.existsSync(sourceTempPath)) {
       try {
         fs.unlinkSync(sourceTempPath);
-      } catch (_) { }
+      } catch (_) {}
     }
   }
 }
