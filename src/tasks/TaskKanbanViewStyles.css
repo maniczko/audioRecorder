@@ -131,3 +131,11 @@
               border-color 0.18s ease,
               box-shadow 0.22s ease;
 }
+
+.todo-kanban-drop-slot.active,
+.tasks-layout .todo-kanban-drop-slot.active {
+  background: rgba(117, 214, 196, 0.12);
+  border-color: rgba(117, 214, 196, 0.4);
+  min-height: 48px;
+  border-style: dashed;
+}

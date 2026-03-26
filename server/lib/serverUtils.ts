@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuta
 const rateLimitMap = new Map();
 
+// Czyszczenie starych wpisów co 5 minut
 setInterval(
   () => {
     const now = Date.now();
@@ -13,7 +14,31 @@ setInterval(
   5 * 60 * 1000
 ).unref();
 
-export function checkRateLimit(ip: string, route: string, max = 10) {
+/**
+ * Sprawdza limit żądań dla danego IP i route.
+ * Różne limity dla różnych typów endpointów:
+ * - auth: 5 żądań/min (logowanie, rejestracja)
+ * - api: 30 żądań/min (zwykłe API)
+ * - upload: 10 żądań/min (przesyłanie plików)
+ * - stt: 5 żądań/min (transkrypcja - kosztowne)
+ */
+export function checkRateLimit(ip: string, route: string, max?: number) {
+  // Domyślne limity w zależności od typu endpointu
+  const defaultLimits: Record<string, number> = {
+    auth: 5,
+    login: 5,
+    register: 5,
+    reset: 3,
+    upload: 10,
+    media: 10,
+    transcribe: 5,
+    stt: 5,
+    analyze: 5,
+    ai: 10,
+  };
+
+  const limit = max ?? defaultLimits[route] ?? 30; // Domyślnie 30 dla innych endpointów
+
   const key = `${ip}:${route}`;
   const now = Date.now();
   let entry = rateLimitMap.get(key);
@@ -24,13 +49,28 @@ export function checkRateLimit(ip: string, route: string, max = 10) {
   }
 
   entry.count += 1;
-  if (entry.count > max) {
+  if (entry.count > limit) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    const error = new Error('Zbyt wiele prob. Sprobuj ponownie za chwile.') as any;
+    const error = new Error(
+      `Zbyt wiele prob. Limit: ${limit} żądań/min. Sprobuj ponownie za ${retryAfter}s.`
+    ) as any;
     error.statusCode = 429;
     error.retryAfter = retryAfter;
+    error.headers = {
+      'Retry-After': retryAfter.toString(),
+      'X-RateLimit-Limit': limit.toString(),
+      'X-RateLimit-Remaining': '0',
+      'X-RateLimit-Reset': entry.resetAt.toString(),
+    };
     throw error;
   }
+
+  // Zwróć informacje o limicie w nagłówkach (dla sukcesu)
+  return {
+    limit,
+    remaining: limit - entry.count,
+    resetAt: entry.resetAt,
+  };
 }
 
 export function corsHeaders(requestOrigin: string, allowedOrigins = 'http://localhost:3000') {

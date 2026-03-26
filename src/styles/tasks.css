@@ -13,7 +13,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr) var(--layout-aside-width);
+  grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr) auto;
   gap: var(--layout-gap-lg);
 }
 
