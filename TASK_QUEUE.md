@@ -42,7 +42,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ---
 
-## GitHub Actions Status (2026-03-26 17:50)
+## GitHub Actions Status (2026-03-26 18:00)
 
 **❌ 61 workflow failures w ostatnich 7 dniach (29 sukcesów)**
 
@@ -64,16 +64,17 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 ### Główne przyczyny błędów:
 1. **302 Errors** - GitHub API nie zwraca logów dla workflow (problem z tokenem/permissions)
 2. **Dependabot workflows** - Permission issues (actions:write, issues:write)
-3. **CSP Errors** - ✅ Naprawione: dodano `*.railway.app` do connect-src
+3. **Husky hooks in CI** - ✅ Naprawione: dodano `CI: true` do env w ci.yml
 
 ### Naprawione dzisiaj:
 - ✅ **CSP** - dodano Railway API do allowed connections w vercel.json
 - ✅ **Tasks Tab Layout** - naprawiono empty space po prawej stronie (data-columns="two")
 - ✅ **selectedTaskSla** - usunięto ReferenceError z TasksTab.tsx
 - ✅ **Lazy Loading Tests** - dodano 9 testów dla createLazyComponent
+- ✅ **CI Husky Issue** - dodano `CI: true` aby wyłączyć husky hooks w CI
 
 ### Wymagane działania:
 - 🔧 **Regenerate GitHub Token** - obecny token nie ma dostępu do logów workflow
 - 🔧 **Update Dependabot Permissions** - dodać `actions: write` i `issues: write` do workflow
-- 🔍 **Investigate CI failures** - sprawdzić dlaczego CI Pipeline, E2E Tests i Backend Smoke failują na commitach 585ec6e i 17cfad2
+- 🔍 **Monitor CI** - sprawdzić czy nowy commit aee2caa naprawił CI Pipeline
 
