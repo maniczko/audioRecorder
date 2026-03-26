@@ -38,12 +38,13 @@ export function registerServiceWorker() {
           });
         });
 
-        registration.update().catch((error) => {
-          console.error('Service worker update check failed.', error);
+        // Silent fail for service worker update - expected in dev mode
+        registration.update().catch(() => {
+          // Silent fail - service worker not available in all environments
         });
       })
-      .catch((error) => {
-        console.error('Service worker registration failed.', error);
+      .catch(() => {
+        // Silent fail - service worker not available in all environments
       });
   });
 }

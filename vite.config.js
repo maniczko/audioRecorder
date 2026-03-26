@@ -56,10 +56,10 @@ export default defineConfig(async () => {
       port: 3000,
       strictPort: true,
       hmr: {
-        // Fix for WebSocket connection issues
-        protocol: 'ws',
-        host: 'localhost',
-        port: 3000,
+        // Fix for WebSocket connection issues - use relative path
+        protocol: undefined,
+        host: undefined,
+        port: undefined,
       },
       proxy: {
         '/voice-profiles': {
