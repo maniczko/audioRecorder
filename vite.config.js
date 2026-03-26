@@ -52,24 +52,15 @@ export default defineConfig(async () => {
         },
       },
     },
-    build: {
-      // Fix for lazy loading chunks - use stable chunk names
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-dom/client'],
-            'vendor-router': ['react-router-dom'],
-          },
-        },
-      },
-      // Disable minification for easier debugging
-      minify: 'terser',
-      // Generate sourcemaps for better debugging
-      sourcemap: true,
-    },
     server: {
       port: 3000,
       strictPort: true,
+      hmr: {
+        // Fix for WebSocket connection issues
+        protocol: 'ws',
+        host: 'localhost',
+        port: 3000,
+      },
       proxy: {
         '/voice-profiles': {
           target: 'http://localhost:4000',

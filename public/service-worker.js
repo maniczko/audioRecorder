@@ -1,110 +1,73 @@
-const CACHE_NAME = "voicelog-os-v3";
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/favicon.ico", "/logo192.png", "/logo512.png"];
+/* eslint-disable no-restricted-globals */
+// Service Worker for VoiceLog OS
+// Cache-first strategy for assets, network-first for API
 
-function isHttpRequest(url) {
-  return String(url?.protocol || "").startsWith("http");
-}
+const CACHE_NAME = 'voicelog-v1';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.svg',
+];
 
-function shouldSkipRequest(requestUrl) {
-  const appOrigin = self.location?.origin;
-  return (
-    (appOrigin && requestUrl.origin !== appOrigin) ||
-    requestUrl.pathname.startsWith("/api/") ||
-    requestUrl.port === "4000" ||
-    requestUrl.port === "4001"
-  );
-}
-
-function isCacheableResponse(response) {
-  return Boolean(
-    response &&
-      response.ok &&
-      !response.bodyUsed &&
-      (response.type === "basic" || response.type === "cors")
-  );
-}
-
-async function cacheResponse(request, response) {
-  if (!isCacheableResponse(response)) return;
-
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(request, response.clone());
-  } catch (error) {
-    console.warn("Service worker cache skipped.", request.url, error);
-  }
-}
-
-self.addEventListener("install", (event) => {
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
+// Activate event - clean old caches
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    })
   );
+  self.clients.claim();
 });
 
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
-  const requestUrl = new URL(event.request.url);
-  if (!isHttpRequest(requestUrl) || shouldSkipRequest(requestUrl)) {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
     return;
   }
 
-  if (requestUrl.pathname.startsWith("/assets/")) {
-    event.respondWith(
-      caches.match(event.request).then(async (cachedResponse) => {
-        const networkResponsePromise = fetch(event.request)
-          .then(async (networkResponse) => {
-            await cacheResponse(event.request, networkResponse);
-            return networkResponse;
-          })
-          .catch(() => null);
-
-        return cachedResponse || networkResponsePromise || fetch(event.request);
-      })
-    );
+  // Skip Vite HMR and chunk requests in development
+  if (
+    url.includes('/src/') ||
+    url.includes('.tsx') ||
+    url.includes('.ts') ||
+    url.includes('@vite') ||
+    url.includes('@react-refresh') ||
+    url.includes('node_modules')
+  ) {
     return;
   }
 
-  if (event.request.mode === "navigate" || requestUrl.pathname === "/" || requestUrl.pathname === "/index.html") {
-    event.respondWith(
-      fetch(event.request)
-        .then(async (response) => {
-          await cacheResponse(event.request, response);
-          return response;
-        })
-        .catch(async () => {
-          const cachedResponse = await caches.match(event.request);
-          return cachedResponse || caches.match("/index.html");
-        })
-    );
+  // Skip WebSocket requests
+  if (url.startsWith('ws:') || url.startsWith('wss:')) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then(async (cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).catch(() => {
+        // Network failed, return offline page if available
+        return caches.match('/index.html');
+      });
 
-      const networkResponse = await fetch(event.request);
-      await cacheResponse(event.request, networkResponse);
-      return networkResponse;
+      return cachedResponse || fetchPromise;
     })
   );
 });

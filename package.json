@@ -78,6 +78,8 @@
     "build": "vite build",
     "build:clean": "rm -rf node_modules/.vite dist build && vite build",
     "build:fix": "rm -rf node_modules/.vite && npm run build",
+    "start": "vite",
+    "start:clean": "rm -rf node_modules/.vite && vite",
     "turbo:build": "turbo run build",
     "migrate": "node scripts/code-migration.js",
     "migrate:dry": "node scripts/code-migration.js --dry-run",
