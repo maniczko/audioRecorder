@@ -40,3 +40,24 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - TaskDetailsPanel pokryty testami ✅
 - Pozostałe zadania są niskiego priorytetu i mogą być realizowane w wolnym czasie
 
+---
+
+## GitHub Actions Status (2026-03-26 17:14)
+
+**❌ 59 workflow failures w ostatnich 7 dniach**
+
+### Główne przyczyny błędów:
+1. **302 Errors** - GitHub API nie zwraca logów dla starych workflow (problem z tokenem/permissions)
+2. **Dependabot workflows** - Permission issues (actions:write, issues:write)
+3. **CSP Errors** - Naprawione: dodano `*.railway.app` do connect-src
+
+### Naprawione dzisiaj:
+- ✅ **CSP** - dodano Railway API do allowed connections w vercel.json
+- ✅ **Tasks Tab Layout** - naprawiono empty space po prawej stronie (data-columns="two")
+- ✅ **selectedTaskSla** - usunięto ReferenceError z TasksTab.tsx
+- ✅ **Lazy Loading Tests** - dodano 9 testów dla createLazyComponent
+
+### Wymagane działania:
+- 🔧 **Regenerate GitHub Token** - obecny token nie ma dostępu do logów workflow
+- 🔧 **Update Dependabot Permissions** - dodać `actions: write` i `issues: write` do workflow
+
