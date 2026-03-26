@@ -11,7 +11,7 @@
 /**
  * Apply simple high-pass filter to remove low-frequency rumble
  */
-export function applyHighPassFilter(audioBuffer: AudioBuffer, cutoffFreq = 80): AudioBuffer {
+export async function applyHighPassFilter(audioBuffer: AudioBuffer, cutoffFreq = 80): Promise<AudioBuffer> {
   const offlineContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -29,18 +29,18 @@ export function applyHighPassFilter(audioBuffer: AudioBuffer, cutoffFreq = 80): 
   filter.connect(offlineContext.destination);
   source.start();
 
-  return offlineContext.startRenderingSync();
+  return offlineContext.startRendering();
 }
 
 /**
  * Apply noise gate to remove quiet background noise
  */
-export function applyNoiseGate(
+export async function applyNoiseGate(
   audioBuffer: AudioBuffer,
   threshold = -40,
   attack = 0.01,
   release = 0.1
-): AudioBuffer {
+): Promise<AudioBuffer> {
   const offlineContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -61,17 +61,17 @@ export function applyNoiseGate(
   noiseGate.connect(offlineContext.destination);
   source.start();
 
-  return offlineContext.startRenderingSync();
+  return offlineContext.startRendering();
 }
 
 /**
  * Apply spectral noise reduction using Web Audio API
  * This is a simplified version - RNNoise is better for real-time
  */
-export function applySpectralNoiseReduction(
+export async function applySpectralNoiseReduction(
   audioBuffer: AudioBuffer,
   noiseReduction = 0.7
-): AudioBuffer {
+): Promise<AudioBuffer> {
   const offlineContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -105,13 +105,19 @@ export function applySpectralNoiseReduction(
 
   source.start();
 
-  return offlineContext.startRenderingSync();
+  return offlineContext.startRendering();
 }
 
 /**
  * Remove clicks and pops using simple interpolation
  */
 export function removeClicks(audioBuffer: AudioBuffer, threshold = 0.95): AudioBuffer {
+  const offlineContext = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.length,
+    audioBuffer.sampleRate
+  );
+  
   const output = offlineContext.createBuffer(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -172,8 +178,8 @@ export async function enhanceAudioQuality(
 
   // Apply filters in sequence
   if (removeNoise) {
-    enhancedBuffer = applyHighPassFilter(enhancedBuffer, 80);
-    enhancedBuffer = applySpectralNoiseReduction(enhancedBuffer, 0.6);
+    enhancedBuffer = await applyHighPassFilter(enhancedBuffer, 80);
+    enhancedBuffer = await applySpectralNoiseReduction(enhancedBuffer, 0.6);
   }
 
   if (removeClicksOption) {
@@ -181,7 +187,7 @@ export async function enhanceAudioQuality(
   }
 
   if (normalizeVolume) {
-    enhancedBuffer = applyNoiseGate(enhancedBuffer, -35);
+    enhancedBuffer = await applyNoiseGate(enhancedBuffer, -35);
   }
 
   // Convert back to blob

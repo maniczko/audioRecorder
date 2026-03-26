@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import { getTaskAssigneeSummary } from '../lib/tasks';
 
@@ -17,12 +17,20 @@ function buildPlacement(groupBy, groupId, previousTaskId = '', nextTaskId = '') 
 }
 
 function DropLine({ placement, onDropTask, label = 'Upusc tutaj zadanie' }) {
+  const [isOver, setIsOver] = useState(false);
   return (
     <div
-      className="todo-row-dropzone"
+      className={`todo-row-dropzone${isOver ? ' active' : ''}`}
       aria-label={label}
-      onDragOver={canDrop}
-      onDrop={(event) => onDropTask(placement, event)}
+      onDragOver={(e) => {
+        canDrop(e);
+        if (!isOver) setIsOver(true);
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(event) => {
+        setIsOver(false);
+        onDropTask(placement, event);
+      }}
     />
   );
 }
@@ -32,7 +40,7 @@ function TaskListView({
   allTasks,
   groupBy,
   sortBy = 'manual',
-  setSortBy = () => {},
+  setSortBy = (value: string) => {},
   selectedTask,
   selectedTaskIds,
   toggleTaskSelection,
@@ -45,6 +53,7 @@ function TaskListView({
   handleGroupDrop,
   handleTaskDrop,
   setDragTaskId,
+  dragTaskId,
 }) {
   return (
     <div className="todo-table-wrap">
@@ -122,7 +131,7 @@ function TaskListView({
                     <div
                       role="button"
                       tabIndex={0}
-                      className={isActive ? 'todo-table-row active' : 'todo-table-row'}
+                      className={`todo-table-row${isActive ? ' active' : ''}${dragTaskId === task.id ? ' dragging' : ''}`}
                       data-selected={isSelected}
                       draggable
                       onDragStart={(event) => {
@@ -258,6 +267,7 @@ TaskListView.propTypes = {
   handleGroupDrop: PropTypes.func,
   handleTaskDrop: PropTypes.func,
   setDragTaskId: PropTypes.func,
+  dragTaskId: PropTypes.string,
 };
 
 // Memoize the entire list view to prevent unnecessary re-renders

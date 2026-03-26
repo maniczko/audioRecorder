@@ -3162,7 +3162,7 @@ export default function StudioMeetingView({
                           audioRef.current.currentTime = nextValue;
                         }
                       }}
-                      style={{ '--ff-player-progress': `${scrubberProgress}%` }}
+                      style={{ '--ff-player-progress': `${scrubberProgress}%` } as React.CSSProperties}
                     />
                   </div>
                 </div>

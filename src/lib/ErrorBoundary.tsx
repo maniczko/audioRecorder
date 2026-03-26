@@ -1,22 +1,32 @@
-import { Component } from 'react';
+import { Component, ReactNode } from 'react';
 import './ErrorBoundaryStyles.css';
 
-export default class ErrorBoundary extends Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  label?: string;
+  children?: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+  info: { componentStack?: string } | null;
+}
+
+export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { error: null, info: null };
   }
 
-  static getDerivedStateFromError(error) {
-    return { error };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { error, info: null };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: { componentStack?: string }) {
     console.error(`[ErrorBoundary:${this.props.label || 'App'}]`, error, info?.componentStack);
     this.setState({ info });
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.error) {
       const isDev = import.meta.env.DEV;
       return (

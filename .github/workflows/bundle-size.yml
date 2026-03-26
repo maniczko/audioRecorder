@@ -3,7 +3,7 @@ name: Bundle Size Monitor
 on:
   pull_request:
     branches: [main, master]
-  push:
+  pull_request_target:
     branches: [main, master]
 
 jobs:
@@ -12,10 +12,16 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout code (dependabot)
+        uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
       
       - name: Setup Node.js
         uses: actions/setup-node@v4

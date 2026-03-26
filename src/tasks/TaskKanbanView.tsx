@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { getTaskDependencyDetails } from '../lib/tasks';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import { getTaskLastActivity } from '../lib/activityFeed';
@@ -75,13 +75,24 @@ function SubtaskProgress({ subtasks }) {
 }
 
 function DropSlot({ placement, onDropTask, onDragEnter, label = 'Upusc tutaj zadanie' }) {
+  const [isOver, setIsOver] = useState(false);
   return (
     <div
-      className="todo-kanban-drop-slot"
+      className={`todo-kanban-drop-slot${isOver ? ' active' : ''}`}
       aria-label={label}
-      onDragOver={canDrop}
-      onDragEnter={onDragEnter}
-      onDrop={(event) => onDropTask(placement, event, 'Zmieniono kolejnosc zadania w kolumnie.')}
+      onDragOver={(e) => {
+        canDrop(e);
+        if (!isOver) setIsOver(true);
+      }}
+      onDragEnter={(e) => {
+        onDragEnter?.(e);
+        if (!isOver) setIsOver(true);
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(event) => {
+        setIsOver(false);
+        onDropTask(placement, event, 'Zmieniono kolejnosc zadania w kolumnie.');
+      }}
     />
   );
 }
@@ -155,7 +166,7 @@ function KanbanCard({
       <article
         role="button"
         tabIndex={0}
-        className={`todo-kanban-card${isActive ? ' active' : ''}${task.completed ? ' completed' : ''}`}
+        className={`todo-kanban-card${isActive ? ' active' : ''}${task.completed ? ' completed' : ''}${dragTaskId === task.id ? ' dragging' : ''}`}
         data-selected={isSelected}
         title="Przeciagnij zadanie"
         draggable
@@ -449,10 +460,22 @@ function TaskKanbanView({
   onQuickAddToColumn,
   onReorderColumns,
   sortBy = 'manual',
-  setSortBy = () => {},
+  setSortBy = (value: string) => {},
 }) {
   const [quickAddColumnId, setQuickAddColumnId] = useState('');
   const [dragHeaderId, setDragHeaderId] = useState('');
+
+  // UX Fix #5: Escape key cancels drag
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key === 'Escape' && dragTaskId) {
+        setDragTaskId('');
+        setDropColumnId('');
+      }
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [dragTaskId, setDragTaskId, setDropColumnId]);
 
   const swimlanes =
     swimlaneGroupBy && swimlaneGroupBy !== 'none'
@@ -509,7 +532,7 @@ function TaskKanbanView({
               <div
                 key={col.id}
                 className={`swimlane-col-header${dragHeaderId === col.id ? ' dragging' : ''}${wipExceeded ? ' wip-exceeded' : ''}`}
-                style={{ '--column-color': col.color }}
+                style={{ '--column-color': col.color } as React.CSSProperties}
                 draggable={typeof onReorderColumns === 'function'}
                 onDragStart={(e) => handleHeaderDragStart(e, col.id)}
                 onDragOver={(e) => e.preventDefault()}
@@ -532,7 +555,7 @@ function TaskKanbanView({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       e.stopPropagation();
-                      setSortBy(e.target.value);
+                      setSortBy((e.target as HTMLSelectElement).value);
                     }}
                     title="Sortuj karty"
                   >
@@ -583,7 +606,7 @@ function TaskKanbanView({
           >
             <header
               className="todo-kanban-header"
-              style={{ '--column-color': column.color }}
+              style={{ '--column-color': column.color } as React.CSSProperties}
               draggable={typeof onReorderColumns === 'function'}
               onDragStart={(e) => handleHeaderDragStart(e, column.id)}
               onDragOver={(e) => e.preventDefault()}
@@ -606,7 +629,7 @@ function TaskKanbanView({
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => {
                     e.stopPropagation();
-                    setSortBy(e.target.value);
+                    setSortBy((e.target as HTMLSelectElement).value);
                   }}
                   title="Sortuj karty"
                 >

@@ -60,7 +60,7 @@ function mergeCollectionById(current: unknown[] = [], incoming: unknown[] = []) 
       return;
     }
 
-    merged[index] = { ...merged[index], ...item };
+    merged[index] = { ...(merged[index] as object), ...(item as object) };
   });
 
   return merged;
@@ -69,7 +69,7 @@ function mergeCollectionById(current: unknown[] = [], incoming: unknown[] = []) 
 function diffCountById(current: unknown[] = [], incoming: unknown[] = []) {
   const currentIds = new Set(current.map((item: any) => clean(item?.id)).filter(Boolean));
   return incoming.reduce(
-    (count, item: any) => count + (currentIds.has(clean(item?.id)) ? 0 : 1),
+    (count: number, item: any) => count + (currentIds.has(clean(item?.id)) ? 0 : 1),
     0
   );
 }

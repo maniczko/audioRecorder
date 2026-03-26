@@ -9,6 +9,7 @@ import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
 import TagBadge from './shared/TagBadge';
+import { Search, Filter, Upload } from 'lucide-react';
 
 function formatPipelineDiagnostics(item) {
   const details = [];
@@ -89,105 +90,7 @@ function getLatestRecording(selectedMeeting) {
   );
 }
 
-function MeetingPicker({
-  selectedMeeting,
-  userMeetings,
-  selectMeeting,
-  startNewMeetingDraft,
-  setActiveTab,
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
-  const ref = React.useRef(null);
 
-  React.useEffect(() => {
-    if (!open) return;
-    function onOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
-  }, [open]);
-
-  const sorted = [...userMeetings].sort(
-    (a, b) =>
-      new Date(b.startsAt || b.createdAt).valueOf() - new Date(a.startsAt || a.createdAt).valueOf()
-  );
-  const filtered = query.trim()
-    ? sorted.filter((m) => m.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
-    : sorted.slice(0, 10);
-  const meetingDiagnostics = getSelectedMeetingDiagnostics(selectedMeeting);
-
-  return (
-    <div className="studio-picker-header" ref={ref}>
-      <div className="studio-picker-header-top">
-        <div className="studio-picker-header-info">
-          <div className="eyebrow">Studio</div>
-          <h2 className="studio-picker-header-title">
-            {selectedMeeting ? selectedMeeting.title : 'Wybierz spotkanie'}
-          </h2>
-          {selectedMeeting && (
-            <div className="studio-picker-header-meta">
-              <span>{formatDateTime(selectedMeeting.startsAt || selectedMeeting.createdAt)}</span>
-              <span>{selectedMeeting.durationMinutes} min</span>
-              <span>{(selectedMeeting.recordings || []).length} nagran</span>
-            </div>
-          )}
-          {meetingDiagnostics ? (
-            <div className="recordings-diagnostics-copy">{meetingDiagnostics}</div>
-          ) : null}
-        </div>
-        <div className="studio-picker-header-actions">
-          <button type="button" className="ghost-button" onClick={() => setOpen((v) => !v)}>
-            Zmień ▾
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => {
-              startNewMeetingDraft();
-              setActiveTab('studio');
-            }}
-          >
-            + Nowe
-          </button>
-        </div>
-        {open && (
-          <div className="studio-picker-dropdown">
-            <Input
-              className="studio-picker-search"
-              type="search"
-              placeholder="Szukaj spotkania…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
-            <div className="studio-picker-list">
-              {filtered.map((meeting) => (
-                <button
-                  key={meeting.id}
-                  type="button"
-                  className={`studio-picker-item${selectedMeeting?.id === meeting.id ? ' active' : ''}`}
-                  onClick={() => {
-                    selectMeeting(meeting);
-                    setOpen(false);
-                    setQuery('');
-                    setActiveTab('studio');
-                  }}
-                >
-                  <span className="studio-picker-item-title">{meeting.title}</span>
-                  <span className="studio-picker-item-date">
-                    {formatDateTime(meeting.startsAt || meeting.createdAt)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function UnifiedLibrary({
   userMeetings,
@@ -195,18 +98,27 @@ function UnifiedLibrary({
   selectMeeting,
   setActiveTab,
   onDeleteMeeting,
+  onUploadClick,
+  isUploading,
+  uploadProgress,
+  fileInputRef,
+  handleFileUpload,
 }) {
+  const [searchQuery, setSearchQuery] = React.useState('');
   const [dateFilter, setDateFilter] = React.useState('');
   const [tagFilter, setTagFilter] = React.useState([]);
-  const [sortConfig, setSortConfig] = React.useState({ key: 'startsAt', direction: 'desc' });
-  const [meetingToDelete, setMeetingToDelete] = React.useState(null);
+  const [participantFilter, setParticipantFilter] = React.useState([]);
+  const [showFilters, setShowFilters] = React.useState(false);
+  const filterDropdownRef = React.useRef(null);
 
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
-    }));
-  };
+  React.useEffect(() => {
+    if (!showFilters) return;
+    function onOutside(e) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) setShowFilters(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [showFilters]);
 
   const allTags = React.useMemo(() => {
     const tags = new Set();
@@ -220,6 +132,28 @@ function UnifiedLibrary({
     return Array.from(tags).sort();
   }, [userMeetings]);
 
+  const allParticipants = React.useMemo(() => {
+    const parts = new Set();
+    userMeetings.forEach((m) => {
+      if (m.owner) parts.add(m.owner.trim());
+      if (Array.isArray(m.guests)) {
+        m.guests.forEach((g) => {
+          if (g && g.trim()) parts.add(g.trim());
+        });
+      }
+    });
+    return Array.from(parts).sort();
+  }, [userMeetings]);
+
+  const [sortConfig, setSortConfig] = React.useState({ key: 'startsAt', direction: 'desc' });
+  const [meetingToDelete, setMeetingToDelete] = React.useState(null);
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
   const sortedAndFiltered = React.useMemo(() => {
     return [...userMeetings]
       .filter((m) => {
@@ -231,6 +165,17 @@ function UnifiedLibrary({
           if (!Array.isArray(m.tags)) return false;
           const mt = m.tags.map((t) => t.trim());
           if (!tagFilter.every((tf) => mt.includes(tf))) return false;
+        }
+        if (participantFilter && participantFilter.length > 0) {
+          const mParts = [m.owner, ...(m.guests || [])].filter(Boolean).map(p => p.trim());
+          if (!participantFilter.every((pf) => mParts.includes(pf))) return false;
+        }
+        if (searchQuery) {
+          const searchLower = searchQuery.toLowerCase();
+          const titleMatch = (m.title || '').toLowerCase().includes(searchLower);
+          const ownerMatch = (m.owner || '').toLowerCase().includes(searchLower);
+          const guestMatch = (m.guests || []).some((g) => g.toLowerCase().includes(searchLower));
+          if (!titleMatch && !ownerMatch && !guestMatch) return false;
         }
         return true;
       })
@@ -260,31 +205,154 @@ function UnifiedLibrary({
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [userMeetings, dateFilter, tagFilter, sortConfig]);
+  }, [userMeetings, searchQuery, dateFilter, tagFilter, participantFilter, sortConfig]);
+
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragCounter = React.useRef(0);
+
+  const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current++; setIsDragging(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current--; if (dragCounter.current <= 0) { dragCounter.current = 0; setIsDragging(false); } };
+  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDrop = (e) => {
+    e.preventDefault(); e.stopPropagation(); setIsDragging(false); dragCounter.current = 0;
+    const file = e.dataTransfer?.files?.[0];
+    if (file && (file.type.startsWith('audio/') || file.type.startsWith('video/'))) {
+      const dt = new DataTransfer(); dt.items.add(file);
+      if (fileInputRef?.current) { fileInputRef.current.files = dt.files; fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+  };
 
   return (
-    <section className="panel meetings-library recordings-library-panel">
-      <div className="panel-header compact recordings-library-header">
+    <section
+      className="panel meetings-library recordings-library-panel"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      style={{ position: 'relative' }}
+    >
+      {isDragging && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 9999,
+          background: 'rgba(117, 214, 196, 0.08)',
+          border: '3px dashed var(--accent)',
+          borderRadius: 16,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
+            <Upload size={40} />
+            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Upuść plik audio/video tutaj</span>
+          </div>
+        </div>
+      )}
+      <div className="panel-header compact recordings-library-header" style={{ alignItems: 'center' }}>
         <div className="recordings-library-heading">
           <div className="eyebrow">Workspace</div>
           <h2>Baza spotkań i nagrań</h2>
         </div>
-        <div className="recordings-library-filters">
-          <Input
-            type="date"
-            className="studio-picker-search recordings-library-filter-control"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+        
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, justifyContent: 'flex-end', marginLeft: 32 }}>
+          {isUploading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160 }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap' }}>Wgrywanie {uploadProgress}%</span>
+              <ProgressBar value={uploadProgress} variant="upload" />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onUploadClick}
+              style={{ height: 36, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '0 12px' }}
+            >
+              <Upload size={14} /> Wgraj
+            </button>
+          )}
+          <input
+            data-testid="recordings-file-input"
+            type="file"
+            ref={fileInputRef}
+            accept="audio/*,video/*"
+            className="recordings-hidden-input"
+            onChange={handleFileUpload}
           />
-          <div style={{ flex: 1, minWidth: 200, maxWidth: 350 }}>
-            <TagInput
-              tags={tagFilter}
-              suggestions={allTags}
-              onChange={setTagFilter}
-              placeholder="Filtruj wg tagów..."
-            />
+
+          <div className="recordings-tab-filters-col" ref={filterDropdownRef} style={{ position: 'relative' }}>
+            <button 
+              type="button"
+              className="secondary-button"
+              onClick={() => setShowFilters(!showFilters)}
+              style={{ height: 36, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', fontSize: '0.82rem', padding: '0 12px' }}
+            >
+              <Filter size={14} /> Filters
+              {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
+                <span style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, background: 'var(--accent)', borderRadius: '50%' }} />
+              )}
+            </button>
+            
+            {showFilters && (
+              <div className="recordings-filters-dropdown" style={{
+                position: 'absolute', top: 'calc(100% + 12px)', left: 0, zIndex: 9999, 
+                background: '#101c1a', border: '1px solid rgba(117, 214, 196, 0.2)', 
+                borderRadius: 12, padding: 24, width: 340, boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+                display: 'flex', flexDirection: 'column', gap: 20
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem' }}>Filtry</h3>
+                  {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
+                    <button 
+                      type="button" 
+                      className="ghost-button" 
+                      onClick={() => { setDateFilter(''); setTagFilter([]); setParticipantFilter([]); }}
+                      style={{ padding: '4px 8px', height: 'auto', color: 'var(--text-3)', fontSize: '0.8rem' }}
+                    >
+                      Wyczyść wszystko
+                    </button>
+                  )}
+                </div>
+                <div className="filter-group">
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Data Spotkania</label>
+                  <Input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    style={{ width: '100%', background: 'var(--surface-1)' }}
+                  />
+                </div>
+                <div className="filter-group">
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Tagi</label>
+                  <TagInput
+                    tags={tagFilter}
+                    suggestions={allTags}
+                    onChange={setTagFilter}
+                    placeholder="Filtruj wg tagów..."
+                  />
+                </div>
+                <div className="filter-group">
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Uczestnicy</label>
+                  <TagInput
+                    tags={participantFilter}
+                    suggestions={allParticipants}
+                    onChange={setParticipantFilter}
+                    placeholder="Dodaj uczestników..."
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="status-chip">{sortedAndFiltered.length}</div>
+
+          <div className="recordings-tab-search-col" style={{ flex: 1 }}>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
+              <Input
+                type="search"
+                placeholder="Search host or title..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', paddingLeft: 36, background: 'var(--surface-0)', border: '1px solid var(--border)', borderRadius: 8, height: 36, fontSize: '0.85rem' }}
+              />
+            </div>
+          </div>
         </div>
       </div>
       <div className="studio-recordings-table-wrap">
@@ -551,58 +619,6 @@ export default function RecordingsTab(props) {
 
   return (
     <div className="recordings-tab-container recordings-tab-shell">
-      <header className="recordings-tab-header recordings-tab-header-shell">
-        <div className="recordings-tab-upload-box recordings-tab-upload-box-fixed">
-          {isUploading ? (
-            <div className="recordings-upload-state">
-              <div className="recordings-upload-label">Wgrywanie ({uploadProgress}%)</div>
-              <div className="recordings-upload-track">
-                <ProgressBar value={uploadProgress} variant="upload" />
-              </div>
-            </div>
-          ) : (
-            <button
-              className="hover-pop recordings-upload-trigger"
-              type="button"
-              onClick={() => mainFileInputRef.current?.click()}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              Wgraj własne nagranie
-            </button>
-          )}
-          <input
-            data-testid="recordings-file-input"
-            type="file"
-            ref={mainFileInputRef}
-            accept="audio/*,video/*"
-            className="recordings-hidden-input"
-            onChange={handleMainFileUpload}
-          />
-        </div>
-        <div className="recordings-tab-picker-col">
-          <MeetingPicker
-            selectedMeeting={selectedMeeting}
-            userMeetings={userMeetings}
-            selectMeeting={selectMeeting}
-            startNewMeetingDraft={startNewMeetingDraft}
-            setActiveTab={setActiveTab}
-          />
-        </div>
-      </header>
 
       {showPipelineStatus ? (
         <section className="panel recordings-status-panel">
@@ -732,6 +748,11 @@ export default function RecordingsTab(props) {
           selectMeeting={selectMeeting}
           setActiveTab={setActiveTab}
           onDeleteMeeting={deleteRecordingAndMeeting}
+          onUploadClick={() => mainFileInputRef.current?.click()}
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
+          fileInputRef={mainFileInputRef}
+          handleFileUpload={handleMainFileUpload}
         />
       </main>
     </div>

@@ -1,12 +1,27 @@
 name: Code Review
 
-on: [pull_request]
+on:
+  pull_request:
+    branches: [main, master]
+  pull_request_target:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  checks: write
 
 jobs:
   eslint-review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

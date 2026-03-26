@@ -2162,11 +2162,17 @@
   background: #f8fbff;
   min-height: 440px;
   align-content: start;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.18s ease,
+              border-color 0.18s ease,
+              box-shadow 0.22s ease;
 }
 
 .tasks-layout.ms-todo .todo-kanban-column.drop {
-  background: #edf5ff;
+  background: #eaf2ff;
   border-color: #85a9ff;
+  transform: scale(1.012);
+  box-shadow: 0 0 20px rgba(133, 169, 255, 0.15);
 }
 
 .tasks-layout.ms-todo .todo-kanban-header {
@@ -2191,22 +2197,20 @@
 }
 
 .tasks-layout.ms-todo .todo-kanban-drop-slot {
-  min-height: 12px;
-  border-radius: 999px;
-  border: 1px dashed transparent;
-  transition: background 0.16s ease, border-color 0.16s ease;
+  min-height: 6px;
+  border-radius: 8px;
+  border: 1.5px dashed transparent;
+  transition: min-height 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.2s ease;
 }
 
 .tasks-layout.ms-todo .todo-kanban-drop-slot:hover,
 .tasks-layout.ms-todo .todo-kanban-drop-slot:focus-visible {
-  background: rgba(80, 122, 255, 0.08);
-  border-color: #86a9ff;
-}
-
-.tasks-layout.ms-todo .todo-kanban-drop-slot:hover,
-.tasks-layout.ms-todo .todo-kanban-drop-slot:focus-visible {
-  background: rgba(80, 122, 255, 0.08);
-  border-color: #86a9ff;
+  background: rgba(117, 214, 196, 0.08);
+  border-color: rgba(117, 214, 196, 0.3);
+  min-height: 40px;
 }
 
 .tasks-layout.ms-todo .todo-kanban-card {
@@ -4662,11 +4666,19 @@
 
 .tasks-layout.ms-todo .todo-kanban-column {
   background: rgba(255, 255, 255, 0.03);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.18s ease,
+              border-color 0.18s ease,
+              box-shadow 0.22s ease;
 }
 
 .tasks-layout.ms-todo .todo-kanban-column.drop {
-  background: rgba(117, 214, 196, 0.08);
-  border-color: rgba(117, 214, 196, 0.22);
+  background: rgba(117, 214, 196, 0.10);
+  border-color: rgba(117, 214, 196, 0.35);
+  box-shadow:
+    inset 0 0 30px rgba(117, 214, 196, 0.06),
+    0 0 24px rgba(117, 214, 196, 0.12);
+  transform: scale(1.012);
 }
 
 .tasks-layout.ms-todo .todo-kanban-header {
@@ -4801,6 +4813,13 @@
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.12);
   color: var(--muted);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.tasks-layout.ms-todo .todo-kanban-column.drop .todo-empty {
+  background: rgba(117, 214, 196, 0.06);
+  border-color: rgba(117, 214, 196, 0.3);
+  border-style: dashed;
 }
 
 @media (max-width: 1320px) {
@@ -5786,3 +5805,107 @@
 }
 
 /* Big Green Button - removed (replaced with inline quick add) */
+
+/* UX Improvements for Drag and Drop */
+.tasks-layout.ms-todo .todo-row-dropzone.active {
+  background: rgba(117, 214, 196, 0.12) !important;
+  border-color: rgba(117, 214, 196, 0.4) !important;
+  min-height: 24px !important;
+}
+.tasks-layout.ms-todo .todo-kanban-drop-slot {
+  transition: min-height 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.2s ease;
+}
+.tasks-layout.ms-todo .todo-kanban-drop-slot.active {
+  background: rgba(117, 214, 196, 0.10) !important;
+  border-color: rgba(117, 214, 196, 0.4) !important;
+  border-style: dashed !important;
+  min-height: 52px !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 12px rgba(117, 214, 196, 0.08) !important;
+}
+.tasks-layout.ms-todo .todo-table-row.dragging {
+  opacity: 0.5 !important;
+  transform: scale(0.99) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  border: 1px dashed #75d6c4 !important;
+  z-index: 100 !important;
+}
+.tasks-layout.ms-todo .todo-kanban-card.dragging {
+  opacity: 0.5 !important;
+  transform: scale(0.96) rotate(1.5deg) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.35) !important;
+  border: 1px dashed rgba(117, 214, 196, 0.5) !important;
+  z-index: 100 !important;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* ============================================================ */
+/* Sprint 1 UX Fix #7: Touch Targets min 36x36px                */
+/* ============================================================ */
+.tasks-layout.ms-todo .todo-task-circle {
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tasks-layout.ms-todo .todo-star,
+.tasks-layout.ms-todo .todo-star.inline {
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tasks-layout.ms-todo .kanban-flag-icon {
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tasks-layout.ms-todo .todo-drag-handle {
+  min-width: 32px;
+  min-height: 36px;
+}
+
+/* ============================================================ */
+/* Sprint 1 UX Fix #12: Modal scroll overflow                   */
+/* ============================================================ */
+.ff-modal-content {
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.ff-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.ff-modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ff-modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+/* ============================================================ */
+/* Sprint 1 UX Fix #23: Custom focus ring for dark theme        */
+/* ============================================================ */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(117, 214, 196, 0.6);
+  border-radius: inherit;
+}
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(117, 214, 196, 0.6);
+}

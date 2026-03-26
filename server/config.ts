@@ -58,8 +58,8 @@ const envSchema = z.object({
     .preprocess((val) => (val ? Number(val) : undefined), z.number().optional())
     .default(3),
   VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('fast'),
-  VOICELOG_STT_MODEL_FAST: z.string().default('whisper-1'), // Direct OpenAI/Groq format; for OpenRouter use "openai/whisper-1"
-  VOICELOG_STT_MODEL_FULL: z.string().default('whisper-1'),
+  VOICELOG_STT_MODEL_FAST: z.string().default('whisper-tiny'), // Fast mode: whisper-tiny for 3x speedup
+  VOICELOG_STT_MODEL_FULL: z.string().default('whisper-1'), // Full mode: whisper-1 for accuracy
   VOICELOG_CHUNK_OVERLAP_SECONDS: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().int().min(0).optional())
     .default(5),
@@ -115,7 +115,7 @@ export function validateRequiredApiKeys() {
   if (!hasOpenAI && !hasGroq) {
     errors.push(
       'Missing STT provider API key. Set either OPENAI_API_KEY or GROQ_API_KEY.\n' +
-        '  See .env.example for configuration options.'
+      '  See .env.example for configuration options.'
     );
   }
 
@@ -123,7 +123,7 @@ export function validateRequiredApiKeys() {
   if (!config.HF_TOKEN && !config.HUGGINGFACE_TOKEN) {
     warnings.push(
       'Missing HF_TOKEN. Speaker diarization will be disabled.\n' +
-        '  Get a token at: https://huggingface.co/settings/tokens'
+      '  Get a token at: https://huggingface.co/settings/tokens'
     );
   }
 

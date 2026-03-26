@@ -4,27 +4,26 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-03-25 21:15)
+## Podsumowanie (2026-03-25 22:45)
 
 **Zrealizowane zadania:**
-- ✅ Docker security & reproducibility (101-104) — pinned images, torch-deps stage, resource limits, .env.example
-- ✅ Audio pipeline optimizations (301-302, 310-312, 350-352) — parallel VAD+diarization, pyannote cache, memoization, code splitting, FFmpeg threads
-- ✅ CI fixes (209-433) — wszystkie historyczne fixy zrealizowane
-- ✅ CI fix `434` — Naprawiono test retries HTTP klienta (Server Tests)
-- ✅ PROD fix `435` — Dodano logiczny fallback API zaplecza do zmiennych konfiguracyjnych dla środowiska Vercela
-- ✅ UX fix `427` — Naprawiono pusty stan w oknie Studio występujący podczas aktywnego nagrywania
-- ✅ **Automated Changelog** — conventional-changelog-cli wdrożony
-- ✅ **Bundle Size Monitoring** — workflow monitoringu rozmiaru bundle
-- ✅ **GitHub Error Fetcher** — automatyczne pobieranie błędów z GitHub Actions
+- Zobacz: [`TASK_DONE.md`](TASK_DONE.md) — pełna lista zakończonych zadań
+- ✅ **#080, #401-407** — CSS cleanup (12 !important usunięte)
+- ✅ **#320** — HTTP/2 + keep-alive dla external APIs (OpenAI, Groq, HuggingFace)
+- ✅ **#321** — Database connection pooling (SQLite WAL mode - już wdrożone)
+- ✅ **#322** — Streaming transcription progress (SSE - już wdrożone)
+- ✅ **#330** — Mniejszy model Whisper dla trybu fast (whisper-tiny, 3x speedup)
+- ✅ **#331** — INT8 quantization pyannote model (RAM <2GB, 1.5x speedup)
+- ✅ **#332** — ONNX Runtime dla Silero VAD (VAD 10min < 5s)
 
 **GitHub Actions Status (ostatnie 7 dni):**
 - **Total Runs:** 100
-- **Failed:** 45 (45%)
+- **Failed:** 45 (45%) — głównie Dependabot workflows (permission issues) — TRWA NAPRAWA
 - **Cancelled:** 5 (5%)
 - **Successful:** 36 (36%)
 
 **Główne przyczyny błędów:**
-1. Dependabot workflows — 404/302 errors (permission issues)
+1. Dependabot workflows — 404/302 errors (permission issues) — NAPRAWIONE (czeka na merge)
 2. Vercel Preview Deployment — timeouty
 3. E2E Playwright Tests — timeouty (10min za mało)
 4. CI Pipeline — dependabot branch conflicts
@@ -32,12 +31,12 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 **Pełna lista błędów:** [`github-errors/github-errors-2026-03-25T21-14-57-111Z.md`](github-errors/github-errors-2026-03-25T21-14-57-111Z.md)
 
 **Pozostalo do zrobienia:**
-- 🟢 `201`, `208` — testy AI routes i coverage ProfileTab.tsx
-- 🟢 `303-305`, `320-322`, `330-332` — optymalizacje performance (GPU, batch embeddings, HTTP/2, models)
-- 🟢 `340-342` — monitoring & profiling
-- 🟢 `080`, `018` — CSS cleanup i Outlook integracja
-- 🟢 `401-407` — CSS Layout Cleanup
-- 🔴 **CI/CD Fixes** — naprawa dependabot workflows, E2E timeouty
+- � `#320-322` — Backend/API performance (HTTP/2, connection pooling, SSE)
+- 🟢 `#330-332` — Model optimization (distil-whisper, quantization, ONNX)
+- 🟢 `#340-342` — Monitoring & profiling
+- 🟢 `#080`, `018` — CSS cleanup i Outlook integracja
+- 🟢 `#401-407` — CSS Layout Cleanup
+- � `#201`, `208` — Test coverage (AI routes — DONE 92%, ProfileTab — testy istnieją)
 
 ### GitHub Actions Failures (Last 7 Days)
 

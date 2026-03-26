@@ -144,19 +144,15 @@ export default function TasksTab({
 
   useEffect(() => {
     if (!visibleTasks.length) {
-      setSelectedTaskId('');
+      if (viewMode !== 'kanban') setSelectedTaskId('');
       setSelectedTaskIds([]);
       return;
-    }
-
-    if (!visibleTasks.some((task) => task.id === selectedTaskId)) {
-      setSelectedTaskId(visibleTasks[0].id);
     }
 
     setSelectedTaskIds((previous) =>
       previous.filter((taskId) => visibleTasks.some((task) => task.id === taskId))
     );
-  }, [visibleTasks, selectedTaskId]);
+  }, [visibleTasks, viewMode]);
 
   useEffect(() => {
     if (!externalSelectedTaskId) {
@@ -187,8 +183,7 @@ export default function TasksTab({
     onTaskSelectionHandled?.();
   }, [externalSelectedTaskId, onTaskSelectionHandled, tasks]);
 
-  const selectedTask =
-    visibleTasks.find((task) => task.id === selectedTaskId) || visibleTasks[0] || null;
+  const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || null;
   const groupedTasks = useMemo(
     () => groupTasks(visibleTasks, groupBy, boardColumns),
     [boardColumns, groupBy, visibleTasks]
@@ -597,7 +592,8 @@ export default function TasksTab({
         setViewMode('list');
         setSelectedTaskId(activeTaskId);
         window.setTimeout(() => {
-          document.querySelector(`[data-task-title-input="${activeTaskId}"]`)?.focus();
+          const inputEl = document.querySelector(`[data-task-title-input="${activeTaskId}"]`) as HTMLInputElement | null;
+          inputEl?.focus();
         }, 0);
         return;
       }
@@ -665,15 +661,12 @@ export default function TasksTab({
             submitColumn={submitColumn}
             quickAddInputRef={quickAddInputRef}
             searchInputRef={searchInputRef}
-            selectedTaskIds={selectedTaskIds}
+            selectedTasks={selectedTaskIds}
             selectedTaskCount={selectedTaskIds.length}
-            clearTaskSelection={clearTaskSelection}
+            toggleTaskSelection={toggleTaskSelection}
             handleBulkUpdate={handleBulkUpdate}
             handleBulkDelete={handleBulkDelete}
             taskNotifications={taskNotifications}
-            selectedTasks={selectedTasks}
-            selectedTaskSla={selectedTaskSla}
-            conflictTasks={conflictTasks}
             onFocusConflictTask={(taskId) => {
               setSelectedTaskId(taskId);
               setSelectedTaskIds([taskId]);
@@ -730,7 +723,6 @@ export default function TasksTab({
             visibleStats={visibleStats}
             selectedTaskIds={selectedTaskIds}
             toggleTaskSelection={toggleTaskSelection}
-            clearTaskSelection={clearTaskSelection}
             handleBulkUpdate={handleBulkUpdate}
             handleBulkDelete={handleBulkDelete}
             taskNotifications={taskNotifications}
@@ -740,28 +732,11 @@ export default function TasksTab({
             setShowColumnManager={setShowColumnManager}
           />
         }
-        aside={
-          viewMode !== 'kanban' ? (
-            <TaskDetailsPanel
-              selectedTask={selectedTask}
-              tasks={tasks}
-              peopleOptions={peopleOptions}
-              tagOptions={tagOptions}
-              taskGroups={taskGroups}
-              boardColumns={boardColumns}
-              onUpdateTask={safeUpdateTask}
-              onMoveTaskToColumn={safeMoveTaskToColumn}
-              onDeleteTask={safeDeleteTask}
-              onOpenMeeting={onOpenMeeting}
-              currentUserName={currentUserName}
-              onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
-            />
-          ) : null
-        }
+        aside={null}
       />
-      {viewMode === 'kanban' && selectedTask && (
+      {selectedTask && (
         <div 
-          className="ff-modal-overlay" 
+          className="ff-modal-overlay tasks-layout ms-todo" 
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
@@ -771,8 +746,9 @@ export default function TasksTab({
             className="ff-modal-content" 
             style={{ 
               padding: 0, 
-              width: '420px', 
-              maxWidth: '90vw',
+              width: '680px', 
+              maxWidth: '95vw',
+
               height: '85vh', 
               display: 'flex', 
               position: 'relative',

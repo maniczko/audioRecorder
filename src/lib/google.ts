@@ -110,14 +110,14 @@ export async function renderGoogleSignInButton(container, callback) {
   });
 }
 
-export async function requestGoogleCalendarAccess({ loginHint } = {}) {
+export async function requestGoogleCalendarAccess({ loginHint }: { loginHint?: string } = {}) {
   return requestGoogleAccess({
     loginHint,
     scope: CALENDAR_SCOPE,
   });
 }
 
-async function requestGoogleAccess({ loginHint, scope }) {
+async function requestGoogleAccess({ loginHint, scope }: { loginHint?: string; scope: string }) {
   if (!GOOGLE_CLIENT_ID) {
     throw new Error(
       'Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).'
@@ -141,7 +141,7 @@ async function requestGoogleAccess({ loginHint, scope }) {
       scope,
       prompt: 'consent',
       login_hint: loginHint || undefined,
-      callback: (response) => {
+      callback: (response: any) => {
         if (response.error) {
           reject(new Error(response.error));
           return;
@@ -154,14 +154,14 @@ async function requestGoogleAccess({ loginHint, scope }) {
   });
 }
 
-export async function requestGoogleTasksAccess({ loginHint } = {}) {
+export async function requestGoogleTasksAccess({ loginHint }: { loginHint?: string } = {}) {
   return requestGoogleAccess({
     loginHint,
     scope: TASKS_SCOPE,
   });
 }
 
-export async function fetchPrimaryCalendarEvents(accessToken, { timeMin, timeMax }) {
+export async function fetchPrimaryCalendarEvents(accessToken: string, { timeMin, timeMax }: { timeMin?: string; timeMax?: string }) {
   const params = new URLSearchParams({
     singleEvents: 'true',
     orderBy: 'startTime',
@@ -189,7 +189,7 @@ export async function fetchPrimaryCalendarEvents(accessToken, { timeMin, timeMax
   return response.json();
 }
 
-async function requestGoogleCalendar(accessToken, path, options = {}) {
+async function requestGoogleCalendar(accessToken: string, path: string, options: RequestInit = {}) {
   const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
     ...options,
     headers: {
@@ -206,7 +206,7 @@ async function requestGoogleCalendar(accessToken, path, options = {}) {
   return response.json();
 }
 
-function normalizeGoogleEventAttendees(attendees = []) {
+function normalizeGoogleEventAttendees(attendees: any[] = []) {
   return (Array.isArray(attendees) ? attendees : [])
     .map((attendee) => ({
       email: String(attendee?.email || '').trim(),
@@ -216,7 +216,13 @@ function normalizeGoogleEventAttendees(attendees = []) {
     .filter((attendee) => attendee.email);
 }
 
-export function buildGoogleCalendarEventPayload(entry, options = {}) {
+export function buildGoogleCalendarEventPayload(entry: any, options: {
+  attendees?: any[];
+  reminders?: number[];
+  summary?: string;
+  description?: string;
+  location?: string;
+} = {}) {
   const attendees = normalizeGoogleEventAttendees(options.attendees);
   const reminders = Array.isArray(options.reminders)
     ? {
@@ -261,7 +267,7 @@ export async function updateGoogleCalendarEvent(accessToken, eventId, updates) {
   );
 }
 
-export async function fetchGoogleTaskLists(accessToken) {
+export async function fetchGoogleTaskLists(accessToken: string) {
   const response = await fetch(
     'https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100',
     {
@@ -278,7 +284,7 @@ export async function fetchGoogleTaskLists(accessToken) {
   return response.json();
 }
 
-export async function fetchGoogleTasks(accessToken, taskListId) {
+export async function fetchGoogleTasks(accessToken: string, taskListId: string) {
   const params = new URLSearchParams({
     showCompleted: 'true',
     showHidden: 'true',
@@ -300,7 +306,7 @@ export async function fetchGoogleTasks(accessToken, taskListId) {
   return response.json();
 }
 
-export async function createGoogleTask(accessToken, taskListId, task) {
+export async function createGoogleTask(accessToken: string, taskListId: string, task: any) {
   const response = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks`, {
     method: 'POST',
     headers: {
@@ -317,7 +323,7 @@ export async function createGoogleTask(accessToken, taskListId, task) {
   return response.json();
 }
 
-export async function updateGoogleTask(accessToken, taskListId, taskId, updates) {
+export async function updateGoogleTask(accessToken: string, taskListId: string, taskId: string, updates: any) {
   const response = await fetch(
     `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks/${taskId}`,
     {
@@ -343,7 +349,9 @@ export function signOutGoogleSession() {
   }
 
   try {
-    window.google?.accounts?.id?.disableAutoSelect();
+    if (window.google?.accounts) {
+      window.google.accounts.id.disableAutoSelect();
+    }
   } catch (error) {
     console.error('Unable to disable Google auto-select.', error);
   }

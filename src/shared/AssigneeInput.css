@@ -16,6 +16,7 @@
   border-color: var(--accent);
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 0 0 0 2px rgba(117, 214, 196, 0.15);
+  z-index: 50;
 }
 
 .assignee-input-tokens {

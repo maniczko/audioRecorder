@@ -65,7 +65,7 @@ export default function RecorderPanel({
                     style={{
                       '--bar-h': `${Math.max(4, height)}px`,
                       '--bar-delay': `${(index % 8) * 0.06}s`,
-                    }}
+                    } as React.CSSProperties}
                   />
                 ))}
               </div>

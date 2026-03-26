@@ -7,7 +7,8 @@ export function getSpeechRecognitionClass() {
     return null;
   }
 
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  const win = window as any;
+  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
 }
 
 export function labelSpeaker(map, speakerId) {

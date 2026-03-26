@@ -98,7 +98,7 @@ export function createGoogleTaskConflictState(existingTask, importedTask) {
   };
 }
 
-export function buildCalendarSyncSnapshot(source, options = {}) {
+export function buildCalendarSyncSnapshot(source: any, options: { type?: string } = {}) {
   const type = options.type || source?.type || 'meeting';
   if (type === 'task') {
     const taskStartsAt = toIsoOrEmpty(source?.startsAt || source?.dueDate);

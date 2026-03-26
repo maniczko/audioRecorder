@@ -154,7 +154,7 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
       });
   });
   const suggestedTags = Object.entries(wordFreq)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 5)
     .map(([w]) => w);
 
@@ -175,7 +175,7 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
   ).slice(0, 3);
 
   const totalSegs = transcript.length || 1;
-  const speakerCounts = {};
+  const speakerCounts: Record<string, { count: number; q: number }> = {};
   transcript.forEach((seg) => {
     const id = String(seg.speakerId);
     if (!speakerCounts[id]) speakerCounts[id] = { count: 0, q: 0 };
@@ -185,7 +185,7 @@ function buildFallbackRichFields({ transcript, speakerNames }) {
   const participantInsights = Object.entries(speakerCounts).map(([id, d]) => ({
     speaker: speakerNames?.[id] || `Speaker ${Number(id) + 1}`,
     mainTopic: '',
-    stance: d.q > d.count * 0.3 ? 'reactive' : 'proactive',
+    stance: d.q > d.count * 0.3 ? 'reactive' : 'proactive' as 'reactive' | 'proactive',
     talkRatio: Math.round((d.count / totalSegs) * 100) / 100,
   }));
 
@@ -266,10 +266,10 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     summary,
     decisions,
     actionItems,
-    tasks,
+    tasks: tasks as any,
     followUps,
     answersToNeeds,
-    risks: rich.risks,
+    risks: rich.risks as any,
     blockers: rich.blockers,
     participantInsights: rich.participantInsights,
     tensions: rich.tensions,
@@ -287,7 +287,7 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     summary,
     decisions,
     actionItems,
-    tasks,
+    tasks: tasks as any,
     followUps,
     answersToNeeds,
     ...rich,
@@ -607,18 +607,12 @@ export async function analyzeMeeting({
       summary: parsed.summary || fallback.summary,
       decisions: dedupeList(parsed.decisions).slice(0, 5),
       actionItems: dedupeList(parsed.actionItems).slice(0, 6),
-      tasks: safeArray(parsed.tasks)
-        .map((task, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames))
-        .filter(Boolean),
+      tasks: safeArray(parsed.tasks).map((task: any, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames)).filter(Boolean) as any,
       followUps: dedupeList(parsed.followUps).slice(0, 5),
-      answersToNeeds: safeArray(parsed.answersToNeeds).length
-        ? parsed.answersToNeeds
-        : fallback.answersToNeeds,
-      risks: safeArray(parsed.risks).slice(0, 4),
+      answersToNeeds: safeArray(parsed.answersToNeeds).length ? parsed.answersToNeeds : fallback.answersToNeeds,
+      risks: safeArray(parsed.risks).slice(0, 4) as any,
       blockers: dedupeList(parsed.blockers).slice(0, 3),
-      participantInsights: safeArray(parsed.participantInsights).length
-        ? parsed.participantInsights
-        : richFallback.participantInsights,
+      participantInsights: safeArray(parsed.participantInsights).length ? parsed.participantInsights : richFallback.participantInsights,
       tensions: safeArray(parsed.tensions).slice(0, 3),
       keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
       speakerStats,

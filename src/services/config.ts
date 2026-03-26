@@ -1,11 +1,9 @@
-function readEnv(key, fallback = '') {
+function readEnv(key: string, fallback = '') {
   if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
     return process.env[key];
   }
-  // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
-    const env = import.meta.env;
+  const env = (import.meta as any).env;
+  if (typeof import.meta !== 'undefined' && env) {
     if (key === 'VITE_DATA_PROVIDER' && env.VITE_DATA_PROVIDER !== undefined)
       return env.VITE_DATA_PROVIDER;
     if (key === 'REACT_APP_DATA_PROVIDER' && env.REACT_APP_DATA_PROVIDER !== undefined)
@@ -42,8 +40,7 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
 const RAW_API_BASE_URL = String(
   readEnv('VITE_API_BASE_URL') ||
     readEnv('REACT_APP_API_BASE_URL') ||
-    // @ts-expect-error - import.meta.env is Vite-specific and not in TypeScript types
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD
+    ((import.meta as any).env?.PROD
       ? 'https://audiorecorder-production.up.railway.app'
       : 'http://localhost:4000')
 ).trim();

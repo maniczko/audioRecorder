@@ -286,56 +286,6 @@ function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
-            <label className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <User size={18} />
-              </span>
-              <span className="todo-row-label">Przypisane do</span>
-              <AssigneeInput
-                value={selectedTask.owner || ''}
-                suggestions={peopleOptions}
-                onChange={(val) => onUpdateTask(selectedTask.id, { owner: val })}
-                placeholder="Wybierz osobę..."
-              />
-            </label>
-            <label className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <Bell size={18} />
-              </span>
-              <span className="todo-row-label">Przypomnienie</span>
-              <Input
-                type="datetime-local"
-                value={toInputDateTime(selectedTask.reminderAt)}
-                onChange={(event) =>
-                  onUpdateTask(selectedTask.id, { reminderAt: event.target.value })
-                }
-              />
-            </label>
-
-            <label className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <Calendar size={18} />
-              </span>
-              <span className="todo-row-label">Termin</span>
-              <Input
-                type="datetime-local"
-                value={toInputDateTime(selectedTask.dueDate)}
-                onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
-              />
-            </label>
-
-            <label className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <Tag size={18} />
-              </span>
-              <span className="todo-row-label">Kategoria</span>
-              <TagInput
-                tags={selectedTags}
-                suggestions={tagOptions}
-                onChange={updateTags}
-                placeholder="Dodaj tag..."
-              />
-            </label>
 
             <label className="todo-detail-row note-row">
               <span className="todo-row-icon" aria-hidden="true">
@@ -352,58 +302,6 @@ function TaskDetailsPanel({
           </div>
         </div>
 
-        <section className="todo-detail-section">
-          <div className="todo-section-head">
-            <strong>
-              <span className="todo-section-icon" aria-hidden="true">
-                <MessageSquare size={16} />
-              </span>
-              Komentarze
-            </strong>
-            <span>{(selectedTask.comments || []).length}</span>
-          </div>
-          <div className="todo-comment-create" style={{ position: 'relative' }}>
-            <textarea
-              ref={commentTextareaRef}
-              rows={3}
-              value={commentDraft}
-              onChange={handleCommentChange}
-              placeholder="Dodaj komentarz... wpisz @ aby wspomnieć osobę"
-            />
-            {showMentions && (
-              <div className="todo-mention-dropdown">
-                {peopleOptions
-                  .filter((p) => p.toLowerCase().startsWith(mentionQuery.toLowerCase()))
-                  .map((person) => (
-                    <button
-                      key={person}
-                      type="button"
-                      className="todo-mention-option"
-                      onMouseDown={() => insertMention(person)}
-                    >
-                      @{person}
-                    </button>
-                  ))}
-              </div>
-            )}
-            <button type="button" className="todo-command-button primary" onClick={addComment}>
-              Dodaj komentarz
-            </button>
-          </div>
-          <div className="todo-comment-list">
-            {(selectedTask.comments || []).length
-              ? [...selectedTask.comments].reverse().map((comment) => (
-                  <article key={comment.id} className="todo-comment-card">
-                    <div className="todo-comment-meta">
-                      <strong>{comment.author || 'Ty'}</strong>
-                      <small>{formatDateTime(comment.createdAt)}</small>
-                    </div>
-                    <p>{comment.text}</p>
-                  </article>
-                ))
-              : null}
-          </div>
-        </section>
 
         <section className="todo-detail-section">
           <div className="todo-section-head">

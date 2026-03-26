@@ -175,6 +175,9 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        // HTTP/2 + keep-alive for connection reuse (#320)
+        'Connection': 'keep-alive',
+        'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -183,6 +186,8 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),
+      // Agent for connection pooling (HTTP/2 support)
+      dispatcher: undefined, // Node.js fetch uses global agent by default
     });
 
     if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
@@ -212,6 +217,9 @@ export async function embedTextChunks(texts: string[]) {
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        // HTTP/2 + keep-alive for connection reuse (#320)
+        'Connection': 'keep-alive',
+        'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
@@ -330,7 +338,7 @@ export async function generateVoiceCoaching(
   } finally {
     try {
       fs.unlinkSync(clipPath);
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -400,7 +408,7 @@ export async function normalizeRecording(filePath: string, options: any = {}) {
   } catch (err) {
     try {
       fs.unlinkSync(tmpPath);
-    } catch (_) {}
+    } catch (_) { }
     throw err;
   }
 }

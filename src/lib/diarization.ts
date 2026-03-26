@@ -69,31 +69,31 @@ function distance(left, right) {
   );
 }
 
-export function summarizeSpectrum(data) {
-  const values = Array.from(data || []);
+export function summarizeSpectrum(data: any) {
+  const values = Array.from(data || []) as number[];
   if (!values.length) {
     return null;
   }
 
-  const total = values.reduce((sum, value) => sum + value, 0) || 1;
-  const normalized = values.map((value) => value / 255);
+  const total = values.reduce((sum, value) => sum + (value as number), 0) || 1;
+  const normalized = values.map((value) => (value as number) / 255);
   const centroid =
     normalized.reduce((sum, value, index) => sum + value * index, 0) /
-    (normalized.reduce((sum, value) => sum + value, 0) || 1);
+    (normalized.reduce((sum, value) => sum + (value as number), 0) || 1);
   const centroidNorm = centroid / normalized.length;
 
   const spread = Math.sqrt(
     normalized.reduce(
       (sum, value, index) => sum + value * (index - centroid) * (index - centroid),
       0
-    ) / (normalized.reduce((sum, value) => sum + value, 0) || 1)
+    ) / (normalized.reduce((sum, value) => sum + (value as number), 0) || 1)
   );
 
   const bandSize = Math.max(1, Math.floor(values.length / 3));
-  const lowBand = values.slice(0, bandSize).reduce((sum, value) => sum + value, 0) / total;
+  const lowBand = values.slice(0, bandSize).reduce((sum, value) => sum + (value as number), 0) / total;
   const midBand =
-    values.slice(bandSize, bandSize * 2).reduce((sum, value) => sum + value, 0) / total;
-  const highBand = values.slice(bandSize * 2).reduce((sum, value) => sum + value, 0) / total;
+    values.slice(bandSize, bandSize * 2).reduce((sum, value) => sum + (value as number), 0) / total;
+  const highBand = values.slice(bandSize * 2).reduce((sum, value) => sum + (value as number), 0) / total;
 
   return {
     energy: average(normalized),

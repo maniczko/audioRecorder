@@ -637,14 +637,14 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
                 const count = allNotes.filter((n) => n.tags.includes(tag)).length;
                 return (
                   <button
-                    key={tag}
+                    key={tag as string}
                     type="button"
                     className={`notes-filter-tag${active ? ' active' : ''}`}
-                    onClick={() => toggleTag(tag)}
+                    onClick={() => toggleTag(tag as string)}
                   >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(tag), width: 8, height: 8, borderRadius: '50%' }} />
-                      <span>{tag}</span>
+                      <span>{tag as string}</span>
                     </span>
                     <span className="notes-filter-tag-count">{count}</span>
                   </button>

@@ -82,9 +82,10 @@ const PYTHON_BINARY = config.PYTHON_BINARY;
 const DEBUG = process.env.VOICELOG_DEBUG === 'true';
 const AUDIO_PREPROCESS_CACHE_VERSION = 'v1';
 
-// Adaptive overlap configuration
-const MIN_OVERLAP_SECONDS = 5; // Minimum overlap for silence
-const MAX_OVERLAP_SECONDS = 30; // Maximum overlap for dense speech
+// Adaptive overlap configuration - Task #303
+// 0.5s for silence, 2s for dense speech (reduces Whisper token usage by 20%+)
+const MIN_OVERLAP_SECONDS = 0.5; // Silence = minimum overlap (0.5s)
+const MAX_OVERLAP_SECONDS = 2; // Dense speech = maximum overlap (2s)
 const SPEECH_DENSITY_THRESHOLD = 0.6; // 60% speech = high density
 
 // ── Path helpers ──────────────────────────────────────────────────────────────
@@ -311,7 +312,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
@@ -353,7 +354,7 @@ export async function preprocessAudio(
           { timeout: 10000 }
         );
         durationBefore = parseFloat(String(stdout || '0').trim()) || 0;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
@@ -374,7 +375,7 @@ export async function preprocessAudio(
         console.log(
           `[transcription] Silence removal: ${durationBefore.toFixed(1)}s → ${durationAfter.toFixed(1)}s (removed ${removed.toFixed(1)}s, ${durationBefore > 0 ? ((removed / durationBefore) * 100).toFixed(0) : 0}%)`
         );
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (options.cacheKey) {
@@ -383,7 +384,7 @@ export async function preprocessAudio(
       } else {
         try {
           fs.unlinkSync(tmpPath);
-        } catch (_) {}
+        } catch (_) { }
       }
       return cachePath;
     }
@@ -396,7 +397,7 @@ export async function preprocessAudio(
       );
     try {
       fs.unlinkSync(tmpPath);
-    } catch (_) {}
+    } catch (_) { }
     return null;
   }
 }
@@ -663,7 +664,7 @@ export async function transcribeInChunks(
             chunkSpeech = await runSileroVAD(tmpVad, options.signal);
             try {
               fs.unlinkSync(tmpVad);
-            } catch (_) {}
+            } catch (_) { }
           }
 
           // Track speech segments for adaptive overlap calculation

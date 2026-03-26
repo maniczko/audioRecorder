@@ -77,7 +77,7 @@ export default function StudioSidebar({
             <label>
               <span>Kontekst</span>
               <textarea
-                rows="3"
+                rows={3}
                 value={meetingDraft.context}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))
@@ -279,7 +279,7 @@ export default function StudioSidebar({
             <label>
               <span>Potrzeby rozmówców</span>
               <textarea
-                rows="3"
+                rows={3}
                 value={meetingDraft.needs}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))
@@ -291,7 +291,7 @@ export default function StudioSidebar({
             <label>
               <span>Co wyciagnac po spotkaniu</span>
               <textarea
-                rows="3"
+                rows={3}
                 value={meetingDraft.desiredOutputs}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({

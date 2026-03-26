@@ -176,7 +176,7 @@ export default function UnifiedPlayer({
               <span className="uplayer-elapsed">{formatDuration(elapsed)}</span>
               <div className="uplayer-live-bars">
                 {visualBars.map((h, i) => (
-                  <span key={i} className="uplayer-bar" style={{ '--h': `${Math.max(3, h)}px` }} />
+                  <span key={i} className="uplayer-bar" style={{ '--h': `${Math.max(3, h)}px` } as React.CSSProperties} />
                 ))}
               </div>
               <div
@@ -205,7 +205,7 @@ export default function UnifiedPlayer({
               {activeSeg ? (
                 <span
                   className="uplayer-speaker-chip"
-                  style={{ '--chip-color': getSpeakerColor(activeSeg.speakerId) }}
+                  style={{ '--chip-color': getSpeakerColor(activeSeg.speakerId) } as React.CSSProperties}
                 >
                   {labelSpeaker(displaySpeakerNames, activeSeg.speakerId)}
                 </span>

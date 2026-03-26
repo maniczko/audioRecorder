@@ -15,7 +15,6 @@ const ProfileTab = lazy(() => import("./ProfileTab"));
 const StudioTab = lazy(() => import("./StudioTab"));
 const TasksTab = lazy(() => import("./TasksTab"));
 const RecordingsTab = lazy(() => import("./RecordingsTab"));
-const RagSearchTab = lazy(() => import("./RagSearchTab"));
 
 function getActiveTabLabel(activeTab: string) {
   switch (activeTab) {
@@ -31,8 +30,6 @@ function getActiveTabLabel(activeTab: string) {
       return "Profil";
     case "recordings":
       return "Nagrania";
-    case "ask-ai":
-      return "Zapytaj AI";
     default:
       return "Studio";
   }
@@ -224,31 +221,31 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onDeleteStoredRecordingAudio={recorder.deleteStoredRecordingAudio}
           />
         );
-      case "recordings":
+      case 'recordings':
         return (
           <RecordingsTab
+            currentWorkspace={workspace.currentWorkspace}
             userMeetings={meetings.userMeetings}
-            selectedMeetingId={meetings.selectedMeetingId}
-            selectMeeting={meetings.selectMeeting}
             selectedMeeting={meetings.selectedMeeting}
-            retryStoredRecording={meetings.retryStoredRecording}
+            selectMeeting={meetings.selectMeeting}
             startNewMeetingDraft={meetings.startNewMeetingDraft}
-            deleteRecordingAndMeeting={meetings.deleteRecordingAndMeeting}
-            retryRecordingQueueItem={recorder.retryRecordingQueueItem}
+            selectedRecordingId={meetings.selectedRecordingId}
+            setSelectedRecordingId={meetings.setSelectedRecordingId}
+            setActiveTab={ui.setActiveTab}
+            saveMeeting={meetings.saveMeeting}
+            onCreateMeeting={meetings.createMeetingDirect}
+            queueRecording={recorder.queueRecording}
+            recordingQueue={recorder.recordingQueue}
             activeQueueItem={recorder.activeQueueItem}
-            getRecordingStatus={recorder.getRecordingStatus}
             analysisStatus={recorder.analysisStatus}
+            recordingMessage={recorder.recordingMessage}
             pipelineProgressPercent={recorder.pipelineProgressPercent}
             pipelineStageLabel={recorder.pipelineStageLabel}
-            progressMessage={recorder.progressMessage}
-            errorMessage={recorder.errorMessage}
-            currentWorkspace={workspace.currentWorkspace}
-            setActiveTab={ui.setActiveTab}
+            retryRecordingQueueItem={recorder.retryRecordingQueueItem}
+            retryStoredRecording={recorder.retryStoredRecording}
+            deleteRecordingAndMeeting={meetings.deleteRecordingAndMeeting}
           />
         );
-
-      case 'ask-ai':
-        return <RagSearchTab currentWorkspace={workspace.currentWorkspace} />;
       default:
         return (
           <StudioTab

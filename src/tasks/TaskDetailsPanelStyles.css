@@ -1,5 +1,3 @@
-
-
 .tasks-layout.ms-todo .todo-detail-card {
   position: relative;
   z-index: auto;
@@ -52,7 +50,7 @@
   background: rgba(8, 22, 36, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 12px;
-  box-shadow: 0 16px 32px rgba(0,0,0,0.42);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.42);
   min-width: 180px;
   max-height: 180px;
   overflow-y: auto;
@@ -143,7 +141,7 @@
   background: rgba(8, 22, 36, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 12px;
-  box-shadow: 0 16px 32px rgba(0,0,0,0.42);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.42);
 }
 
 .todo-tag-option {
@@ -216,7 +214,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .todo-task-checkbox:hover {
@@ -479,13 +477,16 @@
 .tasks-layout.ms-todo .todo-detail-card::-webkit-scrollbar {
   width: 6px;
 }
+
 .tasks-layout.ms-todo .todo-detail-card::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .tasks-layout.ms-todo .todo-detail-card::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 6px;
 }
+
 .tasks-layout.ms-todo .todo-detail-card::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
@@ -526,7 +527,7 @@
 
 /* Toolbar and To-Do Visual Fixes */
 .todo-shell .todo-commandbar {
-  display: flex !important;
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -544,7 +545,7 @@
 }
 
 .todo-shell .todo-filter-search-inline {
-  display: flex !important;
+  display: flex;
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.05);
@@ -564,7 +565,7 @@
 }
 
 .todo-shell .todo-quick-add-inline {
-  display: flex !important;
+  display: flex;
   align-items: stretch;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -607,14 +608,14 @@
 .todo-detail-row input,
 .todo-detail-row textarea {
   flex: 1;
-  margin-left: 16px !important;
-  max-width: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  margin-left: 16px;
+  max-width: none;
+  background: transparent;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .todo-detail-row input:focus,
 .todo-detail-row textarea:focus {
-  border-color: rgba(117, 214, 196, 0.4) !important;
+  border-color: rgba(117, 214, 196, 0.4);
 }

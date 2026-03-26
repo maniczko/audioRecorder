@@ -1,5 +1,10 @@
 import MainApp from './MainApp';
+import { ToastProvider } from './shared/Toast';
 
 export default function App() {
-  return <MainApp />;
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
+  );
 }

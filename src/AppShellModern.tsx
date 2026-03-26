@@ -1,5 +1,7 @@
+import React, { useState } from 'react';
 import './styles/modern-layout.css';
 import AuthScreen from './AuthScreen';
+import AskAIPopover from './shared/AskAIPopover';
 import CommandPalette from './CommandPalette';
 import TabRouter from './TabRouter';
 import NotificationCenter from './NotificationCenter';
@@ -10,11 +12,11 @@ import useUI from './hooks/useUI';
 import { useGoogleCtx } from './context/GoogleContext';
 import { SkeletonBanner, SkeletonList } from './components/Skeleton';
 import {
-  Mic,
-  Library,
-  Calendar,
-  CheckSquare,
-  Users,
+  AudioLines,
+  Layers,
+  CalendarDays,
+  ListTodo,
+  UsersRound,
   Search,
   Play,
   Square,
@@ -27,18 +29,19 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   const recorder = useRecorderCtx();
   const ui = useUI();
   const google = useGoogleCtx();
+  const [showAskAI, setShowAskAI] = useState(false);
 
   if (workspace.isHydratingSession && !workspace.currentUser) {
     return (
       <div className="app-shell-modern">
         <div className="modern-sidebar">
-          <SkeletonBanner height={64} style={{ marginBottom: 20 }} />
+          <SkeletonBanner height={64} style={{ marginBottom: 20 } as React.CSSProperties} />
           <SkeletonList items={5} lines={1} />
         </div>
         <div className="modern-main">
           <div className="modern-header">
-            <SkeletonBanner height={32} style={{ width: 120 }} />
-            <SkeletonBanner height={32} style={{ width: 200 }} />
+            <SkeletonBanner height={32} style={{ width: 120 } as React.CSSProperties} />
+            <SkeletonBanner height={32} style={{ width: 200 } as React.CSSProperties} />
           </div>
           <div className="modern-content-wrapper p-8">
             <SkeletonList items={3} lines={3} />
@@ -85,25 +88,12 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <div className="modern-brand-logo" style={{ color: '#74d0bf' }}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="36"
+              height="36"
               viewBox="0 0 64 64"
               fill="none"
             >
-              <defs>
-                <radialGradient
-                  id="bg"
-                  cx="0"
-                  cy="0"
-                  r="1"
-                  gradientTransform="translate(32 28) rotate(90) scale(30)"
-                >
-                  <stop offset="0" stopColor="#faf7e8" />
-                  <stop offset="1" stopColor="#f3efdb" />
-                </radialGradient>
-              </defs>
-              <circle cx="32" cy="32" r="30" fill="url(#bg)" />
-              <g stroke="#314d27" strokeLinecap="round" strokeLinejoin="round">
+              <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
                 <g strokeWidth="3.8">
                   <path d="M18 18c-3.5 0-6 2.8-6 6.2 0 3.1 2.2 5.7 5.2 6.1" />
                   <path d="M46 18c3.5 0 6 2.8 6 6.2 0 3.1-2.2 5.7-5.2 6.1" />
@@ -118,22 +108,18 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                   <path d="M23.4 17.5c2.5-2.3 5.4-4 8.6-4.9 3.3.9 6.2 2.6 8.7 4.9" />
                   <path d="M29 16.5l3 2.1 3-2.1" />
                 </g>
-                <g fill="#314d27" strokeWidth="0">
+                <g fill="none" stroke="currentColor" strokeWidth="1.8">
                   <circle cx="24.5" cy="28.3" r="2.1" />
                   <circle cx="39.5" cy="28.3" r="2.1" />
                   <path
                     d="M29 31.8c1.1-1.5 2-2.2 3-2.2s1.9.7 3 2.2c-.8 1.3-1.8 2-3 2s-2.2-.7-3-2Z"
-                    fill="#faf7e8"
-                    stroke="#314d27"
-                    strokeWidth="1.8"
                   />
                   <rect x="29.2" y="40.4" width="2.1" height="6.1" rx="1" />
                   <rect x="32.7" y="40.4" width="2.1" height="6.1" rx="1" />
                 </g>
-                <g transform="rotate(24 21 49)">
+                <g transform="rotate(24 21 49)" fill="none" stroke="currentColor">
                   <path
                     d="M18.4 44.6c0-2.1 1.7-3.8 3.8-3.8 2.1 0 3.8 1.7 3.8 3.8v5.8h-7.6v-5.8Z"
-                    fill="#f3efdb"
                     strokeWidth="2.8"
                   />
                   <rect
@@ -142,8 +128,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                     width="2.4"
                     height="6.1"
                     rx="1.2"
-                    fill="#314d27"
-                    strokeWidth="0"
+                    strokeWidth="1.8"
                   />
                   <path d="M16.4 44.1c0-3.2 2.6-5.8 5.8-5.8s5.8 2.6 5.8 5.8" strokeWidth="2.8" />
                   <path d="M17.8 43.2h8.8" strokeWidth="2.1" />
@@ -161,7 +146,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             className={`modern-nav-item ${ui.activeTab === 'studio' ? 'active' : ''}`}
             onClick={ui.openStudio}
           >
-            <Mic size={18} />
+            <AudioLines size={18} />
             Studio
           </button>
 
@@ -170,7 +155,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             className={`modern-nav-item ${ui.activeTab === 'recordings' ? 'active' : ''}`}
             onClick={() => ui.setActiveTab('recordings')}
           >
-            <Library size={18} />
+            <Layers size={18} />
             Nagrania
           </button>
 
@@ -179,7 +164,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             className={`modern-nav-item ${ui.activeTab === 'calendar' ? 'active' : ''}`}
             onClick={() => ui.setActiveTab('calendar')}
           >
-            <Calendar size={18} />
+            <CalendarDays size={18} />
             Kalendarz
           </button>
 
@@ -188,7 +173,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             className={`modern-nav-item ${ui.activeTab === 'tasks' ? 'active' : ''}`}
             onClick={() => ui.setActiveTab('tasks')}
           >
-            <CheckSquare size={18} />
+            <ListTodo size={18} />
             Zadania
           </button>
 
@@ -197,18 +182,25 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             className={`modern-nav-item ${ui.activeTab === 'people' ? 'active' : ''}`}
             onClick={() => ui.setActiveTab('people')}
           >
-            <Users size={18} />
+            <UsersRound size={18} />
             Osoby
           </button>
 
           <button
             type="button"
-            className={`modern-nav-item ${ui.activeTab === 'ask-ai' ? 'active' : ''}`}
-            onClick={() => ui.setActiveTab('ask-ai')}
-            style={{ marginTop: 'auto', color: 'var(--accent)' }}
+            className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
+            onClick={() => setShowAskAI(!showAskAI)}
+            style={{ marginTop: 'auto', color: 'var(--accent)', position: 'relative' }}
           >
             <Brain size={18} />
             Zapytaj AI
+            
+            {showAskAI && (
+              <AskAIPopover 
+                currentWorkspace={workspace.currentWorkspace} 
+                onClose={() => setShowAskAI(false)} 
+              />
+            )}
           </button>
         </nav>
 

@@ -205,8 +205,8 @@ export default function useGoogleIntegrations({
       const response = await requestGoogleCalendarAccess({
         loginHint: currentUser.googleEmail || currentUser.email,
       });
-      googleCalendarTokenRef.current = response.access_token;
-      await loadGoogleMonthEvents(response.access_token, calendarMonth);
+      googleCalendarTokenRef.current = (response as any).access_token;
+      await loadGoogleMonthEvents((response as any).access_token, calendarMonth);
     } catch (error) {
       console.error('Google Calendar connect failed.', error);
       setGoogleCalendarStatus('error');
@@ -243,10 +243,10 @@ export default function useGoogleIntegrations({
     }
 
     const payload = buildGoogleCalendarEventPayload(entry, options);
-    const response = options.googleEventId
+    const response = (options as any).googleEventId
       ? await updateGoogleCalendarEvent(
           googleCalendarTokenRef.current,
-          options.googleEventId,
+          (options as any).googleEventId,
           payload
         )
       : await createGoogleCalendarEvent(googleCalendarTokenRef.current, payload);
@@ -255,7 +255,7 @@ export default function useGoogleIntegrations({
     setGoogleCalendarLastSyncedAt(new Date().toISOString());
     setGoogleCalendarStatus('connected');
     setGoogleCalendarMessage(
-      options.googleEventId
+      (options as any).googleEventId
         ? `Zsynchronizowano wydarzenie "${entry.title}" z Google Calendar.`
         : `Utworzono wydarzenie Google dla "${entry.title}".`
     );
@@ -298,8 +298,8 @@ export default function useGoogleIntegrations({
       const response = await requestGoogleTasksAccess({
         loginHint: currentUser.googleEmail || currentUser.email,
       });
-      googleTasksTokenRef.current = response.access_token;
-      const payload = await fetchGoogleTaskLists(response.access_token);
+      googleTasksTokenRef.current = (response as any).access_token;
+      const payload = await fetchGoogleTaskLists((response as any).access_token);
       const lists = payload.items || [];
       setGoogleTaskLists(lists);
       setSelectedGoogleTaskListId((previous) => previous || lists[0]?.id || '');

@@ -282,7 +282,26 @@ async function runTranscriptionAttempt(
           : ['whisper-1'];
 
       const reqId = options.requestId || 'internal-pipeline';
-      const startTranscribe = performance.now();
+
+      // Performance metrics tracking (#340)
+      const pipelineMetrics = {
+        requestId: reqId,
+        stages: {} as Record<string, number>,
+        total: 0,
+      };
+      const stageStart = (name: string) => performance.now();
+      const stageEnd = (name: string, start: number) => {
+        const duration = performance.now() - start;
+        pipelineMetrics.stages[name] = parseFloat(duration.toFixed(2));
+        pipelineMetrics.total += duration;
+        logger.info(`[Metrics] Pipeline Stage Complete`, {
+          requestId: reqId,
+          stage: name,
+          durationMs: pipelineMetrics.stages[name],
+        });
+      };
+
+      const startTranscribe = stageStart('transcription');
       let lastTranscriptionError: any = null;
 
       for (const model of modelsToTry) {
@@ -331,10 +350,10 @@ async function runTranscriptionAttempt(
                   : getRawWords(whisperPayload).length > 0
                     ? 0
                     : clean(
-                          whisperPayload?.text ||
-                            whisperPayload?.transcript ||
-                            whisperPayload?.results?.text
-                        )
+                      whisperPayload?.text ||
+                      whisperPayload?.transcript ||
+                      whisperPayload?.results?.text
+                    )
                       ? 0
                       : 1,
               chunksWithSegments:
@@ -369,7 +388,7 @@ async function runTranscriptionAttempt(
               error?.transcriptionDiagnostics?.lastChunkErrorMessage || error?.message || ''
             ),
             ...(error?.transcriptionDiagnostics &&
-            typeof error.transcriptionDiagnostics === 'object'
+              typeof error.transcriptionDiagnostics === 'object'
               ? error.transcriptionDiagnostics
               : {}),
           };
@@ -438,17 +457,13 @@ async function runTranscriptionAttempt(
         throw error;
       }
 
-      logger.info(`[Metrics] STT Transcription Stage Complete`, {
-        requestId: reqId,
-        recordingId: asset.id,
-        durationMs: (performance.now() - startTranscribe).toFixed(2),
-      });
+      stageEnd('transcription', startTranscribe);
 
       const verificationSegments = normalizeVerificationSegments(whisperPayload || {});
 
       // ── Diarization ────────────────────────────────────────────────────────
       let diarization: any = null;
-      const startDiarize = performance.now();
+      const startDiarize = stageStart('diarization');
 
       if (usePyannote) {
         notify(80, 'Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!');
@@ -507,12 +522,7 @@ async function runTranscriptionAttempt(
         diarization = normalizeDiarizedSegments(whisperPayload || {});
       }
 
-      logger.info(`[Metrics] Diarization Stage Complete`, {
-        requestId: reqId,
-        recordingId: asset.id,
-        durationMs: (performance.now() - startDiarize).toFixed(2),
-        speakersIdentified: diarization.speakerCount,
-      });
+      stageEnd('diarization', startDiarize);
 
       if (!diarization.segments.length) {
         if (
@@ -628,12 +638,13 @@ async function runTranscriptionAttempt(
           } finally {
             try {
               fs.unlinkSync(clipPath);
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       }
 
       // ── Post-processing: hallucination removal → dedup → merge → LLM ─────
+      const startPostProcess = stageStart('post-processing');
       const processedSegments = await (async () => {
         notify(90, 'Czyszczenie halucynacji AI za sprawą hybrydowej analizy WavLM...');
         const withoutHallucinations = verificationResult.verifiedSegments.filter(
@@ -668,6 +679,7 @@ async function runTranscriptionAttempt(
         const corrected = await correctTranscriptWithLLM(merged, options);
         return corrected;
       })();
+      stageEnd('post-processing', startPostProcess);
 
       if (!processedSegments.length) {
         return buildEmptyTranscriptResult(
@@ -745,22 +757,41 @@ async function runTranscriptionAttempt(
       };
       throw error;
     } finally {
+      // Log total pipeline metrics (#340)
+      if (pipelineMetrics && pipelineMetrics.total > 0) {
+        logger.info(`[Metrics] Pipeline Total Duration`, {
+          requestId: reqId,
+          recordingId: asset.id,
+          totalDurationMs: parseFloat(pipelineMetrics.total.toFixed(2)),
+          stages: pipelineMetrics.stages,
+          p50: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+            Math.floor(Object.keys(pipelineMetrics.stages).length / 2)
+          ] || 0,
+          p95: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+            Math.floor(Object.keys(pipelineMetrics.stages).length * 0.95)
+          ] || 0,
+          p99: Object.values(pipelineMetrics.stages).sort((a, b) => a - b)[
+            Math.floor(Object.keys(pipelineMetrics.stages).length * 0.99)
+          ] || 0,
+        });
+      }
+
       if (prepPath && !isPreprocessCacheFile(prepPath)) {
         try {
           fs.unlinkSync(prepPath);
-        } catch (_) {}
+        } catch (_) { }
       }
       if (normFilePath) {
         try {
           fs.unlinkSync(normFilePath);
-        } catch (_) {}
+        } catch (_) { }
       }
     }
   } finally {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
@@ -911,7 +942,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     if (sourceTempPath && fs.existsSync(sourceTempPath)) {
       try {
         fs.unlinkSync(sourceTempPath);
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
