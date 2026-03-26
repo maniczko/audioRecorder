@@ -43,29 +43,27 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ---
 
-## GitHub Actions Status (2026-03-26 18:00)
+## GitHub Actions Status (2026-03-26 20:20)
 
-**❌ 61 workflow failures w ostatnich 7 dniach (29 sukcesów)**
+**❌ 54 workflow failures w ostatnich 7 dniach (27 sukcesów)**
 
-### Dzisiejsze failures (2026-03-26):
+### Latest Failures (commits):
 
-| Workflow | Commit | Time | Status |
-|----------|--------|------|--------|
-| Backend Production Smoke | 585ec6e | 17:12 | ❌ |
-| Optimized CI | 585ec6e | 17:12 | ❌ |
-| CI Pipeline | 585ec6e | 17:12 | ❌ |
-| E2E Playwright Tests | 585ec6e | 17:12 | ❌ |
-| auto-fix.yml | 585ec6e | 17:12 | ❌ |
-| E2E Playwright Tests | 17cfad2 | 15:52 | ❌ |
-| Backend Production Smoke | 17cfad2 | 15:52 | ❌ |
-| CI Pipeline | 17cfad2 | 15:52 | ❌ |
-| Optimized CI | 17cfad2 | 15:52 | ❌ |
-| auto-fix.yml | 17cfad2 | 15:52 | ❌ |
+| Commit | Workflow | Time | Status |
+|--------|----------|------|--------|
+| 7d3dc12 | auto-fix.yml | 20:15 | ❌ |
+| 7d3dc12 | CI Pipeline | 20:15 | ❌ |
+| 7d3dc12 | Optimized CI | 20:15 | ❌ |
+| ae999a9 | Backend Production Smoke | 19:33 | ❌ |
+| ae999a9 | CI Pipeline | 19:33 | ❌ |
+| ae999a9 | E2E Playwright Tests | 19:33 | ❌ |
+| a1dea5c | Optimized CI | 17:52 | ❌ |
+| a1dea5c | CI Pipeline | 17:52 | ❌ |
 
 ### Główne przyczyny błędów:
 1. **302 Errors** - GitHub API nie zwraca logów dla workflow (problem z tokenem/permissions)
 2. **Dependabot workflows** - Permission issues (actions:write, issues:write)
-3. **Husky hooks in CI** - ✅ Naprawione: dodano `CI: true` do env w ci.yml
+3. **CI Pipeline failures** - Auto-fix workflow failing on latest commits
 
 ### Naprawione dzisiaj:
 - ✅ **CSP** - dodano Railway API do allowed connections w vercel.json
@@ -73,9 +71,12 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - ✅ **selectedTaskSla** - usunięto ReferenceError z TasksTab.tsx
 - ✅ **Lazy Loading Tests** - dodano 9 testów dla createLazyComponent
 - ✅ **CI Husky Issue** - dodano `CI: true` aby wyłączyć husky hooks w CI
+- ✅ **#018** - Outlook / Microsoft To Do integration (FULLY IMPLEMENTED)
+- ✅ **WebSocket Errors** - usunięto explicite HMR config
+- ✅ **Service Worker Errors** - wyłączony w trybie dev
 
 ### Wymagane działania:
 - 🔧 **Regenerate GitHub Token** - obecny token nie ma dostępu do logów workflow
 - 🔧 **Update Dependabot Permissions** - dodać `actions: write` i `issues: write` do workflow
-- 🔍 **Monitor CI** - sprawdzić czy nowy commit aee2caa naprawił CI Pipeline
+- 🔍 **Monitor CI** - sprawdzić czy auto-fix workflow przechodzi na najnowszych commitach
 
