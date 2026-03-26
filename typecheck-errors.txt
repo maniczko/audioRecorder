@@ -1,0 +1,600 @@
+src/AppShell.tsx(66,31): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/AppShell.tsx(67,33): error TS2339: Property 'googleButtonRef' does not exist on type 'never'.
+src/AppShellModern.tsx(46,22): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(47,20): error TS2339: Property 'stopRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(49,20): error TS2339: Property 'startRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(85,31): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/AppShellModern.tsx(86,33): error TS2339: Property 'googleButtonRef' does not exist on type 'never'.
+src/AppShellModern.tsx(270,26): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(275,30): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(276,28): error TS2339: Property 'stopRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(278,28): error TS2339: Property 'startRecording' does not exist on type 'never'.
+src/AppShellModern.tsx(285,27): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/audio/noiseReducerNode.ts(11,5): error TS2322: Type 'Promise<any>' is not assignable to type 'null'.
+src/audio/noiseReducerNode.ts(20,14): error TS2339: Property 'RNNoiseNode' does not exist on type 'null'.
+src/audio/noiseReducerNode.ts(20,27): error TS2339: Property 'rnnoise_loadAssets' does not exist on type 'null'.
+src/audio/noiseReducerNode.ts(60,13): error TS2339: Property 'RNNoiseNode' does not exist on type 'null'.
+src/CommandPalette.tsx(58,23): error TS2339: Property 'focus' does not exist on type 'never'.
+src/CommandPalette.tsx(149,45): error TS2339: Property 'scrollIntoView' does not exist on type 'never'.
+src/CommandPalette.tsx(201,27): error TS2322: Type 'HTMLButtonElement | null' is not assignable to type 'never'.
+src/context/GoogleContext.tsx(26,34): error TS2322: Type '{ googleEnabled: boolean; googleButtonRef: React.RefObject<null>; googleCalendarStatus: string; googleCalendarEvents: never[]; googleCalendarMessage: string; googleTasksStatus: string; ... 17 more ...; googleCalendarWritable: boolean; }' is not assignable to type 'null'.
+src/context/RecorderContext.tsx(19,36): error TS2322: Type '{ liveText: string; currentSegments: any[]; recordingMeetingId: string | null; selectedMeetingQueue: any[]; activeQueueItem: any; speechRecognitionSupported: boolean; liveTranscriptEnabled: boolean; ... 43 more ...; resetSilenceTimer: () => void; }' is not assignable to type 'null'.
+src/hooks/useAudioHardware.ts(93,35): error TS2345: Argument of type 'null' is not assignable to parameter of type 'number'.
+src/hooks/useAudioHardware.ts(94,28): error TS2769: No overload matches this call.
+src/hooks/useAudioHardware.ts(102,30): error TS2339: Property 'clearHandlers' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(104,32): error TS2339: Property 'stop' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(110,25): error TS2339: Property 'getTracks' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(114,34): error TS2339: Property 'close' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(115,31): error TS2339: Property 'close' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(129,53): error TS2339: Property 'frequencyBinCount' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(130,25): error TS2339: Property 'getByteFrequencyData' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(139,41): error TS2345: Argument of type '{ timestamp: number; signature: { energy: number; centroid: number; spread: number; lowBand: number; midBand: number; highBand: number; } | null; }' is not assignable to parameter of type 'never'.
+src/hooks/useAudioHardware.ts(173,7): error TS2322: Type 'number' is not assignable to type 'null'.
+src/hooks/useAudioHardware.ts(267,7): error TS2322: Type 'MediaStream' is not assignable to type 'null'.
+src/hooks/useAudioHardware.ts(286,7): error TS2322: Type 'MediaRecorder' is not assignable to type 'null'.
+src/hooks/useAudioHardware.ts(289,53): error TS2345: Argument of type 'Blob' is not assignable to parameter of type 'never'.
+src/hooks/useAudioHardware.ts(341,7): error TS2322: Type 'number' is not assignable to type 'null'.
+src/hooks/useAudioHardware.ts(363,61): error TS2769: No overload matches this call.
+src/hooks/useAudioHardware.ts(365,37): error TS2339: Property 'state' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(365,59): error TS18047: 'mediaRecorderRef.current' is possibly 'null'.
+src/hooks/useAudioHardware.ts(368,31): error TS2339: Property 'stop' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(370,24): error TS2339: Property 'getTracks' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(374,35): error TS2339: Property 'state' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(375,32): error TS2339: Property 'pause' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(379,33): error TS2339: Property 'stop' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(387,35): error TS2339: Property 'state' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(388,32): error TS2339: Property 'resume' does not exist on type 'never'.
+src/hooks/useAudioHardware.ts(394,33): error TS2339: Property 'start' does not exist on type 'never'.
+src/hooks/useGoogleIntegrations.ts(119,24): error TS2339: Property 'innerHTML' does not exist on type 'never'.
+src/hooks/useGoogleIntegrations.ts(226,29): error TS2345: Argument of type '(previous: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/hooks/useGoogleIntegrations.ts(227,65): error TS2339: Property 'id' does not exist on type 'never'.
+src/hooks/useGoogleIntegrations.ts(236,45): error TS2339: Property 'id' does not exist on type 'never'.
+src/hooks/useGoogleIntegrations.ts(324,64): error TS2339: Property 'id' does not exist on type 'never'.
+src/hooks/useGoogleIntegrations.ts(596,17): error TS2698: Spread types may only be created from object types.
+src/hooks/useGoogleIntegrations.ts(629,35): error TS2339: Property 'updated' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(235,21): error TS2339: Property 'title' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(235,46): error TS2339: Property 'title' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(236,21): error TS2339: Property 'context' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(236,50): error TS2339: Property 'context' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(237,21): error TS2339: Property 'attendees' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(237,54): error TS2339: Property 'attendees' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(239,19): error TS2339: Property 'startsAt' does not exist on type 'never'.
+src/hooks/useMeetingLifecycle.ts(240,36): error TS2339: Property 'startsAt' does not exist on type 'never'.
+src/hooks/useMeetings.ts(81,54): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
+src/hooks/useMeetings.ts(93,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
+src/hooks/usePeopleProfiles.ts(66,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/hooks/useRecordingActions.ts(31,87): error TS2339: Property 'id' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(36,37): error TS2339: Property 'speakerNames' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(39,37): error TS2339: Property 'speakerCount' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(60,42): error TS2339: Property 'timestamp' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(63,30): error TS2339: Property 'id' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(65,33): error TS2339: Property 'label' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(66,32): error TS2339: Property 'note' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(67,30): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/hooks/useRecordingActions.ts(71,23): error TS18047: 'a' is possibly 'null'.
+src/hooks/useRecordingActions.ts(71,37): error TS18047: 'b' is possibly 'null'.
+src/hooks/useRecordingActions.ts(279,11): error TS2322: Type 'any' is not assignable to type 'never'.
+src/hooks/useRecordingActions.ts(280,11): error TS2322: Type '{ id: string; timestamp: any; label: any; note: any; createdAt: string; }' is not assignable to type 'never'.
+src/hooks/useUI.ts(49,9): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/hooks/useUI.ts(50,9): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/hooks/useUI.ts(51,9): error TS2322: Type '{ needs: any; concerns: any; outputs: any; id: string; name: string; meetings: any[]; tasks: any[]; tags: string[]; nextMeeting: any; sentimentHistory: ({ date: any; title: any; score: any; } | null)[]; completedTasks: number; openTasks: number; summary: string; traits: never[]; timezone: any; }[]' is not assignable to type 'never[]'.
+src/hooks/useUI.ts(58,14): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/hooks/useUI.ts(58,38): error TS2339: Property 'recordingMeetingId' does not exist on type 'never'.
+src/hooks/useUI.ts(60,32): error TS2339: Property 'currentSegments' does not exist on type 'never'.
+src/hooks/useUI.ts(63,22): error TS2339: Property 'currentSegments' does not exist on type 'never'.
+src/hooks/useUI.ts(78,16): error TS2339: Property 'audioUrls' does not exist on type 'never'.
+src/hooks/useUI.ts(81,16): error TS2339: Property 'audioHydrationErrors' does not exist on type 'never'.
+src/hooks/useUI.ts(84,16): error TS2339: Property 'audioHydrationStatusByRecordingId' does not exist on type 'never'.
+src/hooks/useUI.ts(96,16): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/hooks/useUI.ts(97,9): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
+src/hooks/useUI.ts(100,28): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/hooks/useUI.ts(112,9): error TS2322: Type '{ task: any; sla: { id: string; label: string; tone: string; }; dependencies: { dependencies: any[]; unresolved: any[]; blocking: boolean; }; }[]' is not assignable to type 'never[]'.
+src/hooks/useUI.ts(128,17): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/hooks/useUI.ts(129,79): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/hooks/useUI.ts(130,14): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/hooks/useUI.ts(229,37): error TS2345: Argument of type '{ attendees: string; }' is not assignable to parameter of type 'null | undefined'.
+src/hooks/useUI.ts(282,14): error TS2339: Property 'resetGoogleSession' does not exist on type 'never'.
+src/hooks/useUI.ts(300,18): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/hooks/useUI.ts(300,40): error TS2339: Property 'stopRecording' does not exist on type 'never'.
+src/hooks/useUI.ts(303,12): error TS2339: Property 'resetGoogleSession' does not exist on type 'never'.
+src/hooks/useUI.ts(304,14): error TS2339: Property 'resetRecorderState' does not exist on type 'never'.
+src/hooks/useUI.ts(355,37): error TS2339: Property 'hydrateRecordingAudio' does not exist on type 'never'.
+src/hooks/useUI.ts(356,40): error TS2339: Property 'clearAudioHydrationError' does not exist on type 'never'.
+src/hooks/useWorkspaceData.ts(413,28): error TS2769: No overload matches this call.
+src/lib/activityFeed.ts(14,26): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/activityFeed.ts(15,17): error TS2339: Property 'name' does not exist on type 'never'.
+src/lib/activityFeed.ts(15,32): error TS2339: Property 'email' does not exist on type 'never'.
+src/lib/activityFeed.ts(22,27): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/activityFeed.ts(22,46): error TS2339: Property 'timestamp' does not exist on type 'never'.
+src/lib/activityFeed.ts(23,26): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/activityFeed.ts(23,44): error TS2339: Property 'timestamp' does not exist on type 'never'.
+src/lib/aiTaskSuggestions.ts(48,19): error TS2339: Property 'name' does not exist on type 'never'.
+src/lib/aiTaskSuggestions.ts(48,29): error TS2339: Property 'email' does not exist on type 'never'.
+src/lib/analysis.ts(581,5): error TS2322: Type 'MeetingNeedAnswer[] | undefined' is not assignable to type 'MeetingNeedAnswer[]'.
+src/lib/analysis.ts(591,5): error TS2322: Type 'MeetingParticipantInsight[] | undefined' is not assignable to type 'MeetingParticipantInsight[]'.
+src/lib/audioEnhancer.ts(244,19): error TS2345: Argument of type 'Float32Array<ArrayBuffer>' is not assignable to parameter of type 'never'.
+src/lib/audioStore.tsx(77,28): error TS2339: Property 'transaction' does not exist on type '{}'.
+src/lib/audioStore.tsx(110,28): error TS2339: Property 'transaction' does not exist on type '{}'.
+src/lib/audioStore.tsx(136,28): error TS2339: Property 'transaction' does not exist on type '{}'.
+src/lib/audioStore.tsx(150,18): error TS2345: Argument of type '{ recordingId: string; sizeBytes: number; mimeType: string; }' is not assignable to parameter of type 'never'.
+src/lib/calendarView.ts(129,18): error TS2345: Argument of type '{ key: string; id: any; type: string; title: any; startsAt: any; endsAt: any; durationMinutes: any; editable: boolean; reminders: number[]; colorTone: string; source: any; participants: any; googleEventId: any; timezone: any; }' is not assignable to parameter of type 'never'.
+src/lib/calendarView.ts(148,30): error TS2339: Property 'start' does not exist on type 'never'.
+src/lib/calendarView.ts(148,55): error TS2339: Property 'start' does not exist on type 'never'.
+src/lib/calendarView.ts(153,13): error TS2339: Property 'end' does not exist on type 'never'.
+src/lib/calendarView.ts(154,13): error TS2339: Property 'end' does not exist on type 'never'.
+src/lib/calendarView.ts(155,38): error TS2339: Property 'start' does not exist on type 'never'.
+src/lib/calendarView.ts(159,13): error TS2339: Property 'start' does not exist on type 'never'.
+src/lib/calendarView.ts(161,18): error TS2345: Argument of type '{ key: string; id: any; type: string; title: any; startsAt: any; endsAt: any; durationMinutes: number; editable: boolean; reminders: never[]; colorTone: string; source: never; htmlLink: any; participants: any; timezone: any; }' is not assignable to parameter of type 'never'.
+src/lib/calendarView.ts(162,43): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/calendarView.ts(163,17): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/calendarView.ts(165,20): error TS2339: Property 'summary' does not exist on type 'never'.
+src/lib/calendarView.ts(173,23): error TS2339: Property 'htmlLink' does not exist on type 'never'.
+src/lib/calendarView.ts(174,28): error TS2339: Property 'attendees' does not exist on type 'never'.
+src/lib/calendarView.ts(177,23): error TS2339: Property 'start' does not exist on type 'never'.
+src/lib/calendarView.ts(177,48): error TS2339: Property 'end' does not exist on type 'never'.
+src/lib/calendarView.ts(182,16): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/lib/calendarView.ts(186,45): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/calendarView.ts(188,18): error TS2345: Argument of type '{ key: string; id: any; type: string; title: any; startsAt: any; endsAt: any; durationMinutes: number; editable: boolean; reminders: number[]; colorTone: string; source: never; participants: any[]; googleEventId: any; timezone: any; }' is not assignable to parameter of type 'never'.
+src/lib/calendarView.ts(190,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/calendarView.ts(192,19): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/calendarView.ts(193,22): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/lib/calendarView.ts(194,33): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/lib/calendarView.ts(200,31): error TS2339: Property 'assignedTo' does not exist on type 'never'.
+src/lib/calendarView.ts(200,55): error TS2339: Property 'owner' does not exist on type 'never'.
+src/lib/calendarView.ts(208,21): error TS2339: Property 'startsAt' does not exist on type 'never'.
+src/lib/calendarView.ts(208,63): error TS2339: Property 'startsAt' does not exist on type 'never'.
+src/lib/calendarView.ts(216,43): error TS2339: Property 'startsAt' does not exist on type 'never'.
+src/lib/calendarView.ts(352,24): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/lib/commandPalette.ts(62,28): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/commandPalette.ts(64,20): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/commandPalette.ts(65,23): error TS2339: Property 'context' does not exist on type 'never'.
+src/lib/commandPalette.ts(68,15): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/commandPalette.ts(69,15): error TS2339: Property 'context' does not exist on type 'never'.
+src/lib/commandPalette.ts(70,15): error TS2339: Property 'location' does not exist on type 'never'.
+src/lib/commandPalette.ts(71,19): error TS2339: Property 'attendees' does not exist on type 'never'.
+src/lib/commandPalette.ts(72,19): error TS2339: Property 'tags' does not exist on type 'never'.
+src/lib/commandPalette.ts(74,35): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/commandPalette.ts(79,22): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/commandPalette.ts(81,17): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/commandPalette.ts(83,13): error TS2339: Property 'owner' does not exist on type 'never'.
+src/lib/commandPalette.ts(83,25): error TS2339: Property 'group' does not exist on type 'never'.
+src/lib/commandPalette.ts(83,37): error TS2339: Property 'sourceMeetingTitle' does not exist on type 'never'.
+src/lib/commandPalette.ts(86,12): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/commandPalette.ts(87,12): error TS2339: Property 'description' does not exist on type 'never'.
+src/lib/commandPalette.ts(88,12): error TS2339: Property 'notes' does not exist on type 'never'.
+src/lib/commandPalette.ts(89,12): error TS2339: Property 'owner' does not exist on type 'never'.
+src/lib/commandPalette.ts(90,16): error TS2339: Property 'assignedTo' does not exist on type 'never'.
+src/lib/commandPalette.ts(91,12): error TS2339: Property 'group' does not exist on type 'never'.
+src/lib/commandPalette.ts(92,16): error TS2339: Property 'tags' does not exist on type 'never'.
+src/lib/commandPalette.ts(94,29): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/commandPalette.ts(95,18): error TS2339: Property 'completed' does not exist on type 'never'.
+src/lib/commandPalette.ts(99,26): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/commandPalette.ts(101,19): error TS2339: Property 'name' does not exist on type 'never'.
+src/lib/commandPalette.ts(102,22): error TS2339: Property 'summary' does not exist on type 'never'.
+src/lib/commandPalette.ts(102,43): error TS2339: Property 'meetings' does not exist on type 'never'.
+src/lib/commandPalette.ts(105,14): error TS2339: Property 'name' does not exist on type 'never'.
+src/lib/commandPalette.ts(106,14): error TS2339: Property 'summary' does not exist on type 'never'.
+src/lib/commandPalette.ts(107,18): error TS2339: Property 'tags' does not exist on type 'never'.
+src/lib/commandPalette.ts(108,18): error TS2339: Property 'traits' does not exist on type 'never'.
+src/lib/commandPalette.ts(109,18): error TS2339: Property 'needs' does not exist on type 'never'.
+src/lib/commandPalette.ts(110,18): error TS2339: Property 'outputs' does not exist on type 'never'.
+src/lib/commandPalette.ts(112,33): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/diarization.ts(171,18): error TS2345: Argument of type '"brak rozpoznanego tekstu"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(176,18): error TS2345: Argument of type '"bardzo krotki fragment"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(181,18): error TS2345: Argument of type '"brzmi jak wypelnienie lub szum"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(186,18): error TS2345: Argument of type '"powtarzajace sie slowa"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(191,18): error TS2345: Argument of type '"brak sygnatury akustycznej"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(196,18): error TS2345: Argument of type '"niska energia dzwieku"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(201,18): error TS2345: Argument of type '"duplikat poprzedniego fragmentu"' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(225,21): error TS2345: Argument of type '{ id: number; centroid: any; sampleCount: number; }' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(231,56): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/diarization.ts(233,23): error TS2345: Argument of type '{ id: number; centroid: null; sampleCount: number; }' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(237,74): error TS2339: Property 'centroid' does not exist on type 'never'.
+src/lib/diarization.ts(248,23): error TS2345: Argument of type '{ id: number; centroid: any; sampleCount: number; }' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(250,35): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/diarization.ts(251,54): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/diarization.ts(252,39): error TS18048: 'cluster' is possibly 'undefined'.
+src/lib/diarization.ts(253,9): error TS18048: 'cluster' is possibly 'undefined'.
+src/lib/diarization.ts(255,14): error TS18048: 'cluster' is possibly 'undefined'.
+src/lib/diarization.ts(259,9): error TS18048: 'cluster' is possibly 'undefined'.
+src/lib/diarization.ts(272,32): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(273,25): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/lib/diarization.ts(278,39): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/lib/google.ts(29,3): error TS2322: Type 'Promise<unknown>' is not assignable to type 'null'.
+src/lib/google.ts(93,3): error TS18047: 'google' is possibly 'null'.
+src/lib/google.ts(93,3): error TS18048: 'google.accounts' is possibly 'undefined'.
+src/lib/google.ts(93,3): error TS18048: 'google.accounts.id' is possibly 'undefined'.
+src/lib/google.ts(102,3): error TS18047: 'google' is possibly 'null'.
+src/lib/google.ts(102,3): error TS18048: 'google.accounts' is possibly 'undefined'.
+src/lib/google.ts(102,3): error TS18048: 'google.accounts.id' is possibly 'undefined'.
+src/lib/google.ts(102,22): error TS2339: Property 'renderButton' does not exist on type '{ initialize: (input: any) => void; prompt: (callback?: ((notification: any) => void) | undefined) => void; disableAutoSelect: () => void; }'.
+src/lib/google.ts(139,25): error TS18047: 'google' is possibly 'null'.
+src/lib/google.ts(139,25): error TS18048: 'google.accounts' is possibly 'undefined'.
+src/lib/google.ts(139,41): error TS2339: Property 'oauth2' does not exist on type '{ id?: { initialize: (input: any) => void; prompt: (callback?: ((notification: any) => void) | undefined) => void; disableAutoSelect: () => void; } | undefined; }'.
+src/lib/google.ts(353,7): error TS18048: 'window.google.accounts.id' is possibly 'undefined'.
+src/lib/kpi.ts(83,36): error TS2532: Object is possibly 'undefined'.
+src/lib/meeting.ts(20,17): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/notifications.ts(18,30): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/notifications.ts(21,16): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(23,20): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(26,21): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/notifications.ts(28,16): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(29,55): error TS2339: Property 'minutes' does not exist on type 'never'.
+src/lib/notifications.ts(30,20): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(31,64): error TS2339: Property 'minutes' does not exist on type 'never'.
+src/lib/notifications.ts(32,61): error TS2339: Property 'minutes' does not exist on type 'never'.
+src/lib/notifications.ts(33,22): error TS2339: Property 'remindAt' does not exist on type 'never'.
+src/lib/notifications.ts(34,25): error TS2339: Property 'remindAt' does not exist on type 'never'.
+src/lib/notifications.ts(36,16): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(37,43): error TS2339: Property 'entryId' does not exist on type 'never'.
+src/lib/notifications.ts(38,20): error TS2339: Property 'entryType' does not exist on type 'never'.
+src/lib/notifications.ts(39,42): error TS2339: Property 'entryId' does not exist on type 'never'.
+src/lib/notifications.ts(40,46): error TS2339: Property 'entryId' does not exist on type 'never'.
+src/lib/notifications.ts(45,24): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/notifications.ts(45,34): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/notifications.ts(45,53): error TS2339: Property 'blocking' does not exist on type 'never'.
+src/lib/notifications.ts(47,17): error TS2339: Property 'tone' does not exist on type 'never'.
+src/lib/notifications.ts(48,19): error TS2339: Property 'title' does not exist on type 'never'.
+src/lib/notifications.ts(49,26): error TS2339: Property 'blocking' does not exist on type 'never'.
+src/lib/notifications.ts(50,46): error TS2339: Property 'unresolved' does not exist on type 'never'.
+src/lib/notifications.ts(51,32): error TS2339: Property 'tone' does not exist on type 'never'.
+src/lib/notifications.ts(51,46): error TS2339: Property 'label' does not exist on type 'never'.
+src/lib/notifications.ts(52,20): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/lib/notifications.ts(52,36): error TS2339: Property 'updatedAt' does not exist on type 'never'.
+src/lib/notifications.ts(52,54): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/notifications.ts(53,23): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/lib/notifications.ts(53,39): error TS2339: Property 'updatedAt' does not exist on type 'never'.
+src/lib/notifications.ts(53,57): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/notifications.ts(54,40): error TS2339: Property 'id' does not exist on type 'never'.
+src/lib/notifications.ts(69,41): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/lib/people.ts(52,17): error TS2345: Argument of type '"czesto przejmuje ownership i follow-upy"' is not assignable to parameter of type 'never'.
+src/lib/people.ts(55,17): error TS2345: Argument of type '"regularnie uczestniczy w kluczowych spotkaniach"' is not assignable to parameter of type 'never'.
+src/lib/people.ts(58,17): error TS2345: Argument of type '"pilnuje planu i terminów"' is not assignable to parameter of type 'never'.
+src/lib/people.ts(61,17): error TS2345: Argument of type '"patrzy na decyzje przez pryzmat kosztu i zakresu"' is not assignable to parameter of type 'never'.
+src/lib/people.ts(64,17): error TS2345: Argument of type '"wnosi perspektywę potrzeb i oczekiwań"' is not assignable to parameter of type 'never'.
+src/lib/recordingQueue.ts(56,18): error TS2339: Property 'recordingId' does not exist on type 'never'.
+src/lib/recordingQueue.ts(61,9): error TS2698: Spread types may only be created from object types.
+src/lib/recordingQueue.ts(62,55): error TS2339: Property 'status' does not exist on type 'never'.
+src/lib/recordingQueue.ts(63,32): error TS2339: Property 'uploaded' does not exist on type 'never'.
+src/lib/recordingQueue.ts(64,43): error TS2339: Property 'attempts' does not exist on type 'never'.
+src/lib/recordingQueue.ts(65,45): error TS2339: Property 'retryCount' does not exist on type 'never'.
+src/lib/recordingQueue.ts(66,47): error TS2339: Property 'backoffUntil' does not exist on type 'never'.
+src/lib/recordingQueue.ts(67,39): error TS2339: Property 'lastErrorMessage' does not exist on type 'never'.
+src/lib/recordingQueue.ts(68,35): error TS2339: Property 'errorMessage' does not exist on type 'never'.
+src/lib/recordingQueue.ts(69,41): error TS2339: Property 'rawSegments' does not exist on type 'never'.
+src/lib/recordingQueue.ts(69,61): error TS2339: Property 'rawSegments' does not exist on type 'never'.
+src/lib/recordingQueue.ts(70,43): error TS2339: Property 'duration' does not exist on type 'never'.
+src/lib/recordingQueue.ts(71,25): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/recordingQueue.ts(72,25): error TS2339: Property 'updatedAt' does not exist on type 'never'.
+src/lib/recordingQueue.ts(72,43): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/lib/recordingQueue.ts(90,37): error TS2322: Type 'any' is not assignable to type 'never'.
+src/lib/recordingQueue.ts(90,57): error TS2322: Type 'any' is not assignable to type 'never'.
+src/lib/recordingQueue.ts(98,34): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
+src/lib/speakerAnalysis.tsx(88,18): error TS2345: Argument of type '{ speakerId: any; speakerName: any; totalWords: any; speakingSeconds: number; wpm: number; turnCount: any; fillerCount: any; fillerRate: number; avgTurnSeconds: number; }' is not assignable to parameter of type 'never'.
+src/lib/speakerAnalysis.tsx(102,28): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/lib/speakerAnalysis.tsx(102,48): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/NotesTab.tsx(99,18): error TS2339: Property 'focus' does not exist on type 'never'.
+src/NotesTab.tsx(100,42): error TS2345: Argument of type 'null' is not assignable to parameter of type 'string | undefined'.
+src/NotesTab.tsx(101,27): error TS2339: Property 'innerHTML' does not exist on type 'never'.
+src/NotesTab.tsx(105,34): error TS2339: Property 'innerHTML' does not exist on type 'never'.
+src/NotesTab.tsx(185,46): error TS2339: Property 'innerHTML' does not exist on type 'never'.
+src/NotesTab.tsx(550,21): error TS2345: Argument of type '(prev: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/NotesTab.tsx(551,21): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/NotesTab.tsx(636,54): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'never'.
+src/NotificationCenter.tsx(32,30): error TS2339: Property 'contains' does not exist on type 'never'.
+src/NotificationCenter.tsx(91,36): error TS2339: Property 'id' does not exist on type 'never'.
+src/NotificationCenter.tsx(91,77): error TS2339: Property 'tone' does not exist on type 'never'.
+src/NotificationCenter.tsx(98,57): error TS2339: Property 'tone' does not exist on type 'never'.
+src/NotificationCenter.tsx(99,50): error TS2339: Property 'sortAt' does not exist on type 'never'.
+src/NotificationCenter.tsx(99,65): error TS2339: Property 'deliverAt' does not exist on type 'never'.
+src/NotificationCenter.tsx(101,35): error TS2339: Property 'title' does not exist on type 'never'.
+src/NotificationCenter.tsx(102,30): error TS2339: Property 'body' does not exist on type 'never'.
+src/NotificationCenter.tsx(107,51): error TS2339: Property 'id' does not exist on type 'never'.
+src/PeopleTab.tsx(614,53): error TS2339: Property 'scrollIntoView' does not exist on type 'never'.
+src/PeopleTab.tsx(623,50): error TS2339: Property 'scrollIntoView' does not exist on type 'never'.
+src/ProfileTab.tsx(153,42): error TS2339: Property 'name' does not exist on type 'never'.
+src/ProfileTab.tsx(153,52): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/ProfileTab.tsx(164,32): error TS2339: Property 'id' does not exist on type 'never'.
+src/ProfileTab.tsx(164,40): error TS2339: Property 'name' does not exist on type 'never'.
+src/ProfileTab.tsx(164,50): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/ProfileTab.tsx(164,70): error TS2339: Property 'name' does not exist on type 'never'.
+src/ProfileTab.tsx(164,80): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/ProfileTab.tsx(679,51): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'SetStateAction<string>'.
+src/RecordingsTab.tsx(28,18): error TS2345: Argument of type '"Pipeline: empty transcript"' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(31,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(39,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(47,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(50,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(58,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(62,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(64,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(67,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(105,67): error TS2339: Property 'contains' does not exist on type 'never'.
+src/RecordingsTab.tsx(440,21): error TS2322: Type 'unknown[]' is not assignable to type 'never[]'.
+src/RecordingsTab.tsx(459,21): error TS2322: Type 'unknown[]' is not assignable to type 'never[]'.
+src/RecordingsTab.tsx(608,78): error TS2339: Property 'title' does not exist on type 'never'.
+src/RecordingsTab.tsx(625,53): error TS2339: Property 'id' does not exist on type 'never'.
+src/RecordingsTab.tsx(689,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(696,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(704,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(708,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(711,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/RecordingsTab.tsx(889,58): error TS2339: Property 'click' does not exist on type 'never'.
+src/shared/TagBadge.tsx(41,13): error TS2349: This expression is not callable.
+src/shared/TagInput.tsx(22,41): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/TagInput.tsx(22,61): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/TagInput.tsx(23,22): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/TagInput.tsx(30,35): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/TagInput.tsx(37,39): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/TagInput.tsx(41,23): error TS2339: Property 'focus' does not exist on type 'never'.
+src/shared/TagInput.tsx(56,25): error TS2339: Property 'blur' does not exist on type 'never'.
+src/shared/TagInput.tsx(63,40): error TS2339: Property 'focus' does not exist on type 'never'.
+src/shared/TagInput.tsx(67,41): error TS2322: Type '() => void' is not assignable to type 'undefined'.
+src/shared/TagInput.tsx(99,24): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/shared/Toast.tsx(89,19): error TS2721: Cannot invoke an object which is possibly 'null'.
+src/store/recorderStore.ts(219,56): error TS2345: Argument of type '8' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(305,15): error TS2345: Argument of type '0' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(346,60): error TS2345: Argument of type '0' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(373,15): error TS2345: Argument of type '12' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(420,13): error TS2345: Argument of type '24' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(444,38): error TS2339: Property 'pipelineGitSha' does not exist on type '{ diarization: {}; verifiedSegments: TranscriptSegment[]; providerId: string; providerLabel: string; pipelineStatus: "done" | "uploading" | "queued" | "processing" | "diarization" | "review" | "failed"; ... 9 more ...; errorMessage: string; } | { ...; }'.
+src/store/recorderStore.ts(445,39): error TS2339: Property 'pipelineVersion' does not exist on type '{ diarization: {}; verifiedSegments: TranscriptSegment[]; providerId: string; providerLabel: string; pipelineStatus: "done" | "uploading" | "queued" | "processing" | "diarization" | "review" | "failed"; ... 9 more ...; errorMessage: string; } | { ...; }'.
+src/store/recorderStore.ts(446,41): error TS2339: Property 'pipelineBuildTime' does not exist on type '{ diarization: {}; verifiedSegments: TranscriptSegment[]; providerId: string; providerLabel: string; pipelineStatus: "done" | "uploading" | "queued" | "processing" | "diarization" | "review" | "failed"; ... 9 more ...; errorMessage: string; } | { ...; }'.
+src/store/recorderStore.ts(447,36): error TS2339: Property 'audioQuality' does not exist on type '{ diarization: {}; verifiedSegments: TranscriptSegment[]; providerId: string; providerLabel: string; pipelineStatus: "done" | "uploading" | "queued" | "processing" | "diarization" | "review" | "failed"; ... 9 more ...; errorMessage: string; } | { ...; }'.
+src/store/recorderStore.ts(448,48): error TS2339: Property 'transcriptionDiagnostics' does not exist on type '{ diarization: {}; verifiedSegments: TranscriptSegment[]; providerId: string; providerLabel: string; pipelineStatus: "done" | "uploading" | "queued" | "processing" | "diarization" | "review" | "failed"; ... 9 more ...; errorMessage: string; } | { ...; }'.
+src/store/recorderStore.ts(454,13): error TS2345: Argument of type '28 | null' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(497,19): error TS2322: Type '{ pipelineStatus: string; diarization?: {} | undefined; verifiedSegments?: TranscriptSegment[] | undefined; providerId?: string | undefined; providerLabel?: string | undefined; ... 9 more ...; errorMessage?: string | undefined; }' is not assignable to type 'null'.
+src/store/recorderStore.ts(594,13): error TS2345: Argument of type '92' is not assignable to parameter of type 'null | undefined'.
+src/store/recorderStore.ts(694,64): error TS2345: Argument of type '0' is not assignable to parameter of type 'null | undefined'.
+src/store/workspaceStore.ts(68,52): error TS2345: Argument of type '{ workspaceId: string; userId?: string | undefined; token?: string | undefined; }' is not assignable to parameter of type 'WorkspaceSession'.
+src/studio/AiTaskSuggestionsPanel.tsx(91,59): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(95,59): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(104,20): error TS2345: Argument of type '(previous: never[]) => { title?: string | undefined; description?: string | undefined; owner?: string | undefined; dueDate?: string | undefined; priority?: string | undefined; }[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/studio/AiTaskSuggestionsPanel.tsx(104,57): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(143,38): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(144,40): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(161,23): error TS2322: Type 'string[]' is not assignable to type 'never[]'.
+src/studio/AiTaskSuggestionsPanel.tsx(162,23): error TS2322: Type 'unknown[]' is not assignable to type 'never[]'.
+src/studio/AiTaskSuggestionsPanel.tsx(192,40): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(194,71): error TS2339: Property 'title' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(196,71): error TS2339: Property 'priority' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(198,49): error TS2339: Property 'priority' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(202,29): error TS2339: Property 'description' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(203,65): error TS2339: Property 'description' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(206,31): error TS2339: Property 'owner' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(207,74): error TS2339: Property 'owner' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(209,31): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(210,73): error TS2339: Property 'dueDate' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(215,48): error TS2339: Property 'tags' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(215,67): error TS2339: Property 'tags' does not exist on type 'never'.
+src/studio/AiTaskSuggestionsPanel.tsx(240,60): error TS2339: Property '_id' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(42,39): error TS2339: Property 'contains' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(219,46): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(221,26): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(225,59): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(227,24): error TS2339: Property 'speakerName' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(229,60): error TS2339: Property 'speakerName' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(233,31): error TS2339: Property 'wpm' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(237,46): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(241,31): error TS2339: Property 'turnCount' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(244,21): error TS2339: Property 'fillerCount' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(246,33): error TS2339: Property 'fillerRate' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(279,28): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(280,70): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(282,33): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(283,76): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(290,51): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(291,40): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(293,31): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(295,35): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(334,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(337,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(340,18): error TS2345: Argument of type '"Chunking: tak"' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(347,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(354,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(357,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(364,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(368,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(371,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(382,16): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(385,16): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(388,16): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(923,20): error TS2345: Argument of type '{ icon: string; label: string; value: string; }' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(932,20): error TS2345: Argument of type '{ icon: string; label: string; value: any; }' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(939,65): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(941,20): error TS2345: Argument of type '{ icon: string; label: string; value: string; }' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(950,20): error TS2345: Argument of type '{ icon: string; label: string; value: any; }' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(959,20): error TS2345: Argument of type '{ icon: string; label: string; value: string; }' is not assignable to parameter of type 'never'.
+src/studio/StudioMeetingView.tsx(999,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1000,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1001,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1002,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1003,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1004,13): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1032,22): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1032,57): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1033,12): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1038,16): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1039,22): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1040,16): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1041,21): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1041,35): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1042,18): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1043,19): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1044,15): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1045,16): error TS18047: 'task' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1084,51): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1180,25): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/studio/StudioMeetingView.tsx(1183,23): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/studio/StudioMeetingView.tsx(1218,25): error TS18047: 't' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1285,11): error TS2339: Property 'paused' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1285,21): error TS2339: Property 'play' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1286,12): error TS2339: Property 'pause' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1294,7): error TS2339: Property 'playbackRate' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1302,29): error TS2339: Property 'scrollToIndex' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1315,22): error TS18047: 'audio' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1318,33): error TS18047: 'audio' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1318,51): error TS18047: 'audio' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1321,21): error TS18047: 'audio' is possibly 'null'.
+src/studio/StudioMeetingView.tsx(1323,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1324,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1325,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1326,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1327,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1328,11): error TS2339: Property 'addEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1329,24): error TS2339: Property 'duration' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1329,43): error TS2339: Property 'duration' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1329,80): error TS2339: Property 'duration' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1331,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1332,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1333,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1334,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1335,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1336,13): error TS2339: Property 'removeEventListener' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1778,36): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1781,44): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1782,66): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1784,41): error TS2339: Property 'speakerName' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1784,71): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1790,39): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1793,75): error TS2339: Property 'speakerId' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1795,62): error TS2339: Property 'speakerName' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1796,77): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1798,46): error TS2339: Property 'speakingSeconds' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1814,43): error TS2339: Property 'label' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1816,39): error TS2339: Property 'icon' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1819,47): error TS2339: Property 'label' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1819,76): error TS2339: Property 'value' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(1965,29): error TS2322: Type 'unknown[]' is not assignable to type 'never[]'.
+src/studio/StudioMeetingView.tsx(2809,60): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/studio/StudioMeetingView.tsx(2823,70): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(3154,44): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(3172,42): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/studio/StudioMeetingView.tsx(3229,42): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/studio/StudioSidebar.tsx(204,27): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/studio/StudioSidebar.tsx(214,33): error TS2339: Property 'toLowerCase' does not exist on type 'never'.
+src/studio/TranscriptPanel.tsx(71,21): error TS2345: Argument of type 'number' is not assignable to parameter of type 'never'.
+src/studio/TranscriptPanel.tsx(74,25): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/studio/TranscriptPanel.tsx(105,39): error TS2339: Property 'getBoundingClientRect' does not exist on type 'never'.
+src/studio/TranscriptPanel.tsx(535,27): error TS2339: Property 'scrollToIndex' does not exist on type 'never'.
+src/studio/TranscriptPanel.tsx(638,27): error TS2345: Argument of type '(previous: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/studio/TranscriptPanel.tsx(639,25): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/studio/TranscriptPanel.tsx(1095,64): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/StudioTab.tsx(53,15): error TS2322: Type 'unknown[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(86,42): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/TabRouter.tsx(87,43): error TS2339: Property 'googleCalendarMessage' does not exist on type 'never'.
+src/TabRouter.tsx(88,46): error TS2339: Property 'disconnectGoogleCalendar' does not exist on type 'never'.
+src/TabRouter.tsx(89,47): error TS2339: Property 'syncCalendarEntryToGoogle' does not exist on type 'never'.
+src/TabRouter.tsx(90,51): error TS2339: Property 'rescheduleGoogleCalendarEntry' does not exist on type 'never'.
+src/TabRouter.tsx(94,44): error TS2339: Property 'googleCalendarWritable' does not exist on type 'never'.
+src/TabRouter.tsx(100,13): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(101,13): error TS2322: Type '{ needs: any; concerns: any; outputs: any; id: string; name: string; meetings: any[]; tasks: any[]; tags: string[]; nextMeeting: any; sentimentHistory: ({ date: any; title: any; score: any; } | null)[]; completedTasks: number; openTasks: number; summary: string; traits: never[]; timezone: any; }[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(129,40): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/TabRouter.tsx(130,39): error TS2339: Property 'googleTasksStatus' does not exist on type 'never'.
+src/TabRouter.tsx(131,40): error TS2339: Property 'googleTasksMessage' does not exist on type 'never'.
+src/TabRouter.tsx(132,45): error TS2339: Property 'googleTasksLastSyncedAt' does not exist on type 'never'.
+src/TabRouter.tsx(133,37): error TS2339: Property 'googleTaskLists' does not exist on type 'never'.
+src/TabRouter.tsx(134,46): error TS2339: Property 'selectedGoogleTaskListId' does not exist on type 'never'.
+src/TabRouter.tsx(135,44): error TS2339: Property 'setSelectedGoogleTaskListId' does not exist on type 'never'.
+src/TabRouter.tsx(136,42): error TS2339: Property 'connectGoogleTasks' does not exist on type 'never'.
+src/TabRouter.tsx(137,41): error TS2339: Property 'importGoogleTasksFromList' does not exist on type 'never'.
+src/TabRouter.tsx(138,41): error TS2339: Property 'exportTasksToGoogle' does not exist on type 'never'.
+src/TabRouter.tsx(139,42): error TS2339: Property 'refreshGoogleTasks' does not exist on type 'never'.
+src/TabRouter.tsx(140,49): error TS2339: Property 'resolveGoogleTaskConflict' does not exist on type 'never'.
+src/TabRouter.tsx(146,13): error TS2322: Type '{ task: any; sla: { id: string; label: string; tone: string; }; dependencies: { dependencies: any[]; unresolved: any[]; blocking: boolean; }; }[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(147,13): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(153,13): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(180,35): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/TabRouter.tsx(181,42): error TS2339: Property 'googleCalendarStatus' does not exist on type 'never'.
+src/TabRouter.tsx(182,43): error TS2339: Property 'googleCalendarMessage' does not exist on type 'never'.
+src/TabRouter.tsx(183,47): error TS2339: Property 'googleCalendarEvents' does not exist on type 'never'.
+src/TabRouter.tsx(184,48): error TS2339: Property 'googleCalendarLastSyncedAt' does not exist on type 'never'.
+src/TabRouter.tsx(185,43): error TS2339: Property 'connectGoogleCalendar' does not exist on type 'never'.
+src/TabRouter.tsx(186,46): error TS2339: Property 'disconnectGoogleCalendar' does not exist on type 'never'.
+src/TabRouter.tsx(187,43): error TS2339: Property 'refreshGoogleCalendar' does not exist on type 'never'.
+src/TabRouter.tsx(193,40): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/TabRouter.tsx(194,39): error TS2339: Property 'googleTasksStatus' does not exist on type 'never'.
+src/TabRouter.tsx(195,40): error TS2339: Property 'googleTasksMessage' does not exist on type 'never'.
+src/TabRouter.tsx(196,45): error TS2339: Property 'googleTasksLastSyncedAt' does not exist on type 'never'.
+src/TabRouter.tsx(197,37): error TS2339: Property 'googleTaskLists' does not exist on type 'never'.
+src/TabRouter.tsx(198,46): error TS2339: Property 'selectedGoogleTaskListId' does not exist on type 'never'.
+src/TabRouter.tsx(199,44): error TS2339: Property 'setSelectedGoogleTaskListId' does not exist on type 'never'.
+src/TabRouter.tsx(200,42): error TS2339: Property 'connectGoogleTasks' does not exist on type 'never'.
+src/TabRouter.tsx(201,41): error TS2339: Property 'importGoogleTasksFromList' does not exist on type 'never'.
+src/TabRouter.tsx(202,41): error TS2339: Property 'exportTasksToGoogle' does not exist on type 'never'.
+src/TabRouter.tsx(203,42): error TS2339: Property 'refreshGoogleTasks' does not exist on type 'never'.
+src/TabRouter.tsx(211,13): error TS2322: Type '{ tag: string; taskCount: number; meetingCount: number; }[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(216,13): error TS2322: Type '{ needs: any; concerns: any; outputs: any; id: string; name: string; meetings: any[]; tasks: any[]; tags: string[]; nextMeeting: any; sentimentHistory: ({ date: any; title: any; score: any; } | null)[]; completedTasks: number; openTasks: number; summary: string; traits: never[]; timezone: any; }[]' is not assignable to type 'never[]'.
+src/TabRouter.tsx(217,41): error TS2339: Property 'audioStorageState' does not exist on type 'never'.
+src/TabRouter.tsx(218,50): error TS2339: Property 'refreshAudioStorageState' does not exist on type 'never'.
+src/TabRouter.tsx(219,52): error TS2339: Property 'deleteStoredRecordingAudio' does not exist on type 'never'.
+src/TabRouter.tsx(235,38): error TS2339: Property 'queueRecording' does not exist on type 'never'.
+src/TabRouter.tsx(236,38): error TS2339: Property 'recordingQueue' does not exist on type 'never'.
+src/TabRouter.tsx(237,39): error TS2339: Property 'activeQueueItem' does not exist on type 'never'.
+src/TabRouter.tsx(238,38): error TS2339: Property 'analysisStatus' does not exist on type 'never'.
+src/TabRouter.tsx(239,40): error TS2339: Property 'recordingMessage' does not exist on type 'never'.
+src/TabRouter.tsx(240,47): error TS2339: Property 'pipelineProgressPercent' does not exist on type 'never'.
+src/TabRouter.tsx(241,42): error TS2339: Property 'pipelineStageLabel' does not exist on type 'never'.
+src/TabRouter.tsx(242,47): error TS2339: Property 'retryRecordingQueueItem' does not exist on type 'never'.
+src/TabRouter.tsx(243,44): error TS2339: Property 'retryStoredRecording' does not exist on type 'never'.
+src/TabRouter.tsx(272,35): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/TabRouter.tsx(273,38): error TS2339: Property 'analysisStatus' does not exist on type 'never'.
+src/TabRouter.tsx(274,39): error TS2339: Property 'activeQueueItem' does not exist on type 'never'.
+src/TabRouter.tsx(275,44): error TS2339: Property 'selectedMeetingQueue' does not exist on type 'never'.
+src/TabRouter.tsx(276,31): error TS2339: Property 'elapsed' does not exist on type 'never'.
+src/TabRouter.tsx(277,34): error TS2339: Property 'visualBars' does not exist on type 'never'.
+src/TabRouter.tsx(278,43): error TS2339: Property 'voiceActivityStatus' does not exist on type 'never'.
+src/TabRouter.tsx(279,40): error TS2339: Property 'silenceCountdown' does not exist on type 'never'.
+src/TabRouter.tsx(280,41): error TS2339: Property 'resetSilenceTimer' does not exist on type 'never'.
+src/TabRouter.tsx(281,32): error TS2339: Property 'isPaused' does not exist on type 'never'.
+src/TabRouter.tsx(282,38): error TS2339: Property 'pauseRecording' does not exist on type 'never'.
+src/TabRouter.tsx(283,39): error TS2339: Property 'resumeRecording' does not exist on type 'never'.
+src/TabRouter.tsx(284,37): error TS2339: Property 'stopRecording' does not exist on type 'never'.
+src/TabRouter.tsx(285,38): error TS2339: Property 'startRecording' does not exist on type 'never'.
+src/TabRouter.tsx(286,47): error TS2339: Property 'retryRecordingQueueItem' does not exist on type 'never'.
+src/TabRouter.tsx(287,42): error TS2339: Property 'normalizeRecording' does not exist on type 'never'.
+src/TabRouter.tsx(288,40): error TS2339: Property 'recordPermission' does not exist on type 'never'.
+src/TabRouter.tsx(289,50): error TS2339: Property 'speechRecognitionSupported' does not exist on type 'never'.
+src/TabRouter.tsx(290,32): error TS2339: Property 'liveText' does not exist on type 'never'.
+src/TabRouter.tsx(291,45): error TS2339: Property 'liveTranscriptEnabled' does not exist on type 'never'.
+src/TabRouter.tsx(292,48): error TS2339: Property 'setLiveTranscriptEnabled' does not exist on type 'never'.
+src/TabRouter.tsx(293,40): error TS2339: Property 'recordingMessage' does not exist on type 'never'.
+src/TabRouter.tsx(294,47): error TS2339: Property 'pipelineProgressPercent' does not exist on type 'never'.
+src/TabRouter.tsx(295,42): error TS2339: Property 'pipelineStageLabel' does not exist on type 'never'.
+src/TabRouter.tsx(296,43): error TS2339: Property 'setRecordingMessage' does not exist on type 'never'.
+src/TabRouter.tsx(297,44): error TS2339: Property 'retryStoredRecording' does not exist on type 'never'.
+src/tasks/TaskKanbanView.tsx(284,27): error TS2339: Property 'actor' does not exist on type 'never'.
+src/tasks/TaskKanbanView.tsx(284,49): error TS2339: Property 'message' does not exist on type 'never'.
+src/tasks/TaskKanbanView.tsx(318,15): error TS2322: Type 'any' is not assignable to type 'never'.
+src/tasks/TaskKanbanView.tsx(325,17): error TS2322: Type 'string' is not assignable to type 'never'.
+src/tasks/TaskKanbanView.tsx(329,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/tasks/TaskKanbanView.tsx(331,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/tasks/TaskKanbanView.tsx(333,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/tasks/TaskKanbanView.tsx(335,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/tasks/TaskScheduleView.tsx(35,15): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'never'.
+src/tasks/TaskScheduleView.tsx(109,31): error TS2339: Property 'getTime' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(110,30): error TS2339: Property 'getTime' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(111,47): error TS2339: Property 'getTime' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(112,33): error TS2339: Property 'getDay' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(112,55): error TS2339: Property 'getDay' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(116,24): error TS2339: Property 'getTime' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(122,69): error TS2339: Property 'getDay' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(124,24): error TS2339: Property 'getDate' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(126,22): error TS2339: Property 'getDate' does not exist on type 'never'.
+src/tasks/TaskScheduleView.tsx(127,73): error TS2339: Property 'getMonth' does not exist on type 'never'.
+src/tasks/TasksWorkspaceView.tsx(243,19): error TS2322: Type 'any[]' is not assignable to type 'never[]'.
+src/TasksTab.tsx(171,25): error TS2322: Type 'any' is not assignable to type 'never'.
+src/TasksTab.tsx(238,24): error TS2345: Argument of type '(previous: never[]) => string[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+src/TasksTab.tsx(239,49): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/TasksTab.tsx(338,29): error TS2322: Type 'any' is not assignable to type 'never'.
+src/TasksTab.tsx(454,29): error TS2322: Type 'any' is not assignable to type 'never'.
+src/TasksTab.tsx(555,35): error TS2339: Property 'focus' does not exist on type 'never'.
+src/TasksTab.tsx(561,33): error TS2339: Property 'focus' does not exist on type 'never'.
+src/TasksTab.tsx(665,35): error TS2322: Type 'any' is not assignable to type 'never'.
+src/Topbar.tsx(180,17): error TS2339: Property 'googleEnabled' does not exist on type 'never'.
+src/Topbar.tsx(212,31): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/Topbar.tsx(214,26): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/Topbar.tsx(217,24): error TS2339: Property 'startRecording' does not exist on type 'never'.
+src/Topbar.tsx(222,27): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/Topbar.tsx(223,32): error TS2339: Property 'isRecording' does not exist on type 'never'.
+src/Topbar.tsx(226,21): error TS2339: Property 'isRecording' does not exist on type 'never'.
