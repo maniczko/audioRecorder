@@ -209,7 +209,7 @@ export default function useTaskOperations({
         Object.entries(derivedPayloads).forEach(([taskId, nextPayload]) => {
           nextState[taskId] = {
             ...(previous[taskId] || {}),
-            ...nextPayload,
+            ...(nextPayload && typeof nextPayload === 'object' ? nextPayload : {}),
           };
         });
         return nextState;

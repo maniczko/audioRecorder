@@ -27,8 +27,9 @@ function mergeUserIntoCollection(existingUsers: any[], user: any) {
   return nextUsers;
 }
 
-function resolveDraftUpdate<T>(previous: T, nextValue: T | ((previous: T) => T)) {
-  const resolved = typeof nextValue === 'function' ? nextValue(previous) : nextValue;
+function resolveDraftUpdate<T extends object>(previous: T, nextValue: T | ((previous: T) => T)) {
+  const resolved =
+    typeof nextValue === 'function' ? (nextValue as (p: T) => T)(previous) : nextValue;
   if (!resolved || typeof resolved !== 'object') {
     return previous;
   }

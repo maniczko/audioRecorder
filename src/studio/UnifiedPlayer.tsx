@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { formatDuration } from '../lib/storage';
 import { getSpeakerColor } from '../lib/speakerColors';
 import { labelSpeaker } from '../lib/recording';
+import { useHotkeys } from '../hooks/useHotkeys';
 import './UnifiedPlayerStyles.css';
 
 export default function UnifiedPlayer({
@@ -42,7 +43,56 @@ export default function UnifiedPlayer({
 
   const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
 
-  // Compute peak level (0–1) from visualBars for the gain meter
+  const mode: 'recording' | 'playback' | 'queue' | 'idle' = isRecording
+    ? 'recording'
+    : selectedRecordingAudioUrl
+      ? 'playback'
+      : isQueued
+        ? 'queue'
+        : 'idle';
+
+  const togglePlayback = useCallback(() => {
+    const a = audioRef?.current;
+    if (!a || mode !== 'playback') return;
+
+    if (playError) {
+      // Retry on click after error
+      setPlayError(null);
+      a.load();
+      a.play().catch((err: Error) => {
+        setPlayError(
+          err.name === 'NotAllowedError'
+            ? 'Kliknij aby odblokować audio'
+            : `Nie można odtworzyć — ${err.message}`
+        );
+      });
+      return;
+    }
+    if (a.paused) {
+      a.play().catch((err: Error) => {
+        setPlayError(
+          err.name === 'NotAllowedError'
+            ? 'Kliknij aby odblokować audio'
+            : 'Nie można odtworzyć — plik może być uszkodzony'
+        );
+      });
+    } else {
+      a.pause();
+    }
+  }, [audioRef, playError, mode]);
+
+  useHotkeys([
+    {
+      key: ' ',
+      handler: (e) => {
+        if (mode === 'playback') {
+          e.preventDefault();
+          togglePlayback();
+        }
+      },
+    },
+  ]);
+
   const peakLevel =
     isRecording && visualBars.length
       ? Math.max(...visualBars) / 58 // bars range 6–58px
@@ -54,16 +104,6 @@ export default function UnifiedPlayer({
     Array.isArray(transcript) && currentTime > 0
       ? transcript.find((s) => s.timestamp <= currentTime && s.endTimestamp > currentTime)
       : null;
-
-  // Which mode to show in the player track area:
-  // "recording" > "playback" > "queue" > "idle"
-  const mode = isRecording
-    ? 'recording'
-    : selectedRecordingAudioUrl
-      ? 'playback'
-      : isQueued
-        ? 'queue'
-        : 'idle';
 
   const queueLabel =
     analysisStatus === 'uploading'
@@ -93,34 +133,7 @@ export default function UnifiedPlayer({
           <button
             type="button"
             className={`uplayer-play-btn${playError ? ' uplayer-play-btn--error' : ''}`}
-            onClick={() => {
-              const a = audioRef.current;
-              if (!a) return;
-              if (playError) {
-                // Retry on click after error
-                setPlayError(null);
-                a.load();
-                a.play().catch((err: Error) => {
-                  setPlayError(
-                    err.name === 'NotAllowedError'
-                      ? 'Kliknij aby odblokować audio'
-                      : `Nie można odtworzyć — ${err.message}`
-                  );
-                });
-                return;
-              }
-              if (a.paused) {
-                a.play().catch((err: Error) => {
-                  setPlayError(
-                    err.name === 'NotAllowedError'
-                      ? 'Kliknij aby odblokować audio'
-                      : 'Nie można odtworzyć — plik może być uszkodzony'
-                  );
-                });
-              } else {
-                a.pause();
-              }
-            }}
+            onClick={togglePlayback}
             aria-label={
               playError ? 'Błąd odtwarzania — kliknij aby ponowić' : isPlaying ? 'Pauza' : 'Odtwórz'
             }
@@ -176,7 +189,11 @@ export default function UnifiedPlayer({
               <span className="uplayer-elapsed">{formatDuration(elapsed)}</span>
               <div className="uplayer-live-bars">
                 {visualBars.map((h, i) => (
-                  <span key={i} className="uplayer-bar" style={{ '--h': `${Math.max(3, h)}px` } as React.CSSProperties} />
+                  <span
+                    key={i}
+                    className="uplayer-bar"
+                    style={{ '--h': `${Math.max(3, h)}px` } as React.CSSProperties}
+                  />
                 ))}
               </div>
               <div
@@ -205,7 +222,9 @@ export default function UnifiedPlayer({
               {activeSeg ? (
                 <span
                   className="uplayer-speaker-chip"
-                  style={{ '--chip-color': getSpeakerColor(activeSeg.speakerId) } as React.CSSProperties}
+                  style={
+                    { '--chip-color': getSpeakerColor(activeSeg.speakerId) } as React.CSSProperties
+                  }
                 >
                   {labelSpeaker(displaySpeakerNames, activeSeg.speakerId)}
                 </span>

@@ -43,7 +43,7 @@ export default function useWorkspace() {
   );
 
   useEffect(() => {
-    return onUnauthorized(() => {
+    onUnauthorized(() => {
       console.warn('Session expired. Logging out.');
       setSession(null);
     });
@@ -157,15 +157,12 @@ export default function useWorkspace() {
     }
 
     const result = await workspaceService.updateMemberRole({
-      workspaces,
       workspaceId: currentWorkspaceId,
       targetUserId,
       memberRole,
     });
 
-    if (Array.isArray(result?.workspaces)) {
-      setWorkspaces(result.workspaces);
-    } else {
+    if (result && typeof result === 'object' && 'membership' in result) {
       setWorkspaces((previous) =>
         previous.map((workspace) =>
           workspace.id !== currentWorkspaceId
@@ -174,7 +171,7 @@ export default function useWorkspace() {
                 ...workspace,
                 memberRoles: {
                   ...(workspace.memberRoles || {}),
-                  [targetUserId]: result?.membership?.memberRole || memberRole,
+                  [targetUserId]: result.membership?.memberRole || memberRole,
                 },
                 updatedAt: new Date().toISOString(),
               }

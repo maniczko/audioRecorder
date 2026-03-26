@@ -1,15 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { vi, afterEach, Mock } from 'vitest';
+import { vi, afterEach, type Mock } from 'vitest';
 import { cleanup } from '@testing-library/react';
-
-// Mock jest global with vitest for compatibility
-declare global {
-  // eslint-disable-next-line no-var
-  var jest: typeof vi;
-}
-
-globalThis.jest = vi;
 
 // Global cleanup after each test to prevent memory leaks and test interference
 afterEach(() => {
@@ -48,7 +40,7 @@ if (!window.URL.revokeObjectURL) {
 vi.mock('react-virtuoso', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as object),
     Virtuoso: ({ data, itemContent, style }: any) => {
       return React.createElement(
         'div',

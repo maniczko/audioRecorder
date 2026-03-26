@@ -70,16 +70,6 @@ function formatPipelineDiagnostics(item) {
   return details.join(' · ');
 }
 
-function getSelectedMeetingDiagnostics(selectedMeeting) {
-  if (!selectedMeeting) return '';
-  const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
-  const latest =
-    recordings.find((recording) => recording.id === selectedMeeting.latestRecordingId) ||
-    recordings[0] ||
-    null;
-  return formatPipelineDiagnostics(latest);
-}
-
 function getLatestRecording(selectedMeeting) {
   if (!selectedMeeting) return null;
   const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
@@ -89,8 +79,6 @@ function getLatestRecording(selectedMeeting) {
     null
   );
 }
-
-
 
 function UnifiedLibrary({
   userMeetings,
@@ -114,7 +102,8 @@ function UnifiedLibrary({
   React.useEffect(() => {
     if (!showFilters) return;
     function onOutside(e) {
-      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) setShowFilters(false);
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target))
+        setShowFilters(false);
     }
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
@@ -167,7 +156,7 @@ function UnifiedLibrary({
           if (!tagFilter.every((tf) => mt.includes(tf))) return false;
         }
         if (participantFilter && participantFilter.length > 0) {
-          const mParts = [m.owner, ...(m.guests || [])].filter(Boolean).map(p => p.trim());
+          const mParts = [m.owner, ...(m.guests || [])].filter(Boolean).map((p) => p.trim());
           if (!participantFilter.every((pf) => mParts.includes(pf))) return false;
         }
         if (searchQuery) {
@@ -210,15 +199,38 @@ function UnifiedLibrary({
   const [isDragging, setIsDragging] = React.useState(false);
   const dragCounter = React.useRef(0);
 
-  const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current++; setIsDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current--; if (dragCounter.current <= 0) { dragCounter.current = 0; setIsDragging(false); } };
-  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+    }
+  };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   const handleDrop = (e) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(false); dragCounter.current = 0;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
     const file = e.dataTransfer?.files?.[0];
     if (file && (file.type.startsWith('audio/') || file.type.startsWith('video/'))) {
-      const dt = new DataTransfer(); dt.items.add(file);
-      if (fileInputRef?.current) { fileInputRef.current.files = dt.files; fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true })); }
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      if (fileInputRef?.current) {
+        fileInputRef.current.files = dt.files;
+        fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     }
   };
 
@@ -232,30 +244,60 @@ function UnifiedLibrary({
       style={{ position: 'relative' }}
     >
       {isDragging && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 9999,
-          background: 'rgba(117, 214, 196, 0.08)',
-          border: '3px dashed var(--accent)',
-          borderRadius: 16,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          pointerEvents: 'none'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(117, 214, 196, 0.08)',
+            border: '3px dashed var(--accent)',
+            borderRadius: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              color: 'var(--accent)',
+            }}
+          >
             <Upload size={40} />
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Upuść plik audio/video tutaj</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+              Upuść plik audio/video tutaj
+            </span>
           </div>
         </div>
       )}
-      <div className="panel-header compact recordings-library-header" style={{ alignItems: 'center' }}>
+      <div
+        className="panel-header compact recordings-library-header"
+        style={{ alignItems: 'center' }}
+      >
         <div className="recordings-library-heading">
           <div className="eyebrow">Workspace</div>
           <h2>Baza spotkań i nagrań</h2>
         </div>
-        
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, justifyContent: 'flex-end', marginLeft: 32 }}>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            flex: 1,
+            justifyContent: 'flex-end',
+            marginLeft: 32,
+          }}
+        >
           {isUploading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160 }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap' }}>Wgrywanie {uploadProgress}%</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                Wgrywanie {uploadProgress}%
+              </span>
               <ProgressBar value={uploadProgress} variant="upload" />
             </div>
           ) : (
@@ -263,7 +305,14 @@ function UnifiedLibrary({
               type="button"
               className="secondary-button"
               onClick={onUploadClick}
-              style={{ height: 36, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '0 12px' }}
+              style={{
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: '0.82rem',
+                padding: '0 12px',
+              }}
             >
               <Upload size={14} /> Wgraj
             </button>
@@ -277,41 +326,96 @@ function UnifiedLibrary({
             onChange={handleFileUpload}
           />
 
-          <div className="recordings-tab-filters-col" ref={filterDropdownRef} style={{ position: 'relative' }}>
-            <button 
+          <div
+            className="recordings-tab-filters-col"
+            ref={filterDropdownRef}
+            style={{ position: 'relative' }}
+          >
+            <button
               type="button"
               className="secondary-button"
               onClick={() => setShowFilters(!showFilters)}
-              style={{ height: 36, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', fontSize: '0.82rem', padding: '0 12px' }}
+              style={{
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                position: 'relative',
+                fontSize: '0.82rem',
+                padding: '0 12px',
+              }}
             >
               <Filter size={14} /> Filters
               {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
-                <span style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, background: 'var(--accent)', borderRadius: '50%' }} />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 10,
+                    height: 10,
+                    background: 'var(--accent)',
+                    borderRadius: '50%',
+                  }}
+                />
               )}
             </button>
-            
+
             {showFilters && (
-              <div className="recordings-filters-dropdown" style={{
-                position: 'absolute', top: 'calc(100% + 12px)', left: 0, zIndex: 9999, 
-                background: '#101c1a', border: '1px solid rgba(117, 214, 196, 0.2)', 
-                borderRadius: 12, padding: 24, width: 340, boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-                display: 'flex', flexDirection: 'column', gap: 20
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                className="recordings-filters-dropdown"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 12px)',
+                  left: 0,
+                  zIndex: 9999,
+                  background: '#101c1a',
+                  border: '1px solid rgba(117, 214, 196, 0.2)',
+                  borderRadius: 12,
+                  padding: 24,
+                  width: 340,
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                }}
+              >
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <h3 style={{ margin: 0, fontSize: '0.95rem' }}>Filtry</h3>
                   {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
-                    <button 
-                      type="button" 
-                      className="ghost-button" 
-                      onClick={() => { setDateFilter(''); setTagFilter([]); setParticipantFilter([]); }}
-                      style={{ padding: '4px 8px', height: 'auto', color: 'var(--text-3)', fontSize: '0.8rem' }}
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => {
+                        setDateFilter('');
+                        setTagFilter([]);
+                        setParticipantFilter([]);
+                      }}
+                      style={{
+                        padding: '4px 8px',
+                        height: 'auto',
+                        color: 'var(--text-3)',
+                        fontSize: '0.8rem',
+                      }}
                     >
                       Wyczyść wszystko
                     </button>
                   )}
                 </div>
                 <div className="filter-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Data Spotkania</label>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--text-2)',
+                      marginBottom: 8,
+                      display: 'block',
+                    }}
+                  >
+                    Data Spotkania
+                  </label>
                   <Input
                     type="date"
                     value={dateFilter}
@@ -320,7 +424,17 @@ function UnifiedLibrary({
                   />
                 </div>
                 <div className="filter-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Tagi</label>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--text-2)',
+                      marginBottom: 8,
+                      display: 'block',
+                    }}
+                  >
+                    Tagi
+                  </label>
                   <TagInput
                     tags={tagFilter}
                     suggestions={allTags}
@@ -329,7 +443,17 @@ function UnifiedLibrary({
                   />
                 </div>
                 <div className="filter-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>Uczestnicy</label>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--text-2)',
+                      marginBottom: 8,
+                      display: 'block',
+                    }}
+                  >
+                    Uczestnicy
+                  </label>
                   <TagInput
                     tags={participantFilter}
                     suggestions={allParticipants}
@@ -343,13 +467,30 @@ function UnifiedLibrary({
 
           <div className="recordings-tab-search-col" style={{ flex: 1 }}>
             <div style={{ position: 'relative', width: '100%' }}>
-              <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
+              <Search
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-3)',
+                }}
+              />
               <Input
                 type="search"
                 placeholder="Search host or title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', paddingLeft: 36, background: 'var(--surface-0)', border: '1px solid var(--border)', borderRadius: 8, height: 36, fontSize: '0.85rem' }}
+                style={{
+                  width: '100%',
+                  paddingLeft: 36,
+                  background: 'var(--surface-0)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  height: 36,
+                  fontSize: '0.85rem',
+                }}
               />
             </div>
           </div>
@@ -498,11 +639,9 @@ function UnifiedLibrary({
 
 export default function RecordingsTab(props) {
   const {
-    currentWorkspace,
     userMeetings,
     selectedMeeting,
     selectMeeting,
-    startNewMeetingDraft,
     setActiveTab,
     onCreateMeeting,
     queueRecording,
@@ -619,7 +758,6 @@ export default function RecordingsTab(props) {
 
   return (
     <div className="recordings-tab-container recordings-tab-shell">
-
       {showPipelineStatus ? (
         <section className="panel recordings-status-panel">
           <div className="panel-header compact recordings-panel-header-flat">

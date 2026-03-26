@@ -1,37 +1,37 @@
-import { useMemo, useState, lazy, Suspense } from "react";
-import ErrorBoundary from "./lib/ErrorBoundary";
+import { useMemo, useState, lazy, Suspense } from 'react';
+import ErrorBoundary from './lib/ErrorBoundary';
 
-import { useWorkspaceSelectors } from "./store/workspaceStore";
-import { useAuthStore } from "./store/authStore";
-import useMeetings from "./hooks/useMeetings";
-import { useGoogleCtx } from "./context/GoogleContext";
-import { useRecorderCtx } from "./context/RecorderContext";
-import useUI from "./hooks/useUI";
+import { useWorkspaceSelectors } from './store/workspaceStore';
+import { useAuthStore } from './store/authStore';
+import useMeetings from './hooks/useMeetings';
+import { useGoogleCtx } from './context/GoogleContext';
+import { useRecorderCtx } from './context/RecorderContext';
+import useUI from './hooks/useUI';
 
-const CalendarTab = lazy(() => import("./CalendarTab"));
-const NotesTab = lazy(() => import("./NotesTab"));
-const PeopleTab = lazy(() => import("./PeopleTab"));
-const ProfileTab = lazy(() => import("./ProfileTab"));
-const StudioTab = lazy(() => import("./StudioTab"));
-const TasksTab = lazy(() => import("./TasksTab"));
-const RecordingsTab = lazy(() => import("./RecordingsTab"));
+const CalendarTab = lazy(() => import('./CalendarTab'));
+const NotesTab = lazy(() => import('./NotesTab'));
+const PeopleTab = lazy(() => import('./PeopleTab'));
+const ProfileTab = lazy(() => import('./ProfileTab'));
+const StudioTab = lazy(() => import('./StudioTab'));
+const TasksTab = lazy(() => import('./TasksTab'));
+const RecordingsTab = lazy(() => import('./RecordingsTab'));
 
 function getActiveTabLabel(activeTab: string) {
   switch (activeTab) {
-    case "calendar":
-      return "Kalendarz";
-    case "tasks":
-      return "Zadania";
-    case "notes":
-      return "Notatki";
-    case "people":
-      return "Osoby";
-    case "profile":
-      return "Profil";
-    case "recordings":
-      return "Nagrania";
+    case 'calendar':
+      return 'Kalendarz';
+    case 'tasks':
+      return 'Zadania';
+    case 'notes':
+      return 'Notatki';
+    case 'people':
+      return 'Osoby';
+    case 'profile':
+      return 'Profil';
+    case 'recordings':
+      return 'Nagrania';
     default:
-      return "Studio";
+      return 'Studio';
   }
 }
 
@@ -74,7 +74,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
 
   function renderActiveTab() {
     switch (ui.activeTab) {
-      case "calendar":
+      case 'calendar':
         return (
           <CalendarTab
             activeMonth={calendarMonth}
@@ -84,16 +84,13 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             userMeetings={meetings.userMeetings}
             calendarTasks={ui.calendarTasks}
             googleCalendarEvents={google.googleCalendarEvents}
-            googleCalendarStatus={google.googleCalendarStatus}
             googleCalendarMessage={google.googleCalendarMessage}
-            connectGoogleCalendar={google.connectGoogleCalendar}
             disconnectGoogleCalendar={google.disconnectGoogleCalendar}
             syncCalendarEntryToGoogle={google.syncCalendarEntryToGoogle}
             rescheduleGoogleCalendarEntry={google.rescheduleGoogleCalendarEntry}
             openMeetingFromCalendar={ui.openMeetingFromCalendar}
             openGoogleCalendarForMeeting={ui.openGoogleCalendarForMeeting}
             openTask={ui.openTask}
-            googleCalendarEnabled={google.googleEnabled}
             googleCalendarWritable={google.googleCalendarWritable}
             onRescheduleMeeting={meetings.rescheduleMeeting}
             onRescheduleTask={meetings.rescheduleTask}
@@ -102,13 +99,15 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onApplyCalendarSyncSnapshot={meetings.applyCalendarSyncSnapshot}
             workspaceMembers={workspace.currentWorkspaceMembers}
             peopleProfiles={meetings.peopleProfiles}
-            currentUserTimezone={workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
+            currentUserTimezone={
+              workspace.currentUser?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+            }
             startNewMeetingDraft={meetings.startNewMeetingDraft}
-            onNavigateToStudio={() => ui.setActiveTab("studio")}
+            onNavigateToStudio={() => ui.setActiveTab('studio')}
             onCreateMeeting={meetings.createMeetingDirect}
           />
         );
-      case "tasks":
+      case 'tasks':
         return (
           <TasksTab
             tasks={meetings.meetingTasks}
@@ -126,7 +125,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onUpdateColumn={meetings.changeTaskColumn}
             onDeleteColumn={meetings.removeTaskColumn}
             onOpenMeeting={ui.openMeetingFromCalendar}
-            defaultView={workspace.currentUser.preferredTaskView || "list"}
+            defaultView={workspace.currentUser.preferredTaskView || 'list'}
             googleTasksEnabled={google.googleEnabled}
             googleTasksStatus={google.googleTasksStatus}
             googleTasksMessage={google.googleTasksMessage}
@@ -139,16 +138,16 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onExportGoogleTasks={google.exportTasksToGoogle}
             onRefreshGoogleTasks={google.refreshGoogleTasks}
             onResolveGoogleTaskConflict={google.resolveGoogleTaskConflict}
-            workspaceName={workspace.currentWorkspace?.name || ""}
-            workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ""}
+            workspaceName={workspace.currentWorkspace?.name || ''}
+            workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ''}
             externalSelectedTaskId={ui.pendingTaskId}
-            onTaskSelectionHandled={() => ui.setPendingTaskId("")}
-            currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
+            onTaskSelectionHandled={() => ui.setPendingTaskId('')}
+            currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
             taskNotifications={meetings.taskNotifications}
             workspaceActivity={meetings.workspaceActivity}
           />
         );
-      case "notes":
+      case 'notes':
         return (
           <NotesTab
             userMeetings={meetings.userMeetings}
@@ -156,7 +155,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onCreateNote={meetings.createManualNote}
           />
         );
-      case "people":
+      case 'people':
         return (
           <PeopleTab
             profiles={meetings.peopleProfiles}
@@ -167,10 +166,10 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onUpdatePersonNotes={meetings.updatePersonNotes}
             onAnalyzePersonProfile={meetings.analyzePersonPsychProfile}
             externalSelectedPersonId={ui.pendingPersonId}
-            onPersonSelectionHandled={() => ui.setPendingPersonId("")}
+            onPersonSelectionHandled={() => ui.setPendingPersonId('')}
           />
         );
-      case "profile":
+      case 'profile':
         return (
           <ProfileTab
             currentUser={workspace.currentUser}
@@ -204,17 +203,16 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onRefreshGoogleTasks={google.refreshGoogleTasks}
             workspaceRole={workspace.currentWorkspaceRole}
             theme={ui.theme}
-            onToggleTheme={() => ui.setTheme((t) => (t === "dark" ? "light" : "dark"))}
             onSetTheme={ui.setTheme}
             layoutPreset={ui.layoutPreset}
             onSetLayoutPreset={ui.setLayoutPreset}
-            sessionToken={workspace.session?.token || ""}
-            apiBaseUrl={import.meta.env.VITE_API_BASE_URL || ""}
+            sessionToken={workspace.session?.token || ''}
+            apiBaseUrl={import.meta.env.VITE_API_BASE_URL || ''}
             allTags={allTags}
             onRenameTag={meetings.renameTag}
             onDeleteTag={meetings.deleteTag}
-            vocabulary={meetings.vocabulary}
-            onUpdateVocabulary={meetings.setVocabulary}
+            vocabulary={[]}
+            onUpdateVocabulary={() => {}}
             peopleProfiles={meetings.peopleProfiles}
             audioStorageState={recorder.audioStorageState}
             onRefreshAudioStorageState={recorder.refreshAudioStorageState}
@@ -262,7 +260,6 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             clearMeetingDraft={meetings.clearMeetingDraft}
             saveMeeting={meetings.saveMeeting}
             startNewMeetingDraft={meetings.startNewMeetingDraft}
-            workspaceMessage={meetings.workspaceMessage}
             workspaceActivity={meetings.workspaceActivity}
             userMeetings={meetings.userMeetings}
             selectedMeetingId={meetings.selectedMeetingId}
@@ -325,7 +322,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             setSelectedMeetingId={meetings.setSelectedMeetingId}
             isDetachedMeetingDraft={meetings.isDetachedMeetingDraft}
             addMeetingComment={meetings.addMeetingComment}
-            currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || "Ty"}
+            currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
             defaultToNewStudio={ui.tabHistory.length === 1}
             tagOptions={meetings.taskTags}
           />

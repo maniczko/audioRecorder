@@ -6,7 +6,7 @@ import type {
   TranscriptionDiagnostics,
   TranscriptionStatusPayload,
   WorkspaceState,
-} from './types.ts';
+} from './types';
 
 export interface WorkspaceStatePayload {
   meetings: unknown[];

@@ -1,17 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-function revokeAudioUrl(url) {
+function revokeAudioUrl(url: string) {
   if (url && typeof URL !== 'undefined' && URL.revokeObjectURL) {
     URL.revokeObjectURL(url);
   }
 }
 
-export default function useAudioHydration({ mediaService, userMeetings }) {
-  const [audioUrls, setAudioUrls] = useState({});
-  const [audioHydrationErrors, setAudioHydrationErrors] = useState({});
-  const [audioHydrationStatusByRecordingId, setAudioHydrationStatusByRecordingId] = useState({});
-  const audioUrlsRef = useRef({});
-  const audioHydrationStatusRef = useRef({});
+interface UseAudioHydrationOptions {
+  force?: boolean;
+  priority?: boolean;
+}
+
+interface UseAudioHydrationParams {
+  mediaService: any;
+  userMeetings: any[];
+}
+
+export default function useAudioHydration({ mediaService, userMeetings }: UseAudioHydrationParams) {
+  const [audioUrls, setAudioUrls] = useState<Record<string, string>>({});
+  const [audioHydrationErrors, setAudioHydrationErrors] = useState<Record<string, string>>({});
+  const [audioHydrationStatusByRecordingId, setAudioHydrationStatusByRecordingId] = useState<
+    Record<string, string>
+  >({});
+  const audioUrlsRef = useRef<Record<string, string>>({});
+  const audioHydrationStatusRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     audioUrlsRef.current = audioUrls;
@@ -22,7 +34,7 @@ export default function useAudioHydration({ mediaService, userMeetings }) {
   }, [audioHydrationStatusByRecordingId]);
 
   const hydrateRecordingAudio = useCallback(
-    async (recordingId, options = {}) => {
+    async (recordingId: string, options: UseAudioHydrationOptions = {}) => {
       if (!recordingId || !mediaService?.getRecordingAudioBlob) return null;
       const force = Boolean(options.force);
       if (!force && audioUrlsRef.current[recordingId]) {

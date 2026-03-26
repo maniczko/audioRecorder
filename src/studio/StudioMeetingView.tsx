@@ -775,10 +775,6 @@ export default function StudioMeetingView({
       .filter(Boolean);
   }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
 
-  const keyQuotes = useMemo(
-    () => safeArray(studioAnalysis?.keyQuotes).slice(0, 3),
-    [studioAnalysis?.keyQuotes]
-  );
   const followUps = useMemo(
     () => safeArray(studioAnalysis?.followUps).slice(0, 4),
     [studioAnalysis?.followUps]
@@ -790,10 +786,6 @@ export default function StudioMeetingView({
   const blockers = useMemo(
     () => safeArray(studioAnalysis?.blockers).slice(0, 3),
     [studioAnalysis?.blockers]
-  );
-  const participantInsights = useMemo(
-    () => safeArray(studioAnalysis?.participantInsights).slice(0, 4),
-    [studioAnalysis?.participantInsights]
   );
   const tensions = useMemo(
     () => safeArray(studioAnalysis?.tensions).slice(0, 3),
@@ -3162,7 +3154,9 @@ export default function StudioMeetingView({
                           audioRef.current.currentTime = nextValue;
                         }
                       }}
-                      style={{ '--ff-player-progress': `${scrubberProgress}%` } as React.CSSProperties}
+                      style={
+                        { '--ff-player-progress': `${scrubberProgress}%` } as React.CSSProperties
+                      }
                     />
                   </div>
                 </div>

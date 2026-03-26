@@ -8,18 +8,26 @@ import TagInput from '../shared/TagInput';
 const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
 const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
 
+interface EditDraft {
+  title?: string;
+  description?: string;
+  owner?: string;
+  dueDate?: string;
+  priority?: string;
+}
+
 function AiTaskSuggestionsPanel({
   selectedRecording,
   displaySpeakerNames,
   peopleProfiles = [],
   onCreateTask,
   canEdit = true,
-}) {
+}: any) {
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [editDraft, setEditDraft] = useState({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft>({});
 
   const peopleSuggestions = useMemo(() => {
     const names = new Set();

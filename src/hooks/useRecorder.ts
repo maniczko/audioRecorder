@@ -18,6 +18,29 @@ import useAudioHydration from './useAudioHydration';
 import useRecordingPipeline from './useRecordingPipeline';
 import useLiveTranscript from './useLiveTranscript';
 
+interface AudioStorageState {
+  usageBytes: number;
+  quotaBytes: number;
+  freeBytes: number;
+  usageRatio: number;
+  isNearQuota: boolean;
+  warningMessage: string;
+  items: any[];
+}
+
+interface UseRecorderParams {
+  selectedMeeting?: any;
+  userMeetings: any[];
+  createAdHocMeeting: () => any;
+  attachCompletedRecording: (recordingMeetingId: any, recording: any) => void;
+  isHydratingRemoteState: boolean;
+  selectMeeting?: (meeting: any) => void;
+}
+
+interface StartRecordingOptions {
+  adHoc?: boolean;
+}
+
 export default function useRecorder({
   selectedMeeting,
   userMeetings,
@@ -25,12 +48,12 @@ export default function useRecorder({
   attachCompletedRecording,
   isHydratingRemoteState,
   selectMeeting,
-}) {
+}: UseRecorderParams) {
   const mediaService = useMemo(() => createMediaService(), []);
   const [liveText, setLiveText] = useState('');
-  const [currentSegments, setCurrentSegments] = useState([]);
-  const [recordingMeetingId, setRecordingMeetingId] = useState(null);
-  const [audioStorageState, setAudioStorageState] = useState({
+  const [currentSegments, setCurrentSegments] = useState<any[]>([]);
+  const [recordingMeetingId, setRecordingMeetingId] = useState<string | null>(null);
+  const [audioStorageState, setAudioStorageState] = useState<AudioStorageState>({
     usageBytes: 0,
     quotaBytes: 0,
     freeBytes: 0,
@@ -39,15 +62,19 @@ export default function useRecorder({
     warningMessage: '',
     items: [],
   });
-  const userMeetingsRef = useRef(userMeetings);
+  const userMeetingsRef = useRef<any[]>(userMeetings);
 
   useEffect(() => {
     userMeetingsRef.current = userMeetings;
   }, [userMeetings]);
 
-  async function refreshAudioStorageState() {
-    const [estimate, items] = await Promise.all([getAudioStorageEstimate(), listStoredSizes()]);
+  async function refreshAudioStorageState(): Promise<AudioStorageState> {
+    const [estimate, itemsResult] = await Promise.all([
+      getAudioStorageEstimate(),
+      listStoredSizes(),
+    ]);
 
+    const items = Array.isArray(itemsResult) ? itemsResult : [];
     const nextEstimate = estimate || {
       usageBytes: 0,
       quotaBytes: 0,
@@ -145,7 +172,8 @@ export default function useRecorder({
       mediaService.mode === 'remote' &&
       liveTranscriptEnabled &&
       !mediaService.supportsLiveTranscription(),
-    transcribeLive: (blob) => mediaService.transcribeLiveChunk?.(blob) ?? Promise.resolve(''),
+    transcribeLive: (blob: Blob) =>
+      (mediaService as any).transcribeLiveChunk?.(blob) ?? Promise.resolve(''),
     mimeType: hardware.mimeTypeRef.current,
   });
 
@@ -155,7 +183,7 @@ export default function useRecorder({
     }
   }, [serverCaption, mediaService.mode, liveTranscriptEnabled]);
 
-  const startRecordingWrapper = (options = {}) => {
+  const startRecordingWrapper = (options: StartRecordingOptions = {}) => {
     const active = options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting;
     if (!active) {
       pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');

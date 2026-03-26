@@ -16,11 +16,7 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 };
 
 function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {}) {
-  const normalized = normalizeMediaTranscriptionResponse({
-    ...response,
-    recordingId: String((response as any)?.recordingId || ''),
-    updatedAt: String((response as any)?.updatedAt || ''),
-  });
+  const normalized = normalizeMediaTranscriptionResponse(response);
 
   return {
     diarization: response.diarization || {},

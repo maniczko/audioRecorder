@@ -23,7 +23,7 @@ function TasksSidebar({
   taskNotifications = [],
   conflictTasks = [],
   onFocusConflictTask,
-}) {
+}: any) {
   return (
     <aside className="todo-sidebar">
       <div className="todo-sidebar-top">

@@ -296,3 +296,13 @@ export interface MeetingAnalysis {
   suggestedAgenda: string[];
   feedback?: MeetingFeedback;
 }
+
+export interface WorkspaceState {
+  meetings: unknown[];
+  manualTasks: unknown[];
+  taskState: Record<string, unknown>;
+  taskBoards: Record<string, unknown>;
+  calendarMeta: Record<string, unknown>;
+  vocabulary: string[];
+  updatedAt?: string;
+}

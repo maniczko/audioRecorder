@@ -1,4 +1,4 @@
-import type { MeetingAnalysis } from '../shared/types';
+import type { MeetingAnalysis, MeetingRisk, TranscriptSegment } from '../shared/types';
 import { analyzeSpeakingStyle } from './speakerAnalysis';
 import { API_BASE_URL } from '../services/config';
 import {
@@ -6,12 +6,22 @@ import {
   buildMeetingFeedbackSchemaExample,
   normalizeMeetingFeedback,
 } from '../shared/meetingFeedback';
+import { normalizeTask, normalizeTasks, type TaskInput } from './taskNormalizer';
+import {
+  validateAnalysisResponse,
+  parseAiResponse,
+  safeParseAiResponse,
+  validateAndNormalizeRisks,
+  type AiAnalysisResponse,
+} from './aiResponseValidator';
+import { buildFallbackRichFields, clearFallbackCache } from './fallbackAnalysis';
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
 
 // Import lazily to avoid circular deps — apiRequest reads from localStorage for the session token
-let _apiRequest = null;
+let _apiRequest: null | typeof import('../services/httpClient').apiRequest = null;
+
 async function getApiRequest() {
   if (!_apiRequest) {
     const mod = await import('../services/httpClient');
@@ -20,11 +30,14 @@ async function getApiRequest() {
   return _apiRequest;
 }
 
-function safeArray(value) {
+function safeArray<T>(value: T | T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : [];
 }
 
-function transcriptText(segments, speakerNames) {
+function transcriptText(
+  segments: TranscriptSegment[],
+  speakerNames: Record<string, string>
+): string {
   return safeArray(segments)
     .map((segment) => {
       const speaker =
@@ -34,8 +47,8 @@ function transcriptText(segments, speakerNames) {
     .join('\n');
 }
 
-function findRelevantSegments(segments, term) {
-  const normalizedTerm = String(term || '').toLowerCase();
+function findRelevantSegments(segments: TranscriptSegment[], term: string): TranscriptSegment[] {
+  const normalizedTerm = term.toLowerCase();
   const keywords = normalizedTerm.split(/\s+/).filter((item) => item.length > 2);
 
   return safeArray(segments).filter((segment) => {
@@ -44,7 +57,7 @@ function findRelevantSegments(segments, term) {
   });
 }
 
-function dedupeList(items) {
+function dedupeList(items: unknown[]): string[] {
   return [
     ...new Set(
       safeArray(items)
@@ -52,164 +65,6 @@ function dedupeList(items) {
         .filter(Boolean)
     ),
   ];
-}
-
-function normalizeTask(task, index, speakerNames) {
-  if (!task) {
-    return null;
-  }
-
-  if (typeof task === 'string') {
-    const match = task.match(/^([^:]{2,40}):\s*(.+)$/);
-    return {
-      id: `task_${index}`,
-      title: match ? match[2].trim() : task.trim(),
-      owner: match ? match[1].trim() : 'Nieprzypisane',
-      sourceQuote: task.trim(),
-      priority: /pilne|asap|natychmiast|krytyczne/i.test(task) ? 'high' : 'medium',
-      tags: [],
-    };
-  }
-
-  const title = String(task.title || task.text || '').trim();
-  if (!title) {
-    return null;
-  }
-
-  const owner = String(task.owner || task.assignee || '').trim();
-  return {
-    id: task.id || `task_${index}`,
-    title,
-    owner: owner || speakerNames?.[String(task.speakerId)] || 'Nieprzypisane',
-    sourceQuote: String(task.sourceQuote || task.quote || title).trim(),
-    priority: String(task.priority || '').trim() || 'medium',
-    tags: Array.isArray(task.tags) ? task.tags : [],
-  };
-}
-
-const STOPWORDS = new Set([
-  'jest',
-  'są',
-  'nie',
-  'się',
-  'jak',
-  'ale',
-  'czy',
-  'tak',
-  'też',
-  'już',
-  'do',
-  'po',
-  'na',
-  'od',
-  'ze',
-  'to',
-  'ten',
-  'tam',
-  'tu',
-  'co',
-  'my',
-  'ty',
-  'go',
-  'jej',
-  'jego',
-  'ich',
-  'dla',
-  'pan',
-  'pani',
-  'tego',
-  'przez',
-  'przy',
-  'czy',
-  'oraz',
-  'więc',
-  'który',
-  'która',
-  'które',
-  'tego',
-  'tej',
-  'temu',
-  'które',
-  'kiedy',
-  'gdzie',
-  'mamy',
-  'musi',
-  'może',
-  'tylko',
-  'sobie',
-  'tego',
-  'tego',
-]);
-
-function buildFallbackRichFields({ transcript, speakerNames }) {
-  const stopwords = STOPWORDS;
-  const wordFreq = {};
-  transcript.forEach((seg) => {
-    String(seg.text || '')
-      .toLowerCase()
-      .split(/\s+/)
-      .forEach((w) => {
-        const c = w.replace(/[^a-ząćęłńóśźż]/g, '');
-        if (c.length >= 5 && !stopwords.has(c)) wordFreq[c] = (wordFreq[c] || 0) + 1;
-      });
-  });
-  const suggestedTags = Object.entries(wordFreq)
-    .sort((a, b) => (b[1] as number) - (a[1] as number))
-    .slice(0, 5)
-    .map(([w]) => w);
-
-  const risks = dedupeList(
-    transcript
-      .filter((s) =>
-        /ryzyko|problem|obawa|trudne|zagrożen|blokuje|nie uda|martwi|niepewn/i.test(s.text)
-      )
-      .map((s) => s.text)
-  )
-    .slice(0, 4)
-    .map((risk) => ({ risk, severity: 'medium' }));
-
-  const blockers = dedupeList(
-    transcript
-      .filter((s) => /blokuje|czekamy|zależy od|nie możemy bez|brakuje|nie mamy/i.test(s.text))
-      .map((s) => s.text)
-  ).slice(0, 3);
-
-  const totalSegs = transcript.length || 1;
-  const speakerCounts: Record<string, { count: number; q: number }> = {};
-  transcript.forEach((seg) => {
-    const id = String(seg.speakerId);
-    if (!speakerCounts[id]) speakerCounts[id] = { count: 0, q: 0 };
-    speakerCounts[id].count++;
-    if (seg.text.includes('?')) speakerCounts[id].q++;
-  });
-  const participantInsights = Object.entries(speakerCounts).map(([id, d]) => ({
-    speaker: speakerNames?.[id] || `Speaker ${Number(id) + 1}`,
-    mainTopic: '',
-    stance: d.q > d.count * 0.3 ? 'reactive' : 'proactive' as 'reactive' | 'proactive',
-    talkRatio: Math.round((d.count / totalSegs) * 100) / 100,
-  }));
-
-  const keyQuotes = transcript
-    .filter((s) => s.text.length > 45)
-    .sort((a, b) => b.text.length - a.text.length)
-    .slice(0, 2)
-    .map((s) => ({
-      quote: s.text,
-      speaker: speakerNames?.[String(s.speakerId)] || `Speaker ${s.speakerId + 1}`,
-      why: 'Znacząca wypowiedź.',
-    }));
-
-  return {
-    suggestedTags,
-    risks,
-    blockers,
-    participantInsights,
-    keyQuotes,
-    tensions: [],
-    suggestedAgenda: [],
-    meetingType: 'other',
-    energyLevel: 'medium',
-  };
 }
 
 function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization }): MeetingAnalysis {
@@ -269,7 +124,7 @@ function buildFallbackAnalysis({ meeting, segments, speakerNames, diarization })
     tasks: tasks as any,
     followUps,
     answersToNeeds,
-    risks: rich.risks as any,
+    risks: rich.risks as import('../shared/types').MeetingRisk[],
     blockers: rich.blockers,
     participantInsights: rich.participantInsights,
     tensions: rich.tensions,
@@ -554,7 +409,7 @@ export async function analyzeMeeting({
       suggestedTags: ['budzet', 'roadmap'],
       meetingType: 'planning',
       energyLevel: 'medium',
-      risks: [{ risk: '...', severity: 'high' }],
+      risks: [{ risk: '...', severity: 'high' as const }],
       blockers: ['...'],
       participantInsights: [
         {
@@ -607,12 +462,18 @@ export async function analyzeMeeting({
       summary: parsed.summary || fallback.summary,
       decisions: dedupeList(parsed.decisions).slice(0, 5),
       actionItems: dedupeList(parsed.actionItems).slice(0, 6),
-      tasks: safeArray(parsed.tasks).map((task: any, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames)).filter(Boolean) as any,
+      tasks: safeArray(parsed.tasks)
+        .map((task: any, index) => normalizeTask(task, index, parsed.speakerLabels || speakerNames))
+        .filter(Boolean) as any,
       followUps: dedupeList(parsed.followUps).slice(0, 5),
-      answersToNeeds: safeArray(parsed.answersToNeeds).length ? parsed.answersToNeeds : fallback.answersToNeeds,
-      risks: safeArray(parsed.risks).slice(0, 4) as any,
+      answersToNeeds: safeArray(parsed.answersToNeeds).length
+        ? parsed.answersToNeeds
+        : fallback.answersToNeeds,
+      risks: safeArray(parsed.risks).slice(0, 4) as import('../shared/types').MeetingRisk[],
       blockers: dedupeList(parsed.blockers).slice(0, 3),
-      participantInsights: safeArray(parsed.participantInsights).length ? parsed.participantInsights : richFallback.participantInsights,
+      participantInsights: safeArray(parsed.participantInsights).length
+        ? parsed.participantInsights
+        : richFallback.participantInsights,
       tensions: safeArray(parsed.tensions).slice(0, 3),
       keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
       speakerStats,
@@ -639,7 +500,7 @@ export async function analyzeMeeting({
         .map((t) => String(t).toLowerCase().trim()),
       meetingType: parsed.meetingType || 'other',
       energyLevel: parsed.energyLevel || 'medium',
-      risks: safeArray(parsed.risks).slice(0, 4),
+      risks: safeArray(parsed.risks).slice(0, 4) as import('../shared/types').MeetingRisk[],
       blockers: dedupeList(parsed.blockers).slice(0, 3),
       participantInsights: safeArray(parsed.participantInsights).length
         ? parsed.participantInsights

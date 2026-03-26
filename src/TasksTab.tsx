@@ -1,7 +1,7 @@
 import './styles/tasks.css';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { PageShell, SplitPane } from './ui/LayoutPrimitives';
-import { buildTaskGroups, getTaskSlaState, taskListStats } from './lib/tasks';
+import { buildTaskGroups, taskListStats } from './lib/tasks';
 import TaskDetailsPanel from './tasks/TaskDetailsPanel';
 import TasksSidebar from './tasks/TasksSidebar';
 import TasksWorkspaceView from './tasks/TasksWorkspaceView';
@@ -60,6 +60,7 @@ export default function TasksTab({
   const [selectedListId, setSelectedListId] = useState('smart:all');
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [selectedTaskSla, setSelectedTaskSla] = useState(null);
   const [sortBy, setSortBy] = useState('manual');
   const [groupBy, setGroupBy] = useState('none');
   const [query, setQuery] = useState('');
@@ -195,15 +196,6 @@ export default function TasksTab({
         tasks: visibleTasks.filter((task) => task.status === column.id),
       })),
     [boardColumns, visibleTasks]
-  );
-  const selectedTasks = useMemo(
-    () => tasks.filter((task) => selectedTaskIds.includes(task.id)),
-    [selectedTaskIds, tasks]
-  );
-  const selectedTaskSla = selectedTask ? getTaskSlaState(selectedTask) : null;
-  const conflictTasks = useMemo(
-    () => tasks.filter((task) => task.googleSyncStatus === 'conflict' && task.googleSyncConflict),
-    [tasks]
   );
 
   const runSafely = useCallback((action, successMessage = '') => {
@@ -592,7 +584,9 @@ export default function TasksTab({
         setViewMode('list');
         setSelectedTaskId(activeTaskId);
         window.setTimeout(() => {
-          const inputEl = document.querySelector(`[data-task-title-input="${activeTaskId}"]`) as HTMLInputElement | null;
+          const inputEl = document.querySelector(
+            `[data-task-title-input="${activeTaskId}"]`
+          ) as HTMLInputElement | null;
           inputEl?.focus();
         }, 0);
         return;
@@ -663,9 +657,8 @@ export default function TasksTab({
             searchInputRef={searchInputRef}
             selectedTasks={selectedTaskIds}
             selectedTaskCount={selectedTaskIds.length}
-            toggleTaskSelection={toggleTaskSelection}
-            handleBulkUpdate={handleBulkUpdate}
-            handleBulkDelete={handleBulkDelete}
+            selectedTaskSla={selectedTaskSla}
+            clearTaskSelection={clearTaskSelection}
             taskNotifications={taskNotifications}
             onFocusConflictTask={(taskId) => {
               setSelectedTaskId(taskId);
@@ -723,11 +716,7 @@ export default function TasksTab({
             visibleStats={visibleStats}
             selectedTaskIds={selectedTaskIds}
             toggleTaskSelection={toggleTaskSelection}
-            handleBulkUpdate={handleBulkUpdate}
-            handleBulkDelete={handleBulkDelete}
             taskNotifications={taskNotifications}
-            workspaceActivity={workspaceActivity}
-            visibleTaskCount={visibleTasks.length}
             showColumnManager={showColumnManager}
             setShowColumnManager={setShowColumnManager}
           />
@@ -735,49 +724,58 @@ export default function TasksTab({
         aside={null}
       />
       {selectedTask && (
-        <div 
-          className="ff-modal-overlay tasks-layout ms-todo" 
+        <div
+          className="ff-modal-overlay tasks-layout ms-todo"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
           style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <div 
-            className="ff-modal-content" 
-            style={{ 
-              padding: 0, 
-              width: '680px', 
+          <div
+            className="ff-modal-content"
+            style={{
+              padding: 0,
+              width: '680px',
               maxWidth: '95vw',
 
-              height: '85vh', 
-              display: 'flex', 
+              height: '85vh',
+              display: 'flex',
               position: 'relative',
               borderRadius: '12px',
               overflow: 'hidden',
-              background: 'var(--surface-0)'
+              background: 'var(--surface-0)',
             }}
           >
-             <button
+            <button
               className="ff-modal-close"
               type="button"
               onClick={() => setSelectedTaskId('')}
-              style={{ 
-                position: 'absolute', 
-                top: 12, 
-                right: 12, 
-                zIndex: 10, 
-                background: 'var(--surface-2)', 
-                borderRadius: '50%', 
-                border: '1px solid var(--border)', 
-                cursor: 'pointer', 
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                zIndex: 10,
+                background: 'var(--surface-2)',
+                borderRadius: '50%',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
                 padding: '4px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
               }}
               title="Zamknij"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>

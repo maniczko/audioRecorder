@@ -11,14 +11,14 @@ function KpiCard({ label, value, tone = 'info' }) {
   );
 }
 
-export default function KpiDashboard({ workspaceName, meetings, tasks }) {
-  const [rangeDays, setRangeDays] = useState(30);
-  const [trend, setTrend] = useState('weekly');
+export default function KpiDashboard({ workspaceName, meetings, tasks }: any) {
+  const [rangeDays, setRangeDays] = useState<number | 'all'>(30);
+  const [trend, setTrend] = useState<'weekly' | 'monthly'>('weekly');
 
   const dashboard = useMemo(
     () =>
       buildWorkspaceKpiDashboard(meetings, tasks, {
-        rangeDays,
+        rangeDays: rangeDays === 'all' ? undefined : rangeDays,
         trend,
       }),
     [meetings, rangeDays, tasks, trend]
@@ -46,9 +46,10 @@ export default function KpiDashboard({ workspaceName, meetings, tasks }) {
           <span>Zakres dat</span>
           <select
             value={String(rangeDays)}
-            onChange={(event) =>
-              setRangeDays(event.target.value === 'all' ? 'all' : Number(event.target.value))
-            }
+            onChange={(event) => {
+              const value = event.target.value;
+              setRangeDays(value === 'all' ? 'all' : Number(value));
+            }}
           >
             <option value="7">7 dni</option>
             <option value="30">30 dni</option>

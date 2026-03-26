@@ -218,7 +218,10 @@ function KanbanCard({
         ) : null}
 
         {tags.length > 0 ? (
-          <div className="kanban-label-chips" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <div
+            className="kanban-label-chips"
+            style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}
+          >
             {tags.slice(0, 4).map((tag) => (
               <TagBadge key={`${task.id}-${tag}`} tag={tag} />
             ))}
@@ -651,9 +654,9 @@ function TaskKanbanView({
 }
 
 export default memo(TaskKanbanView, (prevProps, nextProps) => {
-  // Only re-render if boardColumns or selectedTaskIds change
+  // Only re-render if kanbanColumns or selectedTaskIds change
   return (
-    prevProps.boardColumns === nextProps.boardColumns &&
+    prevProps.kanbanColumns === nextProps.kanbanColumns &&
     prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
     prevProps.selectedTask === nextProps.selectedTask
   );

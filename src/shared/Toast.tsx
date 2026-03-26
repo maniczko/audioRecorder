@@ -1,24 +1,49 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import './Toast.css';
 
-const ToastContext = createContext(null);
+interface ToastOptions {
+  type?: 'success' | 'error' | 'info' | 'warning';
+  action?: () => void;
+  actionLabel?: string | null;
+  duration?: number;
+}
+
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  action: (() => void) | null;
+  actionLabel: string | null;
+  duration: number;
+}
+
+interface ToastContextType {
+  show: (message: string, options?: ToastOptions) => number;
+  success: (message: string, options?: ToastOptions) => void;
+  error: (message: string, options?: ToastOptions) => void;
+  info: (message: string, options?: ToastOptions) => void;
+  warning: (message: string, options?: ToastOptions) => void;
+  dismiss: (id: number) => void;
+}
+
+const ToastContext = createContext<ToastContextType | null>(null);
 
 let toastIdCounter = 0;
 
-export function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
-  const timers = useRef({});
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const timers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
-  const dismiss = useCallback((id) => {
+  const dismiss = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
     clearTimeout(timers.current[id]);
     delete timers.current[id];
   }, []);
 
   const show = useCallback(
-    (message, options = {}) => {
+    (message: string, options: ToastOptions = {}) => {
       const id = ++toastIdCounter;
-      const toast = {
+      const toast: Toast = {
         id,
         message,
         type: options.type || 'success',

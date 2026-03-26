@@ -1,11 +1,8 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { formatDateTime } from '../lib/storage';
-import { createTaskComment } from '../lib/tasks';
 import { toInputDateTime } from './taskViewUtils';
-import TagInput from '../shared/TagInput';
-import AssigneeInput from '../shared/AssigneeInput';
 import { Input } from '../ui/Input';
-import { Bell, Calendar, Tag, AlignLeft, MessageSquare, History, Trash2, Link, User } from 'lucide-react';
+import { AlignLeft, History, Trash2, Link } from 'lucide-react';
 import './TaskDetailsPanelStyles.css';
 
 function buildConflictDraft(conflict) {
@@ -31,17 +28,12 @@ function TaskDetailsPanel({
   currentUserName,
   onResolveGoogleTaskConflict,
 }) {
-  const [commentDraft, setCommentDraft] = useState('');
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [showMentions, setShowMentions] = useState(false);
-  const commentTextareaRef = useRef(null);
   const [conflictDraft, setConflictDraft] = useState(
     buildConflictDraft(selectedTask?.googleSyncConflict)
   );
   const [historyExpanded, setHistoryExpanded] = useState(false);
 
   useEffect(() => {
-    setCommentDraft('');
     setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
@@ -55,59 +47,6 @@ function TaskDetailsPanel({
         </div>
       </aside>
     );
-  }
-
-  const selectedTags = Array.isArray(selectedTask.tags) ? selectedTask.tags : [];
-
-  function updateTags(nextTags) {
-    onUpdateTask(selectedTask.id, { tags: nextTags });
-  }
-
-  function handleCommentChange(event) {
-    const val = event.target.value;
-    setCommentDraft(val);
-    const cursorPos = event.target.selectionStart;
-    const textBeforeCursor = val.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
-    if (atMatch) {
-      setMentionQuery(atMatch[1]);
-      setShowMentions(true);
-    } else {
-      setShowMentions(false);
-      setMentionQuery('');
-    }
-  }
-
-  function insertMention(person) {
-    const textarea = commentTextareaRef.current;
-    if (!textarea) return;
-    const val = commentDraft;
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = val.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
-    if (!atMatch) return;
-    const atStart = cursorPos - atMatch[0].length;
-    const newVal = val.slice(0, atStart) + `@${person} ` + val.slice(cursorPos);
-    setCommentDraft(newVal);
-    setShowMentions(false);
-    setMentionQuery('');
-    setTimeout(() => {
-      textarea.focus();
-      const newPos = atStart + person.length + 2;
-      textarea.setSelectionRange(newPos, newPos);
-    }, 0);
-  }
-
-  function addComment() {
-    if (!commentDraft.trim()) return;
-    onUpdateTask(selectedTask.id, {
-      comments: [
-        ...(selectedTask.comments || []),
-        createTaskComment(commentDraft, currentUserName || 'Ty'),
-      ],
-    });
-    setCommentDraft('');
-    setShowMentions(false);
   }
 
   async function resolveConflict(mode) {
@@ -286,7 +225,6 @@ function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
-
             <label className="todo-detail-row note-row">
               <span className="todo-row-icon" aria-hidden="true">
                 <AlignLeft size={18} />
@@ -301,7 +239,6 @@ function TaskDetailsPanel({
             </label>
           </div>
         </div>
-
 
         <section className="todo-detail-section">
           <div className="todo-section-head">

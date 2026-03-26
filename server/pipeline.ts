@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.ts';
 import { logger } from './logger.ts';
 import { matchSpeakerToProfile } from './speakerEmbedder.ts';
+import { MetricsService } from './services/MetricsService.ts';
 import { getSttModelForProcessingMode } from './stt/modelSelector.ts';
 
 // ── Sub-module imports ────────────────────────────────────────────────────────
@@ -299,6 +300,7 @@ async function runTranscriptionAttempt(
         const duration = performance.now() - start;
         pipelineMetrics.stages[name] = parseFloat(duration.toFixed(2));
         pipelineMetrics.total += duration;
+        MetricsService.observeStageDuration(name, pipelineMetrics.stages[name]);
         logger.info(`[Metrics] Pipeline Stage Complete`, {
           requestId: reqId,
           stage: name,

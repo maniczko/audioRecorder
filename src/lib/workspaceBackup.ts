@@ -66,12 +66,15 @@ function mergeCollectionById(current: unknown[] = [], incoming: unknown[] = []) 
   return merged;
 }
 
-function diffCountById(current: unknown[] = [], incoming: unknown[] = []) {
+function diffCountById(current: unknown[] = [], incoming: unknown[] = []): number {
   const currentIds = new Set(current.map((item: any) => clean(item?.id)).filter(Boolean));
-  return incoming.reduce(
-    (count: number, item: any) => count + (currentIds.has(clean(item?.id)) ? 0 : 1),
-    0
-  );
+  let count = 0;
+  incoming.forEach((item: any) => {
+    if (!currentIds.has(clean(item?.id))) {
+      count += 1;
+    }
+  });
+  return count;
 }
 
 function diffObjectCount(

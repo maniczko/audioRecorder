@@ -9,6 +9,7 @@ import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
 import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
+import { useHotkeys } from './hooks/useHotkeys';
 import { useGoogleCtx } from './context/GoogleContext';
 import { SkeletonBanner, SkeletonList } from './components/Skeleton';
 import {
@@ -31,17 +32,38 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   const google = useGoogleCtx();
   const [showAskAI, setShowAskAI] = useState(false);
 
+  useHotkeys([
+    { key: '1', ctrlKey: true, handler: () => ui.setActiveTab('studio') },
+    { key: '2', ctrlKey: true, handler: () => ui.setActiveTab('recordings') },
+    { key: '3', ctrlKey: true, handler: () => ui.setActiveTab('calendar') },
+    { key: '4', ctrlKey: true, handler: () => ui.setActiveTab('tasks') },
+    { key: '5', ctrlKey: true, handler: () => ui.setActiveTab('people') },
+    { key: 'k', ctrlKey: true, handler: () => ui.setCommandPaletteOpen(true) },
+    {
+      key: 'r',
+      ctrlKey: true,
+      handler: () => {
+        if (recorder.isRecording) {
+          recorder.stopRecording();
+        } else if (workspace.currentWorkspacePermissions?.canRecordAudio) {
+          recorder.startRecording({ adHoc: true });
+          ui.setActiveTab('studio');
+        }
+      },
+    },
+  ]);
+
   if (workspace.isHydratingSession && !workspace.currentUser) {
     return (
       <div className="app-shell-modern">
         <div className="modern-sidebar">
-          <SkeletonBanner height={64} style={{ marginBottom: 20 } as React.CSSProperties} />
+          <SkeletonBanner height={64} className="mb-5" />
           <SkeletonList items={5} lines={1} />
         </div>
         <div className="modern-main">
           <div className="modern-header">
-            <SkeletonBanner height={32} style={{ width: 120 } as React.CSSProperties} />
-            <SkeletonBanner height={32} style={{ width: 200 } as React.CSSProperties} />
+            <SkeletonBanner height={32} className="w-30" />
+            <SkeletonBanner height={32} className="w-50" />
           </div>
           <div className="modern-content-wrapper p-8">
             <SkeletonList items={3} lines={3} />
@@ -111,9 +133,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                 <g fill="none" stroke="currentColor" strokeWidth="1.8">
                   <circle cx="24.5" cy="28.3" r="2.1" />
                   <circle cx="39.5" cy="28.3" r="2.1" />
-                  <path
-                    d="M29 31.8c1.1-1.5 2-2.2 3-2.2s1.9.7 3 2.2c-.8 1.3-1.8 2-3 2s-2.2-.7-3-2Z"
-                  />
+                  <path d="M29 31.8c1.1-1.5 2-2.2 3-2.2s1.9.7 3 2.2c-.8 1.3-1.8 2-3 2s-2.2-.7-3-2Z" />
                   <rect x="29.2" y="40.4" width="2.1" height="6.1" rx="1" />
                   <rect x="32.7" y="40.4" width="2.1" height="6.1" rx="1" />
                 </g>
@@ -122,14 +142,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                     d="M18.4 44.6c0-2.1 1.7-3.8 3.8-3.8 2.1 0 3.8 1.7 3.8 3.8v5.8h-7.6v-5.8Z"
                     strokeWidth="2.8"
                   />
-                  <rect
-                    x="21"
-                    y="50.4"
-                    width="2.4"
-                    height="6.1"
-                    rx="1.2"
-                    strokeWidth="1.8"
-                  />
+                  <rect x="21" y="50.4" width="2.4" height="6.1" rx="1.2" strokeWidth="1.8" />
                   <path d="M16.4 44.1c0-3.2 2.6-5.8 5.8-5.8s5.8 2.6 5.8 5.8" strokeWidth="2.8" />
                   <path d="M17.8 43.2h8.8" strokeWidth="2.1" />
                   <path d="M18.8 46.1h6.8" strokeWidth="2.1" />
@@ -194,11 +207,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           >
             <Brain size={18} />
             Zapytaj AI
-            
             {showAskAI && (
-              <AskAIPopover 
-                currentWorkspace={workspace.currentWorkspace} 
-                onClose={() => setShowAskAI(false)} 
+              <AskAIPopover
+                currentWorkspace={workspace.currentWorkspace}
+                onClose={() => setShowAskAI(false)}
               />
             )}
           </button>

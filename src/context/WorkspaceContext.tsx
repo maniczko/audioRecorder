@@ -22,7 +22,6 @@ export function WorkspaceProvider({ children }) {
       currentWorkspaceMembers: selectors.currentWorkspaceMembers,
       currentWorkspaceRole: selectors.currentWorkspaceRole,
       currentWorkspacePermissions: selectors.currentWorkspacePermissions,
-      isHydratingRemoteState: selectors.isHydratingRemoteState,
       isHydratingSession: selectors.isHydratingSession,
       availableWorkspaces: selectors.availableWorkspaces,
       switchWorkspace: workspaceStore.switchWorkspace,

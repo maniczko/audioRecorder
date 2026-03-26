@@ -355,11 +355,11 @@ export const useRecorderStore = create<any>()(
           if (!nextItem.uploaded) {
             // VAD silence filter: strip silence gaps > 2s before upload to reduce
             // transcription cost and Whisper hallucinations on silence.
-            let uploadBlob = localBlob;
+            let uploadBlob: Blob | null = localBlob as Blob;
             let vadRemovedS = 0;
             try {
               set({ pipelineStageLabel: 'Optymalizacja audio (VAD)…' });
-              const vadResult = await filterSilence(localBlob!);
+              const vadResult = await filterSilence(localBlob as Blob);
               if (vadResult.removedS >= 2) {
                 uploadBlob = vadResult.blob;
                 vadRemovedS = vadResult.removedS;

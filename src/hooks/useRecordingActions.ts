@@ -71,9 +71,9 @@ export default function useRecordingActions({
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  function finalizeRecordingTranscript(recording, transcript, overrides = {}) {
+  function finalizeRecordingTranscript(recording: any, transcript: any, overrides: any = {}) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
-    const speakerNames = { ...(recording.speakerNames || {}), ...(overrides.speakerNames || {}) };
+    const speakerNames = { ...(recording.speakerNames || {}), ...(overrides?.speakerNames || {}) };
     const uniqueSpeakerIds = [
       ...new Set(safeTranscript.map((s) => String(s.speakerId)).filter(Boolean)),
     ];
@@ -87,7 +87,7 @@ export default function useRecordingActions({
       transcript: safeTranscript,
       speakerNames,
       speakerCount: uniqueSpeakerIds.length,
-      markers: normalizeRecordingMarkers(overrides.markers || recording.markers),
+      markers: normalizeRecordingMarkers(overrides?.markers || recording.markers),
       reviewSummary: buildTranscriptReviewSummary(safeTranscript),
     };
   }
