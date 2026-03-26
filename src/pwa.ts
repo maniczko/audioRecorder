@@ -4,7 +4,16 @@ export function registerServiceWorker() {
   // Service worker is disabled in development
   // It will be enabled in production by build process
   if (import.meta.env.DEV) {
-    console.log('[PWA] Service worker disabled in development mode');
+    console.log(
+      '[PWA] Service worker disabled in development mode. Unregistering any existing workers.'
+    );
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
     return;
   }
 
