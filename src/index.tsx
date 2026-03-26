@@ -14,7 +14,7 @@ document.documentElement.setAttribute(
 );
 document.documentElement.setAttribute(
   'data-layout',
-  document.documentElement.getAttribute('data-layout') || 'default'
+  document.documentElement.getAttribute('data-layout') || 'bobr'
 );
 
 async function bootstrap() {
