@@ -1,10 +1,11 @@
 import client from 'prom-client';
 
-// Only collect default metrics once
-let defaultMetricsCollected = false;
-if (!defaultMetricsCollected) {
+// Use global object to track if default metrics were collected (for tests)
+const globalObj = global as typeof globalThis & { __metricsCollected?: boolean };
+
+if (!globalObj.__metricsCollected) {
   client.collectDefaultMetrics();
-  defaultMetricsCollected = true;
+  globalObj.__metricsCollected = true;
 }
 
 export const pipelineStageDuration = new client.Summary({
