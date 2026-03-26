@@ -1,6 +1,11 @@
 import client from 'prom-client';
 
-client.collectDefaultMetrics();
+// Only collect default metrics once
+let defaultMetricsCollected = false;
+if (!defaultMetricsCollected) {
+  client.collectDefaultMetrics();
+  defaultMetricsCollected = true;
+}
 
 export const pipelineStageDuration = new client.Summary({
   name: 'voicelog_pipeline_stage_duration_ms',
