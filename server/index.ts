@@ -77,11 +77,21 @@ export async function bootstrap() {
       const freeGB = (freeBytes / 1024 / 1024 / 1024).toFixed(2);
 
       if (freeBytes < 100 * 1024 * 1024) {
-        // Less than 100MB
+        // Less than 100MB - CRITICAL
         logger.error(`[Bootstrap] CRITICAL: Disk space critically low! Only ${freeGB}GB free.`);
         logger.error(
           '[Bootstrap] Please clean up disk space or the server will fail to accept recordings.'
         );
+        logger.info('[Bootstrap] Attempting automatic disk cleanup...');
+        
+        // Auto cleanup on critical disk space
+        try {
+          const { cleanupDisk } = await import('./scripts/cleanup-disk.js');
+          const result = cleanupDisk();
+          logger.info(`[Bootstrap] Cleanup result: ${result.deletedCount} files deleted, ${(result.freedBytes / 1024 / 1024).toFixed(2)} MB freed`);
+        } catch (cleanupError) {
+          logger.error('[Bootstrap] Automatic cleanup failed:', cleanupError);
+        }
       } else if (freeBytes < 500 * 1024 * 1024) {
         // Less than 500MB
         logger.warn(`[Bootstrap] WARNING: Disk space low. ${freeGB}GB free.`);

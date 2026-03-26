@@ -26,6 +26,7 @@
   "scripts": {
     "test": "npx vitest run",
     "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "cleanup:disk": "tsx scripts/cleanup-disk.ts"
   }
 }

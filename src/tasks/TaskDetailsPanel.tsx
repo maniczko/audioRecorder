@@ -2,7 +2,9 @@ import { memo, useEffect, useState } from 'react';
 import { formatDateTime } from '../lib/storage';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
-import { AlignLeft, History, Trash2, Link } from 'lucide-react';
+import { AlignLeft, History, Trash2, Link, Calendar, User, Flag, Tag } from 'lucide-react';
+import TagInput from '../shared/TagInput';
+import { TASK_PRIORITIES } from '../lib/tasks';
 import './TaskDetailsPanelStyles.css';
 
 function buildConflictDraft(conflict) {
@@ -225,6 +227,65 @@ function TaskDetailsPanel({
 
         <div className="todo-detail-form">
           <div className="todo-detail-stack">
+            <div className="todo-detail-row">
+              <span className="todo-row-icon" aria-hidden="true" title="Termin">
+                <Calendar size={18} />
+              </span>
+              <span className="todo-row-label">Termin</span>
+              <Input
+                type="datetime-local"
+                value={toInputDateTime(selectedTask.dueDate) || ''}
+                onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
+              />
+            </div>
+
+            <div className="todo-detail-row" style={{ overflow: 'visible' }}>
+              <span className="todo-row-icon" aria-hidden="true" title="Przypisz osobę">
+                <User size={18} />
+              </span>
+              <span className="todo-row-label">Osoba</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <TagInput
+                  tags={selectedTask.assignedTo?.length ? selectedTask.assignedTo : (selectedTask.owner ? [selectedTask.owner] : [])}
+                  suggestions={peopleOptions}
+                  onChange={(arr) => onUpdateTask(selectedTask.id, { assignedTo: arr, owner: arr[0] || '' })}
+                  placeholder="Przypisz..."
+                />
+              </div>
+            </div>
+
+            <div className="todo-detail-row">
+              <span className="todo-row-icon" aria-hidden="true" title="Priorytet">
+                <Flag size={18} />
+              </span>
+              <span className="todo-row-label">Priorytet</span>
+              <select
+                className="todo-detail-select"
+                value={selectedTask.priority || 'medium'}
+                onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}
+                style={{ flex: 1, padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-base)' }}
+              >
+                {TASK_PRIORITIES.map((p) => (
+                  <option key={p.id} value={p.id}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="todo-detail-row" style={{ overflow: 'visible' }}>
+              <span className="todo-row-icon" aria-hidden="true" title="Tagi">
+                <Tag size={18} />
+              </span>
+              <span className="todo-row-label">Tagi</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <TagInput
+                  tags={selectedTask.tags || []}
+                  suggestions={tagOptions}
+                  onChange={(arr) => onUpdateTask(selectedTask.id, { tags: arr })}
+                  placeholder="Dodaj tag..."
+                />
+              </div>
+            </div>
+
             <label className="todo-detail-row note-row">
               <span className="todo-row-icon" aria-hidden="true">
                 <AlignLeft size={18} />

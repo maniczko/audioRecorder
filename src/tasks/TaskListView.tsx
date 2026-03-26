@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import { getTaskAssigneeSummary } from '../lib/tasks';
 
@@ -55,6 +55,17 @@ function TaskListView({
   setDragTaskId,
   dragTaskId,
 }) {
+  // UX Fix #5: Escape key cancels drag in List View
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape' && dragTaskId) {
+        setDragTaskId('');
+      }
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [dragTaskId, setDragTaskId]);
+
   return (
     <div className="todo-table-wrap">
       <div className="todo-table-head">

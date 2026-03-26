@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tooltip } from '../shared/Tooltip';
 import './skeleton.css';
 
 export function SkeletonBanner({ height = 120, className = '' }) {
@@ -47,6 +48,7 @@ export function EmptyState({
   message = '',
   action,
   actionText = 'Utwórz',
+  actionTooltip,
   className = '',
 }: any) {
   return (
@@ -55,9 +57,17 @@ export function EmptyState({
       <div className="ff-state-title">{title}</div>
       {message && <p className="ff-state-desc">{message}</p>}
       {action && (
-        <button type="button" className="ff-state-action primary-button" onClick={action}>
-          {actionText}
-        </button>
+        actionTooltip ? (
+          <Tooltip content={actionTooltip} placement="top">
+            <button type="button" className="ff-state-action primary-button" onClick={action}>
+              {actionText}
+            </button>
+          </Tooltip>
+        ) : (
+          <button type="button" className="ff-state-action primary-button" onClick={action}>
+            {actionText}
+          </button>
+        )
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { Search, Plus, Settings } from 'lucide-react';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import TaskScheduleView from './TaskScheduleView';
 import TagInput from '../shared/TagInput';
+import { EmptyState } from '../components/Skeleton';
 import './TasksWorkspaceViewStyles.css';
 
 const TaskKanbanView = lazy(() => import('./TaskKanbanView'));
@@ -369,49 +370,75 @@ function TasksWorkspaceView({
             />
           ) : viewMode === 'list' ? (
             <Suspense fallback={<div className="todo-loading">Ladowanie listy zadan...</div>}>
-              <TaskListView
-                groupedTasks={groupedTasks}
-                allTasks={allVisibleTasks}
-                groupBy={groupBy}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                selectedTask={selectedTask}
-                selectedTaskIds={selectedTaskIds}
-                toggleTaskSelection={toggleTaskSelection}
-                setSelectedTaskId={setSelectedTaskId}
-                onUpdateTask={onUpdateTask}
-                onMoveTaskToColumn={onMoveTaskToColumn}
-                peopleOptions={peopleOptions}
-                taskGroups={taskGroups}
-                boardColumns={boardColumns}
-                handleGroupDrop={handleGroupDrop}
-                handleTaskDrop={handleTaskDrop}
-                setDragTaskId={setDragTaskId}
-                dragTaskId={dragTaskId}
-              />
+              {allVisibleTasks.length === 0 ? (
+                <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
+                  <EmptyState
+                    icon="📋"
+                    title="Brak zadań"
+                    message="W tym widoku nie ma jeszcze żadnych zadań."
+                    action={() => quickAddInputRef.current?.focus()}
+                    actionText="Utwórz zadanie (N)"
+                    actionTooltip="Przejdź do szybkiego dodawania zadania"
+                  />
+                </div>
+              ) : (
+                <TaskListView
+                  groupedTasks={groupedTasks}
+                  allTasks={allVisibleTasks}
+                  groupBy={groupBy}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  selectedTask={selectedTask}
+                  selectedTaskIds={selectedTaskIds}
+                  toggleTaskSelection={toggleTaskSelection}
+                  setSelectedTaskId={setSelectedTaskId}
+                  onUpdateTask={onUpdateTask}
+                  onMoveTaskToColumn={onMoveTaskToColumn}
+                  peopleOptions={peopleOptions}
+                  taskGroups={taskGroups}
+                  boardColumns={boardColumns}
+                  handleGroupDrop={handleGroupDrop}
+                  handleTaskDrop={handleTaskDrop}
+                  setDragTaskId={setDragTaskId}
+                  dragTaskId={dragTaskId}
+                />
+              )}
             </Suspense>
           ) : (
             <Suspense fallback={<div className="todo-loading">Ladowanie kanbanu zadan...</div>}>
-              <TaskKanbanView
-                kanbanColumns={kanbanColumns}
-                allTasks={allVisibleTasks}
-                dropColumnId={dropColumnId}
-                setDropColumnId={setDropColumnId}
-                handleDrop={handleDrop}
-                handleTaskDrop={handleTaskDrop}
-                selectedTask={selectedTask}
-                selectedTaskIds={selectedTaskIds}
-                toggleTaskSelection={toggleTaskSelection}
-                setSelectedTaskId={setSelectedTaskId}
-                setDragTaskId={setDragTaskId}
-                dragTaskId={dragTaskId}
-                onUpdateTask={onUpdateTask}
-                onMoveTaskToColumn={onMoveTaskToColumn}
-                onQuickAddToColumn={onQuickAddToColumn}
-                onReorderColumns={onReorderColumns}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-              />
+              {allVisibleTasks.length === 0 ? (
+                <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
+                  <EmptyState
+                    icon="📋"
+                    title="Brak zadań"
+                    message="W tym widoku nie ma jeszcze żadnych zadań."
+                    action={() => quickAddInputRef.current?.focus()}
+                    actionText="Utwórz zadanie (N)"
+                    actionTooltip="Przejdź do szybkiego dodawania zadania"
+                  />
+                </div>
+              ) : (
+                <TaskKanbanView
+                  kanbanColumns={kanbanColumns}
+                  allTasks={allVisibleTasks}
+                  dropColumnId={dropColumnId}
+                  setDropColumnId={setDropColumnId}
+                  handleDrop={handleDrop}
+                  handleTaskDrop={handleTaskDrop}
+                  selectedTask={selectedTask}
+                  selectedTaskIds={selectedTaskIds}
+                  toggleTaskSelection={toggleTaskSelection}
+                  setSelectedTaskId={setSelectedTaskId}
+                  setDragTaskId={setDragTaskId}
+                  dragTaskId={dragTaskId}
+                  onUpdateTask={onUpdateTask}
+                  onMoveTaskToColumn={onMoveTaskToColumn}
+                  onQuickAddToColumn={onQuickAddToColumn}
+                  onReorderColumns={onReorderColumns}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                />
+              )}
             </Suspense>
           )}
         </section>
