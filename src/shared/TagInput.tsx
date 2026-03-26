@@ -61,6 +61,7 @@ export default function TagInput({
     <div
       className={`tag-input-container ${isFocused ? 'focused' : ''}`}
       onClick={() => inputRef.current?.focus()}
+      style={{ position: 'relative' }}
     >
       <div className="tag-input-tokens">
         {normalizedTags.map((tag) => (
@@ -78,8 +79,24 @@ export default function TagInput({
         />
       </div>
 
-      {isFocused && (filteredSuggestions.length > 0 || canCreate) && (
-        <div className="tag-input-dropdown" onMouseDown={(e) => e.preventDefault()}>
+      {isFocused && (
+        <div 
+          className="tag-input-dropdown" 
+          onMouseDown={(e) => e.preventDefault()}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            marginTop: '4px',
+          }}
+        >
+          {filteredSuggestions.length === 0 && !canCreate && (
+            <div style={{ padding: '8px 12px', color: 'var(--text-3)', fontSize: '0.85rem' }}>
+              Brak sugestii. Wpisz nazwę i naciśnij Enter aby dodać.
+            </div>
+          )}
           {filteredSuggestions.map((s) => (
             <button
               key={s}
