@@ -12,7 +12,7 @@ import useUI from './hooks/useUI';
  * Wrapper dla lazy loading z obsługą błędów i retry logic.
  * Zapobiega błędom "Failed to fetch dynamically imported module".
  */
-function createLazyComponent(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
+export function createLazyComponent(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
   return lazy(async () => {
     try {
       // Add cache-busting query param to prevent stale chunks
@@ -308,7 +308,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onRenameTag={meetings.renameTag}
             onDeleteTag={meetings.deleteTag}
             vocabulary={[]}
-            onUpdateVocabulary={() => {}}
+            onUpdateVocabulary={() => { }}
             peopleProfiles={meetings.peopleProfiles}
             audioStorageState={recorder.audioStorageState}
             onRefreshAudioStorageState={recorder.refreshAudioStorageState}

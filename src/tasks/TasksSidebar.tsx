@@ -19,7 +19,6 @@ function TasksSidebar({
   selectedTaskCount = 0,
   clearTaskSelection,
   selectedTasks = [],
-  selectedTaskSla,
   taskNotifications = [],
   conflictTasks = [],
   onFocusConflictTask,

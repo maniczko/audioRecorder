@@ -281,7 +281,7 @@ function UnifiedLibrary({
         style={{ alignItems: 'center' }}
       >
         <div className="recordings-library-heading">
-          <div className="eyebrow">Workspace</div>
+          <div className="eyebrow">Przestrzeń robocza</div>
           <h2>Baza nagrań</h2>
         </div>
 

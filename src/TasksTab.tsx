@@ -662,7 +662,6 @@ export default function TasksTab({
             searchInputRef={searchInputRef}
             selectedTasks={selectedTaskIds}
             selectedTaskCount={selectedTaskIds.length}
-            selectedTaskSla={selectedTaskSla}
             clearTaskSelection={clearTaskSelection}
             taskNotifications={taskNotifications}
             onFocusConflictTask={(taskId) => {
