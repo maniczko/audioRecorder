@@ -2,6 +2,48 @@
 
 ## Zrealizowane Zadania
 
+## [2026-03-26 20:00] #018: Outlook / Microsoft To Do Integration
+Status: `done`
+Completed by: Qwen Code
+
+### Implementation:
+- **Microsoft Authentication Library (MSAL)**: `@azure/msal-browser` v5.6.1
+- **Microsoft Graph API**: Calendar and To Do integration
+
+### Files Created:
+- `src/lib/microsoft.ts` - Microsoft Graph API functions (310 lines)
+- `src/hooks/useMicrosoftIntegrations.ts` - React hook for Microsoft integration (280 lines)
+- `src/context/MicrosftContext.tsx` - Context provider for Microsoft (1.2KB)
+
+### Files Modified:
+- `.env.example` - Added Microsoft OAuth variables
+- `src/AppProviders.tsx` - Added MicrosoftProvider
+- `src/TabRouter.tsx` - Added Microsoft props to ProfileTab
+- `src/ProfileTab.tsx` - Added Outlook Calendar and Microsoft To Do sections
+
+### Features:
+- ✅ Sign in with Microsoft (MSAL popup authentication)
+- ✅ Connect/disconnect Outlook Calendar
+- ✅ View Outlook Calendar events
+- ✅ Connect/disconnect Microsoft To Do
+- ✅ Select task list from Microsoft To Do
+- ✅ Sync status indicators
+
+### Configuration Required:
+```env
+VITE_MICROSOFT_CLIENT_ID=your-client-id
+VITE_MICROSOFT_TENANT_ID=common  # or your tenant ID
+VITE_MICROSOFT_REDIRECT_URI=http://localhost:3000
+```
+
+### Setup Instructions:
+1. Register app in Azure Portal: https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+2. Add redirect URI: http://localhost:3000
+3. Add API permissions: Calendars.ReadWrite, Tasks.ReadWrite, User.Read
+4. Copy Client ID to .env
+
+---
+
 ## [2026-03-26 19:30] #208: ProfileTab.tsx Coverage
 Status: `done`
 Completed by: Existing tests

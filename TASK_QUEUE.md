@@ -25,8 +25,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### Pozostałe zadania (niski priorytet)
 
+- ✅ `018` — Outlook / Microsoft To Do integracja (DONE!)
 - ✅ `208` — coverage ProfileTab.tsx (35.56% - wystarczające!)
-- 🟡 `018` — Outlook / Microsoft To Do integracja
 - 🟡 `403` — Migrate inline styles to CSS variables (155 inline styles do refaktoryzacji)
 - 🟡 `341` — Memory profiling w production (clinic.js, 0x profiling)
 - 🟡 `342` — APM integration (DataDog/NewRelic)
