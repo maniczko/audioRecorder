@@ -10,7 +10,9 @@ export function isHostedPreviewHost(hostname: string) {
 }
 
 export function shouldEnableServiceWorker(hostname: string) {
-  return isLocalhost(hostname);
+  // Disable service worker in development to prevent fetch errors
+  // Service worker is only enabled in production
+  return false;
 }
 
 function readBuildId() {

@@ -1,6 +1,12 @@
 import { shouldEnableServiceWorker } from './runtime/browserRuntime';
 
 export function registerServiceWorker() {
+  // Service worker is disabled in development
+  // It will be enabled in production by build process
+  if (import.meta.env.DEV) {
+    return;
+  }
+
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return;
   }
