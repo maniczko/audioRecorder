@@ -1,19 +1,29 @@
 import client from 'prom-client';
 
-// Use global object to track if default metrics were collected (for tests)
-const globalObj = global as typeof globalThis & { __metricsCollected?: boolean };
+// Use global object to track if metrics were collected (for tests)
+const globalObj = global as typeof globalThis & {
+  __metricsCollected?: boolean;
+  __pipelineStageDuration?: client.Summary<string>;
+};
 
 if (!globalObj.__metricsCollected) {
   client.collectDefaultMetrics();
   globalObj.__metricsCollected = true;
 }
 
-export const pipelineStageDuration = new client.Summary({
-  name: 'voicelog_pipeline_stage_duration_ms',
-  help: 'Duration of pipeline stages in ms',
-  labelNames: ['stage'],
-  percentiles: [0.5, 0.9, 0.95, 0.99],
-});
+// Reuse existing metric if already registered (for tests)
+export const pipelineStageDuration =
+  globalObj.__pipelineStageDuration ||
+  new client.Summary({
+    name: 'voicelog_pipeline_stage_duration_ms',
+    help: 'Duration of pipeline stages in ms',
+    labelNames: ['stage'],
+    percentiles: [0.5, 0.9, 0.95, 0.99],
+  });
+
+if (!globalObj.__pipelineStageDuration) {
+  globalObj.__pipelineStageDuration = pipelineStageDuration;
+}
 
 // Custom store for easy JSON API reading in the React dashboard frontend
 const stageStats: Record<string, number[]> = {};
