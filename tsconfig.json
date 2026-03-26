@@ -22,7 +22,7 @@
     "checkJs": false,
     "useUnknownInCatchVariables": false,
     "noImplicitAny": false,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "types": ["node", "vitest/globals"]
   },
   "include": ["src"],

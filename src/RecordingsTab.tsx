@@ -89,6 +89,7 @@ function UnifiedLibrary({
   onDeleteMeeting,
   onUploadClick,
   isUploading,
+  uploadingFileName,
   uploadProgress,
   fileInputRef,
   handleFileUpload,
@@ -296,10 +297,15 @@ function UnifiedLibrary({
           }}
         >
           {isUploading ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160 }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-                Wgrywanie {uploadProgress}%
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160, justifyContent: 'center' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-base)', whiteSpace: 'nowrap', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }} title={uploadingFileName}>
+                    {uploadingFileName || 'Wgrywanie...'}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
+                    {uploadProgress}%
+                  </span>
+               </div>
               <ProgressBar value={uploadProgress} variant="upload" />
             </div>
           ) : (
@@ -661,6 +667,7 @@ export default function RecordingsTab(props) {
 
   const toast = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadingFileName, setUploadingFileName] = React.useState('');
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const mainFileInputRef = React.useRef(null);
   const showPipelineStatus =
@@ -720,9 +727,17 @@ export default function RecordingsTab(props) {
   const handleMainFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 500 * 1024 * 1024) {
+      toast.error('Rozmiar pliku przekracza limit 500MB.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
     try {
       if (onCreateMeeting && queueRecording) {
         setIsUploading(true);
+        setUploadingFileName(file.name);
         setUploadProgress(5);
 
         let progress = 5;
@@ -745,6 +760,7 @@ export default function RecordingsTab(props) {
         setTimeout(
           () => {
             setIsUploading(false);
+            setUploadingFileName('');
             setUploadProgress(0);
             if (queuedId) {
               selectMeeting(newMeeting);
@@ -895,6 +911,7 @@ export default function RecordingsTab(props) {
           onDeleteMeeting={deleteRecordingAndMeeting}
           onUploadClick={() => mainFileInputRef.current?.click()}
           isUploading={isUploading}
+          uploadingFileName={uploadingFileName}
           uploadProgress={uploadProgress}
           fileInputRef={mainFileInputRef}
           handleFileUpload={handleMainFileUpload}

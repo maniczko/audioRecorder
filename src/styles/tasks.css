@@ -1152,6 +1152,10 @@
   gap: 18px;
 }
 
+.tasks-layout.ms-todo[data-columns="two"] {
+  grid-template-columns: 270px minmax(0, 1fr);
+}
+
 .tasks-layout.ms-todo .todo-sidebar,
 .tasks-layout.ms-todo .todo-shell,
 .tasks-layout.ms-todo .todo-detail-card {

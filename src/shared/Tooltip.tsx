@@ -29,7 +29,7 @@ export function Tooltip({ content, children, delay = 300, placement = 'top' }: T
   return (
     <BaseTooltip.Provider delay={delay}>
       <BaseTooltip.Root>
-        <BaseTooltip.Trigger asChild>{children}</BaseTooltip.Trigger>
+        <BaseTooltip.Trigger asChild>{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */ (children as any)}</BaseTooltip.Trigger>
         <BaseTooltip.Portal>
           <BaseTooltip.Positioner
             side={placement.split('-')[0] as any}

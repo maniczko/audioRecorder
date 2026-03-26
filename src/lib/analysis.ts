@@ -9,6 +9,7 @@ import {
 import { normalizeTasks, type TaskInput } from './taskNormalizer';
 import {
   validateAnalysisResponse,
+  parseAiResponse,
   safeParseAiResponse,
   validateAndNormalizeRisks,
   type AiAnalysisResponse,
