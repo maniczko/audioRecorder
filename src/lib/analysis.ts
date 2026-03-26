@@ -40,8 +40,8 @@ function transcriptText(
   return safeArray(segments)
     .map((segment) => {
       const speakerId = String(segment.speakerId);
-      const speaker = speakerNames?.[speakerId] || `Speaker ${Number(speakerId) + 1}`;
-      return `[${Math.round(segment.timestamp)}s] ${speaker}: ${segment.text}`;
+      const speaker = speakerNames?.[speakerId] || 'Speaker ' + (Number(speakerId) + 1);
+      return '[' + Math.round(segment.timestamp) + 's] ' + speaker + ': ' + segment.text;
     })
     .join('\n');
 }
@@ -104,8 +104,8 @@ function buildFallbackAnalysis({
       )
       .map((segment) => {
         const speakerId = String(segment.speakerId);
-        const speaker = speakerNames?.[speakerId] || `Speaker ${Number(speakerId) + 1}`;
-        return `${speaker}: ${segment.text}`;
+        const speaker = speakerNames?.[speakerId] || 'Speaker ' + (Number(speakerId) + 1);
+        return speaker + ': ' + segment.text;
       })
   ).slice(0, 5);
 
