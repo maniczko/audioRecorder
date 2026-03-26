@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import TagBadge from '../shared/TagBadge';
+import TagInput from '../shared/TagInput';
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 
@@ -600,6 +601,16 @@ export default function StudioMeetingView({
 
   const { meetings } = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
+
+  const allParticipants = useMemo(() => {
+    const pSet = new Set();
+    (userMeetings || []).forEach((m) => {
+      (m.guests || []).forEach((g) => {
+        if (g && typeof g === 'string' && g.trim()) pSet.add(g.trim());
+      });
+    });
+    return Array.from(pSet).sort();
+  }, [userMeetings]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
@@ -1951,37 +1962,21 @@ export default function StudioMeetingView({
                     ) : null}
 
                     <div className="summary-grid">
-                      <section className="summary-card">
+                      <section className="summary-card" style={{ overflow: 'visible' }}>
                         <div className="summary-card-head">
                           <h3>Uczestnicy</h3>
-                          <span>{participantInsights.length}</span>
+                          <span>{(selectedMeeting?.guests || []).length}</span>
                         </div>
-                        {participantInsights.length ? (
-                          <ul className="analysis-list summary-list-tight">
-                            {participantInsights.map((insight, i) => (
-                              <li key={`${insight.speaker}-${i}`}>
-                                <button
-                                  type="button"
-                                  className="ghost-button"
-                                  onClick={() => onOpenPerson?.(insight.speaker)}
-                                  style={{
-                                    color: 'var(--accent)',
-                                    fontWeight: 600,
-                                    padding: 0,
-                                    height: 'auto',
-                                    display: 'inline',
-                                  }}
-                                >
-                                  {insight.speaker}
-                                </button>
-                                {insight.mainTopic ? ` – ${insight.mainTopic}` : ''}
-                                {insight.stance ? ` (${insight.stance})` : null}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="soft-copy">Brak danych o uczestnikach.</p>
-                        )}
+                        <div style={{ marginTop: 12 }}>
+                          <TagInput
+                            tags={selectedMeeting?.guests || []}
+                            suggestions={allParticipants}
+                            onChange={(newGuests) => {
+                              updateMeeting?.(selectedMeeting?.id, { guests: newGuests });
+                            }}
+                            placeholder="Wpisz lub wybierz z listy..."
+                          />
+                        </div>
                       </section>
 
                       <section className="summary-card">

@@ -1,8 +1,9 @@
-import { useState, memo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
 import { createId } from '../lib/storage';
 import './AiTaskSuggestionsPanelStyles.css';
 import TagBadge from '../shared/TagBadge';
+import TagInput from '../shared/TagInput';
 
 const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
 const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
@@ -19,6 +20,15 @@ function AiTaskSuggestionsPanel({
   const [suggestions, setSuggestions] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({});
+
+  const peopleSuggestions = useMemo(() => {
+    const names = new Set();
+    (peopleProfiles || []).forEach((p) => {
+      const name = (p?.name || p?.displayName || '').trim();
+      if (name) names.add(name);
+    });
+    return Array.from(names).sort();
+  }, [peopleProfiles]);
 
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -137,13 +147,15 @@ function AiTaskSuggestionsPanel({
                   rows={2}
                   placeholder="Opis"
                 />
-                <div className="ai-suggestion-meta-row">
-                  <input
-                    className="ai-suggestion-input"
-                    value={editDraft.owner || ''}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, owner: e.target.value }))}
-                    placeholder="Osoba odpowiedzialna"
-                  />
+                <div className="ai-suggestion-meta-row" style={{ overflow: 'visible' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <TagInput
+                      tags={editDraft.owner ? [editDraft.owner] : []}
+                      suggestions={peopleSuggestions}
+                      onChange={(arr) => setEditDraft((d) => ({ ...d, owner: arr[0] || '' }))}
+                      placeholder="Osoba odpowiedzialna"
+                    />
+                  </div>
                   <input
                     className="ai-suggestion-input"
                     type="date"
@@ -189,7 +201,9 @@ function AiTaskSuggestionsPanel({
                   {suggestion.dueDate ? (
                     <span className="task-tag-chip neutral">{suggestion.dueDate}</span>
                   ) : null}
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div
+                    style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}
+                  >
                     {(Array.isArray(suggestion.tags) ? suggestion.tags : []).map((tag) => (
                       <TagBadge key={tag} tag={tag} />
                     ))}

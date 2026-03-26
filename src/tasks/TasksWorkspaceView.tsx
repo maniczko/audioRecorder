@@ -237,21 +237,16 @@ function TasksWorkspaceView({
         {showAdvancedCreate && !isCharts && !isSchedule && !isSummary ? (
           <section className="todo-create-card todo-create-advanced">
             <div className="todo-add-advanced">
-              <label>
+              <label style={{ overflow: 'visible' }}>
                 <span>Osoba</span>
-                <select
-                  value={quickDraft.owner}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, owner: event.target.value }))
+                <TagInput
+                  tags={quickDraft.owner ? [quickDraft.owner] : []}
+                  suggestions={peopleOptions}
+                  onChange={(arr) =>
+                    setQuickDraft((previous) => ({ ...previous, owner: arr[0] || '' }))
                   }
-                >
-                  <option value="">Nieprzypisane</option>
-                  {peopleOptions.map((person) => (
-                    <option key={person} value={person}>
-                      {person}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Wpisz lub wybierz osobę..."
+                />
               </label>
               <label>
                 <span>Grupa</span>
@@ -393,6 +388,7 @@ function TasksWorkspaceView({
                 handleGroupDrop={handleGroupDrop}
                 handleTaskDrop={handleTaskDrop}
                 setDragTaskId={setDragTaskId}
+                dragTaskId={dragTaskId}
               />
             </Suspense>
           ) : (
