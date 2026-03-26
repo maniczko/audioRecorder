@@ -1,4 +1,4 @@
-import type { MeetingTask, TranscriptSegment } from '../shared/types';
+import type { MeetingTask } from '../shared/types';
 
 export interface TaskInput {
   title?: string;

@@ -1,0 +1,9 @@
+[
+  {
+    "file": "studio\\TranscriptPanel.tsx",
+    "line": 1084,
+    "rule": "input-label",
+    "message": "Input without label or aria-label",
+    "severity": "warning"
+  }
+]

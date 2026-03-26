@@ -9,6 +9,13 @@
   -webkit-box-orient: vertical;
 }
 
+.tasks-page-shell {
+  max-width: none !important;
+  width: 100%;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 .tasks-layout {
   position: relative;
   z-index: 1;
@@ -5946,3 +5953,6 @@ textarea:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(117, 214, 196, 0.6);
 }
+
+/* ========= MOBILE RESPONSIVENESS ========= */
+@import url('./tasks.mobile.css');

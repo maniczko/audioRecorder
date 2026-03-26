@@ -1,4 +1,4 @@
-import type { MeetingAnalysis, MeetingRisk, TranscriptSegment } from '../shared/types';
+import type { MeetingAnalysis, TranscriptSegment } from '../shared/types';
 import { analyzeSpeakingStyle } from './speakerAnalysis';
 import { API_BASE_URL } from '../services/config';
 import {
@@ -6,15 +6,14 @@ import {
   buildMeetingFeedbackSchemaExample,
   normalizeMeetingFeedback,
 } from '../shared/meetingFeedback';
-import { normalizeTask, normalizeTasks, type TaskInput } from './taskNormalizer';
+import { normalizeTasks, type TaskInput } from './taskNormalizer';
 import {
   validateAnalysisResponse,
-  parseAiResponse,
   safeParseAiResponse,
   validateAndNormalizeRisks,
   type AiAnalysisResponse,
 } from './aiResponseValidator';
-import { buildFallbackRichFields, clearFallbackCache } from './fallbackAnalysis';
+import { buildFallbackRichFields } from './fallbackAnalysis';
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';

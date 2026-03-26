@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from "path";
+import path from 'path';
 
 function readClientEnv(...keys) {
   for (const key of keys) {
@@ -20,8 +20,12 @@ export default defineConfig(async () => {
   }
 
   const productionRemoteFallback = process.env.NODE_ENV === 'production' || process.env.VERCEL;
-  const dataProvider = readClientEnv('VITE_DATA_PROVIDER', 'REACT_APP_DATA_PROVIDER') || (productionRemoteFallback ? 'remote' : '');
-  const mediaProvider = readClientEnv('VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') || (productionRemoteFallback ? 'remote' : '');
+  const dataProvider =
+    readClientEnv('VITE_DATA_PROVIDER', 'REACT_APP_DATA_PROVIDER') ||
+    (productionRemoteFallback ? 'remote' : '');
+  const mediaProvider =
+    readClientEnv('VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') ||
+    (productionRemoteFallback ? 'remote' : '');
   const apiBaseUrl =
     readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') ||
     (productionRemoteFallback ? 'https://audiorecorder-production.up.railway.app' : '');
@@ -33,7 +37,7 @@ export default defineConfig(async () => {
     plugins,
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     esbuild: {
@@ -47,6 +51,21 @@ export default defineConfig(async () => {
           '.js': 'jsx',
         },
       },
+    },
+    build: {
+      // Fix for lazy loading chunks - use stable chunk names
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-dom/client'],
+            'vendor-router': ['react-router-dom'],
+          },
+        },
+      },
+      // Disable minification for easier debugging
+      minify: 'terser',
+      // Generate sourcemaps for better debugging
+      sourcemap: true,
     },
     server: {
       port: 3000,
@@ -89,13 +108,26 @@ export default defineConfig(async () => {
             if (id.includes('node_modules')) {
               if (id.includes('react')) return 'vendor-react';
               if (id.includes('langchain')) return 'vendor-langchain';
-              if (id.includes('lucide') || id.includes('class-variance') || id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui';
-              if (id.includes('web-vitals') || id.includes('zod') || id.includes('zustand') || id.includes('idb-keyval') || id.includes('dompurify')) return 'vendor-utils';
+              if (
+                id.includes('lucide') ||
+                id.includes('class-variance') ||
+                id.includes('clsx') ||
+                id.includes('tailwind-merge')
+              )
+                return 'vendor-ui';
+              if (
+                id.includes('web-vitals') ||
+                id.includes('zod') ||
+                id.includes('zustand') ||
+                id.includes('idb-keyval') ||
+                id.includes('dompurify')
+              )
+                return 'vendor-utils';
               if (id.includes('geist')) return 'vendor-fonts';
             }
-          }
-        }
-      }
+          },
+        },
+      },
     },
     define: {
       'process.env.REACT_APP_DATA_PROVIDER': JSON.stringify(dataProvider),

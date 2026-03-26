@@ -1,0 +1,138 @@
+/* ========= MOBILE RESPONSIVENESS ========= */
+
+/* Mobile breakpoints */
+@media (max-width: 768px) {
+  /* Tasks layout - single column */
+  .tasks-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Hide sidebar on mobile, show as modal/drawer */
+  .tasks-sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(8, 20, 31, 0.98);
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .tasks-sidebar.mobile-open {
+    display: grid;
+  }
+
+  /* Compact panels */
+  .tasks-brand-panel,
+  .tasks-list-panel,
+  .tasks-main-panel {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  /* Kanban cards - stacked */
+  .kanban-column {
+    min-width: 100%;
+  }
+
+  .kanban-card {
+    margin-bottom: 12px;
+  }
+
+  /* Hide less important elements */
+  .kanban-card-description {
+    display: none;
+  }
+
+  .task-smart-summary {
+    font-size: 0.85rem;
+  }
+
+  /* Buttons - full width on mobile */
+  .tasks-brand-panel button,
+  .tasks-header button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* Search input - full width */
+  .tasks-search-input {
+    width: 100%;
+  }
+
+  /* Task details - full screen modal */
+  .task-detail-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    border-radius: 0;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* Hide complex charts on mobile */
+  .task-charts-view {
+    display: none;
+  }
+
+  /* Show simplified list view */
+  .task-list-view {
+    display: block;
+  }
+
+  /* Compact header */
+  .tasks-header h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Mobile menu button */
+  .tasks-mobile-menu-btn {
+    display: block;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 999;
+    background: rgba(83, 144, 255, 0.24);
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    cursor: pointer;
+  }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .tasks-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .kanban-column {
+    min-width: 280px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 480px) {
+  .tasks-brand-panel,
+  .tasks-list-panel,
+  .tasks-main-panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .task-filter-card {
+    padding: 12px;
+  }
+
+  .kanban-card-title {
+    font-size: 0.9rem;
+  }
+}

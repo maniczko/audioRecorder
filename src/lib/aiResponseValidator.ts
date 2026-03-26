@@ -1,4 +1,4 @@
-import type { MeetingAnalysis, MeetingRisk, MeetingParticipantInsight } from '../shared/types';
+import type { MeetingRisk, MeetingParticipantInsight } from '../shared/types';
 
 export interface AiAnalysisResponse {
   summary?: string;

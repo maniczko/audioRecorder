@@ -1,0 +1,32 @@
+{
+  "datasetName": "Polish STT Benchmark - Sample",
+  "description": "Przykładowy zbiór testowy do porównania providerów STT dla języka polskiego",
+  "items": [
+    {
+      "id": "sample-001",
+      "audioPath": "./samples/sample-001.wav",
+      "transcriptPath": "./samples/sample-001.txt",
+      "contentType": "audio/wav",
+      "description": "Krótkie spotkanie biznesowe (2 minuty)"
+    },
+    {
+      "id": "sample-002",
+      "audioPath": "./samples/sample-002.wav",
+      "transcriptPath": "./samples/sample-002.txt",
+      "contentType": "audio/wav",
+      "description": "Rozmowa techniczna z wieloma speakerami (5 minut)"
+    },
+    {
+      "id": "sample-003",
+      "audioPath": "./samples/sample-003.wav",
+      "transcriptPath": "./samples/sample-003.txt",
+      "contentType": "audio/wav",
+      "description": "Prezentacja z jednym speakerem (3 minuty)"
+    }
+  ],
+  "notes": [
+    "Dodaj pliki audio do folderu benchmarks/samples/",
+    "Każdy plik .wav powinien mieć odpowiadający mu plik .txt z referencyjną transkrypcją",
+    "Uruchom: pnpm run benchmark:stt:run benchmarks/pl-dataset.json"
+  ]
+}

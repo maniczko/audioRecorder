@@ -1,5 +1,6 @@
 import './styles/recordings.css';
 import React from 'react';
+import { useToast } from './shared/Toast';
 import { formatDateTime } from './lib/storage';
 import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
@@ -92,6 +93,7 @@ function UnifiedLibrary({
   fileInputRef,
   handleFileUpload,
 }) {
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [dateFilter, setDateFilter] = React.useState('');
   const [tagFilter, setTagFilter] = React.useState([]);
@@ -280,7 +282,7 @@ function UnifiedLibrary({
       >
         <div className="recordings-library-heading">
           <div className="eyebrow">Workspace</div>
-          <h2>Baza spotkań i nagrań</h2>
+          <h2>Baza nagrań</h2>
         </div>
 
         <div
@@ -345,7 +347,7 @@ function UnifiedLibrary({
                 padding: '0 12px',
               }}
             >
-              <Filter size={14} /> Filters
+              <Filter size={14} /> Filtry
               {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
                 <span
                   style={{
@@ -479,7 +481,7 @@ function UnifiedLibrary({
               />
               <Input
                 type="search"
-                placeholder="Search host or title..."
+                placeholder="Szukaj hosta lub tytułu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -623,6 +625,7 @@ function UnifiedLibrary({
                 onClick={() => {
                   if (onDeleteMeeting) {
                     onDeleteMeeting(meetingToDelete.id);
+                    toast.success('Pomyślnie usunięto spotkanie i powiązane nagrania.');
                   }
                   setMeetingToDelete(null);
                 }}
@@ -656,6 +659,7 @@ export default function RecordingsTab(props) {
     deleteRecordingAndMeeting,
   } = props;
 
+  const toast = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const mainFileInputRef = React.useRef(null);
@@ -744,6 +748,9 @@ export default function RecordingsTab(props) {
             setUploadProgress(0);
             if (queuedId) {
               selectMeeting(newMeeting);
+              toast.success(
+                'Pomyślnie rozpoczęto wgrywanie pliku i dodano do kolejki tranyskrypcji.'
+              );
             }
           },
           queuedId ? 350 : 0
@@ -752,7 +759,7 @@ export default function RecordingsTab(props) {
     } catch (_) {
       setIsUploading(false);
       setUploadProgress(0);
-      alert('Wystąpił błąd przy wgrywaniu pliku.');
+      toast.error('Wystąpił błąd przy wgrywaniu pliku.');
     }
   };
 

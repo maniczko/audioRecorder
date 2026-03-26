@@ -1081,7 +1081,11 @@ export default function TranscriptPanel({
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" placeholder="Szukaj lub zamień..." />
+            <input
+              type="text"
+              placeholder="Szukaj lub zamień..."
+              aria-label="Szukaj w transkrypcji"
+            />
           </div>
         </div>
 

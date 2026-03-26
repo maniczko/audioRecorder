@@ -1,4 +1,4 @@
-import { useMemo, useState, lazy, Suspense } from 'react';
+import { useMemo, useState, lazy, Suspense, useCallback } from 'react';
 import ErrorBoundary from './lib/ErrorBoundary';
 
 import { useWorkspaceSelectors } from './store/workspaceStore';
@@ -8,13 +8,109 @@ import { useGoogleCtx } from './context/GoogleContext';
 import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 
-const CalendarTab = lazy(() => import('./CalendarTab'));
-const NotesTab = lazy(() => import('./NotesTab'));
-const PeopleTab = lazy(() => import('./PeopleTab'));
-const ProfileTab = lazy(() => import('./ProfileTab'));
-const StudioTab = lazy(() => import('./StudioTab'));
-const TasksTab = lazy(() => import('./TasksTab'));
-const RecordingsTab = lazy(() => import('./RecordingsTab'));
+/**
+ * Wrapper dla lazy loading z obsługą błędów i retry logic.
+ * Zapobiega błędom "Failed to fetch dynamically imported module".
+ */
+function createLazyComponent(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
+  return lazy(async () => {
+    try {
+      // Add cache-busting query param to prevent stale chunks
+      const module = await importFn();
+      return module;
+    } catch (error) {
+      console.error('[LazyComponent] Failed to load component:', error);
+
+      // Return fallback component with retry logic
+      return {
+        default: function FallbackComponent() {
+          const [retrying, setRetrying] = useState(false);
+          const [errorCount, setErrorCount] = useState(0);
+
+          const handleRetry = useCallback(() => {
+            setRetrying(true);
+            setErrorCount((prev) => prev + 1);
+
+            // Force reload the page if retry fails multiple times
+            if (errorCount >= 2) {
+              window.location.reload();
+              return;
+            }
+
+            // Try to reload the component after a short delay
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          }, [errorCount]);
+
+          return (
+            <div
+              style={{
+                padding: '2rem',
+                textAlign: 'center',
+                maxWidth: '600px',
+                margin: '4rem auto',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>
+                ⚠️ Problem z załadowaniem widoku
+              </h2>
+              <p style={{ color: '#aaa', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                Nie udało się załadować tego komponentu. To może być spowodowane:
+              </p>
+              <ul
+                style={{
+                  textAlign: 'left',
+                  color: '#aaa',
+                  marginBottom: '1.5rem',
+                  lineHeight: 1.8,
+                }}
+              >
+                <li>Problemem z cache przeglądarki</li>
+                <li>Brakiem połączenia z internetem</li>
+                <li>Uszkodzonymi plikami buildu</li>
+              </ul>
+              <button
+                onClick={handleRetry}
+                disabled={retrying}
+                style={{
+                  padding: '12px 32px',
+                  fontSize: '1rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: retrying ? 'not-allowed' : 'pointer',
+                  opacity: retrying ? 0.7 : 1,
+                  fontWeight: 600,
+                }}
+              >
+                {retrying ? 'Ładowanie...' : '🔄 Odśwież stronę'}
+              </button>
+              {errorCount > 0 && (
+                <p style={{ marginTop: '1rem', color: '#ff6b6b', fontSize: '0.9rem' }}>
+                  Próba {errorCount} z 3...
+                </p>
+              )}
+            </div>
+          );
+        },
+      };
+    }
+  });
+}
+
+// Lazy load all tabs with error handling
+const CalendarTab = createLazyComponent(() => import('./CalendarTab'));
+const NotesTab = createLazyComponent(() => import('./NotesTab'));
+const PeopleTab = createLazyComponent(() => import('./PeopleTab'));
+const ProfileTab = createLazyComponent(() => import('./ProfileTab'));
+const StudioTab = createLazyComponent(() => import('./StudioTab'));
+const TasksTab = createLazyComponent(() => import('./TasksTab'));
+const RecordingsTab = createLazyComponent(() => import('./RecordingsTab'));
 
 function getActiveTabLabel(activeTab: string) {
   switch (activeTab) {

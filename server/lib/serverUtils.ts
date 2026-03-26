@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuta
 const rateLimitMap = new Map();
 

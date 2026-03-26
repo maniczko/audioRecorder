@@ -1,5 +1,6 @@
 import './styles/tasks.css';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useToast } from './shared/Toast';
 import { PageShell, SplitPane } from './ui/LayoutPrimitives';
 import { buildTaskGroups, taskListStats } from './lib/tasks';
 import TaskDetailsPanel from './tasks/TaskDetailsPanel';
@@ -60,7 +61,6 @@ export default function TasksTab({
   const [selectedListId, setSelectedListId] = useState('smart:all');
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
-  const [selectedTaskSla, setSelectedTaskSla] = useState(null);
   const [sortBy, setSortBy] = useState('manual');
   const [groupBy, setGroupBy] = useState('none');
   const [query, setQuery] = useState('');
@@ -71,7 +71,7 @@ export default function TasksTab({
   const deferredQuery = useDeferredValue(query);
   const [dragTaskId, setDragTaskId] = useState('');
   const [dropColumnId, setDropColumnId] = useState('');
-  const [message, setMessage] = useState('');
+  const toast = useToast();
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: '', color: '#5a92ff', isDone: false });
   const dragTaskIdRef = useRef('');
@@ -180,9 +180,9 @@ export default function TasksTab({
     setQuery('');
     setOwnerFilter('all');
     setTagFilter('all');
-    setMessage(`Otwarto zadanie: ${matchingTask.title}`);
+    toast.info(`Otwarto zadanie: ${matchingTask.title}`);
     onTaskSelectionHandled?.();
-  }, [externalSelectedTaskId, onTaskSelectionHandled, tasks]);
+  }, [externalSelectedTaskId, onTaskSelectionHandled, tasks, toast]);
 
   const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || null;
   const groupedTasks = useMemo(
@@ -198,18 +198,21 @@ export default function TasksTab({
     [boardColumns, visibleTasks]
   );
 
-  const runSafely = useCallback((action, successMessage = '') => {
-    try {
-      const result = action();
-      if (successMessage) {
-        setMessage(successMessage);
+  const runSafely = useCallback(
+    (action, successMessage = '') => {
+      try {
+        const result = action();
+        if (successMessage) {
+          toast.success(successMessage);
+        }
+        return result;
+      } catch (err) {
+        toast.error(err.message || 'Wystąpił błąd');
+        return null;
       }
-      return result;
-    } catch (error) {
-      setMessage(error.message);
-      return null;
-    }
-  }, []);
+    },
+    [toast]
+  );
 
   const safeUpdateTask = useCallback(
     (taskId, updates, successMessage = '') =>
@@ -284,7 +287,7 @@ export default function TasksTab({
     event?.preventDefault?.();
 
     if (!quickDraft.title.trim()) {
-      setMessage('Dodaj tytul zadania.');
+      toast.warning('Dodaj tytul zadania.');
       return;
     }
 
@@ -307,7 +310,7 @@ export default function TasksTab({
 
       setQuickDraft(createQuickDraft(boardColumns));
       setShowAdvancedCreate(false);
-      setMessage('Dodano zadanie do listy.');
+      toast.success('Dodano zadanie do listy.');
 
       if (createdTaskId) {
         const createdTaskData =
@@ -337,8 +340,8 @@ export default function TasksTab({
         setSelectedTaskId(createdTaskId);
         setSelectedTaskIds([createdTaskId]);
       }
-    } catch (error) {
-      setMessage(error.message);
+    } catch (err) {
+      toast.error(err.message || 'Nie udalo sie zapisac zadania');
     }
   }
 
@@ -347,15 +350,15 @@ export default function TasksTab({
     try {
       onCreateColumn(columnDraft);
       setColumnDraft({ label: '', color: '#5a92ff', isDone: false });
-      setMessage('Dodano kolumne.');
-    } catch (error) {
-      setMessage(error.message);
+      toast.success('Dodano kolumne.');
+    } catch (err) {
+      toast.error(err.message || 'Błąd dodawania kolumny');
     }
   }
 
   function finalizeDrop(taskId, update, successMessage) {
     if (!taskId) {
-      setMessage('Nie udalo sie odczytac przeciaganego zadania. Sprobuj przeciagnac jeszcze raz.');
+      toast.error('Nie udalo sie odczytac przeciaganego zadania. Sprobuj przeciagnac jeszcze raz.');
       return;
     }
 
@@ -378,7 +381,9 @@ export default function TasksTab({
 
     rememberDraggedTask('');
     setDropColumnId('');
-    setMessage(successMessage);
+    if (successMessage) {
+      toast.success(successMessage);
+    }
   }
 
   function handleColumnDrop(columnId, event) {
@@ -453,9 +458,9 @@ export default function TasksTab({
         setSelectedTaskId(createdId);
         setSelectedTaskIds([createdId]);
       }
-      setMessage('Dodano zadanie do kolumny.');
-    } catch (error) {
-      setMessage(error.message);
+      toast.success('Dodano zadanie do kolumny.');
+    } catch (err) {
+      toast.error(err.message || 'Błąd dodawania zadania');
     }
   }
 
@@ -516,26 +521,27 @@ export default function TasksTab({
     link.download = `tasks-export-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    setMessage('Wyeksportowano zadania do CSV.');
+    toast.success('Wyeksportowano zadania do CSV.');
   }
 
   async function shareWorkspace() {
     if (!workspaceInviteCode) {
-      setMessage('Brak kodu workspace.');
+      toast.warning('Brak kodu workspace.');
       return;
     }
 
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(workspaceInviteCode);
-        setMessage(`Skopiowano kod workspace: ${workspaceInviteCode}`);
+        toast.success(`Skopiowano kod workspace: ${workspaceInviteCode}`);
         return;
       }
     } catch (error) {
       console.error('Clipboard write failed.', error);
+      toast.error('Kopiowanie do schowka nie powiodło się.');
     }
 
-    setMessage(`Udostepnij workspace kodem: ${workspaceInviteCode}`);
+    toast.info(`Udostepnij workspace kodem: ${workspaceInviteCode}`);
   }
 
   useEffect(() => {
@@ -564,7 +570,6 @@ export default function TasksTab({
 
       if (lowerKey === 'escape') {
         clearTaskSelection();
-        setMessage('');
         return;
       }
 
@@ -695,7 +700,6 @@ export default function TasksTab({
             tagOptions={tagOptions}
             quickAddInputRef={quickAddInputRef}
             searchInputRef={searchInputRef}
-            message={message}
             groupedTasks={groupedTasks}
             allVisibleTasks={visibleTasks}
             selectedTask={selectedTask}

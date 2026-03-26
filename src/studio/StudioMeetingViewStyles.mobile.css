@@ -1,0 +1,109 @@
+/* ========= STUDIO MOBILE RESPONSIVENESS ========= */
+
+/* Mobile - below 768px */
+@media (max-width: 768px) {
+  /* Single column layout */
+  .studio-meeting-view {
+    grid-template-columns: 1fr;
+  }
+
+  /* Compact panels */
+  .studio-panel {
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  /* Transcript panel - full width */
+  .transcript-panel {
+    height: 50vh;
+    min-height: 300px;
+  }
+
+  /* Hide complex visualizations */
+  .studio-voice-stats,
+  .studio-acoustic-metrics {
+    display: none;
+  }
+
+  /* Show simplified stats */
+  .studio-stats-mobile {
+    display: block;
+  }
+
+  /* Buttons - full width */
+  .studio-actions button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* Speaker names - horizontal scroll */
+  .speaker-names-container {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Meeting form - stacked */
+  .studio-meeting-form {
+    grid-template-columns: 1fr;
+  }
+
+  /* Analysis panel - collapsible */
+  .studio-analysis-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 80vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Floating action button for mobile */
+  .studio-fab {
+    display: block;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(83, 144, 255, 0.24);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Tablet - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .studio-meeting-view {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .transcript-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Extra small phones - below 480px */
+@media (max-width: 480px) {
+  .studio-panel {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .studio-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .studio-stats-mobile {
+    font-size: 0.85rem;
+  }
+
+  /* Hide secondary actions */
+  .studio-secondary-actions {
+    display: none;
+  }
+}

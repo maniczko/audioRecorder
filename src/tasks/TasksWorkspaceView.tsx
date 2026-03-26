@@ -107,7 +107,6 @@ function TasksWorkspaceView({
   tagOptions,
   quickAddInputRef,
   searchInputRef,
-  message,
   groupedTasks,
   allVisibleTasks,
   selectedTask,
