@@ -26,7 +26,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
     if (!backendApiReady) return;
     apiRequest('/voice-profiles')
       .then((data: VoiceProfilesListPayload) => setProfiles(data.profiles || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [backendApiReady]);
 
   async function startRecording() {
@@ -118,7 +118,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       setProfiles((prev) =>
         prev.map((p: any) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
       );
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function formatElapsed(s) {
@@ -731,6 +731,20 @@ export default function ProfileTab({
   onImportGoogleTasks,
   onExportGoogleTasks,
   onRefreshGoogleTasks,
+  microsoftEnabled,
+  microsoftCalendarStatus,
+  microsoftCalendarMessage,
+  outlookCalendarEventsCount,
+  microsoftCalendarLastSyncedAt,
+  connectMicrosoftCalendar,
+  disconnectMicrosoftCalendar,
+  microsoftTasksStatus,
+  microsoftTasksMessage,
+  microsoftTaskLists = [],
+  selectedMicrosoftTaskListId,
+  onSelectMicrosoftTaskList,
+  connectMicrosoftTasks,
+  disconnectMicrosoftTasks,
   workspaceRole,
   onLogout,
   theme,
@@ -1020,6 +1034,40 @@ export default function ProfileTab({
               <section className="panel">
                 <div className="panel-header compact">
                   <div>
+                    <div className="eyebrow">Calendar</div>
+                    <h2>Outlook Calendar</h2>
+                  </div>
+                </div>
+                <div className="integration-card">
+                  <p>{integrationStatusLabel(microsoftCalendarStatus, outlookCalendarEventsCount)}</p>
+                  <div className="button-row">
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={connectMicrosoftCalendar}
+                      disabled={!microsoftEnabled}
+                    >
+                      Połącz
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={disconnectMicrosoftCalendar}
+                    >
+                      Rozłącz
+                    </button>
+                  </div>
+                  {!microsoftEnabled && (
+                    <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+                      Microsoft integration not configured. Set VITE_MICROSOFT_CLIENT_ID in .env
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
                     <div className="eyebrow">Tasks</div>
                     <h2>Google Tasks</h2>
                   </div>
@@ -1050,6 +1098,53 @@ export default function ProfileTab({
                       Sync
                     </button>
                   </div>
+                </div>
+              </section>
+
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Tasks</div>
+                    <h2>Microsoft To Do</h2>
+                  </div>
+                </div>
+                <div className="integration-card">
+                  <p>{microsoftTasksStatus === 'connected' ? 'Połączono' : microsoftTasksStatus}</p>
+                  <div style={{ marginBottom: '12px' }}>
+                    <Select
+                      value={selectedMicrosoftTaskListId || ''}
+                      onChange={(e) => onSelectMicrosoftTaskList?.(e.target.value)}
+                    >
+                      <option value="">Wybierz listę...</option>
+                      {microsoftTaskLists.map((l: any) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="button-row profile-button-row-top">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={connectMicrosoftTasks}
+                      disabled={!microsoftEnabled}
+                    >
+                      Połącz
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={disconnectMicrosoftTasks}
+                    >
+                      Rozłącz
+                    </button>
+                  </div>
+                  {!microsoftEnabled && (
+                    <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+                      Microsoft integration not configured. Set VITE_MICROSOFT_CLIENT_ID in .env
+                    </p>
+                  )}
                 </div>
               </section>
 

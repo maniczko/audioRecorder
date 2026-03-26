@@ -1,5 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { GoogleProvider } from './context/GoogleContext';
+import { MicrosoftProvider } from './context/MicrosftContext';
 import { MeetingsProvider } from './context/MeetingsContext';
 import { RecorderProvider } from './context/RecorderContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
@@ -19,11 +20,13 @@ export default function AppProviders({
       <MeetingsProvider>
         <MeetingsSyncManager>
           <GoogleProvider calendarMonth={calendarMonth}>
-            <RecorderProvider>
-              {typeof children === 'function'
-                ? (children as any)({ calendarMonth, setCalendarMonth })
-                : children}
-            </RecorderProvider>
+            <MicrosoftProvider calendarMonth={calendarMonth}>
+              <RecorderProvider>
+                {typeof children === 'function'
+                  ? (children as any)({ calendarMonth, setCalendarMonth })
+                  : children}
+              </RecorderProvider>
+            </MicrosoftProvider>
           </GoogleProvider>
         </MeetingsSyncManager>
       </MeetingsProvider>

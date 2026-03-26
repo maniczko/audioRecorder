@@ -5,6 +5,7 @@ import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
 import useMeetings from './hooks/useMeetings';
 import { useGoogleCtx } from './context/GoogleContext';
+import { useMicrosoftCtx } from './context/MicrosftContext';
 import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 
@@ -297,6 +298,20 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onImportGoogleTasks={google.importGoogleTasksFromList}
             onExportGoogleTasks={google.exportTasksToGoogle}
             onRefreshGoogleTasks={google.refreshGoogleTasks}
+            microsoftEnabled={microsoft.microsoftEnabled}
+            microsoftCalendarStatus={microsoft.microsoftCalendarStatus}
+            microsoftCalendarMessage={microsoft.microsoftCalendarMessage}
+            outlookCalendarEventsCount={microsoft.outlookCalendarEvents.length}
+            microsoftCalendarLastSyncedAt={microsoft.microsoftCalendarLastSyncedAt}
+            connectMicrosoftCalendar={microsoft.connectMicrosoftCalendar}
+            disconnectMicrosoftCalendar={microsoft.disconnectMicrosoftCalendar}
+            microsoftTasksStatus={microsoft.microsoftTasksStatus}
+            microsoftTasksMessage={microsoft.microsoftTasksMessage}
+            microsoftTaskLists={microsoft.microsoftTaskLists}
+            selectedMicrosoftTaskListId={microsoft.selectedMicrosoftTaskListId}
+            onSelectMicrosoftTaskList={microsoft.setSelectedMicrosoftTaskListId}
+            connectMicrosoftTasks={microsoft.connectMicrosoftTasks}
+            disconnectMicrosoftTasks={microsoft.disconnectMicrosoftTasks}
             workspaceRole={workspace.currentWorkspaceRole}
             theme={ui.theme}
             onSetTheme={ui.setTheme}
