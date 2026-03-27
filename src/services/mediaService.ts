@@ -215,6 +215,7 @@ function createRemoteMediaService() {
     async getTranscriptionJobStatus(recordingId) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: 'GET',
+        retries: 1,
       });
 
       return mapRemoteTranscriptionResult(response);
@@ -251,16 +252,43 @@ function createRemoteMediaService() {
       const token = resolvePersistedSession()?.token || '';
       const query = token ? `?token=${encodeURIComponent(token)}` : '';
       const url = `${API_BASE_URL}/media/recordings/${recordingId}/progress${query}`;
-      const es = new EventSource(url);
-      es.addEventListener('progress', (e) => {
-        try {
-          const payload = JSON.parse(e.data);
-          onProgress(payload);
-          if (payload?.progress >= 100) es.close();
-        } catch (err) {}
-      });
-      es.onerror = () => es.close();
-      return () => es.close();
+      let closed = false;
+      let errorCount = 0;
+      let es = new EventSource(url);
+
+      function attachListeners(source: EventSource) {
+        source.addEventListener('progress', (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            errorCount = 0;
+            onProgress(payload);
+            if (payload?.progress >= 100) {
+              closed = true;
+              source.close();
+            }
+          } catch (err) {}
+        });
+        source.onerror = () => {
+          source.close();
+          errorCount += 1;
+          if (closed || errorCount > 5) return;
+          // Reconnect after a short delay on transient errors (e.g. 502)
+          setTimeout(
+            () => {
+              if (closed) return;
+              es = new EventSource(url);
+              attachListeners(es);
+            },
+            2000 * Math.min(errorCount, 3)
+          );
+        };
+      }
+
+      attachListeners(es);
+      return () => {
+        closed = true;
+        es.close();
+      };
     },
     async extractVoiceProfileFromSpeaker(recordingId, speakerId, speakerName) {
       return apiRequest(`/media/recordings/${recordingId}/voice-profiles/from-speaker`, {

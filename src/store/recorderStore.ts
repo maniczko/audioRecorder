@@ -481,10 +481,29 @@ export const useRecorderStore = create<any>()(
               transcription = { ...started, pipelineStatus: 'done' };
             } else {
               let attempts = 0;
+              let consecutiveErrors = 0;
+              const MAX_CONSECUTIVE_ERRORS = 10;
               let finalTranscription = null;
               while (attempts < 120) {
                 attempts += 1;
-                const result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+                let result;
+                try {
+                  result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+                  consecutiveErrors = 0;
+                } catch (pollError: any) {
+                  consecutiveErrors += 1;
+                  console.warn(
+                    `[Pipeline] Status poll error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`,
+                    pollError?.message
+                  );
+                  if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                    throw new Error(
+                      'Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.'
+                    );
+                  }
+                  await sleep(consecutiveErrors < 3 ? 2000 : 5000);
+                  continue;
+                }
                 get().updateQueueItem(nextItem.recordingId, {
                   pipelineGitSha: result?.pipelineGitSha || '',
                   pipelineVersion: result?.pipelineVersion || '',
