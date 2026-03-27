@@ -297,15 +297,40 @@ function UnifiedLibrary({
           }}
         >
           {isUploading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160, justifyContent: 'center' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-base)', whiteSpace: 'nowrap', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }} title={uploadingFileName}>
-                    {uploadingFileName || 'Wgrywanie...'}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
-                    {uploadProgress}%
-                  </span>
-               </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+                minWidth: 160,
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-base)',
+                    whiteSpace: 'nowrap',
+                    maxWidth: 120,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                  title={uploadingFileName}
+                >
+                  {uploadingFileName || 'Wgrywanie...'}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted)',
+                    whiteSpace: 'nowrap',
+                    marginLeft: 'auto',
+                  }}
+                >
+                  {uploadProgress}%
+                </span>
+              </div>
               <ProgressBar value={uploadProgress} variant="upload" />
             </div>
           ) : (
@@ -546,13 +571,29 @@ function UnifiedLibrary({
               </tr>
             </thead>
             <tbody>
-              {sortedAndFiltered.map((m) => (
+              {sortedAndFiltered.map((m, idx) => (
                 <tr
                   key={m.id}
                   className={m.id === selectedMeeting?.id ? 'active' : ''}
+                  tabIndex={0}
                   onClick={() => {
                     selectMeeting(m);
                     setActiveTab('studio');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      selectMeeting(m);
+                      setActiveTab('studio');
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      const next = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (next) next.focus();
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      const prev = e.currentTarget.previousElementSibling as HTMLElement;
+                      if (prev) prev.focus();
+                    }
                   }}
                 >
                   <td className="recordings-library-meeting">

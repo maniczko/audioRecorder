@@ -2,10 +2,15 @@
 
 /**
  * GitHub Actions Error Fetcher
- * 
+ *
  * Automatically fetches failed workflow runs from GitHub Actions
  * and generates error reports.
  */
+
+// Load environment variables from .env.local FIRST (takes precedence)
+require('dotenv').config({ path: '.env.local' });
+// Then load .env as fallback
+require('dotenv').config();
 
 const https = require('https');
 const fs = require('fs');
@@ -36,7 +41,7 @@ function githubRequest(endpoint) {
       method: 'GET',
       headers: {
         'User-Agent': 'github-error-fetcher',
-        'Accept': 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3+json',
       },
     };
 
@@ -102,7 +107,7 @@ async function fetchJobLogs(jobId, jobName) {
       method: 'GET',
       headers: {
         'User-Agent': 'github-error-fetcher',
-        'Accept': 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3+json',
       },
     };
 
@@ -146,11 +151,12 @@ function parseErrors(logs) {
     const line = lines[i];
 
     // Look for error patterns
-    if (line.includes('Error:') ||
+    if (
+      line.includes('Error:') ||
       line.includes('ERROR') ||
       line.includes('❌') ||
-      line.includes('FAILED')) {
-
+      line.includes('FAILED')
+    ) {
       // Get context (5 lines before and after)
       const start = Math.max(0, i - 5);
       const end = Math.min(lines.length, i + 5);
@@ -175,23 +181,23 @@ function generateReport(runs, jobs, logs) {
     period: `${config.daysBack} days`,
     summary: {
       totalRuns: runs.length,
-      failedRuns: runs.filter(r => r.conclusion === 'failure').length,
-      cancelledRuns: runs.filter(r => r.conclusion === 'cancelled').length,
-      successfulRuns: runs.filter(r => r.conclusion === 'success').length,
+      failedRuns: runs.filter((r) => r.conclusion === 'failure').length,
+      cancelledRuns: runs.filter((r) => r.conclusion === 'cancelled').length,
+      successfulRuns: runs.filter((r) => r.conclusion === 'success').length,
     },
     failures: [],
   };
 
   // Process failed runs
-  const failedRuns = runs.filter(r => r.conclusion === 'failure');
+  const failedRuns = runs.filter((r) => r.conclusion === 'failure');
 
   for (const run of failedRuns) {
-    const runJobs = jobs.filter(j => j.run_id === run.id);
+    const runJobs = jobs.filter((j) => j.run_id === run.id);
     const runErrors = [];
 
     for (const job of runJobs) {
       if (job.conclusion === 'failure') {
-        const jobLogs = logs.find(l => l.jobId === job.id);
+        const jobLogs = logs.find((l) => l.jobId === job.id);
 
         if (jobLogs && jobLogs.logs) {
           const errors = parseErrors(jobLogs.logs);
@@ -199,7 +205,7 @@ function generateReport(runs, jobs, logs) {
           runErrors.push({
             jobId: job.id,
             jobName: job.name,
-            stepName: job.steps?.find(s => s.conclusion === 'failure')?.name || 'Unknown',
+            stepName: job.steps?.find((s) => s.conclusion === 'failure')?.name || 'Unknown',
             errors: errors,
           });
         }
@@ -308,13 +314,17 @@ async function createIssue(report, files) {
 | Cancelled Runs | ${report.summary.cancelledRuns} |
 | Successful Runs | ${report.summary.successfulRuns} |
 
-${report.failures.length > 0 ? `
+${
+  report.failures.length > 0
+    ? `
 ### Failed Workflows
 
-${report.failures.map(f => `- [${f.runName}](${f.htmlUrl}) - ${f.commit}`).join('\n')}
-` : `
+${report.failures.map((f) => `- [${f.runName}](${f.htmlUrl}) - ${f.commit}`).join('\n')}
+`
+    : `
 ### ✅ All workflows passed!
-`}
+`
+}
 
 ### Attachments
 
@@ -353,7 +363,7 @@ async function main() {
     console.log(`✓ Found ${runs.length} workflow runs\n`);
 
     // Fetch jobs for failed runs
-    const failedRuns = runs.filter(r => r.conclusion === 'failure');
+    const failedRuns = runs.filter((r) => r.conclusion === 'failure');
     const jobs = [];
     const logs = [];
 
@@ -369,7 +379,7 @@ async function main() {
           jobs.push(...runJobs);
 
           // Fetch logs for failed jobs
-          for (const job of runJobs.filter(j => j.conclusion === 'failure')) {
+          for (const job of runJobs.filter((j) => j.conclusion === 'failure')) {
             const jobLogs = await fetchJobLogs(job.id, job.name);
             if (jobLogs) {
               logs.push({ jobId: job.id, logs: jobLogs });
@@ -393,13 +403,14 @@ async function main() {
 
     // Exit with error code if there are failures
     if (report.summary.failedRuns > 0) {
-      console.log(`❌ ${report.summary.failedRuns} workflow(s) failed in the last ${config.daysBack} days`);
+      console.log(
+        `❌ ${report.summary.failedRuns} workflow(s) failed in the last ${config.daysBack} days`
+      );
       process.exit(1);
     } else {
       console.log(`✅ All workflows passed in the last ${config.daysBack} days`);
       process.exit(0);
     }
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     process.exit(1);

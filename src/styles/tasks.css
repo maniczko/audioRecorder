@@ -2,7 +2,7 @@
 
 .kanban-card-description {
   font-size: 0.8rem;
-  color: #677a97;
+  color: #8a9bb8;
   margin: 2px 0 4px;
   line-height: 1.5;
   overflow: hidden;
@@ -2053,7 +2053,7 @@
   gap: 12px;
   padding: 10px 16px;
   font-size: 0.82rem;
-  color: #677a97;
+  color: #8a9bb8;
   background: #f8fbff;
   border-top: 1px solid #edf2f8;
 }
@@ -2248,14 +2248,14 @@
 .tasks-layout.ms-todo .todo-kanban-card p,
 .tasks-layout.ms-todo .todo-detail-meta-card p {
   margin: 0;
-  color: #677a97;
+  color: #8a9bb8;
   line-height: 1.55;
 }
 
 .tasks-layout.ms-todo .todo-kanban-card p,
 .tasks-layout.ms-todo .todo-detail-meta-card p {
   margin: 0;
-  color: #677a97;
+  color: #8a9bb8;
   line-height: 1.55;
 }
 
@@ -5318,7 +5318,7 @@
 
 .tasks-layout.ms-todo .kanban-card-description {
   font-size: 0.8rem;
-  color: #677a97;
+  color: #8a9bb8;
   line-height: 1.5;
 }
 
