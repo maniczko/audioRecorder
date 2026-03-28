@@ -16,6 +16,8 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 };
 
 const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
+const PREVIEW_BUILD_MISMATCH_UPLOAD_MESSAGE =
+  'Frontend preview jest nowszy niz backend. Odswiez strone lub otworz najnowszy deploy i wznow upload.';
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 
 function sleep(ms: number) {
@@ -60,25 +62,36 @@ async function uploadChunkWithRetry({
 
   while (attempt < maxAttempts) {
     try {
-      await apiRequest(`/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${total}`, {
-        method: 'PUT',
-        body: chunk,
-        retries: 0,
-        headers: {
-          'Content-Type': contentType || 'application/octet-stream',
-          ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
-          ...(meetingId ? { 'X-Meeting-Id': meetingId } : {}),
-        },
-      });
+      await apiRequest(
+        `/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${total}`,
+        {
+          method: 'PUT',
+          body: chunk,
+          retries: 0,
+          headers: {
+            'Content-Type': contentType || 'application/octet-stream',
+            ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+            ...(meetingId ? { 'X-Meeting-Id': meetingId } : {}),
+          },
+        }
+      );
       return;
     } catch (error: any) {
+      const isPreviewMismatch = isPreviewRuntimeBuildMismatch();
+      if (isPreviewMismatch && isRetryableChunkUploadError(error)) {
+        throw new Error(PREVIEW_BUILD_MISMATCH_UPLOAD_MESSAGE);
+      }
+
       attempt += 1;
       const canRetry = isRetryableChunkUploadError(error) && attempt < maxAttempts;
       if (!canRetry) {
         throw error;
       }
 
-      const delayMs = CHUNK_UPLOAD_RETRY_DELAYS_MS[Math.min(attempt - 1, CHUNK_UPLOAD_RETRY_DELAYS_MS.length - 1)];
+      const delayMs =
+        CHUNK_UPLOAD_RETRY_DELAYS_MS[
+          Math.min(attempt - 1, CHUNK_UPLOAD_RETRY_DELAYS_MS.length - 1)
+        ];
       console.warn(
         `[upload] Chunk ${index + 1}/${total} retry ${attempt}/${maxAttempts - 1} after error: ${error?.message || 'unknown error'}`
       );
