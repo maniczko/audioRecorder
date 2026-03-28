@@ -225,14 +225,23 @@ export default class TranscriptionService extends EventEmitter {
         }
       })
       .catch(async (error: any) => {
-        await this.markTranscriptionFailure(
-          recordingId,
-          error.message,
-          error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === 'object'
-            ? error.transcriptionDiagnostics
-            : null,
-          error?.audioQuality && typeof error.audioQuality === 'object' ? error.audioQuality : null
-        );
+        try {
+          await this.markTranscriptionFailure(
+            recordingId,
+            error?.message || String(error || 'Unknown pipeline error'),
+            error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === 'object'
+              ? error.transcriptionDiagnostics
+              : null,
+            error?.audioQuality && typeof error.audioQuality === 'object'
+              ? error.audioQuality
+              : null
+          );
+        } catch (markError: any) {
+          console.error(
+            '[Pipeline] Failed to mark transcription failure:',
+            markError?.message || markError
+          );
+        }
       })
       .finally(() => {
         this.transcriptionJobs.delete(recordingId);

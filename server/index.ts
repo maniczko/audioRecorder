@@ -14,14 +14,21 @@ import { resolveServerPort } from './runtime.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 
+let uncaughtCount = 0;
 process.on('uncaughtException', (error) => {
-  logger.error('FATAL UNCAUGHT EXCEPTION:', error);
-  process.exit(1);
+  uncaughtCount += 1;
+  logger.error(`UNCAUGHT EXCEPTION (${uncaughtCount}):`, error);
+  // Only exit on repeated rapid crashes (3+ within first 30s means startup failure)
+  if (uncaughtCount >= 3 && process.uptime() < 30) {
+    logger.error('Multiple uncaught exceptions during startup — exiting.');
+    process.exit(1);
+  }
+  // Otherwise keep the server alive; the request will fail but other endpoints stay operational
 });
 
 process.on('unhandledRejection', (reason) => {
   logger.error(
-    'FATAL UNHANDLED REJECTION:',
+    'UNHANDLED REJECTION:',
     reason instanceof Error ? reason : new Error(String(reason))
   );
 });
@@ -83,12 +90,14 @@ export async function bootstrap() {
           '[Bootstrap] Please clean up disk space or the server will fail to accept recordings.'
         );
         logger.info('[Bootstrap] Attempting automatic disk cleanup...');
-        
+
         // Auto cleanup on critical disk space
         try {
           const { cleanupDisk } = await import('./scripts/cleanup-disk.js');
           const result = cleanupDisk();
-          logger.info(`[Bootstrap] Cleanup result: ${result.deletedCount} files deleted, ${(result.freedBytes / 1024 / 1024).toFixed(2)} MB freed`);
+          logger.info(
+            `[Bootstrap] Cleanup result: ${result.deletedCount} files deleted, ${(result.freedBytes / 1024 / 1024).toFixed(2)} MB freed`
+          );
         } catch (cleanupError) {
           logger.error('[Bootstrap] Automatic cleanup failed:', cleanupError);
         }
