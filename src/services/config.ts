@@ -27,6 +27,13 @@ function readMode(value, fallback = 'local') {
   return normalized === 'remote' ? 'remote' : fallback;
 }
 
+function isHostedPreviewRuntime() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(String(window.location.origin || ''));
+}
+
 function readDefaultApiBaseUrl() {
   const env = (import.meta as any).env;
   const isProd = Boolean(env?.PROD);
@@ -42,6 +49,20 @@ function readDefaultApiBaseUrl() {
   return '';
 }
 
+function resolveApiBaseUrl() {
+  const configuredValue = String(
+    readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || ''
+  ).trim();
+
+  // On Vercel preview/runtime we proxy API routes through the same frontend origin.
+  // This avoids direct browser calls to Railway that can surface as CORS errors on 502 responses.
+  if (isHostedPreviewRuntime()) {
+    return String(window.location.origin || '').trim();
+  }
+
+  return configuredValue || readDefaultApiBaseUrl();
+}
+
 export const APP_DATA_PROVIDER = readMode(
   readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
   'local'
@@ -52,11 +73,7 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
   'local'
 );
 
-const RAW_API_BASE_URL = String(
-  readEnv('VITE_API_BASE_URL') ||
-    readEnv('REACT_APP_API_BASE_URL') ||
-    readDefaultApiBaseUrl()
-).trim();
+const RAW_API_BASE_URL = String(resolveApiBaseUrl()).trim();
 
 export const API_BASE_URL = RAW_API_BASE_URL;
 
