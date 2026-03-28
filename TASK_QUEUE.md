@@ -43,27 +43,27 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ---
 
-## GitHub Actions Status (2026-03-26 20:20)
+## GitHub Actions Status (2026-03-28 07:00)
 
-**❌ 54 workflow failures w ostatnich 7 dniach (27 sukcesów)**
+**❌ 48 workflow failures w ostatnich 7 dniach (36 sukcesów)**
 
-### Latest Failures (commits):
+### Najczęstsze błędy:
 
-| Commit | Workflow | Time | Status |
-|--------|----------|------|--------|
-| 7d3dc12 | auto-fix.yml | 20:15 | ❌ |
-| 7d3dc12 | CI Pipeline | 20:15 | ❌ |
-| 7d3dc12 | Optimized CI | 20:15 | ❌ |
-| ae999a9 | Backend Production Smoke | 19:33 | ❌ |
-| ae999a9 | CI Pipeline | 19:33 | ❌ |
-| ae999a9 | E2E Playwright Tests | 19:33 | ❌ |
-| a1dea5c | Optimized CI | 17:52 | ❌ |
-| a1dea5c | CI Pipeline | 17:52 | ❌ |
+| Workflow | Count | Status |
+|----------|-------|--------|
+| Optimized CI | 12 | ❌ |
+| CI Pipeline | 11 | ❌ |
+| E2E Playwright Tests | 10 | ❌ |
+| auto-fix.yml | 8 | ❌ |
+| Backend Production Smoke | 4 | ❌ |
+| Auto Security Patches | 2 | ❌ |
+| GitHub Error Reporter | 1 | ❌ |
 
-### Główne przyczyny błędów:
-1. **302 Errors** - GitHub API nie zwraca logów dla workflow (problem z tokenem/permissions)
-2. **Dependabot workflows** - Permission issues (actions:write, issues:write)
-3. **CI Pipeline failures** - Auto-fix workflow failing on latest commits
+### Główne przyczyny:
+1. **Optimized CI / CI Pipeline** - Prawdopodobne błędy testów frontend/backend
+2. **E2E Playwright Tests** - Timeouty lub błędy testów end-to-end
+3. **auto-fix.yml** - Auto-fix test failures nie przechodzi
+4. **Backend Production Smoke** - Backend smoke tests failing
 
 ### Naprawione dzisiaj:
 - ✅ **CSP** - dodano Railway API do allowed connections w vercel.json
@@ -74,9 +74,26 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - ✅ **#018** - Outlook / Microsoft To Do integration (FULLY IMPLEMENTED)
 - ✅ **WebSocket Errors** - usunięto explicite HMR config
 - ✅ **Service Worker Errors** - wyłączony w trybie dev
+- ✅ **GitHub Error Fetcher** - naprawiono pobieranie logów (302 redirect handling)
+
+### Zadania do realizacji:
+
+#### 🔴 Wysoki priorytet:
+- `#GH-01` — Naprawić Optimized CI / CI Pipeline failures (12 failed runs)
+- `#GH-02` — Naprawić E2E Playwright Tests timeouty (10 failed runs)
+- `#GH-03` — Naprawić auto-fix.yml workflow (8 failed runs)
+- `#GH-04` — Naprawić Backend Production Smoke tests (4 failed runs)
+
+#### 🟡 Średni priorytet:
+- ✅ `018` — Outlook / Microsoft To Do integracja (DONE!)
+- ✅ `208` — coverage ProfileTab.tsx (35.56% - wystarczające!)
+- 🟡 `403` — Migrate inline styles to CSS variables (155 inline styles do refaktoryzacji)
+- 🟡 `341` — Memory profiling w production (clinic.js, 0x profiling)
+- 🟡 `342` — APM integration (DataDog/NewRelic)
 
 ### Wymagane działania:
-- 🔧 **Regenerate GitHub Token** - obecny token nie ma dostępu do logów workflow
-- 🔧 **Update Dependabot Permissions** - dodać `actions: write` i `issues: write` do workflow
-- 🔍 **Monitor CI** - sprawdzić czy auto-fix workflow przechodzi na najnowszych commitach
+- 🔍 **Zbadać logi** - pobrać szczegóły błędów z github-errors/*.md
+- 🔧 **Naprawić testy** - naprawić failing tests w CI pipeline
+- ⏱️ **Zwiększyć timeouty** - E2E tests mogą potrzebować więcej czasu
+- 📝 **Dodać retry logic** - dodać retry dla flaky tests
 

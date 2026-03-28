@@ -45,13 +45,6 @@ export default defineConfig(async () => {
       include: /src\/.*\.[tj]sx?$/,
       exclude: [],
     },
-    optimizeDeps: {
-      esbuildOptions: {
-        loader: {
-          '.js': 'jsx',
-        },
-      },
-    },
     server: {
       port: 3000,
       strictPort: true,

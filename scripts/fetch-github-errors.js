@@ -116,21 +116,36 @@ async function fetchJobLogs(jobId, jobName) {
     }
 
     const req = https.request(options, (res) => {
-      let data = '';
-
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      res.on('end', () => {
-        if (res.statusCode !== 200) {
-          console.log(`  ⚠️  Failed to fetch logs: ${res.statusCode}`);
+      // GitHub returns 302 redirect to S3 URL for logs
+      if (res.statusCode === 302 && res.headers.location) {
+        // Follow the redirect to S3
+        const redirectUrl = new URL(res.headers.location);
+        https.get(redirectUrl, (s3Res) => {
+          let data = '';
+          s3Res.on('data', (chunk) => data += chunk);
+          s3Res.on('end', () => {
+            if (s3Res.statusCode !== 200) {
+              console.log(`  ⚠️  Failed to fetch logs: ${s3Res.statusCode}`);
+              resolve(null);
+            } else {
+              resolve({ jobId, logs: data });
+            }
+          });
+        }).on('error', (error) => {
+          console.log(`  ⚠️  Redirect error: ${error.message}`);
           resolve(null);
-        } else {
-          // Logs are returned as raw text, not JSON
+        });
+      } else if (res.statusCode !== 200) {
+        console.log(`  ⚠️  Failed to fetch logs: ${res.statusCode}`);
+        resolve(null);
+      } else {
+        // Logs are returned as raw text, not JSON
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
           resolve({ jobId, logs: data });
-        }
-      });
+        });
+      }
     });
 
     req.on('error', (error) => {
@@ -199,7 +214,7 @@ function generateReport(runs, jobs, logs) {
       if (job.conclusion === 'failure') {
         const jobLogs = logs.find((l) => l.jobId === job.id);
 
-        if (jobLogs && jobLogs.logs) {
+        if (jobLogs && typeof jobLogs.logs === 'string') {
           const errors = parseErrors(jobLogs.logs);
 
           runErrors.push({
@@ -314,17 +329,16 @@ async function createIssue(report, files) {
 | Cancelled Runs | ${report.summary.cancelledRuns} |
 | Successful Runs | ${report.summary.successfulRuns} |
 
-${
-  report.failures.length > 0
-    ? `
+${report.failures.length > 0
+      ? `
 ### Failed Workflows
 
 ${report.failures.map((f) => `- [${f.runName}](${f.htmlUrl}) - ${f.commit}`).join('\n')}
 `
-    : `
+      : `
 ### ✅ All workflows passed!
 `
-}
+    }
 
 ### Attachments
 

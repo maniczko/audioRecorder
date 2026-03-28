@@ -114,6 +114,7 @@ export default function TasksTab({
 
   const visibleTasks = useMemo(() => {
     const filtered = applyMainListFilter(tasks, selectedListId, boardColumns).filter((task) => {
+      if (task._softDeleted) return false;
       if (ownerFilter !== 'all' && task.owner !== ownerFilter) {
         return false;
       }
@@ -226,9 +227,45 @@ export default function TasksTab({
     [onMoveTaskToColumn, runSafely]
   );
 
+  const pendingDeleteRef = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+
   const safeDeleteTask = useCallback(
-    (taskId, successMessage = '') => runSafely(() => onDeleteTask(taskId), successMessage),
-    [onDeleteTask, runSafely]
+    (taskId: string) => {
+      // Cancel any previous pending delete
+      if (pendingDeleteRef.current) {
+        clearTimeout(pendingDeleteRef.current.timer);
+        onDeleteTask(pendingDeleteRef.current.id);
+        pendingDeleteRef.current = null;
+      }
+
+      const task = tasks.find((t: any) => t.id === taskId);
+      const taskTitle = task?.title || 'Zadanie';
+
+      // Hide task immediately via update (soft delete)
+      onUpdateTask(taskId, { _softDeleted: true });
+
+      const timer = setTimeout(() => {
+        onDeleteTask(taskId);
+        pendingDeleteRef.current = null;
+      }, 5000);
+
+      pendingDeleteRef.current = { id: taskId, timer };
+
+      const label = taskTitle.length > 30 ? taskTitle.slice(0, 30) + '…' : taskTitle;
+      toast.info(`Usunięto "${label}"`, {
+        actionLabel: 'Cofnij',
+        action: () => {
+          if (pendingDeleteRef.current?.id === taskId) {
+            clearTimeout(pendingDeleteRef.current.timer);
+            pendingDeleteRef.current = null;
+            onUpdateTask(taskId, { _softDeleted: false });
+            toast.success('Przywrócono zadanie.');
+          }
+        },
+        duration: 5000,
+      });
+    },
+    [onDeleteTask, onUpdateTask, tasks, toast]
   );
 
   function toggleTaskSelection(taskId, forceValue) {
