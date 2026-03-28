@@ -105,7 +105,6 @@ export type Config = z.infer<typeof envSchema>;
 // [104] Runtime validation of required API keys
 // ─────────────────────────────────────────────────────────────
 export function validateRequiredApiKeys() {
-  const errors: string[] = [];
   const warnings: string[] = [];
 
   // Check if at least one STT provider is configured
@@ -113,8 +112,9 @@ export function validateRequiredApiKeys() {
   const hasGroq = Boolean(config.GROQ_API_KEY);
 
   if (!hasOpenAI && !hasGroq) {
-    errors.push(
+    warnings.push(
       'Missing STT provider API key. Set either OPENAI_API_KEY or GROQ_API_KEY.\n' +
+      '  Transcription endpoints will return 503 until a key is configured.\n' +
       '  See .env.example for configuration options.'
     );
   }
@@ -125,18 +125,6 @@ export function validateRequiredApiKeys() {
       'Missing HF_TOKEN. Speaker diarization will be disabled.\n' +
       '  Get a token at: https://huggingface.co/settings/tokens'
     );
-  }
-
-  // Log errors and warnings
-  if (errors.length > 0) {
-    console.error('\n❌ Configuration errors:\n');
-    errors.forEach((err) => console.error(`  - ${err}\n`));
-    console.error('Please fix these errors and restart the server.\n');
-
-    // Don't exit during tests - let the test handle the error
-    if (process.env.NODE_ENV !== 'test') {
-      process.exit(1);
-    }
   }
 
   if (warnings.length > 0) {

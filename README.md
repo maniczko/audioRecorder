@@ -136,18 +136,34 @@ npm run test:smoke
 
 ## 🛠️ Rozwiązywanie problemów (Troubleshooting)
 
-1. **Komunikacja frontu zwalnia powiadomieniem `TypeError: failed to fetch` lub błąd `CORS` z API**
-   - Na 99% Frontend uderza pod niewłaściwy adres docelowy. Zweryfikuj, czy twój plik `.env` załadował poprawne `REACT_APP_API_BASE_URL` oraz czy deweloperski backend faktycznie podniósł się na docelowym porcie z akceptacją Twojego Host Originu `localhost`.
+1. **Błąd CORS / `No 'Access-Control-Allow-Origin' header` z Railway**
+   - Backend (Hono) automatycznie akceptuje żądania z domen `localhost` i `*.vercel.app`. Jeśli używasz własnej domeny, dodaj ją do zmiennej środowiskowej Railway:
+     ```
+     VOICELOG_ALLOWED_ORIGINS=https://your-app.vercel.app,https://your-custom-domain.com
+     ```
+   - Wiele adresów oddziel przecinkami. Można też ustawić `*`, ale nie jest to zalecane w produkcji.
+   - Po zmianie zmiennej środowiskowej Railway automatycznie zrestartuje kontener.
 
-2. **Zablokowanie "Locking Error" przy zapisie SQLite**
+2. **Backend zwraca 502 Bad Gateway (Railway)**
+   - Najczęstsza przyczyna: brakujące zmienne środowiskowe. Sprawdź w Railway → Variables, że ustawione są `OPENAI_API_KEY` (lub `GROQ_API_KEY`) oraz `DATABASE_URL` lub `VOICELOG_DB_PATH`.
+   - Jeśli brak klucza STT (`OPENAI_API_KEY`/`GROQ_API_KEY`), serwer **uruchomi się**, ale endpointy transkrypcji zwrócą 503. Endpoint `/health` będzie działać poprawnie.
+   - Sprawdź logi w Railway → Deploy Logs, aby zobaczyć szczegóły ewentualnego błędu startowego.
+
+3. **`AbortError: signal is aborted without reason` w konsoli przeglądarki (Hosted preview health probe)**
+   - Frontend próbuje sprawdzić zdrowie backendu (Railway). Timeout wynosi 15 sekund — jeśli Railway wykonuje "cold start" lub jest przeciążony, zapytanie może wygasać.
+   - Po kilku nieudanych próbach system wyświetla komunikat o niedostępności backendu. Odśwież stronę po chwili lub sprawdź status Railway.
+
+4. **Komunikacja frontu — błąd `TypeError: failed to fetch`**
+   - Zweryfikuj, czy `VITE_API_BASE_URL` w `.env` wskazuje właściwy adres backendu (np. `https://audiorecorder-production.up.railway.app`).
+   - W środowisku lokalnym domyślnie `http://localhost:4000`.
+
+5. **Zablokowanie "Locking Error" przy zapisie SQLite**
    - SQLite nie toleruje dwóch procesów operujących w trybie "Pragmas Exclusive Lock", co czasem może dotknąć Windowsa pod testami `watchNode`. 
    - Rozwiązaniem ratunkowym jest zatrzymanie konsoli Node, zamknięcie aplikacji bazodanowych GUI, oraz jeżeli trzeba, ręczne usunięcie starego woluminu bazodanowego `server/data/voicelog.sqlite` by skrypt `Bootstrap` Hono otworzył pusty schemat transakcyjny ponownie w całości.
 
-3. **Błąd braku zmiennych przy podnoszeniu Dockera w CD (Crash pętli)**
-   - Kontener deweloperski serwisu backendowego narzuca `fail-fast check` u bramki (od R24 z roadmapy). Musisz upewnić się, że obraz systemu Cloud ładuje mu zestaw zmiennych np. wymaganej bazy `DATABASE_URL`. Bez niej kontener zrzuci błąd `FATAL` w drugiej sekundzie po odpaleniu zamiast cierpieć na brak stabilności bazy później.
-
-4. **Krzyczące importy (na Czerwono) przez TypeScript w edytorze VSCode**
+6. **Krzyczące importy (na Czerwono) przez TypeScript w edytorze VSCode**
    - Interfejs często zaimplementowano z wspólnymi umowami Typów z `src/shared/types.ts`. Po zmianach między branchami TypeScript potrafi zgubić orientacje co jest "współdzielone". By naprawić edytor by nie krzyczał, włącz u góry `Command Palette` (np. przez klawisz F1) i wybierz operację: **"Restart TS Server"**.
+
 ---
 
 ## Vercel Deploy z GitHub Actions
