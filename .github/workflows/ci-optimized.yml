@@ -65,7 +65,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run lint
+      - run: pnpm run lint
         name: Run ESLint
 
   # Type check - only if source files changed
@@ -85,7 +85,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run typecheck
+      - run: pnpm run typecheck
         name: Run TypeScript
 
   # Format check - only if source files changed
@@ -105,7 +105,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run format:check
+      - run: pnpm run format:check
         name: Check formatting
 
   # Tests - only if tests or source files changed
@@ -125,7 +125,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run test:smart-retry
+      - run: pnpm run test:smart-retry
         name: Run tests with retry
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -151,7 +151,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run test:coverage
+      - run: pnpm run test:coverage
         name: Run coverage
       - uses: codecov/codecov-action@v4
         with:
@@ -176,8 +176,8 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm audit --audit-level=high
-        name: Run npm audit
+      - run: pnpm audit --prod
+        name: Run pnpm audit
         continue-on-error: true
 
   # Build - only if source or config changed
@@ -197,7 +197,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run build
+      - run: pnpm run build
         name: Build project
       - uses: actions/upload-artifact@v4
         with:
@@ -222,7 +222,7 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: npm run docs:generate 2>/dev/null || echo "No docs script found"
+      - run: pnpm run docs:generate 2>/dev/null || echo "No docs script found"
         name: Generate docs
         continue-on-error: true
 

@@ -17,6 +17,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -72,7 +77,7 @@ jobs:
               // Run prettier fix
               const { execSync } = require('child_process');
               try {
-                execSync('npm run format', { stdio: 'inherit' });
+                execSync('pnpm run format', { stdio: 'inherit' });
                 console.log('✅ Formatting auto-fixed');
               } catch (error) {
                 console.log('⚠️ Formatting fix failed');
@@ -84,7 +89,7 @@ jobs:
               // Run lint fix
               const { execSync } = require('child_process');
               try {
-                execSync('npm run lint:fix', { stdio: 'inherit' });
+                execSync('pnpm run lint:fix', { stdio: 'inherit' });
                 console.log('✅ Linting auto-fixed');
               } catch (error) {
                 console.log('⚠️ Linting fix failed');

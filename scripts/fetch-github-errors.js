@@ -396,7 +396,7 @@ async function main() {
           for (const job of runJobs.filter((j) => j.conclusion === 'failure')) {
             const jobLogs = await fetchJobLogs(job.id, job.name);
             if (jobLogs) {
-              logs.push({ jobId: job.id, logs: jobLogs });
+              logs.push(jobLogs);
             }
           }
         }
@@ -415,16 +415,15 @@ async function main() {
 
     console.log('\n✅ Done!\n');
 
-    // Exit with error code if there are failures
+    // Report results (always exit 0 — this script is a reporter, not a gate)
     if (report.summary.failedRuns > 0) {
       console.log(
-        `❌ ${report.summary.failedRuns} workflow(s) failed in the last ${config.daysBack} days`
+        `⚠️  ${report.summary.failedRuns} workflow(s) failed in the last ${config.daysBack} days`
       );
-      process.exit(1);
     } else {
       console.log(`✅ All workflows passed in the last ${config.daysBack} days`);
-      process.exit(0);
     }
+    process.exit(0);
   } catch (error) {
     console.error('❌ Error:', error.message);
     process.exit(1);

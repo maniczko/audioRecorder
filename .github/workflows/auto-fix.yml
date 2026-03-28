@@ -102,10 +102,10 @@ jobs:
                   '### Quick Fixes:',
                   '```bash',
                   '# Run auto-fix locally',
-                  'npm run test:fix',
+                  'pnpm run test:fix',
                   '',
                   '# Run tests with retry',
-                  'npm run test:retry',
+                  'pnpm run test:retry',
                   '```',
                 ].join('\n'),
               });

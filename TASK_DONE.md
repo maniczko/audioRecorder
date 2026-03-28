@@ -2,6 +2,36 @@
 
 ## Zrealizowane Zadania
 
+## [2026-03-28] #GH-06: GitHub Error Reporter Workflow Fix
+Status: `done`
+
+### Przyczyna awarii:
+- Workflow używał `npm ci` zamiast `pnpm install --frozen-lockfile`
+- Brak kroku `pnpm/action-setup@v3` (pnpm niedostępny w CI)
+- Skrypt `fetch-github-errors.js` kończył się `exit(1)` gdy raportował failures (reporter nie powinien failować)
+- Bug double-wrap logs: `logs.push({ jobId, logs: { jobId, logs } })` zamiast `logs.push({ jobId, logs })`
+
+### Naprawione pliki:
+- `.github/workflows/github-error-reporter.yml` — pnpm setup + pnpm install
+- `scripts/fetch-github-errors.js` — exit(0), fix double-wrap logs
+
+---
+
+## [2026-03-28] Naprawy z dnia 2026-03-28
+Status: `done`
+
+### Zrealizowane naprawy:
+- ✅ **CSP** — dodano Railway API (`*.railway.app`) do `connect-src` w vercel.json
+- ✅ **Tasks Tab Layout** — naprawiono empty space po prawej stronie (`data-columns="two"`)
+- ✅ **selectedTaskSla** — usunięto ReferenceError z TasksTab.tsx
+- ✅ **Lazy Loading Tests** — dodano 9 testów dla createLazyComponent
+- ✅ **CI Husky Issue** — dodano `CI: true` aby wyłączyć husky hooks w CI
+- ✅ **WebSocket Errors** — usunięto explicite HMR config
+- ✅ **Service Worker Errors** — wyłączony w trybie dev
+- ✅ **GitHub Error Fetcher** — naprawiono pobieranie logów (302 redirect handling)
+
+---
+
 ## [2026-03-26 20:00] #018: Outlook / Microsoft To Do Integration
 Status: `done`
 Completed by: Qwen Code

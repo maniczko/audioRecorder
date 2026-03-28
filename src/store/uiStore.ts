@@ -8,7 +8,7 @@ export const useUIStore = create<any>()(
       activeTab: 'studio',
       tabHistory: ['studio'],
       theme: 'dark',
-      layoutPreset: 'bobr',
+      layoutPreset: 'modern',
       pendingTaskId: '',
       pendingPersonId: '',
       commandPaletteOpen: false,
@@ -119,7 +119,7 @@ export const useUIStore = create<any>()(
         if (state?.theme) {
           document.documentElement.setAttribute('data-theme', state.theme);
         }
-        document.documentElement.setAttribute('data-layout', state?.layoutPreset || 'bobr');
+        document.documentElement.setAttribute('data-layout', state?.layoutPreset || 'modern');
       },
     }
   )
