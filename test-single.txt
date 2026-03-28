@@ -1,0 +1,378 @@
+﻿node.exe : [1m[43m DEPRECA
+TED [49m[22m [33m`test.po
+olOptions` was removed in Vi
+test 4. All previous `poolOp
+tions` are now top-level opt
+ions. Please, refer to the m
+igration guide: https://vite
+st.dev/guide/migration#pool-
+rework[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs
+/node.exe" "C:\Program Files
+\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecifi    ed: ([1
+m[43m DEP    RE...ool-rewor
+k[3    9m:String) [], Rem  
+  oteException
+    + FullyQualifiedEr    ro
+rId : NativeComm    andError
+ 
+
+[1m[46m RUN [49m[22m [36mv4.1.1 [39m[90mC:/Users/user/new/audioRecorder[39m
+
+[90mstderr[2m | src/TabRou
+ter.test.tsx[2m > [22m[2m
+createLazyComponent[2m > [
+22m[2mshould show fallback 
+UI when import fails
+[22m[39m[LazyComponent] Fa
+iled to load component: Erro
+r: Failed to fetch module
+    at C:/Users/user/new/aud
+ioRecorder/src/TabRouter.tes
+t.tsx:35:48
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:30
+2:11
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:18
+93:26
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:23
+16:20
+    at new Promise (<anonymo
+us>)
+    at runWithCancel [90m(f
+ile:///C:/Users/user/new/aud
+ioRecorder/[39mnode_modules
+/[4m.pnpm[24m/@vitest+runn
+er@4.1.1/node_modules/[4m@v
+itest/runner[24m/dist/chunk
+-artifact.js:2313:10[90m)[
+39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:22
+95:20
+    at new Promise (<anonymo
+us>)
+    at runWithTimeout [90m(
+file:///C:/Users/user/new/au
+dioRecorder/[39mnode_module
+s/[4m.pnpm[24m/@vitest+run
+ner@4.1.1/node_modules/[4m@
+vitest/runner[24m/dist/chun
+k-artifact.js:2262:10[90m)
+[39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:29
+45:64
+
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould successfully load component when import succeeds[33m 348[2mms[22m[39m
+[90mstderr[2m | src/TabRou
+ter.test.tsx[2m > [22m[2m
+createLazyComponent[2m > [
+22m[2mshould reload page wh
+en retry button is clicked
+[22m[39m[LazyComponent] Fa
+iled to load component: Erro
+r: Failed to fetch module
+    at C:/Users/user/new/aud
+ioRecorder/src/TabRouter.tes
+t.tsx:56:48
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:30
+2:11
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:18
+93:26
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:23
+16:20
+    at new Promise (<anonymo
+us>)
+    at runWithCancel [90m(f
+ile:///C:/Users/user/new/aud
+ioRecorder/[39mnode_modules
+/[4m.pnpm[24m/@vitest+runn
+er@4.1.1/node_modules/[4m@v
+itest/runner[24m/dist/chunk
+-artifact.js:2313:10[90m)[
+39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:22
+95:20
+    at new Promise (<anonymo
+us>)
+    at runWithTimeout [90m(
+file:///C:/Users/user/new/au
+dioRecorder/[39mnode_module
+s/[4m.pnpm[24m/@vitest+run
+ner@4.1.1/node_modules/[4m@
+vitest/runner[24m/dist/chun
+k-artifact.js:2262:10[90m)
+[39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:29
+45:64
+
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould show fallback UI when import fails[33m 691[2mms[22m[39m
+[90mstderr[2m | src/TabRou
+ter.test.tsx[2m > [22m[2m
+createLazyComponent[2m > [
+22m[2mshould show retry cou
+nt when multiple failures oc
+cur
+[22m[39m[LazyComponent] Fa
+iled to load component: Erro
+r: Failed to fetch module
+    at C:/Users/user/new/aud
+ioRecorder/src/TabRouter.tes
+t.tsx:83:48
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:30
+2:11
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:18
+93:26
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:23
+16:20
+    at new Promise (<anonymo
+us>)
+    at runWithCancel [90m(f
+ile:///C:/Users/user/new/aud
+ioRecorder/[39mnode_modules
+/[4m.pnpm[24m/@vitest+runn
+er@4.1.1/node_modules/[4m@v
+itest/runner[24m/dist/chunk
+-artifact.js:2313:10[90m)[
+39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:22
+95:20
+    at new Promise (<anonymo
+us>)
+    at runWithTimeout [90m(
+file:///C:/Users/user/new/au
+dioRecorder/[39mnode_module
+s/[4m.pnpm[24m/@vitest+run
+ner@4.1.1/node_modules/[4m@
+vitest/runner[24m/dist/chun
+k-artifact.js:2262:10[90m)
+[39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:29
+45:64
+
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould reload page when retry button is clicked[33m 946[2mms[22m[39m
+[90mstderr[2m | src/TabRou
+ter.test.tsx[2m > [22m[2m
+createLazyComponent[2m > [
+22m[2mshould disable button
+ while retrying
+[22m[39m[LazyComponent] Fa
+iled to load component: Erro
+r: Failed to fetch module
+    at C:/Users/user/new/aud
+ioRecorder/src/TabRouter.tes
+t.tsx:112:48
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:30
+2:11
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:18
+93:26
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:23
+16:20
+    at new Promise (<anonymo
+us>)
+    at runWithCancel [90m(f
+ile:///C:/Users/user/new/aud
+ioRecorder/[39mnode_modules
+/[4m.pnpm[24m/@vitest+runn
+er@4.1.1/node_modules/[4m@v
+itest/runner[24m/dist/chunk
+-artifact.js:2313:10[90m)[
+39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:22
+95:20
+    at new Promise (<anonymo
+us>)
+    at runWithTimeout [90m(
+file:///C:/Users/user/new/au
+dioRecorder/[39mnode_module
+s/[4m.pnpm[24m/@vitest+run
+ner@4.1.1/node_modules/[4m@
+vitest/runner[24m/dist/chun
+k-artifact.js:2262:10[90m)
+[39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:29
+45:64
+
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould show retry count when multiple failures occur[33m 404[2mms[22m[39m
+[90mstderr[2m | src/TabRou
+ter.test.tsx[2m > [22m[2m
+createLazyComponent[2m > [
+22m[2mshould have proper st
+yling for error UI
+[22m[39m[LazyComponent] Fa
+iled to load component: Erro
+r: Failed to fetch module
+    at C:/Users/user/new/aud
+ioRecorder/src/TabRouter.tes
+t.tsx:134:48
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:30
+2:11
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:18
+93:26
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:23
+16:20
+    at new Promise (<anonymo
+us>)
+    at runWithCancel [90m(f
+ile:///C:/Users/user/new/aud
+ioRecorder/[39mnode_modules
+/[4m.pnpm[24m/@vitest+runn
+er@4.1.1/node_modules/[4m@v
+itest/runner[24m/dist/chunk
+-artifact.js:2313:10[90m)[
+39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:22
+95:20
+    at new Promise (<anonymo
+us>)
+    at runWithTimeout [90m(
+file:///C:/Users/user/new/au
+dioRecorder/[39mnode_module
+s/[4m.pnpm[24m/@vitest+run
+ner@4.1.1/node_modules/[4m@
+vitest/runner[24m/dist/chun
+k-artifact.js:2262:10[90m)
+[39m
+    at [90mfile:///C:/Users
+/user/new/audioRecorder/[39
+mnode_modules/[4m.pnpm[24m
+/@vitest+runner@4.1.1/node_m
+odules/[4m@vitest/runner[2
+4m/dist/chunk-artifact.js:29
+45:64
+
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould disable button while retrying[33m 439[2mms[22m[39m
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould have proper styling for error UI[33m 347[2mms[22m[39m
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mcreateLazyComponent[2m > [22mshould log error to console when import fails[32m 65[2mms[22m[39m
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mTabRouter lazy components[2m > [22mshould export createLazyComponent helper[32m 1[2mms[22m[39m
+ [32mÔťô[39m src/TabRouter.test.tsx[2m > [22mTabRouter lazy components[2m > [22mshould have error boundary for lazy loaded components[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 10:19:10
+[2m   Duration [22m 10.65s[2m (transform 1.76s, setup 1.05s, import 1.95s, tests 3.25s, environment 3.76s)[22m
+

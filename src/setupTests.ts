@@ -52,3 +52,36 @@ vi.mock('react-virtuoso', async (importOriginal) => {
     },
   };
 });
+
+// ── Global useToast mock ─────────────────────────────────────────────
+// Many components call useToast() which requires ToastProvider.
+// Provide a no-op mock so tests don't crash when ToastProvider is absent.
+vi.mock('./shared/Toast', async (importOriginal) => {
+  const actual = await importOriginal();
+  const noopToast = {
+    show: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  };
+  return {
+    ...(actual as object),
+    useToast: () => noopToast,
+  };
+});
+
+// ── Service Worker mock ──────────────────────────────────────────────
+// jsdom doesn't implement navigator.serviceWorker.getRegistrations
+if (!navigator.serviceWorker) {
+  Object.defineProperty(navigator, 'serviceWorker', {
+    value: {
+      getRegistrations: vi.fn().mockResolvedValue([]),
+      register: vi.fn().mockResolvedValue({}),
+      ready: Promise.resolve({ active: null }),
+    },
+    writable: true,
+  });
+} else if (!navigator.serviceWorker.getRegistrations) {
+  (navigator.serviceWorker as any).getRegistrations = vi.fn().mockResolvedValue([]);
+}
