@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
+import { addCustomTaskPerson } from '../lib/tasks';
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 
@@ -1891,20 +1892,6 @@ export default function StudioMeetingView({
                                 {sketchnoteZoomed ? '🔎 Pomniejsz' : '🔍 Powiększ'}
                               </button>
                             )}
-                            {!sketchnoteUrl &&
-                              !sketchnoteFallbackSvg &&
-                              !showSketchnoteNoDataState && (
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  onClick={handleGenerateSketchnote}
-                                  disabled={isGeneratingSketchnote}
-                                >
-                                  {isGeneratingSketchnote
-                                    ? 'Generowanie...'
-                                    : 'Wygeneruj sketchnotkę AI'}
-                                </button>
-                              )}
                           </div>
                         </div>
 
@@ -2108,8 +2095,11 @@ export default function StudioMeetingView({
                             suggestions={allParticipants}
                             onChange={(newGuests) => {
                               updateMeeting?.(selectedMeeting?.id, { guests: newGuests });
+                              // Persist custom people to localStorage
+                              newGuests.forEach((g) => addCustomTaskPerson(g));
                             }}
                             placeholder="Wpisz lub wybierz z listy..."
+                            type="person"
                           />
                         </div>
                       </section>
