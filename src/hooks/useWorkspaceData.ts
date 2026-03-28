@@ -173,13 +173,15 @@ export default function useWorkspaceData() {
       isProbingRef.current = false;
       remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
       const errorName = String((error as any)?.name || '').toLowerCase();
-      const errorMessage = String((error as any)?.message || '').toLowerCase();
+      const rawMessage = String((error as any)?.message || '');
+      const errorMessage = rawMessage.toLowerCase();
       const isAbortError = errorName.includes('abort') || errorMessage.includes('aborted');
-      if (!isAbortError) {
+      const isExpectedTransportFailure = isBackendUnavailableMessage(rawMessage);
+      if (!isAbortError && !isExpectedTransportFailure) {
         logRemoteErrorOnce('Hosted preview health probe failed.', error);
       }
       pushWorkspaceMessage(
-        String(error?.message || '').includes('nieaktualny wzgledem backendu')
+        rawMessage.includes('nieaktualny wzgledem backendu')
           ? HOSTED_PREVIEW_STALE_MESSAGE
           : HOSTED_PREVIEW_RUNTIME_MESSAGE
       );

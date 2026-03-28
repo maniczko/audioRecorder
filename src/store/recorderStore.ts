@@ -482,7 +482,9 @@ export const useRecorderStore = create<any>()(
             } else {
               let attempts = 0;
               let consecutiveErrors = 0;
+              let totalPollErrors = 0;
               const MAX_CONSECUTIVE_ERRORS = 10;
+              const MAX_TOTAL_POLL_ERRORS = 15;
               let finalTranscription = null;
               while (attempts < 120) {
                 attempts += 1;
@@ -492,11 +494,23 @@ export const useRecorderStore = create<any>()(
                   consecutiveErrors = 0;
                 } catch (pollError: any) {
                   consecutiveErrors += 1;
-                  console.warn(
-                    `[Pipeline] Status poll error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`,
-                    pollError?.message
-                  );
+                  totalPollErrors += 1;
+                  if (
+                    consecutiveErrors === 1 ||
+                    consecutiveErrors === MAX_CONSECUTIVE_ERRORS ||
+                    totalPollErrors === MAX_TOTAL_POLL_ERRORS
+                  ) {
+                    console.warn(
+                      `[Pipeline] Status poll error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}, total ${totalPollErrors}/${MAX_TOTAL_POLL_ERRORS}):`,
+                      pollError?.message
+                    );
+                  }
                   if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                    throw new Error(
+                      'Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.'
+                    );
+                  }
+                  if (totalPollErrors >= MAX_TOTAL_POLL_ERRORS) {
                     throw new Error(
                       'Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.'
                     );
@@ -548,6 +562,9 @@ export const useRecorderStore = create<any>()(
                 await sleep(1500);
               }
               if (!finalTranscription) {
+                if (totalPollErrors > 0) {
+                  throw new Error('Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.');
+                }
                 throw new Error('Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.');
               }
               transcription = finalTranscription;
