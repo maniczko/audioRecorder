@@ -5,6 +5,7 @@ import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
 import useMeetings from './hooks/useMeetings';
 import { useGoogleCtx } from './context/GoogleContext';
+import { useMicrosoftCtx } from './context/MicrosftContext';
 import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 

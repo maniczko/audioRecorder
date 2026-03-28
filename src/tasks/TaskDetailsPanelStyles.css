@@ -628,3 +628,30 @@
 .todo-detail-row textarea:focus {
   border-color: rgba(117, 214, 196, 0.4);
 }
+
+/* ── Inline style migration utilities ── */
+.todo-detail-row-fill {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-section-head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-command-button-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.todo-detail-select {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-base);
+}

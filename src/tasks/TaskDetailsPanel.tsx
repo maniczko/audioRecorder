@@ -108,9 +108,8 @@ function TaskDetailsPanel({
             {selectedTask.sourceMeetingId ? (
               <button
                 type="button"
-                className="todo-command-button"
                 onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                className="todo-command-button todo-command-button-icon"
               >
                 <Link size={16} />
                 Otwórz spotkanie
@@ -239,12 +238,12 @@ function TaskDetailsPanel({
               />
             </div>
 
-            <div className="todo-detail-row" style={{ overflow: 'visible' }}>
+            <div className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true" title="Przypisz osobę">
                 <User size={18} />
               </span>
               <span className="todo-row-label">Osoba</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="todo-detail-row-fill">
                 <TagInput
                   tags={selectedTask.assignedTo?.length ? selectedTask.assignedTo : (selectedTask.owner ? [selectedTask.owner] : [])}
                   suggestions={peopleOptions}
@@ -263,7 +262,7 @@ function TaskDetailsPanel({
                 className="todo-detail-select"
                 value={selectedTask.priority || 'medium'}
                 onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}
-                style={{ flex: 1, padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-base)' }}
+
               >
                 {TASK_PRIORITIES.map((p) => (
                   <option key={p.id} value={p.id}>{p.label}</option>
@@ -271,12 +270,12 @@ function TaskDetailsPanel({
               </select>
             </div>
             
-            <div className="todo-detail-row" style={{ overflow: 'visible' }}>
+            <div className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true" title="Tagi">
                 <Tag size={18} />
               </span>
               <span className="todo-row-label">Tagi</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="todo-detail-row-fill">
                 <TagInput
                   tags={selectedTask.tags || []}
                   suggestions={tagOptions}
@@ -309,7 +308,7 @@ function TaskDetailsPanel({
               </span>
               Historia zmian
             </strong>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="todo-section-head-row">
               <span>{(selectedTask.history || []).length}</span>
               {(selectedTask.history || []).length > 0 && (
                 <button

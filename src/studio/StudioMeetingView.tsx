@@ -1217,7 +1217,6 @@ export default function StudioMeetingView({
   }, [selectedRecording?.id, updateTranscriptSegment]);
 
   const handleGenerateSketchnote = useCallback(async () => {
-    if (!selectedRecording?.id) return;
     setIsGeneratingSketchnote(true);
     setSketchnoteError('');
     const fallbackSvg = buildSketchnoteSvg(
@@ -1231,6 +1230,10 @@ export default function StudioMeetingView({
     setSketchnoteFallbackSvg(fallbackSvg);
     setSketchnoteIsLocal(true);
     setSketchnoteUrl(fallbackSketchnoteUrl);
+    if (!selectedRecording?.id) {
+      setIsGeneratingSketchnote(false);
+      return;
+    }
     try {
       const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, {
         method: 'POST',
@@ -1875,7 +1878,7 @@ export default function StudioMeetingView({
                                 type="button"
                                 className="primary-button"
                                 onClick={handleGenerateSketchnote}
-                                disabled={isGeneratingSketchnote || !selectedRecording?.id}
+                                disabled={isGeneratingSketchnote}
                               >
                                 {isGeneratingSketchnote
                                   ? 'Generowanie...'
@@ -1931,7 +1934,7 @@ export default function StudioMeetingView({
                               type="button"
                               className="primary-button"
                               onClick={handleGenerateSketchnote}
-                              disabled={isGeneratingSketchnote || !selectedRecording?.id}
+                              disabled={isGeneratingSketchnote}
                               style={{ marginTop: 8 }}
                             >
                               {isGeneratingSketchnote

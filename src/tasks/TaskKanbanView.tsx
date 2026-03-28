@@ -220,7 +220,6 @@ function KanbanCard({
         {tags.length > 0 ? (
           <div
             className="kanban-label-chips"
-            style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}
           >
             {tags.slice(0, 4).map((tag) => (
               <TagBadge key={`${task.id}-${tag}`} tag={tag} />
