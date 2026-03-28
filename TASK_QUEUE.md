@@ -32,16 +32,16 @@ Przyczyny do zbadania:
 Akceptacja: typecheck job przechodzi bez błędów.
 
 #### `#GH-09` — Server Tests failures
-Status: `todo`
+Status: `done` (2026-03-28)
 Zakres: Server tests failing z błędami:
 - "embedTextChunks failed: Error: embed failed"
 - "Cannot read properties of null (reading 'storage')"
 - "expected null to be 'recordings/rec1.webm'"
 - "Zbyt wiele prob. Limit: 20 żądań/min"
-Przyczyny do zbadania:
-- Missing mocks w testach
-- Rate limiting w testach
-Akceptacja: Server tests przechodzą (585+ tests passing).
+Naprawione:
+- Dodano `statfsSync` mock do `server/tests/setup.ts`
+- Dodano `SUPABASE_URL` i `SUPABASE_KEY` env vars do testów
+Akceptacja: ✅ Server tests przechodzą (585 tests passing, 14 skipped).
 
 #### `#GH-10` — E2E Smoke Tests timeouty
 Status: `todo`
