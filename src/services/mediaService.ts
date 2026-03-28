@@ -16,6 +16,8 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 };
 
 const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
+const TRANSCRIPTION_STATUS_RETRIES = 2;
+const PROGRESS_MAX_RECONNECT_ERRORS = 20;
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 
 function sleep(ms: number) {
@@ -329,7 +331,7 @@ function createRemoteMediaService() {
     async getTranscriptionJobStatus(recordingId) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: 'GET',
-        retries: 0,
+        retries: TRANSCRIPTION_STATUS_RETRIES,
       });
 
       return mapRemoteTranscriptionResult(response);
@@ -385,7 +387,7 @@ function createRemoteMediaService() {
         source.onerror = () => {
           source.close();
           errorCount += 1;
-          if (closed || errorCount > 5) return;
+          if (closed || errorCount > PROGRESS_MAX_RECONNECT_ERRORS) return;
           // Reconnect after a short delay on transient errors (e.g. 502)
           setTimeout(
             () => {
@@ -393,7 +395,7 @@ function createRemoteMediaService() {
               es = new EventSource(url);
               attachListeners(es);
             },
-            2000 * Math.min(errorCount, 3)
+            2000 * Math.min(errorCount, 5)
           );
         };
       }

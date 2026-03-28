@@ -32,8 +32,8 @@ export default function TagInput({
     if (isFocused && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,
+        left: rect.left,
         width: rect.width,
       });
     }
@@ -48,8 +48,8 @@ export default function TagInput({
         const rect = containerRef.current.getBoundingClientRect();
         setDropdownPosition((prev) => ({
           ...prev,
-          top: rect.bottom + window.scrollY + 4,
-          left: rect.left + window.scrollX,
+          top: rect.bottom + 4,
+          left: rect.left,
         }));
       }
     }

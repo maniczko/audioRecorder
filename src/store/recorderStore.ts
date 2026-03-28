@@ -483,8 +483,8 @@ export const useRecorderStore = create<any>()(
               let attempts = 0;
               let consecutiveErrors = 0;
               let totalPollErrors = 0;
-              const MAX_CONSECUTIVE_ERRORS = 10;
-              const MAX_TOTAL_POLL_ERRORS = 15;
+              const MAX_CONSECUTIVE_ERRORS = 20;
+              const MAX_TOTAL_POLL_ERRORS = 30;
               let finalTranscription = null;
               while (attempts < 120) {
                 attempts += 1;
@@ -515,7 +515,7 @@ export const useRecorderStore = create<any>()(
                       'Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.'
                     );
                   }
-                  await sleep(consecutiveErrors < 3 ? 2000 : 5000);
+                  await sleep(consecutiveErrors < 3 ? 2000 : 7000);
                   continue;
                 }
                 get().updateQueueItem(nextItem.recordingId, {
