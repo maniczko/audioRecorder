@@ -402,3 +402,189 @@
     transform-origin: bottom left;
   }
 }
+
+/* ================================================================ */
+/* CSS Audit Fixes (2026-03-28)                                     */
+/* ================================================================ */
+
+/* --- 1. CALENDAR: agenda card text overflow --- */
+[data-layout="modern"] .agenda-card-title,
+[data-layout="modern"] .agenda-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
+}
+
+[data-layout="modern"] .agenda-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* --- 2. CALENDAR: consistent view buttons --- */
+[data-layout="modern"] .calendar-view-button {
+  min-width: 80px;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+/* --- 3. STUDIO: toolbar button consistency --- */
+[data-layout="modern"] .ff-tb-btn {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--modern-text);
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+[data-layout="modern"] .ff-tb-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-layout="modern"] .ff-tb-btn.active {
+  background: rgba(94, 148, 136, 0.15);
+  border-color: rgba(94, 148, 136, 0.3);
+  color: var(--modern-active-text);
+}
+
+[data-layout="modern"] .ff-tb-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- 4. STUDIO: tab underline fix --- */
+[data-layout="modern"] .ff-int-tab {
+  padding: 10px 2px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+[data-layout="modern"] .ff-int-tab.active {
+  border-bottom-color: var(--modern-active-text);
+  color: var(--modern-text);
+}
+
+/* --- 5. TASKS: reduce excessive row padding --- */
+[data-layout="modern"] .tasks-layout.ms-todo .todo-table-row {
+  padding: 8px 16px;
+}
+
+/* --- 6. TASKS: tighter grid columns for checkbox --- */
+[data-layout="modern"] .tasks-layout.ms-todo .todo-table-head,
+[data-layout="modern"] .tasks-layout.ms-todo .todo-table-row {
+  grid-template-columns: 44px minmax(0, 1.75fr) 140px 130px 110px;
+  gap: 12px;
+}
+
+/* --- 7. PEOPLE: visible buttons on dark bg --- */
+[data-layout="modern"] .person-row button,
+[data-layout="modern"] .people-layout button:not(.primary-button):not(.danger-button) {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--modern-text);
+}
+
+[data-layout="modern"] .people-layout .ghost-button,
+[data-layout="modern"] .people-layout .secondary-button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--modern-text);
+}
+
+[data-layout="modern"] .people-layout .ghost-button:hover,
+[data-layout="modern"] .people-layout .secondary-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- 8. GLOBAL: consistent primary/ghost buttons --- */
+[data-layout="modern"] .primary-button {
+  background: linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%);
+  color: #03222a;
+  font-weight: 600;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+[data-layout="modern"] .ghost-button {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--modern-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+[data-layout="modern"] .ghost-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--modern-text);
+}
+
+/* --- 9. GLOBAL: panel/card backgrounds in modern layout --- */
+[data-layout="modern"] .hero-panel,
+[data-layout="modern"] .ui-panel,
+[data-layout="modern"] .panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--modern-border);
+  border-radius: 16px;
+}
+
+/* --- 10. GLOBAL: search bar in topbar --- */
+[data-layout="modern"] .command-palette-launcher {
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* --- 11. Studio empty state card fix --- */
+[data-layout="modern"] .hero-panel.empty-workspace {
+  min-height: 360px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 48px 32px;
+}
+
+[data-layout="modern"] .empty-workspace-inner {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+}
+
+[data-layout="modern"] .empty-workspace-inner .button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* --- 12. CALENDAR: mini-calendar today indicator --- */
+[data-layout="modern"] .mini-day.today {
+  background: rgba(94, 148, 136, 0.2);
+  color: var(--modern-active-text);
+  font-weight: 700;
+}
+
+/* --- 13. Status banner fix --- */
+[data-layout="modern"] .ff-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.9rem;
+}

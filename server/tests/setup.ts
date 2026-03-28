@@ -2,6 +2,10 @@
 import { vi } from 'vitest';
 import path from 'node:path';
 
+// Mock Supabase credentials for tests
+process.env.SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_KEY = 'test-key';
+
 // Global state for controlling fs mocks
 global.__TEST_FS_STATE__ = {
   existsSync: true,
@@ -73,7 +77,13 @@ const readdirSyncMock = vi.fn((dirPath?: string, options?: any) => {
 });
 
 const rmSyncMock = vi.fn();
-const statfsSyncMock = vi.fn(() => ({ bsize: 4096, frsize: 4096, blocks: 1000000, bfree: 500000, bavail: 500000 }));
+const statfsSyncMock = vi.fn(() => ({
+  bsize: 4096,
+  frsize: 4096,
+  blocks: 1000000,
+  bfree: 500000,
+  bavail: 500000,
+}));
 
 // Expose mocks globally for test manipulation
 export const __mockFs = {
