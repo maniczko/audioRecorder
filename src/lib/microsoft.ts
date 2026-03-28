@@ -8,8 +8,6 @@ export const MICROSOFT_TENANT_ID = import.meta.env.VITE_MICROSOFT_TENANT_ID || '
 export const MICROSOFT_REDIRECT_URI = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || '';
 
 const MICROSOFT_AUTHORITY = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}`;
-const MICROSOFT_GRAPH_SCOPE = 'https://graph.microsoft.com/.default';
-
 // Scopes for Calendar and Tasks
 const CALENDAR_SCOPES = ['Calendars.ReadWrite', 'Calendars.Read'];
 const TASKS_SCOPES = ['Tasks.ReadWrite', 'Tasks.Read'];

@@ -765,25 +765,28 @@ export default function TasksTab({
       />
       {selectedTask && (
         <div
-          className="ff-modal-overlay tasks-layout ms-todo"
+          className="ff-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
           style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div
-            className="ff-modal-content"
+            className="ff-modal-content tasks-layout ms-todo"
             style={{
               padding: 0,
               width: '680px',
               maxWidth: '95vw',
-
-              height: '85vh',
+              maxHeight: '85vh',
               display: 'flex',
+              flexDirection: 'column',
               position: 'relative',
               borderRadius: '12px',
               overflow: 'hidden',
               background: 'var(--surface-0)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              animation: 'ffScaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1)',
             }}
           >
             <button

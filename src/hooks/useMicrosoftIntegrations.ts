@@ -4,33 +4,20 @@ import {
   initializeMsal,
   signInMicrosoft,
   signOutMicrosoft,
-  getMicrosoftAccessToken,
-  fetchMicrosoftProfile,
   fetchOutlookCalendarEvents,
   createOutlookCalendarEvent,
   updateOutlookCalendarEvent,
   fetchMicrosoftTaskLists,
   fetchMicrosoftTasks,
   createMicrosoftTask,
-  updateMicrosoftTask,
   renderMicrosoftSignInButton,
-  requestOutlookCalendarAccess,
-  requestMicrosoftTasksAccess,
-  type MicrosoftProfile,
-  type OutlookEvent,
-  type MicrosoftTaskList,
-  type MicrosoftTask,
 } from '../lib/microsoft';
 import {
   createTaskFromGoogle,
   createTaskHistoryEntry,
   upsertGoogleImportedTasks,
 } from '../lib/tasks';
-import { useMeetingsStore } from '../store/meetingsStore';
 
-function isAfter(reference: string, baseline: string) {
-  return new Date(reference || 0).getTime() > new Date(baseline || 0).getTime();
-}
 
 export default function useMicrosoftIntegrations({
   currentUser,
@@ -43,7 +30,6 @@ export default function useMicrosoftIntegrations({
   onMicrosoftProfile,
   onMicrosoftError,
 }) {
-  const { meetings, calendarMeta, setCalendarMeta } = useMeetingsStore();
   const [microsoftCalendarStatus, setMicrosoftCalendarStatus] = useState('idle');
   const [outlookCalendarEvents, setOutlookCalendarEvents] = useState([]);
   const [microsoftCalendarMessage, setMicrosoftCalendarMessage] = useState('');
@@ -59,8 +45,6 @@ export default function useMicrosoftIntegrations({
   const microsoftCalendarTokenRef = useRef('');
   const microsoftTasksTokenRef = useRef('');
   const manualTasksRef = useRef(manualTasks);
-  const inFlightTaskSyncRef = useRef(new Set());
-  const inFlightCalendarSyncRef = useRef(new Set());
   const hasMicrosoftCalendarToken = Boolean(microsoftCalendarTokenRef.current);
   const hasMicrosoftTasksToken = Boolean(microsoftTasksTokenRef.current);
 
@@ -71,10 +55,7 @@ export default function useMicrosoftIntegrations({
   const microsoftEnabled = Boolean(MICROSOFT_CLIENT_ID);
   const openTaskColumnId =
     taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || 'todo';
-  const doneTaskColumnId =
-    taskColumns.find((column) => column.isDone)?.id ||
-    taskColumns[taskColumns.length - 1]?.id ||
-    'done';
+
 
   function buildMicrosoftTaskPayloadFromSnapshot(snapshot) {
     return {

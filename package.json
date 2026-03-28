@@ -68,7 +68,7 @@
     "benchmark:stt:run": "tsx server/scripts/stt-benchmark-runner.ts run",
     "benchmark:stt:list": "tsx server/scripts/stt-benchmark-runner.ts list",
     "benchmark:stt:latest": "tsx server/scripts/stt-benchmark-runner.ts latest",
-    "benchmark:stt": "npm run benchmark:stt:run && npm run benchmark:stt:latest",
+    "benchmark:stt": "pnpm run benchmark:stt:run && pnpm run benchmark:stt:latest",
     "test:smoke": "tsx server/scripts/smoke-test.ts",
     "audit:a11y": "node scripts/accessibility-audit.js",
     "audit:a11y:ci": "node scripts/accessibility-audit.js --ci",
@@ -77,7 +77,7 @@
     "cleanup:disk:urgent": "node scripts/cleanup-disk-space.js 1",
     "build": "vite build",
     "build:clean": "rm -rf node_modules/.vite dist build && vite build",
-    "build:fix": "rm -rf node_modules/.vite && npm run build",
+    "build:fix": "rm -rf node_modules/.vite && pnpm run build",
     "start": "vite",
     "start:clean": "rm -rf node_modules/.vite && vite",
     "turbo:build": "turbo run build",
@@ -87,7 +87,7 @@
     "docs:watch": "node scripts/auto-docs.js --verbose",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
     "changelog:init": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "release": "npm run changelog && git add CHANGELOG.md",
+    "release": "pnpm run changelog && git add CHANGELOG.md",
     "errors:fetch": "node scripts/fetch-github-errors.js",
     "errors:report": "node scripts/fetch-github-errors.js --verbose",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\" \"server/**/*.{ts,js}\"",
@@ -99,17 +99,17 @@
     "lint:staged": "bash scripts/smart-lint.sh",
     "lint:all": "eslint src --max-warnings=0",
     "turbo:lint": "turbo run lint",
-    "test": "npm run lint && vitest run",
-    "test:fix": "npm run lint:fix && npm run format && vitest run",
-    "test:ai-fix": "npm run lint:fix && npm run format && npm run test:smart-retry",
+    "test": "pnpm run lint && vitest run",
+    "test:fix": "pnpm run lint:fix && pnpm run format && vitest run",
+    "test:ai-fix": "pnpm run lint:fix && pnpm run format && pnpm run test:smart-retry",
     "test:retry": "vitest run --retry=3 --reporter=verbose",
     "test:smart-retry": "node scripts/smart-retry.js",
-    "test:coverage:fix": "npm run lint:fix && npm run format && npm run test:coverage",
+    "test:coverage:fix": "pnpm run lint:fix && pnpm run format && pnpm run test:coverage",
     "turbo:test": "turbo run test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:server": "vitest run -c server/vitest.config.ts --coverage",
-    "test:coverage:all": "npm run test:coverage:server && npm run test:coverage",
+    "test:coverage:all": "pnpm run test:coverage:server && pnpm run test:coverage",
     "coverage:report": "scripts\\generate-coverage-report.bat",
     "coverage:open": "start coverage\\server\\index.html",
     "coverage:open:frontend": "start coverage\\frontend\\index.html",
@@ -179,7 +179,7 @@
     ]
   },
   "coverage": {
-    "summary": "npm run test:coverage:server && node scripts/coverage-summary.cjs"
+    "summary": "pnpm run test:coverage:server && node scripts/coverage-summary.cjs"
   },
   "browserslist": {
     "production": [

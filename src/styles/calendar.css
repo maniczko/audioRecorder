@@ -807,6 +807,201 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: transparent;
   color: var(--muted);
+  }
+}
+
+@media (max-width: 720px) {
+
+  .topbar,
+  .topbar-actions,
+  .user-card,
+  .calendar-board-header,
+  .calendar-board-actions,
+  .calendar-toolbar,
+  .mini-calendar-header,
+  .tasks-header,
+  .tasks-header-actions,
+  .task-row,
+  .task-row-left,
+  .task-row-right,
+  .calendar-time-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar,
+  .topbar-actions,
+  .user-card,
+  .calendar-board-header,
+  .calendar-board-actions,
+  .calendar-toolbar,
+  .mini-calendar-header,
+  .tasks-header,
+  .tasks-header-actions,
+  .task-row,
+  .task-row-left,
+  .task-row-right,
+  .calendar-time-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar,
+  .topbar-actions,
+  .user-card,
+  .calendar-board-header,
+  .calendar-board-actions,
+  .calendar-toolbar,
+  .mini-calendar-header,
+  .tasks-header,
+  .tasks-header-actions,
+  .task-row,
+  .task-row-left,
+  .task-row-right,
+  .calendar-time-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar,
+  .topbar-actions,
+  .user-card,
+  .calendar-board-header,
+  .calendar-board-actions,
+  .calendar-toolbar,
+  .mini-calendar-header,
+  .tasks-header,
+  .tasks-header-actions,
+  .task-row,
+  .task-row-left,
+  .task-row-right,
+  .calendar-time-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .task-smart-summary,
+  .profile-quick-grid,
+  .calendar-lower-grid,
+  .calendar-week-view {
+    grid-template-columns: 1fr;
+  }
+
+  .task-smart-summary,
+  .profile-quick-grid,
+  .calendar-lower-grid,
+  .calendar-week-view {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-row,
+  .profile-hero-main,
+  .kanban-card-meta,
+  .kanban-card-actions,
+  .task-toolbar,
+  .calendar-reminder-grid {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+  }
+
+  .calendar-time-label {
+    width: auto;
+    padding-top: 0;
+  }
+}
+
+.calendar-board {
+  align-content: start;
+}
+
+.calendar-week-view {
+  overflow-x: auto;
+}
+
+.primary-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.tab-pill:not(.active):hover,
+.todo-command-button:not(:disabled):hover,
+.todo-side-link:not(.active):hover,
+.calendar-filter-chip:not(.active):hover,
+.note-card:not(.active):hover,
+.meeting-card:not(.active):hover,
+.recording-card:not(.active):hover,
+.agenda-card:not(:disabled):hover,
+.person-row:not(.active):hover,
+.calendar-tag-chip:not(.active):hover,
+.brief-tab:not(.active):hover,
+.topbar-record-btn:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.primary-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.tab-pill:not(.active):hover,
+.todo-command-button:not(:disabled):hover,
+.todo-side-link:not(.active):hover,
+.calendar-filter-chip:not(.active):hover,
+.note-card:not(.active):hover,
+.meeting-card:not(.active):hover,
+.recording-card:not(.active):hover,
+.agenda-card:not(:disabled):hover,
+.person-row:not(.active):hover,
+.calendar-tag-chip:not(.active):hover,
+.brief-tab:not(.active):hover,
+.topbar-record-btn:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.primary-button:not(:disabled):hover,
+.secondary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover,
+.tab-pill:not(.active):hover,
+.todo-command-button:not(:disabled):hover,
+.todo-side-link:not(.active):hover,
+.calendar-filter-chip:not(.active):hover,
+.note-card:not(.active):hover,
+.meeting-card:not(.active):hover,
+.recording-card:not(.active):hover,
+.agenda-card:not(:disabled):hover,
+.person-row:not(.active):hover,
+.calendar-tag-chip:not(.active):hover,
+.brief-tab:not(.active):hover,
+.topbar-record-btn:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.calendar-tag-filters {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.calendar-tag-filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.calendar-tag-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.calendar-tag-chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--muted);
   font-size: 0.78rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -817,4 +1012,85 @@
   border-color: rgba(116, 208, 191, 0.45);
   color: rgb(116, 208, 191);
   font-weight: 600;
+}
+
+/* ============================================================ */
+/* Modern layout calendar fixes                                 */
+/* ============================================================ */
+
+/* Sidebar: sticky + scrollable so it doesn't overflow */
+[data-layout="modern"] .calendar-sidebar {
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+  align-content: start;
+}
+
+/* Calendar layout: prevent overflow */
+[data-layout="modern"] .calendar-layout {
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Calendar board header: fix text running together */
+[data-layout="modern"] .calendar-board-header {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Board actions (Dzisiaj, arrows, view switcher, stats) */
+[data-layout="modern"] .calendar-board-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Calendar stat badges: add spacing */
+[data-layout="modern"] .calendar-board-actions > span,
+[data-layout="modern"] .calendar-board-actions > small {
+  white-space: nowrap;
+}
+
+/* Calendar grid: ensure days don't overflow */
+[data-layout="modern"] .calendar-grid {
+  min-width: 0;
+}
+
+/* Calendar day cells: prevent overflow */
+[data-layout="modern"] .calendar-day {
+  overflow: hidden;
+  min-height: 80px;
+}
+
+/* Calendar pills: prevent overflow  */
+[data-layout="modern"] .calendar-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar mini-calendar: tighter spacing */
+[data-layout="modern"] .mini-calendar-grid {
+  gap: 4px;
+}
+
+[data-layout="modern"] .mini-day {
+  font-size: 0.8rem;
+}
+
+/* Filter chips: slightly smaller in modern layout */
+[data-layout="modern"] .calendar-filter-chip {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+
+/* Sync card: constrain */
+[data-layout="modern"] .calendar-sync-card {
+  max-height: 200px;
+  overflow-y: auto;
 }
