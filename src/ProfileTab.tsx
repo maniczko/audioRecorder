@@ -11,7 +11,6 @@ import { JapaneseThemeSelector } from './components/JapaneseThemeSelector';
 import { type JapaneseTheme } from './styles/japaneseThemes';
 import './styles/JapaneseFlatDesign.css';
 import TagInput from './shared/TagInput';
-import { getTagColor } from './shared/TagBadge';
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
@@ -212,8 +211,8 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
                 !backendApiReady
                   ? 'Skonfiguruj backend API, aby nagrywac profile glosowe.'
                   : (profilesByPerson[selectedPerson]?.length || 0) >= 5
-                  ? 'Osiągnięto maksymalną liczbę próbek (5) dla tej osoby.'
-                  : undefined
+                    ? 'Osiągnięto maksymalną liczbę próbek (5) dla tej osoby.'
+                    : undefined
               }
             >
               ● Nagraj głos

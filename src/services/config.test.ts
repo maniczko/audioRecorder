@@ -21,14 +21,14 @@ describe('services/config resolveApiBaseUrl', () => {
     vi.resetModules();
   });
 
-  it('uses configured API base URL on hosted preview runtime', async () => {
+  it('uses same-origin proxy on Vercel preview runtime (ignores VITE_API_BASE_URL)', async () => {
     process.env.VITE_API_BASE_URL = 'https://audiorecorder-production.up.railway.app';
     delete process.env.REACT_APP_API_BASE_URL;
     setWindowOrigin('https://audiorecorder-preview.vercel.app');
 
     const config = await import('./config');
 
-    expect(config.API_BASE_URL).toBe('https://audiorecorder-production.up.railway.app');
+    expect(config.API_BASE_URL).toBe('https://audiorecorder-preview.vercel.app');
   });
 
   it('falls back to local default when API URL is not configured in non-hosted runtime', async () => {

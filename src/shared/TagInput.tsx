@@ -111,11 +111,13 @@ export default function TagInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={(e) => {
-            // Check if focus is moving to the dropdown
-            if (!e.relatedTarget?.classList.contains('tag-input-option')) {
-              setIsFocused(false);
-            }
+          onBlur={() => {
+            // Delay blur to let mousedown/click on dropdown fire first
+            setTimeout(() => {
+              if (!containerRef.current?.contains(document.activeElement)) {
+                setIsFocused(false);
+              }
+            }, 150);
           }}
           onKeyDown={handleKeyDown}
           placeholder={normalizedTags.length === 0 ? placeholder : ''}

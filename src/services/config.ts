@@ -54,10 +54,12 @@ function resolveApiBaseUrl() {
     readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || ''
   ).trim();
 
-  // On Vercel preview/runtime prefer explicitly configured API base URL.
-  // Only fallback to same-origin proxy when no backend URL is configured.
+  // On Vercel deployments ALWAYS use same-origin proxy.
+  // vercel.json rewrites (/state/*, /media/*, /auth/*, etc.) proxy to Railway.
+  // Using the Railway URL directly causes CORS errors because Railway
+  // does not set Access-Control-Allow-Origin headers.
   if (isHostedPreviewRuntime()) {
-    return configuredValue || String(window.location.origin || '').trim();
+    return String(window.location.origin || '').trim();
   }
 
   return configuredValue || readDefaultApiBaseUrl();

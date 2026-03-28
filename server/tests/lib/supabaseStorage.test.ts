@@ -39,17 +39,15 @@ vi.mock('../config', () => ({
   },
 }));
 
-// Import after mocks
-const {
-  supabase,
-  uploadAudioToStorage,
-  uploadAudioFileToStorage,
-  downloadAudioFromStorage,
-  deleteAudioFromStorage,
-} = await import('../../lib/supabaseStorage');
+let supabase: any;
+let uploadAudioToStorage: any;
+let uploadAudioFileToStorage: any;
+let downloadAudioFromStorage: any;
+let deleteAudioFromStorage: any;
 
 describe('supabaseStorage', () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
     mockFrom.mockClear();
     mockFrom.mockReturnValue({
@@ -57,6 +55,15 @@ describe('supabaseStorage', () => {
       download: mockDownload,
       remove: mockRemove,
     });
+  });
+
+  beforeEach(async () => {
+    const module = await import('../../lib/supabaseStorage');
+    supabase = module.supabase;
+    uploadAudioToStorage = module.uploadAudioToStorage;
+    uploadAudioFileToStorage = module.uploadAudioFileToStorage;
+    downloadAudioFromStorage = module.downloadAudioFromStorage;
+    deleteAudioFromStorage = module.deleteAudioFromStorage;
   });
 
   afterEach(() => {

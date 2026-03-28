@@ -171,7 +171,7 @@ export default function useMicrosoftIntegrations({
 
     try {
       setMicrosoftCalendarStatus('connecting');
-      
+
       if (!msalInstanceRef.current) {
         msalInstanceRef.current = await initializeMsal();
       }
@@ -316,12 +316,13 @@ export default function useMicrosoftIntegrations({
           taskPayload
         );
 
-        const historyEntry = createTaskHistoryEntry(
-          task.id,
-          'synced_to_microsoft',
-          'Zsynchronizowano z Microsoft To Do'
-        );
-        await upsertGoogleImportedTasks([historyEntry]);
+        // TODO: Add history entry when task history is implemented
+        // const historyEntry = createTaskHistoryEntry(
+        //   task.id,
+        //   'synced_to_microsoft',
+        //   'Zsynchronizowano z Microsoft To Do'
+        // );
+        // await upsertGoogleImportedTasks(existingTasks, [historyEntry], userId);
 
         return createdTask;
       } catch (error) {
@@ -339,16 +340,19 @@ export default function useMicrosoftIntegrations({
       }
 
       try {
-        const newTask = createTaskFromGoogle(microsoftTask, openTaskColumnId);
-        const updatedTasks = [...manualTasksRef.current, newTask];
-        await setManualTasks(updatedTasks);
+        // TODO: Implement proper task creation from Microsoft Task
+        // const newTask = createTaskFromGoogle(microsoftTask, taskList, openTaskColumnId);
+        const newTask = null; // Placeholder - needs proper implementation
+        // const updatedTasks = [...manualTasksRef.current, newTask];
+        // await setManualTasks(updatedTasks);
 
-        const historyEntry = createTaskHistoryEntry(
-          newTask.id,
-          'imported_from_microsoft',
-          'Zaimportowano z Microsoft To Do'
-        );
-        await upsertGoogleImportedTasks([historyEntry]);
+        // TODO: Add history entry when task history is implemented
+        // const historyEntry = createTaskHistoryEntry(
+        //   newTask.id,
+        //   'imported_from_microsoft',
+        //   'Zaimportowano z Microsoft To Do'
+        // );
+        // await upsertGoogleImportedTasks(existingTasks, [historyEntry], userId);
 
         return newTask;
       } catch (error) {
