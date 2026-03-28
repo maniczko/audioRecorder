@@ -1,16 +1,24 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './TagInput.css';
 import TagBadge, { getTagColor } from './TagBadge';
+import { addCustomTaskTag, addCustomTaskPerson } from '../lib/tasks';
 
 export default function TagInput({
   tags = [],
   suggestions = [],
   onChange,
   placeholder = 'Dodaj tag...',
+  type = 'tag', // 'tag' | 'person'
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxHeight: 220,
+  });
   const inputRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -27,16 +35,36 @@ export default function TagInput({
       .slice(0, 10);
   }, [inputValue, suggestions, normalizedTags]);
 
-  // Update dropdown position when focused
-  useEffect(() => {
-    if (isFocused && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      });
+  function updateDropdownPosition() {
+    if (!containerRef.current || typeof window === 'undefined') {
+      return;
     }
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const viewportMargin = 8;
+    const gap = 4;
+    const maxAllowedWidth = Math.max(220, window.innerWidth - viewportMargin * 2);
+    const width = Math.min(rect.width, maxAllowedWidth);
+    const left = Math.min(
+      Math.max(rect.left, viewportMargin),
+      Math.max(viewportMargin, window.innerWidth - width - viewportMargin)
+    );
+
+    const spaceBelow = window.innerHeight - rect.bottom - viewportMargin;
+    const spaceAbove = rect.top - viewportMargin;
+    const openUp = spaceBelow < 170 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, Math.min(260, openUp ? spaceAbove - gap : spaceBelow - gap));
+    const top = openUp ? Math.max(viewportMargin, rect.top - maxHeight - gap) : rect.bottom + gap;
+
+    setDropdownPosition({ top, left, width, maxHeight });
+  }
+
+  useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
+    updateDropdownPosition();
   }, [isFocused]);
 
   // Update position on scroll/resize
@@ -44,14 +72,7 @@ export default function TagInput({
     if (!isFocused) return;
 
     function handleScroll() {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setDropdownPosition((prev) => ({
-          ...prev,
-          top: rect.bottom + 4,
-          left: rect.left,
-        }));
-      }
+      updateDropdownPosition();
     }
 
     window.addEventListener('scroll', handleScroll, true);
@@ -73,6 +94,12 @@ export default function TagInput({
     if (!normalized) return;
     if (!normalizedTags.some((t) => t.toLowerCase() === normalized.toLowerCase())) {
       onChange([...normalizedTags, normalized]);
+      // Persist custom tags/people to localStorage
+      if (type === 'person') {
+        addCustomTaskPerson(normalized);
+      } else {
+        addCustomTaskTag(normalized);
+      }
     }
     setInputValue('');
     inputRef.current?.focus();
@@ -124,58 +151,67 @@ export default function TagInput({
         />
       </div>
 
-      {isFocused && (
-        <div
-          className="tag-input-dropdown"
-          onMouseDown={(e) => e.preventDefault()}
-          style={{
-            position: 'fixed',
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            zIndex: 10000,
-            marginTop: 0,
-          }}
-        >
-          {filteredSuggestions.length === 0 && !canCreate && (
-            <div style={{ padding: '8px 12px', color: 'var(--text-3)', fontSize: '0.85rem' }}>
-              Brak sugestii. Wpisz nazwę i naciśnij Enter aby dodać.
-            </div>
-          )}
-          {filteredSuggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className="tag-input-option"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                addTag(s);
-              }}
-            >
-              <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(s) }} />
-              <span style={{ marginLeft: '8px' }}>{s}</span>
-            </button>
-          ))}
-          {canCreate &&
-            !filteredSuggestions.some(
-              (s) => s.toLowerCase() === inputValue.trim().toLowerCase()
-            ) && (
+      {isFocused &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="tag-input-dropdown"
+            onMouseDown={(e) => e.preventDefault()}
+            style={{
+              position: 'fixed',
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              maxHeight: dropdownPosition.maxHeight,
+              zIndex: 10000,
+              marginTop: 0,
+            }}
+          >
+            {filteredSuggestions.length === 0 && !canCreate && (
+              <div style={{ padding: '8px 12px', color: 'var(--text-3)', fontSize: '0.85rem' }}>
+                Wpisz nazwę i naciśnij Enter, aby dodać nową wartość.
+              </div>
+            )}
+            {filteredSuggestions.map((s) => (
               <button
+                key={s}
                 type="button"
-                className="tag-input-option create"
+                className="tag-input-option"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  addTag(inputValue);
+                  addTag(s);
                 }}
               >
-                <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(inputValue.trim()) }} />
-                <span style={{ marginLeft: '8px' }}>Utwórz: <strong>{inputValue.trim()}</strong></span>
+                <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(s) }} />
+                <span style={{ marginLeft: '8px' }}>{s}</span>
               </button>
-            )}
-        </div>
-      )}
+            ))}
+            {canCreate &&
+              !filteredSuggestions.some(
+                (s) => s.toLowerCase() === inputValue.trim().toLowerCase()
+              ) && (
+                <button
+                  type="button"
+                  className="tag-input-option create"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    addTag(inputValue);
+                  }}
+                >
+                  <span
+                    className="tag-badge-dot"
+                    style={{ backgroundColor: getTagColor(inputValue.trim()) }}
+                  />
+                  <span style={{ marginLeft: '8px' }}>
+                    Utwórz: <strong>{inputValue.trim()}</strong>
+                  </span>
+                </button>
+              )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

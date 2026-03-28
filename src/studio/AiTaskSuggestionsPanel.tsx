@@ -162,6 +162,7 @@ function AiTaskSuggestionsPanel({
                       suggestions={peopleSuggestions}
                       onChange={(arr) => setEditDraft((d) => ({ ...d, owner: arr[0] || '' }))}
                       placeholder="Osoba odpowiedzialna"
+                      type="person"
                     />
                   </div>
                   <input

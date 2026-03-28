@@ -40,3 +40,53 @@
   flex-direction: column;
   gap: 24px;
 }
+
+/* UI FIX: Layout for task list rows and checklists */
+.todo-table-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1.75fr) 160px 150px 130px;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.todo-table-row:hover {
+  background: rgba(255,255,255, 0.04);
+}
+
+.todo-row-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.todo-title-cell strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+}
+
+.todo-title-cell small {
+  color: var(--muted, #8a9bb8);
+  font-size: 0.8rem;
+}
+
+.todo-priority-cell .todo-inline-actions {
+  display: flex;
+  gap: 8px;
+}

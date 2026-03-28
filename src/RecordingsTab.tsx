@@ -251,10 +251,10 @@ function UnifiedLibrary({
           style={{
             position: 'absolute',
             inset: 0,
-            zIndex: 9999,
+            zIndex: 'var(--inline-z-index-overlay)',
             background: 'rgba(117, 214, 196, 0.08)',
             border: '3px dashed var(--accent)',
-            borderRadius: 16,
+            borderRadius: 'var(--inline-radius-2xl)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -266,12 +266,17 @@ function UnifiedLibrary({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 8,
+              gap: 'var(--inline-gap-3)',
               color: 'var(--accent)',
             }}
           >
             <Upload size={40} />
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+            <span
+              style={{
+                fontSize: 'var(--inline-font-2xl)',
+                fontWeight: 'var(--inline-font-weight-semibold)',
+              }}
+            >
               Upuść plik audio/video tutaj
             </span>
           </div>
@@ -597,7 +602,12 @@ function UnifiedLibrary({
                   }}
                 >
                   <td className="recordings-library-meeting">
-                    <strong>{m.title}</strong>
+                    <strong
+                      className="recordings-clickable-title"
+                      title="Kliknij, aby otworzyć spotkanie"
+                    >
+                      {m.title}
+                    </strong>
                   </td>
                   <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
                   <td>{m.durationMinutes} min</td>

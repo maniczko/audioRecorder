@@ -107,7 +107,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && ui.openStudio()}
         >
-          <div className="modern-brand-logo" style={{ color: '#74d0bf' }}>
+          <div className="modern-brand-logo" style={{ color: 'var(--inline-color-accent-strong)' }}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="36"
@@ -203,7 +203,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             type="button"
             className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
             onClick={() => setShowAskAI(!showAskAI)}
-            style={{ marginTop: 'auto', color: 'var(--accent)', position: 'relative' }}
+            style={{ marginTop: 'auto', position: 'relative' }}
           >
             <Brain size={18} />
             Zapytaj AI

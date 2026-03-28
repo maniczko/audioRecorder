@@ -50,6 +50,54 @@ function normalizeWhitespace(value) {
     .trim();
 }
 
+// Custom people/tags storage in localStorage to persist user-created values
+const CUSTOM_TASK_PEOPLE_KEY = 'voicelog_custom_task_people';
+const CUSTOM_TASK_TAGS_KEY = 'voicelog_custom_task_tags';
+
+export function getCustomTaskPeople() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(CUSTOM_TASK_PEOPLE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addCustomTaskPerson(person: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getCustomTaskPeople();
+    const normalized = String(person).trim();
+    if (!normalized || normalized === 'Nieprzypisane') return;
+    if (!current.some((p) => p.toLowerCase() === normalized.toLowerCase())) {
+      localStorage.setItem(CUSTOM_TASK_PEOPLE_KEY, JSON.stringify([...current, normalized]));
+    }
+  } catch {}
+}
+
+export function getCustomTaskTags() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(CUSTOM_TASK_TAGS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addCustomTaskTag(tag: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getCustomTaskTags();
+    const normalized = String(tag).trim();
+    if (!normalized) return;
+    if (!current.some((t) => t.toLowerCase() === normalized.toLowerCase())) {
+      localStorage.setItem(CUSTOM_TASK_TAGS_KEY, JSON.stringify([...current, normalized]));
+    }
+  } catch {}
+}
+
 function normalizeGroup(value) {
   return titleCase(normalizeWhitespace(value));
 }
@@ -898,10 +946,12 @@ export function updateTaskColumns(taskBoards, workspaceId, nextColumns) {
 }
 
 export function buildTaskPeople(meetings, currentUser, workspaceMembers = [], tasks = []) {
+  const customPeople = getCustomTaskPeople();
   return uniqueStrings([
     currentUser?.name,
     currentUser?.email,
     currentUser?.googleEmail,
+    ...customPeople,
     ...safeArray(workspaceMembers).flatMap((member) => [
       member.name,
       member.email,
@@ -916,11 +966,13 @@ export function buildTaskPeople(meetings, currentUser, workspaceMembers = [], ta
       ),
     ]),
     ...safeArray(tasks).flatMap((task) => [task.owner, ...safeArray(task.assignedTo)]),
-  ]);
+  ]).filter((p) => p && p !== 'Nieprzypisane');
 }
 
 export function buildTaskTags(tasks, meetings) {
+  const customTags = getCustomTaskTags();
   return uniqueStrings([
+    ...customTags,
     ...safeArray(tasks).flatMap((task) => task.tags || []),
     ...safeArray(meetings).flatMap((meeting) => meeting.tags || []),
   ]);

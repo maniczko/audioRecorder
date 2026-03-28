@@ -293,6 +293,20 @@
   font-weight: 500;
 }
 
+.recordings-clickable-title {
+  color: var(--accent, #75d6c4);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(117, 214, 196, 0.4);
+  transition: all 0.2s ease;
+}
+
+.recordings-clickable-title:hover {
+  text-decoration-color: var(--accent, #75d6c4);
+  color: #fff;
+}
+
 .recordings-rag-panel,
 .recordings-library-panel {
   margin-bottom: 32px;

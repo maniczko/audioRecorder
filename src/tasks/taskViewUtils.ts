@@ -54,19 +54,19 @@ export function buildSidebarLists(tasks, boardColumns) {
   const baseLists = [
     {
       id: 'smart:important',
-      label: 'Important',
+      label: 'Ważne',
       icon: '⭐',
       count: tasks.filter((task) => task.important).length,
     },
     {
       id: 'smart:planned',
-      label: 'Planned',
+      label: 'Zaplanowane',
       icon: '📅',
       count: tasks.filter((task) => task.dueDate).length,
     },
     {
       id: 'smart:overdue',
-      label: 'Overdue',
+      label: 'Zaległe',
       icon: '⚠️',
       count: tasks.filter(
         (task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()
@@ -74,17 +74,17 @@ export function buildSidebarLists(tasks, boardColumns) {
     },
     {
       id: 'smart:completed',
-      label: 'Completed',
+      label: 'Zakończone',
       icon: '✓',
       count: tasks.filter((task) => task.completed).length,
     },
     {
       id: 'smart:assigned',
-      label: 'Assigned to me',
+      label: 'Przypisane do mnie',
       icon: '👤',
       count: tasks.filter((task) => task.assignedToMe).length,
     },
-    { id: 'smart:all', label: 'Tasks', icon: '✦', count: tasks.length },
+    { id: 'smart:all', label: 'Zadania', icon: '✦', count: tasks.length },
   ];
 
   const workspaceLists = boardColumns.map((column) => ({
@@ -96,7 +96,8 @@ export function buildSidebarLists(tasks, boardColumns) {
 
   const customGroups = Array.from(
     new Set(tasks.map((task) => String(task.group || '').trim()).filter(Boolean))
-  ).sort((left: string, right: string) => left.localeCompare(right))
+  )
+    .sort((left: string, right: string) => left.localeCompare(right))
     .map((group) => ({
       id: `group:${group}`,
       label: group,
@@ -273,7 +274,7 @@ export function getSelectedListLabel(sidebarLists, selectedListId) {
     sidebarLists.baseLists.find((item) => item.id === selectedListId)?.label ||
     sidebarLists.workspaceLists.find((item) => item.id === selectedListId)?.label ||
     sidebarLists.customGroups.find((item) => item.id === selectedListId)?.label ||
-    'Tasks'
+    'Zadania'
   );
 }
 

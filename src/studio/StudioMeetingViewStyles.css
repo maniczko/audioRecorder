@@ -2763,12 +2763,28 @@
   text-align: center;
   background: rgba(15, 23, 42, 0.8);
   padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .sketchnote-image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.sketchnote-inline-svg {
+  width: 100%;
+}
+
+.sketchnote-inline-svg svg {
+  display: block;
+  width: 100%;
   max-width: 100%;
   height: auto;
   border-radius: 4px;
@@ -2816,7 +2832,8 @@
 }
 
 .sketchnote-image-frame.sketchnote-zoomed .sketchnote-image,
-.sketchnote-image-frame.sketchnote-zoomed > div {
+.sketchnote-image-frame.sketchnote-zoomed > div,
+.sketchnote-image-frame.sketchnote-zoomed .sketchnote-inline-svg svg {
   max-width: 100%;
 }
 
@@ -2832,13 +2849,69 @@
   background: rgba(116, 208, 191, 0.04);
 }
 
+.sketchnote-empty-state-no-data {
+  position: relative;
+  overflow: hidden;
+  padding: 48px 28px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(125, 211, 252, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sketchnote-empty-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(4px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.sketchnote-empty-orb-left {
+  top: -18px;
+  left: -12px;
+  width: 112px;
+  height: 112px;
+  background: rgba(250, 204, 21, 0.14);
+}
+
+.sketchnote-empty-orb-right {
+  right: -16px;
+  bottom: -20px;
+  width: 132px;
+  height: 132px;
+  background: rgba(125, 211, 252, 0.12);
+}
+
+.sketchnote-empty-badge {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.45);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .sketchnote-empty-icon {
+  position: relative;
+  z-index: 1;
   font-size: 3rem;
   margin-bottom: 12px;
   filter: grayscale(0.3);
 }
 
 .sketchnote-empty-title {
+  position: relative;
+  z-index: 1;
   margin: 0 0 8px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -2846,6 +2919,8 @@
 }
 
 .sketchnote-empty-desc {
+  position: relative;
+  z-index: 1;
   margin: 0 0 16px;
   max-width: 380px;
   font-size: 0.88rem;
@@ -2853,7 +2928,28 @@
   color: var(--muted);
 }
 
+.sketchnote-empty-diagnostics {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 18px;
+  max-width: 520px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.48);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.sketchnote-empty-state-no-data .ghost-button {
+  position: relative;
+  z-index: 1;
+}
+
 .sketchnote-empty-hint {
+  position: relative;
+  z-index: 1;
   margin: 12px 0 0;
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.35);

@@ -24,9 +24,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### 🟡 Niski priorytet
 
-- 🟡 `403` — Migrate inline styles to CSS variables (155 inline styles do refaktoryzacji)
-- 🟡 `341` — Memory profiling w production (clinic.js, 0x profiling)
-- 🟡 `342` — APM integration (DataDog/NewRelic)
+*(brak zadań w tej kolejce)*
 
 ---
 

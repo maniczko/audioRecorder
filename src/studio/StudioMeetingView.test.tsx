@@ -229,6 +229,37 @@ describe('StudioMeetingView', () => {
     ).toBeInTheDocument();
   });
 
+  test('shows polished no-data state for empty transcript', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedMeeting={{ id: 'm1', title: 'Test Meeting', tags: [], needs: [], concerns: [] }}
+        selectedRecording={{
+          id: 'rec-empty-sketchnote',
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: 'empty',
+          userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+        }}
+        displayRecording={{
+          id: 'rec-empty-sketchnote',
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: 'empty',
+        }}
+      />
+    );
+
+    expect(screen.getByText(/Nie ma jeszcze materiału do podsumowania/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak danych do analizy/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Ponow transkrypcje/i }).length).toBeGreaterThan(
+      0
+    );
+    expect(
+      screen.queryByRole('button', { name: /Wygeneruj sketchnotkę/i })
+    ).not.toBeInTheDocument();
+  });
+
   test('treats done recording with zero segments as empty transcript', () => {
     renderWithContext(
       <StudioMeetingView

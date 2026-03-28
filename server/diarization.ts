@@ -9,78 +9,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { spawn, exec } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { config } from './config.ts';
 import { clean, tokenize, normalizeSpeakerLabel } from './audioPipeline.utils.ts';
-import { getUploadDir } from './transcription.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const execPromise = promisify(exec);
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
 const HF_TOKEN = config.HF_TOKEN || config.HUGGINGFACE_TOKEN || '';
-const PYTHON_BINARY = config.PYTHON_BINARY;
 const FFMPEG_BINARY = config.FFMPEG_BINARY;
-const DIARIZE_SCRIPT = path.join(__dirname, 'diarize.py');
 export const VOICELOG_DIARIZER = config.VOICELOG_DIARIZER || 'auto';
 export const HF_TOKEN_SET = Boolean(HF_TOKEN);
 const DEBUG = process.env.VOICELOG_DEBUG === 'true';
-
-// ── Pyannote diarization cache ────────────────────────────────────────────────
-
-const PYANNOTE_CACHE_VERSION = 'v1';
-const PYANNOTE_MODEL_VERSION = 'pyannote/speaker-diarization-3.1';
-
-function getPyannoteCacheDir() {
-  return path.join(getUploadDir(), '.cache', 'pyannote');
-}
-
-function buildPyannoteCacheKey(audioPath: string) {
-  const stats = fs.statSync(audioPath);
-  const parts = [
-    PYANNOTE_CACHE_VERSION,
-    PYANNOTE_MODEL_VERSION,
-    clean(audioPath),
-    String(stats.mtimeMs),
-    String(stats.size),
-  ];
-  return crypto.createHash('sha256').update(parts.join('|')).digest('hex');
-}
-
-function getPyannoteCachePath(cacheKey: string) {
-  return path.join(getPyannoteCacheDir(), `${cacheKey}.json`);
-}
-
-function loadPyannoteFromCache(cacheKey: string) {
-  const cachePath = getPyannoteCachePath(cacheKey);
-  if (!fs.existsSync(cachePath)) return null;
-  try {
-    const data = fs.readFileSync(cachePath, 'utf8');
-    const parsed = JSON.parse(data);
-    console.log(`[diarization] Loaded pyannote result from cache: ${cacheKey.slice(0, 12)}`);
-    return parsed;
-  } catch (e: any) {
-    console.warn('[diarization] Pyannote cache read failed:', e.message);
-    return null;
-  }
-}
-
-function savePyannoteToCache(cacheKey: string, result: any[]) {
-  try {
-    const cacheDir = getPyannoteCacheDir();
-    fs.mkdirSync(cacheDir, { recursive: true });
-    const cachePath = getPyannoteCachePath(cacheKey);
-    fs.writeFileSync(cachePath, JSON.stringify(result, null, 2));
-    console.log(`[diarization] Saved pyannote result to cache: ${cacheKey.slice(0, 12)}`);
-  } catch (e: any) {
-    console.warn('[diarization] Pyannote cache write failed:', e.message);
-  }
-}
 
 // ── Pyannote diarization ──────────────────────────────────────────────────────
 
@@ -89,89 +32,9 @@ function savePyannoteToCache(cacheKey: string, result: any[]) {
  * Returns [{speaker, start, end}] or null if unavailable/failed.
  */
 export async function runPyannoteDiarization(audioPath: string, signal: any) {
-  if (!HF_TOKEN) return null;
-  if (!fs.existsSync(DIARIZE_SCRIPT)) {
-    console.warn('[diarization] diarize.py not found, skipping pyannote.');
-    return null;
-  }
-  if (!fs.existsSync(audioPath)) {
-    console.warn('[diarization] Audio file not found:', audioPath);
-    return null;
-  }
-
-  // Check cache first
-  const cacheKey = buildPyannoteCacheKey(audioPath);
-  const cached = loadPyannoteFromCache(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  console.log(
-    '[diarization] Running pyannote diarization (may download ~1GB model on first run)...'
-  );
-
-  return new Promise((resolve) => {
-    const child = spawn(PYTHON_BINARY, [DIARIZE_SCRIPT, audioPath, HF_TOKEN], {
-      signal,
-      timeout: 600000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    const stdoutStream: any = (child as any)?.stdout;
-    if (stdoutStream?.setEncoding) {
-      stdoutStream.setEncoding('utf8');
-    }
-    if (stdoutStream?.on) {
-      stdoutStream.on('data', (data: any) => {
-        stdout += String(data ?? '');
-      });
-    }
-
-    const stderrStream: any = (child as any)?.stderr;
-    if (stderrStream?.setEncoding) {
-      stderrStream.setEncoding('utf8');
-    }
-    if (stderrStream?.on) {
-      stderrStream.on('data', (data: any) => {
-        stderr += String(data ?? '');
-      });
-    }
-
-    child.on('error', (error: any) => {
-      console.warn('[diarization] pyannote spawn error:', error.message);
-      resolve(null);
-    });
-
-    child.on('close', (code) => {
-      if (code !== 0 && (!signal || !signal.aborted)) {
-        console.warn('[diarization] pyannote exited with status', code, stderr.slice(0, 400));
-        resolve(null);
-        return;
-      }
-      try {
-        const parsed = JSON.parse(stdout.trim());
-        if (parsed?.error) {
-          console.warn('[diarization] pyannote returned error:', parsed.error);
-          resolve(null);
-          return;
-        }
-        if (!Array.isArray(parsed) || !parsed.length) return resolve(null);
-        const speakers = [...new Set(parsed.map((s) => s.speaker))];
-        console.log(
-          `[diarization] pyannote: ${parsed.length} segments, ${speakers.length} speakers: ${speakers.join(', ')}`
-        );
-        // Save to cache
-        savePyannoteToCache(cacheKey, parsed);
-        resolve(parsed);
-      } catch (e: any) {
-        console.warn('[diarization] pyannote JSON parse failed:', e.message, stdout.slice(0, 200));
-        resolve(null);
-      }
-    });
-  });
+  // Local pyannote diarization has been removed to fix memory leaks and OOM errors
+  console.log('[diarization] Local pyannote diarization is disabled.');
+  return null;
 }
 
 // ── Pyannote / Whisper merging ────────────────────────────────────────────────

@@ -72,6 +72,63 @@
   --layout-aside-width: 360px;
   --layout-shell-padding: var(--space-6);
   --layout-header-min-height: 44px;
+
+  /* Inline style migrations - utility values */
+  --inline-color-accent: #75d6c4;
+  --inline-color-accent-strong: #74d0bf;
+  --inline-color-text: #edf7f6;
+  --inline-color-text-muted: rgba(237, 247, 246, 0.62);
+  --inline-color-danger: #f17d72;
+  --inline-color-warning: #f3ca72;
+  --inline-bg-overlay: rgba(10, 24, 38, 0.82);
+  --inline-bg-panel: rgba(7, 17, 27, 0.94);
+  --inline-bg-surface: rgba(255, 255, 255, 0.03);
+  --inline-bg-surface-hover: rgba(255, 255, 255, 0.06);
+  --inline-border: rgba(255, 255, 255, 0.08);
+  --inline-border-accent: rgba(117, 214, 196, 0.28);
+  --inline-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  --inline-radius-sm: 4px;
+  --inline-radius-md: 8px;
+  --inline-radius-lg: 10px;
+  --inline-radius-xl: 12px;
+  --inline-radius-2xl: 16px;
+  --inline-radius-pill: 999px;
+  --inline-font-xs: 0.7rem;
+  --inline-font-sm: 0.75rem;
+  --inline-font-base: 0.82rem;
+  --inline-font-md: 0.88rem;
+  --inline-font-lg: 0.95rem;
+  --inline-font-xl: 1.05rem;
+  --inline-font-2xl: 1.1rem;
+  --inline-font-title: 1.25rem;
+  --inline-font-heading: 1.4rem;
+  --inline-font-weight-normal: 400;
+  --inline-font-weight-medium: 500;
+  --inline-font-weight-semibold: 600;
+  --inline-font-weight-bold: 700;
+  --inline-font-weight-extrabold: 800;
+  --inline-gap-1: 4px;
+  --inline-gap-2: 6px;
+  --inline-gap-3: 8px;
+  --inline-gap-4: 10px;
+  --inline-gap-5: 12px;
+  --inline-gap-6: 16px;
+  --inline-gap-8: 20px;
+  --inline-gap-10: 24px;
+  --inline-gap-12: 32px;
+  --inline-gap-16: 40px;
+  --inline-padding-sm: 6px;
+  --inline-padding-md: 8px;
+  --inline-padding-lg: 10px;
+  --inline-padding-xl: 12px;
+  --inline-padding-2xl: 14px;
+  --inline-padding-3xl: 16px;
+  --inline-padding-4xl: 18px;
+  --inline-padding-5xl: 20px;
+  --inline-z-index-overlay: 9999;
+  --inline-transition-fast: 0.15s;
+  --inline-transition-normal: 0.2s;
+  --inline-transition-slow: 0.3s;
 }
 
 :root[data-theme="light"] {

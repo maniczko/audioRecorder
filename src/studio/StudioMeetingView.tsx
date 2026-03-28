@@ -609,31 +609,36 @@ export default function StudioMeetingView({
 
   const allParticipants = useMemo(() => {
     const pSet = new Set();
-    
+
     // Dodaj uczestników z istniejących spotkań (guests)
     (userMeetings || []).forEach((m) => {
       (m.guests || []).forEach((g) => {
         if (g && typeof g === 'string' && g.trim()) pSet.add(g.trim());
       });
     });
-    
+
     // Dodaj osoby z profili (główny źródło sugestii)
     (peopleProfiles || []).forEach((p) => {
       if (p?.name && typeof p.name === 'string' && p.name.trim() && p.name !== 'Nieprzypisane') {
         pSet.add(p.name.trim());
       }
     });
-    
+
     // Dodaj członków workspace (fallback)
     (currentWorkspaceMembers || []).forEach((member) => {
-      if (member?.name && typeof member.name === 'string' && member.name.trim() && member.name !== 'Nieprzypisane') {
+      if (
+        member?.name &&
+        typeof member.name === 'string' &&
+        member.name.trim() &&
+        member.name !== 'Nieprzypisane'
+      ) {
         pSet.add(member.name.trim());
       }
       if (member?.email && typeof member.email === 'string' && member.email.trim()) {
         pSet.add(member.email.trim());
       }
     });
-    
+
     return Array.from(pSet).sort();
   }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
@@ -1016,6 +1021,9 @@ export default function StudioMeetingView({
     displayRecording?.diarization?.summary,
     studioAnalysis?.summary,
   ]);
+  const sketchnoteHasSourceData = Boolean(sketchnoteSummaryText) || summaryBullets.length > 0;
+  const showSketchnoteNoDataState =
+    isEmptyTranscript || (!isQueued && !isRecording && !sketchnoteHasSourceData);
 
   useEffect(() => {
     if (!selectedRecording?.id || typeof onCreateTask !== 'function' || !autoTaskDrafts.length) {
@@ -1218,6 +1226,17 @@ export default function StudioMeetingView({
   }, [selectedRecording?.id, updateTranscriptSegment]);
 
   const handleGenerateSketchnote = useCallback(async () => {
+    if (!sketchnoteHasSourceData) {
+      setSketchnoteError(
+        'Brak danych do wygenerowania sketchnotki. Najpierw potrzebne jest podsumowanie lub transkrypcja.'
+      );
+      setSketchnoteFallbackSvg('');
+      setSketchnoteUrl('');
+      setSketchnoteIsLocal(false);
+      setSketchnoteZoomed(false);
+      return;
+    }
+
     setIsGeneratingSketchnote(true);
     setSketchnoteError('');
     const fallbackSvg = buildSketchnoteSvg(
@@ -1283,6 +1302,7 @@ export default function StudioMeetingView({
     }
   }, [
     selectedRecording?.id,
+    sketchnoteHasSourceData,
     sketchnoteSummaryText,
     summaryBullets,
     autoTaskDrafts,
@@ -1864,25 +1884,27 @@ export default function StudioMeetingView({
                               <button
                                 type="button"
                                 className="ghost-button"
-                                onClick={() => setSketchnoteZoomed(z => !z)}
+                                onClick={() => setSketchnoteZoomed((z) => !z)}
                                 title={sketchnoteZoomed ? 'Pomniejsz' : 'Powiększ'}
                                 style={{ padding: '6px 12px', fontSize: '0.82rem' }}
                               >
                                 {sketchnoteZoomed ? '🔎 Pomniejsz' : '🔍 Powiększ'}
                               </button>
                             )}
-                            {!sketchnoteUrl && !sketchnoteFallbackSvg && (
-                              <button
-                                type="button"
-                                className="primary-button"
-                                onClick={handleGenerateSketchnote}
-                                disabled={isGeneratingSketchnote}
-                              >
-                                {isGeneratingSketchnote
-                                  ? 'Generowanie...'
-                                  : 'Wygeneruj sketchnotkę AI'}
-                              </button>
-                            )}
+                            {!sketchnoteUrl &&
+                              !sketchnoteFallbackSvg &&
+                              !showSketchnoteNoDataState && (
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  onClick={handleGenerateSketchnote}
+                                  disabled={isGeneratingSketchnote}
+                                >
+                                  {isGeneratingSketchnote
+                                    ? 'Generowanie...'
+                                    : 'Wygeneruj sketchnotkę AI'}
+                                </button>
+                              )}
                           </div>
                         </div>
 
@@ -1893,11 +1915,12 @@ export default function StudioMeetingView({
                         {sketchnoteUrl || sketchnoteFallbackSvg ? (
                           <div
                             className={`sketchnote-image-container sketchnote-image-frame${sketchnoteZoomed ? ' sketchnote-zoomed' : ''}`}
-                            onClick={() => setSketchnoteZoomed(z => !z)}
+                            onClick={() => setSketchnoteZoomed((z) => !z)}
                             style={{ cursor: sketchnoteZoomed ? 'zoom-out' : 'zoom-in' }}
                           >
                             {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
                               <div
+                                className="sketchnote-inline-svg"
                                 aria-label="Lokalna sketchnotka"
                                 dangerouslySetInnerHTML={{ __html: sketchnoteFallbackSvg }}
                               />
@@ -1910,16 +1933,65 @@ export default function StudioMeetingView({
                             )}
                             <button
                               className="ghost-button sketchnote-regenerate-btn"
-                              onClick={(e) => { e.stopPropagation(); handleGenerateSketchnote(); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleGenerateSketchnote();
+                              }}
                               disabled={isGeneratingSketchnote}
                             >
                               {isGeneratingSketchnote ? 'Generowanie...' : 'Generuj ponownie'}
                             </button>
                           </div>
+                        ) : showSketchnoteNoDataState ? (
+                          <div className="sketchnote-empty-state sketchnote-empty-state-no-data">
+                            <div
+                              className="sketchnote-empty-orb sketchnote-empty-orb-left"
+                              aria-hidden="true"
+                            />
+                            <div
+                              className="sketchnote-empty-orb sketchnote-empty-orb-right"
+                              aria-hidden="true"
+                            />
+                            <div className="sketchnote-empty-badge">
+                              Brak danych do wizualizacji
+                            </div>
+                            <div className="sketchnote-empty-icon" aria-hidden="true">
+                              🗂️
+                            </div>
+                            <h4 className="sketchnote-empty-title">
+                              Nie ma jeszcze materiału na sketchnotkę
+                            </h4>
+                            <p className="sketchnote-empty-desc">
+                              {selectedRecording?.userMessage ||
+                                'W tym nagraniu nie wykryto treści, z której można zbudować czytelne podsumowanie wizualne.'}
+                            </p>
+                            {selectedRecordingAudioQualitySummary ? (
+                              <div className="sketchnote-empty-diagnostics">
+                                {selectedRecordingAudioQualitySummary}
+                              </div>
+                            ) : null}
+                            {retryStoredRecording && selectedMeeting && selectedRecording ? (
+                              <button
+                                type="button"
+                                className="ghost-button"
+                                onClick={() =>
+                                  retryStoredRecording(selectedMeeting, selectedRecording)
+                                }
+                              >
+                                Ponow transkrypcje
+                              </button>
+                            ) : null}
+                            <p className="sketchnote-empty-hint">
+                              Sketchnotka pojawi się automatycznie, gdy w nagraniu będzie
+                              podsumowanie, decyzje lub następne kroki.
+                            </p>
+                          </div>
                         ) : (
                           <div className="sketchnote-empty-state">
                             <div className="sketchnote-empty-icon">🎨</div>
-                            <h4 className="sketchnote-empty-title">Wizualne podsumowanie spotkania</h4>
+                            <h4 className="sketchnote-empty-title">
+                              Wizualne podsumowanie spotkania
+                            </h4>
                             <p className="sketchnote-empty-desc">
                               Wygeneruj atrakcyjną wizualną notatkę (sketchnotkę) z najważniejszymi
                               punktami ze spotkania. AI stworzy czytelny diagram z kluczowymi
@@ -2110,17 +2182,32 @@ export default function StudioMeetingView({
                   </div>
                 ) : isEmptyTranscript ? (
                   <div className="panel-body">
-                    <div className="analysis-summary-text">
-                      {selectedRecording?.userMessage ||
-                        'Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.'}
-                    </div>
-                    {selectedRecordingAudioQualitySummary ? (
-                      <div className="analysis-summary-diagnostics">
-                        {selectedRecordingAudioQualitySummary}
+                    <div className="sketchnote-empty-state sketchnote-empty-state-no-data">
+                      <div
+                        className="sketchnote-empty-orb sketchnote-empty-orb-left"
+                        aria-hidden="true"
+                      />
+                      <div
+                        className="sketchnote-empty-orb sketchnote-empty-orb-right"
+                        aria-hidden="true"
+                      />
+                      <div className="sketchnote-empty-badge">Brak danych do analizy</div>
+                      <div className="sketchnote-empty-icon" aria-hidden="true">
+                        🗂️
                       </div>
-                    ) : null}
-                    {retryStoredRecording && selectedMeeting && selectedRecording ? (
-                      <div className="analysis-summary-retry">
+                      <h4 className="sketchnote-empty-title">
+                        Nie ma jeszcze materiału do podsumowania
+                      </h4>
+                      <p className="sketchnote-empty-desc">
+                        {selectedRecording?.userMessage ||
+                          'Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.'}
+                      </p>
+                      {selectedRecordingAudioQualitySummary ? (
+                        <div className="sketchnote-empty-diagnostics">
+                          {selectedRecordingAudioQualitySummary}
+                        </div>
+                      ) : null}
+                      {retryStoredRecording && selectedMeeting && selectedRecording ? (
                         <button
                           type="button"
                           className="ghost-button"
@@ -2128,8 +2215,12 @@ export default function StudioMeetingView({
                         >
                           Ponow transkrypcje
                         </button>
-                      </div>
-                    ) : null}
+                      ) : null}
+                      <p className="sketchnote-empty-hint">
+                        Gdy w nagraniu pojawi się treść, tutaj pokaże się streszczenie, decyzje i
+                        kolejne kroki.
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="panel-body">

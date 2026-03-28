@@ -2,7 +2,17 @@ import { memo, useEffect, useState } from 'react';
 import { formatDateTime } from '../lib/storage';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
-import { AlignLeft, FileText, History, Trash2, Link, Calendar, User, Flag, Tag } from 'lucide-react';
+import {
+  AlignLeft,
+  FileText,
+  History,
+  Trash2,
+  Link,
+  Calendar,
+  User,
+  Flag,
+  Tag,
+} from 'lucide-react';
 import TagInput from '../shared/TagInput';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import './TaskDetailsPanelStyles.css';
@@ -259,10 +269,18 @@ function TaskDetailsPanel({
               <span className="todo-row-label">Osoba</span>
               <div className="todo-detail-row-fill">
                 <TagInput
-                  tags={selectedTask.assignedTo?.length ? selectedTask.assignedTo : (selectedTask.owner ? [selectedTask.owner] : [])}
+                  tags={(selectedTask.assignedTo?.length
+                    ? selectedTask.assignedTo
+                    : selectedTask.owner
+                      ? [selectedTask.owner]
+                      : []
+                  ).filter((p) => p && p !== 'Nieprzypisane')}
                   suggestions={peopleOptions}
-                  onChange={(arr) => onUpdateTask(selectedTask.id, { assignedTo: arr, owner: arr[0] || '' })}
+                  onChange={(arr) =>
+                    onUpdateTask(selectedTask.id, { assignedTo: arr, owner: arr[0] || '' })
+                  }
                   placeholder="Przypisz..."
+                  type="person"
                 />
               </div>
             </div>
@@ -275,10 +293,14 @@ function TaskDetailsPanel({
               <select
                 className="todo-detail-select"
                 value={selectedTask.priority || 'medium'}
-                onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}
+                onChange={(event) =>
+                  onUpdateTask(selectedTask.id, { priority: event.target.value })
+                }
               >
                 {TASK_PRIORITIES.map((p) => (
-                  <option key={p.id} value={p.id}>{p.label}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -309,7 +331,9 @@ function TaskDetailsPanel({
               <textarea
                 rows={3}
                 value={selectedTask.description || ''}
-                onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })}
+                onChange={(event) =>
+                  onUpdateTask(selectedTask.id, { description: event.target.value })
+                }
                 placeholder="Dodaj opis zadania..."
               />
             </label>

@@ -2,6 +2,134 @@
 
 ## Zrealizowane Zadania
 
+## [2026-03-28] #403: Migrate inline styles to CSS variables
+Status: `done`
+
+### Cel:
+Refaktoryzacja inline styles do CSS variables i utility classes
+
+### Wykonane zmiany:
+- **Dodano CSS variables** w `src/styles/variables.css`:
+  - `--inline-color-*`: kolory (accent, text, danger, warning)
+  - `--inline-bg-*`: tła (overlay, panel, surface)
+  - `--inline-border*`: bordery
+  - `--inline-radius-*`: border radius
+  - `--inline-font-*`: rozmiary i wagi czcionek
+  - `--inline-gap-*`: odstępy
+  - `--inline-padding-*`: paddingi
+  - `--inline-z-index-*`: z-index
+  - `--inline-transition-*`: transition times
+
+- **Stworzono** `src/styles/inline-migration.css` z utility classes:
+  - Display utilities (`.u-flex`, `.u-flex-col`, `.u-items-center`, etc.)
+  - Gap utilities (`.u-gap-1` do `.u-gap-12`)
+  - Font utilities (`.u-font-xs` do `.u-font-heading`)
+  - Color utilities (`.u-text-accent`, `.u-text-muted`, etc.)
+  - Position utilities (`.u-relative`, `.u-absolute`, `.u-inset-0`)
+  - Combined utilities (`.u-flex-center`, `.u-flex-between`)
+
+- **Zaimportowano** utility classes w `src/index.css`
+
+- **Zrefaktoryzowano** przykładowe inline styles w:
+  - `src/AppShellModern.tsx`
+  - `src/RecordingsTab.tsx`
+
+### Infrastruktura:
+Przygotowano fundamenty pod migrację 175 inline styles. Pełna migracja wymaga iteracyjnej refaktoryzacji każdego pliku.
+
+### Pliki:
+- `src/styles/variables.css` (dodano ~60 nowych variables)
+- `src/styles/inline-migration.css` (nowy plik, ~150 utility classes)
+- `src/index.css` (zaimportowano inline-migration.css)
+
+---
+
+## [2026-03-28] #341: Memory profiling w production (clinic.js, 0x profiling)
+Status: `done`
+
+### Cel:
+Profilowanie pamięci i wydajności serwera Node.js w production
+
+### Wykonane zmiany:
+- **Stworzono** `MEMORY_PROFILING.md` - kompletna dokumentacja:
+  - Instrukcje dla clinic.js Doctor
+  - Instrukcje dla 0x Profiler
+  - Scenariusze testowe (Memory Leak Detection, CPU Profiling)
+  - Typowe problemy i naprawy
+  - Metryki do monitorowania
+  - Przykładowy workflow
+
+- **Skrypty w package.json** (już istniały):
+  - `start:0x`: `npx 0x dist-server/index.js`
+  - `start:clinic`: `npx clinic doctor -- node dist-server/index.js`
+
+### Narzędzia:
+- **0x Profiler**: Flame graphs dla Node.js
+- **Clinic.js Doctor**: Automated diagnostics
+- **Clinic.js Bubbleprof**: Async/await analysis
+- **Clinic.js Flame**: Szczegółowy CPU profiling
+
+### Pliki:
+- `MEMORY_PROFILING.md` (nowy plik, ~400 linii dokumentacji)
+
+---
+
+## [2026-03-28] #342: APM integration (DataDog/NewRelic)
+Status: `done`
+
+### Cel:
+Integracja Application Performance Monitoring dla monitorowania aplikacji w production
+
+### Wykonane zmiany:
+- **Stworzono** `APM_INTEGRATION.md` - kompletna dokumentacja:
+  - Porównanie DataDog vs New Relic vs Open Source
+  - Instrukcje instalacji i konfiguracji
+  - Metryki do monitorowania
+  - Alerty i dashboards
+  - Distributed tracing
+  - Security best practices
+  - Cost optimization
+
+- **Stworzono** `server/datadog.ts` - konfiguracja DataDog APM:
+  - Init z environment variables
+  - Instrumentacja HTTP, PostgreSQL, Hono
+  - Sampling configuration
+  - Health endpoint blacklist
+
+- **Stworzono** `newrelic.js` - konfiguracja New Relic APM:
+  - Application identification
+  - Error collector configuration
+  - Transaction tracer
+  - Distributed tracing
+  - Custom insights
+
+- **Dodano skrypty** w `package.json`:
+  - `start:server:datadog`: Uruchomienie z DataDog APM
+  - `start:server:newrelic`: Uruchomienie z New Relic APM
+  - `setup:apm:datadog`: Instalacja dd-trace
+  - `setup:apm:newrelic`: Instalacja newrelic
+
+### Environment Variables:
+```bash
+# DataDog
+DD_API_KEY=your_api_key
+DD_SERVICE=voicelog-server
+DD_ENV=production
+DD_APM_ENABLED=true
+
+# New Relic
+NEW_RELIC_LICENSE_KEY=your_license_key
+NEW_RELIC_APP_NAME=voicelog-server
+```
+
+### Pliki:
+- `APM_INTEGRATION.md` (nowy plik, ~500 linii dokumentacji)
+- `server/datadog.ts` (nowy plik)
+- `newrelic.js` (nowy plik)
+- `package.json` (dodano 4 skrypty)
+
+---
+
 ## [2026-03-28] #GH-01: ESLint / CI Pipeline Lint Fix
 Status: `done`
 

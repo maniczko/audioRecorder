@@ -246,6 +246,7 @@ function TasksWorkspaceView({
                     setQuickDraft((previous) => ({ ...previous, owner: arr[0] || '' }))
                   }
                   placeholder="Wpisz lub wybierz osobę..."
+                  type="person"
                 />
               </label>
               <label>
