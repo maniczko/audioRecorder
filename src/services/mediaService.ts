@@ -215,7 +215,7 @@ function createRemoteMediaService() {
     async getTranscriptionJobStatus(recordingId) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: 'GET',
-        retries: 1,
+        retries: 0,
       });
 
       return mapRemoteTranscriptionResult(response);
