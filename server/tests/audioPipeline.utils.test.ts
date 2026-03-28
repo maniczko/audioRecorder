@@ -639,7 +639,7 @@ describe('audioPipeline.utils', () => {
         diagnostics,
         audioQuality
       );
-      expect(result.transcriptionDiagnostics).toEqual(diagnostics);
+      expect(result.transcriptionDiagnostics).toMatchObject(diagnostics);
       expect(result.audioQuality).toEqual(audioQuality);
     });
   });

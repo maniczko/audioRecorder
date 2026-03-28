@@ -120,15 +120,25 @@ export async function runPyannoteDiarization(audioPath: string, signal: any) {
     let stdout = '';
     let stderr = '';
 
-    child.stdout.setEncoding('utf8');
-    child.stdout.on('data', (data) => {
-      stdout += data;
-    });
+    const stdoutStream: any = (child as any)?.stdout;
+    if (stdoutStream?.setEncoding) {
+      stdoutStream.setEncoding('utf8');
+    }
+    if (stdoutStream?.on) {
+      stdoutStream.on('data', (data: any) => {
+        stdout += String(data ?? '');
+      });
+    }
 
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', (data) => {
-      stderr += data;
-    });
+    const stderrStream: any = (child as any)?.stderr;
+    if (stderrStream?.setEncoding) {
+      stderrStream.setEncoding('utf8');
+    }
+    if (stderrStream?.on) {
+      stderrStream.on('data', (data: any) => {
+        stderr += String(data ?? '');
+      });
+    }
 
     child.on('error', (error: any) => {
       console.warn('[diarization] pyannote spawn error:', error.message);

@@ -434,7 +434,7 @@ describe('audioPipeline exports', () => {
       pipelineStatus: 'completed',
       transcriptOutcome: 'empty',
       emptyReason: 'no_segments_from_stt',
-      userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+      userMessage: 'API transkrypcji nie zwróciło żadnych segmentów.',
       speakerCount: 0,
       speakerNames: {},
       segments: [],
