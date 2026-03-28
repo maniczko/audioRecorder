@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
+import * as ts from 'typescript';
 
 vi.unmock('node:fs');
 vi.unmock('fs');
@@ -73,24 +74,40 @@ describe('Server Dependencies Verification', () => {
     for (const file of tsFiles) {
       const content = readFileSync(file, 'utf8');
 
-      // Match basic ES imports and CJS requires
-      const matches = [
-        ...content.matchAll(/from\s+['"]([^'.][^'"]*)['"]/g),
-        ...content.matchAll(/import\s+['"]([^'.][^'"]*)['"]/g),
-        ...content.matchAll(/import\(['"]([^'.][^'"]*)['"]\)/g),
-        ...content.matchAll(/require\(['"]([^'.][^'"]*)['"]\)/g),
-      ];
+      const sourceFile = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true);
 
-      for (const match of matches) {
-        const mod = match[1].trim();
-        // Ignore local imports, dynamic injections, aliases
+      const findImports = (node: ts.Node) => {
+        if (ts.isImportDeclaration(node)) {
+          if (node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+            addExternal(node.moduleSpecifier.text);
+          }
+        } else if (ts.isCallExpression(node)) {
+          if (node.expression.getText(sourceFile) === 'require' && node.arguments.length > 0) {
+            const arg = node.arguments[0];
+            if (ts.isStringLiteral(arg)) {
+              addExternal(arg.text);
+            }
+          } else if (
+            node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+            node.arguments.length > 0
+          ) {
+            const arg = node.arguments[0];
+            if (ts.isStringLiteral(arg)) {
+              addExternal(arg.text);
+            }
+          }
+        }
+        ts.forEachChild(node, findImports);
+      };
+
+      const addExternal = (mod: string) => {
         if (
           mod.startsWith('.') ||
           mod.startsWith('/') ||
           mod.startsWith('~/') ||
           mod.startsWith('src/')
         ) {
-          continue;
+          return;
         }
 
         let pkgName = mod;
@@ -104,7 +121,9 @@ describe('Server Dependencies Verification', () => {
         if (!isBuiltin(pkgName)) {
           externalImports.add(pkgName);
         }
-      }
+      };
+
+      findImports(sourceFile);
     }
 
     const missingDeps: string[] = [];

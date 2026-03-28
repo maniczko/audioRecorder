@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
-import { addCustomTaskPerson } from '../lib/tasks';
+import { addCustomTaskPerson, addCustomTaskTag } from '../lib/tasks';
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 
@@ -643,6 +643,35 @@ export default function StudioMeetingView({
     return Array.from(pSet).sort();
   }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
+  const allMeetingTags = useMemo(() => {
+    const tSet = new Set();
+
+    // Dodaj tagi z istniejących spotkań
+    (userMeetings || []).forEach((m) => {
+      const tags = m.tags;
+      if (Array.isArray(tags)) {
+        tags.forEach((t) => {
+          const normalized = String(t || '').trim();
+          if (normalized) tSet.add(normalized);
+        });
+      } else if (typeof tags === 'string') {
+        tags.split(',').forEach((t) => {
+          const normalized = String(t || '').trim();
+          if (normalized) tSet.add(normalized);
+        });
+      }
+    });
+
+    // Dodaj tagi z zadań
+    (meetingTasks || []).forEach((task) => {
+      (task.tags || []).forEach((tag) => {
+        if (tag && typeof tag === 'string' && tag.trim()) tSet.add(tag.trim());
+      });
+    });
+
+    return Array.from(tSet).sort();
+  }, [meetingTasks, userMeetings]);
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
 
@@ -764,12 +793,7 @@ export default function StudioMeetingView({
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
-  const [sketchnoteUrl, setSketchnoteUrl] = useState('');
-  const [sketchnoteFallbackSvg, setSketchnoteFallbackSvg] = useState('');
-  const [sketchnoteIsLocal, setSketchnoteIsLocal] = useState(false);
-  const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
-  const [sketchnoteError, setSketchnoteError] = useState('');
-  const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
+
   const autoTaskSyncKeyRef = useRef('');
 
   const audioRef = useRef(null);
@@ -1226,104 +1250,6 @@ export default function StudioMeetingView({
     }
   }, [selectedRecording?.id, updateTranscriptSegment]);
 
-  const handleGenerateSketchnote = useCallback(async () => {
-    if (!sketchnoteHasSourceData) {
-      setSketchnoteError(
-        'Brak danych do wygenerowania sketchnotki. Najpierw potrzebne jest podsumowanie lub transkrypcja.'
-      );
-      setSketchnoteFallbackSvg('');
-      setSketchnoteUrl('');
-      setSketchnoteIsLocal(false);
-      setSketchnoteZoomed(false);
-      return;
-    }
-
-    setIsGeneratingSketchnote(true);
-    setSketchnoteError('');
-    const fallbackSvg = buildSketchnoteSvg(
-      sketchnoteSummaryText || 'Podsumowanie spotkania',
-      summaryBullets
-    );
-    const fallbackSketchnoteUrl = buildSketchnoteDataUrl(
-      sketchnoteSummaryText || 'Podsumowanie spotkania',
-      summaryBullets
-    );
-    setSketchnoteFallbackSvg(fallbackSvg);
-    setSketchnoteIsLocal(true);
-    setSketchnoteUrl(fallbackSketchnoteUrl);
-    if (!selectedRecording?.id) {
-      setIsGeneratingSketchnote(false);
-      return;
-    }
-    try {
-      const res = await apiRequest(`/media/recordings/${selectedRecording.id}/sketchnote`, {
-        method: 'POST',
-        body: {
-          summary: sketchnoteSummaryText,
-          decisions: safeArray(studioAnalysis?.decisions)
-            .map((d) =>
-              String(
-                typeof d === 'object' ? (d as any)?.title || (d as any)?.text || '' : d || ''
-              ).trim()
-            )
-            .filter(Boolean),
-          actionItems: autoTaskDrafts
-            .slice(0, 6)
-            .map((t) => t.title)
-            .filter(Boolean),
-          followUps: followUps.slice(0, 4),
-          risks: risks
-            .slice(0, 3)
-            .map((r: any) =>
-              typeof r === 'object' ? r?.risk || r?.title || String(r) : String(r)
-            ),
-          blockers: blockers.slice(0, 3),
-          keyQuotes: safeArray(studioAnalysis?.keyQuotes)
-            .slice(0, 2)
-            .map((q: any) =>
-              typeof q === 'object' ? q?.text || q?.quote || String(q) : String(q)
-            ),
-        },
-      });
-      if (res?.sketchnoteUrl) {
-        setSketchnoteUrl(res.sketchnoteUrl);
-        setSketchnoteIsLocal(false);
-        setSketchnoteFallbackSvg('');
-        return;
-      }
-      setSketchnoteError('Backend sketchnotki nie zwrócił obrazu. Pokazuję lokalny podgląd.');
-    } catch (err) {
-      setSketchnoteError(
-        err?.message
-          ? `Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd: ${err.message}`
-          : 'Nie udało się pobrać sketchnotki z backendu. Pokazuję lokalny podgląd.'
-      );
-    } finally {
-      setIsGeneratingSketchnote(false);
-    }
-  }, [
-    selectedRecording?.id,
-    sketchnoteHasSourceData,
-    sketchnoteSummaryText,
-    summaryBullets,
-    autoTaskDrafts,
-    blockers,
-    followUps,
-    risks,
-    studioAnalysis?.decisions,
-    studioAnalysis?.keyQuotes,
-  ]);
-
-  useEffect(() => {
-    if (displayRecording?.diarization?.sketchnoteUrl) {
-      setSketchnoteUrl(displayRecording.diarization.sketchnoteUrl);
-      setSketchnoteIsLocal(false);
-      setSketchnoteFallbackSvg('');
-    } else if (!sketchnoteIsLocal) {
-      setSketchnoteUrl('');
-    }
-  }, [displayRecording?.diarization?.sketchnoteUrl, displayRecording?.id, sketchnoteIsLocal]);
-
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
     const nums = uniqueSpeakers
@@ -1332,7 +1258,6 @@ export default function StudioMeetingView({
     const max = nums.length ? Math.max(...nums) : 0;
     return String(max + 1);
   }, [uniqueSpeakers]);
-  void handleGenerateSketchnote;
 
   function togglePlay() {
     const a = audioRef.current;
@@ -1877,132 +1802,6 @@ export default function StudioMeetingView({
                           ))}
                         </ul>
                       ) : null}
-                      <div className="sketchnote-section sketchnote-section-shell">
-                        <div className="sketchnote-header">
-                          <h3 className="sketchnote-title">🎨 Sketchnotka AI</h3>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            {(sketchnoteUrl || sketchnoteFallbackSvg) && (
-                              <button
-                                type="button"
-                                className="ghost-button"
-                                onClick={() => setSketchnoteZoomed((z) => !z)}
-                                title={sketchnoteZoomed ? 'Pomniejsz' : 'Powiększ'}
-                                style={{ padding: '6px 12px', fontSize: '0.82rem' }}
-                              >
-                                {sketchnoteZoomed ? '🔎 Pomniejsz' : '🔍 Powiększ'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {sketchnoteError && (
-                          <div className="inline-alert error">{sketchnoteError}</div>
-                        )}
-
-                        {sketchnoteUrl || sketchnoteFallbackSvg ? (
-                          <div
-                            className={`sketchnote-image-container sketchnote-image-frame${sketchnoteZoomed ? ' sketchnote-zoomed' : ''}`}
-                            onClick={() => setSketchnoteZoomed((z) => !z)}
-                            style={{ cursor: sketchnoteZoomed ? 'zoom-out' : 'zoom-in' }}
-                          >
-                            {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
-                              <div
-                                className="sketchnote-inline-svg"
-                                aria-label="Lokalna sketchnotka"
-                                dangerouslySetInnerHTML={{ __html: sketchnoteFallbackSvg }}
-                              />
-                            ) : (
-                              <img
-                                src={sketchnoteUrl}
-                                alt="AI Generated Sketchnote"
-                                className="sketchnote-image"
-                              />
-                            )}
-                            <button
-                              className="ghost-button sketchnote-regenerate-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleGenerateSketchnote();
-                              }}
-                              disabled={isGeneratingSketchnote}
-                            >
-                              {isGeneratingSketchnote ? 'Generowanie...' : 'Generuj ponownie'}
-                            </button>
-                          </div>
-                        ) : showSketchnoteNoDataState ? (
-                          <div className="sketchnote-empty-state sketchnote-empty-state-no-data">
-                            <div
-                              className="sketchnote-empty-orb sketchnote-empty-orb-left"
-                              aria-hidden="true"
-                            />
-                            <div
-                              className="sketchnote-empty-orb sketchnote-empty-orb-right"
-                              aria-hidden="true"
-                            />
-                            <div className="sketchnote-empty-badge">
-                              Brak danych do wizualizacji
-                            </div>
-                            <div className="sketchnote-empty-icon" aria-hidden="true">
-                              🗂️
-                            </div>
-                            <h4 className="sketchnote-empty-title">
-                              Nie ma jeszcze materiału na sketchnotkę
-                            </h4>
-                            <p className="sketchnote-empty-desc">
-                              {selectedRecording?.userMessage ||
-                                'W tym nagraniu nie wykryto treści, z której można zbudować czytelne podsumowanie wizualne.'}
-                            </p>
-                            {selectedRecordingAudioQualitySummary ? (
-                              <div className="sketchnote-empty-diagnostics">
-                                {selectedRecordingAudioQualitySummary}
-                              </div>
-                            ) : null}
-                            {retryStoredRecording && selectedMeeting && selectedRecording ? (
-                              <button
-                                type="button"
-                                className="ghost-button"
-                                onClick={() =>
-                                  retryStoredRecording(selectedMeeting, selectedRecording)
-                                }
-                              >
-                                Ponow transkrypcje
-                              </button>
-                            ) : null}
-                            <p className="sketchnote-empty-hint">
-                              Sketchnotka pojawi się automatycznie, gdy w nagraniu będzie
-                              podsumowanie, decyzje lub następne kroki.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="sketchnote-empty-state">
-                            <div className="sketchnote-empty-icon">🎨</div>
-                            <h4 className="sketchnote-empty-title">
-                              Wizualne podsumowanie spotkania
-                            </h4>
-                            <p className="sketchnote-empty-desc">
-                              Wygeneruj atrakcyjną wizualną notatkę (sketchnotkę) z najważniejszymi
-                              punktami ze spotkania. AI stworzy czytelny diagram z kluczowymi
-                              tematami, decyzjami i następnymi krokami.
-                            </p>
-                            <button
-                              type="button"
-                              className="primary-button"
-                              onClick={handleGenerateSketchnote}
-                              disabled={isGeneratingSketchnote}
-                              style={{ marginTop: 8 }}
-                            >
-                              {isGeneratingSketchnote
-                                ? '⏳ Generowanie...'
-                                : '✨ Wygeneruj sketchnotkę'}
-                            </button>
-                            {!selectedRecording?.id && (
-                              <p className="sketchnote-empty-hint">
-                                Brak aktywnego nagrania — najpierw nagraj lub wybierz spotkanie.
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
                     </div>
 
                     {aiDebrief ? (
@@ -2084,7 +1883,7 @@ export default function StudioMeetingView({
                     ) : null}
 
                     <div className="summary-grid">
-                      <section className="summary-card" style={{ overflow: 'visible' }}>
+                      <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
                           <h3>Uczestnicy</h3>
                           <span>{(selectedMeeting?.guests || []).length}</span>
@@ -2100,6 +1899,40 @@ export default function StudioMeetingView({
                             }}
                             placeholder="Wpisz lub wybierz z listy..."
                             type="person"
+                          />
+                        </div>
+                      </section>
+
+                      <section className="summary-card summary-card-overflow-visible">
+                        <div className="summary-card-head">
+                          <h3>Tagi</h3>
+                          <span>
+                            {Array.isArray(selectedMeeting?.tags)
+                              ? selectedMeeting.tags.filter((t) => t && String(t).trim()).length
+                              : String(selectedMeeting?.tags || '')
+                                  .split(',')
+                                  .filter((t) => t.trim()).length}
+                          </span>
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                          <TagInput
+                            tags={
+                              Array.isArray(selectedMeeting?.tags)
+                                ? selectedMeeting.tags
+                                    .map((t) => String(t || '').trim())
+                                    .filter(Boolean)
+                                : String(selectedMeeting?.tags || '')
+                                    .split(',')
+                                    .map((t) => t.trim())
+                                    .filter(Boolean)
+                            }
+                            suggestions={allMeetingTags}
+                            onChange={(newTags) => {
+                              updateMeeting?.(selectedMeeting?.id, { tags: newTags.join(', ') });
+                              // Persist custom tags to localStorage
+                              newTags.forEach((t) => addCustomTaskTag(t));
+                            }}
+                            placeholder="Dodaj tag..."
                           />
                         </div>
                       </section>
