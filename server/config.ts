@@ -21,6 +21,8 @@ const envSchema = z.object({
   VOICELOG_API_PORT: z.preprocess((val) => (val ? Number(val) : undefined), z.number().optional()),
   VOICELOG_API_HOST: z.string().default('0.0.0.0'),
   VOICELOG_ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
+  // CORS_ALLOWED_ORIGINS is accepted as an alias for VOICELOG_ALLOWED_ORIGINS
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
   VOICELOG_TRUST_PROXY: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 
   DATABASE_URL: z.string().optional(),

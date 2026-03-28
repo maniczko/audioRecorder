@@ -139,6 +139,53 @@ npm run test:smoke
 1. **Komunikacja frontu zwalnia powiadomieniem `TypeError: failed to fetch` lub błąd `CORS` z API**
    - Na 99% Frontend uderza pod niewłaściwy adres docelowy. Zweryfikuj, czy twój plik `.env` załadował poprawne `REACT_APP_API_BASE_URL` oraz czy deweloperski backend faktycznie podniósł się na docelowym porcie z akceptacją Twojego Host Originu `localhost`.
 
+### CORS — konfiguracja dla Vercel/Railway
+
+Błąd `Access-Control-Allow-Origin` oznacza, że backend nie zwraca nagłówka CORS dla Twojego origin frontendu.
+Serwer akceptuje `*.vercel.app` automatycznie. Dla własnych domen ustaw zmienną na Railway:
+
+```env
+# Obsługiwana przez backend — preferowany alias:
+CORS_ALLOWED_ORIGINS=https://twoja-aplikacja.vercel.app,https://twoja-domena.pl
+
+# Alternatywna nazwa (równoważna):
+VOICELOG_ALLOWED_ORIGINS=https://twoja-aplikacja.vercel.app
+```
+
+- Obie nazwy zmiennych są akceptowane; `CORS_ALLOWED_ORIGINS` ma pierwszeństwo.
+- Wartość to lista origins oddzielona przecinkami (bez spacji).
+- Użyj `*` by zezwolić na dowolny origin (niezalecane na produkcji).
+- Po zmianie zmiennych zrestartuj serwis na Railway.
+
+#### Diagnostyka CORS i 502 na Railway
+
+```bash
+# Sprawdź nagłówki i status health endpointu:
+curl -i https://audiorecorder-production.up.railway.app/health
+
+# Sprawdź preflight OPTIONS z originem frontendu:
+curl -i -X OPTIONS https://audiorecorder-production.up.railway.app/health \
+  -H "Origin: https://twoja-aplikacja.vercel.app" \
+  -H "Access-Control-Request-Method: GET"
+```
+
+Jeśli `Access-Control-Allow-Origin` nie jest w odpowiedzi, sprawdź:
+1. Zmienne środowiskowe (`CORS_ALLOWED_ORIGINS` / `VOICELOG_ALLOWED_ORIGINS`) na Railway.
+2. Logi Railway (`Deploy Logs`) — czy serwer uruchomił się poprawnie.
+3. Status usługi — `502 Bad Gateway` oznacza, że serwer nie działa; sprawdź logi Railway pod kątem crashu, braku pamięci lub brakujących zmiennych jak `OPENAI_API_KEY`.
+
+#### AbortError / health probe timeout
+
+Frontend wywołuje `/health` z 15-sekundowym timeoutem. Na Railway przy "cold start" pierwsze zapytanie może trwać dłużej. W logach przeglądarki pojawi się wtedy:
+
+```
+Hosted preview health probe failed. AbortError: signal is aborted without reason
+```
+
+Jest to normalne przy pierwszym wejściu po przerwie. Odśwież stronę, jeśli błąd nie znika po kilku sekundach.
+
+
+
 2. **Zablokowanie "Locking Error" przy zapisie SQLite**
    - SQLite nie toleruje dwóch procesów operujących w trybie "Pragmas Exclusive Lock", co czasem może dotknąć Windowsa pod testami `watchNode`. 
    - Rozwiązaniem ratunkowym jest zatrzymanie konsoli Node, zamknięcie aplikacji bazodanowych GUI, oraz jeżeli trzeba, ręczne usunięcie starego woluminu bazodanowego `server/data/voicelog.sqlite` by skrypt `Bootstrap` Hono otworzył pusty schemat transakcyjny ponownie w całości.

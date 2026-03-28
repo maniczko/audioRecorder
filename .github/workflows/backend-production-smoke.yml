@@ -41,6 +41,7 @@ jobs:
           EXPECTED_GIT_SHA: ${{ github.sha }}
           SMOKE_MAX_RETRIES: "20"
           SMOKE_WAIT_MS: "45000"
+          SMOKE_CORS_ORIGIN: https://audiorecorder-bvgd2caeu-iwoczajka-2703s-projects.vercel.app
 
       - name: Debug - Log Railway deployment status
         if: failure()

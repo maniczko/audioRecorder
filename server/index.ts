@@ -133,7 +133,10 @@ export async function bootstrap() {
     workspaceService,
     transcriptionService,
     config: {
-      allowedOrigins: config.VOICELOG_ALLOWED_ORIGINS || 'http://localhost:3000',
+      allowedOrigins:
+        config.CORS_ALLOWED_ORIGINS ||
+        config.VOICELOG_ALLOWED_ORIGINS ||
+        'http://localhost:3000',
       trustProxy: config.VOICELOG_TRUST_PROXY === true,
       uploadDir: db.uploadDir,
     },

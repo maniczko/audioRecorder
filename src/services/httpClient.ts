@@ -109,7 +109,7 @@ function normalizeApiErrorMessage(message = '', status?: number) {
 
 export async function probeRemoteApiHealth(fetchImpl = fetch) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetchImpl(buildUrl('/health'), {
       method: 'GET',
@@ -172,11 +172,11 @@ async function fetchWithRetry(
   maxRetries: number = 3
 ): Promise<Response> {
   let lastError: Error | null = null;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
-      
+
       // Retry on 502, 503, 504 (server errors)
       if (!response.ok && [502, 503, 504].includes(response.status)) {
         if (attempt < maxRetries) {
@@ -186,38 +186,44 @@ async function fetchWithRetry(
           continue;
         }
       }
-      
+
       return response;
     } catch (error: any) {
       lastError = error;
-      
+
+      // Never retry AbortError — the signal was intentionally triggered
+      // (either by our own timeout or by the caller). Retrying with the
+      // same already-aborted signal would fail immediately anyway.
+      if (error?.name === 'AbortError') {
+        break;
+      }
+
       // Check if it's a network error that should be retried
       const errorMessage = String(error?.message || '').toLowerCase();
-      const isRetryable = 
+      const isRetryable =
         errorMessage.includes('failed to fetch') ||
         errorMessage.includes('networkerror') ||
         errorMessage.includes('load failed') ||
-        errorMessage.includes('aborted') ||
         errorMessage.includes('upstream') ||
         errorMessage.includes('bad gateway');
-      
+
       if (isRetryable && attempt < maxRetries) {
         const delayMs = Math.min(1000 * Math.pow(2, attempt), 10000); // exponential backoff, max 10s
         console.warn(`[httpClient] Retry ${attempt + 1}/${maxRetries} after network error: ${error?.message}`);
         await delay(delayMs);
         continue;
       }
-      
+
       // Don't retry on non-retryable errors
       break;
     }
   }
-  
+
   // Throw the last error
   if (lastError) {
     throw lastError;
   }
-  
+
   throw new Error('Request failed after all retries');
 }
 
