@@ -624,6 +624,43 @@ Important:
   });
 
   // Chunked upload: PUT /recordings/:id/audio/chunk?index=N&total=M
+  router.get('/recordings/:recordingId/audio/chunk-status', async (c) => {
+    const recordingId = c.req.param('recordingId');
+    const workspaceId = c.req.header('X-Workspace-Id') || '';
+    if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
+    await ensureWorkspaceAccess(c, workspaceId);
+
+    const total = parseInt(c.req.query('total') || '', 10);
+    if (isNaN(total) || total <= 0) {
+      return c.json({ message: 'Brakuje poprawnego parametru total.' }, 400);
+    }
+
+    const chunksDir = path.join(config.uploadDir, 'chunks');
+    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (!existsSync(chunksDir)) {
+      return c.json({ nextIndex: 0, uploaded: 0, total, resumable: false }, 200);
+    }
+
+    let nextIndex = 0;
+    for (let i = 0; i < total; i++) {
+      const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
+      if (!existsSync(chunkPath)) {
+        break;
+      }
+      nextIndex = i + 1;
+    }
+
+    return c.json(
+      {
+        nextIndex,
+        uploaded: nextIndex,
+        total,
+        resumable: nextIndex > 0 && nextIndex < total,
+      },
+      200
+    );
+  });
+
   router.put('/recordings/:recordingId/audio/chunk', async (c) => {
     const recordingId = c.req.param('recordingId');
     const workspaceId = c.req.header('X-Workspace-Id') || '';

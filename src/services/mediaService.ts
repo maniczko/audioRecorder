@@ -206,7 +206,32 @@ function createRemoteMediaService() {
 
       if (blob && blob.size > CHUNKED_THRESHOLD) {
         const total = Math.ceil(blob.size / CHUNK_SIZE);
-        for (let i = 0; i < total; i++) {
+        let startIndex = 0;
+        try {
+          const status = await apiRequest(
+            `/media/recordings/${recordingId}/audio/chunk-status?total=${total}`,
+            {
+              method: 'GET',
+              retries: 0,
+              headers: {
+                ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+              },
+            }
+          );
+          const nextIndex = Number(status?.nextIndex);
+          if (Number.isFinite(nextIndex)) {
+            startIndex = Math.max(0, Math.min(total, Math.floor(nextIndex)));
+          }
+        } catch (_) {
+          // If status lookup fails, fallback to uploading from the beginning.
+          startIndex = 0;
+        }
+
+        if (startIndex > 0) {
+          onProgress?.((startIndex / total) * 90);
+        }
+
+        for (let i = startIndex; i < total; i++) {
           const chunk = blob.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
           try {
             await uploadChunkWithRetry({
