@@ -2784,16 +2784,31 @@
 
 /* Zoom toggle */
 .sketchnote-image-frame {
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  max-height: 360px;
+  transition: max-height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 200px;
   overflow: hidden;
+  position: relative;
+}
+
+.sketchnote-image-frame::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, rgba(15, 23, 42, 0.95));
+  pointer-events: none;
+  transition: opacity 0.3s;
 }
 
 .sketchnote-image-frame.sketchnote-zoomed {
-  max-height: none;
+  max-height: 2000px;
   cursor: zoom-out !important;
-  position: relative;
-  z-index: 10;
+}
+
+.sketchnote-image-frame.sketchnote-zoomed::after {
+  opacity: 0;
 }
 
 .sketchnote-image-frame:not(.sketchnote-zoomed) {

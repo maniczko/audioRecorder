@@ -546,8 +546,6 @@
   gap: 12px;
 }
 
-.profile-category-view-spaced {
-
 /* Profile głosowe - grupowanie */
 .voice-profiles-grouped {
   display: flex;
@@ -688,6 +686,8 @@
 .profile-samples-max {
   color: var(--danger);
 }
+
+.profile-category-view-spaced {
   margin-top: 32px;
 }
 

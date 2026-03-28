@@ -763,6 +763,7 @@ export default function StudioMeetingView({
   const [sketchnoteIsLocal, setSketchnoteIsLocal] = useState(false);
   const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
   const [sketchnoteError, setSketchnoteError] = useState('');
+  const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
   const autoTaskSyncKeyRef = useRef('');
 
   const audioRef = useRef(null);
@@ -1863,17 +1864,14 @@ export default function StudioMeetingView({
                               <button
                                 type="button"
                                 className="ghost-button"
-                                onClick={() => {
-                                  const frame = document.querySelector('.sketchnote-image-frame');
-                                  if (frame) frame.classList.toggle('sketchnote-zoomed');
-                                }}
-                                title="Powiększ / pomniejsz"
+                                onClick={() => setSketchnoteZoomed(z => !z)}
+                                title={sketchnoteZoomed ? 'Pomniejsz' : 'Powiększ'}
                                 style={{ padding: '6px 12px', fontSize: '0.82rem' }}
                               >
-                                🔍 Zoom
+                                {sketchnoteZoomed ? '🔎 Pomniejsz' : '🔍 Powiększ'}
                               </button>
                             )}
-                            {!sketchnoteUrl && (
+                            {!sketchnoteUrl && !sketchnoteFallbackSvg && (
                               <button
                                 type="button"
                                 className="primary-button"
@@ -1894,12 +1892,9 @@ export default function StudioMeetingView({
 
                         {sketchnoteUrl || sketchnoteFallbackSvg ? (
                           <div
-                            className="sketchnote-image-container sketchnote-image-frame"
-                            onClick={() => {
-                              const frame = document.querySelector('.sketchnote-image-frame');
-                              if (frame) frame.classList.toggle('sketchnote-zoomed');
-                            }}
-                            style={{ cursor: 'zoom-in' }}
+                            className={`sketchnote-image-container sketchnote-image-frame${sketchnoteZoomed ? ' sketchnote-zoomed' : ''}`}
+                            onClick={() => setSketchnoteZoomed(z => !z)}
+                            style={{ cursor: sketchnoteZoomed ? 'zoom-out' : 'zoom-in' }}
                           >
                             {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
                               <div
