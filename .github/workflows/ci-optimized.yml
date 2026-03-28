@@ -229,7 +229,7 @@ jobs:
   # Summary - runs after all other jobs
   summary:
     needs: [changes, lint, typecheck, format, test, coverage, security, build, docs]
-    if: always()
+    if: always() && (needs.changes.outputs.src == 'true' || needs.changes.outputs.config == 'true' || needs.changes.outputs.package == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.docs == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Check job statuses
@@ -247,12 +247,17 @@ jobs:
           echo "| Build | ${{ needs.build.result }} |"
           echo "| Docs | ${{ needs.docs.result }} |"
           echo ""
+
+          # Check if any critical jobs failed (skip 'skipped' jobs)
+          CRITICAL_FAILED="false"
+          if [ "${{ needs.lint.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
+          if [ "${{ needs.typecheck.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
+          if [ "${{ needs.test.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
           
-          # Check if any critical jobs failed
-          if [ "${{ needs.lint.result }}" == "failure" ] || [ "${{ needs.typecheck.result }}" == "failure" ] || [ "${{ needs.test.result }}" == "failure" ]; then
+          if [ "$CRITICAL_FAILED" == "true" ]; then
             echo "❌ Critical checks failed"
             exit 1
           else
-            echo "✅ All critical checks passed"
+            echo "✅ All critical checks passed or were skipped"
             exit 0
           fi
