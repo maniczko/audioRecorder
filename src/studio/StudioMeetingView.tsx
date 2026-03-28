@@ -325,7 +325,11 @@ VoiceSpeakerStats.propTypes = {
 };
 
 function formatEmptyTranscriptDiagnostics(recording) {
-  if (!recording || recording.transcriptOutcome !== 'empty') return '';
+  const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
+  const treatedAsEmpty =
+    recording?.transcriptOutcome === 'empty' ||
+    (recording?.pipelineStatus === 'done' && transcript.length === 0);
+  if (!recording || !treatedAsEmpty) return '';
   const details = [];
   const diagnostics = recording.transcriptionDiagnostics || {};
   const audioQuality = recording.audioQuality || null;
@@ -615,14 +619,14 @@ export default function StudioMeetingView({
     
     // Dodaj osoby z profili (główny źródło sugestii)
     (peopleProfiles || []).forEach((p) => {
-      if (p?.name && typeof p.name === 'string' && p.name.trim()) {
+      if (p?.name && typeof p.name === 'string' && p.name.trim() && p.name !== 'Nieprzypisane') {
         pSet.add(p.name.trim());
       }
     });
     
     // Dodaj członków workspace (fallback)
     (currentWorkspaceMembers || []).forEach((member) => {
-      if (member?.name && typeof member.name === 'string' && member.name.trim()) {
+      if (member?.name && typeof member.name === 'string' && member.name.trim() && member.name !== 'Nieprzypisane') {
         pSet.add(member.name.trim());
       }
       if (member?.email && typeof member.email === 'string' && member.email.trim()) {
@@ -774,7 +778,12 @@ export default function StudioMeetingView({
 
   const analysisStatus = selectedMeetingQueue?.status;
   const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
-  const isEmptyTranscript = selectedRecording?.transcriptOutcome === 'empty';
+  const selectedTranscript = Array.isArray(selectedRecording?.transcript)
+    ? selectedRecording.transcript
+    : [];
+  const isEmptyTranscript =
+    selectedRecording?.transcriptOutcome === 'empty' ||
+    (selectedRecording?.pipelineStatus === 'done' && selectedTranscript.length === 0);
   const emptyTranscriptDiagnostics = useMemo(
     () => formatEmptyTranscriptDiagnostics(selectedRecording),
     [selectedRecording]
@@ -1752,8 +1761,8 @@ export default function StudioMeetingView({
             <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
               <div className="ff-status-detail-stack">
                 <span>
-                  Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz
-                  audio w odtwarzaczu.
+                  {selectedRecording?.userMessage ||
+                    'Nie wykryto wypowiedzi w nagraniu. Sprobuj ponownie transkrypcje albo sprawdz audio w odtwarzaczu.'}
                 </span>
                 {emptyTranscriptDiagnostics ? (
                   <span className="ff-status-detail-text">{emptyTranscriptDiagnostics}</span>
@@ -2061,8 +2070,8 @@ export default function StudioMeetingView({
                 ) : isEmptyTranscript ? (
                   <div className="panel-body">
                     <div className="analysis-summary-text">
-                      Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj
-                      ponownie innym formatem.
+                      {selectedRecording?.userMessage ||
+                        'Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.'}
                     </div>
                     {selectedRecordingAudioQualitySummary ? (
                       <div className="analysis-summary-diagnostics">

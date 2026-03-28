@@ -132,4 +132,19 @@ describe('TranscriptPanel', () => {
     expect(screen.getByLabelText(/transcript timeline/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /segment ania 00:04/i })).toBeInTheDocument();
   });
+
+  test('shows diagnostic copy when pipeline is done but transcript is empty', () => {
+    renderTranscriptPanel({
+      displayRecording: { transcript: [] },
+      selectedRecording: {
+        pipelineStatus: 'done',
+        userMessage: 'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.',
+      },
+    });
+
+    expect(screen.getByText(/Brak transkrypcji/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji\./i)
+    ).toBeInTheDocument();
+  });
 });

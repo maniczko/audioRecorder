@@ -563,7 +563,7 @@ export const useRecorderStore = create<any>()(
 
           const isEmptyTranscript =
             transcription?.pipelineStatus === 'done' &&
-            transcription?.transcriptOutcome === 'empty';
+            (transcription?.transcriptOutcome === 'empty' || verifiedSegments.length === 0);
 
           if (isEmptyTranscript) {
             const emptyMessage = EMPTY_TRANSCRIPT_MESSAGE;
@@ -577,8 +577,16 @@ export const useRecorderStore = create<any>()(
               duration: nextItem.duration || 0,
               transcript: [],
               transcriptOutcome: 'empty',
-              emptyReason: transcription.emptyReason || 'no_segments_from_stt',
-              userMessage: transcription.userMessage || 'Nie wykryto wypowiedzi w nagraniu.',
+              emptyReason:
+                transcription.emptyReason ||
+                (verifiedSegments.length === 0
+                  ? 'no_segments_returned_by_pipeline'
+                  : 'no_segments_from_stt'),
+              userMessage:
+                transcription.userMessage ||
+                (verifiedSegments.length === 0
+                  ? 'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.'
+                  : 'Nie wykryto wypowiedzi w nagraniu.'),
               pipelineGitSha: transcription.pipelineGitSha || '',
               pipelineVersion: transcription.pipelineVersion || '',
               pipelineBuildTime: transcription.pipelineBuildTime || '',

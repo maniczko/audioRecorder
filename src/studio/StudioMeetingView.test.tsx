@@ -229,6 +229,28 @@ describe('StudioMeetingView', () => {
     ).toBeInTheDocument();
   });
 
+  test('treats done recording with zero segments as empty transcript', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{
+          id: 'rec-done-empty',
+          transcript: [],
+          duration: 60,
+          pipelineStatus: 'done',
+          userMessage: 'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.',
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('empty-transcript-banner')).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        /Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji\./i
+      ).length
+    ).toBeGreaterThan(0);
+  });
+
   test('renders playback scrubber and lets user seek audio', () => {
     renderWithContext(
       <StudioMeetingView

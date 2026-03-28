@@ -1284,6 +1284,9 @@ export default function TranscriptPanel({
               <span>
                 {selectedRecording?.transcriptOutcome === 'empty'
                   ? 'Nie wykryto wypowiedzi w tym nagraniu.'
+                  : selectedRecording?.pipelineStatus === 'done'
+                    ? selectedRecording?.userMessage ||
+                      'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.'
                   : selectedRecording?.pipelineStatus === 'failed'
                     ? 'Transkrypcja nie powiodla sie dla tego nagrania.'
                     : 'Uruchom nagrywanie, aby przypiac pierwsza rozmowe.'}
