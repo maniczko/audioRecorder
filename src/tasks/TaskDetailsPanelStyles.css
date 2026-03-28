@@ -472,6 +472,9 @@
   flex-direction: column;
   overflow-y: auto;
   border-radius: 12px;
+  max-height: calc(100vh - 180px);
+  position: sticky;
+  top: 0;
 }
 
 .tasks-layout.ms-todo .todo-detail-card::-webkit-scrollbar {
