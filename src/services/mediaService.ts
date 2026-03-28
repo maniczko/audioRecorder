@@ -15,6 +15,77 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
   label: 'Remote STT + diarization pipeline',
 };
 
+const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableChunkUploadError(error: any) {
+  const status = Number(error?.status || 0);
+  if ([429, 502, 503, 504].includes(status)) {
+    return true;
+  }
+
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('backend jest chwilowo niedostepny') ||
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('bad gateway') ||
+    message.includes('upstream')
+  );
+}
+
+async function uploadChunkWithRetry({
+  recordingId,
+  index,
+  total,
+  chunk,
+  contentType,
+  workspaceId,
+  meetingId,
+}: {
+  recordingId: string;
+  index: number;
+  total: number;
+  chunk: Blob;
+  contentType: string;
+  workspaceId?: string;
+  meetingId?: string;
+}) {
+  const maxAttempts = CHUNK_UPLOAD_RETRY_DELAYS_MS.length + 1;
+  let attempt = 0;
+
+  while (attempt < maxAttempts) {
+    try {
+      await apiRequest(`/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${total}`, {
+        method: 'PUT',
+        body: chunk,
+        retries: 0,
+        headers: {
+          'Content-Type': contentType || 'application/octet-stream',
+          ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+          ...(meetingId ? { 'X-Meeting-Id': meetingId } : {}),
+        },
+      });
+      return;
+    } catch (error: any) {
+      attempt += 1;
+      const canRetry = isRetryableChunkUploadError(error) && attempt < maxAttempts;
+      if (!canRetry) {
+        throw error;
+      }
+
+      const delayMs = CHUNK_UPLOAD_RETRY_DELAYS_MS[Math.min(attempt - 1, CHUNK_UPLOAD_RETRY_DELAYS_MS.length - 1)];
+      console.warn(
+        `[upload] Chunk ${index + 1}/${total} retry ${attempt}/${maxAttempts - 1} after error: ${error?.message || 'unknown error'}`
+      );
+      await sleep(delayMs);
+    }
+  }
+}
+
 function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {}) {
   const normalized = normalizeMediaTranscriptionResponse(response);
 
@@ -137,22 +208,26 @@ function createRemoteMediaService() {
         const total = Math.ceil(blob.size / CHUNK_SIZE);
         for (let i = 0; i < total; i++) {
           const chunk = blob.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-          await apiRequest(
-            `/media/recordings/${recordingId}/audio/chunk?index=${i}&total=${total}`,
-            {
-              method: 'PUT',
-              body: chunk,
-              headers: {
-                'Content-Type': blob.type || 'application/octet-stream',
-                ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
-                ...(meetingId ? { 'X-Meeting-Id': meetingId } : {}),
-              },
-            }
-          );
+          try {
+            await uploadChunkWithRetry({
+              recordingId,
+              index: i,
+              total,
+              chunk,
+              contentType: blob.type || 'application/octet-stream',
+              workspaceId,
+              meetingId,
+            });
+          } catch (error: any) {
+            throw new Error(
+              `Upload audio przerwany na fragmencie ${i + 1}/${total}. ${error?.message || 'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'}`
+            );
+          }
           onProgress?.(((i + 1) / total) * 90);
         }
         const response = await apiRequest(`/media/recordings/${recordingId}/audio/finalize`, {
           method: 'POST',
+          retries: 1,
           body: {
             contentType: blob.type || 'application/octet-stream',
             workspaceId,
