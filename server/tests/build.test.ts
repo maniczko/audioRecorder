@@ -1,7 +1,10 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
+
+vi.unmock('node:fs');
+vi.unmock('fs');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

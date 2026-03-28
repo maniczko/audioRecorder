@@ -25,6 +25,7 @@
     "ffprobe-static": "^3.1.0",
     "hono": "^4.12.8",
     "nodemailer": "^8.0.3",
+    "octokit": "^5.0.5",
     "onnxruntime-node": "^1.24.3",
     "pg": "^8.20.0",
     "prom-client": "^15.1.3",
