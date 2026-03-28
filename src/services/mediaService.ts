@@ -2,7 +2,7 @@ import { diarizeSegments, verifyRecognizedSegments } from '../lib/diarization';
 import { getAudioBlob, saveAudioBlob } from '../lib/audioStore';
 import { createBrowserTranscriptionController, TRANSCRIPTION_PROVIDER } from '../lib/transcription';
 import { getSpeechRecognitionClass } from '../lib/recording';
-import { apiRequest, isPreviewRuntimeBuildMismatch } from './httpClient';
+import { apiRequest } from './httpClient';
 import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from './config';
 import { resolvePersistedSession } from '../lib/sessionStorage';
 import {
@@ -16,8 +16,6 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 };
 
 const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
-const PREVIEW_BUILD_MISMATCH_UPLOAD_MESSAGE =
-  'Frontend preview jest nowszy niz backend. Odswiez strone lub otworz najnowszy deploy i wznow upload.';
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 
 function sleep(ms: number) {
@@ -77,11 +75,6 @@ async function uploadChunkWithRetry({
       );
       return;
     } catch (error: any) {
-      const isPreviewMismatch = isPreviewRuntimeBuildMismatch();
-      if (isPreviewMismatch && isRetryableChunkUploadError(error)) {
-        throw new Error(PREVIEW_BUILD_MISMATCH_UPLOAD_MESSAGE);
-      }
-
       attempt += 1;
       const canRetry = isRetryableChunkUploadError(error) && attempt < maxAttempts;
       if (!canRetry) {
@@ -221,8 +214,7 @@ function createRemoteMediaService() {
       if (blob && blob.size > CHUNKED_THRESHOLD) {
         const total = Math.ceil(blob.size / CHUNK_SIZE);
         let startIndex = 0;
-        const shouldQueryChunkStatus =
-          chunkStatusEndpointSupported !== 'no' && !isPreviewRuntimeBuildMismatch();
+        const shouldQueryChunkStatus = chunkStatusEndpointSupported !== 'no';
         if (shouldQueryChunkStatus) {
           try {
             const status = await apiRequest(

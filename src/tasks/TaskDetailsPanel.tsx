@@ -115,6 +115,19 @@ function TaskDetailsPanel({
                 Otwórz spotkanie
               </button>
             ) : null}
+            <button
+              type="button"
+              className="todo-delete-button"
+              onClick={() => {
+                if (window.confirm('Usunac to zadanie?')) {
+                  onDeleteTask?.(selectedTask.id);
+                }
+              }}
+              aria-label="Usun zadanie"
+              title="Usuń zadanie"
+            >
+              <Trash2 size={18} />
+            </button>
           </div>
         </div>
 
@@ -353,22 +366,6 @@ function TaskDetailsPanel({
             <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
           )}
         </section>
-
-        <div className="todo-detail-footer">
-          <button
-            type="button"
-            className="todo-delete-button"
-            onClick={() => {
-              if (window.confirm('Usunac to zadanie?')) {
-                onDeleteTask?.(selectedTask.id);
-              }
-            }}
-            aria-label="Usun zadanie"
-            title="Usun zadanie"
-          >
-            <Trash2 size={20} />
-          </button>
-        </div>
       </div>
     </aside>
   );
