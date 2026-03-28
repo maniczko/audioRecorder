@@ -26,6 +26,12 @@
   z-index: 9999;
 }
 
+/* TagInput dropdown w formularzu zadań - wymuś widoczność */
+.tasks-layout.ms-todo .tag-input-dropdown {
+  z-index: 10000 !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
 .todo-history-toggle {
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.07);

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import './TagInput.css';
 import TagBadge, { getTagColor } from './TagBadge';
 
@@ -10,7 +10,9 @@ export default function TagInput({
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
 
   const normalizedTags = useMemo(() => (Array.isArray(tags) ? tags : []), [tags]);
 
@@ -24,6 +26,41 @@ export default function TagInput({
       )
       .slice(0, 10);
   }, [inputValue, suggestions, normalizedTags]);
+
+  // Update dropdown position when focused
+  useEffect(() => {
+    if (isFocused && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [isFocused]);
+
+  // Update position on scroll/resize
+  useEffect(() => {
+    if (!isFocused) return;
+
+    function handleScroll() {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDropdownPosition((prev) => ({
+          ...prev,
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+        }));
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [isFocused]);
 
   const canCreate =
     inputValue.trim().length > 0 &&
@@ -59,6 +96,7 @@ export default function TagInput({
 
   return (
     <div
+      ref={containerRef}
       className={`tag-input-container ${isFocused ? 'focused' : ''}`}
       onClick={() => inputRef.current?.focus()}
       style={{ position: 'relative' }}
@@ -73,23 +111,28 @@ export default function TagInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+          onBlur={(e) => {
+            // Check if focus is moving to the dropdown
+            if (!e.relatedTarget?.classList.contains('tag-input-option')) {
+              setIsFocused(false);
+            }
+          }}
           onKeyDown={handleKeyDown}
           placeholder={normalizedTags.length === 0 ? placeholder : ''}
         />
       </div>
 
       {isFocused && (
-        <div 
-          className="tag-input-dropdown" 
+        <div
+          className="tag-input-dropdown"
           onMouseDown={(e) => e.preventDefault()}
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            marginTop: '4px',
+            position: 'fixed',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            zIndex: 10000,
+            marginTop: 0,
           }}
         >
           {filteredSuggestions.length === 0 && !canCreate && (
@@ -102,8 +145,9 @@ export default function TagInput({
               key={s}
               type="button"
               className="tag-input-option"
-              onMouseDown={(e) => {
+              onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 addTag(s);
               }}
             >
@@ -118,8 +162,9 @@ export default function TagInput({
               <button
                 type="button"
                 className="tag-input-option create"
-                onMouseDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   addTag(inputValue);
                 }}
               >
