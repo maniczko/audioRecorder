@@ -33,6 +33,36 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ## Otwarta kolejka
 
+### 🔴 Wysoki priorytet
+
+#### `#GH-08` — Optimized CI typecheck failures
+Status: `todo`
+Zakres: typecheck job failing w Optimized CI workflow.
+Przyczyny do zbadania:
+- TypeScript errors w kodzie
+- Missing type definitions
+Akceptacja: typecheck job przechodzi bez błędów.
+
+#### `#GH-09` — Server Tests failures
+Status: `todo`
+Zakres: Server tests failing z błędami:
+- "embedTextChunks failed: Error: embed failed"
+- "Cannot read properties of null (reading 'storage')"
+- "expected null to be 'recordings/rec1.webm'"
+- "Zbyt wiele prob. Limit: 20 żądań/min"
+Przyczyny do zbadania:
+- Missing mocks w testach
+- Rate limiting w testach
+Akceptacja: Server tests przechodzą (585+ tests passing).
+
+#### `#GH-10` — E2E Smoke Tests timeouty
+Status: `todo`
+Zakres: E2E Smoke Tests failują z timeoutami.
+Przyczyny do zbadania:
+- Timeout za krótki
+- Slow test execution
+Akceptacja: E2E Smoke Tests przechodzą.
+
 ### 🟡 Niski priorytet
 
 - 🟡 `403` — Migrate inline styles to CSS variables (155 inline styles do refaktoryzacji)
