@@ -1855,18 +1855,34 @@ export default function StudioMeetingView({
                       <div className="sketchnote-section sketchnote-section-shell">
                         <div className="sketchnote-header">
                           <h3 className="sketchnote-title">🎨 Sketchnotka AI</h3>
-                          {!sketchnoteUrl && (
-                            <button
-                              type="button"
-                              className="primary-button"
-                              onClick={handleGenerateSketchnote}
-                              disabled={isGeneratingSketchnote || !selectedRecording?.id}
-                            >
-                              {isGeneratingSketchnote
-                                ? 'Generowanie...'
-                                : 'Wygeneruj sketchnotkę AI'}
-                            </button>
-                          )}
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {(sketchnoteUrl || sketchnoteFallbackSvg) && (
+                              <button
+                                type="button"
+                                className="ghost-button"
+                                onClick={() => {
+                                  const frame = document.querySelector('.sketchnote-image-frame');
+                                  if (frame) frame.classList.toggle('sketchnote-zoomed');
+                                }}
+                                title="Powiększ / pomniejsz"
+                                style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                              >
+                                🔍 Zoom
+                              </button>
+                            )}
+                            {!sketchnoteUrl && (
+                              <button
+                                type="button"
+                                className="primary-button"
+                                onClick={handleGenerateSketchnote}
+                                disabled={isGeneratingSketchnote || !selectedRecording?.id}
+                              >
+                                {isGeneratingSketchnote
+                                  ? 'Generowanie...'
+                                  : 'Wygeneruj sketchnotkę AI'}
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {sketchnoteError && (
@@ -1874,7 +1890,14 @@ export default function StudioMeetingView({
                         )}
 
                         {sketchnoteUrl || sketchnoteFallbackSvg ? (
-                          <div className="sketchnote-image-container sketchnote-image-frame">
+                          <div
+                            className="sketchnote-image-container sketchnote-image-frame"
+                            onClick={() => {
+                              const frame = document.querySelector('.sketchnote-image-frame');
+                              if (frame) frame.classList.toggle('sketchnote-zoomed');
+                            }}
+                            style={{ cursor: 'zoom-in' }}
+                          >
                             {sketchnoteIsLocal && sketchnoteFallbackSvg ? (
                               <div
                                 aria-label="Lokalna sketchnotka"
@@ -1889,18 +1912,38 @@ export default function StudioMeetingView({
                             )}
                             <button
                               className="ghost-button sketchnote-regenerate-btn"
-                              onClick={handleGenerateSketchnote}
+                              onClick={(e) => { e.stopPropagation(); handleGenerateSketchnote(); }}
                               disabled={isGeneratingSketchnote}
                             >
                               {isGeneratingSketchnote ? 'Generowanie...' : 'Generuj ponownie'}
                             </button>
                           </div>
                         ) : (
-                          <p className="soft-copy sketchnote-empty-copy">
-                            Wygeneruj wizualną notatkę podsumowującą to spotkanie. Jeśli backend AI
-                            jest niedostępny, pokażemy lokalny podgląd oparty na podsumowaniu i
-                            punktach ze spotkania.
-                          </p>
+                          <div className="sketchnote-empty-state">
+                            <div className="sketchnote-empty-icon">🎨</div>
+                            <h4 className="sketchnote-empty-title">Wizualne podsumowanie spotkania</h4>
+                            <p className="sketchnote-empty-desc">
+                              Wygeneruj atrakcyjną wizualną notatkę (sketchnotkę) z najważniejszymi
+                              punktami ze spotkania. AI stworzy czytelny diagram z kluczowymi
+                              tematami, decyzjami i następnymi krokami.
+                            </p>
+                            <button
+                              type="button"
+                              className="primary-button"
+                              onClick={handleGenerateSketchnote}
+                              disabled={isGeneratingSketchnote || !selectedRecording?.id}
+                              style={{ marginTop: 8 }}
+                            >
+                              {isGeneratingSketchnote
+                                ? '⏳ Generowanie...'
+                                : '✨ Wygeneruj sketchnotkę'}
+                            </button>
+                            {!selectedRecording?.id && (
+                              <p className="sketchnote-empty-hint">
+                                Brak aktywnego nagrania — najpierw nagraj lub wybierz spotkanie.
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

@@ -2782,6 +2782,69 @@
   margin: 0;
 }
 
+/* Zoom toggle */
+.sketchnote-image-frame {
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.sketchnote-image-frame.sketchnote-zoomed {
+  max-height: none;
+  cursor: zoom-out !important;
+  position: relative;
+  z-index: 10;
+}
+
+.sketchnote-image-frame:not(.sketchnote-zoomed) {
+  cursor: zoom-in;
+}
+
+.sketchnote-image-frame.sketchnote-zoomed .sketchnote-image,
+.sketchnote-image-frame.sketchnote-zoomed > div {
+  max-width: 100%;
+}
+
+/* Empty state */
+.sketchnote-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px;
+  border-radius: 12px;
+  border: 1px dashed rgba(116, 208, 191, 0.25);
+  background: rgba(116, 208, 191, 0.04);
+}
+
+.sketchnote-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  filter: grayscale(0.3);
+}
+
+.sketchnote-empty-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sketchnote-empty-desc {
+  margin: 0 0 16px;
+  max-width: 380px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.sketchnote-empty-hint {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+
 .summary-card-spaced {
   margin-bottom: 18px;
 }

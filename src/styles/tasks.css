@@ -10,7 +10,7 @@
 
 .todo-detail-modal {
   padding: 0;
-  width: 680px;
+  width: 100%;
   max-width: 95vw;
   max-height: 85vh;
   display: flex;
