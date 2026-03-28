@@ -54,10 +54,10 @@ function resolveApiBaseUrl() {
     readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || ''
   ).trim();
 
-  // On Vercel preview/runtime we proxy API routes through the same frontend origin.
-  // This avoids direct browser calls to Railway that can surface as CORS errors on 502 responses.
+  // On Vercel preview/runtime prefer explicitly configured API base URL.
+  // Only fallback to same-origin proxy when no backend URL is configured.
   if (isHostedPreviewRuntime()) {
-    return String(window.location.origin || '').trim();
+    return configuredValue || String(window.location.origin || '').trim();
   }
 
   return configuredValue || readDefaultApiBaseUrl();
