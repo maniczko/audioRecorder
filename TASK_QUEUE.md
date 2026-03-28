@@ -14,6 +14,22 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - **Playwright config**: npm→pnpm
 - **package.json**: 9× npm→pnpm w skryptach
 
+### Najnowsze błędy (2026-03-28 09:23, commit `e36dfdb`):
+
+1. **Optimized CI - summary job** - "❌ Critical checks failed" (typecheck failure)
+2. **CI Pipeline - Server Tests** - test failures:
+   - "embedTextChunks failed: Error: embed failed"
+   - "Cannot read properties of null (reading 'storage')"
+   - "expected null to be 'recordings/rec1.webm'"
+   - "Zbyt wiele prob. Limit: 20 żądań/min"
+3. **E2E Smoke Tests** - timeouty
+4. **Frontend Tests** - UI selector failures
+5. **Build** - build failures (pre-existing)
+
+### Postęp:
+- **19 workflow failures** w ostatnich 7 dniach (z 48 → 36 → 19!)
+- **Poprawa:** ✅ **-60% błędów!** (48 → 19)
+
 ---
 
 ## Otwarta kolejka

@@ -73,6 +73,7 @@ const readdirSyncMock = vi.fn((dirPath?: string, options?: any) => {
 });
 
 const rmSyncMock = vi.fn();
+const statfsSyncMock = vi.fn(() => ({ bsize: 4096, frsize: 4096, blocks: 1000000, bfree: 500000, bavail: 500000 }));
 
 // Expose mocks globally for test manipulation
 export const __mockFs = {
@@ -86,6 +87,7 @@ export const __mockFs = {
   renameSync: renameSyncMock,
   readdirSync: readdirSyncMock,
   rmSync: rmSyncMock,
+  statfsSync: statfsSyncMock,
 };
 
 (global as any).__mockFs = __mockFs;
@@ -106,6 +108,7 @@ vi.mock('node:fs', async () => {
     renameSync: renameSyncMock,
     readdirSync: readdirSyncMock,
     rmSync: rmSyncMock,
+    statfsSync: statfsSyncMock,
   };
   // Also expose as default for compatibility with `import fs from 'node:fs'`
   return {

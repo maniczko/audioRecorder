@@ -97,6 +97,39 @@ Status: `done`
 
 ---
 
+## [2026-03-28] #GH-05: Auto Security Patches Workflow Fix
+Status: `done`
+
+### Naprawione:
+- Brakujący `pnpm/action-setup@v3` w security-auto-patch.yml
+- `npm audit --audit-level=high` → `pnpm audit --audit-level=high`
+- `npm run` → `pnpm run` w skryptach
+
+### Naprawione pliki:
+- `.github/workflows/security-auto-patch.yml`
+
+---
+
+## [2026-03-28] #GH-07: Masowa naprawa npm→pnpm we wszystkich workflow
+Status: `done`
+
+### Zakres napraw:
+6 workflowów miało brakujący `pnpm/action-setup@v3`, 21 komend `npm run` → `pnpm run`.
+
+### Naprawione pliki:
+- `.github/workflows/ai-auto-fix.yml` — +pnpm setup, 5× npm→pnpm
+- `.github/workflows/bundle-size.yml` — +pnpm setup, 1× npm→pnpm
+- `.github/workflows/changelog.yml` — +pnpm setup, 1× npm→pnpm
+- `.github/workflows/code-review.yml` — +pnpm setup ×4 jobs, 3× npm→pnpm, npm audit→pnpm audit
+- `.github/workflows/issue-to-pr.yml` — +pnpm setup, 2× npm→pnpm (JS execSync)
+- `.github/workflows/security-auto-patch.yml` — +pnpm setup, npm audit→pnpm audit, npm run→pnpm run
+- `.github/workflows/ci-optimized.yml` — 8× npm→pnpm (lint, typecheck, format, test, coverage, audit, build, docs)
+- `.github/workflows/auto-fix.yml` — 2× npm→pnpm (PR comment instructions)
+
+### Rezultat: Wszystkie workflowy używają pnpm ✅
+
+---
+
 ## [2026-03-26 20:00] #018: Outlook / Microsoft To Do Integration
 Status: `done`
 Completed by: Qwen Code
