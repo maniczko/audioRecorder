@@ -770,7 +770,7 @@ export default function TasksTab({
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
         >
-          <div className="todo-detail-modal tasks-layout ms-todo">
+          <div className="todo-detail-modal">
             <button
               className="todo-detail-modal-close"
               type="button"
@@ -791,7 +791,7 @@ export default function TasksTab({
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-            <div className="todo-detail-modal-scroll">
+            <div className="todo-detail-modal-scroll tasks-layout ms-todo">
               <TaskDetailsPanel
                 selectedTask={selectedTask}
                 tasks={tasks}

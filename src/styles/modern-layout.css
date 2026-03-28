@@ -45,11 +45,12 @@
   padding: 0 8px;
   cursor: pointer;
   user-select: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
 
 [data-layout="modern"] .modern-brand:hover {
-  opacity: 0.8;
+  opacity: 0.85;
+  transform: scale(1.02);
 }
 
 [data-layout="modern"] .modern-brand h1 {
