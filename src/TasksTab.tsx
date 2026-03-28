@@ -791,7 +791,7 @@ export default function TasksTab({
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-            <div className="todo-detail-modal-scroll tasks-layout ms-todo">
+            <div className="todo-detail-modal-scroll ms-todo">
               <TaskDetailsPanel
                 selectedTask={selectedTask}
                 tasks={tasks}

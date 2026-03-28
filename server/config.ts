@@ -75,6 +75,12 @@ const envSchema = z.object({
   FFMPEG_BINARY: z.string().default('ffmpeg'),
   PYTHON_BINARY: z.string().default('python'),
 
+  // Local Whisper configuration (for offline processing)
+  WHISPER_CPP_PATH: z.string().optional(),
+  WHISPER_MODEL_PATH: z.string().optional(),
+  WHISPER_THREADS: z.string().default('4'),
+  USE_LOCAL_WHISPER: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+
   DIARIZATION_MODEL: z.string().default('pyannote/speaker-diarization-3.1'),
   SPEAKER_IDENTIFICATION_MODEL: z.string().default('microsoft/wavlm-base-plus-sv'),
   VERIFICATION_MODEL: z.string().default('gpt-4o-transcribe'),
@@ -111,11 +117,14 @@ export function validateRequiredApiKeys() {
   // Check if at least one STT provider is configured
   const hasOpenAI = Boolean(config.OPENAI_API_KEY);
   const hasGroq = Boolean(config.GROQ_API_KEY);
+  const hasLocalWhisper = config.USE_LOCAL_WHISPER && Boolean(config.WHISPER_CPP_PATH);
 
-  if (!hasOpenAI && !hasGroq) {
+  if (!hasOpenAI && !hasGroq && !hasLocalWhisper) {
     errors.push(
-      'Missing STT provider API key. Set either OPENAI_API_KEY or GROQ_API_KEY.\n' +
-      '  See .env.example for configuration options.'
+      'Missing STT provider. Configure one of:\n' +
+      '  - OPENAI_API_KEY (OpenAI Whisper)\n' +
+      '  - GROQ_API_KEY (Groq Whisper)\n' +
+      '  - WHISPER_CPP_PATH + USE_LOCAL_WHISPER=true (Local offline processing)'
     );
   }
 

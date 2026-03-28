@@ -651,3 +651,92 @@
   background: rgba(255, 77, 79, 0.2);
   border-color: rgba(255, 77, 79, 0.5);
 }
+
+/* --- 19. TASK DETAIL FORM: darker bg + better layout --- */
+[data-layout="modern"] .todo-detail-modal {
+  background: rgba(8, 15, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+[data-layout="modern"] .todo-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+[data-layout="modern"] .todo-detail-group {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-layout="modern"] .todo-detail-group--content {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
+  gap: 12px;
+}
+
+[data-layout="modern"] .todo-detail-row {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[data-layout="modern"] .todo-detail-row:last-child {
+  border-bottom: none;
+}
+
+[data-layout="modern"] .todo-row-icon {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+[data-layout="modern"] .todo-row-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  min-width: 70px;
+}
+
+[data-layout="modern"] .todo-detail-form textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+[data-layout="modern"] .todo-detail-form textarea:focus {
+  border-color: rgba(116, 208, 191, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+[data-layout="modern"] .todo-detail-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+[data-layout="modern"] .todo-detail-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 6px 10px;
+}
+
+[data-layout="modern"] .todo-detail-header {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-layout="modern"] .todo-detail-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 20px;
+}
+
+[data-layout="modern"] .todo-detail-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}

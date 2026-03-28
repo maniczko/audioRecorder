@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { formatDateTime } from '../lib/storage';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
-import { AlignLeft, History, Trash2, Link, Calendar, User, Flag, Tag } from 'lucide-react';
+import { AlignLeft, FileText, History, Trash2, Link, Calendar, User, Flag, Tag } from 'lucide-react';
 import TagInput from '../shared/TagInput';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import './TaskDetailsPanelStyles.css';
@@ -225,7 +225,8 @@ function TaskDetailsPanel({
         ) : null}
 
         <div className="todo-detail-form">
-          <div className="todo-detail-stack">
+          {/* --- Metadata group --- */}
+          <div className="todo-detail-group">
             <div className="todo-detail-row">
               <span className="todo-row-icon" aria-hidden="true" title="Termin">
                 <Calendar size={18} />
@@ -262,14 +263,13 @@ function TaskDetailsPanel({
                 className="todo-detail-select"
                 value={selectedTask.priority || 'medium'}
                 onChange={(event) => onUpdateTask(selectedTask.id, { priority: event.target.value })}
-
               >
                 {TASK_PRIORITIES.map((p) => (
                   <option key={p.id} value={p.id}>{p.label}</option>
                 ))}
               </select>
             </div>
-            
+
             <div className="todo-detail-row field-row">
               <span className="todo-row-icon" aria-hidden="true" title="Tagi">
                 <Tag size={18} />
@@ -284,6 +284,22 @@ function TaskDetailsPanel({
                 />
               </div>
             </div>
+          </div>
+
+          {/* --- Content group: Opis + Notatka --- */}
+          <div className="todo-detail-group todo-detail-group--content">
+            <label className="todo-detail-row note-row">
+              <span className="todo-row-icon" aria-hidden="true">
+                <FileText size={18} />
+              </span>
+              <span className="todo-row-label">Opis</span>
+              <textarea
+                rows={3}
+                value={selectedTask.description || ''}
+                onChange={(event) => onUpdateTask(selectedTask.id, { description: event.target.value })}
+                placeholder="Dodaj opis zadania..."
+              />
+            </label>
 
             <label className="todo-detail-row note-row">
               <span className="todo-row-icon" aria-hidden="true">
@@ -291,7 +307,7 @@ function TaskDetailsPanel({
               </span>
               <span className="todo-row-label">Notatka</span>
               <textarea
-                rows={5}
+                rows={4}
                 value={selectedTask.notes || ''}
                 onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
                 placeholder="Dodaj notatkę..."

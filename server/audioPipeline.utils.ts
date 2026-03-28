@@ -760,15 +760,51 @@ export function buildEmptyTranscriptResult(
   transcriptionDiagnostics: any = {},
   audioQuality: any = null
 ): any {
+  // Szczegółowe komunikaty błędów
+  const errorMessages: Record<string, { user: string; detailed: string }> = {
+    'no_segments_from_stt': {
+      user: 'API transkrypcji nie zwróciło żadnych segmentów.',
+      detailed: 'Sprawdź jakość audio lub spróbuj innego formatu.',
+    },
+    'segments_removed_by_vad': {
+      user: 'Wykryto ciszę - segmenty zostały usunięte.',
+      detailed: 'VAD usunął wszystkie segmenty jako ciszę.',
+    },
+    'segments_removed_as_hallucinations': {
+      user: 'Wykryto zniekształcenia - transkrypcja odrzucona.',
+      detailed: `WER: ${transcriptionDiagnostics?.wer || 'N/A'}.`,
+    },
+    'all_chunks_discarded_as_too_small': {
+      user: 'Plik jest za krótki do przetworzenia.',
+      detailed: 'Wszystkie chunki zostały odrzucone jako za małe.',
+    },
+  };
+
+  const messages = errorMessages[reason] || {
+    user: 'Nie wykryto wypowiedzi w nagraniu.',
+    detailed: 'Nieznany błąd przetwarzania.',
+  };
+
   return {
     providerId: 'stt-pipeline',
     providerLabel: 'STT + diarization',
     pipelineStatus: 'completed',
     transcriptOutcome: 'empty' as const,
     emptyReason: reason,
-    userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+    userMessage: messages.user,
     audioQuality,
-    transcriptionDiagnostics,
+    transcriptionDiagnostics: {
+      ...transcriptionDiagnostics,
+      detailedReason: messages.detailed,
+      timestamp: new Date().toISOString(),
+      suggestions: [
+        'Sprawdź jakość nagrania (głośność, szumy tła)',
+        'Upewnij się że plik jest w obsługiwanym formacie (WAV, MP3, FLAC, WebM)',
+        'Jeśli używasz API, sprawdź czy klucz jest poprawny i masz dostępne środki',
+        'Spróbuj nagrać ponownie z lepszym mikrofonem',
+        'Dla cichych nagrań zwiększ gain w ustawieniach mikrofonu',
+      ].filter((_, i) => i < 3),
+    },
     diarization: {
       speakerNames: {},
       speakerCount: 0,
@@ -776,7 +812,7 @@ export function buildEmptyTranscriptResult(
       text: '',
       transcriptOutcome: 'empty',
       emptyReason: reason,
-      userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+      userMessage: messages.user,
       audioQuality,
       transcriptionDiagnostics,
     },
