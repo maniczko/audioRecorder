@@ -765,48 +765,16 @@ export default function TasksTab({
       />
       {selectedTask && (
         <div
-          className="ff-modal-overlay"
+          className="ff-modal-overlay todo-detail-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
-          style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <div
-            className="ff-modal-content tasks-layout ms-todo"
-            style={{
-              padding: 0,
-              width: '680px',
-              maxWidth: '95vw',
-              maxHeight: '85vh',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: 'var(--surface-0)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-              animation: 'ffScaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-            }}
-          >
+          <div className="todo-detail-modal tasks-layout ms-todo">
             <button
-              className="ff-modal-close"
+              className="todo-detail-modal-close"
               type="button"
               onClick={() => setSelectedTaskId('')}
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                zIndex: 10,
-                background: 'var(--surface-2)',
-                borderRadius: '50%',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
               title="Zamknij"
             >
               <svg
@@ -823,7 +791,7 @@ export default function TasksTab({
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div className="todo-detail-modal-scroll">
               <TaskDetailsPanel
                 selectedTask={selectedTask}
                 tasks={tasks}

@@ -1,5 +1,59 @@
 @import url('./tasks.mobile.css');
 
+/* ── Task Detail Modal ── */
+.todo-detail-overlay {
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-detail-modal {
+  padding: 0;
+  width: 680px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-0);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  animation: ffScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.todo-detail-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: var(--surface-2);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.todo-detail-modal-close:hover {
+  color: var(--text);
+  background: var(--surface-3, rgba(255, 255, 255, 0.08));
+}
+
+.todo-detail-modal-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+
 .kanban-card-description {
   font-size: 0.8rem;
   color: #8a9bb8;

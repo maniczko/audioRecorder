@@ -66,26 +66,39 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             // Find the latest markdown report
             const reportsDir = path.join(process.cwd(), 'github-errors');
             let mdFile = null;
-            
+
             if (fs.existsSync(reportsDir)) {
               const files = fs.readdirSync(reportsDir)
                 .filter(f => f.endsWith('.md'))
                 .sort()
                 .reverse();
-              
+
               if (files.length > 0) {
                 mdFile = fs.readFileSync(path.join(reportsDir, files[0]), 'utf8');
               }
             }
-            
+
             // Check if there are failures
             const hasFailures = mdFile && mdFile.includes('### Failed Workflows');
-            
+
             if (hasFailures) {
+              // Fetch repository contributors for suggestions
+              const { data: contributors } = await github.rest.repos.listContributors({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 10,
+              });
+
+              // Build assignees suggestion hint
+              const assigneesHint = contributors.length > 0
+                ? '\n\n---\n💡 **Sugerowane osoby do przypisania:** ' +
+                  contributors.map(c => '@' + c.login).join(', ')
+                : '';
+
               // Find existing open issue
               const { data: issues } = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
@@ -93,16 +106,16 @@ jobs:
                 state: 'open',
                 labels: 'automated-error-report',
               });
-              
+
               if (issues.length > 0) {
                 // Update existing issue
                 await github.rest.issues.update({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issues[0].number,
-                  body: mdFile,
+                  body: mdFile + assigneesHint,
                 });
-                
+
                 console.log('✅ Updated existing error report issue #' + issues[0].number);
               } else {
                 // Create new issue
@@ -110,10 +123,10 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   title: '🚨 GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
-                  body: mdFile,
+                  body: mdFile + assigneesHint,
                   labels: ['automated-error-report', 'ci/cd'],
                 });
-                
+
                 console.log('✅ Created new error report issue #' + issue.number);
               }
             } else {

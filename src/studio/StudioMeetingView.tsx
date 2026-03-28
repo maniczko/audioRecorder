@@ -572,6 +572,7 @@ export default function StudioMeetingView({
   currentWorkspaceRole,
   currentWorkspace,
   currentUser,
+  currentWorkspaceMembers,
   userMeetings,
   meetingTasks,
   onCreateTask,
@@ -604,13 +605,33 @@ export default function StudioMeetingView({
 
   const allParticipants = useMemo(() => {
     const pSet = new Set();
+    
+    // Dodaj uczestników z istniejących spotkań (guests)
     (userMeetings || []).forEach((m) => {
       (m.guests || []).forEach((g) => {
         if (g && typeof g === 'string' && g.trim()) pSet.add(g.trim());
       });
     });
+    
+    // Dodaj osoby z profili (główny źródło sugestii)
+    (peopleProfiles || []).forEach((p) => {
+      if (p?.name && typeof p.name === 'string' && p.name.trim()) {
+        pSet.add(p.name.trim());
+      }
+    });
+    
+    // Dodaj członków workspace (fallback)
+    (currentWorkspaceMembers || []).forEach((member) => {
+      if (member?.name && typeof member.name === 'string' && member.name.trim()) {
+        pSet.add(member.name.trim());
+      }
+      if (member?.email && typeof member.email === 'string' && member.email.trim()) {
+        pSet.add(member.email.trim());
+      }
+    });
+    
     return Array.from(pSet).sort();
-  }, [userMeetings]);
+  }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
@@ -3479,6 +3500,7 @@ StudioMeetingView.propTypes = {
   currentWorkspaceRole: PropTypes.string,
   currentWorkspace: PropTypes.object,
   currentUser: PropTypes.object,
+  currentWorkspaceMembers: PropTypes.array,
   userMeetings: PropTypes.array,
   meetingTasks: PropTypes.array,
   onCreateTask: PropTypes.func,
