@@ -5,6 +5,7 @@ import { getHostedRuntimeBuildId, isHostedPreviewHost } from '../runtime/browser
 const unauthorizedHandlers = new Set();
 let previewRuntimeStatus = 'unknown';
 let buildIdMismatchLogged = false;
+let previewBuildMismatch = false;
 const HOSTED_PREVIEW_STALE_MESSAGE =
   'Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.';
 
@@ -23,6 +24,10 @@ export function setPreviewRuntimeStatus(status = 'unknown') {
 
 export function resetPreviewRuntimeStatus() {
   previewRuntimeStatus = 'unknown';
+}
+
+export function isPreviewRuntimeBuildMismatch() {
+  return previewBuildMismatch;
 }
 
 function buildUrl(path) {
@@ -128,6 +133,9 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
     const payload = await parseResponse(response);
     const frontendBuildId = getHostedRuntimeBuildId();
     const backendGitSha = String(payload?.gitSha || '').trim();
+    previewBuildMismatch =
+      Boolean(isHostedPreviewRuntime() && frontendBuildId && backendGitSha) &&
+      frontendBuildId !== backendGitSha;
     if (
       isHostedPreviewRuntime() &&
       frontendBuildId &&
@@ -147,6 +155,7 @@ export async function probeRemoteApiHealth(fetchImpl = fetch) {
     return payload;
   } catch (error) {
     clearTimeout(timeoutId);
+    previewBuildMismatch = false;
     if (String(error?.message || '').includes('nieaktualny wzgledem backendu')) {
       setPreviewRuntimeStatus('stale_runtime');
     } else {

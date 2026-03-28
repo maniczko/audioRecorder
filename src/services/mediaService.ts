@@ -2,7 +2,7 @@ import { diarizeSegments, verifyRecognizedSegments } from '../lib/diarization';
 import { getAudioBlob, saveAudioBlob } from '../lib/audioStore';
 import { createBrowserTranscriptionController, TRANSCRIPTION_PROVIDER } from '../lib/transcription';
 import { getSpeechRecognitionClass } from '../lib/recording';
-import { apiRequest } from './httpClient';
+import { apiRequest, isPreviewRuntimeBuildMismatch } from './httpClient';
 import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from './config';
 import { resolvePersistedSession } from '../lib/sessionStorage';
 import {
@@ -16,6 +16,7 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 };
 
 const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
+let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -207,24 +208,32 @@ function createRemoteMediaService() {
       if (blob && blob.size > CHUNKED_THRESHOLD) {
         const total = Math.ceil(blob.size / CHUNK_SIZE);
         let startIndex = 0;
-        try {
-          const status = await apiRequest(
-            `/media/recordings/${recordingId}/audio/chunk-status?total=${total}`,
-            {
-              method: 'GET',
-              retries: 0,
-              headers: {
-                ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
-              },
+        const shouldQueryChunkStatus =
+          chunkStatusEndpointSupported !== 'no' && !isPreviewRuntimeBuildMismatch();
+        if (shouldQueryChunkStatus) {
+          try {
+            const status = await apiRequest(
+              `/media/recordings/${recordingId}/audio/chunk-status?total=${total}`,
+              {
+                method: 'GET',
+                retries: 0,
+                headers: {
+                  ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+                },
+              }
+            );
+            chunkStatusEndpointSupported = 'yes';
+            const nextIndex = Number(status?.nextIndex);
+            if (Number.isFinite(nextIndex)) {
+              startIndex = Math.max(0, Math.min(total, Math.floor(nextIndex)));
             }
-          );
-          const nextIndex = Number(status?.nextIndex);
-          if (Number.isFinite(nextIndex)) {
-            startIndex = Math.max(0, Math.min(total, Math.floor(nextIndex)));
+          } catch (error: any) {
+            if (Number(error?.status) === 404) {
+              chunkStatusEndpointSupported = 'no';
+            }
+            // If status lookup fails, fallback to uploading from the beginning.
+            startIndex = 0;
           }
-        } catch (_) {
-          // If status lookup fails, fallback to uploading from the beginning.
-          startIndex = 0;
         }
 
         if (startIndex > 0) {
