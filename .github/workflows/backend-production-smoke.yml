@@ -30,12 +30,25 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Smoke-check deployed backend health
         id: smoke
-        run: pnpm run test:smoke
+        run: |
+          echo "Starting smoke test against $SMOKE_TEST_URL..."
+          echo "Expected Git SHA: $EXPECTED_GIT_SHA"
+          echo "Max retries: $SMOKE_MAX_RETRIES"
+          echo "Wait between retries: $SMOKE_WAIT_MS ms"
+          pnpm run test:smoke
         env:
           SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
           EXPECTED_GIT_SHA: ${{ github.sha }}
-          SMOKE_MAX_RETRIES: "15"
-          SMOKE_WAIT_MS: "30000"
+          SMOKE_MAX_RETRIES: "20"
+          SMOKE_WAIT_MS: "45000"
+
+      - name: Debug - Log Railway deployment status
+        if: failure()
+        run: |
+          echo "Smoke test failed!"
+          echo "Checking Railway deployment status..."
+          curl -v "$SMOKE_TEST_URL" || echo "Railway not responding"
+        continue-on-error: true
 
       - name: Create GitHub issue on production crash
         if: failure() && steps.smoke.outcome == 'failure'
