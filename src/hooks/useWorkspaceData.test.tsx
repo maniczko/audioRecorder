@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import useWorkspaceData from './useWorkspaceData';
 
@@ -178,15 +178,17 @@ describe('useWorkspaceData', () => {
 
     const { result, unmount } = renderHook(() => useWorkspaceData());
 
+    // Flush microtasks so the bootstrap IIFE starts
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    // Advance enough for bootstrap to settle
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
     });
 
     expect(stateServiceMock.bootstrap).toHaveBeenCalledWith('ws1');
-    await waitFor(() => {
-      expect(result.current.isHydratingRemoteState).toBe(false);
-    });
+    expect(result.current.isHydratingRemoteState).toBe(false);
     expect(meetingsState.setMeetings).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ id: 'm1' })])
     );

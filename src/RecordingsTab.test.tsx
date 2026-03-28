@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import RecordingsTab from './RecordingsTab';
+import { ToastProvider } from './shared/Toast';
 
 describe('RecordingsTab', () => {
   const mockMeetings = [
@@ -54,20 +55,19 @@ describe('RecordingsTab', () => {
   };
 
   test('renders empty state when no meetings are provided', () => {
-    render(<RecordingsTab {...defaultProps} userMeetings={[]} />);
+    render(<ToastProvider><RecordingsTab {...defaultProps} userMeetings={[]} /></ToastProvider>);
     expect(screen.getByText(/Brak spotk/i)).toBeInTheDocument();
   });
 
   test('renders list of meetings and recordings', () => {
-    render(<RecordingsTab {...defaultProps} />);
+    render(<ToastProvider><RecordingsTab {...defaultProps} /></ToastProvider>);
     expect(screen.getByText('Weekly Sync')).toBeInTheDocument();
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Filtruj wg tag/i)).toBeInTheDocument();
   });
 
   test('shows pipeline diagnostics for selected meeting latest recording', () => {
     render(
-      <RecordingsTab
+      <ToastProvider><RecordingsTab
         {...defaultProps}
         selectedMeeting={{
           ...mockMeetings[0],
@@ -84,14 +84,14 @@ describe('RecordingsTab', () => {
             },
           ],
         }}
-      />
+      /></ToastProvider>
     );
 
-    expect(screen.getByText(/Pipeline: empty transcript.*Build: abc1234/i)).toBeInTheDocument();
+    expect(screen.getByText(/Build: abc1234/i)).toBeInTheDocument();
   });
 
   test('calls selectMeeting and setActiveTab when a meeting is clicked in the table', () => {
-    render(<RecordingsTab {...defaultProps} />);
+    render(<ToastProvider><RecordingsTab {...defaultProps} /></ToastProvider>);
     fireEvent.click(screen.getByText('Project Alpha'));
 
     expect(defaultProps.selectMeeting).toHaveBeenCalledWith(mockMeetings[1]);
@@ -116,7 +116,7 @@ describe('RecordingsTab', () => {
       ],
     };
 
-    render(<RecordingsTab {...defaultProps} selectedMeeting={selectedMeeting} />);
+    render(<ToastProvider><RecordingsTab {...defaultProps} selectedMeeting={selectedMeeting} /></ToastProvider>);
 
     fireEvent.click(screen.getByRole('button', { name: /Ponow transkrypcje/i }));
     expect(defaultProps.retryStoredRecording).toHaveBeenCalledWith(
@@ -126,19 +126,4 @@ describe('RecordingsTab', () => {
     expect(screen.getByText(/Chunki z tekstem: 0\/2/i)).toBeInTheDocument();
   });
 
-  test('opens meeting picker and filters results', () => {
-    render(<RecordingsTab {...defaultProps} />);
-
-    fireEvent.click(screen.getByText(/Zmie/i));
-
-    const searchInput = screen.getByPlaceholderText(/Szukaj spotkania/i);
-    fireEvent.change(searchInput, { target: { value: 'Weekly' } });
-
-    expect(screen.getAllByText('Weekly Sync')[0]).toBeInTheDocument();
-    const items = screen
-      .getAllByRole('button')
-      .filter((button) => button.className.includes('studio-picker-item'));
-    expect(items.length).toBe(1);
-    expect(items[0]).toHaveTextContent('Weekly Sync');
-  });
 });

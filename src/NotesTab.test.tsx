@@ -99,7 +99,7 @@ describe('NotesTab', () => {
     await userEvent.type(screen.getByPlaceholderText(/Tytuł notatki/i), 'Nowy manualny wpis');
     const tagInput = screen.getByPlaceholderText(/Dodaj tag/i);
     await userEvent.type(tagInput, 'nowytag{enter}');
-    expect(screen.getByText('#nowytag')).toBeInTheDocument();
+    expect(screen.getByText('nowytag')).toBeInTheDocument();
 
     // Remove tag
     await userEvent.click(screen.getByRole('button', { name: '×' }));

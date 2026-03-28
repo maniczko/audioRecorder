@@ -354,7 +354,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getByText((content) => content.includes('Kalendarz'))).toBeInTheDocument();
+      expect(screen.getAllByText((content) => content.includes('Kalendarz')).length).toBeGreaterThan(0);
     });
   });
 
@@ -374,7 +374,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      const select = screen.getByRole('combobox');
+      const select = screen.getAllByRole('combobox')[0];
       expect(select).toBeInTheDocument();
       expect(screen.getByText('My Tasks')).toBeInTheDocument();
       expect(screen.getByText('Work')).toBeInTheDocument();
@@ -386,7 +386,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      const select = screen.getByRole('combobox');
+      const select = screen.getAllByRole('combobox')[0];
       await userEvent.selectOptions(select, 'list2');
 
       expect(baseProps.onSelectGoogleTaskList).toHaveBeenCalledWith('list2');
@@ -398,9 +398,10 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      // Tasks "Połącz" is second (Calendar is first)
+      // Tasks "Połącz": 0=Google Calendar, 1=Outlook Calendar, 2=Google Tasks, 3=Microsoft Tasks
       const connectBtns = screen.getAllByText('Połącz');
-      await userEvent.click(connectBtns[1]);
+      const googleTasksConnectBtn = connectBtns.find((btn, i) => i === 2);
+      await userEvent.click(googleTasksConnectBtn!);
 
       expect(baseProps.onConnectGoogleTasks).toHaveBeenCalled();
     });
@@ -631,7 +632,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getByText('Wybierz listę...')).toBeInTheDocument();
+      expect(screen.getAllByText('Wybierz listę...').length).toBeGreaterThan(0);
     });
 
     it('handles null optional props', () => {

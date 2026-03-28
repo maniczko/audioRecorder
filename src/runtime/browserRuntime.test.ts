@@ -16,8 +16,9 @@ describe('browserRuntime', () => {
   });
 
   test('enables service worker only on localhost', () => {
-    expect(shouldEnableServiceWorker('localhost')).toBe(true);
-    expect(shouldEnableServiceWorker('127.0.0.1')).toBe(true);
+    // Service worker is currently disabled in all environments
+    expect(shouldEnableServiceWorker('localhost')).toBe(false);
+    expect(shouldEnableServiceWorker('127.0.0.1')).toBe(false);
     expect(shouldEnableServiceWorker('preview.vercel.app')).toBe(false);
     expect(shouldEnableServiceWorker('app.example.com')).toBe(false);
   });

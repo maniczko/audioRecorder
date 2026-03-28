@@ -14,29 +14,10 @@ describe('registerServiceWorker', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
   });
 
-  test('registers service worker on localhost and reloads once on controller change', async () => {
-    const waitingWorker = { postMessage: vi.fn() };
-    const installingListeners: Record<string, () => void> = {};
-    const installingWorker = {
-      state: 'installed',
-      postMessage: vi.fn(),
-      addEventListener: vi.fn((event: string, handler: () => void) => {
-        installingListeners[event] = handler;
-      }),
-    };
-    const registrationListeners: Record<string, () => void> = {};
-    const registration = {
-      waiting: waitingWorker,
-      installing: installingWorker,
-      addEventListener: vi.fn((event: string, handler: () => void) => {
-        registrationListeners[event] = handler;
-      }),
-      update: vi.fn().mockResolvedValue(undefined),
-    };
-    const serviceWorkerListeners: Record<string, () => void> = {};
-    const register = vi.fn().mockResolvedValue(registration);
-    const reload = vi.fn();
-    let loadHandler: (() => void) | null = null;
+  test('unregisters existing service workers in development mode', async () => {
+    const unregister = vi.fn();
+    const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
+    const register = vi.fn();
 
     Object.defineProperty(window, 'navigator', {
       configurable: true,
@@ -44,51 +25,30 @@ describe('registerServiceWorker', () => {
         serviceWorker: {
           controller: {},
           register,
-          addEventListener: vi.fn((event: string, handler: () => void) => {
-            serviceWorkerListeners[event] = handler;
-          }),
+          getRegistrations,
+          addEventListener: vi.fn(),
         },
       },
     });
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'localhost', reload },
-    });
-    vi.spyOn(window, 'addEventListener').mockImplementation(((
-      event: string,
-      handler: () => void
-    ) => {
-      if (event === 'load') {
-        loadHandler = handler;
-      }
-    }) as any);
 
     registerServiceWorker();
-    loadHandler?.();
+    await Promise.resolve();
     await Promise.resolve();
 
-    expect(register).toHaveBeenCalledWith('/service-worker.js', { updateViaCache: 'none' });
-    expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
-
-    registrationListeners.updatefound?.();
-    installingListeners.statechange?.();
-    serviceWorkerListeners.controllerchange?.();
-    serviceWorkerListeners.controllerchange?.();
-
-    expect(installingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
-    expect(registration.update).toHaveBeenCalledTimes(1);
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(getRegistrations).toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
   });
 
-  test('does not register service worker on hosted vercel previews', () => {
+  test('does not register service worker on hosted vercel previews', async () => {
     const register = vi.fn();
-    let loadHandler: (() => void) | null = null;
+    const getRegistrations = vi.fn().mockResolvedValue([]);
 
     Object.defineProperty(window, 'navigator', {
       configurable: true,
       value: {
         serviceWorker: {
           register,
+          getRegistrations,
           addEventListener: vi.fn(),
         },
       },
@@ -97,17 +57,9 @@ describe('registerServiceWorker', () => {
       configurable: true,
       value: { hostname: 'preview-deployment.vercel.app', reload: vi.fn() },
     });
-    vi.spyOn(window, 'addEventListener').mockImplementation(((
-      event: string,
-      handler: () => void
-    ) => {
-      if (event === 'load') {
-        loadHandler = handler;
-      }
-    }) as any);
 
     registerServiceWorker();
-    loadHandler?.();
+    await Promise.resolve();
 
     expect(register).not.toHaveBeenCalled();
   });

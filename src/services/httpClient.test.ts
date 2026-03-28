@@ -39,7 +39,7 @@ describe('httpClient retry logic', () => {
         ok: true,
         json: () => Promise.resolve({ success: true }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       });
 
     global.fetch = mockFetch as any;
@@ -62,20 +62,20 @@ describe('httpClient retry logic', () => {
         status: 503,
         json: () => Promise.resolve({ message: 'Service Unavailable' }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       })
       .mockResolvedValueOnce({
         ok: false,
         status: 503,
         json: () => Promise.resolve({ message: 'Service Unavailable' }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ success: true }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       });
 
     global.fetch = mockFetch as any;
@@ -98,7 +98,7 @@ describe('httpClient retry logic', () => {
         ok: true,
         json: () => Promise.resolve({ success: true }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       });
 
     global.fetch = mockFetch as any;
@@ -118,12 +118,12 @@ describe('httpClient retry logic', () => {
       ok: false,
       status: 400,
       json: () => Promise.resolve({ message: 'Bad request' }),
-      headers: new Headers(),
+      headers: new Headers({ 'content-type': 'application/json' }),
     });
 
     global.fetch = mockFetch as any;
 
-    await expect(apiRequest('/test', { retries: 3 })).rejects.toThrow('HTTP 400');
+    await expect(apiRequest('/test', { retries: 3 })).rejects.toThrow('Bad request');
     expect(mockFetch).toHaveBeenCalledTimes(1); // No retries
   });
 
@@ -132,12 +132,12 @@ describe('httpClient retry logic', () => {
       ok: false,
       status: 401,
       json: () => Promise.resolve({ message: 'Unauthorized' }),
-      headers: new Headers(),
+      headers: new Headers({ 'content-type': 'application/json' }),
     });
 
     global.fetch = mockFetch as any;
 
-    await expect(apiRequest('/test', { retries: 3 })).rejects.toThrow('HTTP 401');
+    await expect(apiRequest('/test', { retries: 3 })).rejects.toThrow('Unauthorized');
     expect(mockFetch).toHaveBeenCalledTimes(1); // No retries
   });
 
@@ -148,12 +148,13 @@ describe('httpClient retry logic', () => {
 
     global.fetch = mockFetch as any;
 
-    const promise = apiRequest('/test', { retries: 2 });
-    
+    const promise = apiRequest('/test', { retries: 2 }).catch((e: unknown) => e);
+
     // Fast-forward timers past all retries
     await vi.advanceTimersByTimeAsync(10000);
 
-    await expect(promise).rejects.toThrow();
+    const error = await promise;
+    expect(error).toBeInstanceOf(Error);
     expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
   });
 
@@ -166,7 +167,7 @@ describe('httpClient retry logic', () => {
         ok: true,
         json: () => Promise.resolve({ success: true }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       });
 
     global.fetch = mockFetch as any;
@@ -196,7 +197,7 @@ describe('httpClient retry logic', () => {
         ok: true,
         json: () => Promise.resolve({ success: true }),
         text: () => Promise.resolve(''),
-        headers: new Headers(),
+        headers: new Headers({ 'content-type': 'application/json' }),
       });
 
     global.fetch = mockFetch as any;
@@ -223,7 +224,7 @@ describe('httpClient retry logic', () => {
       ok: true,
       json: () => Promise.resolve({ success: true }),
       text: () => Promise.resolve(''),
-      headers: new Headers(),
+      headers: new Headers({ 'content-type': 'application/json' }),
     });
 
     global.fetch = mockFetch as any;

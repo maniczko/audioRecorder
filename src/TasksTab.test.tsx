@@ -2,6 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TasksTab from './TasksTab';
+import { ToastProvider } from './shared/Toast';
 
 function createDataTransfer() {
   const store = {};
@@ -83,7 +84,7 @@ function renderTasksTab(overrides = {}) {
   };
 
   return {
-    ...render(<TasksTab {...props} />),
+    ...render(<ToastProvider><TasksTab {...props} /></ToastProvider>),
     props,
   };
 }
@@ -119,7 +120,7 @@ describe('TasksTab', () => {
     });
 
     // Type in inline quick add input and press Enter
-    const quickAddInput = screen.getByPlaceholderText('Dodaj zadanie (N)');
+    const quickAddInput = screen.getByPlaceholderText(/Dodaj zadanie/);
     await userEvent.type(quickAddInput, 'Nowe zadanie{enter}');
 
     expect(props.onCreateTask).toHaveBeenCalledWith(

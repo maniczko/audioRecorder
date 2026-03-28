@@ -12,7 +12,7 @@ import useUI from './hooks/useUI';
  * Wrapper dla lazy loading z obsługą błędów i retry logic.
  * Zapobiega błędom "Failed to fetch dynamically imported module".
  */
-function createLazyComponent(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
+export function createLazyComponent(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
   return lazy(async () => {
     try {
       const module = await importFn();

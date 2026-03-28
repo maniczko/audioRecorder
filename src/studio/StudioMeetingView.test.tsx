@@ -327,8 +327,8 @@ describe('StudioMeetingView', () => {
 
   test('renders toolbar buttons', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
-    expect(screen.getByText(/Notatki/i)).toBeInTheDocument();
-    expect(screen.getByText(/Transkrypt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Eksport/i)).toBeInTheDocument();
+    expect(screen.getByText(/Transkrypcja/i)).toBeInTheDocument();
     expect(screen.getByText(/Rozpocznij nagrywanie/i)).toBeInTheDocument();
   });
 

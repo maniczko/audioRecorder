@@ -656,11 +656,11 @@ describe('ProfileTab', () => {
       await user.click(reviewButton!);
 
       await waitFor(() => {
-        const select = screen.getByRole('combobox');
+        const select = screen.getAllByRole('combobox')[0];
         expect(select).toBeInTheDocument();
       });
 
-      const select = screen.getByRole('combobox');
+      const select = screen.getAllByRole('combobox')[0];
       await user.selectOptions(select, 'list2');
 
       expect(mockProps.onSelectGoogleTaskList).toHaveBeenCalledWith('list2');
