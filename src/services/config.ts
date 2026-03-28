@@ -27,6 +27,21 @@ function readMode(value, fallback = 'local') {
   return normalized === 'remote' ? 'remote' : fallback;
 }
 
+function readDefaultApiBaseUrl() {
+  const env = (import.meta as any).env;
+  const isProd = Boolean(env?.PROD);
+  if (!isProd) {
+    return 'http://localhost:4000';
+  }
+
+  // In deployed frontend builds we proxy API paths through the same origin.
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  return '';
+}
+
 export const APP_DATA_PROVIDER = readMode(
   readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
   'local'
@@ -40,9 +55,7 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
 const RAW_API_BASE_URL = String(
   readEnv('VITE_API_BASE_URL') ||
     readEnv('REACT_APP_API_BASE_URL') ||
-    ((import.meta as any).env?.PROD
-      ? 'https://audiorecorder-production.up.railway.app'
-      : 'http://localhost:4000')
+    readDefaultApiBaseUrl()
 ).trim();
 
 export const API_BASE_URL = RAW_API_BASE_URL;

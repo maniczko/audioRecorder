@@ -3,6 +3,44 @@
   "outputDirectory": "build",
   "framework": "vite",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./src ./public ./package.json ./pnpm-lock.yaml ./index.html ./vite.config.js ./vercel.json",
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "https://audiorecorder-production.up.railway.app/health"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/auth/:path*"
+    },
+    {
+      "source": "/users/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/users/:path*"
+    },
+    {
+      "source": "/workspaces/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/workspaces/:path*"
+    },
+    {
+      "source": "/state/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/state/:path*"
+    },
+    {
+      "source": "/voice-profiles/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/voice-profiles/:path*"
+    },
+    {
+      "source": "/media/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/media/:path*"
+    },
+    {
+      "source": "/transcribe",
+      "destination": "https://audiorecorder-production.up.railway.app/transcribe"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

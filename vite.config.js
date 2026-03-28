@@ -28,7 +28,7 @@ export default defineConfig(async () => {
     (productionRemoteFallback ? 'remote' : '');
   const apiBaseUrl =
     readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') ||
-    (productionRemoteFallback ? 'https://audiorecorder-production.up.railway.app' : '');
+    '';
   const googleClientId =
     readClientEnv('VITE_GOOGLE_CLIENT_ID', 'REACT_APP_GOOGLE_CLIENT_ID') ||
     (productionRemoteFallback ? 'demo' : '');
