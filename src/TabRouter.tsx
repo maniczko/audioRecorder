@@ -158,6 +158,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
   const auth = useAuthStore();
   const meetings = useMeetings();
   const google = useGoogleCtx();
+  const microsoft = useMicrosoftCtx();
   const recorder = useRecorderCtx();
   const ui = useUI();
 

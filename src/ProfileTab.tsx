@@ -1,5 +1,5 @@
 import './styles/profile.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { apiRequest } from './services/httpClient';
 import { apiBaseUrlConfigured } from './services/config';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from './shared/types';
@@ -10,17 +10,37 @@ import { Select } from './ui/Select';
 import { JapaneseThemeSelector } from './components/JapaneseThemeSelector';
 import { type JapaneseTheme } from './styles/japaneseThemes';
 import './styles/JapaneseFlatDesign.css';
+import TagInput from './shared/TagInput';
+import { getTagColor } from './shared/TagBadge';
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [speakerName, setSpeakerName] = useState('');
+  const [selectedPerson, setSelectedPerson] = useState('');
   const [status, setStatus] = useState('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const backendApiReady = apiBaseUrlConfigured();
+
+  // Filtracja sugestii - tylko prawdziwe osoby, bez emaili i systemowych
+  const peopleSuggestions = useMemo(() => {
+    return peopleProfiles
+      .map((p) => p.name)
+      .filter((name) => {
+        const n = String(name || '').trim().toLowerCase();
+        return (
+          n &&
+          n !== 'nieprzypisane' &&
+          n !== 'unassigned' &&
+          n !== 'system' &&
+          !n.includes('@')
+        );
+      })
+      .sort()
+      .filter((value, index, self) => self.indexOf(value) === index); // unikalne
+  }, [peopleProfiles]);
 
   useEffect(() => {
     if (!backendApiReady) return;
@@ -29,6 +49,21 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       .catch(() => { });
   }, [backendApiReady]);
 
+  // Grupowanie profili po osobie
+  const profilesByPerson = useMemo(() => {
+    const groups: Record<string, VoiceProfileSummary[]> = {};
+    profiles.forEach((p) => {
+      const key = p.speakerName;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+    // Sortuj próbki wewnątrz grupy po dacie
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    });
+    return groups;
+  }, [profiles]);
+
   async function startRecording() {
     if (!backendApiReady) {
       setStatus(
@@ -36,8 +71,8 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       );
       return;
     }
-    if (!speakerName.trim()) {
-      setStatus('Podaj imię osoby przed nagraniem.');
+    if (!selectedPerson.trim()) {
+      setStatus('Wybierz osobę przed nagraniem.');
       return;
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
@@ -63,7 +98,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
           body: blob,
           headers: {
             'Content-Type': blob.type,
-            'X-Speaker-Name': speakerName.trim(),
+            'X-Speaker-Name': selectedPerson.trim(),
           },
         })) as VoiceProfileSummary & { isUpdate?: boolean };
         setProfiles((prev) => {
@@ -77,9 +112,11 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
           }
           return [data, ...prev];
         });
-        setSpeakerName('');
         const sampleCount = data.sampleCount || 1;
-        if (data.isUpdate) {
+        if (sampleCount >= 5) {
+          setStatus(`Maksymalna liczba próbek (5) dla osoby ${data.speakerName}.`);
+          setSelectedPerson('');
+        } else if (data.isUpdate) {
           setStatus(`Próbka ${sampleCount}/5 dodana do profilu ${data.speakerName}.`);
         } else {
           setStatus(
@@ -139,32 +176,24 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       </p>
       <div className="stack-form profile-form-bottom">
         <label>
-          <span>Imię osoby</span>
-          <Input
-            list="saved-people-list"
-            value={speakerName}
-            onChange={(e) => setSpeakerName(e.target.value)}
-            placeholder="np. Marek"
-            disabled={isRecording}
+          <span>Wybierz osobę</span>
+          <TagInput
+            tags={selectedPerson ? [selectedPerson] : []}
+            suggestions={peopleSuggestions}
+            onChange={(tags) => setSelectedPerson(tags[0] || '')}
+            placeholder="Wpisz lub wybierz z listy..."
           />
-          <datalist id="saved-people-list">
-            {peopleProfiles
-              .filter((p) => {
-                const nameStr = String(p.name || p.speakerId || '').trim();
-                const lower = nameStr.toLowerCase();
-                return (
-                  lower !== 'nieprzypisane' &&
-                  lower !== 'unassigned' &&
-                  lower !== 'system' &&
-                  !nameStr.includes('@') &&
-                  nameStr !== ''
-                );
-              })
-              .map((p) => (
-                <option key={p.id || p.name || p.speakerId} value={p.name || p.speakerId} />
-              ))}
-          </datalist>
         </label>
+        {selectedPerson && profilesByPerson[selectedPerson] && (
+          <div className="profile-samples-info">
+            <span className="profile-samples-count">
+              Próbek: {profilesByPerson[selectedPerson].length}/5
+            </span>
+            {profilesByPerson[selectedPerson].length >= 5 && (
+              <span className="profile-samples-max"> (maksimum osiągnięte)</span>
+            )}
+          </div>
+        )}
         <div className="button-row">
           {isRecording ? (
             <>
@@ -178,10 +207,12 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
               type="button"
               className="primary-button"
               onClick={startRecording}
-              disabled={!speakerName.trim() || !backendApiReady}
+              disabled={!selectedPerson.trim() || !backendApiReady || (profilesByPerson[selectedPerson]?.length || 0) >= 5}
               title={
                 !backendApiReady
                   ? 'Skonfiguruj backend API, aby nagrywac profile glosowe.'
+                  : (profilesByPerson[selectedPerson]?.length || 0) >= 5
+                  ? 'Osiągnięto maksymalną liczbę próbek (5) dla tej osoby.'
                   : undefined
               }
             >
@@ -203,56 +234,75 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       </div>
 
       {profiles.length > 0 && (
-        <ul className="voice-profile-list">
-          {profiles.map((p) => (
-            <li key={p.id} className="voice-profile-item vp-item-expanded">
-              <span className="voice-profile-avatar">
-                {p.speakerName.slice(0, 2).toUpperCase()}
-              </span>
-              <div className="voice-profile-info">
-                <div className="vp-name-row">
-                  <strong>{p.speakerName}</strong>
-                  {p.sampleCount != null && (
-                    <span className="vp-sample-badge">{p.sampleCount}/5 próbek</span>
-                  )}
-                </div>
-                <span>{new Date(p.createdAt).toLocaleDateString('pl-PL')}</span>
-                <div className="vp-threshold-row">
-                  <span className="vp-threshold-label">
-                    Próg: {Math.round((p.threshold ?? 0.82) * 100)}%
+        <div className="voice-profiles-grouped">
+          {Object.entries(profilesByPerson).map(([personName, samples]) => (
+            <div key={personName} className="voice-profile-person-group">
+              <div className="voice-profile-person-header">
+                <span className="voice-profile-person-avatar">
+                  {personName.slice(0, 2).toUpperCase()}
+                </span>
+                <div className="voice-profile-person-info">
+                  <strong>{personName}</strong>
+                  <span className="voice-profile-samples-count">
+                    {samples.length}/5 próbek
                   </span>
-                  <input
-                    type="range"
-                    className="vp-threshold-slider"
-                    min="50"
-                    max="99"
-                    step="1"
-                    value={Math.round((p.threshold ?? 0.82) * 100)}
-                    onChange={(e) => {
-                      const t = Number(e.target.value) / 100;
-                      setProfiles((prev) =>
-                        prev.map((x) => (x.id === p.id ? { ...x, threshold: t } : x))
-                      );
-                    }}
-                    onMouseUp={(e) =>
-                      updateThreshold(p.id, Number((e.target as HTMLInputElement).value) / 100)
-                    }
-                    onTouchEnd={(e) =>
-                      updateThreshold(p.id, Number((e.target as HTMLInputElement).value) / 100)
-                    }
-                  />
                 </div>
               </div>
-              <button
-                type="button"
-                className="ghost-button profile-ghost-button-compact profile-self-start"
-                onClick={() => deleteProfile(p.id)}
-              >
-                Usuń
-              </button>
-            </li>
+              <ul className="voice-profile-samples-list">
+                {samples.map((p, idx) => (
+                  <li key={p.id} className="voice-profile-sample-item">
+                    <span className="sample-number">{idx + 1}</span>
+                    <div className="voice-profile-sample-info">
+                      <span className="sample-date">
+                        {new Date(p.createdAt).toLocaleDateString('pl-PL', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                      {p.hasEmbedding && (
+                        <span className="sample-status-badge">✓ Przetworzono</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-button profile-delete-sample-btn"
+                      onClick={() => deleteProfile(p.id)}
+                      title="Usuń tę próbkę"
+                    >
+                      🗑️
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="voice-profile-threshold-container">
+                <span className="vp-threshold-label">
+                  Próg rozpoznawania: {Math.round((samples[0]?.threshold ?? 0.82) * 100)}%
+                </span>
+                <input
+                  type="range"
+                  className="vp-threshold-slider"
+                  min="50"
+                  max="99"
+                  step="1"
+                  value={Math.round((samples[0]?.threshold ?? 0.82) * 100)}
+                  onChange={(e) => {
+                    const t = Number(e.target.value) / 100;
+                    setProfiles((prev) =>
+                      prev.map((x) => (x.id === samples[0].id ? { ...x, threshold: t } : x))
+                    );
+                  }}
+                  onMouseUp={(e) =>
+                    updateThreshold(samples[0].id, Number((e.target as HTMLInputElement).value) / 100)
+                  }
+                  onTouchEnd={(e) =>
+                    updateThreshold(samples[0].id, Number((e.target as HTMLInputElement).value) / 100)
+                  }
+                />
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
