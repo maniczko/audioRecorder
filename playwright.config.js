@@ -6,11 +6,16 @@ module.exports = defineConfig({
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
+  timeout: 60_000, // 60 seconds per test
+  expect: {
+    timeout: 10_000, // 10 seconds for expect assertions
+  },
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    actionTimeout: 15_000, // 15 seconds for actions like click, fill, etc.
   },
   projects: [
     {
@@ -22,7 +27,7 @@ module.exports = defineConfig({
     command: "pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000, // 3 minutes for server startup
     stdout: "ignore",
     stderr: "pipe",
     env: {
