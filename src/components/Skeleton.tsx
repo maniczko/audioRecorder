@@ -81,3 +81,25 @@ export function LoadingScreen({ message = 'Wczytywanie...', className = '' }: an
     </div>
   );
 }
+
+export function StudioSkeleton() {
+  return (
+    <div className="studio-skeleton">
+      <div className="studio-skeleton-main">
+        <div className="skeleton studio-skeleton-player" />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="skeleton studio-skeleton-transcript-line"
+            style={{ width: `${90 - i * 6}%`, animationDelay: `${i * 0.08}s` }}
+          />
+        ))}
+      </div>
+      <div className="studio-skeleton-sidebar">
+        <div className="skeleton studio-skeleton-analysis-card" />
+        <div className="skeleton studio-skeleton-analysis-card" style={{ height: 140 }} />
+        <div className="skeleton studio-skeleton-analysis-card" style={{ height: 80 }} />
+      </div>
+    </div>
+  );
+}

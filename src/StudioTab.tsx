@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import StudioMeetingView from './studio/StudioMeetingView';
 import StudioSidebar from './studio/StudioSidebar';
 import { PageShell, SplitPane } from './ui/LayoutPrimitives';
+import { StudioSkeleton } from './components/Skeleton';
 
 export default function StudioTab(props) {
   const {
@@ -62,7 +63,9 @@ export default function StudioTab(props) {
         }
         main={
           <main className={`studio-tab-main${briefOpen ? ' workspace-main' : ''}`}>
-            <StudioMeetingView {...props} briefOpen={briefOpen} setBriefOpen={setBriefOpen} />
+            <Suspense fallback={<StudioSkeleton />}>
+              <StudioMeetingView {...props} briefOpen={briefOpen} setBriefOpen={setBriefOpen} />
+            </Suspense>
           </main>
         }
       />

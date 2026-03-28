@@ -1,5 +1,15 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { formatDateTime } from '../lib/storage';
+
+const LS_KEY = 'voicebobr:sidebar-collapsed';
+
+function loadCollapsed(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
 
 function TasksSidebar({
   sidebarLists,
@@ -23,16 +33,32 @@ function TasksSidebar({
   conflictTasks = [],
   onFocusConflictTask,
 }: any) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
+
+  function toggle(key: string) {
+    setCollapsed((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
   return (
     <aside className="todo-sidebar">
       <div className="todo-sidebar-top">
         <div className="todo-sidebar-scroll">
           <div className="todo-nav-panel">
             <div className="todo-sidebar-group">
-              <div className="todo-workspace-title">
+              <button
+                type="button"
+                className="todo-workspace-title"
+                onClick={() => toggle('smart')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', color: 'inherit', padding: 0 }}
+              >
+                <span style={{ fontSize: '0.7rem', opacity: 0.6, transition: 'transform 0.15s', transform: collapsed.smart ? 'rotate(-90deg)' : 'rotate(0)' }}>▼</span>
                 <strong>Inteligentne listy</strong>
-              </div>
-              {sidebarLists.baseLists.map((item) => (
+              </button>
+              {!collapsed.smart && sidebarLists.baseLists.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -49,10 +75,16 @@ function TasksSidebar({
             </div>
 
             <div className="todo-workspace-group">
-              <div className="todo-workspace-title">
+              <button
+                type="button"
+                className="todo-workspace-title"
+                onClick={() => toggle('workspace')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', color: 'inherit', padding: 0 }}
+              >
+                <span style={{ fontSize: '0.7rem', opacity: 0.6, transition: 'transform 0.15s', transform: collapsed.workspace ? 'rotate(-90deg)' : 'rotate(0)' }}>▼</span>
                 <strong>Widoki workspace</strong>
-              </div>
-              {sidebarLists.workspaceLists.map((item) => (
+              </button>
+              {!collapsed.workspace && sidebarLists.workspaceLists.map((item) => (
                 <button
                   type="button"
                   key={item.id}
