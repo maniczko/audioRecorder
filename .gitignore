@@ -1,6 +1,8 @@
-```
 # Dependencies
 node_modules/
+
+# External projects
+OpenClaw/
 
 # Build outputs
 dist/
@@ -81,10 +83,9 @@ coverage/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-```
+
 # Server runtime data
 server/data/
 
 # LangGraph API
 .langgraph_api
-"# Redeploy trigger"  
