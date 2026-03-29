@@ -141,7 +141,14 @@ describe('Server Dependencies Verification', () => {
     }
 
     // Types or dev tools that we don't strictly require on production runtime isolated server package.json
-    const allowedMissing = new Set(['@types/jest', 'vitest', 'cross-env', 'jest', 'ts-jest']);
+    const allowedMissing = new Set([
+      '@types/jest',
+      'vitest',
+      'cross-env',
+      'jest',
+      'ts-jest',
+      'typescript',
+    ]);
 
     const trueMissing = missingDeps.filter((d) => !allowedMissing.has(d));
 
