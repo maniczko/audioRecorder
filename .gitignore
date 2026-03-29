@@ -3,6 +3,7 @@ node_modules/
 
 # External projects
 OpenClaw/
+penpot/
 
 # Build outputs
 dist/

@@ -33,15 +33,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
   flex-wrap: wrap;
 }
 
 .calendar-board-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+}
+
+.calendar-board-actions > * + * {
+  margin-left: 14px;
 }
 
 .mini-calendar-header,
@@ -49,13 +51,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+}
+
+.mini-calendar-header > * + *,
+.agenda-card-top > * + * {
+  margin-left: 12px;
 }
 
 .status-cluster {
   display: flex;
   align-items: center;
-  gap: 10px;
+}
+
+.status-cluster > * + * {
+  margin-left: 10px;
 }
 
 .status-chip {
