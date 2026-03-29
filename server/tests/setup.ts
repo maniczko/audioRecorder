@@ -40,7 +40,8 @@ const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
     (filePath.endsWith('.sql') ||
       filePath.endsWith('.sqlite') ||
       filePath.endsWith('.db') ||
-      filePath.endsWith('Dockerfile'))
+      filePath.endsWith('Dockerfile') ||
+      filePath.endsWith('railway.toml'))
   ) {
     return originalFs?.readFileSync(filePath, options) ?? Buffer.from('mocked');
   }

@@ -3,17 +3,15 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "pnpm run build"
+# Build backend artifact used by runtime start command.
+buildCommand = "pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external"
 
 [deploy]
-startCommand = "pnpm run start:server"
+startCommand = "node dist-server/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-# Post-deploy script (uruchamiany po każdym deploy)
-postDeploy = "pnpm run db:migrate"
 
 # Environment variables
 [deploy.envs]
