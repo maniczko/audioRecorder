@@ -146,141 +146,6 @@
   border-bottom: none;
 }
 
-.studio-picker-search {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text);
-  font-size: 0.86rem;
-  outline: none;
-}
-
-.studio-picker-search::placeholder {
-  color: var(--muted);
-}
-
-.studio-picker-list {
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.studio-picker-item.active {
-  background: rgba(116, 208, 191, 0.1);
-}
-
-.studio-picker-item-title {
-  font-size: 0.86rem;
-  font-weight: 500;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.studio-picker-item-date {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-.studio-picker-header {
-  position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  flex-shrink: 0;
-}
-
-.studio-picker-header-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px 24px 14px;
-}
-
-.studio-picker-header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.studio-picker-header-title {
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 4px 0 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.studio-picker-header-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.studio-picker-header-meta span::before {
-  content: "";
-}
-
-.studio-picker-header-meta span+span::before {
-  content: "·";
-  margin-right: 12px;
-}
-
-.studio-picker-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  padding-top: 6px;
-}
-
-.studio-recordings-table-wrap {
-  padding: 0 24px 14px;
-  overflow-x: auto;
-}
-
-.studio-recordings-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-
-.studio-recordings-table th {
-  text-align: left;
-  padding: 6px 10px;
-  color: var(--muted);
-  font-weight: 500;
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  white-space: nowrap;
-}
-
-.studio-recordings-table td {
-  padding: 7px 10px;
-  color: var(--text);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
-}
-
-.studio-recordings-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.studio-recordings-table tbody tr.active td {
-  background: rgba(116, 208, 191, 0.08);
-}
-
-.studio-recordings-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
 .recordings-library {
   margin: 0 0 24px;
 }
@@ -552,6 +417,81 @@ input[type="date"].recordings-library-filter-control::-webkit-calendar-picker-in
 
 .recordings-tab-upload-box-fixed {
   flex: 0 0 200px;
+}
+
+/* ================================================================ */
+/* Consistency Pass: spacing and table alignment                    */
+/* ================================================================ */
+
+.recordings-tab-shell {
+  padding: 20px 22px;
+}
+
+.recordings-tab-header-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.recordings-panel-header-flat,
+.recordings-library-header,
+.recordings-library-filters,
+.recordings-panel-actions {
+  align-items: center;
+  gap: 10px;
+}
+
+.recordings-library-filter-control,
+.recordings-rag-input,
+.recordings-rag-submit {
+  min-height: 36px;
+  box-sizing: border-box;
+}
+
+.studio-recordings-table th,
+.studio-recordings-table td {
+  vertical-align: middle;
+}
+
+.studio-recordings-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.recordings-library-meeting,
+.recordings-library-meeting strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordings-library-delete-btn {
+  width: 32px;
+  height: 32px;
+}
+
+@media (max-width: 1100px) {
+  .recordings-tab-shell {
+    padding: 16px 14px;
+  }
+
+  .recordings-tab-header-shell {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .recordings-library-header,
+  .recordings-library-filters {
+    row-gap: 8px;
+  }
+
+  .studio-recordings-table-wrap {
+    padding: 0 12px 12px;
+  }
 }
 
 .recordings-upload-state,

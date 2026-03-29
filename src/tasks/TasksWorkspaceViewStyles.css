@@ -1,13 +1,13 @@
 
-.todo-settings-dropdown-wrap {
+.tasks-layout.ms-todo .todo-settings-dropdown-wrap {
   display: inline-block;
 }
-.todo-settings-btn {
+.tasks-layout.ms-todo .todo-settings-btn {
   min-width: 0;
   padding: 5px 10px;
   font-size: 1rem;
 }
-.todo-settings-dropdown {
+.tasks-layout.ms-todo .todo-settings-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
@@ -21,7 +21,7 @@
   flex-direction: column;
   overflow: hidden;
 }
-.todo-settings-item {
+.tasks-layout.ms-todo .todo-settings-item {
   padding: 10px 16px;
   text-align: left;
   background: none;
@@ -32,61 +32,11 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.todo-settings-item:last-child { border-bottom: none; }
-.todo-settings-item:hover { background: rgba(117, 214, 196, 0.08); }
-.todo-summary-view {
+.tasks-layout.ms-todo .todo-settings-item:last-child { border-bottom: none; }
+.tasks-layout.ms-todo .todo-settings-item:hover { background: rgba(117, 214, 196, 0.08); }
+.tasks-layout.ms-todo .todo-summary-view {
   padding: 0 0 24px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-/* UI FIX: Layout for task list rows and checklists */
-.todo-table-row {
-  display: grid;
-  grid-template-columns: 46px minmax(0, 1.75fr) 160px 150px 130px;
-  gap: 16px;
-  align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-  border-radius: 8px;
-  transition: background 0.15s;
-}
-
-.todo-table-row:hover {
-  background: rgba(255,255,255, 0.04);
-}
-
-.todo-row-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.todo-title-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.todo-title-cell strong {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.95rem;
-}
-
-.todo-title-cell small {
-  color: var(--muted, #8a9bb8);
-  font-size: 0.8rem;
-}
-
-.todo-priority-cell .todo-inline-actions {
-  display: flex;
-  gap: 8px;
 }

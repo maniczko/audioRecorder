@@ -166,7 +166,12 @@ export class Database {
     await this._createSchema();
   }
 
-  _sendToWorker(type: string, sql: string | null, params: any[] | null = null, dbPath: string | null = null) {
+  _sendToWorker(
+    type: string,
+    sql: string | null,
+    params: any[] | null = null,
+    dbPath: string | null = null
+  ) {
     return new Promise((resolve, reject) => {
       const id = ++this.msgId;
       this.callbacks.set(id, { resolve, reject });
@@ -570,7 +575,10 @@ export class Database {
     return this.getWorkspaceState(workspaceId);
   }
 
-  async createSession(userId: string, workspaceId: string): Promise<{ token: string; expiresAt: string }> {
+  async createSession(
+    userId: string,
+    workspaceId: string
+  ): Promise<{ token: string; expiresAt: string }> {
     const timestamp = this.nowIso();
     const expiresAt = new Date(Date.now() + this.sessionTtlHours * 60 * 60 * 1000).toISOString();
     const token = crypto.randomBytes(48).toString('hex');
@@ -969,17 +977,27 @@ export class Database {
   }: any): Promise<MediaAsset | null> {
     const safeRecordingId = String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
     if (!safeRecordingId) throw new Error('Nieprawidłowy identyfikator nagrania.');
-    const baseMime = String(contentType || '').toLowerCase().split(';')[0].trim();
+    const baseMime = String(contentType || '')
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
     const extension =
-      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav', 'audio/ogg': '.ogg', 'audio/flac': '.flac', 'audio/x-m4a': '.m4a', 'audio/mp3': '.mp3' }[
-        baseMime
-      ] || '.webm';
+      {
+        'audio/webm': '.webm',
+        'audio/mpeg': '.mp3',
+        'audio/mp4': '.m4a',
+        'audio/wav': '.wav',
+        'audio/ogg': '.ogg',
+        'audio/flac': '.flac',
+        'audio/x-m4a': '.m4a',
+        'audio/mp3': '.mp3',
+      }[baseMime] || '.webm';
 
     let storagePath: string;
 
     // Try Supabase Storage first, fall back to local fs
     try {
-      const { uploadAudioToStorage } = await import('./lib/supabaseStorage');
+      const { uploadAudioToStorage } = await import('./lib/supabaseStorage.js');
       const result = await uploadAudioToStorage(safeRecordingId, buffer, contentType, extension);
       if (result) {
         storagePath = result;
@@ -1053,16 +1071,26 @@ export class Database {
     if (!safeRecordingId) throw new Error('Nieprawidlowy identyfikator nagrania.');
     if (!filePath || !fs.existsSync(filePath)) throw new Error('Plik zrodlowy nie istnieje.');
 
-    const baseMime = String(contentType || '').toLowerCase().split(';')[0].trim();
+    const baseMime = String(contentType || '')
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
     const extension =
-      { 'audio/webm': '.webm', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/wav': '.wav', 'audio/ogg': '.ogg', 'audio/flac': '.flac', 'audio/x-m4a': '.m4a', 'audio/mp3': '.mp3' }[
-        baseMime
-      ] || '.webm';
+      {
+        'audio/webm': '.webm',
+        'audio/mpeg': '.mp3',
+        'audio/mp4': '.m4a',
+        'audio/wav': '.wav',
+        'audio/ogg': '.ogg',
+        'audio/flac': '.flac',
+        'audio/x-m4a': '.m4a',
+        'audio/mp3': '.mp3',
+      }[baseMime] || '.webm';
     const fileStats = await fs.promises.stat(filePath);
     let storagePath: string;
 
     try {
-      const { uploadAudioFileToStorage } = await import('./lib/supabaseStorage');
+      const { uploadAudioFileToStorage } = await import('./lib/supabaseStorage.js');
       const result = await uploadAudioFileToStorage(
         safeRecordingId,
         filePath,
@@ -1137,14 +1165,17 @@ export class Database {
 
     if (asset.file_path && !asset.file_path.includes(path.sep)) {
       // If it has no path separator, it's a Supabase storage path
-      const { deleteAudioFromStorage } = await import('./lib/supabaseStorage');
+      const { deleteAudioFromStorage } = await import('./lib/supabaseStorage.js');
       await deleteAudioFromStorage(asset.file_path);
     } else if (asset.file_path) {
       // Legacy local file path cleanup
       try {
         fs.unlinkSync(asset.file_path);
       } catch (error: any) {
-        logger.warn(`[database] Failed to delete legacy audio file ${asset.file_path}:`, error.message);
+        logger.warn(
+          `[database] Failed to delete legacy audio file ${asset.file_path}:`,
+          error.message
+        );
       }
     }
 
@@ -1375,7 +1406,10 @@ export class Database {
         try {
           existingEmb = JSON.parse(existing.embedding_json || '[]');
         } catch (error: any) {
-          logger.warn(`[database] Failed to parse embedding JSON for profile ${existing.id}:`, error.message);
+          logger.warn(
+            `[database] Failed to parse embedding JSON for profile ${existing.id}:`,
+            error.message
+          );
         }
         const averaged = embedding?.length
           ? addToAverageEmbedding(existingEmb, existingCount, embedding)
@@ -1431,7 +1465,10 @@ export class Database {
       try {
         fs.unlinkSync(row.audio_path);
       } catch (error: any) {
-        logger.warn(`[database] Failed to delete voice profile audio ${row.audio_path}:`, error.message);
+        logger.warn(
+          `[database] Failed to delete voice profile audio ${row.audio_path}:`,
+          error.message
+        );
       }
     }
     await this._execute('DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?', [

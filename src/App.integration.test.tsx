@@ -298,37 +298,38 @@ describe('App integration', () => {
     expect(createdTaskFields.length).toBeGreaterThan(0);
   });
 
+  // TODO: App renders auth form when selectedMeetingId is null — needs app-level fix
+  // for draft-only state initialization before this test can work
   test.skip('restores an autosaved meeting draft after refresh', async () => {
-    // Use fake timers to avoid real setTimeout delays
-    vi.useFakeTimers();
+    seedWorkspaceAppState({ selectedMeetingId: null });
 
-    try {
-      seedWorkspaceAppState({ selectedMeetingId: null });
+    const { unmount } = render(<App />);
+    await screen.findByText(/Nowe spotkanie/i);
 
-      const { unmount } = render(<App />);
-      await screen.findByText(/Nowe spotkanie/i);
+    const titleInput = screen.getByPlaceholderText('np. Spotkanie z klientem');
+    await userEvent.type(titleInput, 'Plan retro');
 
-      const titleInput = screen.getByPlaceholderText('np. Spotkanie z klientem');
-      await userEvent.type(titleInput, 'Plan retro');
+    const contextInput = screen.getByPlaceholderText('O czym będzie to spotkanie?');
+    await userEvent.type(contextInput, 'Podsumowanie sprintu');
 
-      const contextInput = screen.getByPlaceholderText('O czym będzie to spotkanie?');
-      await userEvent.type(contextInput, 'Podsumowanie sprintu');
+    expect(screen.getByDisplayValue('Plan retro')).toBeInTheDocument();
 
-      expect(screen.getByDisplayValue('Plan retro')).toBeInTheDocument();
+    // Wait for autosave debounce to persist the draft
+    await waitFor(
+      () => {
+        const raw = window.localStorage.getItem(STORAGE_KEYS.meetingDrafts);
+        const drafts = raw ? JSON.parse(raw) : {};
+        const ws = drafts.workspace_1;
+        expect(ws?.draft?.title).toContain('Plan retro');
+      },
+      { timeout: 5000 }
+    );
 
-      // Advance timers by 2s to trigger autosave (instead of waiting real time)
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
+    unmount();
+    render(<App />);
 
-      unmount();
-      render(<App />);
-
-      expect(await screen.findByDisplayValue('Plan retro')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('Podsumowanie sprintu')).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(await screen.findByDisplayValue('Plan retro')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Podsumowanie sprintu')).toBeInTheDocument();
   });
 
   test('shows notification center items and requests browser notification permission', async () => {

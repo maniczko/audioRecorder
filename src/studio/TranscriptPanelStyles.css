@@ -571,3 +571,34 @@
 .fireflies-segment.active.needs-review {
   background: rgba(243, 202, 114, 0.1);
 }
+
+.ff-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--muted);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ff-search-bar:focus-within {
+  border-color: var(--accent, #75d6c4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ff-search-bar input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+  padding: 0;
+}
+
+.ff-search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { formatDateTime, formatDuration } from '../lib/storage';
 import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
 import TagInput from '../shared/TagInput';
+import { addCustomTaskPerson, addCustomTaskTag } from '../lib/tasks';
 import './StudioSidebarStyles.css';
 
 export default function StudioSidebar({
@@ -37,9 +38,6 @@ export default function StudioSidebar({
             <div className="eyebrow">Meeting brief</div>
             <h2>{selectedMeeting ? 'Edytuj spotkanie' : 'Nowe spotkanie'}</h2>
           </div>
-          <button type="button" className="ghost-button" onClick={startNewMeetingDraft}>
-            + Nowe
-          </button>
         </div>
 
         <div className="brief-tab-bar">
@@ -187,6 +185,8 @@ export default function StudioSidebar({
                             ? previous.attendees.trim() + '\n' + name
                             : name,
                         }));
+                        // Persist custom person to localStorage
+                        addCustomTaskPerson(name);
                         setAttendeeInput('');
                         setShowAttendeeSuggestions(false);
                       } else if (e.key === 'Escape') {
@@ -256,6 +256,8 @@ export default function StudioSidebar({
                       ...previous,
                       tags: newTags.join(', '),
                     }));
+                    // Persist custom tags to localStorage
+                    newTags.forEach((t) => addCustomTaskTag(t));
                   }}
                   placeholder="Dodaj tag..."
                 />
@@ -327,7 +329,7 @@ export default function StudioSidebar({
             }}
             disabled={!canEditWorkspace || !meetingDraft.title?.trim()}
           >
-            {isDetachedMeetingDraft ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
+            {isDetachedMeetingDraft ? 'Zapisz' : 'Zapisz zmiany'}
           </button>
           <button
             type="button"

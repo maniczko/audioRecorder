@@ -142,7 +142,7 @@ async function runTranscriptionAttempt(
 
     if (!options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
       notify(10, 'Pobieranie nagrania z bazy danych...');
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
+      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
       const buffer = await downloadAudioFromStorage(workingFilePath);
       const baseMime = String(asset.content_type || '')
         .toLowerCase()
@@ -209,11 +209,18 @@ async function runTranscriptionAttempt(
 
     // ── Process diarization results ────────────────────────────────────────────
     let normFilePath = '';
-    if (earlyPyannoteSegments && earlyPyannoteSegments.length > 0) {
-      const uniqueSpeakers = new Set(earlyPyannoteSegments.map((s) => s.speaker));
+    if (
+      earlyPyannoteSegments &&
+      Array.isArray(earlyPyannoteSegments) &&
+      earlyPyannoteSegments.length > 0
+    ) {
+      const uniqueSpeakers = new Set((earlyPyannoteSegments as any[]).map((s) => s.speaker));
       if (uniqueSpeakers.size > 1) {
         notify(28, `Normalizacja głośności per mówca (${uniqueSpeakers.size} mówców)...`);
-        const normalized = await applyPerSpeakerNorm(transcribeFilePath, earlyPyannoteSegments);
+        const normalized = await applyPerSpeakerNorm(
+          transcribeFilePath,
+          earlyPyannoteSegments as any[]
+        );
         if (normalized) {
           normFilePath = normalized;
           transcribeFilePath = normalized;
@@ -222,7 +229,7 @@ async function runTranscriptionAttempt(
       }
     }
 
-    if (DEBUG && speechSegments) {
+    if (DEBUG && Array.isArray(speechSegments)) {
       console.log(`[pipeline] Silero VAD detected ${speechSegments.length} speech segment(s).`);
     }
 
@@ -555,13 +562,15 @@ async function runTranscriptionAttempt(
       if (speechSegments) {
         const originalCount = diarization.segments.length;
         diarization.segments = diarization.segments.filter((seg: any) => {
-          const hasSpeech = speechSegments.some((v: any) => {
-            const overlap = Math.max(
-              0,
-              Math.min(seg.endTimestamp, v.end) - Math.max(seg.timestamp, v.start)
-            );
-            return overlap > 0.1 || overlap / (seg.endTimestamp - seg.timestamp) > 0.2;
-          });
+          const hasSpeech =
+            Array.isArray(speechSegments) &&
+            speechSegments.some((v: any) => {
+              const overlap = Math.max(
+                0,
+                Math.min(seg.endTimestamp, v.end) - Math.max(seg.timestamp, v.start)
+              );
+              return overlap > 0.1 || overlap / (seg.endTimestamp - seg.timestamp) > 0.2;
+            });
           return hasSpeech;
         });
         if (DEBUG && diarization.segments.length < originalCount) {
@@ -852,7 +861,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
 
   if (needsSourceMaterialization && remoteSource) {
     try {
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
+      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
       const buffer = await downloadAudioFromStorage(asset.file_path);
       const baseMime = String(asset.content_type || '')
         .toLowerCase()

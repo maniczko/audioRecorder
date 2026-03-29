@@ -139,12 +139,10 @@ export default function TagInput({
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => {
-            // Delay blur to let mousedown/click on dropdown fire first
+            // Delay blur to let click on dropdown option fire first
             setTimeout(() => {
-              if (!containerRef.current?.contains(document.activeElement)) {
-                setIsFocused(false);
-              }
-            }, 150);
+              setIsFocused(false);
+            }, 200);
           }}
           onKeyDown={handleKeyDown}
           placeholder={normalizedTags.length === 0 ? placeholder : ''}
@@ -156,14 +154,13 @@ export default function TagInput({
         createPortal(
           <div
             className="tag-input-dropdown"
-            onMouseDown={(e) => e.preventDefault()}
             style={{
               position: 'fixed',
               top: dropdownPosition.top,
               left: dropdownPosition.left,
               width: dropdownPosition.width,
               maxHeight: dropdownPosition.maxHeight,
-              zIndex: 10000,
+              zIndex: 999999,
               marginTop: 0,
             }}
           >
@@ -177,9 +174,8 @@ export default function TagInput({
                 key={s}
                 type="button"
                 className="tag-input-option"
-                onClick={(e) => {
+                onMouseDown={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
                   addTag(s);
                 }}
               >
@@ -194,9 +190,8 @@ export default function TagInput({
                 <button
                   type="button"
                   className="tag-input-option create"
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.preventDefault();
-                    e.stopPropagation();
                     addTag(inputValue);
                   }}
                 >

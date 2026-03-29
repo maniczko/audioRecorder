@@ -94,4 +94,14 @@ describe('StudioSidebar', () => {
     expect(defaultProps.selectMeeting).toHaveBeenCalled();
     expect(defaultProps.setSelectedRecordingId).toHaveBeenCalled();
   });
+
+  test('uses simplified create-state actions', () => {
+    render(
+      <StudioSidebar {...defaultProps} isDetachedMeetingDraft={true} selectedMeeting={null} />
+    );
+
+    expect(screen.queryByRole('button', { name: '+ Nowe' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Zapisz' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Utwórz spotkanie' })).not.toBeInTheDocument();
+  });
 });

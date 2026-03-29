@@ -107,23 +107,36 @@ describe('storage (browser)', () => {
     expect(result.length).toBeGreaterThan(4);
   });
 
-  it('downloadTextFile creates and clicks a link', () => {
+  it('downloadTextFile creates and clicks a link with correct href and filename', () => {
     const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:abc');
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const clickSpy = vi.fn();
-    const createElSpy = vi.spyOn(document, 'createElement').mockReturnValue({
-      set href(_v) {},
-      set download(_v) {},
-      click: clickSpy,
-    } as any);
+    const fakeLink = { href: '', download: '', click: vi.fn() };
+    const createElSpy = vi.spyOn(document, 'createElement').mockReturnValue(fakeLink as any);
 
     vi.useFakeTimers();
     downloadTextFile('x.txt', 'hello');
     expect(createSpy).toHaveBeenCalled();
-    expect(clickSpy).toHaveBeenCalled();
+    expect(fakeLink.href).toBe('blob:abc');
+    expect(fakeLink.download).toBe('x.txt');
+    expect(fakeLink.click).toHaveBeenCalled();
     vi.runAllTimers();
     expect(revokeSpy).toHaveBeenCalled();
     vi.useRealTimers();
     createElSpy.mockRestore();
+  });
+
+  it('idbJSONStorage setItem writes parsed value via writeStorageAsync', async () => {
+    const { set } = await import('idb-keyval');
+    (window as any).indexedDB = {};
+    await idbJSONStorage.setItem('json_set', JSON.stringify({ test: 42 }));
+    expect(set).toHaveBeenCalledWith('json_set', { test: 42 });
+  });
+
+  it('writeStorageAsync falls back to localStorage when indexedDB is missing', async () => {
+    const originalIndexedDB = window.indexedDB;
+    (window as any).indexedDB = undefined;
+    await writeStorageAsync('fallback_key', { stored: true });
+    expect(readStorage('fallback_key', null)).toEqual({ stored: true });
+    (window as any).indexedDB = originalIndexedDB;
   });
 });

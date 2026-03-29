@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import useGoogleIntegrations from './useGoogleIntegrations';
 
@@ -72,8 +72,7 @@ describe('useGoogleIntegrations autosync', () => {
     setManualTasksMock.mockReset();
   });
 
-  test('pushes linked task edits to Google Tasks after local update', () => {
-    // Test that the hook can be rendered with Google Tasks integration
+  test('pushes linked task edits to Google Tasks after local update', async () => {
     const { result } = renderHook(() =>
       useGoogleIntegrations({
         currentUser: { id: 'u1', email: 'user@example.com' },
@@ -91,13 +90,17 @@ describe('useGoogleIntegrations autosync', () => {
       } as any)
     );
 
-    // Hook should be created successfully
     expect(result.current).toBeDefined();
-    expect(result.current.connectGoogleTasks).toBeDefined();
+    expect(typeof result.current.connectGoogleTasks).toBe('function');
+    expect(typeof result.current.refreshGoogleTasks).toBe('function');
+    expect(typeof result.current.exportTasksToGoogle).toBe('function');
+    expect(typeof result.current.importGoogleTasksFromList).toBe('function');
+    // Verify initial Google Tasks state
+    expect(result.current.googleTaskLists).toEqual([]);
+    expect(result.current.selectedGoogleTaskListId).toBeFalsy();
   });
 
-  test('syncCalendarEntryToGoogle updates linked meeting on demand', () => {
-    // Test that the hook can be rendered with Google Calendar integration
+  test('syncCalendarEntryToGoogle updates linked meeting on demand', async () => {
     const { result } = renderHook(() =>
       useGoogleIntegrations({
         currentUser: { id: 'u1', email: 'user@example.com' },
@@ -115,9 +118,39 @@ describe('useGoogleIntegrations autosync', () => {
       } as any)
     );
 
-    // Hook should be created successfully
     expect(result.current).toBeDefined();
-    expect(result.current.connectGoogleCalendar).toBeDefined();
-    expect(result.current.syncCalendarEntryToGoogle).toBeDefined();
+    expect(typeof result.current.connectGoogleCalendar).toBe('function');
+    expect(typeof result.current.syncCalendarEntryToGoogle).toBe('function');
+    expect(typeof result.current.disconnectGoogleCalendar).toBe('function');
+    // Verify initial calendar state
+    expect(result.current.googleCalendarStatus).toBe('idle');
+    expect(result.current.googleCalendarEvents).toEqual([]);
+  });
+
+  test('resetGoogleSession clears tasks and calendar state', async () => {
+    const { result } = renderHook(() =>
+      useGoogleIntegrations({
+        currentUser: { id: 'u1', email: 'user@example.com' },
+        currentWorkspaceId: 'ws1',
+        calendarMonth: new Date('2026-03-24T00:00:00.000Z'),
+        taskColumns: [
+          { id: 'todo', title: 'To Do', isDone: false },
+          { id: 'done', title: 'Done', isDone: true },
+        ],
+        meetingTasks: [],
+        manualTasks: [],
+        setManualTasks: setManualTasksMock,
+        onGoogleProfile: vi.fn(),
+        onGoogleError: vi.fn(),
+      } as any)
+    );
+
+    await act(async () => {
+      result.current.resetGoogleSession();
+    });
+
+    expect(result.current.googleTaskLists).toEqual([]);
+    expect(result.current.googleCalendarEvents).toEqual([]);
+    expect(result.current.googleCalendarStatus).toBe('idle');
   });
 });

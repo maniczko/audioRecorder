@@ -176,7 +176,7 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
         // HTTP/2 + keep-alive for connection reuse (#320)
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
@@ -188,7 +188,7 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
       }),
       // Agent for connection pooling (HTTP/2 support)
       dispatcher: undefined, // Node.js fetch uses global agent by default
-    });
+    } as any);
 
     if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
     const json = await resp.json();
@@ -218,7 +218,7 @@ export async function embedTextChunks(texts: string[]) {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
         // HTTP/2 + keep-alive for connection reuse (#320)
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
@@ -338,7 +338,7 @@ export async function generateVoiceCoaching(
   } finally {
     try {
       fs.unlinkSync(clipPath);
-    } catch (_) { }
+    } catch (_) {}
   }
 }
 
@@ -408,7 +408,7 @@ export async function normalizeRecording(filePath: string, options: any = {}) {
   } catch (err) {
     try {
       fs.unlinkSync(tmpPath);
-    } catch (_) { }
+    } catch (_) {}
     throw err;
   }
 }

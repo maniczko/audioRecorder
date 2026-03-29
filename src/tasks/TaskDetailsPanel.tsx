@@ -125,19 +125,6 @@ function TaskDetailsPanel({
                 Otwórz spotkanie
               </button>
             ) : null}
-            <button
-              type="button"
-              className="todo-delete-button"
-              onClick={() => {
-                if (window.confirm('Usunac to zadanie?')) {
-                  onDeleteTask?.(selectedTask.id);
-                }
-              }}
-              aria-label="Usun zadanie"
-              title="Usuń zadanie"
-            >
-              <Trash2 size={18} />
-            </button>
           </div>
         </div>
 
@@ -355,24 +342,39 @@ function TaskDetailsPanel({
 
         <section className="todo-detail-section">
           <div className="todo-section-head">
-            <strong>
-              <span className="todo-section-icon" aria-hidden="true">
-                <History size={16} />
-              </span>
-              Historia zmian
-            </strong>
-            <div className="todo-section-head-row">
-              <span>{(selectedTask.history || []).length}</span>
-              {(selectedTask.history || []).length > 0 && (
+            <div className="todo-section-head-wrapper">
+              <strong>
+                <span className="todo-section-icon" aria-hidden="true">
+                  <History size={16} />
+                </span>
+                Historia zmian
+              </strong>
+              <div className="todo-section-head-row">
+                <span>{(selectedTask.history || []).length}</span>
+                {(selectedTask.history || []).length > 0 && (
+                  <button
+                    type="button"
+                    className="todo-history-toggle"
+                    onClick={() => setHistoryExpanded((v) => !v)}
+                    title={historyExpanded ? 'Ukryj historię' : 'Pokaż historię'}
+                  >
+                    {historyExpanded ? '▲' : '▼'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="todo-history-toggle"
-                  onClick={() => setHistoryExpanded((v) => !v)}
-                  title={historyExpanded ? 'Ukryj historię' : 'Pokaż historię'}
+                  className="todo-delete-button-inline"
+                  onClick={() => {
+                    if (window.confirm('Usunac to zadanie?')) {
+                      onDeleteTask?.(selectedTask.id);
+                    }
+                  }}
+                  aria-label="Usun zadanie"
+                  title="Usuń zadanie"
                 >
-                  {historyExpanded ? '▲' : '▼'}
+                  <Trash2 size={16} />
                 </button>
-              )}
+              </div>
             </div>
           </div>
           {historyExpanded && (

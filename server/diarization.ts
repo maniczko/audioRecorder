@@ -330,7 +330,7 @@ export async function diarizeFromTranscript(
         const text = clean(wseg.text || '');
         if (!text) return null;
 
-        const rawLabel = indexToSpeaker.has(i) ? indexToSpeaker.get(i)! : lastKnown;
+        const rawLabel = String(indexToSpeaker.has(i) ? indexToSpeaker.get(i)! : lastKnown);
 
         if (!speakerOrder.has(rawLabel)) {
           const nextId = speakerOrder.size;

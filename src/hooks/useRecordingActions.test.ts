@@ -175,4 +175,131 @@ describe('useRecordingActions', () => {
       result.current.splitTranscriptSegment('s1', 2); // splits original s1
     });
   });
+
+  test('updateTranscriptSegment preserves status when only non-text fields change', () => {
+    const { result } = setupHook();
+    act(() => {
+      result.current.updateTranscriptSegment('s1', { speakerId: 5 });
+    });
+    const updater = mockSetMeetings.mock.calls[0][0];
+    const newMeetings = updater([baseMeeting]);
+    const segment = newMeetings[0].recordings[0].transcript[0];
+    expect(segment.speakerId).toBe(5);
+    expect(segment.verificationStatus).toBe('review');
+  });
+
+  test('updateTranscriptSegment respects explicit verificationStatus', () => {
+    const { result } = setupHook();
+    act(() => {
+      result.current.updateTranscriptSegment('s1', {
+        text: 'Changed',
+        verificationStatus: 'review',
+      });
+    });
+    const updater = mockSetMeetings.mock.calls[0][0];
+    const newMeetings = updater([baseMeeting]);
+    const segment = newMeetings[0].recordings[0].transcript[0];
+    expect(segment.text).toBe('Changed');
+    expect(segment.verificationStatus).toBe('review');
+  });
+
+  test('mergeTranscriptSegments handles reversed order IDs', () => {
+    const customMeeting = {
+      ...baseMeeting,
+      recordings: [
+        {
+          id: 'r1',
+          transcript: [
+            { id: 's1', speakerId: '0', text: 'Hello', timestamp: 0, endTimestamp: 1 },
+            { id: 's2', speakerId: '0', text: 'world', timestamp: 1, endTimestamp: 2 },
+          ],
+          speakerNames: { '0': 'Speaker 1' },
+          markers: [],
+        },
+      ],
+    };
+    const { result } = setupHook(customMeeting, customMeeting.recordings[0]);
+    act(() => {
+      result.current.mergeTranscriptSegments(['s2', 's1']); // reversed order
+    });
+    const newMeetings = mockSetMeetings.mock.calls[0][0]([customMeeting]);
+    expect(newMeetings[0].recordings[0].transcript.length).toBe(1);
+    expect(newMeetings[0].recordings[0].transcript[0].text).toBe('Hello world');
+  });
+
+  test('mergeTranscriptSegments ignores non-consecutive segments', () => {
+    const customMeeting = {
+      ...baseMeeting,
+      recordings: [
+        {
+          id: 'r1',
+          transcript: [
+            { id: 's1', speakerId: '0', text: 'A', timestamp: 0 },
+            { id: 's2', speakerId: '0', text: 'B', timestamp: 1 },
+            { id: 's3', speakerId: '0', text: 'C', timestamp: 2 },
+          ],
+          speakerNames: { '0': 'Speaker 1' },
+          markers: [],
+        },
+      ],
+    };
+    const { result } = setupHook(customMeeting, customMeeting.recordings[0]);
+    act(() => {
+      result.current.mergeTranscriptSegments(['s1', 's3']); // non-consecutive
+    });
+    const newMeetings = mockSetMeetings.mock.calls[0][0]([customMeeting]);
+    expect(newMeetings[0].recordings[0].transcript.length).toBe(3); // unchanged
+  });
+
+  test('splitTranscriptSegment produces correct left and right segments', () => {
+    const customMeeting = {
+      ...baseMeeting,
+      recordings: [
+        {
+          id: 'r1',
+          transcript: [
+            { id: 's1', speakerId: '0', text: 'Hello world', timestamp: 0, endTimestamp: 4 },
+          ],
+          speakerNames: { '0': 'Speaker 1' },
+          markers: [],
+        },
+      ],
+    };
+    const { result } = setupHook(customMeeting, customMeeting.recordings[0]);
+    act(() => {
+      result.current.splitTranscriptSegment('s1', 5);
+    });
+    const newMeetings = mockSetMeetings.mock.calls[0][0]([customMeeting]);
+    const transcript = newMeetings[0].recordings[0].transcript;
+    expect(transcript.length).toBe(2);
+    expect(transcript[0].text).toBe('Hello');
+    expect(transcript[1].text).toBe('world');
+    expect(transcript[0].verificationStatus).toBe('review');
+    expect(transcript[1].verificationStatus).toBe('review');
+  });
+
+  test('splitTranscriptSegment clamps out-of-bounds splitIndex', () => {
+    const customMeeting = {
+      ...baseMeeting,
+      recordings: [
+        {
+          id: 'r1',
+          transcript: [{ id: 's1', speakerId: '0', text: 'ABCD', timestamp: 0, endTimestamp: 4 }],
+          speakerNames: { '0': 'Speaker 1' },
+          markers: [],
+        },
+      ],
+    };
+    const { result } = setupHook(customMeeting, customMeeting.recordings[0]);
+
+    // splitIndex=0 is falsy, so normalizedSplit falls to Math.floor(text.length/2) = 2
+    act(() => {
+      result.current.splitTranscriptSegment('s1', 0);
+    });
+    const newMeetings = mockSetMeetings.mock.calls[0][0]([customMeeting]);
+    const transcript = newMeetings[0].recordings[0].transcript;
+    expect(transcript.length).toBe(2);
+    expect(transcript[0].text).toBe('AB');
+    expect(transcript[1].text).toBe('CD');
+  });
 });

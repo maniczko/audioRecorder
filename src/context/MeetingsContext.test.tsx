@@ -89,9 +89,31 @@ describe('MeetingsContext', () => {
     );
     const { result } = renderHook(() => useMeetingsCtx(), { wrapper });
 
-    expect(result.current.meetings).toBeDefined();
-    expect(result.current.meetings.userMeetings).toBeDefined();
-    expect(Array.isArray(result.current.meetings.userMeetings)).toBe(true);
-    expect(result.current.meetings.selectedMeetingId).toBeDefined();
+    expect(result.current.meetings.userMeetings).toEqual([{ id: 'm1', title: 'Demo meeting' }]);
+    expect(result.current.meetings.selectedMeetingId).toBe('m1');
+    expect(result.current.meetings.selectedMeeting).toEqual({ id: 'm1', title: 'Demo meeting' });
+  });
+
+  test('exposes create and mutation methods that delegate to hook', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MeetingsProvider>{children}</MeetingsProvider>
+    );
+    const { result } = renderHook(() => useMeetingsCtx(), { wrapper });
+
+    const created = result.current.meetings.createAdHocMeeting();
+    expect(created).toEqual({ id: 'm2' });
+    expect(mockMeetings.createAdHocMeeting).toHaveBeenCalledTimes(1);
+
+    result.current.meetings.deleteMeeting('m1');
+    expect(mockMeetings.deleteMeeting).toHaveBeenCalledWith('m1');
+
+    result.current.meetings.updateMeeting('m1', { title: 'Updated' });
+    expect(mockMeetings.updateMeeting).toHaveBeenCalledWith('m1', { title: 'Updated' });
+  });
+
+  test('throws when useMeetingsCtx is called outside provider', () => {
+    expect(() => {
+      renderHook(() => useMeetingsCtx());
+    }).toThrow();
   });
 });

@@ -302,6 +302,46 @@ describe('tasks extra coverage', () => {
     expect(fallback[0].title).toBe('Zamknij temat');
   });
 
+  test('extractMeetingTasks returns empty array when analysis is null or missing', () => {
+    const baseMeeting = {
+      id: 'm2',
+      title: 'Daily',
+      startsAt: '2026-03-10T10:00:00.000Z',
+      updatedAt: '2026-03-10T11:00:00.000Z',
+      createdAt: '2026-03-10T09:00:00.000Z',
+      latestRecordingId: 'r1',
+      attendees: ['Anna'],
+      tags: ['call'],
+    };
+
+    // analysis: null
+    const result1 = extractMeetingTasks({ ...baseMeeting, analysis: null }, DEFAULT_TASK_COLUMNS);
+    expect(result1).toEqual([]);
+
+    // analysis missing entirely
+    const result2 = extractMeetingTasks(baseMeeting, DEFAULT_TASK_COLUMNS);
+    expect(result2).toEqual([]);
+
+    // analysis: {} (no tasks key)
+    const result3 = extractMeetingTasks({ ...baseMeeting, analysis: {} }, DEFAULT_TASK_COLUMNS);
+    expect(result3).toEqual([]);
+  });
+
+  test('buildTaskReorderUpdate with invalid neighbor IDs uses fallback', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-01T00:00:00.000Z'));
+
+    const tasks = [
+      { id: 't1', order: 0 },
+      { id: 't2', order: 1024 },
+    ];
+
+    // previousTaskId that doesn't exist → should fallback
+    const result = buildTaskReorderUpdate(tasks, { previousTaskId: 'nonexistent' });
+    expect(result.order).toBeDefined();
+    expect(typeof result.order).toBe('number');
+  });
+
   test('buildTasksFromMeetings merges tasks and respects workspace filter', () => {
     const meeting = {
       id: 'm2',

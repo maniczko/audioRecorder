@@ -177,9 +177,12 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
   let tempFilePath = '';
   try {
     if (filePath && !filePath.includes(path.sep) && !filePath.includes('/')) {
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage');
+      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
       const buffer = await downloadAudioFromStorage(filePath);
-      const baseMime = String(options.contentType || '').toLowerCase().split(';')[0].trim();
+      const baseMime = String(options.contentType || '')
+        .toLowerCase()
+        .split(';')[0]
+        .trim();
       const ext =
         {
           'audio/webm': '.webm',
@@ -196,9 +199,9 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
       filePath = tempFilePath;
     }
 
-    if (!fs.existsSync(filePath)) return { error: 'File not found' };
+    if (!fs.existsSync(filePath)) return { error: 'File not found' } as any;
 
-    const ffprobeBinary = deriveFfprobeBinary();
+    const ffprobeBinary = deriveFfprobeBinary(FFMPEG_BINARY);
     let codec = '';
     let sampleRateHz = 0;
     let channels = 0;
@@ -257,13 +260,14 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
         `"${FFMPEG_BINARY}" -i "${filePath}" -af "silencedetect=noise=-35dB:d=0.5" -f null -`,
         { timeout: 45000, signal: options.signal }
       );
-      const silenceDurations = String(stderr || '').match(/silence_duration:\s*([0-9.]+)/gi) || [];
+      const silenceDurations = (String(stderr || '').match(/silence_duration:\s*([0-9.]+)/gi) ||
+        []) as string[];
       const totalSilence = silenceDurations.reduce(
-        (sum: number, entry: string) => sum + parseDbNumber(entry, 0),
+        (sum: number, entry: any) => sum + parseDbNumber(entry, 0),
         0
       );
       silenceRatio =
-        durationSeconds > 0 ? clamp(totalSilence / durationSeconds, 0, 1) : silenceRatio;
+        durationSeconds > 0 ? clamp(Number(totalSilence) / durationSeconds, 0, 1) : silenceRatio;
     } catch (error: any) {
       if (!options.signal?.aborted) {
         console.warn('[transcription] silencedetect analysis failed:', error?.message || error);
@@ -312,7 +316,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-      } catch (_) { }
+      } catch (_) {}
     }
   }
 }
@@ -348,13 +352,13 @@ export async function preprocessAudio(
     let durationBefore = 0;
     if (DEBUG && options.silenceRemove) {
       try {
-        const ffprobeBinary = deriveFfprobeBinary();
+        const ffprobeBinary = deriveFfprobeBinary(FFMPEG_BINARY);
         const { stdout } = await execPromise(
           `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
           { timeout: 10000 }
         );
         durationBefore = parseFloat(String(stdout || '0').trim()) || 0;
-      } catch (_) { }
+      } catch (_) {}
     }
 
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
@@ -365,7 +369,7 @@ export async function preprocessAudio(
 
     if (DEBUG && options.silenceRemove && durationBefore > 0) {
       try {
-        const ffprobeBinary = deriveFfprobeBinary();
+        const ffprobeBinary = deriveFfprobeBinary(FFMPEG_BINARY);
         const { stdout } = await execPromise(
           `"${ffprobeBinary}" -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tmpPath}"`,
           { timeout: 10000 }
@@ -375,7 +379,7 @@ export async function preprocessAudio(
         console.log(
           `[transcription] Silence removal: ${durationBefore.toFixed(1)}s → ${durationAfter.toFixed(1)}s (removed ${removed.toFixed(1)}s, ${durationBefore > 0 ? ((removed / durationBefore) * 100).toFixed(0) : 0}%)`
         );
-      } catch (_) { }
+      } catch (_) {}
     }
 
     if (options.cacheKey) {
@@ -384,7 +388,7 @@ export async function preprocessAudio(
       } else {
         try {
           fs.unlinkSync(tmpPath);
-        } catch (_) { }
+        } catch (_) {}
       }
       return cachePath;
     }
@@ -397,7 +401,7 @@ export async function preprocessAudio(
       );
     try {
       fs.unlinkSync(tmpPath);
-    } catch (_) { }
+    } catch (_) {}
     return null;
   }
 }
@@ -664,7 +668,7 @@ export async function transcribeInChunks(
             chunkSpeech = await runSileroVAD(tmpVad, options.signal);
             try {
               fs.unlinkSync(tmpVad);
-            } catch (_) { }
+            } catch (_) {}
           }
 
           // Track speech segments for adaptive overlap calculation

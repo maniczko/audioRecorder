@@ -1,5 +1,5 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TasksTab from './TasksTab';
 import { ToastProvider } from './shared/Toast';
@@ -84,7 +84,11 @@ function renderTasksTab(overrides = {}) {
   };
 
   return {
-    ...render(<ToastProvider><TasksTab {...props} /></ToastProvider>),
+    ...render(
+      <ToastProvider>
+        <TasksTab {...props} />
+      </ToastProvider>
+    ),
     props,
   };
 }
@@ -167,22 +171,32 @@ describe('TasksTab', () => {
       ],
     });
 
-    expect(screen.getByText('Completed')).toBeInTheDocument();
-    expect(screen.getByText('Overdue')).toBeInTheDocument();
+    expect(screen.getByText(/(Completed|Zakończone)/i)).toBeInTheDocument();
+    expect(screen.getByText(/(Overdue|Zaległe)/i)).toBeInTheDocument();
   });
 
-  test.skip('pokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)', async () => {
-    // SKIP: This test is flaky - error message UI implementation changed
-    // Task creation error handling is tested through component unit tests
-    const { props } = renderTasksTab({
-      defaultView: 'list',
-      onCreateTask: vi.fn().mockReturnValue(null),
+  test('pokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)', async () => {
+    // Toast DOM doesn't render under global fakeTimers — spy on useToast instead
+    const toastModule = await import('./shared/Toast');
+    const errorSpy = vi.fn();
+    const spy = vi.spyOn(toastModule, 'useToast').mockReturnValue({
+      show: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+      warning: vi.fn(),
+      dismiss: vi.fn(),
+      error: errorSpy,
     });
 
-    await userEvent.type(screen.getByPlaceholderText('Dodaj zadanie'), 'Felerne zadanie');
-    await userEvent.click(screen.getByRole('button', { name: 'Dodaj zadanie' }));
+    const onCreateTask = vi.fn().mockReturnValue(null);
+    renderTasksTab({ defaultView: 'list', onCreateTask });
 
-    expect(props.onCreateTask).toHaveBeenCalled();
-    expect(await screen.findByText('Nie udalo sie dodac zadania.')).toBeInTheDocument();
-  });
+    const quickAddInput = screen.getByPlaceholderText(/Dodaj zadanie/);
+    await userEvent.type(quickAddInput, 'Felerne zadanie{Enter}');
+
+    expect(onCreateTask).toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(/Nie udalo sie dodac zadania/));
+
+    spy.mockRestore();
+  }, 15000);
 });

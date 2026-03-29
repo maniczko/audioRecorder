@@ -174,6 +174,7 @@ export default function useUI() {
 
   const openStudio = useCallback(() => {
     meetings.startNewMeetingDraft();
+    meetings.resetSelectionState();
     setActiveTab('studio');
   }, [meetings, setActiveTab]);
 

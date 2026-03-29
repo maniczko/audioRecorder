@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import useMeetings from './useMeetings';
 
@@ -157,33 +157,56 @@ describe('useMeetings', () => {
     stateServiceState.syncWorkspaceState.mockReset().mockResolvedValue(null);
   });
 
-  test('updates calendar entry metadata and applies meeting snapshot', () => {
+  test('updateCalendarEntryMeta stores metadata under composite key', () => {
     const { result } = renderHook(() => useMeetings());
 
-    expect(result.current.updateCalendarEntryMeta).toBeDefined();
-    expect(result.current.applyCalendarSyncSnapshot).toBeDefined();
+    act(() => {
+      result.current.updateCalendarEntryMeta('meeting', 'm1', { syncedAt: '2026-03-28' });
+    });
+    expect(meetingsState.calendarMeta['meeting:m1']).toEqual({ syncedAt: '2026-03-28' });
   });
 
-  test('delegates task snapshot application to task operations', () => {
+  test('updateCalendarEntryMeta merges into existing meta entry', () => {
+    meetingsState.calendarMeta = { 'meeting:m1': { syncedAt: '2026-03-20' } };
     const { result } = renderHook(() => useMeetings());
 
-    expect(result.current.applyCalendarSyncSnapshot).toBeDefined();
+    act(() => {
+      result.current.updateCalendarEntryMeta('meeting', 'm1', { status: 'synced' });
+    });
+    expect(meetingsState.calendarMeta['meeting:m1']).toEqual({
+      syncedAt: '2026-03-20',
+      status: 'synced',
+    });
   });
 
-  test('creates manual note through lifecycle helper and updates workspace message', () => {
+  test('createManualNote delegates to createMeetingDirect and sets workspace message', () => {
+    lifecycleState.createMeetingDirect.mockReturnValue({ id: 'note1' });
     const { result } = renderHook(() => useMeetings());
 
-    expect(result.current.createManualNote).toBeDefined();
+    act(() => {
+      result.current.createManualNote({ title: 'Notatka', context: 'Treść' });
+    });
+    expect(lifecycleState.createMeetingDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Notatka',
+        context: 'Treść',
+        durationMinutes: 0,
+      })
+    );
+    expect(meetingsState.workspaceMessage).toBe('Notatka zapisana.');
   });
 
-  test('deletes selected meeting and resets selection state', () => {
+  test('deleteMeeting removes meeting from state and resets selection', () => {
     const { result } = renderHook(() => useMeetings());
 
-    expect(result.current.deleteMeeting).toBeDefined();
-    expect(result.current.resetSelectionState).toBeDefined();
+    act(() => {
+      result.current.deleteMeeting('m1');
+    });
+    expect(meetingsState.meetings).toEqual([]);
+    expect(lifecycleState.resetSelectionState).toHaveBeenCalled();
   });
 
-  test('deleteRecordingAndMeeting removes meeting and syncs workspace immediately', async () => {
+  test('deleteRecordingAndMeeting removes meeting and syncs workspace', async () => {
     const originalMeetings = meetingsState.meetings;
     meetingsState.meetings = [
       {
@@ -201,10 +224,18 @@ describe('useMeetings', () => {
 
     await result.current.deleteRecordingAndMeeting('m1');
 
-    // Restore original state
-    meetingsState.meetings = originalMeetings;
+    expect(meetingsState.meetings).toEqual([]);
+    expect(lifecycleState.resetSelectionState).toHaveBeenCalled();
+    expect(stateServiceState.syncWorkspaceState).toHaveBeenCalled();
+  });
 
-    // Just verify the function exists and was called
-    expect(result.current.deleteRecordingAndMeeting).toBeDefined();
+  test('updateMeeting merges updates into matching meeting', () => {
+    const { result } = renderHook(() => useMeetings());
+
+    act(() => {
+      result.current.updateMeeting('m1', { title: 'Nowy tytuł' });
+    });
+    expect(meetingsState.meetings[0].title).toBe('Nowy tytuł');
+    expect(meetingsState.meetings[0].updatedAt).toBeDefined();
   });
 });

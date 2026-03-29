@@ -156,6 +156,63 @@ html {
   --layout-shell-padding: var(--space-6);
   --layout-header-min-height: 44px;
 
+  /* Inline migration tokens (must be defined globally because utilities and inline styles use them) */
+  --inline-color-accent: var(--accent);
+  --inline-color-accent-strong: var(--accent-strong);
+  --inline-color-text: var(--text);
+  --inline-color-text-muted: var(--muted);
+  --inline-color-danger: var(--danger);
+  --inline-color-warning: var(--warning);
+  --inline-bg-overlay: var(--bg-panel);
+  --inline-bg-panel: var(--bg-panel-strong);
+  --inline-bg-surface: var(--surface-panel-muted);
+  --inline-bg-surface-hover: var(--surface-panel-hover);
+  --inline-border: var(--surface-stroke);
+  --inline-border-accent: color-mix(in srgb, var(--accent) 40%, transparent);
+  --inline-shadow: var(--shadow-panel);
+  --inline-radius-sm: 4px;
+  --inline-radius-md: 8px;
+  --inline-radius-lg: 10px;
+  --inline-radius-xl: 12px;
+  --inline-radius-2xl: 16px;
+  --inline-radius-pill: 999px;
+  --inline-font-xs: 0.7rem;
+  --inline-font-sm: 0.75rem;
+  --inline-font-base: 0.82rem;
+  --inline-font-md: 0.88rem;
+  --inline-font-lg: 0.95rem;
+  --inline-font-xl: 1.05rem;
+  --inline-font-2xl: 1.1rem;
+  --inline-font-title: 1.25rem;
+  --inline-font-heading: 1.4rem;
+  --inline-font-weight-normal: 400;
+  --inline-font-weight-medium: 500;
+  --inline-font-weight-semibold: 600;
+  --inline-font-weight-bold: 700;
+  --inline-font-weight-extrabold: 800;
+  --inline-gap-1: 4px;
+  --inline-gap-2: 6px;
+  --inline-gap-3: 8px;
+  --inline-gap-4: 10px;
+  --inline-gap-5: 12px;
+  --inline-gap-6: 16px;
+  --inline-gap-8: 20px;
+  --inline-gap-10: 24px;
+  --inline-gap-12: 32px;
+  --inline-gap-16: 40px;
+  --inline-padding-sm: 6px;
+  --inline-padding-md: 8px;
+  --inline-padding-lg: 10px;
+  --inline-padding-xl: 12px;
+  --inline-padding-2xl: 14px;
+  --inline-padding-3xl: 16px;
+  --inline-padding-4xl: 18px;
+  --inline-padding-5xl: 20px;
+  --inline-z-index-overlay: 9999;
+  --inline-transition-fast: 0.15s;
+  --inline-transition-normal: 0.2s;
+  --inline-transition-slow: 0.3s;
+
   /* Z-index scale */
   --z-index-hidden: -1;
   --z-index-base: 0;
@@ -248,6 +305,10 @@ html {
   --surface-2: #f5f8fc;
   --text-1: #0d1f2d;
   --text-2: rgba(13, 31, 45, 0.62);
+
+  --inline-bg-surface: rgba(13, 31, 45, 0.03);
+  --inline-bg-surface-hover: rgba(13, 31, 45, 0.06);
+  --inline-border: rgba(13, 31, 45, 0.14);
 }
 
 :root[data-theme="beaver"] {

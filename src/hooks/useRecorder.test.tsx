@@ -248,4 +248,53 @@ describe('useRecorder', () => {
     expect(listStoredSizesMock).toHaveBeenCalled();
     expect(result.current.audioStorageState.items).toEqual([]);
   });
+
+  test('queueRecording sets error status when saveAudioBlob throws', async () => {
+    saveAudioBlobMock.mockRejectedValue(new Error('QuotaExceededError'));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'Demo', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo', workspaceId: 'ws1' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(['audio'], 'test.webm', { type: 'audio/webm' });
+
+    await act(async () => {
+      await result.current.queueRecording('m1', file);
+    });
+
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Nie udalo sie zapisac pliku do kolejki.'
+    );
+  });
+
+  test('startRecording is a no-op when createAdHocMeeting returns null', () => {
+    const createAdHocMeeting = vi.fn(() => null);
+    const selectMeeting = vi.fn();
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+        selectMeeting,
+      })
+    );
+
+    act(() => {
+      result.current.startRecording();
+    });
+
+    expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
+    // startRecording on hardware should not be called when no meeting was created
+    expect(hardwareState.startRecording).not.toHaveBeenCalled();
+  });
 });

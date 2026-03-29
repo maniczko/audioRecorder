@@ -1520,6 +1520,90 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* ================================================================ */
+/* Consistency Pass: vertical rhythm and stable alignment            */
+/* ================================================================ */
+
+.ff-header {
+  gap: 6px;
+  padding: 18px 0 8px;
+}
+
+.ff-intelligence-tabs {
+  margin-bottom: 16px;
+}
+
+.ff-toolbar {
+  gap: 8px;
+  padding: 10px 0 12px;
+}
+
+.ff-tb-btn,
+.ff-tb-lang,
+.ff-tb-record,
+.ff-tb-stop {
+  min-height: 36px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  box-sizing: border-box;
+}
+
+.ff-panels {
+  gap: 16px;
+}
+
+.studio-analysis-summary-panel .panel-header.compact {
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ff-summary-layout {
+  gap: 16px;
+}
+
+.summary-card,
+.summary-hero,
+.sketchnote-section-shell {
+  border-radius: 16px;
+}
+
+.summary-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.summary-grid {
+  gap: 14px;
+}
+
+.summary-list-tight li {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1220px) {
+  .ff-toolbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .ff-tb-btn,
+  .ff-tb-lang,
+  .ff-tb-record,
+  .ff-tb-stop {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 0.78rem;
+  }
+
+  .summary-grid,
+  .feedback-grid,
+  .feedback-category-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .summary-metric span {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -2751,6 +2835,35 @@
   margin-bottom: 16px;
 }
 
+.sketchnote-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sketchnote-collapse-btn {
+  min-height: 34px;
+  width: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.sketchnote-collapse-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sketchnote-zoom-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
 .sketchnote-title {
   display: flex;
   align-items: center;
@@ -2792,6 +2905,10 @@
 
 .sketchnote-regenerate-btn {
   margin-top: 12px;
+}
+
+.sketchnote-generate-btn {
+  margin-top: 8px;
 }
 
 .sketchnote-empty-copy {
@@ -2960,6 +3077,10 @@
   margin-bottom: 18px;
 }
 
+.summary-card-overflow-visible {
+  overflow: visible;
+}
+
 .summary-copy-spaced {
   margin-bottom: 12px;
 }
@@ -3010,6 +3131,37 @@
 
 .ff-sidebar-action-btn-centered {
   align-self: center;
+}
+
+.ff-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--muted);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ff-search-bar:focus-within {
+  border-color: var(--accent, #75d6c4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ff-search-bar input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+  padding: 0;
+}
+
+.ff-search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .ff-search-bar-stretch {

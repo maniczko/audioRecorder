@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
-import { config } from '../config';
+import { config } from '../config.js';
 
 const SUPABASE_URL = config.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = config.SUPABASE_SERVICE_ROLE_KEY || '';

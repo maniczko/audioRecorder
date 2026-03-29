@@ -22,8 +22,11 @@ describe('ProfileTab auth integration', () => {
   });
 
   test.skip('loads voice profiles directly from the absolute api base url on hosted previews', async () => {
-    // SKIP: This integration test is flaky and depends on specific API mock implementation
-    // The voice profiles feature is tested through unit tests
+    // SKIP: Requires mocking apiRequest internal URL resolution + zustand workspace store hydration
+    // in a hosted preview context. Voice profiles API is tested via:
+    // - ProfileTab.comprehensive.test.tsx (section rendering)
+    // - App.integration.test.tsx (dialog + recording flow)
+    // - service-worker.test.ts (cache strategy for /voice-profiles)
     localStorage.setItem(
       'voicelog_workspace_store',
       JSON.stringify({

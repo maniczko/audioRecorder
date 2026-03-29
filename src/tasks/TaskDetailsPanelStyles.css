@@ -526,6 +526,85 @@
   margin-bottom: 12px;
 }
 
+/* Delete button in section footer */
+.todo-detail-section-footer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.todo-detail-section-footer .todo-delete-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(241, 125, 114, 0.12);
+  border: 1px solid rgba(241, 125, 114, 0.3);
+  border-radius: var(--radius-md);
+  color: #f17d72;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.todo-detail-section-footer .todo-delete-button:hover {
+  background: rgba(241, 125, 114, 0.2);
+  border-color: rgba(241, 125, 114, 0.5);
+  transform: translateY(-1px);
+}
+
+.todo-detail-section-footer .todo-delete-button:active {
+  transform: translateY(0);
+}
+
+/* Section head wrapper for inline delete button */
+.todo-section-head-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 1;
+}
+
+.todo-section-head-wrapper strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-section-head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todo-delete-button-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 122, 122, 0.22);
+  background: rgba(241, 125, 114, 0.12);
+  color: #f17d72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.todo-delete-button-inline:hover {
+  border-color: rgba(255, 122, 122, 0.42);
+  background: rgba(241, 125, 114, 0.25);
+  transform: translateY(-1px);
+}
+
+.todo-delete-button-inline:active {
+  transform: translateY(0);
+}
+
 .tasks-layout.ms-todo .todo-comment-card,
 .tasks-layout.ms-todo .todo-history-row {
   background: rgba(255, 255, 255, 0.02);
@@ -656,6 +735,17 @@
   color: var(--text-base);
 }
 
+/* Fix select dropdown options visibility */
+.todo-detail-select option {
+  background: #1a2634;
+  color: #eef4fb;
+  padding: 8px 12px;
+}
+
+.todo-detail-select option:hover {
+  background: #2a3f55;
+}
+
 /* ── todo-detail-group (replaces todo-detail-stack) ── */
 .todo-detail-group {
   display: flex;
@@ -669,6 +759,30 @@
 
 .todo-detail-group--content {
   overflow: visible;
+}
+
+/* ── todo-detail-row alignment fixes ── */
+.todo-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.todo-detail-row .todo-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.todo-detail-row .todo-row-label {
+  min-width: 70px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 /* ── Standalone .ms-todo theming (for modal popup) ── */

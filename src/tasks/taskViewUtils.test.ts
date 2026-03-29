@@ -419,7 +419,7 @@ describe('getSelectedListLabel', () => {
   it('returns label from customGroups', () => {
     expect(getSelectedListLabel(lists, 'group:Sprint')).toBe('Sprint');
   });
-  it('returns fallback Tasks for unknown id', () => {
-    expect(getSelectedListLabel(lists, 'unknown')).toBe('Tasks');
+  it('returns fallback Zadania for unknown id', () => {
+    expect(getSelectedListLabel(lists, 'unknown')).toBe('Zadania');
   });
 });

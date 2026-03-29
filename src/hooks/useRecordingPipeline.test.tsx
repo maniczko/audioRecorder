@@ -48,7 +48,6 @@ describe('useRecordingPipeline', () => {
     const attachCompletedRecording = vi.fn();
     const setCurrentSegments = vi.fn();
 
-    // Simulate queue with items
     mockStore.recordingQueue = [{ recordingId: 'r1', meetingId: 'm1' }];
 
     renderHook(() =>
@@ -60,8 +59,11 @@ describe('useRecordingPipeline', () => {
       })
     );
 
-    // Hook should be created successfully
-    expect(mockStore.recordingQueue).toBeDefined();
+    expect(mockStore.processQueue).toHaveBeenCalledWith(
+      expect.any(Function),
+      attachCompletedRecording,
+      setCurrentSegments
+    );
   });
 
   test('does not process queue while remote state is hydrating', () => {
@@ -77,6 +79,96 @@ describe('useRecordingPipeline', () => {
     );
 
     expect(mockStore.processQueue).not.toHaveBeenCalled();
+  });
+
+  test('re-triggers processQueue when hydration transitions from true to false', () => {
+    const userMeetingsRef = { current: [{ id: 'm1' }] };
+
+    const { rerender } = renderHook(
+      ({ isHydrating }) =>
+        useRecordingPipeline({
+          userMeetingsRef,
+          attachCompletedRecording: vi.fn(),
+          setCurrentSegments: vi.fn(),
+          isHydratingRemoteState: isHydrating,
+        }),
+      { initialProps: { isHydrating: true } }
+    );
+
+    expect(mockStore.processQueue).not.toHaveBeenCalled();
+
+    rerender({ isHydrating: false });
+
+    expect(mockStore.processQueue).toHaveBeenCalled();
+  });
+
+  test('resolveMeetingForQueueItem finds meeting from userMeetingsRef', () => {
+    const userMeetingsRef = { current: [{ id: 'm1', title: 'Demo Meeting' }] };
+    const attachCompletedRecording = vi.fn();
+    const setCurrentSegments = vi.fn();
+
+    mockStore.recordingQueue = [{ recordingId: 'r1', meetingId: 'm1' }];
+
+    renderHook(() =>
+      useRecordingPipeline({
+        userMeetingsRef,
+        attachCompletedRecording,
+        setCurrentSegments,
+        isHydratingRemoteState: false,
+      })
+    );
+
+    // processQueue was called with resolveMeetingForQueueItem as first arg
+    const resolveFunction = mockStore.processQueue.mock.calls[0][0];
+    const resolved = resolveFunction({ meetingId: 'm1' });
+    expect(resolved).toEqual({ id: 'm1', title: 'Demo Meeting' });
+  });
+
+  test('resolveMeetingForQueueItem falls back to meetingSnapshot when meeting not found', () => {
+    const userMeetingsRef = { current: [] };
+
+    mockStore.recordingQueue = [
+      {
+        recordingId: 'r1',
+        meetingId: 'm_gone',
+        meetingSnapshot: { id: 'm_gone', title: 'Snapshot' },
+      },
+    ];
+
+    renderHook(() =>
+      useRecordingPipeline({
+        userMeetingsRef,
+        attachCompletedRecording: vi.fn(),
+        setCurrentSegments: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const resolveFunction = mockStore.processQueue.mock.calls[0][0];
+    const resolved = resolveFunction({
+      meetingId: 'm_gone',
+      meetingSnapshot: { id: 'm_gone', title: 'Snapshot' },
+    });
+    expect(resolved).toEqual({ id: 'm_gone', title: 'Snapshot' });
+  });
+
+  test('resolveMeetingForQueueItem returns null when meeting and snapshot both absent', () => {
+    const userMeetingsRef = { current: [] };
+
+    mockStore.recordingQueue = [{ recordingId: 'r1', meetingId: 'm_none' }];
+
+    renderHook(() =>
+      useRecordingPipeline({
+        userMeetingsRef,
+        attachCompletedRecording: vi.fn(),
+        setCurrentSegments: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const resolveFunction = mockStore.processQueue.mock.calls[0][0];
+    const resolved = resolveFunction({ meetingId: 'm_none' });
+    expect(resolved).toBeNull();
   });
 
   test('exposes queue summary and meeting-specific queue accessors', () => {

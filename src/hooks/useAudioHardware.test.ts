@@ -103,4 +103,248 @@ describe('useAudioHardware', () => {
     expect(result.current.isRecording).toBe(false);
     expect(onRecordingStop).toHaveBeenCalled();
   });
+
+  test('shows error message when microphone permission is denied', async () => {
+    const onMessageChange = vi.fn();
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange,
+      })
+    );
+
+    // Simulate denied permission
+    act(() => {
+      // Set permission to denied by calling startRecording when getUserMedia rejects
+    });
+
+    // Override to simulate denied state by forcing the state
+    Object.defineProperty(result.current, 'recordPermission', { value: 'denied', writable: true });
+
+    // Instead, test what happens when getUserMedia throws
+    navigator.mediaDevices.getUserMedia = vi
+      .fn()
+      .mockRejectedValue(
+        Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' })
+      );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(onMessageChange).toHaveBeenCalled();
+    const message = onMessageChange.mock.calls.find((c) => c[0].length > 0);
+    expect(message).toBeTruthy();
+  });
+
+  test('shows error when getUserMedia is not available', async () => {
+    navigator.mediaDevices = { getUserMedia: undefined } as any;
+    const onMessageChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange,
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(onMessageChange).toHaveBeenCalledWith(expect.stringContaining('nie obsługuje'));
+  });
+
+  test('shows error when MediaRecorder is not available', async () => {
+    delete global.MediaRecorder;
+    const onMessageChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange,
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(onMessageChange).toHaveBeenCalledWith(expect.stringContaining('MediaRecorder'));
+  });
+
+  test('pause and resume recording', async () => {
+    const mockMediaService = {
+      createLiveController: () => ({
+        setOnEnd: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        clearHandlers: vi.fn(),
+      }),
+    };
+
+    global.MediaRecorder = class {
+      constructor() {
+        this.state = 'inactive';
+        this.mimeType = 'audio/webm';
+      }
+      start() {
+        this.state = 'recording';
+      }
+      stop() {
+        this.state = 'inactive';
+        if (this.onstop) this.onstop();
+      }
+      pause() {
+        this.state = 'paused';
+      }
+      resume() {
+        this.state = 'recording';
+      }
+      static isTypeSupported() {
+        return true;
+      }
+    };
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: mockMediaService,
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(result.current.isRecording).toBe(true);
+    expect(result.current.isPaused).toBe(false);
+
+    act(() => {
+      result.current.pauseRecording();
+    });
+
+    expect(result.current.isPaused).toBe(true);
+
+    act(() => {
+      result.current.resumeRecording();
+    });
+
+    expect(result.current.isPaused).toBe(false);
+    expect(result.current.isRecording).toBe(true);
+
+    act(() => {
+      result.current.stopRecording();
+    });
+  });
+
+  test('cleanupRecorder resets state without crash', async () => {
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+      })
+    );
+
+    // Should not throw even when nothing is initialized
+    act(() => {
+      result.current.cleanupRecorder();
+    });
+
+    expect(result.current.voiceActivityStatus).toBe('unsupported');
+  });
+
+  test('resetSilenceTimer clears countdown', async () => {
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+        silenceAutoStopMinutes: 3,
+      })
+    );
+
+    act(() => {
+      result.current.resetSilenceTimer();
+    });
+
+    expect(result.current.silenceCountdown).toBeNull();
+  });
+
+  test('onRecordingStop receives correct data shape', async () => {
+    const onRecordingStop = vi.fn();
+    const mockMediaService = {
+      createLiveController: () => ({
+        setOnEnd: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        clearHandlers: vi.fn(),
+      }),
+    };
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: mockMediaService,
+        onRecordingStop,
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('test_meeting');
+    });
+
+    act(() => {
+      result.current.stopRecording();
+    });
+
+    expect(onRecordingStop).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meetingId: 'test_meeting',
+        chunks: expect.any(Array),
+        mimeType: expect.any(String),
+        rawSegments: expect.any(Array),
+        duration: expect.any(Number),
+      })
+    );
+  });
+
+  test('initial state is correct before any recording', () => {
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+      })
+    );
+
+    expect(result.current.isRecording).toBe(false);
+    expect(result.current.isPaused).toBe(false);
+    expect(result.current.elapsed).toBe(0);
+    expect(result.current.silenceCountdown).toBeNull();
+    expect(result.current.voiceActivityStatus).toBe('unsupported');
+    expect(result.current.visualBars).toBeDefined();
+    expect(Array.isArray(result.current.visualBars)).toBe(true);
+  });
 });

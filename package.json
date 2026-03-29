@@ -82,7 +82,6 @@
     "build": "vite build",
     "build:clean": "rm -rf node_modules/.vite dist build && vite build",
     "build:fix": "rm -rf node_modules/.vite && pnpm run build",
-    "start": "vite",
     "start:clean": "rm -rf node_modules/.vite && vite",
     "turbo:build": "turbo run build",
     "migrate": "node scripts/code-migration.js",
@@ -127,6 +126,8 @@
     "test:workflows": "node scripts/validate-vercel-workflows.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:server": "tsc --project server/tsconfig.server.json --noEmit",
+    "typecheck:all": "pnpm run typecheck && pnpm run typecheck:server",
     "typecheck:watch": "tsc --noEmit --watch",
     "prepare": "husky"
   },

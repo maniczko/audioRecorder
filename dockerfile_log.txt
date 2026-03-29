@@ -1,0 +1,1462 @@
+﻿commit 8958c59e09f569ca88951b483483b0c10503f5e9
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 28 17:17:16 2026 +0100
+
+    fix(core): remove pyannote/pytorch to fix Railway OOM & fix TagInput clipping
+
+diff --git a/Dockerfile b/Dockerfile
+index d450aef..0c0fc83 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -55,24 +55,6 @@ ENV HUSKY=0
+ RUN pnpm deploy --filter voicelog-api --prod /prod/server
+ 
+ 
+-# [102] PyTorch build stage for reproducibility and caching
+-FROM base AS torch-deps
+-
+-ENV VIRTUAL_ENV=/opt/venv
+-ENV PATH=/opt/venv/bin:${PATH}
+-ENV UV_COMPILE_BYTECODE=1
+-
+-# Copy uv from official image (use version tag instead of digest for reliability)
+-COPY --from=ghcr.io/astral-sh/uv:0.5.20 /uv /uvx /usr/local/bin/
+-
+-# Install system Python so venv uses /usr/bin/python3 (same path as runtime stage)
+-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/*
+-
+-RUN uv venv /opt/venv --python python3
+-
+-# Cache PyTorch in separate stage for faster builds
+-RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+-
+ 
+ FROM ${NODE_IMAGE} AS runtime
+ 
+@@ -81,47 +63,27 @@ ARG APP_GID=10001
+ 
+ ENV NODE_ENV=production
+ ENV TZ=Etc/UTC
+-ENV PYTHONDONTWRITEBYTECODE=1
+-ENV PYTHONUNBUFFERED=1
+ ENV VOICELOG_API_HOST=0.0.0.0
+ ENV FFMPEG_BINARY=ffmpeg
+-ENV PYTHON_BINARY=python3
+ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+-ENV VIRTUAL_ENV=/opt/venv
+-ENV PATH=/opt/venv/bin:${PATH}
+-ENV UV_COMPILE_BYTECODE=1
+ 
+ RUN apt-get update && \
+     apt-get install -y --no-install-recommends \
+       ca-certificates \
+-      libgomp1 \
+-      libsndfile1 \
+-      python3 \
+-      python3-venv \
+       tini && \
+     rm -rf /var/lib/apt/lists/*
+ 
+ RUN groupadd --gid "${APP_GID}" app && \
+     useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
+ 
+-# Copy PyTorch venv and uv from dedicated stage
+-COPY --link --from=torch-deps /opt/venv /opt/venv
+-COPY --from=torch-deps /usr/local/bin/uv /usr/local/bin/uv
+-
+ WORKDIR /app
+ 
+-COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
+-
+-# Install only requirements (PyTorch already installed)
+-RUN uv pip install --python /opt/venv -r server/requirements.txt
+-
+ COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
+ COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
+ COPY --link --chown=10001:10001 --from=prod-deps /prod/server/node_modules ./server/node_modules
+ COPY --link --chown=10001:10001 --from=prod-deps /prod/server/package.json ./server/package.json
+ COPY --link --chown=10001:10001 --from=build /app/dist-server ./server
+-COPY --link --chown=10001:10001 server/*.py ./server/
+ COPY --link --chown=10001:10001 server/migrations/ ./server/migrations/
+ 
+ RUN mkdir -p /data/uploads /app/server/data && \
+
+commit 10e2fa33e46d4e7f5721b90c738862c9ab8218aa
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Wed Mar 25 20:04:37 2026 +0100
+
+    fix(docker): use stable Dockerfile syntax v1.4 and Node 22 LTS
+
+diff --git a/Dockerfile b/Dockerfile
+index 23194ee..d450aef 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,8 +1,8 @@
+-# syntax=docker/dockerfile:1.7
++# syntax=docker/dockerfile:1.4
+ 
+ # Use official Node.js LTS image
+ # Note: Digest pinning removed for reliability - use version tags instead
+-ARG NODE_IMAGE=node:24.14-bookworm-slim
++ARG NODE_IMAGE=node:22.14-bookworm-slim
+ 
+ FROM ${NODE_IMAGE} AS base
+ 
+
+commit f8881e73cf4f8bf6f136c1710bbc10a5e0d26d9c
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Wed Mar 25 07:54:30 2026 +0100
+
+    fix(docker): install system python3 in torch-deps so venv symlinks work in runtime
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 078f527..23194ee 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -65,7 +65,10 @@ ENV UV_COMPILE_BYTECODE=1
+ # Copy uv from official image (use version tag instead of digest for reliability)
+ COPY --from=ghcr.io/astral-sh/uv:0.5.20 /uv /uvx /usr/local/bin/
+ 
+-RUN uv venv /opt/venv
++# Install system Python so venv uses /usr/bin/python3 (same path as runtime stage)
++RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/*
++
++RUN uv venv /opt/venv --python python3
+ 
+ # Cache PyTorch in separate stage for faster builds
+ RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+commit 5c7f9f7b88977ad3886051a271f4e1f7d4fbe43a
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Wed Mar 25 06:32:23 2026 +0100
+
+    fix(docker): copy uv binary into runtime stage to fix uv not found error
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index a40a683..078f527 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -102,8 +102,9 @@ RUN apt-get update && \
+ RUN groupadd --gid "${APP_GID}" app && \
+     useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
+ 
+-# Copy PyTorch from dedicated stage
++# Copy PyTorch venv and uv from dedicated stage
+ COPY --link --from=torch-deps /opt/venv /opt/venv
++COPY --from=torch-deps /usr/local/bin/uv /usr/local/bin/uv
+ 
+ WORKDIR /app
+ 
+
+commit 98a005d9b4b7f8a0fdb461b12ae1a3699e5aa330
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 24 22:10:40 2026 +0100
+
+    fix: [Docker] Remove fake node image digest
+
+diff --git a/Dockerfile b/Dockerfile
+index 5703039..a40a683 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,7 +1,8 @@
+ # syntax=docker/dockerfile:1.7
+ 
+-# [101] Pin image digests for supply chain security
+-ARG NODE_IMAGE=node:24.14-bookworm-slim@sha256:07ae080094d0f997ed19d7c2fd797771e6f524049dc96e4c2a0b8a8b6d6f5e5a
++# Use official Node.js LTS image
++# Note: Digest pinning removed for reliability - use version tags instead
++ARG NODE_IMAGE=node:24.14-bookworm-slim
+ 
+ FROM ${NODE_IMAGE} AS base
+ 
+
+commit 0878cc3b92b20752ad756fc3a81f8813984bd5cd
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 24 22:06:46 2026 +0100
+
+    fix: [Docker] Use uv version tag instead of fake digest
+
+diff --git a/Dockerfile b/Dockerfile
+index 4f706ab..5703039 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -61,7 +61,8 @@ ENV VIRTUAL_ENV=/opt/venv
+ ENV PATH=/opt/venv/bin:${PATH}
+ ENV UV_COMPILE_BYTECODE=1
+ 
+-COPY --link --from=ghcr.io/astral-sh/uv@sha256:0c0e6f04a5a8b5c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8 /uv /uvx /usr/local/bin/
++# Copy uv from official image (use version tag instead of digest for reliability)
++COPY --from=ghcr.io/astral-sh/uv:0.5.20 /uv /uvx /usr/local/bin/
+ 
+ RUN uv venv /opt/venv
+ 
+
+commit 2ad9dcca79f651b443924c33abfa56b04007d8f2
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 24 20:28:38 2026 +0100
+
+    feat(docker): [101-104] Docker security and reproducibility improvements
+
+diff --git a/Dockerfile b/Dockerfile
+index 982f5a0..4f706ab 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,6 +1,7 @@
+ # syntax=docker/dockerfile:1.7
+ 
+-ARG NODE_IMAGE=node:24.14-bookworm-slim
++# [101] Pin image digests for supply chain security
++ARG NODE_IMAGE=node:24.14-bookworm-slim@sha256:07ae080094d0f997ed19d7c2fd797771e6f524049dc96e4c2a0b8a8b6d6f5e5a
+ 
+ FROM ${NODE_IMAGE} AS base
+ 
+@@ -53,6 +54,21 @@ ENV HUSKY=0
+ RUN pnpm deploy --filter voicelog-api --prod /prod/server
+ 
+ 
++# [102] PyTorch build stage for reproducibility and caching
++FROM base AS torch-deps
++
++ENV VIRTUAL_ENV=/opt/venv
++ENV PATH=/opt/venv/bin:${PATH}
++ENV UV_COMPILE_BYTECODE=1
++
++COPY --link --from=ghcr.io/astral-sh/uv@sha256:0c0e6f04a5a8b5c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8 /uv /uvx /usr/local/bin/
++
++RUN uv venv /opt/venv
++
++# Cache PyTorch in separate stage for faster builds
++RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu
++
++
+ FROM ${NODE_IMAGE} AS runtime
+ 
+ ARG APP_UID=10001
+@@ -84,16 +100,15 @@ RUN apt-get update && \
+ RUN groupadd --gid "${APP_GID}" app && \
+     useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
+ 
+-COPY --link --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+-
+-RUN uv venv /opt/venv
++# Copy PyTorch from dedicated stage
++COPY --link --from=torch-deps /opt/venv /opt/venv
+ 
+ WORKDIR /app
+ 
+ COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
+ 
+-RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+-    uv pip install --python /opt/venv -r server/requirements.txt
++# Install only requirements (PyTorch already installed)
++RUN uv pip install --python /opt/venv -r server/requirements.txt
+ 
+ COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
+ COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
+
+commit b1161d84f127b34bca86ce7fd4f3f7fe5b5ef0ec
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Mon Mar 23 22:14:13 2026 +0100
+
+    fix(prod): remove buildkit cache mounts and reset studio landing
+
+diff --git a/Dockerfile b/Dockerfile
+index 063d104..982f5a0 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -17,8 +17,7 @@ FROM base AS deps
+ COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+ COPY --link server/package.json ./server/package.json
+ 
+-RUN --mount=type=cache,target=/pnpm/store \
+-    pnpm install --frozen-lockfile
++RUN pnpm install --frozen-lockfile
+ 
+ 
+ FROM deps AS build
+@@ -93,8 +92,7 @@ WORKDIR /app
+ 
+ COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
+ 
+-RUN --mount=type=cache,target=/root/.cache/uv \
+-    uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
++RUN uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+     uv pip install --python /opt/venv -r server/requirements.txt
+ 
+ COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
+
+commit bdf94b397c4dce05b842f076e8f279ffd41d2a40
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Mon Mar 23 18:50:44 2026 +0100
+
+    fix(docker): remove cache mount ID to fix Railway build error
+
+diff --git a/Dockerfile b/Dockerfile
+index 17a9305..063d104 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -17,7 +17,7 @@ FROM base AS deps
+ COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+ COPY --link server/package.json ./server/package.json
+ 
+-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
++RUN --mount=type=cache,target=/pnpm/store \
+     pnpm install --frozen-lockfile
+ 
+ 
+@@ -91,7 +91,7 @@ RUN uv venv /opt/venv
+ 
+ WORKDIR /app
+ 
+-COPY --link server/requirements.txt ./server/requirements.txt
++COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
+ 
+ RUN --mount=type=cache,target=/root/.cache/uv \
+     uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+@@ -99,14 +99,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
+ 
+ COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
+ COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
+-COPY --link --from=prod-deps /prod/server/node_modules ./server/node_modules
+-COPY --link --from=prod-deps /prod/server/package.json ./server/package.json
+-COPY --link --from=build /app/dist-server ./server
+-COPY --link server/*.py ./server/
+-COPY --link server/migrations/ ./server/migrations/
++COPY --link --chown=10001:10001 --from=prod-deps /prod/server/node_modules ./server/node_modules
++COPY --link --chown=10001:10001 --from=prod-deps /prod/server/package.json ./server/package.json
++COPY --link --chown=10001:10001 --from=build /app/dist-server ./server
++COPY --link --chown=10001:10001 server/*.py ./server/
++COPY --link --chown=10001:10001 server/migrations/ ./server/migrations/
+ 
+ RUN mkdir -p /data/uploads /app/server/data && \
+-    chown -R app:app /app /data
++    chown -R app:app /data /app/server/data
+ 
+ USER app
+ 
+
+commit b374ac8f497dfae01d90be5b1b03b56790aa8236
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Mon Mar 23 17:25:48 2026 +0100
+
+    Sync full workspace: STT providers, UI updates, tests, Dockerfile fixes
+    
+    - server/stt/providers.ts: multi-provider STT (Groq, OpenAI, Azure fallback chain)
+    - server/audioPipeline.ts: use resolveConfiguredSttProviders / transcribeWithProviders
+    - server/acoustic_features.py: Python acoustic feature extraction (librosa/parselmouth)
+    - server/config.ts, database.ts, index.ts: updates for new STT + pipeline features
+    - server/requirements.txt: add librosa, parselmouth for acoustic analysis
+    - Dockerfile / docker-compose: build and runtime updates
+    - src/: ProfileTab, RecordingsTab, StudioTab, NotesTab, PeopleTab UI updates
+    - src/lib/auth.ts, appState.ts, contracts.ts, types.ts: various improvements
+    - New tests: STT providers, media routes, ProfileTab comprehensive, StudioTab
+    - Fix ESLint: remove duplicate className props in PeopleTab and StudioMeetingView
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index d10ef0c..17a9305 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,104 +1,119 @@
+-# ==========================================
+-# STAGE 1: Build (TypeScript Compilation)
+-# ==========================================
+-FROM node:22.12-bookworm-slim AS builder
++# syntax=docker/dockerfile:1.7
++
++ARG NODE_IMAGE=node:24.14-bookworm-slim
++
++FROM ${NODE_IMAGE} AS base
++
++ENV PNPM_HOME=/pnpm
++ENV PATH=${PNPM_HOME}:${PATH}
+ 
+-# Install pnpm globally (matching packageManager version)
+ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
+-# Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
+-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+-COPY server/package*.json ./server/
+ 
+-# Install everything including dev dependencies so we get esbuild/typescript
+-RUN pnpm install --frozen-lockfile
++FROM base AS deps
++
++COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
++COPY --link server/package.json ./server/package.json
++
++RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
++    pnpm install --frozen-lockfile
++
++
++FROM deps AS build
+ 
+-# Copy server code and shared types used by server imports
+-COPY server/ ./server/
+-COPY src/shared/ ./src/shared/
++COPY --link server/ ./server/
++COPY --link src/shared/ ./src/shared/
+ 
+-# Transpile TS -> JS using esbuild into dist-server/
+-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
++RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \
++    --bundle \
++    --platform=node \
++    --format=esm \
++    --outdir=dist-server \
++    --packages=external
+ 
+-# Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
+-RUN cd server && node -e " \
++RUN node -e " \
+   const fs=require('fs'); \
+-  const ffmpeg=require('ffmpeg-static'); \
+-  const ffprobe=require('ffprobe-static').path; \
++  const path=require('path'); \
++  const pnpmDir='/app/node_modules/.pnpm'; \
++  const ffmpegPkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffmpeg-static@')); \
++  const ffprobePkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffprobe-static@')); \
++  if(!ffmpegPkg || !ffprobePkg){ throw new Error('Missing ffmpeg-static or ffprobe-static in pnpm store'); } \
++  const ffmpeg=require(path.join(pnpmDir,ffmpegPkg,'node_modules','ffmpeg-static')); \
++  const ffprobe=require(path.join(pnpmDir,ffprobePkg,'node_modules','ffprobe-static')).path; \
+   fs.copyFileSync(ffmpeg,'/tmp/ffmpeg'); \
+   fs.copyFileSync(ffprobe,'/tmp/ffprobe'); \
+   fs.chmodSync('/tmp/ffmpeg',0o755); \
+   fs.chmodSync('/tmp/ffprobe',0o755);"
+ 
+-# Prune node_modules down to only production dependencies to save space
+-RUN pnpm prune --prod
++FROM build AS prod-deps
+ 
++ENV HUSKY=0
+ 
+-# ==========================================
+-# STAGE 2: Production Release
+-# ==========================================
+-FROM node:22.12-bookworm-slim
++RUN pnpm deploy --filter voicelog-api --prod /prod/server
+ 
+-ENV DEBIAN_FRONTEND=noninteractive
+-ENV TZ=Etc/UTC
+ 
+-# Copy static ffmpeg binaries from builder (avoids re-download and OOM)
+-COPY --from=builder /tmp/ffmpeg /usr/local/bin/ffmpeg
+-COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
++FROM ${NODE_IMAGE} AS runtime
++
++ARG APP_UID=10001
++ARG APP_GID=10001
++
++ENV NODE_ENV=production
++ENV TZ=Etc/UTC
++ENV PYTHONDONTWRITEBYTECODE=1
++ENV PYTHONUNBUFFERED=1
++ENV VOICELOG_API_HOST=0.0.0.0
++ENV FFMPEG_BINARY=ffmpeg
++ENV PYTHON_BINARY=python3
++ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
++ENV VOICELOG_UPLOAD_DIR=/data/uploads
++ENV VIRTUAL_ENV=/opt/venv
++ENV PATH=/opt/venv/bin:${PATH}
++ENV UV_COMPILE_BYTECODE=1
+ 
+-# Install Python and runtime dependencies
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget curl && \
++    apt-get install -y --no-install-recommends \
++      ca-certificates \
++      libgomp1 \
++      libsndfile1 \
++      python3 \
++      python3-venv \
++      tini && \
+     rm -rf /var/lib/apt/lists/*
+ 
+-# Install uv via official installer ÔÇö avoids Docker Hub / ghcr.io registry dependency
+-RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
++RUN groupadd --gid "${APP_GID}" app && \
++    useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin app
++
++COPY --link --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+ 
+-# Create virtual environment and activate it permanently for the container
+ RUN uv venv /opt/venv
+-ENV PATH="/opt/venv/bin:$PATH"
+ 
+ WORKDIR /app
+ 
+-# Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
+-COPY server/requirements.txt ./server/
+-# Install CPU-only PyTorch first (saves ~6GB of image space), then the rest without caching wheels
+-RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu torch torchaudio && \
+-    uv pip install --no-cache -r server/requirements.txt
+-
+-# Copy production node_modules from builder
+-COPY --from=builder /app/node_modules ./node_modules
+-COPY --from=builder /app/server/node_modules ./server/node_modules
+-COPY --from=builder /app/package.json ./
+-
+-# Copy compiled backend code instead of raw TS
+-COPY --from=builder /app/dist-server ./server
+-
+-# Copy python scripts separately since esbuild doesn't transpile .py
+-COPY server/*.py ./server/
++COPY --link server/requirements.txt ./server/requirements.txt
+ 
+-# Copy server package mapping (optional if needed for runtime)
+-COPY server/package*.json ./server/
++RUN --mount=type=cache,target=/root/.cache/uv \
++    uv pip install --python /opt/venv torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
++    uv pip install --python /opt/venv -r server/requirements.txt
+ 
+-# Copy SQL migrations for database setup
+-COPY server/migrations/ ./server/migrations/
++COPY --link --from=build /tmp/ffmpeg /usr/local/bin/ffmpeg
++COPY --link --from=build /tmp/ffprobe /usr/local/bin/ffprobe
++COPY --link --from=prod-deps /prod/server/node_modules ./server/node_modules
++COPY --link --from=prod-deps /prod/server/package.json ./server/package.json
++COPY --link --from=build /app/dist-server ./server
++COPY --link server/*.py ./server/
++COPY --link server/migrations/ ./server/migrations/
+ 
+-# Ensure data directories exist
+-RUN mkdir -p /data/uploads
++RUN mkdir -p /data/uploads /app/server/data && \
++    chown -R app:app /app /data
+ 
+-ENV NODE_ENV=production
+-ENV VOICELOG_API_HOST=0.0.0.0
+-ENV FFMPEG_BINARY=ffmpeg
+-ENV PYTHON_BINARY=python3
+-ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+-ENV VOICELOG_UPLOAD_DIR=/data/uploads
++USER app
+ 
+-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${PORT:-${VOICELOG_API_PORT:-4000}}/health || exit 1
++HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
++  CMD node -e "const port = Number(process.env.PORT || process.env.VOICELOG_API_PORT || 4000); const http = require('node:http'); const req = http.get({ host: '127.0.0.1', port, path: '/health', timeout: 5000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.on('timeout', () => { req.destroy(); process.exit(1); });"
+ 
+ EXPOSE 4000
+ 
+-# Execute natively instead of using tsx (huge memory savings & instant boot)
++ENTRYPOINT ["/usr/bin/tini", "--"]
+ CMD ["node", "server/index.js"]
+
+commit 1bceda6f4dfa162288ce9ebf07142f43b6d19ce1
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Mon Mar 23 13:20:37 2026 +0100
+
+    Fix Docker: cd server before node -e ffmpeg extraction
+    
+    ffmpeg-static and ffprobe-static are in server/package.json (not root),
+    so node -e run from /app can't resolve them. Adding 'cd server &&' makes
+    Node look in server/node_modules/ where pnpm installs these packages.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 8fa4bd8..d10ef0c 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -23,7 +23,7 @@ COPY src/shared/ ./src/shared/
+ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+ 
+ # Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
+-RUN node -e " \
++RUN cd server && node -e " \
+   const fs=require('fs'); \
+   const ffmpeg=require('ffmpeg-static'); \
+   const ffprobe=require('ffprobe-static').path; \
+
+commit 9f26fb33f9cf90eed03aded93d7497d6cfcb1c64
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Mon Mar 23 06:23:29 2026 +0100
+
+    remove suggested agenda and auto tasks sections from studio view
+
+diff --git a/Dockerfile b/Dockerfile
+index 86b6260..8fa4bd8 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -50,11 +50,11 @@ COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
+ 
+ # Install Python and runtime dependencies
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
++    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget curl && \
+     rm -rf /var/lib/apt/lists/*
+ 
+-# Install uv (astronomically fast API from Astral) to build python modules 100x faster
+-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
++# Install uv via official installer ÔÇö avoids Docker Hub / ghcr.io registry dependency
++RUN curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+ 
+ # Create virtual environment and activate it permanently for the container
+ RUN uv venv /opt/venv
+
+commit 44480b3576ecb30b877bbb6964300d29d5404367
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 21:37:24 2026 +0100
+
+    Fix Docker build: copy src/shared/ for server esbuild imports
+    
+    server/audioPipeline.ts imports from ../src/shared/meetingFeedback.ts
+    which was not copied into the Docker build context.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index f221315..86b6260 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -15,8 +15,9 @@ COPY server/package*.json ./server/
+ # Install everything including dev dependencies so we get esbuild/typescript
+ RUN pnpm install --frozen-lockfile
+ 
+-# Copy server code
++# Copy server code and shared types used by server imports
+ COPY server/ ./server/
++COPY src/shared/ ./src/shared/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+
+commit f3e6a14b6c65a710fba0576871181a3dacb5e35d
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 21:33:27 2026 +0100
+
+    Fix Docker build: use ffmpeg-static/ffprobe-static npm packages
+    
+    All external ffmpeg download methods fail on Railway (johnvansickle.com
+    blocked, GitHub redirects broken, apt OOM, Docker Hub context canceled).
+    
+    Solution: ffmpeg-static + ffprobe-static npm packages download the binaries
+    during pnpm install (Railway-reliable). Dockerfile then copies them from
+    node_modules to /tmp and into production stage ÔÇö no external downloads.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 36bd078..f221315 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,16 +8,6 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
+-# Download static ffmpeg via curl (follows GitHub redirects; johnvansickle.com blocked on Railway)
+-RUN apt-get update && apt-get install -y --no-install-recommends curl xz-utils && rm -rf /var/lib/apt/lists/* && \
+-    curl -fsSL --retry 3 --retry-delay 10 -L \
+-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" \
+-        -o /tmp/ffmpeg.tar.xz && \
+-    tar xJf /tmp/ffmpeg.tar.xz -C /tmp && \
+-    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /tmp/ffmpeg && \
+-    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /tmp/ffprobe && \
+-    rm -rf /tmp/ffmpeg-master-latest-linux64-gpl /tmp/ffmpeg.tar.xz
+-
+ # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
+ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+ COPY server/package*.json ./server/
+@@ -31,6 +21,16 @@ COPY server/ ./server/
+ # Transpile TS -> JS using esbuild into dist-server/
+ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+ 
++# Extract ffmpeg/ffprobe binaries from npm packages into /tmp for stage 2
++RUN node -e " \
++  const fs=require('fs'); \
++  const ffmpeg=require('ffmpeg-static'); \
++  const ffprobe=require('ffprobe-static').path; \
++  fs.copyFileSync(ffmpeg,'/tmp/ffmpeg'); \
++  fs.copyFileSync(ffprobe,'/tmp/ffprobe'); \
++  fs.chmodSync('/tmp/ffmpeg',0o755); \
++  fs.chmodSync('/tmp/ffprobe',0o755);"
++
+ # Prune node_modules down to only production dependencies to save space
+ RUN pnpm prune --prod
+ 
+
+commit 329ab78d040353d729756fa6a3c8606a64c6e218
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:31:27 2026 +0100
+
+    Fix Docker build: use curl -L for GitHub BtbN ffmpeg (johnvansickle blocked)
+    
+    johnvansickle.com is unreachable from Railway's Singapore region.
+    curl -L properly follows GitHub's redirect to objects.githubusercontent.com.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index f91fd75..36bd078 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,16 +8,15 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
+-# Install wget and xz-utils for ffmpeg download
+-RUN apt-get update && apt-get install -y --no-install-recommends wget xz-utils && rm -rf /var/lib/apt/lists/*
+-
+-# Download static ffmpeg in builder stage (retries handle transient failures)
+-RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
+-    https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
+-    tar xf ffmpeg-release-amd64-static.tar.xz && \
+-    cp ffmpeg-*-amd64-static/ffmpeg /tmp/ffmpeg && \
+-    cp ffmpeg-*-amd64-static/ffprobe /tmp/ffprobe && \
+-    rm -rf ffmpeg-*
++# Download static ffmpeg via curl (follows GitHub redirects; johnvansickle.com blocked on Railway)
++RUN apt-get update && apt-get install -y --no-install-recommends curl xz-utils && rm -rf /var/lib/apt/lists/* && \
++    curl -fsSL --retry 3 --retry-delay 10 -L \
++        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" \
++        -o /tmp/ffmpeg.tar.xz && \
++    tar xJf /tmp/ffmpeg.tar.xz -C /tmp && \
++    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /tmp/ffmpeg && \
++    cp /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffprobe /tmp/ffprobe && \
++    rm -rf /tmp/ffmpeg-master-latest-linux64-gpl /tmp/ffmpeg.tar.xz
+ 
+ # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
+ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+commit 676e657f75b011d7b2f3ff776ec04337e5570241
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:28:02 2026 +0100
+
+    Fix Docker build: install wget in builder stage before ffmpeg download
+    
+    node:bookworm-slim does not include wget ÔÇö must apt-get install it first.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index e38d623..f91fd75 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,6 +8,9 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
++# Install wget and xz-utils for ffmpeg download
++RUN apt-get update && apt-get install -y --no-install-recommends wget xz-utils && rm -rf /var/lib/apt/lists/*
++
+ # Download static ffmpeg in builder stage (retries handle transient failures)
+ RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
+     https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
+
+commit 2f9333b4ca576790546acd773efe77842bc1aafc
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:26:34 2026 +0100
+
+    Fix Docker build: download ffmpeg in builder stage with 5 retries
+    
+    - Move ffmpeg download to builder stage (node:bookworm-slim has wget)
+    - Copy binary to production stage via COPY --from=builder
+    - --tries=5 --waitretry=15 handles transient johnvansickle.com failures
+    - Avoids OOM (no apt ffmpeg) and Docker Hub pull restrictions (no mwader image)
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 4f1c086..e38d623 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,6 +8,14 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
++# Download static ffmpeg in builder stage (retries handle transient failures)
++RUN wget -q --tries=5 --waitretry=15 --retry-connrefused \
++    https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
++    tar xf ffmpeg-release-amd64-static.tar.xz && \
++    cp ffmpeg-*-amd64-static/ffmpeg /tmp/ffmpeg && \
++    cp ffmpeg-*-amd64-static/ffprobe /tmp/ffprobe && \
++    rm -rf ffmpeg-*
++
+ # Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
+ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+ COPY server/package*.json ./server/
+@@ -33,11 +41,11 @@ FROM node:22.12-bookworm-slim
+ ENV DEBIAN_FRONTEND=noninteractive
+ ENV TZ=Etc/UTC
+ 
+-# Copy static ffmpeg/ffprobe binaries from official Docker image (no download, no OOM)
+-COPY --from=mwader/static-ffmpeg:latest /ffmpeg /usr/local/bin/ffmpeg
+-COPY --from=mwader/static-ffmpeg:latest /ffprobe /usr/local/bin/ffprobe
++# Copy static ffmpeg binaries from builder (avoids re-download and OOM)
++COPY --from=builder /tmp/ffmpeg /usr/local/bin/ffmpeg
++COPY --from=builder /tmp/ffprobe /usr/local/bin/ffprobe
+ 
+-# Install Python and runtime dependencies (no ffmpeg package needed)
++# Install Python and runtime dependencies
+ RUN apt-get update && \
+     apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
+     rm -rf /var/lib/apt/lists/*
+
+commit eaab51c412d5f12c20dba70909132e5c3ff7f38a
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:23:21 2026 +0100
+
+    Fix Docker build: copy ffmpeg from mwader/static-ffmpeg image (no download)
+    
+    apt-get ffmpeg causes OOM on Railway; external URL downloads are unreliable.
+    Using COPY --from=mwader/static-ffmpeg:latest pulls static binaries directly
+    from Docker Hub during image build ÔÇö no network download, no OOM risk.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 45a4fff..4f1c086 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -33,9 +33,13 @@ FROM node:22.12-bookworm-slim
+ ENV DEBIAN_FRONTEND=noninteractive
+ ENV TZ=Etc/UTC
+ 
+-# Install Python, ffmpeg and dependencies
++# Copy static ffmpeg/ffprobe binaries from official Docker image (no download, no OOM)
++COPY --from=mwader/static-ffmpeg:latest /ffmpeg /usr/local/bin/ffmpeg
++COPY --from=mwader/static-ffmpeg:latest /ffprobe /usr/local/bin/ffprobe
++
++# Install Python and runtime dependencies (no ffmpeg package needed)
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends python3 python3-venv ffmpeg xz-utils bash ca-certificates libgomp1 libsndfile1 && \
++    apt-get install -y --no-install-recommends python3 python3-venv xz-utils bash ca-certificates libgomp1 libsndfile1 wget && \
+     rm -rf /var/lib/apt/lists/*
+ 
+ # Install uv (astronomically fast API from Astral) to build python modules 100x faster
+
+commit 2f402cf86f01ddb370a84bb0035453700a625caa
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:19:41 2026 +0100
+
+    Fix Docker build: install ffmpeg via apt instead of downloading static binary
+    
+    Both johnvansickle.com and GitHub BtbN fail during Railway builds (network
+    issues / redirect handling). apt-get with --no-install-recommends installs
+    only the core ffmpeg libraries without GPU/X11 deps.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index 2595bfe..45a4fff 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -33,18 +33,11 @@ FROM node:22.12-bookworm-slim
+ ENV DEBIAN_FRONTEND=noninteractive
+ ENV TZ=Etc/UTC
+ 
+-# Install Python and dependencies, skip ffmpeg apt package to avoid heavy GPU/X11 libraries which cause Railway OOM
++# Install Python, ffmpeg and dependencies
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates libgomp1 libsndfile1 && \
++    apt-get install -y --no-install-recommends python3 python3-venv ffmpeg xz-utils bash ca-certificates libgomp1 libsndfile1 && \
+     rm -rf /var/lib/apt/lists/*
+ 
+-# Install static FFmpeg build from GitHub (more reliable than johnvansickle.com)
+-RUN wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz && \
+-    tar xf ffmpeg-master-latest-linux64-gpl.tar.xz && \
+-    mv ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ && \
+-    mv ffmpeg-master-latest-linux64-gpl/bin/ffprobe /usr/local/bin/ && \
+-    rm -rf ffmpeg-master-latest-linux64-gpl* ffmpeg-master-latest-linux64-gpl.tar.xz
+-
+ # Install uv (astronomically fast API from Astral) to build python modules 100x faster
+ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ 
+
+commit cad11a7c25c309e8c65f91b8b60fdff60aed26a6
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 20:12:33 2026 +0100
+
+    Fix Docker build: switch FFmpeg source from johnvansickle.com to GitHub BtbN
+    
+    johnvansickle.com is a third-party host that regularly fails during Railway
+    builds. GitHub BtbN/FFmpeg-Builds is the official static build and far
+    more reliable.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+index ac23f89..2595bfe 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -38,12 +38,12 @@ RUN apt-get update && \
+     apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates libgomp1 libsndfile1 && \
+     rm -rf /var/lib/apt/lists/*
+ 
+-# Install static FFmpeg build directly
+-RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
+-    tar xf ffmpeg-release-amd64-static.tar.xz && \
+-    mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
+-    mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
+-    rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
++# Install static FFmpeg build from GitHub (more reliable than johnvansickle.com)
++RUN wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz && \
++    tar xf ffmpeg-master-latest-linux64-gpl.tar.xz && \
++    mv ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ && \
++    mv ffmpeg-master-latest-linux64-gpl/bin/ffprobe /usr/local/bin/ && \
++    rm -rf ffmpeg-master-latest-linux64-gpl* ffmpeg-master-latest-linux64-gpl.tar.xz
+ 
+ # Install uv (astronomically fast API from Astral) to build python modules 100x faster
+ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+commit 986ff8bc6dd0b960562d7d4f9851cdccec3c30c4
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 15:41:45 2026 +0100
+
+    fix: make runtime healthchecks honor dynamic port
+
+diff --git a/Dockerfile b/Dockerfile
+index f91b4ac..ac23f89 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -88,7 +88,7 @@ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ 
+ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${VOICELOG_API_PORT:-4000}/health || exit 1
++  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${PORT:-${VOICELOG_API_PORT:-4000}}/health || exit 1
+ 
+ EXPOSE 4000
+ 
+
+commit 0e65a5d8bf0ae2a129c777fe29b433e8bec12ec2
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 12:06:22 2026 +0100
+
+    fix(docker): externalize all deps and copy server/node_modules to solve dynamic require crash
+
+diff --git a/Dockerfile b/Dockerfile
+index 1f37972..f91b4ac 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
+ COPY server/ ./server/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node
++RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --packages=external
+ 
+ # Prune node_modules down to only production dependencies to save space
+ RUN pnpm prune --prod
+@@ -62,6 +62,7 @@ RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu t
+ 
+ # Copy production node_modules from builder
+ COPY --from=builder /app/node_modules ./node_modules
++COPY --from=builder /app/server/node_modules ./server/node_modules
+ COPY --from=builder /app/package.json ./
+ 
+ # Copy compiled backend code instead of raw TS
+
+commit 9dedf7771fbdccefe6c5152e13ffc9dc5742a03c
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 11:58:21 2026 +0100
+
+    fix(docker): bundle @sentry/node to fix ERR_MODULE_NOT_FOUND
+
+diff --git a/Dockerfile b/Dockerfile
+index dcada27..1f37972 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
+ COPY server/ ./server/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+-RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node --external:@sentry/node
++RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node
+ 
+ # Prune node_modules down to only production dependencies to save space
+ RUN pnpm prune --prod
+
+commit 4ce7388e4abfe7e3787512278f4d0a102c0eebf9
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 11:37:21 2026 +0100
+
+    fix(docker): restore backend fixes after conflicting branch merge
+
+diff --git a/Dockerfile b/Dockerfile
+index 91feaf9..dcada27 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
+ COPY server/ ./server/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+-RUN find server -name "*.ts" -o -name "*.js" | xargs pnpm exec esbuild --outdir=dist-server --platform=node --format=cjs
++RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts --bundle --platform=node --format=esm --outdir=dist-server --external:pg --external:@xenova/transformers --external:onnxruntime-node --external:@sentry/node
+ 
+ # Prune node_modules down to only production dependencies to save space
+ RUN pnpm prune --prod
+@@ -35,7 +35,7 @@ ENV TZ=Etc/UTC
+ 
+ # Install Python and dependencies, skip ffmpeg apt package to avoid heavy GPU/X11 libraries which cause Railway OOM
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates && \
++    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates libgomp1 libsndfile1 && \
+     rm -rf /var/lib/apt/lists/*
+ 
+ # Install static FFmpeg build directly
+@@ -81,7 +81,6 @@ RUN mkdir -p /data/uploads
+ 
+ ENV NODE_ENV=production
+ ENV VOICELOG_API_HOST=0.0.0.0
+-ENV VOICELOG_API_PORT=4000
+ ENV FFMPEG_BINARY=ffmpeg
+ ENV PYTHON_BINARY=python3
+ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+
+commit b378799ea181d9ba625b7cb02691c840591fcebd
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 11:12:21 2026 +0100
+
+    chore: ship auth, deploy and pipeline updates
+
+diff --git a/Dockerfile b/Dockerfile
+index 1b1199f..91feaf9 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -87,6 +87,9 @@ ENV PYTHON_BINARY=python3
+ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ 
++HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
++  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:${VOICELOG_API_PORT:-4000}/health || exit 1
++
+ EXPOSE 4000
+ 
+ # Execute natively instead of using tsx (huge memory savings & instant boot)
+
+commit 7b18eb22ca9db02cb41d2cd416499edb2f320466
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sat Mar 21 06:21:06 2026 +0100
+
+    fix(docker): reduce image size by using CPU-only torch to respect Railway 4GB limit
+
+diff --git a/Dockerfile b/Dockerfile
+index 25f1ed0..1b1199f 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -43,7 +43,7 @@ RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-stati
+     tar xf ffmpeg-release-amd64-static.tar.xz && \
+     mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
+     mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
+-    rm -rf ffmpeg-*-amd64-static*
++    rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
+ 
+ # Install uv (astronomically fast API from Astral) to build python modules 100x faster
+ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+@@ -56,7 +56,9 @@ WORKDIR /app
+ 
+ # Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
+ COPY server/requirements.txt ./server/
+-RUN uv pip install -r server/requirements.txt
++# Install CPU-only PyTorch first (saves ~6GB of image space), then the rest without caching wheels
++RUN uv pip install --no-cache --index-url https://download.pytorch.org/whl/cpu torch torchaudio && \
++    uv pip install --no-cache -r server/requirements.txt
+ 
+ # Copy production node_modules from builder
+ COPY --from=builder /app/node_modules ./node_modules
+
+commit a2a42761dd679ee03fd42363396eabbf383c80ee
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 22:35:06 2026 +0100
+
+    fix(build): add esbuild to devDependencies and use pnpm exec in Dockerfile to fix missing bin resolution
+
+diff --git a/Dockerfile b/Dockerfile
+index 828f842..25f1ed0 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
+ COPY server/ ./server/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+-RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
++RUN find server -name "*.ts" -o -name "*.js" | xargs pnpm exec esbuild --outdir=dist-server --platform=node --format=cjs
+ 
+ # Prune node_modules down to only production dependencies to save space
+ RUN pnpm prune --prod
+
+commit da70461dd2198971b21a7474657cc9b183692913
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 22:25:42 2026 +0100
+
+    fix(docker): use static FFmpeg to prevent memory/dependency bloat breaking Railway builds
+
+diff --git a/Dockerfile b/Dockerfile
+index 46876a8..828f842 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -30,11 +30,21 @@ RUN pnpm prune --prod
+ # ==========================================
+ FROM node:22.12-bookworm-slim
+ 
+-# Install FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
++ENV DEBIAN_FRONTEND=noninteractive
++ENV TZ=Etc/UTC
++
++# Install Python and dependencies, skip ffmpeg apt package to avoid heavy GPU/X11 libraries which cause Railway OOM
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends ffmpeg python3 python3-venv && \
++    apt-get install -y --no-install-recommends python3 python3-venv wget xz-utils bash ca-certificates && \
+     rm -rf /var/lib/apt/lists/*
+ 
++# Install static FFmpeg build directly
++RUN wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz && \
++    tar xf ffmpeg-release-amd64-static.tar.xz && \
++    mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ && \
++    mv ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ && \
++    rm -rf ffmpeg-*-amd64-static*
++
+ # Install uv (astronomically fast API from Astral) to build python modules 100x faster
+ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ 
+
+commit 6538909e80ca620778f8fcda3b89156283a1d881
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 21:11:31 2026 +0100
+
+    fix(docker): Add pnpm-workspace.yaml to COPY for workspace resolution
+
+diff --git a/Dockerfile b/Dockerfile
+index 38591af..46876a8 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,8 +8,8 @@ RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
+ 
+ WORKDIR /app
+ 
+-# Copy only manifest + lockfile first for maximum Docker cache efficiency
+-COPY package.json pnpm-lock.yaml ./
++# Copy only manifest + lockfile + workspace config for maximum Docker cache efficiency
++COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+ COPY server/package*.json ./server/
+ 
+ # Install everything including dev dependencies so we get esbuild/typescript
+
+commit 5e98b17f852531e2c998dec73d413023201c9b3a
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 21:10:00 2026 +0100
+
+    fix(docker): Switch Dockerfile from npm to pnpm to match packageManager
+
+diff --git a/Dockerfile b/Dockerfile
+index 99a33fe..38591af 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -3,26 +3,26 @@
+ # ==========================================
+ FROM node:22.12-bookworm-slim AS builder
+ 
++# Install pnpm globally (matching packageManager version)
++RUN corepack enable && corepack prepare pnpm@9.12.1 --activate
++
+ WORKDIR /app
+ 
+-# Install build dependencies
+-# We copy root package.json for monorepo workspace resolution if any
+-COPY package*.json ./
++# Copy only manifest + lockfile first for maximum Docker cache efficiency
++COPY package.json pnpm-lock.yaml ./
+ COPY server/package*.json ./server/
+ 
+ # Install everything including dev dependencies so we get esbuild/typescript
+-RUN npm ci
++RUN pnpm install --frozen-lockfile
+ 
+ # Copy server code
+ COPY server/ ./server/
+ 
+ # Transpile TS -> JS using esbuild into dist-server/
+-# We use find to recursively grab all ts/js files within server dodging sh glob limitations
+ RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
+ 
+ # Prune node_modules down to only production dependencies to save space
+-# Note: npm prune --production in root removes dev dependencies
+-RUN npm prune --production
++RUN pnpm prune --prod
+ 
+ 
+ # ==========================================
+@@ -50,7 +50,7 @@ RUN uv pip install -r server/requirements.txt
+ 
+ # Copy production node_modules from builder
+ COPY --from=builder /app/node_modules ./node_modules
+-COPY --from=builder /app/package*.json ./
++COPY --from=builder /app/package.json ./
+ 
+ # Copy compiled backend code instead of raw TS
+ COPY --from=builder /app/dist-server ./server
+@@ -61,6 +61,9 @@ COPY server/*.py ./server/
+ # Copy server package mapping (optional if needed for runtime)
+ COPY server/package*.json ./server/
+ 
++# Copy SQL migrations for database setup
++COPY server/migrations/ ./server/migrations/
++
+ # Ensure data directories exist
+ RUN mkdir -p /data/uploads
+ 
+
+commit 9d74b66b7ce4205508147372a0590f20f887f334
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 06:36:57 2026 +0100
+
+    feat: rewrite backend to hono, configure turborepo build system, refine test configs
+
+diff --git a/Dockerfile b/Dockerfile
+index 7aab85d..99a33fe 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,18 +1,65 @@
++# ==========================================
++# STAGE 1: Build (TypeScript Compilation)
++# ==========================================
++FROM node:22.12-bookworm-slim AS builder
++
++WORKDIR /app
++
++# Install build dependencies
++# We copy root package.json for monorepo workspace resolution if any
++COPY package*.json ./
++COPY server/package*.json ./server/
++
++# Install everything including dev dependencies so we get esbuild/typescript
++RUN npm ci
++
++# Copy server code
++COPY server/ ./server/
++
++# Transpile TS -> JS using esbuild into dist-server/
++# We use find to recursively grab all ts/js files within server dodging sh glob limitations
++RUN find server -name "*.ts" -o -name "*.js" | xargs npx esbuild --outdir=dist-server --platform=node --format=cjs
++
++# Prune node_modules down to only production dependencies to save space
++# Note: npm prune --production in root removes dev dependencies
++RUN npm prune --production
++
++
++# ==========================================
++# STAGE 2: Production Release
++# ==========================================
+ FROM node:22.12-bookworm-slim
+ 
+-# FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
++# Install FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends ffmpeg python3 python3-pip && \
++    apt-get install -y --no-install-recommends ffmpeg python3 python3-venv && \
+     rm -rf /var/lib/apt/lists/*
+ 
++# Install uv (astronomically fast API from Astral) to build python modules 100x faster
++COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
++
++# Create virtual environment and activate it permanently for the container
++RUN uv venv /opt/venv
++ENV PATH="/opt/venv/bin:$PATH"
++
+ WORKDIR /app
+ 
+-# Install server dependencies
+-COPY server/package.json server/package-lock.json* ./
+-# Install ALL dependencies (including dev for tsx)
+-RUN npm install
++# Cache ML dependencies layer efficiently so Docker reuses it when JS/TS bits change
++COPY server/requirements.txt ./server/
++RUN uv pip install -r server/requirements.txt
+ 
+-COPY server/ ./server/
++# Copy production node_modules from builder
++COPY --from=builder /app/node_modules ./node_modules
++COPY --from=builder /app/package*.json ./
++
++# Copy compiled backend code instead of raw TS
++COPY --from=builder /app/dist-server ./server
++
++# Copy python scripts separately since esbuild doesn't transpile .py
++COPY server/*.py ./server/
++
++# Copy server package mapping (optional if needed for runtime)
++COPY server/package*.json ./server/
+ 
+ # Ensure data directories exist
+ RUN mkdir -p /data/uploads
+@@ -27,4 +74,5 @@ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ 
+ EXPOSE 4000
+ 
+-CMD ["npx", "tsx", "server/index.ts"]
++# Execute natively instead of using tsx (huge memory savings & instant boot)
++CMD ["node", "server/index.js"]
+
+commit 924d6f40f6952e1c2f471dc99131383e34a8ee6e
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 19 22:38:49 2026 +0100
+
+    feat: setup Docker and Compose for ML native dependencies
+
+diff --git a/Dockerfile b/Dockerfile
+index ae50143..7aab85d 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,31 +1,30 @@
+ FROM node:22.12-bookworm-slim
+ 
+-# FFmpeg for audio processing pipeline
++# FFmpeg and Python for ML audio processing pipeline (Pyannote / Silero VAD)
+ RUN apt-get update && \
+-    apt-get install -y --no-install-recommends ffmpeg && \
++    apt-get install -y --no-install-recommends ffmpeg python3 python3-pip && \
+     rm -rf /var/lib/apt/lists/*
+ 
+ WORKDIR /app
+ 
+-# Install server dependencies only (separate package.json to avoid React deps)
++# Install server dependencies
+ COPY server/package.json server/package-lock.json* ./
+-RUN npm install --omit=dev 2>/dev/null || npm install
++# Install ALL dependencies (including dev for tsx)
++RUN npm install
+ 
+ COPY server/ ./server/
+-RUN mkdir -p .cache && \
+-    XENOVA_TRANSFORMERS_CACHE=.cache node server/scripts/download_models.js
+ 
+-# Ensure data directories exist (Railway volume overrides this path)
++# Ensure data directories exist
+ RUN mkdir -p /data/uploads
+ 
+ ENV NODE_ENV=production
+ ENV VOICELOG_API_HOST=0.0.0.0
+ ENV VOICELOG_API_PORT=4000
+ ENV FFMPEG_BINARY=ffmpeg
++ENV PYTHON_BINARY=python3
+ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+-ENV XENOVA_TRANSFORMERS_CACHE=/app/.cache
+ 
+ EXPOSE 4000
+ 
+-CMD ["node", "--experimental-sqlite", "server/index.js"]
++CMD ["npx", "tsx", "server/index.ts"]
+
+commit ad7f20073ecf2f8a2b7feee87cc138ba3502e0f0
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 21:15:45 2026 +0100
+
+    fix: production stability, detailed logging, and case-insensitive Vercel CORS
+
+diff --git a/Dockerfile b/Dockerfile
+index 31c14ba..ae50143 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,4 +1,4 @@
+-FROM node:22-bookworm-slim
++FROM node:22.12-bookworm-slim
+ 
+ # FFmpeg for audio processing pipeline
+ RUN apt-get update && \
+
+commit 5bcf8c60b3170f4929d6fb0fe30e810b3ba9a83a
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 21:09:37 2026 +0100
+
+    fix: pre-download ML models during Docker build and set cache path
+
+diff --git a/Dockerfile b/Dockerfile
+index 60b2e11..31c14ba 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -11,8 +11,9 @@ WORKDIR /app
+ COPY server/package.json server/package-lock.json* ./
+ RUN npm install --omit=dev 2>/dev/null || npm install
+ 
+-# Copy server code
+ COPY server/ ./server/
++RUN mkdir -p .cache && \
++    XENOVA_TRANSFORMERS_CACHE=.cache node server/scripts/download_models.js
+ 
+ # Ensure data directories exist (Railway volume overrides this path)
+ RUN mkdir -p /data/uploads
+@@ -23,6 +24,7 @@ ENV VOICELOG_API_PORT=4000
+ ENV FFMPEG_BINARY=ffmpeg
+ ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
+ ENV VOICELOG_UPLOAD_DIR=/data/uploads
++ENV XENOVA_TRANSFORMERS_CACHE=/app/.cache
+ 
+ EXPOSE 4000
+ 
+
+commit 1f1e9e6f55cbeb3fe30786593662458fecfc53eb
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 21:04:24 2026 +0100
+
+    fix: add --experimental-sqlite flag and fatal error logging
+
+diff --git a/Dockerfile b/Dockerfile
+index 9fb91b6..60b2e11 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -26,4 +26,4 @@ ENV VOICELOG_UPLOAD_DIR=/data/uploads
+ 
+ EXPOSE 4000
+ 
+-CMD ["node", "server/index.js"]
++CMD ["node", "--experimental-sqlite", "server/index.js"]
+
+commit 93fdeb9b7d54ca9ceb42eafe1ab1a894d6d15571
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 13:05:50 2026 +0100
+
+    Add Docker/Railway deployment for public backend
+    
+    - Dockerfile: Node 22 + FFmpeg, server-only deps, /data volume
+    - server/package.json: isolated server dependencies (dotenv, transformers)
+    - server/index.js: graceful dotenv import, conditional request logging
+    - server/database.js: support env-based DB/upload paths for containers
+    - Remove temporary DIAG logging from client code
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..9fb91b6
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,29 @@
++FROM node:22-bookworm-slim
++
++# FFmpeg for audio processing pipeline
++RUN apt-get update && \
++    apt-get install -y --no-install-recommends ffmpeg && \
++    rm -rf /var/lib/apt/lists/*
++
++WORKDIR /app
++
++# Install server dependencies only (separate package.json to avoid React deps)
++COPY server/package.json server/package-lock.json* ./
++RUN npm install --omit=dev 2>/dev/null || npm install
++
++# Copy server code
++COPY server/ ./server/
++
++# Ensure data directories exist (Railway volume overrides this path)
++RUN mkdir -p /data/uploads
++
++ENV NODE_ENV=production
++ENV VOICELOG_API_HOST=0.0.0.0
++ENV VOICELOG_API_PORT=4000
++ENV FFMPEG_BINARY=ffmpeg
++ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
++ENV VOICELOG_UPLOAD_DIR=/data/uploads
++
++EXPOSE 4000
++
++CMD ["node", "server/index.js"]

@@ -1,0 +1,590 @@
+﻿commit 14668934f896b5bc1b938bcb33cf300ddffb024a
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 26 17:33:21 2026 +0100
+
+    fix(railway): auto disk cleanup + config docs
+
+diff --git a/server/package.json b/server/package.json
+index 45c763c..ed173d9 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -26,6 +26,7 @@
+   "scripts": {
+     "test": "npx vitest run",
+     "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
+-    "start": "tsx index.ts"
++    "start": "tsx index.ts",
++    "cleanup:disk": "tsx scripts/cleanup-disk.ts"
+   }
+ }
+
+commit f9f521d5481961d7af7373f67560e470cefb3b95
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 26 11:46:15 2026 +0100
+
+    chore(release): deploy all fixes to production
+
+diff --git a/server/package.json b/server/package.json
+index 5dbc8ca..45c763c 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -1,31 +1,31 @@
+-{
+-  "name": "voicelog-api",
+-  "version": "0.1.0",
+-  "private": true,
+-  "type": "module",
+-  "engines": {
+-    "node": ">=22.5"
+-  },
+-  "dependencies": {
+-    "@sentry/node": "^10.46.0",
+-    "@xenova/transformers": "^2.17.2",
+-    "dotenv": "^16.4.0",
+-    "ffmpeg-static": "^5.2.0",
+-    "ffprobe-static": "^3.1.0",
+-    "pg": "^8.20.0"
+-  },
+-  "devDependencies": {
+-    "@types/jest": "^30.0.0",
+-    "better-sqlite3": "^12.8.0",
+-    "vitest": "^4.1.1",
+-    "cross-env": "^10.1.0",
+-    "jest": "^29.7.0",
+-    "ts-jest": "^29.4.6"
+-  },
+-  "scripts": {
+-    "test": "npx vitest run",
+-    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
+-    "start": "tsx index.ts"
+-  }
+-}
+-
++{
++  "name": "voicelog-api",
++  "version": "0.1.0",
++  "private": true,
++  "type": "module",
++  "engines": {
++    "node": ">=22.5"
++  },
++  "dependencies": {
++    "@sentry/node": "^10.46.0",
++    "@xenova/transformers": "^2.17.2",
++    "dotenv": "^16.4.0",
++    "ffmpeg-static": "^5.2.0",
++    "ffprobe-static": "^3.1.0",
++    "pg": "^8.20.0",
++    "prom-client": "^15.1.3"
++  },
++  "devDependencies": {
++    "@types/jest": "^30.0.0",
++    "better-sqlite3": "^12.8.0",
++    "cross-env": "^10.1.0",
++    "jest": "^29.7.0",
++    "ts-jest": "^29.4.6",
++    "vitest": "^4.1.1"
++  },
++  "scripts": {
++    "test": "npx vitest run",
++    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
++    "start": "tsx index.ts"
++  }
++}
+
+commit 3ef602ea5236932de23c6e3074c6ab24d83016dd
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Wed Mar 25 21:48:42 2026 +0000
+
+    chore(deps): bump the development-dependencies group with 5 updates
+    
+    Bumps the development-dependencies group with 5 updates:
+    
+    | Package | From | To |
+    | --- | --- | --- |
+    | [@vitest/coverage-v8](https://github.com/vitest-dev/vitest/tree/HEAD/packages/coverage-v8) | `4.1.0` | `4.1.1` |
+    | [rollup-plugin-visualizer](https://github.com/btd/rollup-plugin-visualizer) | `5.11.0` | `5.14.0` |
+    | [tailwindcss](https://github.com/tailwindlabs/tailwindcss/tree/HEAD/packages/tailwindcss) | `4.1.0` | `4.2.2` |
+    | [vite](https://github.com/vitejs/vite/tree/HEAD/packages/vite) | `8.0.1` | `8.0.2` |
+    | [vitest](https://github.com/vitest-dev/vitest/tree/HEAD/packages/vitest) | `4.1.0` | `4.1.1` |
+    
+    
+    Updates `@vitest/coverage-v8` from 4.1.0 to 4.1.1
+    - [Release notes](https://github.com/vitest-dev/vitest/releases)
+    - [Commits](https://github.com/vitest-dev/vitest/commits/v4.1.1/packages/coverage-v8)
+    
+    Updates `rollup-plugin-visualizer` from 5.11.0 to 5.14.0
+    - [Changelog](https://github.com/btd/rollup-plugin-visualizer/blob/master/CHANGELOG.md)
+    - [Commits](https://github.com/btd/rollup-plugin-visualizer/compare/v5.11.0...v5.14.0)
+    
+    Updates `tailwindcss` from 4.1.0 to 4.2.2
+    - [Release notes](https://github.com/tailwindlabs/tailwindcss/releases)
+    - [Changelog](https://github.com/tailwindlabs/tailwindcss/blob/main/CHANGELOG.md)
+    - [Commits](https://github.com/tailwindlabs/tailwindcss/commits/v4.2.2/packages/tailwindcss)
+    
+    Updates `vite` from 8.0.1 to 8.0.2
+    - [Release notes](https://github.com/vitejs/vite/releases)
+    - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md)
+    - [Commits](https://github.com/vitejs/vite/commits/create-vite@8.0.2/packages/vite)
+    
+    Updates `vitest` from 4.1.0 to 4.1.1
+    - [Release notes](https://github.com/vitest-dev/vitest/releases)
+    - [Commits](https://github.com/vitest-dev/vitest/commits/v4.1.1/packages/vitest)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: "@vitest/coverage-v8"
+      dependency-version: 4.1.1
+      dependency-type: direct:development
+      update-type: version-update:semver-patch
+      dependency-group: development-dependencies
+    - dependency-name: rollup-plugin-visualizer
+      dependency-version: 5.14.0
+      dependency-type: direct:development
+      update-type: version-update:semver-minor
+      dependency-group: development-dependencies
+    - dependency-name: tailwindcss
+      dependency-version: 4.2.2
+      dependency-type: direct:development
+      update-type: version-update:semver-minor
+      dependency-group: development-dependencies
+    - dependency-name: vite
+      dependency-version: 8.0.2
+      dependency-type: direct:development
+      update-type: version-update:semver-patch
+      dependency-group: development-dependencies
+    - dependency-name: vitest
+      dependency-version: 4.1.1
+      dependency-type: direct:development
+      update-type: version-update:semver-patch
+      dependency-group: development-dependencies
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+diff --git a/server/package.json b/server/package.json
+index 8184144..5dbc8ca 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -17,7 +17,7 @@
+   "devDependencies": {
+     "@types/jest": "^30.0.0",
+     "better-sqlite3": "^12.8.0",
+-    "vitest": "^4.1.0",
++    "vitest": "^4.1.1",
+     "cross-env": "^10.1.0",
+     "jest": "^29.7.0",
+     "ts-jest": "^29.4.6"
+
+commit 0c8c702970a106be0fa3a270b472c3ebe87286ae
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Wed Mar 25 20:09:54 2026 +0000
+
+    chore(deps): bump the production-dependencies group with 8 updates
+    
+    Bumps the production-dependencies group with 8 updates:
+    
+    | Package | From | To |
+    | --- | --- | --- |
+    | [@langchain/community](https://github.com/langchain-ai/langchainjs) | `1.1.24` | `1.1.25` |
+    | [@langchain/core](https://github.com/langchain-ai/langchainjs) | `1.1.35` | `1.1.36` |
+    | [@langchain/openai](https://github.com/langchain-ai/langchainjs) | `1.3.0` | `1.3.1` |
+    | [@supabase/supabase-js](https://github.com/supabase/supabase-js/tree/HEAD/packages/core/supabase-js) | `2.99.3` | `2.100.0` |
+    | [hono](https://github.com/honojs/hono) | `4.12.8` | `4.12.9` |
+    | [lucide-react](https://github.com/lucide-icons/lucide/tree/HEAD/packages/lucide-react) | `1.0.1` | `1.7.0` |
+    | [nodemailer](https://github.com/nodemailer/nodemailer) | `8.0.3` | `8.0.4` |
+    | [@sentry/node](https://github.com/getsentry/sentry-javascript) | `10.45.0` | `10.46.0` |
+    
+    
+    Updates `@langchain/community` from 1.1.24 to 1.1.25
+    - [Release notes](https://github.com/langchain-ai/langchainjs/releases)
+    - [Commits](https://github.com/langchain-ai/langchainjs/compare/@langchain/community@1.1.24...@langchain/community@1.1.25)
+    
+    Updates `@langchain/core` from 1.1.35 to 1.1.36
+    - [Release notes](https://github.com/langchain-ai/langchainjs/releases)
+    - [Commits](https://github.com/langchain-ai/langchainjs/compare/@langchain/core@1.1.35...@langchain/core@1.1.36)
+    
+    Updates `@langchain/openai` from 1.3.0 to 1.3.1
+    - [Release notes](https://github.com/langchain-ai/langchainjs/releases)
+    - [Commits](https://github.com/langchain-ai/langchainjs/compare/@langchain/openai@1.3.0...@langchain/openai@1.3.1)
+    
+    Updates `@supabase/supabase-js` from 2.99.3 to 2.100.0
+    - [Release notes](https://github.com/supabase/supabase-js/releases)
+    - [Changelog](https://github.com/supabase/supabase-js/blob/master/packages/core/supabase-js/CHANGELOG.md)
+    - [Commits](https://github.com/supabase/supabase-js/commits/v2.100.0/packages/core/supabase-js)
+    
+    Updates `hono` from 4.12.8 to 4.12.9
+    - [Release notes](https://github.com/honojs/hono/releases)
+    - [Commits](https://github.com/honojs/hono/compare/v4.12.8...v4.12.9)
+    
+    Updates `lucide-react` from 1.0.1 to 1.7.0
+    - [Release notes](https://github.com/lucide-icons/lucide/releases)
+    - [Commits](https://github.com/lucide-icons/lucide/commits/1.7.0/packages/lucide-react)
+    
+    Updates `nodemailer` from 8.0.3 to 8.0.4
+    - [Release notes](https://github.com/nodemailer/nodemailer/releases)
+    - [Changelog](https://github.com/nodemailer/nodemailer/blob/master/CHANGELOG.md)
+    - [Commits](https://github.com/nodemailer/nodemailer/compare/v8.0.3...v8.0.4)
+    
+    Updates `@sentry/node` from 10.45.0 to 10.46.0
+    - [Release notes](https://github.com/getsentry/sentry-javascript/releases)
+    - [Changelog](https://github.com/getsentry/sentry-javascript/blob/develop/CHANGELOG.md)
+    - [Commits](https://github.com/getsentry/sentry-javascript/compare/10.45.0...10.46.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: "@langchain/community"
+      dependency-version: 1.1.25
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+      dependency-group: production-dependencies
+    - dependency-name: "@langchain/core"
+      dependency-version: 1.1.36
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+      dependency-group: production-dependencies
+    - dependency-name: "@langchain/openai"
+      dependency-version: 1.3.1
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+      dependency-group: production-dependencies
+    - dependency-name: "@supabase/supabase-js"
+      dependency-version: 2.100.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+      dependency-group: production-dependencies
+    - dependency-name: hono
+      dependency-version: 4.12.9
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+      dependency-group: production-dependencies
+    - dependency-name: lucide-react
+      dependency-version: 1.7.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+      dependency-group: production-dependencies
+    - dependency-name: nodemailer
+      dependency-version: 8.0.4
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+      dependency-group: production-dependencies
+    - dependency-name: "@sentry/node"
+      dependency-version: 10.46.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+      dependency-group: production-dependencies
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+diff --git a/server/package.json b/server/package.json
+index e157f00..8184144 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -7,7 +7,7 @@
+     "node": ">=22.5"
+   },
+   "dependencies": {
+-    "@sentry/node": "^10.45.0",
++    "@sentry/node": "^10.46.0",
+     "@xenova/transformers": "^2.17.2",
+     "dotenv": "^16.4.0",
+     "ffmpeg-static": "^5.2.0",
+
+commit f3e6a14b6c65a710fba0576871181a3dacb5e35d
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Sun Mar 22 21:33:27 2026 +0100
+
+    Fix Docker build: use ffmpeg-static/ffprobe-static npm packages
+    
+    All external ffmpeg download methods fail on Railway (johnvansickle.com
+    blocked, GitHub redirects broken, apt OOM, Docker Hub context canceled).
+    
+    Solution: ffmpeg-static + ffprobe-static npm packages download the binaries
+    during pnpm install (Railway-reliable). Dockerfile then copies them from
+    node_modules to /tmp and into production stage ÔÇö no external downloads.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/server/package.json b/server/package.json
+index 86a0a89..e157f00 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -1,29 +1,31 @@
+-{
+-  "name": "voicelog-api",
+-  "version": "0.1.0",
+-  "private": true,
+-  "type": "module",
+-  "engines": {
+-    "node": ">=22.5"
+-  },
+-  "dependencies": {
+-    "@sentry/node": "^10.45.0",
+-    "@xenova/transformers": "^2.17.2",
+-    "dotenv": "^16.4.0",
+-    "pg": "^8.20.0"
+-  },
+-  "devDependencies": {
+-    "@types/jest": "^30.0.0",
+-    "better-sqlite3": "^12.8.0",
+-    "vitest": "^4.1.0",
+-    "cross-env": "^10.1.0",
+-    "jest": "^29.7.0",
+-    "ts-jest": "^29.4.6"
+-  },
+-  "scripts": {
+-    "test": "npx vitest run",
+-    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
+-    "start": "tsx index.ts"
+-  }
+-}
+-
++{
++  "name": "voicelog-api",
++  "version": "0.1.0",
++  "private": true,
++  "type": "module",
++  "engines": {
++    "node": ">=22.5"
++  },
++  "dependencies": {
++    "@sentry/node": "^10.45.0",
++    "@xenova/transformers": "^2.17.2",
++    "dotenv": "^16.4.0",
++    "ffmpeg-static": "^5.2.0",
++    "ffprobe-static": "^3.1.0",
++    "pg": "^8.20.0"
++  },
++  "devDependencies": {
++    "@types/jest": "^30.0.0",
++    "better-sqlite3": "^12.8.0",
++    "vitest": "^4.1.0",
++    "cross-env": "^10.1.0",
++    "jest": "^29.7.0",
++    "ts-jest": "^29.4.6"
++  },
++  "scripts": {
++    "test": "npx vitest run",
++    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
++    "start": "tsx index.ts"
++  }
++}
++
+
+commit fe6d8a367e56d775cb53a9d0a2a504fd0c1ddaf0
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 11:10:57 2026 +0100
+
+    Fix transcription pipeline null access and update tests
+
+diff --git a/server/package.json b/server/package.json
+index 579691d..86a0a89 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -2,6 +2,7 @@
+   "name": "voicelog-api",
+   "version": "0.1.0",
+   "private": true,
++  "type": "module",
+   "engines": {
+     "node": ">=22.5"
+   },
+@@ -21,7 +22,8 @@
+   },
+   "scripts": {
+     "test": "npx vitest run",
+-    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 node index.ts",
+-    "start": "node index.ts"
++    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 tsx index.ts",
++    "start": "tsx index.ts"
+   }
+ }
++
+
+commit e671bf29651a0e3e0a3919ef6d8f690f52447c2e
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Fri Mar 20 06:42:34 2026 +0100
+
+    feat: switch to hono adapter
+
+diff --git a/server/package.json b/server/package.json
+index cbc71cb..579691d 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "voicelog-server",
++  "name": "voicelog-api",
+   "version": "0.1.0",
+   "private": true,
+   "engines": {
+
+commit 05dfdde780441069b8e2f50360926789658b5318
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 19 18:31:17 2026 +0100
+
+    feat: migrate entire project to TypeScript extensions
+    
+    - Renamed frontend and backend files from .js/.jsx to .ts/.tsx
+    - Added tsconfig.json and tsconfig.node.json configuration files
+    - Setup backend to use tsx and updated npm scripts
+    - Integrated ts-jest into Node.js server tests
+    - Setup Vite TS compliance across the app
+
+diff --git a/server/package.json b/server/package.json
+index 47c1ac9..cbc71cb 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -6,16 +6,22 @@
+     "node": ">=22.5"
+   },
+   "dependencies": {
++    "@sentry/node": "^10.45.0",
+     "@xenova/transformers": "^2.17.2",
+     "dotenv": "^16.4.0",
+     "pg": "^8.20.0"
+   },
+   "devDependencies": {
++    "@types/jest": "^30.0.0",
+     "better-sqlite3": "^12.8.0",
+-    "vitest": "^4.1.0"
++    "vitest": "^4.1.0",
++    "cross-env": "^10.1.0",
++    "jest": "^29.7.0",
++    "ts-jest": "^29.4.6"
+   },
+   "scripts": {
+     "test": "npx vitest run",
+-    "start": "node index.js"
++    "test:e2e": "cross-env NODE_ENV=test DB_PATH=./data/staging.sqlite PORT=4001 node index.ts",
++    "start": "node index.ts"
+   }
+ }
+
+commit 03e45323926b9e466a1dcfc35c6930616076f178
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 19 18:34:26 2026 +0100
+
+    fix: pelna aktualizacja pipelines i migracji testow serwera na Vitest
+
+diff --git a/server/package.json b/server/package.json
+index 369ae68..47c1ac9 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -12,10 +12,10 @@
+   },
+   "devDependencies": {
+     "better-sqlite3": "^12.8.0",
+-    "jest": "^29.7.0"
++    "vitest": "^4.1.0"
+   },
+   "scripts": {
+-    "test": "jest",
++    "test": "npx vitest run",
+     "start": "node index.js"
+   }
+ }
+
+commit efa8dc44b4e926440c8aa4f08a443598a03e0cbf
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Thu Mar 19 07:29:46 2026 +0100
+
+    \Fix server security tests, integration tests, and studio UI. Add beaver favicon."
+
+diff --git a/server/package.json b/server/package.json
+index eca7e34..369ae68 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -6,11 +6,12 @@
+     "node": ">=22.5"
+   },
+   "dependencies": {
+-    "dotenv": "^16.4.0",
+     "@xenova/transformers": "^2.17.2",
++    "dotenv": "^16.4.0",
+     "pg": "^8.20.0"
+   },
+   "devDependencies": {
++    "better-sqlite3": "^12.8.0",
+     "jest": "^29.7.0"
+   },
+   "scripts": {
+
+commit 0b2333cc5d1fe41200e2dd1f6ab70255dc5971a3
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Wed Mar 18 20:40:37 2026 +0100
+
+    Add pg dependency to server package.json for Railway deployment
+
+diff --git a/server/package.json b/server/package.json
+index 69b6c28..eca7e34 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -7,7 +7,8 @@
+   },
+   "dependencies": {
+     "dotenv": "^16.4.0",
+-    "@xenova/transformers": "^2.17.2"
++    "@xenova/transformers": "^2.17.2",
++    "pg": "^8.20.0"
+   },
+   "devDependencies": {
+     "jest": "^29.7.0"
+
+commit 2131e140363af1c07cc07cf6c5a679d5691672bb
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 20:50:30 2026 +0100
+
+    fix: resolve CI build errors (unused-vars and useEffect dependencies)
+
+diff --git a/server/package.json b/server/package.json
+index c940b88..69b6c28 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -8,5 +8,12 @@
+   "dependencies": {
+     "dotenv": "^16.4.0",
+     "@xenova/transformers": "^2.17.2"
++  },
++  "devDependencies": {
++    "jest": "^29.7.0"
++  },
++  "scripts": {
++    "test": "jest",
++    "start": "node index.js"
+   }
+ }
+
+commit 93fdeb9b7d54ca9ceb42eafe1ab1a894d6d15571
+Author: iwo <iwo.czajka@gmail.com>
+Date:   Tue Mar 17 13:05:50 2026 +0100
+
+    Add Docker/Railway deployment for public backend
+    
+    - Dockerfile: Node 22 + FFmpeg, server-only deps, /data volume
+    - server/package.json: isolated server dependencies (dotenv, transformers)
+    - server/index.js: graceful dotenv import, conditional request logging
+    - server/database.js: support env-based DB/upload paths for containers
+    - Remove temporary DIAG logging from client code
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/server/package.json b/server/package.json
+new file mode 100644
+index 0000000..c940b88
+--- /dev/null
++++ b/server/package.json
+@@ -0,0 +1,12 @@
++{
++  "name": "voicelog-server",
++  "version": "0.1.0",
++  "private": true,
++  "engines": {
++    "node": ">=22.5"
++  },
++  "dependencies": {
++    "dotenv": "^16.4.0",
++    "@xenova/transformers": "^2.17.2"
++  }
++}

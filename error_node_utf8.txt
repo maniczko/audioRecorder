@@ -1,0 +1,95 @@
+﻿node : (node:23032) [MO
+DULE_TYPELESS_PACKAGE_J
+SON] Warning: Module ty
+pe of file:///C:/Users/
+user/new/audioRecorder/
+dist-server/index.js is
+ not specified and it d
+oesn't parse as CommonJ
+S.
+At line:1 char:1
++ node dist-server/inde
+x.js 2> error_node.txt 
+; Get-Content error_nod
+e. ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ((node:23032)    
+ [M...se as CommonJ    
+S.:String) [], Rem    o
+teException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+Reparsing as ES module 
+because module syntax w
+as detected. This incur
+s a performance overhea
+d.
+To eliminate this warni
+ng, add "type": "module
+" to C:\Users\user\new\
+audioRecorder\package.j
+son.
+(Use `node --trace-warn
+ings ...` to show where
+ the warning was create
+d)
+node:internal/modules/p
+ackage_json_reader:301
+  throw new ERR_MODULE_
+NOT_FOUND(packageName, 
+fileURLToPath(base), nu
+ll);
+        ^
+
+Error [ERR_MODULE_NOT_F
+OUND]: Cannot find pack
+age 'prom-client' impor
+ted from C:\Users\user\
+new\audioRecorder\dist-
+server\index.js
+    at Object.getPackag
+eJSONURL (node:internal
+/modules/package_json_r
+eader:301:9)
+    at packageResolve (
+node:internal/modules/e
+sm/resolve:768:81)
+    at moduleResolve (n
+ode:internal/modules/es
+m/resolve:859:18)
+    at defaultResolve (
+node:internal/modules/e
+sm/resolve:991:11)
+    at #cachedDefaultRe
+solve (node:internal/mo
+dules/esm/loader:719:20
+)
+    at #resolveAndMaybe
+BlockOnLoaderThread (no
+de:internal/modules/esm
+/loader:736:38)
+    at ModuleLoader.res
+olveSync (node:internal
+/modules/esm/loader:765
+:52)
+    at #resolve (node:i
+nternal/modules/esm/loa
+der:701:17)
+    at ModuleLoader.get
+OrCreateModuleJob (node
+:internal/modules/esm/l
+oader:621:35)
+    at ModuleJob.syncLi
+nk (node:internal/modul
+es/esm/module_job:160:3
+3) {
+  code: 'ERR_MODULE_NOT
+_FOUND'
+}
+
+Node.js v24.14.0

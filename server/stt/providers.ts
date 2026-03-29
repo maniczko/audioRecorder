@@ -52,7 +52,18 @@ function ensureAudioBuffer(request: SttAudioRequest) {
   return audioBuffer;
 }
 
-const VALID_STT_EXTENSIONS = new Set(['.flac', '.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.ogg', '.opus', '.wav', '.webm']);
+const VALID_STT_EXTENSIONS = new Set([
+  '.flac',
+  '.mp3',
+  '.mp4',
+  '.mpeg',
+  '.mpga',
+  '.m4a',
+  '.ogg',
+  '.opus',
+  '.wav',
+  '.webm',
+]);
 
 function ensureValidSttFilename(filename: string): string {
   const ext = path.extname(filename).toLowerCase();
@@ -70,7 +81,7 @@ function createFormData(request: SttAudioRequest) {
 
   form.append(
     'file',
-    new File([audioBuffer], safeFilename, {
+    new File([new Uint8Array(audioBuffer)], safeFilename, {
       type: request.contentType || 'application/octet-stream',
     }) as any
   );

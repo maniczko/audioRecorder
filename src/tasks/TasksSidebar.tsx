@@ -38,7 +38,9 @@ function TasksSidebar({
   function toggle(key: string) {
     setCollapsed((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(next));
+      } catch {}
       return next;
     });
   }
@@ -51,55 +53,75 @@ function TasksSidebar({
             <div className="todo-sidebar-group">
               <button
                 type="button"
-                className="todo-workspace-title"
+                className="todo-workspace-title todo-workspace-toggle"
                 onClick={() => toggle('smart')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', color: 'inherit', padding: 0 }}
+                aria-expanded={!collapsed.smart}
+                aria-controls="todo-smart-lists"
               >
-                <span style={{ fontSize: '0.7rem', opacity: 0.6, transition: 'transform 0.15s', transform: collapsed.smart ? 'rotate(-90deg)' : 'rotate(0)' }}>▼</span>
+                <span
+                  className={`todo-workspace-toggle-arrow${collapsed.smart ? ' collapsed' : ''}`}
+                  aria-hidden="true"
+                >
+                  ▼
+                </span>
                 <strong>Inteligentne listy</strong>
               </button>
-              {!collapsed.smart && sidebarLists.baseLists.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={
-                    selectedListId === item.id ? 'todo-side-link active' : 'todo-side-link'
-                  }
-                  onClick={() => setSelectedListId(item.id)}
-                >
-                  <span className="todo-side-icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                  <strong>{item.count}</strong>
-                </button>
-              ))}
+              {!collapsed.smart && (
+                <div id="todo-smart-lists" role="group" aria-label="Inteligentne listy">
+                  {sidebarLists.baseLists.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={
+                        selectedListId === item.id ? 'todo-side-link active' : 'todo-side-link'
+                      }
+                      onClick={() => setSelectedListId(item.id)}
+                    >
+                      <span className="todo-side-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                      <strong>{item.count}</strong>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="todo-workspace-group">
               <button
                 type="button"
-                className="todo-workspace-title"
+                className="todo-workspace-title todo-workspace-toggle"
                 onClick={() => toggle('workspace')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', color: 'inherit', padding: 0 }}
+                aria-expanded={!collapsed.workspace}
+                aria-controls="todo-workspace-lists"
               >
-                <span style={{ fontSize: '0.7rem', opacity: 0.6, transition: 'transform 0.15s', transform: collapsed.workspace ? 'rotate(-90deg)' : 'rotate(0)' }}>▼</span>
+                <span
+                  className={`todo-workspace-toggle-arrow${collapsed.workspace ? ' collapsed' : ''}`}
+                  aria-hidden="true"
+                >
+                  ▼
+                </span>
                 <strong>Widoki workspace</strong>
               </button>
-              {!collapsed.workspace && sidebarLists.workspaceLists.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={
-                    selectedListId === item.id
-                      ? 'todo-side-link active workspace'
-                      : 'todo-side-link workspace'
-                  }
-                  onClick={() => setSelectedListId(item.id)}
-                >
-                  <span className="todo-side-icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                  <strong>{item.count}</strong>
-                </button>
-              ))}
+              {!collapsed.workspace && (
+                <div id="todo-workspace-lists" role="group" aria-label="Widoki workspace">
+                  {sidebarLists.workspaceLists.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={
+                        selectedListId === item.id
+                          ? 'todo-side-link active workspace'
+                          : 'todo-side-link workspace'
+                      }
+                      onClick={() => setSelectedListId(item.id)}
+                    >
+                      <span className="todo-side-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                      <strong>{item.count}</strong>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

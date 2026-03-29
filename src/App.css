@@ -1623,7 +1623,7 @@ select:focus {
 
 /* Footer */
 
-.todo-side-link {
+.tasks-layout.ms-todo .todo-side-link {
   display: flex;
   align-items: center;
   gap: 0.5rem;
