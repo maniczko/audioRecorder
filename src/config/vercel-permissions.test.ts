@@ -15,13 +15,20 @@ const ROOT = path.resolve(__dirname, '..', '..');
 
 function getPermissionsPolicy(): string {
   const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf-8'));
-  const globalHeaders = config.headers.find(
-    (h: { source: string }) => h.source === '/(.*)'
-  );
+  const globalHeaders = config.headers.find((h: { source: string }) => h.source === '/(.*)');
   const ppHeader = globalHeaders.headers.find(
     (h: { key: string }) => h.key === 'Permissions-Policy'
   );
   return ppHeader.value as string;
+}
+
+function getContentSecurityPolicy(): string {
+  const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf-8'));
+  const globalHeaders = config.headers.find((h: { source: string }) => h.source === '/(.*)');
+  const cspHeader = globalHeaders.headers.find(
+    (h: { key: string }) => h.key === 'Content-Security-Policy'
+  );
+  return cspHeader.value as string;
 }
 
 describe('Regression: #0 — Permissions-Policy must allow microphone and camera', () => {
@@ -36,5 +43,10 @@ describe('Regression: #0 — Permissions-Policy must allow microphone and camera
   test('Permissions-Policy header does NOT block microphone with empty ()', () => {
     // microphone=() means "deny all" — must never appear
     expect(getPermissionsPolicy()).not.toMatch(/microphone=\(\)/);
+  });
+
+  test('CSP explicitly allows blob audio via media-src', () => {
+    const csp = getContentSecurityPolicy();
+    expect(csp).toContain("media-src 'self' blob:");
   });
 });
