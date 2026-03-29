@@ -287,8 +287,9 @@ function UnifiedLibrary({
         style={{ alignItems: 'center' }}
       >
         <div className="ui-page-header__copy recordings-library-heading">
-          <div className="eyebrow">Przestrzeń robocza</div>
-          <h2 className="ui-page-header__title">Baza nagrań</h2>
+          <h2 className="ui-page-header__title" style={{ marginTop: 0 }}>
+            Baza nagrań
+          </h2>
         </div>
 
         <div
@@ -612,7 +613,10 @@ function UnifiedLibrary({
                   <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
                   <td>{m.durationMinutes} min</td>
                   <td>
-                    <div className="recordings-library-tags">
+                    <div
+                      className="recordings-library-tags"
+                      style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', minWidth: 0 }}
+                    >
                       {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
                         if (!t.trim()) return null;
                         return <TagBadge key={idx} tag={t.trim()} />;

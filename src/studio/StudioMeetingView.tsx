@@ -11,7 +11,19 @@ import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
 import TaskCreateModal from '../tasks/TaskCreateModal';
-import { Type, AlignLeft, Users, Folder, Calendar, Clock, Flag, Activity, Tag } from 'lucide-react';
+import {
+  Type,
+  AlignLeft,
+  Users,
+  Folder,
+  Calendar,
+  Clock,
+  Flag,
+  Activity,
+  Tag,
+  ChevronDown,
+  PenTool,
+} from 'lucide-react';
 
 import PropTypes from 'prop-types';
 import { formatDateTime, formatDuration } from '../lib/storage';
@@ -1141,6 +1153,7 @@ export default function StudioMeetingView({
   ]);
 
   const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
+  const [sketchnoteExpanded, setSketchnoteExpanded] = useState(false);
   const sketchnoteSummaryText = useMemo(() => {
     return String(
       studioAnalysis?.summary ||
@@ -2234,33 +2247,101 @@ export default function StudioMeetingView({
                     </div>
 
                     {/* Wizualizacja (Sketchnote) */}
-                    <section className="sketchnote-section-shell mt-6 mb-4">
-                      <div className="sketchnote-header flex justify-between items-center mb-4">
-                        <h3 className="sketchnote-title">Wizualizacja (Sketchnote)</h3>
-                        <div className="sketchnote-header-actions flex gap-2">
+                    <section className="sketchnote-section-shell mt-6 mb-4 bg-slate-800/10 rounded-2xl border border-slate-700/50 overflow-hidden transition-all duration-300">
+                      {/* Accordion Header */}
+                      <div
+                        className="sketchnote-header flex justify-between items-center px-4 py-2.5 cursor-pointer hover:bg-slate-700/30 transition-colors m-0"
+                        onClick={() => setSketchnoteExpanded(!sketchnoteExpanded)}
+                        title={sketchnoteExpanded ? 'Zwiń wizualizację' : 'Rozwiń wizualizację'}
+                      >
+                        <div className="flex items-center gap-3">
                           <button
                             type="button"
-                            className="sketchnote-zoom-btn ghost-button"
-                            onClick={() => setSketchnoteZoomed(!sketchnoteZoomed)}
+                            className="ghost-button p-1 m-0 pointer-events-none"
+                            style={{
+                              minWidth: 'auto',
+                              minHeight: 'auto',
+                              border: 'none',
+                              background: 'transparent',
+                            }}
                           >
-                            {sketchnoteZoomed ? 'Pomniejsz' : 'Powiększ'}
+                            <ChevronDown
+                              className={`transition-transform duration-300 ${sketchnoteExpanded ? 'rotate-180' : ''}`}
+                              size={16}
+                            />
                           </button>
+                          <h3 className="sketchnote-title m-0 text-sm font-medium">
+                            Wizualizacja (Sketchnote)
+                          </h3>
+                        </div>
+                        <div
+                          className="sketchnote-header-actions flex gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="sketchnote-regenerate-btn primary-button text-xs py-1.5 px-4 m-0 font-medium rounded-full transition-all hover:scale-105 active:scale-95"
+                            style={{
+                              minHeight: '32px',
+                              background: 'linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%)',
+                              color: '#03222a',
+                              border: 'none',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Tutaj logika docelowego wywołania generowania
+                            }}
+                          >
+                            🎨 Generuj sketchnotkę
+                          </button>
+                          {sketchnoteExpanded && sketchnoteHasSourceData && (
+                            <button
+                              type="button"
+                              className="sketchnote-zoom-btn ghost-button text-xs py-1.5 px-4 m-0 font-medium rounded-full transition-all hover:bg-slate-700/50"
+                              style={{ minHeight: '32px' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSketchnoteZoomed(!sketchnoteZoomed);
+                              }}
+                            >
+                              {sketchnoteZoomed ? '🔍 Pomniejsz' : '🔍 Powiększ'}
+                            </button>
+                          )}
                         </div>
                       </div>
-                      {sketchnoteHasSourceData ? (
+
+                      {/* Accordion Content */}
+                      {sketchnoteExpanded && (
                         <div
-                          className={`sketchnote-image-frame p-6 bg-slate-800/10 rounded-2xl border border-slate-700/50 flex justify-center items-center min-h-[300px] ${sketchnoteZoomed ? 'sketchnote-zoomed' : ''}`}
+                          className={`p-0 border-t border-slate-700/30 overflow-hidden ${sketchnoteZoomed ? 'sketchnote-zoomed-overlay' : ''}`}
                         >
-                          <div
-                            className="sketchnote-inline-svg"
-                            dangerouslySetInnerHTML={{
-                              __html: buildSketchnoteSvg(sketchnoteSummaryText, summaryBullets),
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="sketchnote-empty-copy soft-copy">
-                          Aby wygenerować szkic, nagranie musi zawierać dłuższą dyskusję.
+                          {sketchnoteHasSourceData ? (
+                            <div
+                              className={`sketchnote-image-frame flex justify-center items-center min-h-[300px] mt-0 ${sketchnoteZoomed ? 'sketchnote-zoomed' : ''}`}
+                            >
+                              <div
+                                className="w-full max-w-4xl mx-auto p-6"
+                                dangerouslySetInnerHTML={{
+                                  __html: buildSketchnoteSvg(sketchnoteSummaryText, summaryBullets),
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="sketchnote-empty-copy p-12 mt-4 flex flex-col items-center justify-center bg-slate-900/30 rounded-xl text-center">
+                              <PenTool
+                                size={42}
+                                className="text-slate-500 mb-4 opacity-50 stroke-1"
+                              />
+                              <h4 className="text-slate-300 font-medium mb-2 text-lg">
+                                Brak danych do wygenerowania szkicu
+                              </h4>
+                              <p className="text-sm text-slate-400 max-w-md mx-auto">
+                                Aby automatycznie wyrysować graficzną notatkę ze spotkania
+                                (Sketchnote), wejściowe nagranie musi zawierać obszerniejszą
+                                dyskusję z wyciągniętymi wnioskami lub decyzjami.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </section>

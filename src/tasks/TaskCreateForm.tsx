@@ -46,7 +46,9 @@ export default function TaskCreateForm({
     status: initialDraft.status || boardColumns[0]?.id || 'todo',
     dueDate: initialDraft.dueDate || '',
     reminderAt: initialDraft.reminderAt || '',
-    tags: initialDraft.tags || '',
+    tags: Array.isArray(initialDraft.tags)
+      ? (initialDraft.tags as string[]).join(', ')
+      : initialDraft.tags || '',
     important: initialDraft.important || false,
   });
 

@@ -5486,6 +5486,11 @@
   display: flex;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.tasks-layout.ms-todo .todo-sidebar-inner {
+  overflow-x: hidden;
 }
 
 .tasks-layout.ms-todo .todo-side-link .todo-side-label {

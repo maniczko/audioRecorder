@@ -151,10 +151,6 @@
 }
 
 .recordings-library-meeting {
-  max-width: 260px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-weight: 500;
 }
 
@@ -460,10 +456,10 @@ input[type="date"].recordings-library-filter-control::-webkit-calendar-picker-in
   padding-bottom: 8px;
 }
 
-.recordings-library-meeting,
 .recordings-library-meeting strong {
   display: block;
   min-width: 0;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
