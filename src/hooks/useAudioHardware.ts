@@ -202,38 +202,6 @@ export default function useAudioHardware({
     setSilenceCountdown(null);
   }
 
-  async function checkMicrophonePermission() {
-    // Check if Permissions API is available
-    if (!('permissions' in navigator)) {
-      return 'unknown';
-    }
-
-    try {
-      const permissionStatus = await navigator.permissions.query({
-        name: 'microphone' as PermissionName,
-      });
-
-      // Listen for permission changes
-      permissionStatus.onchange = () => {
-        console.log('[useAudioHardware] Microphone permission changed:', permissionStatus.state);
-        if (permissionStatus.state === 'granted') {
-          setRecordPermission('granted');
-          onMessageChange('');
-        } else if (permissionStatus.state === 'denied') {
-          setRecordPermission('denied');
-          onMessageChange(
-            'Mikrofon jest zablokowany. Aby odblokować: 1) Kliknij ikonę kłódki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
-          );
-        }
-      };
-
-      return permissionStatus.state;
-    } catch (e) {
-      console.warn('[useAudioHardware] Permissions API check failed:', e);
-      return 'unknown';
-    }
-  }
-
   async function startRecording(meetingId) {
     // Check if browser supports getUserMedia
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -247,28 +215,17 @@ export default function useAudioHardware({
       return;
     }
 
-    // Proactively check microphone permission
-    const permissionState = await checkMicrophonePermission();
-
-    if (permissionState === 'denied') {
+    // If permission is explicitly denied, show helpful message
+    if (recordPermission === 'denied') {
       onMessageChange(
-        'Mikrofon jest zablokowany. Aby odblokować: ' +
-          '1) Kliknij ikonę kłódki obok adresu strony, ' +
-          '2) Wybierz "Zezwalaj" przy mikrofonie, ' +
-          '3) Odśwież stronę.'
+        '❌ Mikrofon zablokowany. Aby odblokować: 1) Kliknij ikonę kłódki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
       );
-      setRecordPermission('denied');
       return;
-    }
-
-    if (permissionState === 'prompt') {
-      // Permission not yet granted - will prompt on getUserMedia call
-      onMessageChange('Nagrywanie...');
     }
 
     cleanupRecorder();
     setRecordPermission('loading');
-    onMessageChange('Nagrywanie...');
+    onMessageChange('Pobieranie dostępu do mikrofonu...');
     onInterimChange('');
     onSegmentsChange([]);
     setVisualBars(DEFAULT_BARS);

@@ -195,6 +195,15 @@
   transform: translateY(-1px);
 }
 
+.ghost-button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-section-title {
+  font-weight: 600 !important;
+  color: var(--accent);
+}
+
 .people-search-wrap {
   position: relative;
   margin-bottom: 12px;
