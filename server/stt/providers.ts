@@ -147,7 +147,9 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
     console.warn(
       `[stt] ${provider.id} failed: status=${response.status} body=${rawBody.slice(0, 300)}`
     );
-    throw new Error(msg);
+    const err: any = new Error(msg);
+    err.status = response.status;
+    throw err;
   }
 
   return parseJsonResponse(rawBody);

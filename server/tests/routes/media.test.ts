@@ -570,4 +570,81 @@ describe('Media Routes', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ mode: 'no-key' });
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — POST /transcribe returns 502 on unhandled pipeline error
+  // Date: 2026-03-29
+  // Bug: startTranscriptionPipeline threw unhandled → global error handler → 500/502 via proxy
+  // Fix: Added try-catch returning structured error with proper status code
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — transcribe pipeline error returns structured error, not 502', () => {
+    it('POST /transcribe returns error JSON when pipeline throws', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_err',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/err.webm',
+        content_type: 'audio/webm',
+      });
+      mockTranscriptionService.queueTranscription.mockRejectedValue(
+        new Error('STT provider unreachable')
+      );
+
+      const res = await app.request('/media/recordings/rec_err/transcribe', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: 'ws_1' }),
+      });
+
+      expect(res.status).toBe(502);
+      const data = await res.json();
+      expect(data.message).toContain('STT provider unreachable');
+      expect(data.recordingId).toBe('rec_err');
+    });
+
+    it('POST /retry-transcribe returns error JSON when pipeline throws', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_retry_err',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/retry_err.webm',
+        content_type: 'audio/webm',
+        meeting_id: 'mtg_1',
+      });
+      mockTranscriptionService.queueTranscription.mockRejectedValue(
+        new Error('Database connection lost')
+      );
+
+      const res = await app.request('/media/recordings/rec_retry_err/retry-transcribe', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(502);
+      const data = await res.json();
+      expect(data.message).toContain('Database connection lost');
+      expect(data.recordingId).toBe('rec_retry_err');
+    });
+
+    it('POST /transcribe returns custom status code from error', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_429',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/rate.webm',
+        content_type: 'audio/webm',
+      });
+      const rateLimitError: any = new Error('Rate limit exceeded');
+      rateLimitError.statusCode = 429;
+      mockTranscriptionService.queueTranscription.mockRejectedValue(rateLimitError);
+
+      const res = await app.request('/media/recordings/rec_429/transcribe', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: 'ws_1' }),
+      });
+
+      expect(res.status).toBe(429);
+      const data = await res.json();
+      expect(data.message).toContain('Rate limit exceeded');
+    });
+  });
 });

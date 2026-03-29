@@ -10,6 +10,7 @@ import {
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
+import { Type, AlignLeft, Users, Folder, Calendar, Clock, Flag, Activity, Tag } from 'lucide-react';
 
 import PropTypes from 'prop-types';
 import { formatDateTime, formatDuration } from '../lib/storage';
@@ -725,6 +726,58 @@ export default function StudioMeetingView({
     tags: [],
   });
   const [isAddingTask, setIsAddingTask] = useState(false);
+
+  const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
+  const [analysisDraft, setAnalysisDraft] = useState({
+    summary: '',
+    decisions: '',
+    followUps: '',
+    risks: '',
+  });
+
+  function handleEditAnalysis() {
+    setIsEditingAnalysis(true);
+    setAnalysisDraft({
+      summary: studioAnalysis?.summary || '',
+      decisions: (safeArray(studioAnalysis?.decisions) || []).join('\n'),
+      followUps: (safeArray(studioAnalysis?.followUps) || []).join('\n'),
+      risks: (safeArray(studioAnalysis?.risks) || [])
+        .map((r: any) => (typeof r === 'string' ? r : r?.risk || ''))
+        .filter(Boolean)
+        .join('\n'),
+    });
+  }
+
+  function handleSaveAnalysis() {
+    const targetId =
+      selectedMeeting?.id || displayRecording?.meetingId || selectedRecording?.meetingId;
+    if (!targetId) {
+      console.warn('Cannot save analysis: no meeting context.');
+      setIsEditingAnalysis(false);
+      return;
+    }
+
+    const newAnalysis = {
+      ...(studioAnalysis || {}),
+      summary: analysisDraft.summary.trim(),
+      decisions: analysisDraft.decisions
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+      followUps: analysisDraft.followUps
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+      risks: analysisDraft.risks
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+        .map((r: string) => ({ risk: r, impact: 'Medium', mitigation: '' })),
+    };
+
+    updateMeeting?.(targetId, { analysis: newAnalysis });
+    setIsEditingAnalysis(false);
+  }
 
   const [studioAnalysisTab, setStudioAnalysisTab] = useState('summary'); // default to summary based on user preference
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
@@ -1823,7 +1876,35 @@ export default function StudioMeetingView({
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">AI ? podsumowanie</div>
-                    <h2>Podsumowanie spotkania</h2>
+                    <div className="analysis-edit-header">
+                      <h2>Podsumowanie spotkania</h2>
+                      {!isEditingAnalysis ? (
+                        <button
+                          type="button"
+                          className="ghost-button header-action"
+                          onClick={handleEditAnalysis}
+                        >
+                          ✏️ Edytuj
+                        </button>
+                      ) : (
+                        <div className="analysis-edit-actions">
+                          <button
+                            type="button"
+                            className="primary-button header-action"
+                            onClick={handleSaveAnalysis}
+                          >
+                            Zapisz
+                          </button>
+                          <button
+                            type="button"
+                            className="ghost-button header-action"
+                            onClick={() => setIsEditingAnalysis(false)}
+                          >
+                            Anuluj
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1870,7 +1951,19 @@ export default function StudioMeetingView({
                 {studioAnalysis?.summary ? (
                   <div className="panel-body ff-summary-layout">
                     <div className="summary-hero">
-                      <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+                      {isEditingAnalysis ? (
+                        <textarea
+                          className="editable-analysis-textarea"
+                          value={analysisDraft.summary}
+                          onChange={(e) =>
+                            setAnalysisDraft((prev) => ({ ...prev, summary: e.target.value }))
+                          }
+                          rows={4}
+                          placeholder="Wpisz podsumowanie..."
+                        />
+                      ) : (
+                        <div className="analysis-summary-text">{studioAnalysis.summary}</div>
+                      )}
                       {summaryBullets.length ? (
                         <ul className="summary-highlights">
                           {summaryBullets.map((item) => (
@@ -2046,7 +2139,17 @@ export default function StudioMeetingView({
                           <h3>Decyzje</h3>
                           <span>{safeArray(studioAnalysis.decisions).length}</span>
                         </div>
-                        {safeArray(studioAnalysis.decisions).length ? (
+                        {isEditingAnalysis ? (
+                          <textarea
+                            className="editable-analysis-textarea"
+                            value={analysisDraft.decisions}
+                            onChange={(e) =>
+                              setAnalysisDraft((prev) => ({ ...prev, decisions: e.target.value }))
+                            }
+                            placeholder="Wpisz decyzje, każda w nowej linii..."
+                            rows={5}
+                          />
+                        ) : safeArray(studioAnalysis.decisions).length ? (
                           <ul className="analysis-list summary-list-tight">
                             {studioAnalysis.decisions.map((item, i) => (
                               <li key={i}>{item}</li>
@@ -2061,7 +2164,17 @@ export default function StudioMeetingView({
                           <h3>Nastepne kroki</h3>
                           <span>{followUps.length}</span>
                         </div>
-                        {followUps.length ? (
+                        {isEditingAnalysis ? (
+                          <textarea
+                            className="editable-analysis-textarea"
+                            value={analysisDraft.followUps}
+                            onChange={(e) =>
+                              setAnalysisDraft((prev) => ({ ...prev, followUps: e.target.value }))
+                            }
+                            placeholder="Wpisz następne kroki, każdy w nowej linii..."
+                            rows={5}
+                          />
+                        ) : followUps.length ? (
                           <ul className="analysis-list summary-list-tight">
                             {followUps.map((item, i) => (
                               <li key={i}>{item}</li>
@@ -2077,7 +2190,17 @@ export default function StudioMeetingView({
                           <h3>Ryzyka i blokery</h3>
                           <span>{risks.length + blockers.length + tensions.length}</span>
                         </div>
-                        {risks.length || blockers.length || tensions.length ? (
+                        {isEditingAnalysis ? (
+                          <textarea
+                            className="editable-analysis-textarea"
+                            value={analysisDraft.risks}
+                            onChange={(e) =>
+                              setAnalysisDraft((prev) => ({ ...prev, risks: e.target.value }))
+                            }
+                            placeholder="Wpisz ryzyka, każde w nowej linii..."
+                            rows={5}
+                          />
+                        ) : risks.length || blockers.length || tensions.length ? (
                           <div className="summary-stack">
                             {risks.map((item, i) => (
                               <article key={`risk-${i}`} className="summary-pill-card danger">
@@ -2670,30 +2793,57 @@ export default function StudioMeetingView({
                           Anuluj
                         </button>
                       </div>
-                      <div className="task-form-grid">
-                        <label>
-                          <span>Tytuł *</span>
-                          <input
-                            type="text"
-                            value={taskDraft.title}
-                            onChange={(e) => setTaskDraft((d) => ({ ...d, title: e.target.value }))}
-                            placeholder="np. Wyślij ofertę"
-                          />
-                        </label>
-                        <label>
-                          <span>Opis</span>
-                          <textarea
-                            rows={3}
-                            value={taskDraft.description}
-                            onChange={(e) =>
-                              setTaskDraft((d) => ({ ...d, description: e.target.value }))
-                            }
-                            placeholder="Dodaj opis zadania..."
-                          />
-                        </label>
-                        <div className="task-form-row">
-                          <label style={{ overflow: 'visible' }}>
-                            <span>Osoba</span>
+                      <div
+                        className="todo-detail-body ms-todo"
+                        style={{ padding: '0 16px', background: 'transparent' }}
+                      >
+                        {/* Tytuł */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Tytuł">
+                            <Type size={18} />
+                          </span>
+                          <span className="todo-row-label">
+                            Tytuł <span className="required-star">*</span>
+                          </span>
+                          <div className="todo-detail-row-fill">
+                            <input
+                              className="todo-detail-unified-field headline-input"
+                              type="text"
+                              value={taskDraft.title}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, title: e.target.value }))
+                              }
+                              placeholder="np. Wyślij ofertę"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Opis */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Opis">
+                            <AlignLeft size={18} />
+                          </span>
+                          <span className="todo-row-label">Opis</span>
+                          <div className="todo-detail-row-fill">
+                            <textarea
+                              className="todo-detail-unified-field text-area-field"
+                              rows={3}
+                              value={taskDraft.description}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, description: e.target.value }))
+                              }
+                              placeholder="Dodaj opis zadania..."
+                            />
+                          </div>
+                        </div>
+
+                        {/* Osoba */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Osoba">
+                            <Users size={18} />
+                          </span>
+                          <span className="todo-row-label">Osoba</span>
+                          <div className="todo-detail-row-fill">
                             <TagInput
                               tags={taskDraft.owner ? [taskDraft.owner] : []}
                               suggestions={allParticipants}
@@ -2707,10 +2857,18 @@ export default function StudioMeetingView({
                               placeholder="Wpisz lub wybierz osobę..."
                               type="person"
                             />
-                          </label>
-                          <label>
-                            <span>Grupa</span>
+                          </div>
+                        </div>
+
+                        {/* Grupa */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Grupa">
+                            <Folder size={18} />
+                          </span>
+                          <span className="todo-row-label">Grupa</span>
+                          <div className="todo-detail-row-fill">
                             <input
+                              className="todo-detail-unified-field"
                               list="task-groups"
                               value={taskDraft.group}
                               onChange={(e) =>
@@ -2718,34 +2876,54 @@ export default function StudioMeetingView({
                               }
                               placeholder="np. Sprint 14"
                             />
-                          </label>
+                          </div>
                         </div>
-                        <div className="task-form-row">
-                          <label>
-                            <span>Termin</span>
+
+                        {/* Termin */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Termin">
+                            <Calendar size={18} />
+                          </span>
+                          <span className="todo-row-label">Termin</span>
+                          <div className="todo-detail-row-fill">
                             <input
+                              className="todo-detail-unified-field"
                               type="datetime-local"
                               value={taskDraft.dueDate}
                               onChange={(e) =>
                                 setTaskDraft((d) => ({ ...d, dueDate: e.target.value }))
                               }
                             />
-                          </label>
-                          <label>
-                            <span>Przypomnienie</span>
+                          </div>
+                        </div>
+
+                        {/* Przypomnienie */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Przypomnienie">
+                            <Clock size={18} />
+                          </span>
+                          <span className="todo-row-label">Przypomnienie</span>
+                          <div className="todo-detail-row-fill">
                             <input
+                              className="todo-detail-unified-field"
                               type="datetime-local"
                               value={taskDraft.reminderAt}
                               onChange={(e) =>
                                 setTaskDraft((d) => ({ ...d, reminderAt: e.target.value }))
                               }
                             />
-                          </label>
+                          </div>
                         </div>
-                        <div className="task-form-row">
-                          <label>
-                            <span>Priorytet</span>
+
+                        {/* Priorytet */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Priorytet">
+                            <Flag size={18} />
+                          </span>
+                          <span className="todo-row-label">Priorytet</span>
+                          <div className="todo-detail-row-fill">
                             <select
+                              className="todo-detail-unified-field"
                               value={taskDraft.priority}
                               onChange={(e) =>
                                 setTaskDraft((d) => ({ ...d, priority: e.target.value }))
@@ -2756,10 +2934,18 @@ export default function StudioMeetingView({
                               <option value="high">Wysoki</option>
                               <option value="urgent">Krytyczny</option>
                             </select>
-                          </label>
-                          <label>
-                            <span>Status</span>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Status">
+                            <Activity size={18} />
+                          </span>
+                          <span className="todo-row-label">Status</span>
+                          <div className="todo-detail-row-fill">
                             <select
+                              className="todo-detail-unified-field"
                               value={taskDraft.status}
                               onChange={(e) =>
                                 setTaskDraft((d) => ({ ...d, status: e.target.value }))
@@ -2771,30 +2957,37 @@ export default function StudioMeetingView({
                               <option value="waiting">Oczekuje</option>
                               <option value="done">Zakończone</option>
                             </select>
-                          </label>
+                          </div>
                         </div>
-                        <label>
-                          <span>Tagi</span>
-                          <TagInput
-                            tags={taskDraft.tags}
-                            suggestions={allMeetingTags}
-                            onChange={(newTags) => setTaskDraft((d) => ({ ...d, tags: newTags }))}
-                            placeholder="Dodaj tag..."
-                          />
-                        </label>
+
+                        {/* Tagi */}
+                        <div className="todo-detail-row field-row">
+                          <span className="todo-row-icon" title="Tagi">
+                            <Tag size={18} />
+                          </span>
+                          <span className="todo-row-label">Tagi</span>
+                          <div className="todo-detail-row-fill">
+                            <TagInput
+                              tags={taskDraft.tags}
+                              suggestions={allMeetingTags}
+                              onChange={(newTags) => setTaskDraft((d) => ({ ...d, tags: newTags }))}
+                              placeholder="Dodaj tag..."
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="task-form-actions">
+
+                      <div
+                        className="todo-detail-header-actions"
+                        style={{
+                          justifyContent: 'flex-end',
+                          padding: '16px',
+                          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                        }}
+                      >
                         <button
                           type="button"
-                          className="primary-button"
-                          onClick={handleCreateManualTask}
-                          disabled={!taskDraft.title.trim()}
-                        >
-                          Utwórz zadanie
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
+                          className="todo-command-button"
                           onClick={() => {
                             setIsAddingTask(false);
                             setTaskDraft({
@@ -2812,6 +3005,14 @@ export default function StudioMeetingView({
                           }}
                         >
                           Anuluj
+                        </button>
+                        <button
+                          type="button"
+                          className="todo-command-button primary"
+                          onClick={handleCreateManualTask}
+                          disabled={!taskDraft.title.trim()}
+                        >
+                          Utwórz zadanie
                         </button>
                       </div>
                     </section>

@@ -49,6 +49,11 @@ function mergeAbortSignals(signals: AbortSignal[]): AbortSignal {
 }
 
 /**
+ * HTTP status codes that indicate a transient server error worth retrying.
+ */
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
+
+/**
  * Check if error is a retryable network error
  */
 function isRetryableNetworkError(error: any): boolean {
@@ -95,6 +100,16 @@ export async function httpClient(url: string, options: FetchOptions = {}): Promi
       });
 
       clearTimeout(timeoutId);
+
+      // Retry on transient server errors (502, 503, 504)
+      if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < MAX_RETRIES - 1) {
+        const delay = 500 * Math.pow(2, attempt);
+        console.warn(
+          `[httpClient] Retry ${attempt + 1}/${MAX_RETRIES} after HTTP ${response.status} for ${method} ${url}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
 
       return {
         ok: response.ok,

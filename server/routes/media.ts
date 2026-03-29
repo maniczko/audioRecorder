@@ -288,13 +288,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
     await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
-    const result = await startTranscriptionPipeline(recordingId, asset, {
-      ...body,
-      processingMode: resolveProcessingMode(body.processingMode),
-      requestId: c.get('reqId'),
-    });
+    try {
+      const result = await startTranscriptionPipeline(recordingId, asset, {
+        ...body,
+        processingMode: resolveProcessingMode(body.processingMode),
+        requestId: c.get('reqId'),
+      });
 
-    return c.json(normalizeTranscriptionStatusPayload(result), 202);
+      return c.json(normalizeTranscriptionStatusPayload(result), 202);
+    } catch (err: any) {
+      console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
+      const status = err?.statusCode || err?.status || 502;
+      return c.json(
+        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+        status
+      );
+    }
   });
 
   router.post('/recordings/:recordingId/retry-transcribe', async (c) => {
@@ -312,15 +321,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
     }
 
-    const result = await startTranscriptionPipeline(recordingId, asset, {
-      workspaceId: asset.workspace_id,
-      meetingId: asset.meeting_id,
-      contentType: asset.content_type,
-      processingMode: resolveProcessingMode(body.processingMode),
-      requestId: c.get('reqId'),
-    });
+    try {
+      const result = await startTranscriptionPipeline(recordingId, asset, {
+        workspaceId: asset.workspace_id,
+        meetingId: asset.meeting_id,
+        contentType: asset.content_type,
+        processingMode: resolveProcessingMode(body.processingMode),
+        requestId: c.get('reqId'),
+      });
 
-    return c.json(normalizeTranscriptionStatusPayload(result), 202);
+      return c.json(normalizeTranscriptionStatusPayload(result), 202);
+    } catch (err: any) {
+      console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
+      const status = err?.statusCode || err?.status || 502;
+      return c.json(
+        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+        status
+      );
+    }
   });
 
   router.get('/recordings/:recordingId/transcribe', async (c) => {

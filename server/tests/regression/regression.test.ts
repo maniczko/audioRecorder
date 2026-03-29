@@ -598,3 +598,56 @@ describe('Regression: Issue #804 - deleteAudioFromStorage error handling', () =>
     expect(Array.isArray(mockRemove.mock.calls[0][0])).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Server httpClient does not retry on HTTP 502/503/504
+// Date: 2026-03-29
+// Bug: httpClient only retried on network-level errors (ECONNRESET etc.),
+//      not on HTTP 502/503/504 from upstream STT providers
+// Fix: Added RETRYABLE_STATUS_CODES check in the fetch loop to retry
+//      on 502, 503, 504 before returning the response
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: #0 — httpClient retries on HTTP 502/503/504', () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  test('retries on 502 and eventually succeeds', async () => {
+    let callCount = 0;
+    globalThis.fetch = vi.fn(async () => {
+      callCount++;
+      if (callCount < 3) {
+        return new Response('Bad Gateway', { status: 502, statusText: 'Bad Gateway' });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as any;
+
+    const { httpClient } = await import('../../lib/httpClient');
+    const result = await httpClient('https://api.example.com/test', { timeout: 5000 });
+
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe(200);
+    expect(callCount).toBe(3);
+  });
+
+  test('returns 502 after all retries exhausted', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return new Response('Bad Gateway', { status: 502, statusText: 'Bad Gateway' });
+    }) as any;
+
+    const { httpClient } = await import('../../lib/httpClient');
+    const result = await httpClient('https://api.example.com/test', { timeout: 5000 });
+
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(502);
+  });
+});

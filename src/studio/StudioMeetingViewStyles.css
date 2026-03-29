@@ -267,6 +267,50 @@
   border-top: none;
 }
 
+/* Edit Analysis Styles */
+.analysis-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+}
+.analysis-edit-header h2 {
+  margin: 0;
+}
+.analysis-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+.ghost-button.header-action,
+.primary-button.header-action {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  height: auto;
+  min-height: unset;
+}
+.editable-analysis-textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--surface-stroke, rgba(255,255,255,0.08));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+[data-theme="light"] .editable-analysis-textarea {
+  background: var(--surface2, #f9fafb);
+  border-color: var(--border, #e5e7eb);
+}
+.editable-analysis-textarea:focus {
+  outline: none;
+  border-color: var(--accent, #75d6c4);
+}
+
 .ff-live-block-dot {
   width: 7px;
   height: 7px;
