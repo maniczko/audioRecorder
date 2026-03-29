@@ -26,9 +26,7 @@ export default defineConfig(async () => {
   const mediaProvider =
     readClientEnv('VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') ||
     (productionRemoteFallback ? 'remote' : '');
-  const apiBaseUrl =
-    readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') ||
-    '';
+  const apiBaseUrl = readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') || '';
   const googleClientId =
     readClientEnv('VITE_GOOGLE_CLIENT_ID', 'REACT_APP_GOOGLE_CLIENT_ID') ||
     (productionRemoteFallback ? 'demo' : '');
@@ -46,6 +44,7 @@ export default defineConfig(async () => {
       exclude: [],
     },
     server: {
+      host: '127.0.0.1',
       port: 3000,
       strictPort: true,
       hmr: {

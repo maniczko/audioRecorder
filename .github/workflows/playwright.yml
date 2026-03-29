@@ -2,29 +2,67 @@ name: E2E Playwright Tests
 on:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
+
+env:
+  CI: true
+  PLAYWRIGHT_BROWSERS_PATH: /tmp/browsers
 
 jobs:
   test:
+    name: E2E Playwright Tests
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
+    
     - uses: pnpm/action-setup@v3
       with:
         version: 9
+    
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+        cache: 'pnpm'
+    
     - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
+      run: |
+        echo "📦 Installing dependencies..."
+        pnpm install --no-frozen-lockfile
+    
     - name: Install Playwright Browsers
-      run: pnpm exec playwright install --with-deps
+      run: |
+        echo "🌐 Installing Playwright browsers..."
+        pnpm exec playwright install --with-deps chromium
+        pnpm exec playwright install-deps chromium
+    
     - name: Run Playwright tests
-      run: pnpm exec playwright test
-    - uses: actions/upload-artifact@v4
+      run: |
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║  🎭 Running E2E Playwright Tests                          ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        pnpm exec playwright test --reporter=list
+      env:
+        PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
+        PLAYWRIGHT_HTML_OUTPUT: playwright-report
+    
+    - name: Upload Playwright Report
       if: always()
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: playwright-report/
-        retention-days: 30
+        retention-days: 7
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-results
+        path: |
+          test-results/
+          results.xml
+        retention-days: 7

@@ -31,16 +31,24 @@ jobs:
       - name: Smoke-check deployed backend health
         id: smoke
         run: |
-          echo "Starting smoke test against $SMOKE_TEST_URL..."
-          echo "Expected Git SHA: $EXPECTED_GIT_SHA"
-          echo "Max retries: $SMOKE_MAX_RETRIES"
-          echo "Wait between retries: $SMOKE_WAIT_MS ms"
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  🚬 Starting Backend Production Smoke Test                ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Configuration:"
+          echo "  - URL: $SMOKE_TEST_URL"
+          echo "  - Expected Git SHA: $EXPECTED_GIT_SHA"
+          echo "  - Max Retries: $SMOKE_MAX_RETRIES"
+          echo "  - Wait Between Retries: ${SMOKE_WAIT_MS}ms"
+          echo "  - Total Max Wait: ~$((SMOKE_MAX_RETRIES * SMOKE_WAIT_MS / 1000))s"
+          echo ""
+          echo "Starting smoke test..."
           pnpm run test:smoke
         env:
           SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
           EXPECTED_GIT_SHA: ${{ github.sha }}
-          SMOKE_MAX_RETRIES: "20"
-          SMOKE_WAIT_MS: "45000"
+          SMOKE_MAX_RETRIES: "10"
+          SMOKE_WAIT_MS: "10000"
 
       - name: Debug - Log Railway deployment status
         if: failure()

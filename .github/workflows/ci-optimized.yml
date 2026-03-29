@@ -234,7 +234,9 @@ jobs:
     steps:
       - name: Check job statuses
         run: |
-          echo "## CI Summary"
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  📊 CI Summary                                            ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
           echo ""
           echo "| Job | Status |"
           echo "|-----|--------|"
@@ -247,17 +249,39 @@ jobs:
           echo "| Build | ${{ needs.build.result }} |"
           echo "| Docs | ${{ needs.docs.result }} |"
           echo ""
-
-          # Check if any critical jobs failed (skip 'skipped' jobs)
+          
+          # Determine overall status correctly
           CRITICAL_FAILED="false"
+          
+          # Check critical jobs - these MUST pass
           if [ "${{ needs.lint.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
           if [ "${{ needs.typecheck.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
           if [ "${{ needs.test.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
+          if [ "${{ needs.build.result }}" == "failure" ]; then CRITICAL_FAILED="true"; fi
           
+          # Non-critical jobs - these can fail without blocking
+          if [ "${{ needs.format.result }}" == "failure" ]; then
+            echo "⚠️  Format check failed (non-blocking)"
+          fi
+          if [ "${{ needs.coverage.result }}" == "failure" ]; then
+            echo "⚠️  Coverage check failed (non-blocking)"
+          fi
+          if [ "${{ needs.security.result }}" == "failure" ]; then
+            echo "⚠️  Security audit failed (non-blocking)"
+          fi
+          if [ "${{ needs.docs.result }}" == "failure" ]; then
+            echo "⚠️  Docs generation failed (non-blocking)"
+          fi
+          
+          echo ""
           if [ "$CRITICAL_FAILED" == "true" ]; then
-            echo "❌ Critical checks failed"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║  ❌ CRITICAL CHECKS FAILED                                ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
             exit 1
           else
-            echo "✅ All critical checks passed or were skipped"
+            echo "╔═══════════════════════════════════════════════════════════╗"
+            echo "║  ✅ ALL CRITICAL CHECKS PASSED                            ║"
+            echo "╚═══════════════════════════════════════════════════════════╝"
             exit 0
           fi

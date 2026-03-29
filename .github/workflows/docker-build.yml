@@ -18,11 +18,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check disk space
+        run: |
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  💾 Checking Disk Space                                   ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          df -h
+          echo ""
+          AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+          echo "Available space: ${AVAILABLE}K"
+          if [ "$AVAILABLE" -lt "10000000" ]; then
+            echo "⚠️  Warning: Less than 10GB available!"
+          else
+            echo "✅ Disk space OK"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
+        id: build
         with:
           context: .
           push: false
@@ -31,11 +50,38 @@ jobs:
           cache-to: type=gha,mode=max
           tags: voicelog:test
           load: true
+          provenance: false
+          sbom: false
+
+      - name: Verify Docker image size
+        run: |
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  📦 Docker Image Size                                     ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          docker images voicelog:test
+          SIZE=$(docker images voicelog:test --format "{{.Size}}")
+          echo "Image size: $SIZE"
 
       - name: Verify binaries present in image
         run: |
-          docker run --rm --entrypoint="" voicelog:test ffmpeg -version
-          docker run --rm --entrypoint="" voicelog:test ffprobe -version
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  🔧 Verifying Binaries                                    ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          
+          echo "Checking ffmpeg..."
+          docker run --rm --entrypoint="" voicelog:test ffmpeg -version | head -1
+          
+          echo "Checking ffprobe..."
+          docker run --rm --entrypoint="" voicelog:test ffprobe -version | head -1
+          
+          echo "Checking Python..."
           docker run --rm --entrypoint="" voicelog:test python3 --version
+          
+          echo "Checking Node.js..."
           docker run --rm --entrypoint="" voicelog:test node --version
+          
+          echo "Checking uv..."
           docker run --rm --entrypoint="" voicelog:test uv --version
+          
+          echo ""
+          echo "✅ All binaries verified!"

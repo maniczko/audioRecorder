@@ -180,24 +180,49 @@ export default function useAudioHardware({
   }
 
   async function startRecording(meetingId) {
-    if (recordPermission === 'denied') {
-      onMessageChange(
-        'Mikrofon jest zablokowany w przeglądarce. Kliknij ikonę kłódki przy adresie strony i zezwól na mikrofon.'
-      );
-      return;
-    }
+    // Check if browser supports getUserMedia
     if (!navigator.mediaDevices?.getUserMedia) {
       onMessageChange('Ta przeglądarka nie obsługuje dostępu do mikrofonu.');
       return;
     }
+
+    // Check if browser supports MediaRecorder
     if (typeof window !== 'undefined' && typeof window.MediaRecorder === 'undefined') {
       onMessageChange('Ta przeglądarka nie obsługuje nagrywania audio przez MediaRecorder.');
       return;
     }
 
+    // Proactively check microphone permission
+    try {
+      if ('permissions' in navigator) {
+        const permissionStatus = await navigator.permissions.query({
+          name: 'microphone' as PermissionName,
+        });
+
+        if (permissionStatus.state === 'denied') {
+          onMessageChange(
+            'Mikrofon jest zablokowany. Aby odblokować: ' +
+              '1) Kliknij ikonę kłódki obok adresu strony, ' +
+              '2) Wybierz "Zezwalaj" przy mikrofonie, ' +
+              '3) Odśwież stronę.'
+          );
+          setRecordPermission('denied');
+          return;
+        }
+
+        if (permissionStatus.state === 'prompt') {
+          // Permission not yet granted - will prompt on getUserMedia call
+          onMessageChange('Nagrywanie...');
+        }
+      }
+    } catch (e) {
+      // Permissions API not available - proceed with getUserMedia
+      console.warn('Permissions API not available, proceeding with getUserMedia');
+    }
+
     cleanupRecorder();
     setRecordPermission('loading');
-    onMessageChange('');
+    onMessageChange('Nagrywanie...');
     onInterimChange('');
     onSegmentsChange([]);
     setVisualBars(DEFAULT_BARS);
@@ -226,7 +251,7 @@ export default function useAudioHardware({
       const noiseReducer = await createNoiseReducerNode(audioContext);
       let recordStream = stream;
       let noiseReductionEnabled = false;
-      
+
       if (noiseReducer) {
         try {
           // Client-side noise reduction using RNNoise (WebAssembly) - ZERO server costs!
@@ -238,7 +263,7 @@ export default function useAudioHardware({
           recordStream = destination.stream;
           noiseReducerRef.current = noiseReducer;
           noiseReductionEnabled = true;
-          
+
           if (isRnnoiseNode(noiseReducer)) {
             setVoiceActivityStatus('idle');
             noiseReducer.onstatus = (event) => {
@@ -260,7 +285,7 @@ export default function useAudioHardware({
         source.connect(analyser);
         setVoiceActivityStatus('unsupported');
       }
-      
+
       // Debug: check in console if noise reduction is active
       (window as any).__NOISE_REDUCTION_ENABLED = noiseReductionEnabled;
 

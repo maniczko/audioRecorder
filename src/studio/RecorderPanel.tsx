@@ -33,7 +33,8 @@ export default function RecorderPanel({
               : 'Ready';
 
   // Check if noise reduction is actually working
-  const isNoiseReductionActive = typeof window !== 'undefined' && (window as any).__NOISE_REDUCTION_ENABLED;
+  const isNoiseReductionActive =
+    typeof window !== 'undefined' && (window as any).__NOISE_REDUCTION_ENABLED;
 
   return (
     <section className="panel recorder-panel">
@@ -62,10 +63,12 @@ export default function RecorderPanel({
                   <span
                     key={index}
                     className="bar bar-live"
-                    style={{
-                      '--bar-h': `${Math.max(4, height)}px`,
-                      '--bar-delay': `${(index % 8) * 0.06}s`,
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        '--bar-h': `${Math.max(4, height)}px`,
+                        '--bar-delay': `${(index % 8) * 0.06}s`,
+                      } as React.CSSProperties
+                    }
                   />
                 ))}
               </div>
@@ -96,23 +99,27 @@ export default function RecorderPanel({
               Nagranie ad hoc
             </button>
           ) : null}
-          
+
           {/* Noise Reduction Toggle */}
           <button
             type="button"
             className={`ghost-button ${noiseReductionEnabled ? 'active' : ''}`}
             onClick={onToggleNoiseReduction}
-            title={noiseReductionEnabled ? 'Noise reduction WLACZONY - czyszczenie szumow' : 'Noise reduction WYLACZONY'}
+            title={
+              noiseReductionEnabled
+                ? 'Noise reduction WLACZONY - czyszczenie szumow'
+                : 'Noise reduction WYLACZONY'
+            }
             disabled={!canRecord || isRecording}
           >
             {noiseReductionEnabled ? '🔇 Szumy: ON' : '🎤 Szumy: OFF'}
           </button>
-          
+
           <div className="microcopy">
             {!canRecord
               ? 'Ta rola ma dostep tylko do podgladu. Nagrywanie i edycja sa zablokowane.'
               : recordPermission === 'denied'
-                ? 'Mikrofon zablokowany. Odblokuj go przy pasku adresu.'
+                ? '❌ Mikrofon zablokowany. Aby odblokować: 1) Kliknij 🔒 obok adresu, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
                 : speechRecognitionSupported
                   ? 'Live transcript wlacza sie automatycznie.'
                   : 'Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review.'}

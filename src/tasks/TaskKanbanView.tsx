@@ -156,7 +156,6 @@ function KanbanCard({
   allTasks,
 }) {
   const dependencyState = getTaskDependencyDetails(task, allTasks);
-  const lastActivity = getTaskLastActivity(task);
   const subtasks = task.subtasks || [];
   const assignees = task.assignedTo?.length ? task.assignedTo : task.owner ? [task.owner] : [];
   const tags = task.tags || [];
@@ -166,19 +165,22 @@ function KanbanCard({
       <article
         role="button"
         tabIndex={0}
+        draggable
         className={`todo-kanban-card${isActive ? ' active' : ''}${task.completed ? ' completed' : ''}${dragTaskId === task.id ? ' dragging' : ''}`}
         data-selected={isSelected}
-        title="Przeciagnij zadanie"
-        draggable
+        title="Kliknij aby otworzyc szczegoly. Zlap i przeciagnij, aby zmienic kolumne."
         onDragStart={(event) => {
-          setSelectedTaskId(task.id);
           setDragTaskId(task.id);
           writeDragTask(event, task.id);
         }}
         onDragEnd={() => {
           setDragTaskId('');
         }}
-        onClick={() => setSelectedTaskId(task.id)}
+        onClick={(event) => {
+          // Zapobiegamy otwarciu jesli to byl koniec drag'n'drop (klikanie jest przechwytywane inaczej na dnd, ale upewniamy sie)
+          event.stopPropagation();
+          setSelectedTaskId(task.id);
+        }}
         onKeyDown={(event) => handleCardKeyDown(event, () => setSelectedTaskId(task.id))}
       >
         {task.coverColor ? (
@@ -186,6 +188,19 @@ function KanbanCard({
         ) : null}
 
         <div className="todo-kanban-card-top">
+          <div className="kanban-drag-handle" title="Przeciagnij aby przeniesc">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="8" cy="6" r="2" />
+              <circle cx="12" cy="6" r="2" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="8" cy="12" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="16" cy="12" r="2" />
+              <circle cx="8" cy="18" r="2" />
+              <circle cx="12" cy="18" r="2" />
+              <circle cx="16" cy="18" r="2" />
+            </svg>
+          </div>
           <div className="todo-kanban-title">
             <button
               type="button"
@@ -218,9 +233,7 @@ function KanbanCard({
         ) : null}
 
         {tags.length > 0 ? (
-          <div
-            className="kanban-label-chips"
-          >
+          <div className="kanban-label-chips">
             {tags.slice(0, 4).map((tag) => (
               <TagBadge key={`${task.id}-${tag}`} tag={tag} />
             ))}
@@ -277,12 +290,6 @@ function KanbanCard({
             ) : null}
           </div>
         </div>
-
-        {lastActivity ? (
-          <small className="todo-activity-copy">
-            {lastActivity.actor}: {lastActivity.message}
-          </small>
-        ) : null}
       </article>
 
       <DropSlot
@@ -379,7 +386,6 @@ function ColumnBody({
       className="todo-kanban-body"
       onDragOver={canDrop}
       onDragEnter={() => setDropColumnId(column.id)}
-      onDragLeave={() => setDropColumnId((prev) => (prev === column.id ? '' : prev))}
       onDrop={(event) => handleDrop(column.id, event)}
     >
       {tasks.length ? (
@@ -585,6 +591,12 @@ function TaskKanbanView({
                 <div
                   key={col.id}
                   className={`swimlane-col${dropColumnId === col.id ? ' drop' : ''}`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragTaskId && dropColumnId !== col.id) {
+                      setDropColumnId(col.id);
+                    }
+                  }}
                 >
                   <ColumnBody column={col} tasks={col.tasks} {...sharedBodyProps} />
                 </div>
@@ -605,6 +617,12 @@ function TaskKanbanView({
             key={column.id}
             data-testid={`column-${column.id}`}
             className={`todo-kanban-column${dropColumnId === column.id ? ' drop' : ''}${wipExceeded ? ' wip-exceeded' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (dragTaskId && dropColumnId !== column.id) {
+                setDropColumnId(column.id);
+              }
+            }}
           >
             <header
               className="todo-kanban-header"

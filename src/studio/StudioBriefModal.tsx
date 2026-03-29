@@ -1,10 +1,22 @@
-import { useState, useRef } from 'react';
-import { formatDateTime, formatDuration } from '../lib/storage';
-import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
+import { useState } from 'react';
 import TagInput from '../shared/TagInput';
 import { addCustomTaskPerson, addCustomTaskTag } from '../lib/tasks';
-import { X } from 'lucide-react';
+import {
+  X,
+  Type,
+  Calendar,
+  Clock,
+  Users,
+  Tag,
+  AlignLeft,
+  MapPin,
+  Target,
+  ChevronDown,
+  ChevronUp,
+  ListTodo,
+} from 'lucide-react';
 import './StudioBriefModalStyles.css';
+import '../tasks/TaskDetailsPanelStyles.css'; /* Upewniamy się, że klasy unified-field i detail-row są dostępne */
 
 export default function StudioBriefModal({
   currentWorkspacePermissions,
@@ -26,10 +38,7 @@ export default function StudioBriefModal({
   onClose,
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
-  const [activeSection, setActiveSection] = useState('basic');
-  const [attendeeInput, setAttendeeInput] = useState('');
-  const [showAttendeeSuggestions, setShowAttendeeSuggestions] = useState(false);
-  const attendeeWrapRef = useRef(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div className="studio-brief-modal-overlay" onClick={onClose}>
@@ -44,209 +53,164 @@ export default function StudioBriefModal({
           </button>
         </div>
 
-        <div className="brief-tab-bar">
-          <button
-            type="button"
-            className={activeSection === 'basic' ? 'brief-tab active' : 'brief-tab'}
-            onClick={() => setActiveSection('basic')}
-          >
-            Podstawowe
-          </button>
-          <button
-            type="button"
-            className={activeSection === 'advanced' ? 'brief-tab active' : 'brief-tab'}
-            onClick={() => setActiveSection('advanced')}
-          >
-            Szczegóły
-          </button>
-        </div>
-
-        {activeSection === 'basic' ? (
-          <div className="stack-form brief-form-section">
-            <label>
-              <span>
-                Tytuł <span className="required-star">*</span>
-              </span>
+        <div className="studio-brief-modal-body ms-todo">
+          {/* Tytuł */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Tytuł">
+              <Type size={18} />
+            </span>
+            <span className="todo-row-label">
+              Tytuł <span className="required-star">*</span>
+            </span>
+            <div className="todo-detail-row-fill">
               <input
-                value={meetingDraft.title}
+                className="todo-detail-unified-field"
+                value={meetingDraft.title || ''}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))
                 }
                 placeholder="np. Spotkanie z klientem"
                 disabled={!canEditWorkspace}
               />
-            </label>
-            <label>
-              <span>Kontekst</span>
+            </div>
+          </div>
+
+          {/* Kontekst */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Kontekst">
+              <AlignLeft size={18} />
+            </span>
+            <span className="todo-row-label">Kontekst</span>
+            <div className="todo-detail-row-fill">
               <textarea
-                rows={3}
-                value={meetingDraft.context}
+                className="todo-detail-unified-field brief-textarea"
+                rows={2}
+                value={meetingDraft.context || ''}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))
                 }
                 placeholder="O czym będzie to spotkanie?"
                 disabled={!canEditWorkspace}
               />
-            </label>
-            <label className="full">
-              <span>Termin</span>
+            </div>
+          </div>
+
+          {/* Termin */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Termin">
+              <Calendar size={18} />
+            </span>
+            <span className="todo-row-label">Termin</span>
+            <div className="todo-detail-row-fill">
               <input
                 type="datetime-local"
-                value={meetingDraft.startsAt}
+                className="todo-detail-unified-field"
+                value={meetingDraft.startsAt || ''}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))
                 }
                 disabled={!canEditWorkspace}
               />
-            </label>
-            <label>
-              <span>Czas trwania</span>
-              <div className="duration-picker">
-                <select
-                  value={
-                    [15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes))
-                      ? String(meetingDraft.durationMinutes)
-                      : 'custom'
+            </div>
+          </div>
+
+          {/* Czas trwania */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Czas trwania">
+              <Clock size={18} />
+            </span>
+            <span className="todo-row-label">Czas trwania</span>
+            <div className="todo-detail-row-fill duration-picker-fill">
+              <select
+                className="todo-detail-unified-field"
+                value={
+                  [15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes))
+                    ? String(meetingDraft.durationMinutes)
+                    : 'custom'
+                }
+                onChange={(event) => {
+                  if (event.target.value !== 'custom') {
+                    setMeetingDraft((previous) => ({
+                      ...previous,
+                      durationMinutes: Number(event.target.value),
+                    }));
                   }
-                  onChange={(event) => {
-                    if (event.target.value !== 'custom') {
-                      setMeetingDraft((previous) => ({
-                        ...previous,
-                        durationMinutes: Number(event.target.value),
-                      }));
-                    }
-                  }}
+                }}
+                disabled={!canEditWorkspace}
+              >
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="45">45 min</option>
+                <option value="60">1 godz</option>
+                <option value="custom">Własny czas</option>
+              </select>
+              {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
+                <input
+                  type="number"
+                  min="5"
+                  step="5"
+                  className="todo-detail-unified-field duration-custom-input"
+                  value={meetingDraft.durationMinutes}
+                  onChange={(event) =>
+                    setMeetingDraft((previous) => ({
+                      ...previous,
+                      durationMinutes: event.target.value ? Number(event.target.value) : 0,
+                    }))
+                  }
                   disabled={!canEditWorkspace}
-                >
-                  <option value="15">15 min</option>
-                  <option value="30">30 min</option>
-                  <option value="45">45 min</option>
-                  <option value="60">1 godz</option>
-                  <option value="custom">Własny czas</option>
-                </select>
-                {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
-                  <input
-                    type="number"
-                    min="5"
-                    step="5"
-                    value={meetingDraft.durationMinutes}
-                    onChange={(event) =>
-                      setMeetingDraft((previous) => ({
-                        ...previous,
-                        durationMinutes: event.target.value,
-                      }))
-                    }
-                    disabled={!canEditWorkspace}
-                    placeholder="min"
-                    className="duration-custom-input"
-                  />
-                )}
-              </div>
-            </label>
-            <div className="brief-attendees-field">
-              <span className="brief-field-label">Uczestnicy</span>
-              <div className="brief-attendees-chips">
-                {(meetingDraft.attendees || '')
-                  .split('\n')
-                  .filter(Boolean)
-                  .map((name) => (
-                    <span key={name} className="brief-attendee-chip">
-                      {name}
-                      <button
-                        type="button"
-                        className="brief-attendee-remove"
-                        onClick={() =>
-                          setMeetingDraft((previous) => ({
-                            ...previous,
-                            attendees: (previous.attendees || '')
-                              .split('\n')
-                              .filter((n) => n.trim() && n.trim() !== name.trim())
-                              .join('\n'),
-                          }))
-                        }
-                        disabled={!canEditWorkspace}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-              </div>
-              {canEditWorkspace && (
-                <div className="brief-attendee-input-wrap" ref={attendeeWrapRef}>
-                  <input
-                    value={attendeeInput}
-                    onChange={(e) => {
-                      setAttendeeInput(e.target.value);
-                      setShowAttendeeSuggestions(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ',') && attendeeInput.trim()) {
-                        e.preventDefault();
-                        const name = attendeeInput.trim().replace(/,$/, '');
-                        setMeetingDraft((previous) => ({
-                          ...previous,
-                          attendees: previous.attendees
-                            ? previous.attendees.trim() + '\n' + name
-                            : name,
-                        }));
-                        addCustomTaskPerson(name);
-                        setAttendeeInput('');
-                        setShowAttendeeSuggestions(false);
-                      } else if (e.key === 'Escape') {
-                        setShowAttendeeSuggestions(false);
-                      }
-                    }}
-                    onFocus={() => setShowAttendeeSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowAttendeeSuggestions(false), 150)}
-                    placeholder="Dodaj uczestnika..."
-                    className="brief-attendee-input"
-                  />
-                  {showAttendeeSuggestions &&
-                    peopleOptions.filter(
-                      (p) =>
-                        p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
-                        !(meetingDraft.attendees || '')
-                          .split('\n')
-                          .map((n) => n.trim())
-                          .includes(p)
-                    ).length > 0 && (
-                      <div className="attendee-suggestions-dropdown">
-                        {peopleOptions
-                          .filter(
-                            (p) =>
-                              p.toLowerCase().includes(attendeeInput.toLowerCase()) &&
-                              !(meetingDraft.attendees || '')
-                                .split('\n')
-                                .map((n) => n.trim())
-                                .includes(p)
-                          )
-                          .map((person) => (
-                            <button
-                              key={person}
-                              type="button"
-                              className="attendee-suggestion-item"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setMeetingDraft((previous) => ({
-                                  ...previous,
-                                  attendees: previous.attendees
-                                    ? previous.attendees.trim() + '\n' + person
-                                    : person,
-                                }));
-                                setAttendeeInput('');
-                                setShowAttendeeSuggestions(false);
-                              }}
-                            >
-                              {person}
-                            </button>
-                          ))}
-                      </div>
-                    )}
+                  placeholder="min"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Uczestnicy */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Uczestnicy">
+              <Users size={18} />
+            </span>
+            <span className="todo-row-label">Uczestnicy</span>
+            <div className="todo-detail-row-fill">
+              {canEditWorkspace ? (
+                <TagInput
+                  type="person"
+                  tags={(meetingDraft.attendees || '')
+                    .split('\n')
+                    .map((t) => t.trim())
+                    .filter(Boolean)}
+                  suggestions={peopleOptions}
+                  onChange={(newAttendees) => {
+                    setMeetingDraft((previous) => ({
+                      ...previous,
+                      attendees: newAttendees.join('\n'),
+                    }));
+                    newAttendees.forEach((t) => addCustomTaskPerson(t));
+                  }}
+                  placeholder="Dodaj uczestnika..."
+                />
+              ) : (
+                <div className="brief-attendees-chips">
+                  {(meetingDraft.attendees || '')
+                    .split('\n')
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .map((person) => (
+                      <span key={person} className="brief-attendee-chip">
+                        {person}
+                      </span>
+                    ))}
                 </div>
               )}
             </div>
-            <div className="brief-attendees-field">
-              <span className="brief-field-label">Tagi</span>
+          </div>
+
+          {/* Tagi */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" title="Tagi">
+              <Tag size={18} />
+            </span>
+            <span className="todo-row-label">Tagi</span>
+            <div className="todo-detail-row-fill">
               {canEditWorkspace ? (
                 <TagInput
                   tags={(meetingDraft.tags || '')
@@ -278,61 +242,85 @@ export default function StudioBriefModal({
               )}
             </div>
           </div>
-        ) : (
-          <div className="stack-form brief-form-section">
-            <label>
-              <span>Potrzeby rozmówców</span>
-              <textarea
-                rows={3}
-                value={meetingDraft.needs}
-                onChange={(event) =>
-                  setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))
-                }
-                placeholder={'np. Potrzebuję wybudować dom\nChcę refinansować kredyt'}
-                disabled={!canEditWorkspace}
-              />
-            </label>
-            <label>
-              <span>Co wyciagnac po spotkaniu</span>
-              <textarea
-                rows={3}
-                value={meetingDraft.desiredOutputs}
-                onChange={(event) =>
-                  setMeetingDraft((previous) => ({
-                    ...previous,
-                    desiredOutputs: event.target.value,
-                  }))
-                }
-                placeholder={'np. Kolejne kroki\nOwnerzy zadan'}
-                disabled={!canEditWorkspace}
-              />
-            </label>
-            <label>
-              <span>Lokalizacja</span>
-              <input
-                value={meetingDraft.location}
-                onChange={(event) =>
-                  setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))
-                }
-                placeholder="np. Sala konferencyjna A"
-                disabled={!canEditWorkspace}
-              />
-            </label>
+
+          <div className="brief-advanced-divider">
+            <button
+              type="button"
+              className="brief-advanced-toggle"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              Dodatkowe opcje {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
-        )}
+
+          {showAdvanced && (
+            <div className="brief-advanced-section">
+              {/* Lokalizacja */}
+              <div className="todo-detail-row field-row">
+                <span className="todo-row-icon" title="Lokalizacja">
+                  <MapPin size={18} />
+                </span>
+                <span className="todo-row-label">Lokalizacja</span>
+                <div className="todo-detail-row-fill">
+                  <input
+                    className="todo-detail-unified-field"
+                    value={meetingDraft.location || ''}
+                    onChange={(event) =>
+                      setMeetingDraft((previous) => ({ ...previous, location: event.target.value }))
+                    }
+                    placeholder="np. Sala konferencyjna A"
+                    disabled={!canEditWorkspace}
+                  />
+                </div>
+              </div>
+
+              {/* Potrzeby rozmówców */}
+              <div className="todo-detail-row field-row">
+                <span className="todo-row-icon" title="Potrzeby">
+                  <Target size={18} />
+                </span>
+                <span className="todo-row-label">Potrzeby</span>
+                <div className="todo-detail-row-fill">
+                  <textarea
+                    className="todo-detail-unified-field brief-textarea"
+                    rows={2}
+                    value={meetingDraft.needs || ''}
+                    onChange={(event) =>
+                      setMeetingDraft((previous) => ({ ...previous, needs: event.target.value }))
+                    }
+                    placeholder={'np. Potrzebuję wybudować dom\nChcę refinansować kredyt'}
+                    disabled={!canEditWorkspace}
+                  />
+                </div>
+              </div>
+
+              {/* Oczekiwania */}
+              <div className="todo-detail-row field-row">
+                <span className="todo-row-icon" title="Oczekiwania">
+                  <ListTodo size={18} />
+                </span>
+                <span className="todo-row-label">Oczekiwania</span>
+                <div className="todo-detail-row-fill">
+                  <textarea
+                    className="todo-detail-unified-field brief-textarea"
+                    rows={2}
+                    value={meetingDraft.desiredOutputs || ''}
+                    onChange={(event) =>
+                      setMeetingDraft((previous) => ({
+                        ...previous,
+                        desiredOutputs: event.target.value,
+                      }))
+                    }
+                    placeholder={'np. Kolejne kroki\nOwnerzy zadań'}
+                    disabled={!canEditWorkspace}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="button-row brief-actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => {
-              saveMeeting();
-              if (onClose) onClose();
-            }}
-            disabled={!canEditWorkspace || !meetingDraft.title?.trim()}
-          >
-            {isDetachedMeetingDraft ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
-          </button>
           <button
             type="button"
             className="ghost-button"
@@ -343,6 +331,17 @@ export default function StudioBriefModal({
             disabled={!canEditWorkspace}
           >
             Anuluj
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => {
+              saveMeeting();
+              if (onClose) onClose();
+            }}
+            disabled={!canEditWorkspace || !meetingDraft.title?.trim()}
+          >
+            {isDetachedMeetingDraft ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
           </button>
         </div>
       </div>

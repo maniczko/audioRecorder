@@ -40,14 +40,14 @@ export function recordingErrorMessage(error) {
   switch (error?.name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return 'Dostep do mikrofonu jest zablokowany. Odblokuj go przy ikonie klodki obok adresu strony.';
+      return '❌ Dostep do mikrofonu zablokowany. Aby odblokować: 1) Kliknij ikonę 🔒 obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.';
     case 'NotFoundError':
-      return 'Nie znaleziono zadnego mikrofonu.';
+      return 'Nie znaleziono zadnego mikrofonu. Podłącz mikrofon i spróbuj ponownie.';
     case 'NotReadableError':
-      return 'Mikrofon jest teraz zajety przez inna aplikacje.';
+      return 'Mikrofon jest teraz zajety przez inna aplikacje. Zamknij inne aplikacje uzywajace mikrofonu.';
     case 'AbortError':
       return 'Nagrywanie zostalo przerwane zanim zdazylo wystartowac.';
     default:
-      return 'Nie udalo sie wlaczyc nagrywania.';
+      return 'Nie udalo sie wlaczyc nagrywania. Spróbuj ponownie.';
   }
 }

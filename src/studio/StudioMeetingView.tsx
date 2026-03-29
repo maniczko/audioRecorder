@@ -593,6 +593,10 @@ export default function StudioMeetingView({
   meetingDraft,
   setMeetingDraft,
   saveMeeting,
+  isDetachedMeetingDraft,
+  activeStoredMeetingDraft,
+  clearMeetingDraft,
+  workspaceMessage,
   renameSpeaker,
   autoCreateVoiceProfile,
   updateTranscriptSegment,
@@ -610,6 +614,8 @@ export default function StudioMeetingView({
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState('');
   const [debriefCopyMessage, setDebriefCopyMessage] = useState('');
+
+  const [localStoreTick, setLocalStoreTick] = useState(0);
 
   const [localGuests, setLocalGuests] = useState<string[]>([]);
   const [localTags, setLocalTags] = useState<string[]>([]);
@@ -667,7 +673,7 @@ export default function StudioMeetingView({
     });
 
     return Array.from(pSet).sort();
-  }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
+  }, [userMeetings, peopleProfiles, currentWorkspaceMembers, localStoreTick]);
 
   const allMeetingTags = useMemo(() => {
     const tSet = new Set();
@@ -701,7 +707,7 @@ export default function StudioMeetingView({
     });
 
     return Array.from(tSet).sort();
-  }, [meetingTasks, userMeetings]);
+  }, [meetingTasks, userMeetings, localStoreTick]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
@@ -1985,7 +1991,10 @@ export default function StudioMeetingView({
                                 );
                               }
                               // Persist custom people to localStorage
-                              newGuests.forEach((g) => addCustomTaskPerson(g));
+                              newGuests.forEach((g) => {
+                                addCustomTaskPerson(g);
+                              });
+                              setLocalStoreTick((t) => t + 1);
                             }}
                             placeholder="Wpisz lub wybierz z listy..."
                             type="person"
@@ -2022,7 +2031,10 @@ export default function StudioMeetingView({
                                 );
                               }
                               // Persist custom tags to localStorage
-                              newTags.forEach((t) => addCustomTaskTag(t));
+                              newTags.forEach((t) => {
+                                addCustomTaskTag(t);
+                              });
+                              setLocalStoreTick((t) => t + 1);
                             }}
                             placeholder="Dodaj tag..."
                           />
@@ -3706,7 +3718,7 @@ export default function StudioMeetingView({
           startNewMeetingDraft={startNewMeetingDraft}
           workspaceMessage={workspaceMessage}
           selectedMeeting={selectedMeeting}
-          peopleOptions={peopleOptions}
+          peopleOptions={allParticipants}
           tagOptions={allMeetingTags}
           userMeetings={userMeetings}
           selectMeeting={selectMeeting}
@@ -3767,6 +3779,12 @@ StudioMeetingView.propTypes = {
   addMeetingComment: PropTypes.func,
   currentUserName: PropTypes.string,
   meetingDraft: PropTypes.object,
+  setMeetingDraft: PropTypes.func,
+  saveMeeting: PropTypes.func,
+  isDetachedMeetingDraft: PropTypes.bool,
+  activeStoredMeetingDraft: PropTypes.object,
+  clearMeetingDraft: PropTypes.func,
+  workspaceMessage: PropTypes.string,
   renameSpeaker: PropTypes.func,
   autoCreateVoiceProfile: PropTypes.func,
   updateTranscriptSegment: PropTypes.func,

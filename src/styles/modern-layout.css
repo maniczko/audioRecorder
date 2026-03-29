@@ -484,7 +484,7 @@
 /* --- 6. TASKS: tighter grid columns for checkbox --- */
 [data-layout="modern"] .tasks-layout.ms-todo .todo-table-head,
 [data-layout="modern"] .tasks-layout.ms-todo .todo-table-row {
-  grid-template-columns: 44px minmax(0, 1.75fr) 140px 130px 110px;
+  grid-template-columns: 56px minmax(0, 1.75fr) 140px 130px 110px;
   gap: 12px;
 }
 

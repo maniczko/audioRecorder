@@ -644,6 +644,38 @@
   gap: 12px;
 }
 
+.kanban-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: grab;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.kanban-drag-handle:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.kanban-drag-handle:active {
+  cursor: grabbing;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.kanban-drag-handle svg {
+  width: 20px;
+  height: 20px;
+}
+
 .kanban-card p {
   margin: 0;
   line-height: 1.6;
@@ -5306,26 +5338,6 @@
   outline: 1px solid var(--accent);
 }
 
-.tasks-layout.ms-todo .kanban-card-description {
-  font-size: 0.8rem;
-  color: #8a9bb8;
-  line-height: 1.5;
-}
-
-.tasks-layout.ms-todo .kanban-card-title {
-  font-size: 0.9rem;
-  color: #1f3553;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.tasks-layout.ms-todo .kanban-label-chip {
-  font-size: 0.72rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  color: #fff;
-  opacity: 0.9;
-}
 
 .tasks-layout.ms-todo .todo-col-sort-btn {
   color: #5f7392;

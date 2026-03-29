@@ -60,6 +60,12 @@ export function checkRateLimit(ip: string, route: string, max?: number) {
       'X-RateLimit-Remaining': '0',
       'X-RateLimit-Reset': entry.resetAt.toString(),
     };
+
+    // Log as WARN, not ERROR - rate limiting is expected behavior, not a bug
+    console.warn(
+      `[RATE LIMIT] ${ip} exceeded ${limit} req/min on /${route}. Retry after ${retryAfter}s`
+    );
+
     throw error;
   }
 

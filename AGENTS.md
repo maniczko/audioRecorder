@@ -185,3 +185,147 @@ that references this document. Do NOT duplicate these rules.
 | GitHub Copilot | `.github/copilot-instructions.md` | `→ See AGENTS.md` + agent-specific overrides only |
 | Qwen | `.qwen/skills/*.md` | `→ See AGENTS.md` + Qwen-specific skill syntax only |
 | Cursor | `.cursor/rules/*.md` | `→ See AGENTS.md` + Cursor-specific rules only |
+
+---
+
+## 8. Anti-Regression & TDD Skill
+
+**MANDATORY for all AI agents and developers.** Use before ANY implementation.
+
+### 8.1 Usage
+
+```bash
+# Before starting any implementation
+pnpm run tdd [feature-name]
+
+# Example
+pnpm run tdd supabaseStorage
+```
+
+### 8.2 Workflow
+
+1. **Understand** — What problem? Current vs expected?
+2. **Write test FIRST** — Create `*.test.ts` file
+3. **RED** — Confirm test fails
+4. **GREEN** — Implement minimum code to pass
+5. **REFACTOR** — Clean up with green tests
+6. **Regression** — Add test in `server/tests/regression/` if bug fix
+7. **Verify** — `pnpm run test` + `pnpm run test:coverage`
+
+### 8.3 Files
+
+- Skill definition: `.qwen/skills/anti-regression-tdd.md`
+- Usage guide: `.qwen/skills/USAGE.md`
+- Check script: `scripts/tdd-check.ps1` (Windows) / `scripts/tdd-check.sh` (Linux/Mac)
+- Regression tests: `server/tests/regression/*.test.ts`
+
+### 8.4 Agent Integration
+
+When using AI agents (Qwen, Copilot, Cursor), invoke the skill:
+
+```markdown
+@anti-regression-tdd
+
+Task: [Description]
+
+Following TDD workflow:
+1. ✅ Understand task
+2. ✅ Write tests first (RED)
+3. ✅ Implement minimum code (GREEN)
+4. ✅ Refactor (REFACTOR)
+5. ✅ Add regression tests
+6. ✅ Verify all tests pass
+```
+
+### 8.5 Enforcement
+
+- Pre-commit hook: `pnpm run tdd [changed-file]`
+- CI check: Coverage must not drop below 90%
+- Code review: Reject PRs without tests
+
+---
+
+## 9. Automatic Regression Tests for Bug Fixes
+
+**MANDATORY for all AI agents.** Every bug fix MUST produce a regression test.
+No exceptions — a fix without a test is incomplete.
+
+### 9.1 When this applies
+
+A change is a "bug fix" if ANY of these is true:
+- Commit type is `fix(…)`
+- User reports something broken / not working as expected
+- Test suite was failing and agent is correcting it
+- Runtime error, crash, or incorrect behavior is being addressed
+
+### 9.2 Procedure (strict order)
+
+```
+1. REPRODUCE  — Understand the exact failing scenario (input → wrong output)
+2. TEST FIRST — Write a test that fails WITH the bug present
+3. VERIFY RED — Run the test, confirm it fails (proves bug exists)
+4. FIX        — Write minimum code to make the test pass
+5. VERIFY GREEN — Run the test, confirm it passes
+6. REGISTER   — Add regression entry (see §9.3)
+7. FULL SUITE — Run full test suite to check for side effects
+```
+
+**If step 3 (VERIFY RED) does not fail → the test does not prove the bug. Rewrite it.**
+
+### 9.3 Where regression tests go
+
+| Bug location | Regression test location | Naming |
+|-------------|-------------------------|--------|
+| Frontend hook/service/lib | Next to source: `xxx.test.ts` (add `describe('Regression: …')` block) | `Regression: #issue — description` |
+| Frontend component | Next to source: `Xxx.test.tsx` (add `describe('Regression: …')` block) | `Regression: #issue — description` |
+| Server route/lib | `server/tests/regression/regression.test.ts` (append new `describe`) | `Regression: Issue #NNN — description` |
+| Cross-cutting / unclear | `server/tests/regression/regression.test.ts` | `Regression: Issue #NNN — description` |
+
+### 9.4 Regression test format
+
+Every regression test block MUST include a header comment:
+
+```typescript
+// ─────────────────────────────────────────────────────────────────
+// Issue #NNN — short description of the bug
+// Date: YYYY-MM-DD
+// Bug: what was happening (wrong behavior)
+// Fix: what was changed (correct behavior)
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #NNN — short description', () => {
+  test('exact scenario that was failing', () => {
+    // Arrange — set up the exact conditions that triggered the bug
+    // Act    — perform the operation
+    // Assert — verify correct behavior (not the old broken one)
+  });
+});
+```
+
+### 9.5 Agent checklist (copy into commit message)
+
+When committing a bug fix, the agent MUST verify:
+
+- [ ] Regression test exists and is included in the commit
+- [ ] Test was confirmed RED before the fix
+- [ ] Test is confirmed GREEN after the fix
+- [ ] Full suite passes (no side effects)
+- [ ] Commit message uses `fix(scope):` format
+
+### 9.6 What if there's no issue number?
+
+Use `#0` and a descriptive title. Example:
+```
+// Issue #0 — MentionTextarea crashes with object suggestions
+```
+
+---
+
+## 10. Post-Deployment Verification
+
+**MANDATORY for all AI agents.** After making code changes to either the frontend or backend, the agent MUST verify that the local development server (or the resulting deployed process) still runs.
+
+### 10.1 Verification Steps
+
+1. If the server (`pnpm start` / `vite` / `node`) crashes or stops during the implementation, the agent must detect this via terminal checks.
+2. The agent MUST explicitly restart the server with the correct port (e.g., `pnpm start` or forcing `--port 3000`).
+3. The agent MUST NOT notify the user that "changes are ready" if `localhost:3000` is throwing `ERR_CONNECTION_REFUSED`. Wait for the `VITE ready` signal.

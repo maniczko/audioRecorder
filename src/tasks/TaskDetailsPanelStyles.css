@@ -897,8 +897,8 @@
 }
 
 /* ── Unified Metadata Fields ── */
-.tasks-layout.ms-todo .todo-detail-unified-field,
-.tasks-layout.ms-todo .tag-input-container {
+.todo-detail-unified-field,
+.tag-input-container {
   display: flex;
   align-items: center;
   width: 100%;
@@ -907,7 +907,8 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
-  color: var(--task-text);
+  color: #eef4fb; /* Fallback for var(--task-text) */
+  color: var(--task-text, #eef4fb);
   font-size: 0.9rem;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -915,31 +916,36 @@
   box-shadow: none;
 }
 
-.tasks-layout.ms-todo .todo-detail-unified-field:hover,
-.tasks-layout.ms-todo .tag-input-container:hover {
+.todo-detail-unified-field:hover,
+.tag-input-container:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.tasks-layout.ms-todo .todo-detail-unified-field:focus,
-.tasks-layout.ms-todo .todo-detail-unified-field:focus-within,
-.tasks-layout.ms-todo .tag-input-container:focus-within {
+.todo-detail-unified-field:focus,
+.todo-detail-unified-field:focus-within,
+.tag-input-container:focus-within {
   outline: none;
-  border-color: var(--task-accent);
+  border-color: var(--task-accent, #75d6c4);
   background: rgba(117, 214, 196, 0.06);
   box-shadow: 0 0 0 1px rgba(117, 214, 196, 0.2);
 }
 
-.tasks-layout.ms-todo .tag-input-container {
+.tag-input-container {
   flex-wrap: wrap;
   align-items: flex-start;
   padding: 6px 8px;
 }
 
-.tasks-layout.ms-todo .todo-detail-unified-field[type="datetime-local"],
-.tasks-layout.ms-todo select.todo-detail-unified-field {
+.todo-detail-unified-field[type="datetime-local"],
+select.todo-detail-unified-field {
   height: auto; 
   cursor: pointer; 
+}
+
+select.todo-detail-unified-field option {
+  background-color: #0f172a;
+  color: #e2e8f0;
 }
 
 .tasks-layout.ms-todo .tag-input-container input {
