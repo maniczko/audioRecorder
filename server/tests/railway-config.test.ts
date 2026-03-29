@@ -4,9 +4,14 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
 const railwayTomlPath = path.join(ROOT, 'railway.toml');
+const nixpacksTomlPath = path.join(ROOT, 'nixpacks.toml');
 
 function readRailwayToml() {
   return fs.readFileSync(railwayTomlPath, 'utf8');
+}
+
+function readNixpacksToml() {
+  return fs.readFileSync(nixpacksTomlPath, 'utf8');
 }
 
 describe('Railway deployment config', () => {
@@ -51,5 +56,38 @@ describe('Railway deployment config', () => {
     expect(buildCommand).toContain('esbuild');
     expect(buildCommand).toContain('server/index.ts');
     expect(buildCommand).toContain('--outdir=dist-server');
+  });
+
+  it('does not have non-standard TOML sections that break Railway parser', () => {
+    const content = readRailwayToml();
+    // [deploy.envs] and [volumes] are not valid Railway TOML sections and
+    // can cause Railway to ignore startCommand and fall back to pnpm start
+    expect(content).not.toMatch(/^\[deploy\.envs\]/m);
+    expect(content).not.toMatch(/^\[volumes\]/m);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — NIXPACKS auto-detects pnpm start instead of node cmd
+// Date: 2026-03-29
+// Bug: NIXPACKS reads pnpm-lock.yaml and generates `pnpm start` as the
+//      runtime CMD, which fails because pnpm is absent in the container.
+// Fix: nixpacks.toml [start] cmd overrides auto-detection.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — NIXPACKS pnpm start override', () => {
+  it('nixpacks.toml exists and sets explicit start command', () => {
+    expect(() => readNixpacksToml()).not.toThrow();
+    const content = readNixpacksToml();
+    expect(content).toMatch(/^\[start\]/m);
+    expect(content).toMatch(/^cmd\s*=\s*"([^"]+)"/m);
+  });
+
+  it('nixpacks.toml start cmd uses node, not pnpm', () => {
+    const content = readNixpacksToml();
+    const cmdMatch = content.match(/^cmd\s*=\s*"([^"]+)"/m);
+    expect(cmdMatch).not.toBeNull();
+    const cmd = cmdMatch![1];
+    expect(cmd).toBe('node dist-server/index.js');
+    expect(cmd).not.toContain('pnpm');
   });
 });

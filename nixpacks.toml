@@ -1,0 +1,9 @@
+# NIXPACKS Configuration
+# https://nixpacks.com/docs/configuration/file
+#
+# Explicitly sets the start command so NIXPACKS does not auto-detect from
+# pnpm-lock.yaml (which would generate `pnpm start`, failing at runtime
+# because pnpm is not available in the deployed container).
+
+[start]
+cmd = "node dist-server/index.js"
