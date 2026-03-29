@@ -78,8 +78,8 @@ function TasksSidebar({
                       onClick={() => setSelectedListId(item.id)}
                     >
                       <span className="todo-side-icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                      <strong>{item.count}</strong>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      <strong style={{ marginLeft: 'auto' }}>{item.count}</strong>
                     </button>
                   ))}
                 </div>
@@ -116,8 +116,8 @@ function TasksSidebar({
                       onClick={() => setSelectedListId(item.id)}
                     >
                       <span className="todo-side-icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                      <strong>{item.count}</strong>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      <strong style={{ marginLeft: 'auto' }}>{item.count}</strong>
                     </button>
                   ))}
                 </div>
