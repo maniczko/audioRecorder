@@ -43,6 +43,7 @@ export default function useMeetings() {
     calendarMeta,
     setCalendarMeta,
     vocabulary,
+    workspaceMessage,
     setWorkspaceMessage,
   } = useMeetingsStore();
   const stateService = useMemo(() => createStateService(), []);
@@ -366,6 +367,7 @@ export default function useMeetings() {
     setTaskState,
     setTaskBoards,
     setCalendarMeta,
+    workspaceMessage,
     setWorkspaceMessage,
     ...lifecycle,
     ...taskOps,

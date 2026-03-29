@@ -1,136 +1,22 @@
-# 🛡️ Anti-Regression & TDD Skill
+# Qwen Skills — audioRecorder (VoiceLog)
 
-## 🎯 Cel
+> **All project standards live in [`AGENTS.md`](../../AGENTS.md).**
+> Read it before every task. This directory contains Qwen-specific skill wrappers only.
 
-Ten skill **MUSI** być użyty przez KAŻDEGO agenta przed rozpoczęciem implementacji jakiejkolwiek funkcjonalności lub naprawy buga.
+## Available Skills
 
----
+### `anti-regression-tdd`
+TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
+`@anti-regression-tdd` invocation.
 
-## 🚀 Quick Start
+## Rules for Qwen
 
-### Dla Agentów:
+1. **Always read `AGENTS.md`** at the start of each task.
+2. **Tests are mandatory** — see AGENTS.md §2 for minimum counts and patterns.
+3. **TDD for bug fixes** — failing test first, then fix.
+4. **Communicate in Polish**, code and commits in English.
+5. **Implement directly** — don't just suggest changes.
 
-```markdown
-@anti-regression-tdd
-
-Task: [Opis zadania]
-
-Following TDD workflow:
-1. ✅ Understand task
-2. ✅ Write tests first (RED)
-3. ✅ Implement minimum code (GREEN)
-4. ✅ Refactor (REFACTOR)
-5. ✅ Add regression tests
-6. ✅ Verify all tests pass
-```
-
-### Dla Ludzi:
-
-```bash
-# Przed rozpoczęciem pracy
-pnpm run tdd [feature-name]
-
-# Przykład
-pnpm run tdd supabaseStorage
-```
-
----
-
-## 📋 Workflow
-
-### 1. Zrozumienie zadania
-
-```markdown
-## Questions to answer:
-- Jaka funkcjonalność ma być dodana/naprawiona?
-- Jakie jest obecne zachowanie?
-- Jakie jest oczekiwane zachowanie?
-- Czy to jest bug fix czy nowa funkcjonalność?
-```
-
-### 2. Test-First Approach (TDD)
-
-```bash
-# KROK 1: Stwórz plik testu
-mkdir -p server/tests/lib
-touch server/tests/lib/[feature].test.ts
-
-# KROK 2: Napisz test (który FAILUJE)
-# Edit the test file with failing tests
-
-# KROK 3: Uruchom test
-pnpm exec vitest run server/tests/lib/[feature].test.ts
-
-# ❌ Powinien FAILować (RED phase)
-```
-
-### 3. Implementacja
-
-```bash
-# KROK 4: Napisz minimum kodu żeby test przeszedł
-# Edit the implementation file
-
-# KROK 5: Uruchom test ponownie
-pnpm exec vitest run server/tests/lib/[feature].test.ts
-
-# ✅ Powinien przechodzić (GREEN phase)
-```
-
-### 4. Refaktor
-
-```bash
-# KROK 6: Refaktoruj kod (testy ciągle zielone)
-pnpm exec vitest run server/tests/lib/[feature].test.ts
-
-# ✅ Testy ciągle przechodzą (REFACTOR phase)
-```
-
-### 5. Regression Test (jeśli bug fix)
-
-```bash
-# KROK 7: Dodaj test regresji
-mkdir -p server/tests/regression
-touch server/tests/regression/[issue-number].test.ts
-
-# Edit the regression test to document the bug
-```
-
-### 6. Weryfikacja
-
-```bash
-# KROK 8: Uruchom pełny TDD check
-pnpm run tdd [feature-name]
-
-# KROK 9: Uruchom wszystkie testy
-pnpm run test
-
-# KROK 10: Sprawdź coverage
-pnpm run test:coverage
-```
-
----
-
-## 📁 Struktura Plików
-
-```
-project/
-├── .qwen/
-│   └── skills/
-│       └── anti-regression-tdd.md  ← Skill definition
-├── scripts/
-│   └── tdd-check.sh                ← TDD check script
-├── server/
-│   ├── lib/
-│   │   └── [feature].ts            ← Implementation
-│   └── tests/
-│       ├── lib/
-│       │   └── [feature].test.ts   ← Tests (written FIRST)
-│       └── regression/
-│           └── [issue].test.ts     ← Regression tests
-└── docs/
-    └── adr/
-        └── [number]-[title].md     ← Architectural decisions
-```
 
 ---
 
