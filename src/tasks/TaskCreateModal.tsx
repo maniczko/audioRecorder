@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import TaskCreateForm, { TaskDraft } from './TaskCreateForm';
+import '../styles/tasks.css';
 
 interface TaskCreateModalProps {
   isOpen: boolean;
