@@ -347,4 +347,88 @@ describe('useAudioHardware', () => {
     expect(result.current.visualBars).toBeDefined();
     expect(Array.isArray(result.current.visualBars)).toBe(true);
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Mic permission denied blocks recording permanently
+  // Date: 2026-03-29
+  // Bug: startRecording() checked recordPermission === 'denied' and returned
+  //      early without trying getUserMedia, so even after user grants permission
+  //      in browser settings the app would never re-request.
+  // Fix: Always attempt getUserMedia — let the browser handle the permission popup.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: denied permission does not permanently block recording', () => {
+    test('startRecording calls getUserMedia even after prior NotAllowedError', async () => {
+      const getUserMediaMock = vi.fn();
+      const onMessageChange = vi.fn();
+      const mockMediaService = {
+        createLiveController: () => ({
+          setOnEnd: vi.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
+          clearHandlers: vi.fn(),
+        }),
+      };
+
+      // Phase 1: getUserMedia rejects with NotAllowedError
+      getUserMediaMock.mockRejectedValueOnce(
+        Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' })
+      );
+      navigator.mediaDevices = { getUserMedia: getUserMediaMock } as any;
+
+      const { result } = renderHook(() =>
+        useAudioHardware({
+          mediaService: mockMediaService,
+          onRecordingStop: vi.fn(),
+          onSegmentsChange: vi.fn(),
+          onInterimChange: vi.fn(),
+          onMessageChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.startRecording('m1');
+      });
+
+      expect(getUserMediaMock).toHaveBeenCalledTimes(1);
+      expect(result.current.recordPermission).toBe('denied');
+
+      // Phase 2: simulate user granting permission in browser settings
+      getUserMediaMock.mockResolvedValueOnce({
+        getTracks: () => [{ stop: vi.fn() }],
+      });
+
+      await act(async () => {
+        await result.current.startRecording('m2');
+      });
+
+      // Must have called getUserMedia again — NOT blocked by stale 'denied' state
+      expect(getUserMediaMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('non-permission errors do not set recordPermission to denied', async () => {
+      const onMessageChange = vi.fn();
+      navigator.mediaDevices = {
+        getUserMedia: vi.fn().mockRejectedValue(
+          Object.assign(new Error('Device busy'), { name: 'NotReadableError' })
+        ),
+      } as any;
+
+      const { result } = renderHook(() =>
+        useAudioHardware({
+          mediaService: { createLiveController: () => null },
+          onRecordingStop: vi.fn(),
+          onSegmentsChange: vi.fn(),
+          onInterimChange: vi.fn(),
+          onMessageChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.startRecording('m1');
+      });
+
+      // NotReadableError is not a permission error — should NOT set denied
+      expect(result.current.recordPermission).not.toBe('denied');
+    });
+  });
 });

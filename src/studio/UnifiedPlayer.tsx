@@ -266,7 +266,7 @@ export default function UnifiedPlayer({
                 {!canRecord
                   ? 'Brak uprawnień do nagrywania.'
                   : recordPermission === 'denied'
-                    ? '❌ Mikrofon zablokowany. Aby odblokować: 1) Kliknij 🔒 obok adresu, 2) Wybierz "Zezwalaj", 3) Odśwież stronę.'
+                    ? '🎤 Kliknij "Nagraj", aby przyznać dostęp do mikrofonu.'
                     : speechRecognitionSupported
                       ? 'Transkrypcja na żywo włącza się automatycznie.'
                       : 'Audio trafi na serwer po zakończeniu.'}

@@ -215,14 +215,9 @@ export default function useAudioHardware({
       return;
     }
 
-    // If permission is explicitly denied, show helpful message
-    if (recordPermission === 'denied') {
-      onMessageChange(
-        '❌ Mikrofon zablokowany. Aby odblokować: 1) Kliknij ikonę kłódki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
-      );
-      return;
-    }
-
+    // Always attempt getUserMedia — even if previously denied, user may have
+    // changed browser settings. getUserMedia will trigger the permission popup
+    // if the state is 'prompt', or succeed immediately if 'granted'.
     cleanupRecorder();
     setRecordPermission('loading');
     onMessageChange('Pobieranie dostępu do mikrofonu...');
@@ -378,7 +373,10 @@ export default function useAudioHardware({
       console.error('Recording start failed.', error);
       cleanupRecorder();
       setIsRecording(false);
-      setRecordPermission('denied');
+      // Only mark as 'denied' for actual permission errors
+      if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+        setRecordPermission('denied');
+      }
       onMessageChange(recordingErrorMessage(error));
       setVisualBars(DEFAULT_BARS);
     }

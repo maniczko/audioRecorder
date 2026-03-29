@@ -119,7 +119,7 @@ export default function RecorderPanel({
             {!canRecord
               ? 'Ta rola ma dostep tylko do podgladu. Nagrywanie i edycja sa zablokowane.'
               : recordPermission === 'denied'
-                ? '❌ Mikrofon zablokowany. Aby odblokować: 1) Kliknij 🔒 obok adresu, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
+                ? '🎤 Kliknij "Nagraj", aby przyznać dostęp do mikrofonu. Jeśli przeglądarka nie zapyta — kliknij 🔒 obok adresu i zezwól na mikrofon.'
                 : speechRecognitionSupported
                   ? 'Live transcript wlacza sie automatycznie.'
                   : 'Audio trafi na serwer i po zatrzymaniu przejdzie przez STT, diarization i review.'}
