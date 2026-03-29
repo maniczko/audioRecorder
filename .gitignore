@@ -60,6 +60,10 @@ test_run_*.txt
 test_output.txt
 tsc-err.txt
 
+# SQLite WAL/SHM files
+*.sqlite-shm
+*.sqlite-wal
+
 # Cache
 .mypy_cache/
 .pytest_cache/
