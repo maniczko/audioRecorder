@@ -1233,7 +1233,6 @@
 .tasks-layout.ms-todo .todo-side-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 6px 12px;
   min-height: 36px;
@@ -1244,6 +1243,15 @@
   color: #233754;
   cursor: pointer;
   text-align: left;
+  width: 100%;
+}
+
+.tasks-layout.ms-todo .todo-side-link .todo-side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tasks-layout.ms-todo .todo-side-link:hover {
@@ -3987,12 +3995,24 @@
 }
 
 .tasks-layout.ms-todo .todo-side-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   border: 1px solid transparent;
   border-radius: 16px;
   padding: 6px 12px;
   min-height: 36px;
   background: rgba(255, 255, 255, 0.02);
   color: var(--text);
+  width: 100%;
+}
+
+.tasks-layout.ms-todo .todo-side-link .todo-side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tasks-layout.ms-todo .todo-side-link:hover {
@@ -5465,6 +5485,15 @@
   color: var(--task-text);
   display: flex;
   align-items: center;
+  width: 100%;
+}
+
+.tasks-layout.ms-todo .todo-side-link .todo-side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tasks-layout.ms-todo .todo-side-link:hover,
@@ -5475,7 +5504,9 @@
 
 .tasks-layout.ms-todo .todo-side-link strong {
   color: var(--task-muted);
-  margin-left: auto;
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .tasks-layout.ms-todo .todo-notification-card {

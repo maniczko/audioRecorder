@@ -1628,6 +1628,21 @@ select:focus {
   align-items: center;
   gap: 0.5rem;
   padding: 5px 8px;
+  width: 100%;
+}
+
+.tasks-layout.ms-todo .todo-side-link .todo-side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tasks-layout.ms-todo .todo-side-link strong {
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 /* Kanban card readable preview */
