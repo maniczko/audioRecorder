@@ -102,10 +102,20 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
       <aside className="modern-sidebar">
         <div
           className="modern-brand"
-          onClick={ui.openStudio}
+          onClick={() => {
+            // Navigate to home/dashboard
+            ui.setActiveTab('studio');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && ui.openStudio()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              ui.setActiveTab('studio');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          title="Strona główna"
         >
           <div className="modern-brand-logo" style={{ color: 'var(--inline-color-accent-strong)' }}>
             <svg

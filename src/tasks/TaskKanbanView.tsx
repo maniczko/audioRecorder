@@ -671,10 +671,14 @@ function TaskKanbanView({
 }
 
 export default memo(TaskKanbanView, (prevProps, nextProps) => {
-  // Only re-render if kanbanColumns or selectedTaskIds change
+  // Only re-render if core props, selections, drag-and-drop state, or sorting configurations change
   return (
     prevProps.kanbanColumns === nextProps.kanbanColumns &&
     prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
-    prevProps.selectedTask === nextProps.selectedTask
+    prevProps.selectedTask === nextProps.selectedTask &&
+    prevProps.dropColumnId === nextProps.dropColumnId &&
+    prevProps.dragTaskId === nextProps.dragTaskId &&
+    prevProps.swimlaneGroupBy === nextProps.swimlaneGroupBy &&
+    prevProps.sortBy === nextProps.sortBy
   );
 });

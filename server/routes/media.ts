@@ -211,80 +211,86 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   });
 
   router.get('/recordings/:recordingId/audio', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) {
-      console.warn('[media] Audio 404 — no media_assets row', { recordingId });
-      return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    }
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-
-    const ALLOWED = new Set([
-      'audio/webm',
-      'audio/mpeg',
-      'audio/mp4',
-      'audio/wav',
-      'audio/ogg',
-      'audio/flac',
-      'application/octet-stream',
-    ]);
-    const safeType = ALLOWED.has(String(asset.content_type || '').toLowerCase())
-      ? asset.content_type
-      : 'application/octet-stream';
-
-    // Supabase remote path — no OS path separator means it's a short Supabase key
-    if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
-      try {
-        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-        const arrayBuffer = await downloadAudioFromStorage(asset.file_path);
-
-        c.header('Content-Type', safeType);
-        c.header('Content-Length', String(arrayBuffer.byteLength));
-        c.header('Content-Disposition', 'attachment');
-        return c.body(arrayBuffer as any, 200);
-      } catch (err: any) {
-        console.error('[media] Supabase download failed', {
-          recordingId,
-          filePath: asset.file_path,
-          error: err.message,
-        });
-        return c.json(
-          { message: 'Błąd podczas pobierania nagrania z remote storage.', error: err.message },
-          500
-        );
+    try {
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) {
+        console.warn('[media] Audio 404 — no media_assets row', { recordingId });
+        return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       }
-    } else {
-      // Local file path — try local first, then fall back to Supabase with basename
-      if (existsSync(asset.file_path)) {
-        const stream = createReadStream(asset.file_path);
-        c.header('Content-Type', safeType);
-        c.header('Content-Length', String(statSync(asset.file_path).size));
-        c.header('Content-Disposition', 'attachment');
-        return c.body(stream as any, 200);
-      }
+      await ensureWorkspaceAccess(c, asset.workspace_id);
 
-      // Local file missing (e.g. after redeploy) — try Supabase with just the filename
-      try {
-        const basename = path.basename(asset.file_path);
-        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-        const arrayBuffer = await downloadAudioFromStorage(basename);
-        console.info('[media] Local file missing, served from Supabase fallback', {
-          recordingId,
-          localPath: asset.file_path,
-          supabasePath: basename,
-        });
+      const ALLOWED = new Set([
+        'audio/webm',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/wav',
+        'audio/ogg',
+        'audio/flac',
+        'application/octet-stream',
+      ]);
+      const safeType = ALLOWED.has(String(asset.content_type || '').toLowerCase())
+        ? asset.content_type
+        : 'application/octet-stream';
 
-        c.header('Content-Type', safeType);
-        c.header('Content-Length', String(arrayBuffer.byteLength));
-        c.header('Content-Disposition', 'attachment');
-        return c.body(arrayBuffer as any, 200);
-      } catch {
-        console.warn('[media] Audio 404 — local file missing, Supabase fallback failed', {
-          recordingId,
-          filePath: asset.file_path,
-        });
-        return c.json({ message: 'Plik audio nie istnieje.' }, 404);
+      // Supabase remote path — no OS path separator means it's a short Supabase key
+      if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
+        try {
+          const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
+          const arrayBuffer = await downloadAudioFromStorage(asset.file_path);
+
+          c.header('Content-Type', safeType);
+          c.header('Content-Length', String(arrayBuffer.byteLength));
+          c.header('Content-Disposition', 'attachment');
+          return c.body(arrayBuffer as any, 200);
+        } catch (err: any) {
+          console.error('[media] Supabase download failed', {
+            recordingId,
+            filePath: asset.file_path,
+            error: err.message,
+          });
+          return c.json(
+            { message: 'Błąd podczas pobierania nagrania z remote storage.', error: err.message },
+            500
+          );
+        }
+      } else {
+        // Local file path — try local first, then fall back to Supabase with basename
+        if (existsSync(asset.file_path)) {
+          const stream = createReadStream(asset.file_path);
+          c.header('Content-Type', safeType);
+          c.header('Content-Length', String(statSync(asset.file_path).size));
+          c.header('Content-Disposition', 'attachment');
+          return c.body(stream as any, 200);
+        }
+
+        // Local file missing (e.g. after redeploy) — try Supabase with just the filename
+        try {
+          const basename = path.basename(asset.file_path);
+          const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
+          const arrayBuffer = await downloadAudioFromStorage(basename);
+          console.info('[media] Local file missing, served from Supabase fallback', {
+            recordingId,
+            localPath: asset.file_path,
+            supabasePath: basename,
+          });
+
+          c.header('Content-Type', safeType);
+          c.header('Content-Length', String(arrayBuffer.byteLength));
+          c.header('Content-Disposition', 'attachment');
+          return c.body(arrayBuffer as any, 200);
+        } catch {
+          console.warn('[media] Audio 404 — local file missing, Supabase fallback failed', {
+            recordingId,
+            filePath: asset.file_path,
+          });
+          return c.json({ message: 'Plik audio nie istnieje.' }, 404);
+        }
       }
+    } catch (err: any) {
+      console.error(`[audio] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Blad pobierania audio.' }, status);
     }
   });
 
@@ -430,12 +436,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   });
 
   router.post('/recordings/:recordingId/normalize', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-    await transcriptionService.normalizeRecording(asset.file_path, { signal: c.req.raw.signal });
-    return c.json({ ok: true }, 200);
+    try {
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
+      await transcriptionService.normalizeRecording(asset.file_path, { signal: c.req.raw.signal });
+      return c.json({ ok: true }, 200);
+    } catch (err: any) {
+      console.error(`[normalize] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Blad normalizacji.' }, status);
+    }
   });
 
   router.post('/recordings/:recordingId/voice-profiles/from-speaker', async (c) => {
@@ -461,73 +473,91 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   });
 
   router.post('/recordings/:recordingId/voice-coaching', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const body = await c.req.json().catch(() => ({}));
-    if (body.speakerId === undefined || body.speakerId === null)
-      return c.json({ message: 'Brakuje speakerId.' }, 400);
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-    const coaching = await transcriptionService.generateVoiceCoaching(
-      asset,
-      String(body.speakerId),
-      body?.segments || [],
-      {}
-    );
-    return c.json({ coaching }, 200);
+    try {
+      const recordingId = c.req.param('recordingId');
+      const body = await c.req.json().catch(() => ({}));
+      if (body.speakerId === undefined || body.speakerId === null)
+        return c.json({ message: 'Brakuje speakerId.' }, 400);
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
+      const coaching = await transcriptionService.generateVoiceCoaching(
+        asset,
+        String(body.speakerId),
+        body?.segments || [],
+        {}
+      );
+      return c.json({ coaching }, 200);
+    } catch (err: any) {
+      console.error(`[voice-coaching] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Blad generowania voice coaching.' }, status);
+    }
   });
 
   router.post('/recordings/:recordingId/acoustic-features', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-    const payload = await transcriptionService.getSpeakerAcousticFeatures(asset, {
-      signal: c.req.raw.signal,
-    });
-    return c.json(payload, 200);
+    try {
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
+      const payload = await transcriptionService.getSpeakerAcousticFeatures(asset, {
+        signal: c.req.raw.signal,
+      });
+      return c.json(payload, 200);
+    } catch (err: any) {
+      console.error(`[acoustic-features] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Blad analizy akustycznej.' }, status);
+    }
   });
 
   router.post('/recordings/:recordingId/rediarize', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-
-    let stored = [] as any[];
     try {
-      stored = JSON.parse(asset.transcript_json || '[]');
-    } catch (_) {}
-    if (!stored.length) return c.json({ message: 'Brak transkrypcji.' }, 400);
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
 
-    const whisperLike = stored
-      .map((s) => ({ text: s.text, start: s.timestamp, end: s.endTimestamp || s.timestamp }))
-      .filter((s) => s.text);
-    const diarization = await transcriptionService.diarizeFromTranscript(whisperLike);
-    if (!diarization) return c.json({ message: 'Diaryzacja nie powiodla sie.' }, 422);
+      let stored = [] as any[];
+      try {
+        stored = JSON.parse(asset.transcript_json || '[]');
+      } catch (_) {}
+      if (!stored.length) return c.json({ message: 'Brak transkrypcji.' }, 400);
 
-    const updated = diarization.segments.map((seg: any, idx: number) => ({
-      ...(stored[idx] || {}),
-      id: stored[idx]?.id || seg.id,
-      text: seg.text,
-      timestamp: seg.timestamp,
-      endTimestamp: seg.endTimestamp,
-      speakerId: seg.speakerId,
-      rawSpeakerLabel: seg.rawSpeakerLabel,
-    }));
-    await transcriptionService.saveTranscriptionResult(recordingId, {
-      segments: updated,
-      diarization,
-      pipelineStatus: 'completed',
-    });
-    return c.json(
-      {
-        speakerCount: diarization.speakerCount,
-        speakerNames: diarization.speakerNames,
+      const whisperLike = stored
+        .map((s) => ({ text: s.text, start: s.timestamp, end: s.endTimestamp || s.timestamp }))
+        .filter((s) => s.text);
+      const diarization = await transcriptionService.diarizeFromTranscript(whisperLike);
+      if (!diarization) return c.json({ message: 'Diaryzacja nie powiodla sie.' }, 422);
+
+      const updated = diarization.segments.map((seg: any, idx: number) => ({
+        ...(stored[idx] || {}),
+        id: stored[idx]?.id || seg.id,
+        text: seg.text,
+        timestamp: seg.timestamp,
+        endTimestamp: seg.endTimestamp,
+        speakerId: seg.speakerId,
+        rawSpeakerLabel: seg.rawSpeakerLabel,
+      }));
+      await transcriptionService.saveTranscriptionResult(recordingId, {
         segments: updated,
-      },
-      200
-    );
+        diarization,
+        pipelineStatus: 'completed',
+      });
+      return c.json(
+        {
+          speakerCount: diarization.speakerCount,
+          speakerNames: diarization.speakerNames,
+          segments: updated,
+        },
+        200
+      );
+    } catch (err: any) {
+      console.error(`[rediarize] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Blad rediaryzacji.' }, status);
+    }
   });
 
   router.post('/recordings/:recordingId/sketchnote', async (c) => {

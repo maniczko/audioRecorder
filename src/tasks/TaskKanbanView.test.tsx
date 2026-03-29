@@ -109,3 +109,64 @@ describe('TaskKanbanView', () => {
     expect(defaultProps.onQuickAddToColumn).toHaveBeenCalledWith('c2', 'New Quick Task');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Regression: Issue #0 — Kanban visual drag-and-drop delay
+// Date: 2026-03-29
+// Bug: TaskKanbanView had a broken React.memo comparison that
+//      ignored dropColumnId and dragTaskId props, causing the
+//      highlight (.drop CSS class) to only apply with massive delay.
+// Fix: Added dropColumnId and dragTaskId to the memo comparison logic.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — TaskKanbanView responsive to dropColumnId', () => {
+  it('re-renders and applies drop class when dropColumnId changes', () => {
+    const dummyColumns = [
+      { id: 'todo', label: 'Do zrobienia', tasks: [] },
+      { id: 'in_progress', label: 'W toku', tasks: [] },
+    ];
+
+    const { container, rerender } = render(
+      <TaskKanbanView
+        kanbanColumns={dummyColumns}
+        allTasks={[]}
+        dropColumnId=""
+        setDropColumnId={() => {}}
+        handleDrop={() => {}}
+        handleTaskDrop={() => {}}
+        selectedTask={null}
+        selectedTaskIds={[]}
+        toggleTaskSelection={() => {}}
+        setSelectedTaskId={() => {}}
+        setDragTaskId={() => {}}
+        dragTaskId=""
+        onUpdateTask={() => {}}
+        onMoveTaskToColumn={() => {}}
+      />
+    );
+
+    const todoCol = container.querySelector('[data-testid="column-todo"]');
+    expect(todoCol).not.toHaveClass('drop');
+
+    rerender(
+      <TaskKanbanView
+        kanbanColumns={dummyColumns}
+        allTasks={[]}
+        dropColumnId="todo" // Trigger change
+        setDropColumnId={() => {}}
+        handleDrop={() => {}}
+        handleTaskDrop={() => {}}
+        selectedTask={null}
+        selectedTaskIds={[]}
+        toggleTaskSelection={() => {}}
+        setSelectedTaskId={() => {}}
+        setDragTaskId={() => {}}
+        dragTaskId="drag-123"
+        onUpdateTask={() => {}}
+        onMoveTaskToColumn={() => {}}
+      />
+    );
+
+    const updatedTodoCol = container.querySelector('[data-testid="column-todo"]');
+    expect(updatedTodoCol).toHaveClass('drop');
+  });
+});
