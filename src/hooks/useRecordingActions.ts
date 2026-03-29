@@ -339,20 +339,13 @@ export default function useRecordingActions({
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
-    const aiTags = (recording.analysis?.suggestedTags || [])
-      .map((t) => String(t).toLowerCase().trim())
-      .filter(Boolean);
     setMeetings((prev) =>
       prev.map((m) => {
         if (m.id !== recordingMeetingId) return m;
         const base = attachRecording(m, recording);
-        const existingTags = new Set((m.tags || []).map((t) => String(t).toLowerCase()));
-        const mergedTags = aiTags.length
-          ? [...(m.tags || []), ...aiTags.filter((t) => !existingTags.has(t))]
-          : m.tags || [];
         return {
           ...base,
-          tags: mergedTags,
+          tags: m.tags || [],
           activity: [
             ...(m.activity || []),
             {

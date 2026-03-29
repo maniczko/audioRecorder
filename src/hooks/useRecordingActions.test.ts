@@ -135,7 +135,8 @@ describe('useRecordingActions', () => {
       });
     });
     newMeetings = mockSetMeetings.mock.calls[1][0](newMeetings);
-    expect(newMeetings[0].tags).toContain('ai');
+    // Auto-tagging disabled — AI suggestedTags must NOT be auto-applied
+    expect(newMeetings[0].tags).not.toContain('ai');
   });
 
   test('rescheduleMeeting', () => {
