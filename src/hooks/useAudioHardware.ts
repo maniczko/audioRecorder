@@ -68,20 +68,43 @@ export default function useAudioHardware({
   }, [isPaused]);
 
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.permissions?.query) return undefined;
+    if (typeof navigator === 'undefined') return undefined;
+
+    // Check if Permissions API is available
+    if (!navigator.permissions?.query) {
+      // Fallback: try to get permission by calling getUserMedia
+      return undefined;
+    }
+
     let mounted = true;
     let permissionStatus;
+
     async function syncPermission() {
       try {
         permissionStatus = await navigator.permissions.query({ name: 'microphone' });
         if (!mounted) return;
+
+        console.log('[useAudioHardware] Initial microphone permission:', permissionStatus.state);
         setRecordPermission(permissionStatus.state);
-        permissionStatus.onchange = () => setRecordPermission(permissionStatus.state);
+
+        // Listen for permission changes
+        permissionStatus.onchange = () => {
+          console.log('[useAudioHardware] Microphone permission changed:', permissionStatus.state);
+          if (mounted) {
+            setRecordPermission(permissionStatus.state);
+            // Clear error message if permission was granted
+            if (permissionStatus.state === 'granted') {
+              onMessageChange('');
+            }
+          }
+        };
       } catch (error) {
         console.error('Microphone permission query failed.', error);
       }
     }
+
     syncPermission();
+
     return () => {
       mounted = false;
       if (permissionStatus) permissionStatus.onchange = null;
@@ -179,6 +202,38 @@ export default function useAudioHardware({
     setSilenceCountdown(null);
   }
 
+  async function checkMicrophonePermission() {
+    // Check if Permissions API is available
+    if (!('permissions' in navigator)) {
+      return 'unknown';
+    }
+
+    try {
+      const permissionStatus = await navigator.permissions.query({
+        name: 'microphone' as PermissionName,
+      });
+
+      // Listen for permission changes
+      permissionStatus.onchange = () => {
+        console.log('[useAudioHardware] Microphone permission changed:', permissionStatus.state);
+        if (permissionStatus.state === 'granted') {
+          setRecordPermission('granted');
+          onMessageChange('');
+        } else if (permissionStatus.state === 'denied') {
+          setRecordPermission('denied');
+          onMessageChange(
+            'Mikrofon jest zablokowany. Aby odblokować: 1) Kliknij ikonę kłódki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
+          );
+        }
+      };
+
+      return permissionStatus.state;
+    } catch (e) {
+      console.warn('[useAudioHardware] Permissions API check failed:', e);
+      return 'unknown';
+    }
+  }
+
   async function startRecording(meetingId) {
     // Check if browser supports getUserMedia
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -193,31 +248,22 @@ export default function useAudioHardware({
     }
 
     // Proactively check microphone permission
-    try {
-      if ('permissions' in navigator) {
-        const permissionStatus = await navigator.permissions.query({
-          name: 'microphone' as PermissionName,
-        });
+    const permissionState = await checkMicrophonePermission();
 
-        if (permissionStatus.state === 'denied') {
-          onMessageChange(
-            'Mikrofon jest zablokowany. Aby odblokować: ' +
-              '1) Kliknij ikonę kłódki obok adresu strony, ' +
-              '2) Wybierz "Zezwalaj" przy mikrofonie, ' +
-              '3) Odśwież stronę.'
-          );
-          setRecordPermission('denied');
-          return;
-        }
+    if (permissionState === 'denied') {
+      onMessageChange(
+        'Mikrofon jest zablokowany. Aby odblokować: ' +
+          '1) Kliknij ikonę kłódki obok adresu strony, ' +
+          '2) Wybierz "Zezwalaj" przy mikrofonie, ' +
+          '3) Odśwież stronę.'
+      );
+      setRecordPermission('denied');
+      return;
+    }
 
-        if (permissionStatus.state === 'prompt') {
-          // Permission not yet granted - will prompt on getUserMedia call
-          onMessageChange('Nagrywanie...');
-        }
-      }
-    } catch (e) {
-      // Permissions API not available - proceed with getUserMedia
-      console.warn('Permissions API not available, proceeding with getUserMedia');
+    if (permissionState === 'prompt') {
+      // Permission not yet granted - will prompt on getUserMedia call
+      onMessageChange('Nagrywanie...');
     }
 
     cleanupRecorder();

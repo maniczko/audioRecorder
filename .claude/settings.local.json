@@ -64,7 +64,8 @@
       "Bash(railway whoami:*)",
       "Bash(railway environment:*)",
       "Bash(python -m json.tool)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(grep -r \"502\\\\|gateway\\\\|proxy\\\\|upstream\" /c/Users/user/new/audioRecorder/server --include=*.ts --include=*.js)"
     ]
   }
 }

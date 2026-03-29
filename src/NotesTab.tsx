@@ -276,8 +276,10 @@ function NoteDetail({ note, onOpenMeeting }) {
     <aside className="notes-detail-panel">
       <div className="notes-detail-header">
         <div className="notes-detail-hero">
-          <div className="eyebrow">Notatka ze spotkania</div>
-          <h2>{note.title}</h2>
+          <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
+            <div className="eyebrow">Notatka ze spotkania</div>
+            <h2 className="ui-page-header__title">{note.title}</h2>
+          </div>
           <div className="notes-detail-meta">
             <span className="note-date">{formatDateTime(note.date)}</span>
             {note.attendees.length > 0 && (
@@ -288,7 +290,10 @@ function NoteDetail({ note, onOpenMeeting }) {
             )}
           </div>
           {note.tags.length > 0 && (
-            <div className="note-tags note-tags-offset" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            <div
+              className="note-tags note-tags-offset"
+              style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}
+            >
               {note.tags.map((tag) => (
                 <TagBadge key={tag} tag={tag} />
               ))}
@@ -450,15 +455,17 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
     <aside className="notes-detail-panel">
       <div className="notes-detail-header notes-new-panel-header">
         <div className="notes-detail-hero">
-          <div className="eyebrow">Nowa notatka ręczna</div>
-          <input
-            className="notes-new-title-input"
-            type="text"
-            placeholder="Tytuł notatki…"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-          />
+          <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
+            <div className="eyebrow">Nowa notatka ręczna</div>
+            <input
+              className="notes-new-title-input ui-page-header__title"
+              type="text"
+              placeholder="Tytuł notatki…"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+            />
+          </div>
           <div className="notes-tag-input-wrap">
             <TagInput
               tags={tags}
@@ -643,7 +650,15 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
                     onClick={() => toggleTag(tag as string)}
                   >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="tag-badge-dot" style={{ backgroundColor: getTagColor(tag), width: 8, height: 8, borderRadius: '50%' }} />
+                      <span
+                        className="tag-badge-dot"
+                        style={{
+                          backgroundColor: getTagColor(tag),
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                        }}
+                      />
                       <span>{tag as string}</span>
                     </span>
                     <span className="notes-filter-tag-count">{count}</span>

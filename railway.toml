@@ -1,0 +1,27 @@
+# Railway Configuration
+# https://docs.railway.app/guides/configure
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm run build"
+
+[deploy]
+startCommand = "pnpm run start:server"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Post-deploy script (uruchamiany po każdym deploy)
+postDeploy = "pnpm run db:migrate"
+
+# Environment variables
+[deploy.envs]
+NODE_ENV = "production"
+VOICELOG_API_PORT = "4000"
+VOICELOG_ALLOWED_ORIGINS = "https://twoja-domena.railway.app"
+
+# Volumes (persistent storage)
+[volumes]
+uploads = "/app/server/data/uploads"
+database = "/app/server/data/sqlite"

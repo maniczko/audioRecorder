@@ -603,8 +603,10 @@ export default function PeopleTab({
               <div className="profile-hero-main">
                 <div className="profile-avatar-fallback">{selectedPerson.name.slice(0, 1)}</div>
                 <div>
-                  <div className="eyebrow">Osoba</div>
-                  <h2>{selectedPerson.name}</h2>
+                  <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
+                    <div className="eyebrow">Osoba</div>
+                    <h2 className="ui-page-header__title">{selectedPerson.name}</h2>
+                  </div>
                   <p>{selectedPerson.summary}</p>
                   <div className="status-cluster">
                     <button
@@ -1065,8 +1067,10 @@ export default function PeopleTab({
           </>
         ) : (
           <section className="hero-panel empty-workspace">
-            <div className="eyebrow">Osoby</div>
-            <h2>Dodaj uczestnikow do spotkan</h2>
+            <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
+              <div className="eyebrow">Osoby</div>
+              <h2 className="ui-page-header__title">Dodaj uczestnikow do spotkan</h2>
+            </div>
             <p>
               Gdy pojawia sie ludzie w spotkaniach i taskach, tutaj zbuduje sie ich profil roboczy.
             </p>

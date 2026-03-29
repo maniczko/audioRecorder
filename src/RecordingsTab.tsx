@@ -286,9 +286,9 @@ function UnifiedLibrary({
         className="panel-header compact recordings-library-header"
         style={{ alignItems: 'center' }}
       >
-        <div className="recordings-library-heading">
+        <div className="ui-page-header__copy recordings-library-heading">
           <div className="eyebrow">Przestrzeń robocza</div>
-          <h2>Baza nagrań</h2>
+          <h2 className="ui-page-header__title">Baza nagrań</h2>
         </div>
 
         <div

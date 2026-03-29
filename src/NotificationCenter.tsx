@@ -63,9 +63,9 @@ export default function NotificationCenter({
       {open ? (
         <div className="notification-panel">
           <div className="notification-panel-header">
-            <div>
+            <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
               <div className="eyebrow">Powiadomienia</div>
-              <h2>Centrum alertow</h2>
+              <h2 className="ui-page-header__title">Centrum alertow</h2>
             </div>
             <span className="status-chip">{unreadCount} nowych</span>
           </div>

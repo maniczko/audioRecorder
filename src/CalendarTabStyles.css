@@ -3,7 +3,7 @@
 .mini-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
 }
 
 .mini-calendar-weekday {
@@ -11,23 +11,39 @@
   font-size: 0.74rem;
   color: var(--soft);
   text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
 }
 
 .mini-day {
   aspect-ratio: 1;
-  border-radius: 999px;
+  border-radius: var(--radius-md, 8px);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text);
   cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s ease, color 0.15s ease, font-weight 0.15s ease;
+}
+
+.mini-day:hover:not(.selected) {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .mini-day[data-faded="true"] {
-  color: var(--soft);
+  color: var(--muted);
 }
 
 .mini-day.selected {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-  color: var(--bg);
-  font-weight: 700;
+  background: rgba(116, 208, 191, 0.15);
+  color: #8cebd7;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(116, 208, 191, 0.3);
+}
+
+.mini-day.today:not(.selected) {
+  color: var(--accent-strong);
+  font-weight: 600;
+  background: rgba(116, 208, 191, 0.08);
 }

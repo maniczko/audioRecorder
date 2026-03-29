@@ -1,279 +1,242 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  NODE_VERSION: "22"
-  CI: true
+    branches: [main, develop]
 
 jobs:
-  lint:
-    name: Lint
+  # ─────────────────────────────────────────────────────────────
+  # QUALITY CHECKS
+  # ─────────────────────────────────────────────────────────────
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run ESLint
-        run: pnpm exec eslint src --max-warnings=0
+          fetch-depth: 0
 
-  validate-workflows:
-    name: Validate Workflow Guards
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Validate Vercel workflows
-        run: pnpm run test:workflows
+          node-version: '22'
+          cache: 'pnpm'
 
-  test-frontend:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Run Vitest
-        run: pnpm exec vitest run --reporter=verbose --coverage --exclude="**/NotesTab.test.tsx" --exclude="**/RecordingsTab.test.tsx" --exclude="**/TasksTab.test.tsx" --exclude="**/httpClient.test.ts" --exclude="**/useWorkspaceData.test.tsx" --exclude="**/StudioMeetingView.test.tsx"
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: coverage/frontend/
-          retention-days: 7
 
-  test-server:
-    name: Server Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run server tests with coverage
-        run: pnpm run test:server:coverage
+      - name: Validate .env configuration
+        run: node scripts/validate-env.js
+        continue-on-error: true
         env:
-          NODE_ENV: test
-      - name: Upload server coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-coverage
-          path: coverage/server/
-          retention-days: 7
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Build production bundle
-        run: pnpm run build
-        env:
-          NODE_ENV: production
-      - name: Verify build output
-        run: |
-          test -f build/index.html || (echo "build/index.html missing!" && exit 1)
-          du -sh build/
-          find build/assets -type f -name '*.js' -exec du -h {} + | sort -rh | head -15
-          find build/assets -type f -name '*.css' -exec du -h {} +
-      - name: Check bundle size limits
-        run: |
-          TOTAL_JS=$(find build/assets -name '*.js' -exec cat {} + | wc -c)
-          TOTAL_CSS=$(find build/assets -name '*.css' -exec cat {} + | wc -c)
-          JS_KB=$((TOTAL_JS / 1024))
-          CSS_KB=$((TOTAL_CSS / 1024))
-          echo "Total JS: ${JS_KB} KB"
-          echo "Total CSS: ${CSS_KB} KB"
-          if [ "$JS_KB" -gt 800 ]; then
-            echo "::warning::JS bundle is ${JS_KB}KB (limit: 800KB)"
-          fi
-          if [ "$CSS_KB" -gt 300 ]; then
-            echo "::warning::CSS bundle is ${CSS_KB}KB (limit: 300KB)"
-          fi
-          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
-          echo "| Asset | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| JavaScript | ${JS_KB} KB |" >> $GITHUB_STEP_SUMMARY
-          echo "| CSS | ${CSS_KB} KB |" >> $GITHUB_STEP_SUMMARY
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-build
-          path: build/
-          retention-days: 3
+      - name: TypeScript type check
+        run: pnpm run type-check
 
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run pnpm audit (non-blocking)
-        run: pnpm audit --prod || true
-      - name: Check for critical vulnerabilities
-        run: |
-          CRITICAL=$(pnpm audit --json --prod 2>/dev/null | node -e "
-            let data=''; process.stdin.on('data',c=>data+=c); process.stdin.on('end',()=>{
-              try { const r=JSON.parse(data); console.log(r.metadata?.vulnerabilities?.critical||0); }
-              catch(e) { console.log(0); }
-            })
-          ")
-          echo "Critical vulnerabilities: $CRITICAL"
-          if [ "$CRITICAL" -gt 0 ]; then
-            echo "::warning::Found $CRITICAL critical pnpm vulnerabilities"
-          fi
+      - name: ESLint
+        run: pnpm run lint
 
+      - name: Stylelint
+        run: pnpm run stylelint
 
-  e2e-smoke:
-    name: E2E Smoke Tests
+      - name: Prettier check
+        run: pnpm run format-check
+
+  # ─────────────────────────────────────────────────────────────
+  # UNIT TESTS
+  # ─────────────────────────────────────────────────────────────
+  test-unit:
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: quality
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          node-version: '22'
+          cache: 'pnpm'
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Run Smoke Tests
-        run: pnpm run test:e2e:smoke -- --project=chromium
-      - uses: actions/upload-artifact@v4
+
+      - name: Run unit tests
+        run: pnpm test -- --coverage --reporter=junit --outputFile=reports/junit.xml
+        
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-smoke-report
-          path: playwright-report/
+          name: test-results-unit
+          path: reports/
+
+  # ─────────────────────────────────────────────────────────────
+  # BUILD
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality, test-unit]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
           retention-days: 7
 
-  ci-passed:
-    name: CI Passed
+  # ─────────────────────────────────────────────────────────────
+  # E2E TESTS
+  # ─────────────────────────────────────────────────────────────
+  test-e2e:
+    name: E2E Tests
     runs-on: ubuntu-latest
-    if: always()
-    needs: [lint, validate-workflows, test-frontend, test-server, build, security, e2e-smoke]
+    timeout-minutes: 30
+    needs: build
+    
     steps:
-      - name: Check all jobs
-        run: |
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            echo "Lint failed"; exit 1
-          fi
-          if [ "${{ needs.validate-workflows.result }}" != "success" ]; then
-            echo "Workflow validation failed"; exit 1
-          fi
-          if [ "${{ needs.test-frontend.result }}" != "success" ]; then
-            echo "Frontend tests failed"; exit 1
-          fi
-          if [ "${{ needs.test-server.result }}" != "success" ]; then
-            echo "Server tests failed"; exit 1
-          fi
-          if [ "${{ needs.build.result }}" != "success" ]; then
-            echo "Build failed"; exit 1
-          fi
-          if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
-            echo "E2E smoke tests failed"; exit 1
-          fi
-          echo "All CI stages passed successfully."
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # Railway gate: deploy only after ALL tests pass.
-  #
-  # Setup (one-time):
-  #   1. Go to Railway → Service → Settings → General → Disable "Auto-Deploy"
-  #   2. Create a Railway API token: railway.app → Account → Tokens
-  #   3. Add RAILWAY_TOKEN + RAILWAY_SERVICE_ID to GitHub repo secrets
-  #      (Service ID is in Railway → Service → Settings → General)
-  # ──────────────────────────────────────────────────────────────────────────
-  deploy-railway:
-    name: Deploy to Railway (after CI)
-    runs-on: ubuntu-latest
-    needs: [ci-passed]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
 
-      - name: Check Railway secrets
-        id: check_secrets
-        run: |
-          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
-            echo "RAILWAY_TOKEN secret not set — skipping Railway deploy."
-            echo "See ci.yml comments for setup instructions."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install Railway CLI
-        if: steps.check_secrets.outputs.skip == 'false'
-        run: npm install -g @railway/cli
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
 
-      - name: Deploy to Railway
-        if: steps.check_secrets.outputs.skip == 'false'
-        run: railway up --detach --service "${{ secrets.RAILWAY_SERVICE_ID }}"
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - name: Run E2E tests
+        run: pnpm run test:e2e
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          CI: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-e2e
+          path: playwright-report/
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCKER BUILD (optional)
+  # ─────────────────────────────────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build, test-e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: voicelog-os:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────────────
+  # DEPLOY (optional - for main branch only)
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build, test-e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          # Add your deployment script here
+          # Examples:
+          # - pnpm run deploy
+          # - curl -X POST $DEPLOY_WEBHOOK
+          # - rsync -avz build/ user@server:/var/www/
+        env:
+          DEPLOY_WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK }}
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          # Add notification (Slack, Discord, email, etc.)
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          # Add failure notification

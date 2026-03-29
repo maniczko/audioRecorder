@@ -687,8 +687,7 @@ export default function CalendarTab({
               {'\u203A'}
             </button>
             <div>
-              <div className="eyebrow">Calendar</div>
-              <h2>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
                 {viewMode === 'month'
                   ? monthLabel(activeMonth)
                   : formatCalendarDayLabel(selectedDate, { month: true })}
@@ -711,8 +710,8 @@ export default function CalendarTab({
               ))}
             </div>
             <div className="status-cluster">
-              <span className="status-chip">{userMeetings.length} spotkan</span>
-              <span className="status-chip">{calendarTasks.length} zadan</span>
+              <span className="status-chip">{userMeetings.length} spotkań</span>
+              <span className="status-chip">{calendarTasks.length} zadań</span>
               <span className="status-chip">{googleCalendarEvents.length} Google</span>
             </div>
           </div>
