@@ -332,7 +332,7 @@ function TaskDetailsPanel({
                   onUpdateTask(selectedTask.id, { description: event.target.value })
                 }
                 placeholder="Dodaj opis zadania..."
-                suggestions={peopleOptions || []}
+                suggestions={(peopleOptions || []).map((p) => (typeof p === 'string' ? p : p.name))}
               />
             </label>
 
@@ -348,7 +348,7 @@ function TaskDetailsPanel({
                 value={selectedTask.notes || ''}
                 onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
                 placeholder="Dodaj notatkę..."
-                suggestions={peopleOptions || []}
+                suggestions={(peopleOptions || []).map((p) => (typeof p === 'string' ? p : p.name))}
               />
             </label>
           </div>

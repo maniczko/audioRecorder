@@ -97,7 +97,7 @@ describe('TasksTab', () => {
   test('moves a task between kanban columns with drag and drop', async () => {
     const { props } = renderTasksTab();
     const dataTransfer = createDataTransfer();
-    const dragHandle = await screen.findByTitle('Przeciagnij zadanie', {}, { timeout: 3000 });
+    const dragHandle = await screen.findByTitle('Przeciagnij aby przeniesc', {}, { timeout: 3000 });
     const doneColumn = screen.getByTestId('column-done');
 
     fireEvent.dragStart(dragHandle, { dataTransfer });

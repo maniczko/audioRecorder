@@ -53,6 +53,11 @@ Thumbs.db
 # Testing
 .vitest/
 vitest.cache/
+fail_*.txt
+test_full_*.txt
+test_run_*.txt
+test_output.txt
+tsc-err.txt
 
 # Cache
 .mypy_cache/
