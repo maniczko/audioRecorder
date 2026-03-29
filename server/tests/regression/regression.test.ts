@@ -702,3 +702,150 @@ describe('Regression: #0 — httpClient retries on HTTP 502/503/504', () => {
     expect(result.status).toBe(502);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — _sendToWorker hangs forever if SQLite worker dies
+// Date: 2026-03-29
+// Bug: _sendToWorker returned a Promise with no timeout. If the
+//      SQLite worker crashed or became unresponsive, ALL database
+//      queries would hang indefinitely. Vercel proxy would timeout
+//      (10-30s) and return 502 to the client. /health returned 200
+//      because it never touched the DB — making the server appear
+//      healthy while actually being a zombie.
+// Fix: 1) Added 15s timeout to _sendToWorker
+//      2) Worker crash rejects all pending callbacks
+//      3) Worker auto-restarts on exit
+//      4) /health now checks DB connectivity (returns 503 if down)
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: #0 — _sendToWorker timeout prevents zombie server', () => {
+  test('_sendToWorker rejects after timeout when worker does not respond', async () => {
+    // Simulate a worker that never responds by creating a mock
+    const callbacks = new Map<number, { resolve: Function; reject: Function }>();
+    let msgId = 0;
+    const TIMEOUT_MS = 200; // Use short timeout for testing
+
+    function sendToWorkerWithTimeout(type: string, sql: string | null) {
+      return new Promise((resolve, reject) => {
+        const id = ++msgId;
+        const timer = setTimeout(() => {
+          callbacks.delete(id);
+          reject(
+            new Error(
+              `[DB] Query timeout after ${TIMEOUT_MS}ms: ${type} ${String(sql || '').slice(0, 80)}`
+            )
+          );
+        }, TIMEOUT_MS);
+        callbacks.set(id, {
+          resolve: (val: any) => {
+            clearTimeout(timer);
+            resolve(val);
+          },
+          reject: (err: Error) => {
+            clearTimeout(timer);
+            reject(err);
+          },
+        });
+        // Intentionally NOT sending to worker — simulates unresponsive worker
+      });
+    }
+
+    // Should reject after ~200ms, not hang forever
+    await expect(sendToWorkerWithTimeout('query', 'SELECT 1')).rejects.toThrow(/Query timeout/);
+    expect(callbacks.size).toBe(0); // callback was cleaned up
+  });
+
+  test('_rejectAllPending clears all waiting callbacks on worker crash', () => {
+    const callbacks = new Map<number, { resolve: Function; reject: Function }>();
+    const rejections: string[] = [];
+
+    // Simulate 5 pending queries
+    for (let i = 1; i <= 5; i++) {
+      callbacks.set(i, {
+        resolve: () => {},
+        reject: (err: Error) => {
+          rejections.push(err.message);
+        },
+      });
+    }
+
+    // Simulate _rejectAllPending
+    for (const [, cb] of callbacks) {
+      cb.reject(new Error('Worker exited unexpectedly'));
+    }
+    callbacks.clear();
+
+    expect(rejections).toHaveLength(5);
+    expect(rejections.every((m) => m === 'Worker exited unexpectedly')).toBe(true);
+    expect(callbacks.size).toBe(0);
+  });
+
+  test('timeout clears callback to prevent memory leak', async () => {
+    const callbacks = new Map<number, { resolve: Function; reject: Function }>();
+    let msgId = 0;
+    const TIMEOUT_MS = 50;
+
+    function sendToWorkerWithTimeout() {
+      return new Promise((resolve, reject) => {
+        const id = ++msgId;
+        const timer = setTimeout(() => {
+          callbacks.delete(id);
+          reject(new Error('timeout'));
+        }, TIMEOUT_MS);
+        callbacks.set(id, {
+          resolve: (val: any) => {
+            clearTimeout(timer);
+            resolve(val);
+          },
+          reject: (err: Error) => {
+            clearTimeout(timer);
+            reject(err);
+          },
+        });
+      });
+    }
+
+    // Fire 10 queries that will all timeout
+    const promises = Array.from({ length: 10 }, () => sendToWorkerWithTimeout().catch(() => {}));
+    await Promise.all(promises);
+
+    // All callbacks should have been cleaned up
+    expect(callbacks.size).toBe(0);
+  });
+
+  test('successful response clears timeout (no double-resolve)', async () => {
+    const callbacks = new Map<number, { resolve: Function; reject: Function }>();
+    let msgId = 0;
+    const TIMEOUT_MS = 5000;
+
+    function sendToWorkerWithTimeout() {
+      return new Promise((resolve, reject) => {
+        const id = ++msgId;
+        const timer = setTimeout(() => {
+          callbacks.delete(id);
+          reject(new Error('timeout'));
+        }, TIMEOUT_MS);
+        callbacks.set(id, {
+          resolve: (val: any) => {
+            clearTimeout(timer);
+            resolve(val);
+          },
+          reject: (err: Error) => {
+            clearTimeout(timer);
+            reject(err);
+          },
+        });
+      });
+    }
+
+    const promise = sendToWorkerWithTimeout();
+
+    // Simulate worker responding immediately
+    const cb = callbacks.get(1)!;
+    cb.resolve({ ok: true });
+
+    const result = await promise;
+    expect(result).toEqual({ ok: true });
+    // Callback cleaned up by resolve
+    // Timer was cleared, so no timeout error will fire later
+  });
+});

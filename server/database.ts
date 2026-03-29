@@ -105,6 +105,8 @@ function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffe
   }
 }
 
+const WORKER_QUERY_TIMEOUT_MS = 15000;
+
 export class Database {
   type: string;
   uploadDir: string;
@@ -114,6 +116,7 @@ export class Database {
   callbacks: Map<number, { resolve: (val: any) => void; reject: (err: Error) => void }>;
   worker: Worker | any;
   sqliteInitPromise: Promise<any>;
+  private _dbPath: string;
 
   constructor(dbConfig: any = {}) {
     const {
@@ -127,6 +130,8 @@ export class Database {
     this.uploadDir = _resolveWritableUploadDir(uploadDir);
     this.sessionTtlHours = sessionTtlHours;
 
+    this._dbPath = dbPath;
+
     if (this.type === 'postgres') {
       this.pool = new Pool({ connectionString });
       console.log('[DB] Using PostgreSQL (Supabase)');
@@ -137,23 +142,7 @@ export class Database {
 
       this.msgId = 0;
       this.callbacks = new Map();
-      const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
-      this.worker = new Worker(path.join(__dirname, `sqliteWorker${ext}`));
-
-      this.worker.on('message', (msg) => {
-        const { id, result, error } = msg;
-        const cb = this.callbacks.get(id);
-        if (cb) {
-          this.callbacks.delete(id);
-          if (error) cb.reject(new Error(error));
-          else cb.resolve(result);
-        }
-      });
-
-      this.worker.on('error', (err) => console.error('SQLite Worker Error:', err));
-
-      this.sqliteInitPromise = this._sendToWorker('init', null, null, dbPath);
-      console.log('[DB] Using local async SQLite Worker at:', dbPath);
+      this._spawnWorker(dbPath);
     }
 
     fs.mkdirSync(this.uploadDir, { recursive: true });
@@ -166,6 +155,45 @@ export class Database {
     await this._createSchema();
   }
 
+  private _spawnWorker(dbPath: string) {
+    const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
+    this.worker = new Worker(path.join(__dirname, `sqliteWorker${ext}`));
+
+    this.worker.on('message', (msg: any) => {
+      const { id, result, error } = msg;
+      const cb = this.callbacks.get(id);
+      if (cb) {
+        this.callbacks.delete(id);
+        if (error) cb.reject(new Error(error));
+        else cb.resolve(result);
+      }
+    });
+
+    this.worker.on('error', (err: Error) => {
+      console.error('SQLite Worker Error:', err);
+      this._rejectAllPending('Worker error: ' + err.message);
+    });
+
+    this.worker.on('exit', (code: number) => {
+      if (code !== 0) {
+        console.error(`[DB] SQLite Worker exited with code ${code}, restarting...`);
+        this._rejectAllPending('Worker exited unexpectedly');
+        this._spawnWorker(this._dbPath);
+        this.sqliteInitPromise = this._sendToWorker('init', null, null, this._dbPath);
+      }
+    });
+
+    this.sqliteInitPromise = this._sendToWorker('init', null, null, dbPath);
+    console.log('[DB] Using local async SQLite Worker at:', dbPath);
+  }
+
+  private _rejectAllPending(reason: string) {
+    for (const [, cb] of this.callbacks) {
+      cb.reject(new Error(reason));
+    }
+    this.callbacks.clear();
+  }
+
   _sendToWorker(
     type: string,
     sql: string | null,
@@ -174,7 +202,24 @@ export class Database {
   ) {
     return new Promise((resolve, reject) => {
       const id = ++this.msgId;
-      this.callbacks.set(id, { resolve, reject });
+      const timer = setTimeout(() => {
+        this.callbacks.delete(id);
+        reject(
+          new Error(
+            `[DB] Query timeout after ${WORKER_QUERY_TIMEOUT_MS}ms: ${type} ${String(sql || '').slice(0, 80)}`
+          )
+        );
+      }, WORKER_QUERY_TIMEOUT_MS);
+      this.callbacks.set(id, {
+        resolve: (val: any) => {
+          clearTimeout(timer);
+          resolve(val);
+        },
+        reject: (err: Error) => {
+          clearTimeout(timer);
+          reject(err);
+        },
+      });
       this.worker.postMessage({ id, type, sql, params, dbPath });
     });
   }

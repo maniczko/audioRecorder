@@ -737,9 +737,16 @@ export default function StudioMeetingView({
     status: '',
     dueDate: '',
     reminderAt: '',
-    tags: [],
+    tags: '',
   });
   const [isAddingTask, setIsAddingTask] = useState(false);
+
+  const [isGeneratingSketchnote, setIsGeneratingSketchnote] = useState(false);
+  const [localSketchnoteUrl, setLocalSketchnoteUrl] = useState('');
+
+  useEffect(() => {
+    setLocalSketchnoteUrl('');
+  }, [selectedRecording?.id, displayRecording?.id]);
 
   const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
   const [analysisDraft, setAnalysisDraft] = useState({
@@ -1201,7 +1208,7 @@ export default function StudioMeetingView({
       status: '',
       dueDate: '',
       reminderAt: '',
-      tags: [],
+      tags: '',
     });
     setIsAddingTask(false);
   }
@@ -2287,19 +2294,52 @@ export default function StudioMeetingView({
                         >
                           <button
                             type="button"
-                            className="sketchnote-regenerate-btn primary-button text-xs py-1.5 px-4 m-0 font-medium rounded-full transition-all hover:scale-105 active:scale-95"
+                            disabled={isGeneratingSketchnote}
+                            className={`sketchnote-regenerate-btn primary-button text-xs py-1.5 px-4 m-0 font-medium rounded-full transition-all hover:scale-105 active:scale-95 ${isGeneratingSketchnote ? 'opacity-50 cursor-not-allowed' : ''}`}
                             style={{
                               minHeight: '32px',
                               background: 'linear-gradient(135deg, #74d0bf 0%, #5bb3dc 100%)',
                               color: '#03222a',
                               border: 'none',
                             }}
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              // Tutaj logika docelowego wywołania generowania
+                              if (!selectedRecording?.id) {
+                                alert('Brak zapisanego nagrania do wygenerowania wizualizacji.');
+                                return;
+                              }
+                              try {
+                                setIsGeneratingSketchnote(true);
+                                const res = await apiRequest(
+                                  `/media/recordings/${selectedRecording.id}/sketchnote`,
+                                  {
+                                    method: 'POST',
+                                    body: {
+                                      summary: sketchnoteSummaryText,
+                                      decisions: safeArray(studioAnalysis?.decisions),
+                                      followUps: safeArray(studioAnalysis?.followUps),
+                                      risks: safeArray(studioAnalysis?.risks).map((r: any) =>
+                                        typeof r === 'string' ? r : r.risk
+                                      ),
+                                    },
+                                  }
+                                );
+                                if (res?.sketchnoteUrl) {
+                                  setLocalSketchnoteUrl(res.sketchnoteUrl);
+                                }
+                              } catch (err: any) {
+                                console.error('Failed to generate sketchnote:', err);
+                                alert(
+                                  err.message || 'Wystąpił błąd podczas generowania wizualizacji.'
+                                );
+                              } finally {
+                                setIsGeneratingSketchnote(false);
+                              }
                             }}
                           >
-                            🎨 Generuj sketchnotkę
+                            {isGeneratingSketchnote
+                              ? '⏳ Generowanie...'
+                              : '🎨 Generuj sketchnotkę'}
                           </button>
                           {sketchnoteExpanded && sketchnoteHasSourceData && (
                             <button
@@ -2326,12 +2366,27 @@ export default function StudioMeetingView({
                             <div
                               className={`sketchnote-image-frame flex justify-center items-center min-h-[300px] mt-0 ${sketchnoteZoomed ? 'sketchnote-zoomed' : ''}`}
                             >
-                              <div
-                                className="w-full max-w-4xl mx-auto p-6"
-                                dangerouslySetInnerHTML={{
-                                  __html: buildSketchnoteSvg(sketchnoteSummaryText, summaryBullets),
-                                }}
-                              />
+                              {localSketchnoteUrl ||
+                              displayRecording?.diarization?.sketchnoteUrl ? (
+                                <img
+                                  src={
+                                    localSketchnoteUrl ||
+                                    displayRecording?.diarization?.sketchnoteUrl
+                                  }
+                                  alt="Wygenerowana sketchnotka"
+                                  className="w-full max-w-4xl mx-auto rounded-lg shadow-md sketchnote-image"
+                                />
+                              ) : (
+                                <div
+                                  className="w-full max-w-4xl mx-auto p-6"
+                                  dangerouslySetInnerHTML={{
+                                    __html: buildSketchnoteSvg(
+                                      sketchnoteSummaryText,
+                                      summaryBullets
+                                    ),
+                                  }}
+                                />
+                              )}
                             </div>
                           ) : (
                             <div className="sketchnote-empty-copy p-12 mt-4 flex flex-col items-center justify-center bg-slate-900/30 rounded-xl text-center">
@@ -2899,24 +2954,19 @@ export default function StudioMeetingView({
                       { id: 'waiting', label: 'Oczekuje' },
                       { id: 'done', label: 'Zakończone' },
                     ]} // Minimalist fallback for status options
-                    peopleOptions={allParticipants}
-                    tagOptions={allMeetingTags}
+                    peopleOptions={allParticipants as string[]}
+                    tagOptions={allMeetingTags as string[]}
                     initialDraft={taskDraft}
                     onSubmit={(draft) => {
                       if (typeof onCreateTask === 'function') {
                         onCreateTask({
                           ...draft,
-                          meetingId: selectedRecording?.id || meeting?.id,
+                          meetingId: selectedRecording?.id || selectedMeeting?.id,
                           dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : '',
                           reminderAt: draft.reminderAt
                             ? new Date(draft.reminderAt).toISOString()
                             : '',
-                          tags: draft.tags
-                            ? draft.tags
-                                .split(',')
-                                .map((t) => t.trim())
-                                .filter(Boolean)
-                            : [],
+                          tags: draft.tags || '',
                         });
                       }
                       setIsAddingTask(false);
@@ -2930,7 +2980,7 @@ export default function StudioMeetingView({
                         status: '',
                         dueDate: '',
                         reminderAt: '',
-                        tags: [],
+                        tags: '',
                       });
                     }}
                   />

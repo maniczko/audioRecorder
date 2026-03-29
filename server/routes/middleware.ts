@@ -5,6 +5,7 @@ export type AppServices = {
   authService: any;
   workspaceService: any;
   transcriptionService: any;
+  db: any;
   config: any;
 };
 

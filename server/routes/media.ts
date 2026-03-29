@@ -377,45 +377,56 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   });
 
   router.get('/recordings/:recordingId/transcribe', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-    return c.json(normalizeTranscriptionStatusPayload(asset), 200);
+    try {
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
+      return c.json(normalizeTranscriptionStatusPayload(asset), 200);
+    } catch (err: any) {
+      console.error(`[transcribe-status] Error:`, err?.message);
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Błąd pobierania statusu transkrypcji.' }, status);
+    }
   });
 
   router.get('/recordings/:recordingId/progress', async (c) => {
-    const recordingId = c.req.param('recordingId');
+    try {
+      const recordingId = c.req.param('recordingId');
 
-    return streamSSE(c, async (stream) => {
-      let active = true;
+      return streamSSE(c, async (stream) => {
+        let active = true;
 
-      const progressCallback = async (data: any) => {
-        if (!active) return;
-        await stream.writeSSE({
-          data: JSON.stringify(data),
-          event: 'progress',
+        const progressCallback = async (data: any) => {
+          if (!active) return;
+          await stream.writeSSE({
+            data: JSON.stringify(data),
+            event: 'progress',
+          });
+        };
+
+        transcriptionService.on(`progress-${recordingId}`, progressCallback);
+
+        const pingId = setInterval(async () => {
+          if (active) {
+            await stream
+              .writeSSE({ data: JSON.stringify({ ping: 'stay-alive' }), event: 'ping' })
+              .catch(() => {});
+          }
+        }, 15000);
+
+        c.req.raw.signal.addEventListener('abort', () => {
+          active = false;
+          clearInterval(pingId);
+          transcriptionService.removeListener(`progress-${recordingId}`, progressCallback);
         });
-      };
 
-      transcriptionService.on(`progress-${recordingId}`, progressCallback);
-
-      const pingId = setInterval(async () => {
-        if (active) {
-          await stream
-            .writeSSE({ data: JSON.stringify({ ping: 'stay-alive' }), event: 'ping' })
-            .catch(() => {});
-        }
-      }, 15000);
-
-      c.req.raw.signal.addEventListener('abort', () => {
-        active = false;
-        clearInterval(pingId);
-        transcriptionService.removeListener(`progress-${recordingId}`, progressCallback);
+        await new Promise(() => {});
       });
-
-      await new Promise(() => {});
-    });
+    } catch (err: any) {
+      console.error(`[progress] SSE error:`, err?.message);
+      return c.json({ message: err?.message || 'Błąd strumienia postępu.' }, 500);
+    }
   });
 
   router.post('/recordings/:recordingId/normalize', async (c) => {

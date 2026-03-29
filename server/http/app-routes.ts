@@ -13,7 +13,7 @@ export function registerAppRoutes(
   services: AppServices,
   middlewares: AppMiddlewares
 ) {
-  registerHealthRoute(app);
+  registerHealthRoute(app, (services as any).db);
 
   app.get('/metrics', async (c) => {
     const metrics = await MetricsService.getPrometheusMetrics();
