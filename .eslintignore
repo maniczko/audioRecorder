@@ -7,3 +7,6 @@ dist/
 
 # Node modules
 node_modules/
+
+# Config files ESLint cannot parse
+*.toml
