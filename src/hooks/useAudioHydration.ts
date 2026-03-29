@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getAudioBlob } from '../lib/audioStore';
 
 function revokeAudioUrl(url: string) {
   if (url && typeof URL !== 'undefined' && URL.revokeObjectURL) {
@@ -59,7 +60,19 @@ export default function useAudioHydration({ mediaService, userMeetings }: UseAud
       });
 
       try {
-        const blob = await mediaService.getRecordingAudioBlob(recordingId);
+        let blob = null;
+
+        // Prefer local IndexedDB audio first (ad-hoc/local recordings may not exist on backend yet).
+        try {
+          blob = await getAudioBlob(recordingId);
+        } catch {
+          blob = null;
+        }
+
+        if (!blob) {
+          blob = await mediaService.getRecordingAudioBlob(recordingId);
+        }
+
         if (!blob || typeof URL === 'undefined' || !URL.createObjectURL) {
           throw new Error('Audio blob jest niedostepny.');
         }

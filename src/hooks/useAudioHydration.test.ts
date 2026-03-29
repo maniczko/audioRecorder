@@ -2,6 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import useAudioHydration from './useAudioHydration';
 
+const mockGetAudioBlob = vi.hoisted(() => vi.fn());
+
+vi.mock('../lib/audioStore', () => ({
+  getAudioBlob: mockGetAudioBlob,
+}));
+
 let blobCounter = 0;
 
 // Non-empty meetings so the mount-time useEffect goes through the "else" branch
@@ -22,6 +28,8 @@ describe('useAudioHydration', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     blobCounter = 0;
+    mockGetAudioBlob.mockReset();
+    mockGetAudioBlob.mockResolvedValue(null);
     globalThis.URL.createObjectURL = vi.fn(() => `blob:url-${++blobCounter}`);
     globalThis.URL.revokeObjectURL = vi.fn();
   });
@@ -54,6 +62,40 @@ describe('useAudioHydration', () => {
     expect(url).toBe('blob:url-1');
     expect(service.getRecordingAudioBlob).toHaveBeenCalledWith('rec-1');
     expect(globalThis.URL.createObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses local IndexedDB blob first and skips remote fetch', async () => {
+    const service = makeService();
+    mockGetAudioBlob.mockResolvedValueOnce(new Blob(['local-audio']));
+    const { result } = renderHook(() =>
+      useAudioHydration({ mediaService: service, userMeetings: STABLE_MEETINGS })
+    );
+
+    let url: string | null = null;
+    await act(async () => {
+      url = await result.current.hydrateRecordingAudio('rec-local');
+    });
+
+    expect(url).toBe('blob:url-1');
+    expect(mockGetAudioBlob).toHaveBeenCalledWith('rec-local');
+    expect(service.getRecordingAudioBlob).not.toHaveBeenCalled();
+  });
+
+  it('falls back to remote fetch when local blob is missing', async () => {
+    const service = makeService({
+      getRecordingAudioBlob: vi.fn().mockResolvedValue(new Blob(['remote-audio'])),
+    });
+    mockGetAudioBlob.mockResolvedValueOnce(null);
+    const { result } = renderHook(() =>
+      useAudioHydration({ mediaService: service, userMeetings: STABLE_MEETINGS })
+    );
+
+    await act(async () => {
+      await result.current.hydrateRecordingAudio('rec-remote');
+    });
+
+    expect(mockGetAudioBlob).toHaveBeenCalledWith('rec-remote');
+    expect(service.getRecordingAudioBlob).toHaveBeenCalledWith('rec-remote');
   });
 
   it('skips fetch when already loaded (returns cached URL)', async () => {
