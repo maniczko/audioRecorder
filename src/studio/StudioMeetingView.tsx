@@ -10,6 +10,7 @@ import {
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
+import TaskCreateModal from '../tasks/TaskCreateModal';
 import { Type, AlignLeft, Users, Folder, Calendar, Clock, Flag, Activity, Tag } from 'lucide-react';
 
 import PropTypes from 'prop-types';
@@ -22,6 +23,7 @@ import { normalizeMeetingFeedback } from '../shared/meetingFeedback';
 import { apiRequest } from '../services/httpClient';
 import { remoteApiEnabled } from '../services/config';
 import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
+import '../styles/studio.css';
 import './StudioMeetingViewStyles.css';
 
 // Lazy load AI Task Suggestions Panel for code splitting
@@ -1138,6 +1140,7 @@ export default function StudioMeetingView({
     studioAnalysis?.summary,
   ]);
 
+  const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
   const sketchnoteSummaryText = useMemo(() => {
     return String(
       studioAnalysis?.summary ||
@@ -2229,6 +2232,38 @@ export default function StudioMeetingView({
                         )}
                       </section>
                     </div>
+
+                    {/* Wizualizacja (Sketchnote) */}
+                    <section className="sketchnote-section-shell mt-6 mb-4">
+                      <div className="sketchnote-header flex justify-between items-center mb-4">
+                        <h3 className="sketchnote-title">Wizualizacja (Sketchnote)</h3>
+                        <div className="sketchnote-header-actions flex gap-2">
+                          <button
+                            type="button"
+                            className="sketchnote-zoom-btn ghost-button"
+                            onClick={() => setSketchnoteZoomed(!sketchnoteZoomed)}
+                          >
+                            {sketchnoteZoomed ? 'Pomniejsz' : 'Powiększ'}
+                          </button>
+                        </div>
+                      </div>
+                      {sketchnoteHasSourceData ? (
+                        <div
+                          className={`sketchnote-image-frame p-6 bg-slate-800/10 rounded-2xl border border-slate-700/50 flex justify-center items-center min-h-[300px] ${sketchnoteZoomed ? 'sketchnote-zoomed' : ''}`}
+                        >
+                          <div
+                            className="sketchnote-inline-svg"
+                            dangerouslySetInnerHTML={{
+                              __html: buildSketchnoteSvg(sketchnoteSummaryText, summaryBullets),
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="sketchnote-empty-copy soft-copy">
+                          Aby wygenerować szkic, nagranie musi zawierać dłuższą dyskusję.
+                        </div>
+                      )}
+                    </section>
                   </div>
                 ) : isEmptyTranscript ? (
                   <div className="panel-body">
@@ -2759,264 +2794,58 @@ export default function StudioMeetingView({
                 </div>
 
                 <div className="panel-body">
-                  {!isAddingTask ? (
-                    <button
-                      type="button"
-                      className="primary-button"
-                      onClick={() => setIsAddingTask(true)}
-                    >
-                      + Dodaj zadanie
-                    </button>
-                  ) : (
-                    <section className="summary-card summary-card-wide studio-task-form-card">
-                      <div className="summary-card-head">
-                        <h3>Dodaj nowe zadanie</h3>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => {
-                            setIsAddingTask(false);
-                            setTaskDraft({
-                              title: '',
-                              description: '',
-                              owner: '',
-                              assignedTo: [],
-                              group: '',
-                              priority: 'medium',
-                              status: '',
-                              dueDate: '',
-                              reminderAt: '',
-                              tags: [],
-                            });
-                          }}
-                        >
-                          Anuluj
-                        </button>
-                      </div>
-                      <div
-                        className="todo-detail-body ms-todo"
-                        style={{ padding: '0 16px', background: 'transparent' }}
-                      >
-                        {/* Tytuł */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Tytuł">
-                            <Type size={18} />
-                          </span>
-                          <span className="todo-row-label">
-                            Tytuł <span className="required-star">*</span>
-                          </span>
-                          <div className="todo-detail-row-fill">
-                            <input
-                              className="todo-detail-unified-field headline-input"
-                              type="text"
-                              value={taskDraft.title}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, title: e.target.value }))
-                              }
-                              placeholder="np. Wyślij ofertę"
-                            />
-                          </div>
-                        </div>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => setIsAddingTask(true)}
+                  >
+                    + Dodaj zadanie
+                  </button>
 
-                        {/* Opis */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Opis">
-                            <AlignLeft size={18} />
-                          </span>
-                          <span className="todo-row-label">Opis</span>
-                          <div className="todo-detail-row-fill">
-                            <textarea
-                              className="todo-detail-unified-field text-area-field"
-                              rows={3}
-                              value={taskDraft.description}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, description: e.target.value }))
-                              }
-                              placeholder="Dodaj opis zadania..."
-                            />
-                          </div>
-                        </div>
-
-                        {/* Osoba */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Osoba">
-                            <Users size={18} />
-                          </span>
-                          <span className="todo-row-label">Osoba</span>
-                          <div className="todo-detail-row-fill">
-                            <TagInput
-                              tags={taskDraft.owner ? [taskDraft.owner] : []}
-                              suggestions={allParticipants}
-                              onChange={(arr) =>
-                                setTaskDraft((d) => ({
-                                  ...d,
-                                  owner: arr[0] || '',
-                                  assignedTo: arr,
-                                }))
-                              }
-                              placeholder="Wpisz lub wybierz osobę..."
-                              type="person"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Grupa */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Grupa">
-                            <Folder size={18} />
-                          </span>
-                          <span className="todo-row-label">Grupa</span>
-                          <div className="todo-detail-row-fill">
-                            <input
-                              className="todo-detail-unified-field"
-                              list="task-groups"
-                              value={taskDraft.group}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, group: e.target.value }))
-                              }
-                              placeholder="np. Sprint 14"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Termin */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Termin">
-                            <Calendar size={18} />
-                          </span>
-                          <span className="todo-row-label">Termin</span>
-                          <div className="todo-detail-row-fill">
-                            <input
-                              className="todo-detail-unified-field"
-                              type="datetime-local"
-                              value={taskDraft.dueDate}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, dueDate: e.target.value }))
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        {/* Przypomnienie */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Przypomnienie">
-                            <Clock size={18} />
-                          </span>
-                          <span className="todo-row-label">Przypomnienie</span>
-                          <div className="todo-detail-row-fill">
-                            <input
-                              className="todo-detail-unified-field"
-                              type="datetime-local"
-                              value={taskDraft.reminderAt}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, reminderAt: e.target.value }))
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        {/* Priorytet */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Priorytet">
-                            <Flag size={18} />
-                          </span>
-                          <span className="todo-row-label">Priorytet</span>
-                          <div className="todo-detail-row-fill">
-                            <select
-                              className="todo-detail-unified-field"
-                              value={taskDraft.priority}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, priority: e.target.value }))
-                              }
-                            >
-                              <option value="low">Niski</option>
-                              <option value="medium">Średni</option>
-                              <option value="high">Wysoki</option>
-                              <option value="urgent">Krytyczny</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Status">
-                            <Activity size={18} />
-                          </span>
-                          <span className="todo-row-label">Status</span>
-                          <div className="todo-detail-row-fill">
-                            <select
-                              className="todo-detail-unified-field"
-                              value={taskDraft.status}
-                              onChange={(e) =>
-                                setTaskDraft((d) => ({ ...d, status: e.target.value }))
-                              }
-                            >
-                              <option value="">Domyślny</option>
-                              <option value="todo">Do zrobienia</option>
-                              <option value="in_progress">W toku</option>
-                              <option value="waiting">Oczekuje</option>
-                              <option value="done">Zakończone</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Tagi */}
-                        <div className="todo-detail-row field-row">
-                          <span className="todo-row-icon" title="Tagi">
-                            <Tag size={18} />
-                          </span>
-                          <span className="todo-row-label">Tagi</span>
-                          <div className="todo-detail-row-fill">
-                            <TagInput
-                              tags={taskDraft.tags}
-                              suggestions={allMeetingTags}
-                              onChange={(newTags) => setTaskDraft((d) => ({ ...d, tags: newTags }))}
-                              placeholder="Dodaj tag..."
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className="todo-detail-header-actions"
-                        style={{
-                          justifyContent: 'flex-end',
-                          padding: '16px',
-                          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="todo-command-button"
-                          onClick={() => {
-                            setIsAddingTask(false);
-                            setTaskDraft({
-                              title: '',
-                              description: '',
-                              owner: '',
-                              assignedTo: [],
-                              group: '',
-                              priority: 'medium',
-                              status: '',
-                              dueDate: '',
-                              reminderAt: '',
-                              tags: [],
-                            });
-                          }}
-                        >
-                          Anuluj
-                        </button>
-                        <button
-                          type="button"
-                          className="todo-command-button primary"
-                          onClick={handleCreateManualTask}
-                          disabled={!taskDraft.title.trim()}
-                        >
-                          Utwórz zadanie
-                        </button>
-                      </div>
-                    </section>
-                  )}
+                  <TaskCreateModal
+                    isOpen={isAddingTask}
+                    onClose={() => setIsAddingTask(false)}
+                    boardColumns={[
+                      { id: 'todo', label: 'Do zrobienia' },
+                      { id: 'in_progress', label: 'W toku' },
+                      { id: 'waiting', label: 'Oczekuje' },
+                      { id: 'done', label: 'Zakończone' },
+                    ]} // Minimalist fallback for status options
+                    peopleOptions={allParticipants}
+                    tagOptions={allMeetingTags}
+                    initialDraft={taskDraft}
+                    onSubmit={(draft) => {
+                      if (typeof onCreateTask === 'function') {
+                        onCreateTask({
+                          ...draft,
+                          meetingId: internalMeetingId,
+                          dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : '',
+                          reminderAt: draft.reminderAt
+                            ? new Date(draft.reminderAt).toISOString()
+                            : '',
+                          tags: draft.tags
+                            ? draft.tags
+                                .split(',')
+                                .map((t) => t.trim())
+                                .filter(Boolean)
+                            : [],
+                        });
+                      }
+                      setIsAddingTask(false);
+                      setTaskDraft({
+                        title: '',
+                        description: '',
+                        owner: '',
+                        assignedTo: [],
+                        group: '',
+                        priority: 'medium',
+                        status: '',
+                        dueDate: '',
+                        reminderAt: '',
+                        tags: [],
+                      });
+                    }}
+                  />
 
                   <section className="summary-card summary-card-wide studio-meeting-task-card">
                     <div className="summary-card-head">
