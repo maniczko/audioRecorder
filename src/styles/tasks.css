@@ -5451,6 +5451,8 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--task-text);
+  display: flex;
+  align-items: center;
 }
 
 .tasks-layout.ms-todo .todo-side-link:hover,
@@ -5461,6 +5463,7 @@
 
 .tasks-layout.ms-todo .todo-side-link strong {
   color: var(--task-muted);
+  margin-left: auto;
 }
 
 .tasks-layout.ms-todo .todo-notification-card {

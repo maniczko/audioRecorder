@@ -14,6 +14,7 @@ import {
   Tag,
 } from 'lucide-react';
 import TagInput from '../shared/TagInput';
+import MentionTextarea from '../shared/MentionTextarea';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import './TaskDetailsPanelStyles.css';
 
@@ -242,11 +243,16 @@ function TaskDetailsPanel({
                 <Calendar size={18} />
               </span>
               <span className="todo-row-label">Termin</span>
-              <Input
-                type="datetime-local"
-                value={toInputDateTime(selectedTask.dueDate) || ''}
-                onChange={(event) => onUpdateTask(selectedTask.id, { dueDate: event.target.value })}
-              />
+              <div className="todo-detail-row-fill">
+                <Input
+                  className="todo-detail-unified-field"
+                  type="datetime-local"
+                  value={toInputDateTime(selectedTask.dueDate) || ''}
+                  onChange={(event) =>
+                    onUpdateTask(selectedTask.id, { dueDate: event.target.value })
+                  }
+                />
+              </div>
             </div>
 
             <div className="todo-detail-row field-row">
@@ -277,19 +283,21 @@ function TaskDetailsPanel({
                 <Flag size={18} />
               </span>
               <span className="todo-row-label">Priorytet</span>
-              <select
-                className="todo-detail-select"
-                value={selectedTask.priority || 'medium'}
-                onChange={(event) =>
-                  onUpdateTask(selectedTask.id, { priority: event.target.value })
-                }
-              >
-                {TASK_PRIORITIES.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+              <div className="todo-detail-row-fill">
+                <select
+                  className="todo-detail-unified-field"
+                  value={selectedTask.priority || 'medium'}
+                  onChange={(event) =>
+                    onUpdateTask(selectedTask.id, { priority: event.target.value })
+                  }
+                >
+                  {TASK_PRIORITIES.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="todo-detail-row field-row">
@@ -311,30 +319,36 @@ function TaskDetailsPanel({
           {/* --- Content group: Opis + Notatka --- */}
           <div className="todo-detail-group todo-detail-group--content">
             <label className="todo-detail-row note-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <FileText size={18} />
-              </span>
-              <span className="todo-row-label">Opis</span>
-              <textarea
+              <div className="todo-row-label-container">
+                <span className="todo-row-icon" aria-hidden="true">
+                  <FileText size={18} />
+                </span>
+                <span className="todo-row-label">Opis</span>
+              </div>
+              <MentionTextarea
                 rows={3}
                 value={selectedTask.description || ''}
                 onChange={(event) =>
                   onUpdateTask(selectedTask.id, { description: event.target.value })
                 }
                 placeholder="Dodaj opis zadania..."
+                suggestions={peopleOptions || []}
               />
             </label>
 
             <label className="todo-detail-row note-row">
-              <span className="todo-row-icon" aria-hidden="true">
-                <AlignLeft size={18} />
-              </span>
-              <span className="todo-row-label">Notatka</span>
-              <textarea
+              <div className="todo-row-label-container">
+                <span className="todo-row-icon" aria-hidden="true">
+                  <AlignLeft size={18} />
+                </span>
+                <span className="todo-row-label">Notatka</span>
+              </div>
+              <MentionTextarea
                 rows={4}
                 value={selectedTask.notes || ''}
                 onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
                 placeholder="Dodaj notatkę..."
+                suggestions={peopleOptions || []}
               />
             </label>
           </div>

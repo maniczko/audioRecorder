@@ -314,14 +314,24 @@
 
 .todo-detail-row.note-row {
   flex-direction: column;
-  align-items: stretch;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  align-items: flex-start;
+  padding-top: 16px;
+  padding-bottom: 16px;
   min-height: 118px;
+  gap: 12px;
 }
 
+.todo-detail-row.note-row .todo-row-label-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.todo-detail-row.note-row .mention-textarea-wrapper,
 .todo-detail-row.note-row textarea {
   max-width: none;
+  width: 100%;
   margin-left: 0;
   min-height: 96px;
 }
@@ -503,6 +513,35 @@
 .tasks-layout.ms-todo .todo-detail-header {
   gap: 16px;
   align-items: flex-start;
+}
+
+/* Close button for task detail modal */
+.todo-detail-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.todo-detail-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.todo-detail-modal-close:active {
+  transform: scale(0.95);
 }
 
 .tasks-layout.ms-todo .todo-detail-form {
@@ -785,6 +824,26 @@
   flex-shrink: 0;
 }
 
+/* Ensure alignment in ms-todo modal */
+.ms-todo .todo-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ms-todo .todo-detail-row .todo-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.ms-todo .todo-detail-row .todo-row-label {
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
 /* ── Standalone .ms-todo theming (for modal popup) ── */
 .ms-todo {
   --task-text: #eef4fb;
@@ -835,4 +894,60 @@
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 12px;
+}
+
+/* ── Unified Metadata Fields ── */
+.tasks-layout.ms-todo .todo-detail-unified-field,
+.tasks-layout.ms-todo .tag-input-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--task-text);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  margin: 0;
+  box-shadow: none;
+}
+
+.tasks-layout.ms-todo .todo-detail-unified-field:hover,
+.tasks-layout.ms-todo .tag-input-container:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.tasks-layout.ms-todo .todo-detail-unified-field:focus,
+.tasks-layout.ms-todo .todo-detail-unified-field:focus-within,
+.tasks-layout.ms-todo .tag-input-container:focus-within {
+  outline: none;
+  border-color: var(--task-accent);
+  background: rgba(117, 214, 196, 0.06);
+  box-shadow: 0 0 0 1px rgba(117, 214, 196, 0.2);
+}
+
+.tasks-layout.ms-todo .tag-input-container {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding: 6px 8px;
+}
+
+.tasks-layout.ms-todo .todo-detail-unified-field[type="datetime-local"],
+.tasks-layout.ms-todo select.todo-detail-unified-field {
+  height: auto; 
+  cursor: pointer; 
+}
+
+.tasks-layout.ms-todo .tag-input-container input {
+  padding: 4px;
+  margin: 0;
+  height: auto;
+  border: none;
+  background: transparent;
+  flex: 1 1 120px;
+  min-width: 120px;
 }

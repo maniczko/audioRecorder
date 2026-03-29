@@ -2864,6 +2864,70 @@
   font-size: 0.82rem;
 }
 
+/* Task form in Studio */
+.studio-task-form-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.task-form-grid {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.task-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-form-grid label span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.task-form-grid input,
+.task-form-grid textarea,
+.task-form-grid select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.task-form-grid input:focus,
+.task-form-grid textarea:focus,
+.task-form-grid select:focus {
+  border-color: var(--accent);
+}
+
+.task-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .task-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.task-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 .sketchnote-title {
   display: flex;
   align-items: center;
@@ -2893,6 +2957,46 @@
 
 .sketchnote-inline-svg {
   width: 100%;
+}
+
+/* ── Unified Metadata Fields inside Studio Summary Cards ── */
+.summary-card .tag-input-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.summary-card .tag-input-container:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.summary-card .tag-input-container:focus-within {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(117, 214, 196, 0.06);
+  box-shadow: 0 0 0 1px rgba(117, 214, 196, 0.2);
+}
+
+.summary-card .tag-input-container input {
+  padding: 4px;
+  margin: 0;
+  height: auto;
+  border: none;
+  background: transparent;
+  flex: 1 1 120px;
+  min-width: 120px;
+  cursor: text;
 }
 
 .sketchnote-inline-svg svg {

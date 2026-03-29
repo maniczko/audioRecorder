@@ -13,14 +13,15 @@ export default function TagInput({
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
     left: 0,
     width: 0,
     maxHeight: 220,
   });
-  const inputRef = useRef(null);
-  const containerRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const normalizedTags = useMemo(() => (Array.isArray(tags) ? tags : []), [tags]);
 
@@ -63,9 +64,9 @@ export default function TagInput({
     if (!isFocused) {
       return;
     }
-
     updateDropdownPosition();
-  }, [isFocused]);
+    setActiveIndex(0);
+  }, [isFocused, inputValue]);
 
   // Update position on scroll/resize
   useEffect(() => {
@@ -110,9 +111,30 @@ export default function TagInput({
   }
 
   function handleKeyDown(e) {
-    if (e.key === 'Enter' || e.key === ',') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (inputValue.trim()) addTag(inputValue);
+      if (filteredSuggestions.length > 0 || canCreate) {
+        setActiveIndex((prev) => (prev + 1) % (filteredSuggestions.length + (canCreate ? 1 : 0)));
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const total = filteredSuggestions.length + (canCreate ? 1 : 0);
+      if (total > 0) {
+        setActiveIndex((prev) => (prev - 1 + total) % total);
+      }
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (isFocused && (filteredSuggestions.length > 0 || canCreate)) {
+        e.preventDefault();
+        const total = filteredSuggestions.length + (canCreate ? 1 : 0);
+        if (activeIndex >= 0 && activeIndex < filteredSuggestions.length) {
+          addTag(filteredSuggestions[activeIndex]);
+        } else if (canCreate && activeIndex === filteredSuggestions.length) {
+          addTag(inputValue);
+        }
+      } else if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        if (inputValue.trim()) addTag(inputValue);
+      }
     } else if (e.key === 'Backspace' && !inputValue && normalizedTags.length > 0) {
       removeTag(normalizedTags[normalizedTags.length - 1]);
     } else if (e.key === 'Escape') {
@@ -169,12 +191,21 @@ export default function TagInput({
                 Wpisz nazwę i naciśnij Enter, aby dodać nową wartość.
               </div>
             )}
-            {filteredSuggestions.map((s) => (
+            {filteredSuggestions.map((s, idx) => (
               <button
                 key={s}
                 type="button"
                 className="tag-input-option"
+                style={{
+                  backgroundColor: idx === activeIndex ? 'rgba(117, 214, 196, 0.1)' : undefined,
+                  color: idx === activeIndex ? 'var(--accent)' : undefined,
+                }}
+                onMouseEnter={() => setActiveIndex(idx)}
                 onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(s);
+                }}
+                onClick={(e) => {
                   e.preventDefault();
                   addTag(s);
                 }}
@@ -190,7 +221,18 @@ export default function TagInput({
                 <button
                   type="button"
                   className="tag-input-option create"
+                  style={{
+                    backgroundColor:
+                      activeIndex === filteredSuggestions.length
+                        ? 'rgba(117, 214, 196, 0.1)'
+                        : undefined,
+                  }}
+                  onMouseEnter={() => setActiveIndex(filteredSuggestions.length)}
                   onMouseDown={(e) => {
+                    e.preventDefault();
+                    addTag(inputValue);
+                  }}
+                  onClick={(e) => {
                     e.preventDefault();
                     addTag(inputValue);
                   }}

@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
-import { addCustomTaskPerson, addCustomTaskTag } from '../lib/tasks';
+import {
+  addCustomTaskPerson,
+  addCustomTaskTag,
+  getCustomTaskPeople,
+  getCustomTaskTags,
+} from '../lib/tasks';
 import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
+import StudioBriefModal from './StudioBriefModal';
 
 import PropTypes from 'prop-types';
 import { formatDateTime, formatDuration } from '../lib/storage';
@@ -605,6 +611,21 @@ export default function StudioMeetingView({
   const [concernDraft, setConcernDraft] = useState('');
   const [debriefCopyMessage, setDebriefCopyMessage] = useState('');
 
+  const [localGuests, setLocalGuests] = useState<string[]>([]);
+  const [localTags, setLocalTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    setLocalGuests(selectedMeeting?.guests || []);
+    setLocalTags(
+      Array.isArray(selectedMeeting?.tags)
+        ? selectedMeeting.tags.map((t: any) => String(t || '').trim()).filter(Boolean)
+        : String(selectedMeeting?.tags || '')
+            .split(',')
+            .map((t: string) => t.trim())
+            .filter(Boolean)
+    );
+  }, [selectedMeeting?.guests, selectedMeeting?.tags]);
+
   const { meetings } = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
 
@@ -640,6 +661,11 @@ export default function StudioMeetingView({
       }
     });
 
+    // Dodaj customowe z localStorage
+    getCustomTaskPeople().forEach((p: string) => {
+      if (p && p.trim()) pSet.add(p.trim());
+    });
+
     return Array.from(pSet).sort();
   }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
@@ -669,11 +695,30 @@ export default function StudioMeetingView({
       });
     });
 
+    // Dodaj customowe z localStorage
+    getCustomTaskTags().forEach((t: string) => {
+      if (t && t.trim()) tSet.add(t.trim());
+    });
+
     return Array.from(tSet).sort();
   }, [meetingTasks, userMeetings]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
+
+  const [taskDraft, setTaskDraft] = useState({
+    title: '',
+    description: '',
+    owner: '',
+    assignedTo: [],
+    group: '',
+    priority: 'medium',
+    status: '',
+    dueDate: '',
+    reminderAt: '',
+    tags: [],
+  });
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const [studioAnalysisTab, setStudioAnalysisTab] = useState('summary'); // default to summary based on user preference
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
@@ -1049,6 +1094,42 @@ export default function StudioMeetingView({
   const sketchnoteHasSourceData = Boolean(sketchnoteSummaryText) || summaryBullets.length > 0;
   const showSketchnoteNoDataState =
     isEmptyTranscript || (!isQueued && !isRecording && !sketchnoteHasSourceData);
+
+  function handleCreateManualTask() {
+    if (!taskDraft.title.trim() || !selectedMeeting?.id) return;
+
+    const newTask = {
+      title: taskDraft.title.trim(),
+      description: taskDraft.description.trim(),
+      owner: taskDraft.owner.trim(),
+      assignedTo: taskDraft.assignedTo,
+      group: taskDraft.group.trim(),
+      priority: taskDraft.priority,
+      status: taskDraft.status,
+      dueDate: taskDraft.dueDate,
+      reminderAt: taskDraft.reminderAt,
+      tags: taskDraft.tags,
+      sourceMeetingId: selectedMeeting.id,
+      sourceType: 'meeting',
+      sourceMeetingTitle: selectedMeeting.title,
+      sourceMeetingDate: selectedMeeting.startsAt,
+    };
+
+    onCreateTask(newTask);
+    setTaskDraft({
+      title: '',
+      description: '',
+      owner: '',
+      assignedTo: [],
+      group: '',
+      priority: 'medium',
+      status: '',
+      dueDate: '',
+      reminderAt: '',
+      tags: [],
+    });
+    setIsAddingTask(false);
+  }
 
   useEffect(() => {
     if (!selectedRecording?.id || typeof onCreateTask !== 'function' || !autoTaskDrafts.length) {
@@ -1576,12 +1657,8 @@ export default function StudioMeetingView({
               Eksport
             </button>
 
-            <button
-              type="button"
-              className={`ff-tb-btn${briefOpen ? ' active' : ''}`}
-              onClick={() => setBriefOpen((v) => !v)}
-            >
-              {briefOpen ? '− Brief' : '+ Brief'}
+            <button type="button" className="ff-tb-btn" onClick={() => setBriefOpen(true)}>
+              + Brief
             </button>
 
             {/* ── Separator ── */}
@@ -1890,10 +1967,23 @@ export default function StudioMeetingView({
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <TagInput
-                            tags={selectedMeeting?.guests || []}
+                            tags={localGuests}
                             suggestions={allParticipants}
                             onChange={(newGuests) => {
-                              updateMeeting?.(selectedMeeting?.id, { guests: newGuests });
+                              setLocalGuests(newGuests);
+                              const targetId =
+                                selectedMeeting?.id ||
+                                displayRecording?.meetingId ||
+                                selectedRecording?.meetingId;
+                              if (targetId) {
+                                updateMeeting?.(targetId, { guests: newGuests });
+                              } else if (selectedRecording?.id || displayRecording?.id) {
+                                // If the recording literally has no meeting yet, we can't save meeting guests.
+                                // We'd need updateRecording... but guests belong to Meetings.
+                                console.warn(
+                                  'Cannot save guests: No meeting associated with this recording.'
+                                );
+                              }
                               // Persist custom people to localStorage
                               newGuests.forEach((g) => addCustomTaskPerson(g));
                             }}
@@ -1916,19 +2006,21 @@ export default function StudioMeetingView({
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <TagInput
-                            tags={
-                              Array.isArray(selectedMeeting?.tags)
-                                ? selectedMeeting.tags
-                                    .map((t) => String(t || '').trim())
-                                    .filter(Boolean)
-                                : String(selectedMeeting?.tags || '')
-                                    .split(',')
-                                    .map((t) => t.trim())
-                                    .filter(Boolean)
-                            }
+                            tags={localTags}
                             suggestions={allMeetingTags}
                             onChange={(newTags) => {
-                              updateMeeting?.(selectedMeeting?.id, { tags: newTags.join(', ') });
+                              setLocalTags(newTags);
+                              const targetId =
+                                selectedMeeting?.id ||
+                                displayRecording?.meetingId ||
+                                selectedRecording?.meetingId;
+                              if (targetId) {
+                                updateMeeting?.(targetId, { tags: newTags });
+                              } else {
+                                console.warn(
+                                  'Cannot save tags: No meeting associated with this recording.'
+                                );
+                              }
                               // Persist custom tags to localStorage
                               newTags.forEach((t) => addCustomTaskTag(t));
                             }}
@@ -2532,6 +2624,187 @@ export default function StudioMeetingView({
                 </div>
 
                 <div className="panel-body">
+                  {!isAddingTask ? (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => setIsAddingTask(true)}
+                    >
+                      + Dodaj zadanie
+                    </button>
+                  ) : (
+                    <section className="summary-card summary-card-wide studio-task-form-card">
+                      <div className="summary-card-head">
+                        <h3>Dodaj nowe zadanie</h3>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => {
+                            setIsAddingTask(false);
+                            setTaskDraft({
+                              title: '',
+                              description: '',
+                              owner: '',
+                              assignedTo: [],
+                              group: '',
+                              priority: 'medium',
+                              status: '',
+                              dueDate: '',
+                              reminderAt: '',
+                              tags: [],
+                            });
+                          }}
+                        >
+                          Anuluj
+                        </button>
+                      </div>
+                      <div className="task-form-grid">
+                        <label>
+                          <span>Tytuł *</span>
+                          <input
+                            type="text"
+                            value={taskDraft.title}
+                            onChange={(e) => setTaskDraft((d) => ({ ...d, title: e.target.value }))}
+                            placeholder="np. Wyślij ofertę"
+                          />
+                        </label>
+                        <label>
+                          <span>Opis</span>
+                          <textarea
+                            rows={3}
+                            value={taskDraft.description}
+                            onChange={(e) =>
+                              setTaskDraft((d) => ({ ...d, description: e.target.value }))
+                            }
+                            placeholder="Dodaj opis zadania..."
+                          />
+                        </label>
+                        <div className="task-form-row">
+                          <label style={{ overflow: 'visible' }}>
+                            <span>Osoba</span>
+                            <TagInput
+                              tags={taskDraft.owner ? [taskDraft.owner] : []}
+                              suggestions={allParticipants}
+                              onChange={(arr) =>
+                                setTaskDraft((d) => ({
+                                  ...d,
+                                  owner: arr[0] || '',
+                                  assignedTo: arr,
+                                }))
+                              }
+                              placeholder="Wpisz lub wybierz osobę..."
+                              type="person"
+                            />
+                          </label>
+                          <label>
+                            <span>Grupa</span>
+                            <input
+                              list="task-groups"
+                              value={taskDraft.group}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, group: e.target.value }))
+                              }
+                              placeholder="np. Sprint 14"
+                            />
+                          </label>
+                        </div>
+                        <div className="task-form-row">
+                          <label>
+                            <span>Termin</span>
+                            <input
+                              type="datetime-local"
+                              value={taskDraft.dueDate}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, dueDate: e.target.value }))
+                              }
+                            />
+                          </label>
+                          <label>
+                            <span>Przypomnienie</span>
+                            <input
+                              type="datetime-local"
+                              value={taskDraft.reminderAt}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, reminderAt: e.target.value }))
+                              }
+                            />
+                          </label>
+                        </div>
+                        <div className="task-form-row">
+                          <label>
+                            <span>Priorytet</span>
+                            <select
+                              value={taskDraft.priority}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, priority: e.target.value }))
+                              }
+                            >
+                              <option value="low">Niski</option>
+                              <option value="medium">Średni</option>
+                              <option value="high">Wysoki</option>
+                              <option value="urgent">Krytyczny</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span>Status</span>
+                            <select
+                              value={taskDraft.status}
+                              onChange={(e) =>
+                                setTaskDraft((d) => ({ ...d, status: e.target.value }))
+                              }
+                            >
+                              <option value="">Domyślny</option>
+                              <option value="todo">Do zrobienia</option>
+                              <option value="in_progress">W toku</option>
+                              <option value="waiting">Oczekuje</option>
+                              <option value="done">Zakończone</option>
+                            </select>
+                          </label>
+                        </div>
+                        <label>
+                          <span>Tagi</span>
+                          <TagInput
+                            tags={taskDraft.tags}
+                            suggestions={allMeetingTags}
+                            onChange={(newTags) => setTaskDraft((d) => ({ ...d, tags: newTags }))}
+                            placeholder="Dodaj tag..."
+                          />
+                        </label>
+                      </div>
+                      <div className="task-form-actions">
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={handleCreateManualTask}
+                          disabled={!taskDraft.title.trim()}
+                        >
+                          Utwórz zadanie
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => {
+                            setIsAddingTask(false);
+                            setTaskDraft({
+                              title: '',
+                              description: '',
+                              owner: '',
+                              assignedTo: [],
+                              group: '',
+                              priority: 'medium',
+                              status: '',
+                              dueDate: '',
+                              reminderAt: '',
+                              tags: [],
+                            });
+                          }}
+                        >
+                          Anuluj
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
                   <section className="summary-card summary-card-wide studio-meeting-task-card">
                     <div className="summary-card-head">
                       <h3>Zadania utworzone z tego spotkania</h3>
@@ -3419,6 +3692,28 @@ export default function StudioMeetingView({
             </div>
           </div>
         </div>
+      )}
+
+      {briefOpen && (
+        <StudioBriefModal
+          currentWorkspacePermissions={currentWorkspacePermissions}
+          isDetachedMeetingDraft={isDetachedMeetingDraft}
+          meetingDraft={meetingDraft}
+          setMeetingDraft={setMeetingDraft}
+          activeStoredMeetingDraft={activeStoredMeetingDraft}
+          clearMeetingDraft={clearMeetingDraft}
+          saveMeeting={saveMeeting}
+          startNewMeetingDraft={startNewMeetingDraft}
+          workspaceMessage={workspaceMessage}
+          selectedMeeting={selectedMeeting}
+          peopleOptions={peopleOptions}
+          tagOptions={allMeetingTags}
+          userMeetings={userMeetings}
+          selectMeeting={selectMeeting}
+          selectedRecordingId={selectedRecordingId}
+          setSelectedRecordingId={setSelectedRecordingId}
+          onClose={() => setBriefOpen(false)}
+        />
       )}
     </>
   );
