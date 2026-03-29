@@ -2156,7 +2156,9 @@ export default function StudioMeetingView({
                       <section className="summary-card">
                         <div className="summary-card-head">
                           <h3>Decyzje</h3>
-                          <span>{safeArray(studioAnalysis.decisions).length}</span>
+                          {safeArray(studioAnalysis.decisions).length > 0 && (
+                            <span>{safeArray(studioAnalysis.decisions).length}</span>
+                          )}
                         </div>
                         {isEditingAnalysis ? (
                           <textarea
@@ -2181,7 +2183,7 @@ export default function StudioMeetingView({
                       <section className="summary-card">
                         <div className="summary-card-head">
                           <h3>Nastepne kroki</h3>
-                          <span>{followUps.length}</span>
+                          {followUps.length > 0 && <span>{followUps.length}</span>}
                         </div>
                         {isEditingAnalysis ? (
                           <textarea
@@ -2207,7 +2209,9 @@ export default function StudioMeetingView({
                       <section className="summary-card">
                         <div className="summary-card-head">
                           <h3>Ryzyka i blokery</h3>
-                          <span>{risks.length + blockers.length + tensions.length}</span>
+                          {risks.length + blockers.length + tensions.length > 0 && (
+                            <span>{risks.length + blockers.length + tensions.length}</span>
+                          )}
                         </div>
                         {isEditingAnalysis ? (
                           <textarea
@@ -2902,7 +2906,7 @@ export default function StudioMeetingView({
                       if (typeof onCreateTask === 'function') {
                         onCreateTask({
                           ...draft,
-                          meetingId: internalMeetingId,
+                          meetingId: selectedRecording?.id || meeting?.id,
                           dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : '',
                           reminderAt: draft.reminderAt
                             ? new Date(draft.reminderAt).toISOString()
