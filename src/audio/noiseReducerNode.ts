@@ -6,6 +6,27 @@ const fallbackLoadPromises = new WeakMap();
 const rnnoiseNodes = new WeakSet();
 let rnnoiseModulePromise = null;
 
+/**
+ * Convert a data: URI to a blob: URL so it passes CSP script-src (which allows
+ * blob: but not data:). Vite inlines small ?url imports as data: URIs when the
+ * file is below assetsInlineLimit (default 4 KB).
+ */
+export function toBlobUrl(url: string): string {
+  if (!url.startsWith('data:')) return url;
+  const [header, body] = url.split(',');
+  const isBase64 = header.includes(';base64');
+  const mime = header.match(/:(.*?)(;|$)/)?.[1] || 'application/javascript';
+  let bytes: Uint8Array;
+  if (isBase64) {
+    const bin = atob(body);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  } else {
+    bytes = new TextEncoder().encode(decodeURIComponent(body));
+  }
+  return URL.createObjectURL(new Blob([bytes], { type: mime }));
+}
+
 async function loadRnnoiseModule() {
   if (!rnnoiseModulePromise) {
     rnnoiseModulePromise = import('simple-rnnoise-wasm');
@@ -21,7 +42,7 @@ export async function ensureNoiseReducerWorklet(audioContext) {
       RNNoiseNode.register(
         audioContext,
         rnnoise_loadAssets({
-          scriptSrc: rnnoiseWorkletUrl,
+          scriptSrc: toBlobUrl(rnnoiseWorkletUrl),
           moduleSrc: rnnoiseWasmUrl,
         })
       )
