@@ -1104,14 +1104,7 @@ export default function StudioMeetingView({
   const summaryBullets = useMemo(() => {
     const bullets = [];
 
-    const summaryText = String(studioAnalysis?.summary || '').trim();
-    if (summaryText) {
-      bullets.push({
-        icon: '🧾',
-        label: 'Podsumowanie',
-        value: summaryText,
-      });
-    }
+    // Note: Summary was moved to a static <li> to allow editing inside its native bullet block.
 
     const decisionsText = safeArray(studioAnalysis?.decisions).slice(0, 3);
     if (decisionsText.length) {
@@ -1174,8 +1167,6 @@ export default function StudioMeetingView({
     studioAnalysis?.summary,
   ]);
   const sketchnoteHasSourceData = Boolean(sketchnoteSummaryText) || summaryBullets.length > 0;
-  const showSketchnoteNoDataState =
-    isEmptyTranscript || (!isQueued && !isRecording && !sketchnoteHasSourceData);
 
   function handleCreateManualTask() {
     if (!taskDraft.title.trim() || !selectedMeeting?.id) return;
@@ -1971,24 +1962,50 @@ export default function StudioMeetingView({
                   </div>
                 )}
 
-                {studioAnalysis?.summary ? (
+                {studioAnalysis?.summary || isEditingAnalysis ? (
                   <div className="panel-body ff-summary-layout">
                     <div className="summary-hero">
-                      {isEditingAnalysis ? (
-                        <textarea
-                          className="editable-analysis-textarea"
-                          value={analysisDraft.summary}
-                          onChange={(e) =>
-                            setAnalysisDraft((prev) => ({ ...prev, summary: e.target.value }))
-                          }
-                          rows={4}
-                          placeholder="Wpisz podsumowanie..."
-                        />
-                      ) : (
-                        <div className="analysis-summary-text">{studioAnalysis.summary}</div>
-                      )}
-                      {summaryBullets.length ? (
+                      {/*
+                         We render a single <ul className="summary-highlights"> for the blocks.
+                         The "Podsumowanie" is manually rendered here so it can turn into a textarea.
+                      */}
+                      {studioAnalysis?.summary || isEditingAnalysis || summaryBullets.length > 0 ? (
                         <ul className="summary-highlights">
+                          {(studioAnalysis?.summary || isEditingAnalysis) && (
+                            <li className="summary-highlight">
+                              <span className="summary-highlight-icon" aria-hidden="true">
+                                🧾
+                              </span>
+                              <div
+                                className="summary-highlight-body"
+                                style={
+                                  isEditingAnalysis
+                                    ? { display: 'flex', flexDirection: 'column', width: '100%' }
+                                    : {}
+                                }
+                              >
+                                <strong>Podsumowanie:</strong>{' '}
+                                {isEditingAnalysis ? (
+                                  <textarea
+                                    className="editable-analysis-textarea"
+                                    value={analysisDraft.summary}
+                                    onChange={(e) =>
+                                      setAnalysisDraft((prev) => ({
+                                        ...prev,
+                                        summary: e.target.value,
+                                      }))
+                                    }
+                                    rows={4}
+                                    placeholder="Wpisz podsumowanie..."
+                                    autoFocus
+                                    style={{ marginTop: 8 }}
+                                  />
+                                ) : (
+                                  <span>{studioAnalysis.summary}</span>
+                                )}
+                              </div>
+                            </li>
+                          )}
                           {summaryBullets.map((item) => (
                             <li key={item.label} className="summary-highlight">
                               <span className="summary-highlight-icon" aria-hidden="true">

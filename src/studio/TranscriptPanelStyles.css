@@ -546,6 +546,20 @@
   position: relative;
   background: var(--bg-surface, #fff);
   border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Remove horizontal scrollbar from transcript panel */
+.ff-transcript-wrapper,
+.transcript-panel,
+.transcript-list-fill,
+.transcript-virtuoso {
+  overflow-x: hidden !important;
+}
+
+/* Ensure no horizontal scroll */
+.ff-transcript-wrapper * {
+  max-width: 100%;
 }
 
 [data-theme="dark"] .ff-transcript-wrapper,
