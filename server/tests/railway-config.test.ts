@@ -4,90 +4,82 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
 const railwayTomlPath = path.join(ROOT, 'railway.toml');
-const nixpacksTomlPath = path.join(ROOT, 'nixpacks.toml');
+const dockerfilePath = path.join(ROOT, 'Dockerfile');
 
 function readRailwayToml() {
   return fs.readFileSync(railwayTomlPath, 'utf8');
 }
 
-function readNixpacksToml() {
-  return fs.readFileSync(nixpacksTomlPath, 'utf8');
+function readDockerfile() {
+  return fs.readFileSync(dockerfilePath, 'utf8');
 }
 
 describe('Railway deployment config', () => {
-  it('contains explicit build and deploy commands', () => {
+  it('uses DOCKERFILE builder explicitly', () => {
     const content = readRailwayToml();
-
     expect(content).toMatch(/^\[build\]/m);
+    expect(content).toMatch(/builder\s*=\s*"DOCKERFILE"/m);
+  });
+
+  it('does not set startCommand (Dockerfile CMD handles startup)', () => {
+    const content = readRailwayToml();
+    // startCommand would override Dockerfile CMD and use wrong path
+    // (dist-server/ in source vs server/ in container)
+    expect(content).not.toMatch(/^startCommand\s*=/m);
+  });
+
+  it('has healthcheck configured with sufficient timeout', () => {
+    const content = readRailwayToml();
     expect(content).toMatch(/^\[deploy\]/m);
-    expect(content).toMatch(/^buildCommand\s*=\s*".+"/m);
-    expect(content).toMatch(/^startCommand\s*=\s*".+"/m);
+    expect(content).toMatch(/healthcheckPath\s*=\s*"\/health"/m);
+
+    const timeoutMatch = content.match(/healthcheckTimeout\s*=\s*(\d+)/);
+    expect(timeoutMatch).not.toBeNull();
+    const timeout = Number(timeoutMatch![1]);
+    expect(timeout).toBeGreaterThanOrEqual(60);
   });
 
-  it('starts runtime with node dist-server/index.js (no pnpm at runtime)', () => {
+  it('does not use pnpm in any runtime command', () => {
     const content = readRailwayToml();
-
-    const startMatch = content.match(/^startCommand\s*=\s*"([^"]+)"/m);
-    expect(startMatch).not.toBeNull();
-
-    const startCommand = startMatch![1];
-    expect(startCommand).toBe('node dist-server/index.js');
-    expect(startCommand).not.toContain('pnpm');
-  });
-
-  it('does not use pnpm in postDeploy hook when present', () => {
-    const content = readRailwayToml();
-    const postDeployMatch = content.match(/^postDeploy\s*=\s*"([^"]+)"/m);
-
-    if (!postDeployMatch) {
-      expect(content).not.toMatch(/^postDeploy\s*=\s*"\s*pnpm\b/m);
-      return;
+    const lines = content.split('\n');
+    for (const line of lines) {
+      if (line.match(/^(startCommand|postDeploy)\s*=/)) {
+        expect(line).not.toContain('pnpm');
+      }
     }
-
-    expect(postDeployMatch[1]).not.toContain('pnpm');
-  });
-
-  it('build command produces backend artifact using esbuild', () => {
-    const content = readRailwayToml();
-    const buildMatch = content.match(/^buildCommand\s*=\s*"([^"]+)"/m);
-    expect(buildMatch).not.toBeNull();
-
-    const buildCommand = buildMatch![1];
-    expect(buildCommand).toContain('esbuild');
-    expect(buildCommand).toContain('server/index.ts');
-    expect(buildCommand).toContain('--outdir=dist-server');
   });
 
   it('does not have non-standard TOML sections that break Railway parser', () => {
     const content = readRailwayToml();
-    // [deploy.envs] and [volumes] are not valid Railway TOML sections and
-    // can cause Railway to ignore startCommand and fall back to pnpm start
     expect(content).not.toMatch(/^\[deploy\.envs\]/m);
     expect(content).not.toMatch(/^\[volumes\]/m);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────
-// Issue #0 — NIXPACKS auto-detects pnpm start instead of node cmd
+// Issue #0 — Dockerfile CMD path vs railway.toml startCommand mismatch
 // Date: 2026-03-29
-// Bug: NIXPACKS reads pnpm-lock.yaml and generates `pnpm start` as the
-//      runtime CMD, which fails because pnpm is absent in the container.
-// Fix: nixpacks.toml [start] cmd overrides auto-detection.
+// Bug: railway.toml had startCommand = "node dist-server/index.js" but
+//      Dockerfile copies dist-server/ -> server/ in the container.
+//      Railway overrides Dockerfile CMD with startCommand, causing
+//      "file not found" and healthcheck failure.
+// Fix: Remove startCommand from railway.toml, let Dockerfile CMD handle it.
 // ─────────────────────────────────────────────────────────────────
-describe('Regression: Issue #0 — NIXPACKS pnpm start override', () => {
-  it('nixpacks.toml exists and sets explicit start command', () => {
-    expect(() => readNixpacksToml()).not.toThrow();
-    const content = readNixpacksToml();
-    expect(content).toMatch(/^\[start\]/m);
-    expect(content).toMatch(/^cmd\s*=\s*"([^"]+)"/m);
+describe('Regression: Issue #0 — Dockerfile CMD consistency', () => {
+  it('Dockerfile CMD uses correct path: server/index.js', () => {
+    const content = readDockerfile();
+    // CMD should match the COPY destination, not the source build dir
+    expect(content).toMatch(/CMD\s+\[.*"server\/index\.js".*\]/);
   });
 
-  it('nixpacks.toml start cmd uses node, not pnpm', () => {
-    const content = readNixpacksToml();
-    const cmdMatch = content.match(/^cmd\s*=\s*"([^"]+)"/m);
-    expect(cmdMatch).not.toBeNull();
-    const cmd = cmdMatch![1];
-    expect(cmd).toBe('node dist-server/index.js');
-    expect(cmd).not.toContain('pnpm');
+  it('Dockerfile copies dist-server to server/ in runtime stage', () => {
+    const content = readDockerfile();
+    // The COPY from build stage maps dist-server -> ./server
+    expect(content).toMatch(/COPY.*--from=build.*dist-server.*\.\/server/);
+  });
+
+  it('Dockerfile ENTRYPOINT uses tini for signal handling', () => {
+    const content = readDockerfile();
+    expect(content).toMatch(/ENTRYPOINT.*tini/);
   });
 });
