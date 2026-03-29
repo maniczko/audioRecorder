@@ -56,17 +56,22 @@ export default function TaskCreateModal({
           </button>
         </div>
 
-        <TaskCreateForm
-          initialDraft={initialDraft}
-          boardColumns={boardColumns}
-          peopleOptions={peopleOptions}
-          tagOptions={tagOptions}
-          onSubmit={(draft) => {
-            onSubmit(draft);
-            onClose();
-          }}
-          onCancel={onClose}
-        />
+        <div
+          className="tasks-layout ms-todo"
+          style={{ display: 'block', height: 'auto', background: 'transparent' }}
+        >
+          <TaskCreateForm
+            initialDraft={initialDraft}
+            boardColumns={boardColumns}
+            peopleOptions={peopleOptions}
+            tagOptions={tagOptions}
+            onSubmit={(draft) => {
+              onSubmit(draft);
+              onClose();
+            }}
+            onCancel={onClose}
+          />
+        </div>
       </div>
     </div>
   );

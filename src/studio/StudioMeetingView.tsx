@@ -2078,7 +2078,9 @@ export default function StudioMeetingView({
                       <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
                           <h3>Uczestnicy</h3>
-                          <span>{(selectedMeeting?.guests || []).length}</span>
+                          {(selectedMeeting?.guests || []).length > 0 && (
+                            <span>{(selectedMeeting?.guests || []).length}</span>
+                          )}
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <TagInput
@@ -2114,13 +2116,14 @@ export default function StudioMeetingView({
                       <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
                           <h3>Tagi</h3>
-                          <span>
-                            {Array.isArray(selectedMeeting?.tags)
+                          {(() => {
+                            const tagCount = Array.isArray(selectedMeeting?.tags)
                               ? selectedMeeting.tags.filter((t) => t && String(t).trim()).length
                               : String(selectedMeeting?.tags || '')
                                   .split(',')
-                                  .filter((t) => t.trim()).length}
-                          </span>
+                                  .filter((t) => t.trim()).length;
+                            return tagCount > 0 ? <span>{tagCount}</span> : null;
+                          })()}
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <TagInput

@@ -142,6 +142,31 @@ select {
   border-radius: 999px;
 }
 
+.primary-button:hover:not(:disabled),
+.pill.active:hover:not(:disabled) {
+  filter: brightness(1.15) saturate(1.1);
+  box-shadow: 0 4px 14px rgba(116, 208, 191, 0.25);
+  transform: translateY(-1px);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: rgba(116, 208, 191, 0.18);
+  border-color: rgba(116, 208, 191, 0.4);
+  color: var(--accent);
+}
+
+.ghost-button:hover:not(:disabled),
+.pill:not(.active):hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text);
+}
+
+.danger-button:hover:not(:disabled) {
+  background: rgba(241, 125, 114, 0.2);
+  border-color: rgba(241, 125, 114, 0.4);
+}
+
 input,
 textarea,
 select {
