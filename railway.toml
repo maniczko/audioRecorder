@@ -7,7 +7,7 @@ buildCommand = "pnpm run build"
 
 [deploy]
 startCommand = "pnpm run start:server"
-healthcheckPath = "/api/health"
+healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

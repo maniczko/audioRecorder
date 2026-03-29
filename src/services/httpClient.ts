@@ -172,61 +172,65 @@ interface ApiOptions extends RequestInit {
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries: number = 3
+  maxRetries: number = 4
 ): Promise<Response> {
   let lastError: Error | null = null;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
-      
+
       // Retry on 502, 503, 504 (server errors)
       if (!response.ok && [502, 503, 504].includes(response.status)) {
         if (attempt < maxRetries) {
-          const delayMs = Math.min(1000 * Math.pow(2, attempt), 10000); // exponential backoff, max 10s
-          console.warn(`[httpClient] Retry ${attempt + 1}/${maxRetries} after HTTP ${response.status}`);
+          const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000); // exponential backoff, max 15s
+          console.warn(
+            `[httpClient] Retry ${attempt + 1}/${maxRetries} after HTTP ${response.status}`
+          );
           await delay(delayMs);
           continue;
         }
       }
-      
+
       return response;
     } catch (error: any) {
       lastError = error;
-      
+
       // Check if it's a network error that should be retried
       const errorMessage = String(error?.message || '').toLowerCase();
-      const isRetryable = 
+      const isRetryable =
         errorMessage.includes('failed to fetch') ||
         errorMessage.includes('networkerror') ||
         errorMessage.includes('load failed') ||
         errorMessage.includes('aborted') ||
         errorMessage.includes('upstream') ||
         errorMessage.includes('bad gateway');
-      
+
       if (isRetryable && attempt < maxRetries) {
-        const delayMs = Math.min(1000 * Math.pow(2, attempt), 10000); // exponential backoff, max 10s
-        console.warn(`[httpClient] Retry ${attempt + 1}/${maxRetries} after network error: ${error?.message}`);
+        const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000); // exponential backoff, max 15s
+        console.warn(
+          `[httpClient] Retry ${attempt + 1}/${maxRetries} after network error: ${error?.message}`
+        );
         await delay(delayMs);
         continue;
       }
-      
+
       // Don't retry on non-retryable errors
       break;
     }
   }
-  
+
   // Throw the last error
   if (lastError) {
     throw lastError;
   }
-  
+
   throw new Error('Request failed after all retries');
 }
 
