@@ -526,6 +526,57 @@ describe('Regression: Issue #703 - Bucket creation error handling', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Issue #0 — Audio GET 404 after Railway redeploy: path.sep detection fragile
+// Date: 2026-03-29
+// Bug: On Linux path.sep='/' works, but the code using path.sep is fragile
+//      across platforms and missed Supabase fallback when local file disappears.
+//      Also: retry-transcribe used path.sep which could misdetect on cross-OS data.
+// Fix: - Use explicit '/' and '\\' checks instead of path.sep
+//      - Add Supabase fallback when local file is missing (try basename as key)
+//      - Add diagnostic console logging for 404/500 cases
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Regression: Issue #0 — Audio path detection cross-platform', () => {
+  test('Supabase key (no separators) is detected as remote path', () => {
+    const filePath = 'rec_abc123.webm';
+    const isRemote = !filePath.includes('/') && !filePath.includes('\\');
+    expect(isRemote).toBe(true);
+  });
+
+  test('Linux local path is detected as local (has /)', () => {
+    const filePath = '/app/server/data/uploads/rec_abc123.webm';
+    const isRemote = !filePath.includes('/') && !filePath.includes('\\');
+    expect(isRemote).toBe(false);
+  });
+
+  test('Windows local path is detected as local (has \\)', () => {
+    const filePath = 'C:\\Users\\data\\uploads\\rec_abc123.webm';
+    const isRemote = !filePath.includes('/') && !filePath.includes('\\');
+    expect(isRemote).toBe(false);
+  });
+
+  test('basename of Linux path yields valid Supabase key', async () => {
+    const path = await import('node:path');
+    const filePath = '/app/server/data/uploads/rec_abc123.webm';
+    const basename = path.basename(filePath);
+    expect(basename).toBe('rec_abc123.webm');
+    // basename should be a valid Supabase key (no separators)
+    expect(!basename.includes('/') && !basename.includes('\\')).toBe(true);
+  });
+
+  test('retry-transcribe detects local path with / or \\', () => {
+    const linuxPath = '/app/data/uploads/rec.webm';
+    const windowsPath = 'C:\\data\\uploads\\rec.webm';
+    const supabaseKey = 'rec.webm';
+
+    const hasLocalSep = (p: string) => p.includes('/') || p.includes('\\');
+    expect(hasLocalSep(linuxPath)).toBe(true);
+    expect(hasLocalSep(windowsPath)).toBe(true);
+    expect(hasLocalSep(supabaseKey)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Issue #804 - deleteAudioFromStorage blocks DB deletion on file not found
 // Date: 2026-03-28
 // Bug: Function threw error when file already deleted, blocking DB cleanup

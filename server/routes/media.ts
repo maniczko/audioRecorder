@@ -213,7 +213,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   router.get('/recordings/:recordingId/audio', async (c) => {
     const recordingId = c.req.param('recordingId');
     const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+    if (!asset) {
+      console.warn('[media] Audio 404 — no media_assets row', { recordingId });
+      return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+    }
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
     const ALLOWED = new Set([
@@ -229,10 +232,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       ? asset.content_type
       : 'application/octet-stream';
 
-    // Depending on file_path format (legacy local vs remote Supabase)
-    if (asset.file_path && !asset.file_path.includes(path.sep)) {
+    // Supabase remote path — no OS path separator means it's a short Supabase key
+    if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
       try {
-        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.ts');
+        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
         const arrayBuffer = await downloadAudioFromStorage(asset.file_path);
 
         c.header('Content-Type', safeType);
@@ -240,19 +243,48 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         c.header('Content-Disposition', 'attachment');
         return c.body(arrayBuffer as any, 200);
       } catch (err: any) {
+        console.error('[media] Supabase download failed', {
+          recordingId,
+          filePath: asset.file_path,
+          error: err.message,
+        });
         return c.json(
           { message: 'Błąd podczas pobierania nagrania z remote storage.', error: err.message },
           500
         );
       }
     } else {
-      // Legacy local file stream
-      if (!existsSync(asset.file_path)) return c.json({ message: 'Plik audio nie istnieje.' }, 404);
-      const stream = createReadStream(asset.file_path);
-      c.header('Content-Type', safeType);
-      c.header('Content-Length', String(statSync(asset.file_path).size));
-      c.header('Content-Disposition', 'attachment');
-      return c.body(stream as any, 200);
+      // Local file path — try local first, then fall back to Supabase with basename
+      if (existsSync(asset.file_path)) {
+        const stream = createReadStream(asset.file_path);
+        c.header('Content-Type', safeType);
+        c.header('Content-Length', String(statSync(asset.file_path).size));
+        c.header('Content-Disposition', 'attachment');
+        return c.body(stream as any, 200);
+      }
+
+      // Local file missing (e.g. after redeploy) — try Supabase with just the filename
+      try {
+        const basename = path.basename(asset.file_path);
+        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
+        const arrayBuffer = await downloadAudioFromStorage(basename);
+        console.info('[media] Local file missing, served from Supabase fallback', {
+          recordingId,
+          localPath: asset.file_path,
+          supabasePath: basename,
+        });
+
+        c.header('Content-Type', safeType);
+        c.header('Content-Length', String(arrayBuffer.byteLength));
+        c.header('Content-Disposition', 'attachment');
+        return c.body(arrayBuffer as any, 200);
+      } catch {
+        console.warn('[media] Audio 404 — local file missing, Supabase fallback failed', {
+          recordingId,
+          filePath: asset.file_path,
+        });
+        return c.json({ message: 'Plik audio nie istnieje.' }, 404);
+      }
     }
   });
 
@@ -317,7 +349,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: 'Brak ścieżki pliku do ponownego przetworzenia.' }, 409);
     }
 
-    if (asset.file_path.includes(path.sep) && !existsSync(asset.file_path)) {
+    if (
+      (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
+      !existsSync(asset.file_path)
+    ) {
       return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
     }
 

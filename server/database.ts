@@ -1163,7 +1163,7 @@ export class Database {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
 
-    if (asset.file_path && !asset.file_path.includes(path.sep)) {
+    if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
       // If it has no path separator, it's a Supabase storage path
       const { deleteAudioFromStorage } = await import('./lib/supabaseStorage.js');
       await deleteAudioFromStorage(asset.file_path);
