@@ -649,6 +649,12 @@ export default function StudioMeetingView({
 
   const { meetings } = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
+  const setWorkspaceMessage = meetings?.setWorkspaceMessage;
+  const normalizedWorkspaceMessage = String(workspaceMessage || '').toLowerCase();
+  const workspaceMessageIsTransportIssue =
+    normalizedWorkspaceMessage.includes('backend jest chwilowo niedostepny') ||
+    normalizedWorkspaceMessage.includes('hostowany preview nie moze polaczyc sie z backendem') ||
+    normalizedWorkspaceMessage.includes('hostowany preview jest nieaktualny wzgledem backendu');
 
   const allParticipants = useMemo(() => {
     const pSet = new Set();
@@ -1820,6 +1826,24 @@ export default function StudioMeetingView({
           ) : isRecording && !speechRecognitionSupported && !liveTranscriptEnabled ? (
             <div className="ff-status-banner ff-status-warn">
               Transkrypcja live niedostępna — włącz CC, aby uzyskać podpisy na żywo przez Whisper.
+            </div>
+          ) : null}
+
+          {workspaceMessage ? (
+            <div
+              className={`ff-status-banner${workspaceMessageIsTransportIssue ? ' ff-status-warn' : ''}`}
+            >
+              <div style={{ flex: 1 }}>{workspaceMessage}</div>
+              {typeof setWorkspaceMessage === 'function' ? (
+                <button
+                  type="button"
+                  className="ff-status-dismiss-btn"
+                  onClick={() => setWorkspaceMessage('')}
+                  aria-label="Zamknij komunikat workspace"
+                >
+                  ×
+                </button>
+              ) : null}
             </div>
           ) : null}
 

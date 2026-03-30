@@ -21,7 +21,7 @@ function createRemoteStateService() {
       const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : '';
       return apiRequest(`/state/bootstrap${query}`, {
         method: 'GET',
-        retries: 0,
+        retries: 3,
       });
     },
     syncWorkspaceState(

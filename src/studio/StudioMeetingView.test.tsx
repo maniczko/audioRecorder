@@ -166,6 +166,19 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
   });
 
+  test('renders workspace backend warning banner when workspaceMessage is set', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        workspaceMessage="Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile."
+      />
+    );
+
+    expect(
+      screen.getByText(/Backend jest chwilowo niedostepny\. Sprobuj ponownie za chwile\./i)
+    ).toBeInTheDocument();
+  });
+
   test('renders player shell while selected recording audio is loading', () => {
     renderWithContext(
       <StudioMeetingView

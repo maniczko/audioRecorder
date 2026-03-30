@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { apiRequest } from './httpClient';
+import { apiRequest, probeRemoteApiHealth } from './httpClient';
 
 // Mock dependencies
 vi.mock('../lib/sessionStorage', () => ({
@@ -45,7 +45,7 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const promise = apiRequest('/test', { retries: 2 });
-    
+
     // Fast-forward timers to trigger retries
     await vi.advanceTimersByTimeAsync(3000);
 
@@ -81,7 +81,7 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const promise = apiRequest('/test', { retries: 2 });
-    
+
     // Fast-forward timers to trigger retries
     await vi.advanceTimersByTimeAsync(3000);
 
@@ -104,7 +104,7 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const promise = apiRequest('/test', { retries: 1 });
-    
+
     // Fast-forward timers to trigger retry
     await vi.advanceTimersByTimeAsync(1500);
 
@@ -142,9 +142,7 @@ describe('httpClient retry logic', () => {
   });
 
   it('throws error after all retries are exhausted', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockRejectedValue(new Error('Failed to fetch'));
+    const mockFetch = vi.fn().mockRejectedValue(new Error('Failed to fetch'));
 
     global.fetch = mockFetch as any;
 
@@ -173,11 +171,11 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const promise = apiRequest('/test', { retries: 2 });
-    
+
     // After 1st retry (1s delay)
     await vi.advanceTimersByTimeAsync(1000);
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    
+
     // After 2nd retry (2s delay)
     await vi.advanceTimersByTimeAsync(2000);
     expect(mockFetch).toHaveBeenCalledTimes(3);
@@ -203,7 +201,7 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const promise = apiRequest('/test', { retries: 4 });
-    
+
     // Should cap at 10s delay for later retries
     await vi.advanceTimersByTimeAsync(30000);
 
@@ -247,5 +245,109 @@ describe('httpClient retry logic', () => {
         body: JSON.stringify({ data: 'test' }),
       })
     );
+  });
+});
+
+describe('probeRemoteApiHealth retry logic', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function mockHealthResponse(
+    ok: boolean,
+    status = 200,
+    payload = { status: 'ok', gitSha: 'abc123' }
+  ) {
+    return {
+      ok,
+      status,
+      json: () => Promise.resolve(payload),
+      text: () => Promise.resolve(JSON.stringify(payload)),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    } as unknown as Response;
+  }
+
+  it('returns payload on first successful probe', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockHealthResponse(true));
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 0);
+    const result = await promise;
+
+    expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries on 502 and succeeds on second attempt', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockHealthResponse(false, 502))
+      .mockResolvedValueOnce(mockHealthResponse(true));
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 2);
+
+    // Advance past first retry delay (1s)
+    await vi.advanceTimersByTimeAsync(2000);
+
+    const result = await promise;
+    expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries on network error and succeeds on retry', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockResolvedValueOnce(mockHealthResponse(true));
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 2);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    const result = await promise;
+    expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws after exhausting all retries on 503', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockHealthResponse(false, 503));
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 2).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(15000);
+
+    const error = await promise;
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('HTTP 503');
+    expect(fetchMock).toHaveBeenCalledTimes(3); // initial + 2 retries
+  });
+
+  it('does not retry on 404 (non-transient error)', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockHealthResponse(false, 404));
+
+    await expect(probeRemoteApiHealth(fetchMock as any, 2)).rejects.toThrow('HTTP 404');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses exponential backoff between retries', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockHealthResponse(false, 502))
+      .mockResolvedValueOnce(mockHealthResponse(false, 502))
+      .mockResolvedValueOnce(mockHealthResponse(true));
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 3);
+
+    // After 1st retry delay (1s)
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // After 2nd retry delay (2s)
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const result = await promise;
+    expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
   });
 });

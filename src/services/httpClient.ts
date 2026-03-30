@@ -112,57 +112,89 @@ function normalizeApiErrorMessage(message = '', status?: number) {
   return String(message || '');
 }
 
-export async function probeRemoteApiHealth(fetchImpl = fetch) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetchImpl(buildUrl('/health'), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+export async function probeRemoteApiHealth(fetchImpl = fetch, maxRetries = 3) {
+  let lastError: Error | null = null;
 
-    if (!response.ok) {
-      setPreviewRuntimeStatus('backend_unreachable');
-      throw new Error(`HTTP ${response.status}`);
-    }
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetchImpl(buildUrl('/health'), {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-    const payload = await parseResponse(response);
-    const frontendBuildId = getHostedRuntimeBuildId();
-    const backendGitSha = String(payload?.gitSha || '').trim();
-    previewBuildMismatch =
-      Boolean(isHostedPreviewRuntime() && frontendBuildId && backendGitSha) &&
-      frontendBuildId !== backendGitSha;
-    if (
-      isHostedPreviewRuntime() &&
-      frontendBuildId &&
-      backendGitSha &&
-      frontendBuildId !== backendGitSha &&
-      !buildIdMismatchLogged
-    ) {
-      // Railway and Vercel deploy at different times — SHA mismatch is expected.
-      // Log once per session and do NOT block requests.
-      buildIdMismatchLogged = true;
-      console.warn(
-        `[Preview] Build ID mismatch: frontend=${frontendBuildId.slice(0, 8)} backend=${backendGitSha.slice(0, 8)}. This is expected when Railway and Vercel deploy at different times.`
-      );
-    }
+      if (!response.ok) {
+        if ([502, 503, 504].includes(response.status) && attempt < maxRetries) {
+          const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+          console.warn(
+            `[httpClient] Health probe retry ${attempt + 1}/${maxRetries} after HTTP ${response.status}`
+          );
+          await delay(delayMs);
+          continue;
+        }
+        setPreviewRuntimeStatus('backend_unreachable');
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-    setPreviewRuntimeStatus('healthy');
-    return payload;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    previewBuildMismatch = false;
-    if (String(error?.message || '').includes('nieaktualny wzgledem backendu')) {
-      setPreviewRuntimeStatus('stale_runtime');
-    } else {
-      setPreviewRuntimeStatus('backend_unreachable');
+      const payload = await parseResponse(response);
+      const frontendBuildId = getHostedRuntimeBuildId();
+      const backendGitSha = String(payload?.gitSha || '').trim();
+      previewBuildMismatch =
+        Boolean(isHostedPreviewRuntime() && frontendBuildId && backendGitSha) &&
+        frontendBuildId !== backendGitSha;
+      if (
+        isHostedPreviewRuntime() &&
+        frontendBuildId &&
+        backendGitSha &&
+        frontendBuildId !== backendGitSha &&
+        !buildIdMismatchLogged
+      ) {
+        buildIdMismatchLogged = true;
+        console.warn(
+          `[Preview] Build ID mismatch: frontend=${frontendBuildId.slice(0, 8)} backend=${backendGitSha.slice(0, 8)}. This is expected when Railway and Vercel deploy at different times.`
+        );
+      }
+
+      setPreviewRuntimeStatus('healthy');
+      return payload;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error as Error;
+
+      const msg = String((error as any)?.message || '').toLowerCase();
+      const isRetryable =
+        msg.includes('abort') ||
+        msg.includes('failed to fetch') ||
+        msg.includes('networkerror') ||
+        msg.includes('load failed');
+      if (isRetryable && attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+        console.warn(
+          `[httpClient] Health probe retry ${attempt + 1}/${maxRetries} after: ${(error as any)?.message}`
+        );
+        await delay(delayMs);
+        continue;
+      }
+
+      previewBuildMismatch = false;
+      if (String((error as any)?.message || '').includes('nieaktualny wzgledem backendu')) {
+        setPreviewRuntimeStatus('stale_runtime');
+      } else {
+        setPreviewRuntimeStatus('backend_unreachable');
+      }
+      throw error;
     }
-    throw error;
   }
+
+  // All retries exhausted
+  previewBuildMismatch = false;
+  setPreviewRuntimeStatus('backend_unreachable');
+  throw lastError || new Error('Health probe failed after all retries');
 }
 
 interface ApiOptions extends RequestInit {

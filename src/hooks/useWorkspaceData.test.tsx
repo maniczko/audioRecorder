@@ -321,7 +321,7 @@ describe('useWorkspaceData', () => {
     unmount();
   });
 
-  test('applies cooldown after transport bootstrap errors and avoids poll spam', async () => {
+  test('auto-retries bootstrap on transport errors then applies cooldown', async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = 'remote';
     workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
@@ -331,27 +331,23 @@ describe('useWorkspaceData', () => {
 
     const { unmount } = renderHook(() => useWorkspaceData());
 
+    // Advance past initial bootstrap + 3 recovery attempts (10s delay each)
     await act(async () => {
-      await Promise.resolve();
-      await vi.runAllTimersAsync();
+      await vi.advanceTimersByTimeAsync(31000);
     });
 
-    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+    // 1 initial + 3 recovery = 4 calls; error message shown once after all retries exhausted
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(4);
     expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
 
+    // After 5s — polling fires but 25s cooldown still active
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
 
-    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(4);
     expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(25000);
-    });
-
-    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(2);
-    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledTimes(1);
     unmount();
   });
 
@@ -388,19 +384,15 @@ describe('useWorkspaceData', () => {
 
     const { unmount } = renderHook(() => useWorkspaceData());
 
+    // Advance past initial fail + 10s recovery delay → 2nd call succeeds
     await act(async () => {
-      await Promise.resolve();
-      await vi.runAllTimersAsync();
+      await vi.advanceTimersByTimeAsync(11000);
     });
 
-    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(25000);
-    });
-
+    // 1st fails (transport), auto-recovery after 10s → 2nd succeeds
     expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(2);
 
+    // After recovery, cooldown was reset to 0 → polling fires freely
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });

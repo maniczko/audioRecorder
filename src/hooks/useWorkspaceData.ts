@@ -13,6 +13,8 @@ import {
 } from '../shared/contracts';
 
 const REMOTE_PULL_COOLDOWN_MS = 25000;
+const BOOTSTRAP_RECOVERY_DELAY_MS = 10000;
+const BOOTSTRAP_RECOVERY_MAX_ATTEMPTS = 3;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
   'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.';
 const HOSTED_PREVIEW_STALE_MESSAGE =
@@ -230,7 +232,7 @@ export default function useWorkspaceData() {
     let cancelled = false;
     setIsHydratingRemoteState(true);
 
-    (async () => {
+    const attemptBootstrap = async (recoveryAttempt = 0) => {
       const canConnect = await ensureHostedPreviewConnectivity();
       if (cancelled || !canConnect) {
         if (!cancelled) {
@@ -240,36 +242,43 @@ export default function useWorkspaceData() {
       }
 
       if (isBootstrappingRef.current) {
-        // Another bootstrap is already in flight — let it complete and set isHydratingRemoteState
         return;
       }
 
       isBootstrappingRef.current = true;
-      stateService
-        .bootstrap(session.workspaceId)
-        .then((result) => {
-          if (cancelled || !result) {
-            return;
-          }
-          applyRemoteWorkspaceState(result);
-        })
-        .catch((error: any) => {
-          if (cancelled) {
-            return;
-          }
-          applyRemoteTransportCooldown(error);
-          logRemoteErrorOnce('Remote workspace bootstrap failed.', error);
-          pushWorkspaceMessage(
-            error?.message || 'Nie udalo sie pobrac danych workspace z backendu.'
+      try {
+        const result = await stateService.bootstrap(session.workspaceId);
+        if (cancelled || !result) {
+          return;
+        }
+        applyRemoteWorkspaceState(result);
+      } catch (error: any) {
+        if (cancelled) {
+          return;
+        }
+        applyRemoteTransportCooldown(error);
+
+        const isTransport = isBackendUnavailableMessage(error?.message || '');
+        if (isTransport && recoveryAttempt < BOOTSTRAP_RECOVERY_MAX_ATTEMPTS) {
+          console.warn(
+            `[useWorkspaceData] Bootstrap failed (transport), recovery attempt ${recoveryAttempt + 1}/${BOOTSTRAP_RECOVERY_MAX_ATTEMPTS} in ${BOOTSTRAP_RECOVERY_DELAY_MS / 1000}s`
           );
-        })
-        .finally(() => {
+          await new Promise((r) => setTimeout(r, BOOTSTRAP_RECOVERY_DELAY_MS));
+          if (cancelled) return;
           isBootstrappingRef.current = false;
-          // Always clear hydration flag — even if this run was cancelled,
-          // the guard may have blocked isHydratingRemoteState(false) in re-renders
-          setIsHydratingRemoteState(false);
-        });
-    })();
+          remotePullCooldownUntilRef.current = 0;
+          return attemptBootstrap(recoveryAttempt + 1);
+        }
+
+        logRemoteErrorOnce('Remote workspace bootstrap failed.', error);
+        pushWorkspaceMessage(error?.message || 'Nie udalo sie pobrac danych workspace z backendu.');
+      } finally {
+        isBootstrappingRef.current = false;
+        setIsHydratingRemoteState(false);
+      }
+    };
+
+    attemptBootstrap();
 
     return () => {
       cancelled = true;

@@ -62,7 +62,7 @@ describe('stateService', () => {
       await service.bootstrap('ws-42');
       expect(mockApiRequest).toHaveBeenCalledWith('/state/bootstrap?workspaceId=ws-42', {
         method: 'GET',
-        retries: 0,
+        retries: 3,
       });
     });
 
@@ -71,7 +71,7 @@ describe('stateService', () => {
       await service.bootstrap('');
       expect(mockApiRequest).toHaveBeenCalledWith('/state/bootstrap', {
         method: 'GET',
-        retries: 0,
+        retries: 3,
       });
     });
 
@@ -80,7 +80,7 @@ describe('stateService', () => {
       await service.bootstrap('ws with spaces&more');
       expect(mockApiRequest).toHaveBeenCalledWith(
         '/state/bootstrap?workspaceId=ws%20with%20spaces%26more',
-        { method: 'GET', retries: 0 }
+        { method: 'GET', retries: 3 }
       );
     });
 
