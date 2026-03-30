@@ -678,9 +678,13 @@ Important:
       );
 
       if (!res.ok) {
-        const err = await res.text();
-        logger.error('Gemini image gen error:', err);
-        return c.json({ message: 'Blad generowania obrazu Gemini.' }, 500);
+        const errBody = await res.text();
+        logger.error('Gemini image gen error:', errBody);
+        const detail = errBody.slice(0, 300);
+        return c.json(
+          { message: 'Blad generowania obrazu Gemini.', status: res.status, detail },
+          500
+        );
       }
 
       const data = await res.json();
