@@ -24,7 +24,7 @@ export function toBlobUrl(url: string): string {
   } else {
     bytes = new TextEncoder().encode(decodeURIComponent(body));
   }
-  return URL.createObjectURL(new Blob([bytes], { type: mime }));
+  return URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: mime }));
 }
 
 async function loadRnnoiseModule() {
