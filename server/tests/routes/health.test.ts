@@ -62,7 +62,7 @@ describe('Regression: Health endpoint — Supabase status', () => {
     const data = await res.json();
 
     expect(res.status).toBe(503);
-    expect(data.db).toBe('unreachable');
+    expect(data.db).toBe('Connection failed');
     expect(data.ok).toBe(false);
   });
 });
