@@ -10,6 +10,11 @@ HF_TOKEN=your_huggingface_token_here
 
 # OpenAI API Key (for STT transcription)
 OPENAI_API_KEY=sk-your_openai_key_here
+
+# Supabase Storage (CRITICAL for persistent audio)
+# Without these, recordings are lost after every redeploy!
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
 ### 🟡 RECOMMENDED - Enhanced functionality
@@ -63,6 +68,8 @@ Go to **Railway Dashboard** → **Variables** → **Add Variable**
 Add these:
 - `HF_TOKEN` = (your Hugging Face token)
 - `OPENAI_API_KEY` = (your OpenAI key)
+- `SUPABASE_URL` = (your Supabase project URL)
+- `SUPABASE_SERVICE_ROLE_KEY` = (your Supabase Service Role key)
 - `GROQ_API_KEY` = (your Groq key, optional)
 
 ### 2. Configure Volume

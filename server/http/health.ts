@@ -20,12 +20,15 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
     } else {
       dbOk = true; // no DB reference, assume OK
     }
+    const hasSupabase =
+      Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
     const status = dbOk ? 'ok' : 'degraded';
     return c.json(
       {
         ok: dbOk,
         status,
         db: dbOk ? 'connected' : 'unreachable',
+        supabaseRemote: hasSupabase,
         uptime: process.uptime(),
         gitSha: build.gitSha,
         buildTime: build.buildTime,

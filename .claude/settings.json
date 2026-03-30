@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://audiorecorder-production.up.railway.app/health)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://audiorecorder-production.up.railway.app/health)",
+      "Bash(npx prettier:*)"
     ]
   }
 }

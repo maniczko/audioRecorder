@@ -122,17 +122,38 @@ export function validateRequiredApiKeys() {
   if (!hasOpenAI && !hasGroq && !hasLocalWhisper) {
     errors.push(
       'Missing STT provider. Configure one of:\n' +
-      '  - OPENAI_API_KEY (OpenAI Whisper)\n' +
-      '  - GROQ_API_KEY (Groq Whisper)\n' +
-      '  - WHISPER_CPP_PATH + USE_LOCAL_WHISPER=true (Local offline processing)'
+        '  - OPENAI_API_KEY (OpenAI Whisper)\n' +
+        '  - GROQ_API_KEY (Groq Whisper)\n' +
+        '  - WHISPER_CPP_PATH + USE_LOCAL_WHISPER=true (Local offline processing)'
     );
+  }
+
+  // Supabase is recommended for persistent storage on ephemeral platforms like Railway
+  const hasSupabase = Boolean(config.SUPABASE_URL) && Boolean(config.SUPABASE_SERVICE_ROLE_KEY);
+  if (!hasSupabase) {
+    const isRailway = Boolean(
+      process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID
+    );
+    if (isRailway) {
+      errors.push(
+        'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\n' +
+          '  On Railway, local files are lost after each redeploy.\n' +
+          '  Please set these variables to enable persistent remote storage.'
+      );
+    } else {
+      warnings.push(
+        'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\n' +
+          '  Audio files will only be stored locally. This is fine for local development,\n' +
+          '  but not recommended for production deployments like Railway.'
+      );
+    }
   }
 
   // HuggingFace is required for diarization
   if (!config.HF_TOKEN && !config.HUGGINGFACE_TOKEN) {
     warnings.push(
       'Missing HF_TOKEN. Speaker diarization will be disabled.\n' +
-      '  Get a token at: https://huggingface.co/settings/tokens'
+        '  Get a token at: https://huggingface.co/settings/tokens'
     );
   }
 
@@ -162,6 +183,7 @@ export function validateRequiredApiKeys() {
     console.log(
       `  - Diarization: ${config.HF_TOKEN || config.HUGGINGFACE_TOKEN ? 'pyannote (HF token set)' : 'disabled'}`
     );
+    console.log(`  - Storage: ${hasSupabase ? 'Supabase remote' : 'Local filesystem only'}`);
     console.log(`  - Processing mode: ${config.VOICELOG_PROCESSING_MODE_DEFAULT}`);
     console.log(`  - Debug: ${config.DEBUG}`);
     console.log('');
