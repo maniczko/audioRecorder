@@ -251,6 +251,7 @@ describe('httpClient retry logic', () => {
 describe('probeRemoteApiHealth retry logic', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    resetProbeDedup();
   });
 
   afterEach(() => {

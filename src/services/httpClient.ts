@@ -112,7 +112,36 @@ function normalizeApiErrorMessage(message = '', status?: number) {
   return String(message || '');
 }
 
+// ── Module-level health probe deduplication ──────────────────────
+// Multiple useWorkspaceData instances fire probes concurrently.
+// Singleton promise ensures only ONE network probe runs at a time.
+let pendingProbe: Promise<any> | null = null;
+let probeCooldownUntil = 0;
+const PROBE_COOLDOWN_MS = 10_000;
+
+export function resetProbeDedup() {
+  pendingProbe = null;
+  probeCooldownUntil = 0;
+}
+
 export async function probeRemoteApiHealth(fetchImpl = fetch, maxRetries = 3) {
+  if (Date.now() < probeCooldownUntil) {
+    throw new Error('Health probe cooldown active');
+  }
+  if (pendingProbe) return pendingProbe;
+
+  pendingProbe = _probeRemoteApiHealthImpl(fetchImpl, maxRetries)
+    .catch((err) => {
+      probeCooldownUntil = Date.now() + PROBE_COOLDOWN_MS;
+      throw err;
+    })
+    .finally(() => {
+      pendingProbe = null;
+    });
+  return pendingProbe;
+}
+
+async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
