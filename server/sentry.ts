@@ -1,6 +1,5 @@
+import * as Sentry from '@sentry/node';
 import { logger } from './logger.js';
-
-let Sentry: typeof import('@sentry/node') | null = null;
 
 export function initSentry() {
   const dsn = process.env.SENTRY_DSN;
@@ -11,12 +10,9 @@ export function initSentry() {
   }
 
   try {
-    // Dynamic import to avoid loading native modules when not needed
-    Sentry = require('@sentry/node');
-
-    Sentry!.init({
+    Sentry.init({
       dsn,
-      tracesSampleRate: 0.2,
+      tracesSampleRate: 0.1, // Reduced sample rate to save memory/bandwidth
       environment: process.env.NODE_ENV || 'development',
     });
 
@@ -27,7 +23,9 @@ export function initSentry() {
 }
 
 export function captureException(error: Error) {
-  if (Sentry) {
+  try {
     Sentry.captureException(error);
+  } catch (err) {
+    // Fail silently if Sentry is not initialized
   }
 }

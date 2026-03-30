@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { apiRequest, probeRemoteApiHealth } from './httpClient';
+import { apiRequest, probeRemoteApiHealth, resetProbeDedup } from './httpClient';
 
 // Mock dependencies
 vi.mock('../lib/sessionStorage', () => ({
@@ -349,5 +349,109 @@ describe('probeRemoteApiHealth retry logic', () => {
 
     const result = await promise;
     expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Health probe storm: 7+ useWorkspaceData instances fire
+// independent probes during 502 outages
+// Date: 2026-03-30
+// Bug: Each hook instance has its own isProbingRef, so concurrent
+//      callers each trigger a separate probeRemoteApiHealth chain.
+// Fix: Module-level promise deduplication + cooldown in httpClient.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — probeRemoteApiHealth deduplication', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    resetProbeDedup();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function mockHealthResponse(
+    ok: boolean,
+    status = 200,
+    payload = { status: 'ok', gitSha: 'abc123' }
+  ) {
+    return {
+      ok,
+      status,
+      json: () => Promise.resolve(payload),
+      text: () => Promise.resolve(JSON.stringify(payload)),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    } as unknown as Response;
+  }
+
+  it('deduplicates concurrent calls into a single network probe', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockHealthResponse(true));
+
+    // Simulate 5 concurrent callers (like 5 useWorkspaceData instances)
+    const p1 = probeRemoteApiHealth(fetchMock as any, 0);
+    const p2 = probeRemoteApiHealth(fetchMock as any, 0);
+    const p3 = probeRemoteApiHealth(fetchMock as any, 0);
+    const p4 = probeRemoteApiHealth(fetchMock as any, 0);
+    const p5 = probeRemoteApiHealth(fetchMock as any, 0);
+
+    const results = await Promise.all([p1, p2, p3, p4, p5]);
+
+    // Only 1 fetch call, not 5
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // All callers get the same result
+    for (const r of results) {
+      expect(r).toEqual({ status: 'ok', gitSha: 'abc123' });
+    }
+  });
+
+  it('enforces cooldown after a failed probe', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockHealthResponse(false, 502));
+
+    // First call fails (no retries for simplicity)
+    const err1 = await probeRemoteApiHealth(fetchMock as any, 0).catch((e: unknown) => e);
+    expect(err1).toBeInstanceOf(Error);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Immediate second call should be rejected by cooldown — no network request
+    fetchMock.mockClear();
+    const err2 = await probeRemoteApiHealth(fetchMock as any, 0).catch((e: unknown) => e);
+    expect(err2).toBeInstanceOf(Error);
+    expect((err2 as Error).message).toContain('cooldown');
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('allows a new probe after cooldown expires', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockHealthResponse(false, 502))
+      .mockResolvedValueOnce(mockHealthResponse(true));
+
+    // First call fails
+    await probeRemoteApiHealth(fetchMock as any, 0).catch(() => {});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Advance past cooldown (10s)
+    await vi.advanceTimersByTimeAsync(11_000);
+
+    // Now a new probe should be allowed
+    const result = await probeRemoteApiHealth(fetchMock as any, 0);
+    expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('broadcasts failure to all concurrent callers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockHealthResponse(false, 404));
+
+    const p1 = probeRemoteApiHealth(fetchMock as any, 0).catch((e: unknown) => e);
+    const p2 = probeRemoteApiHealth(fetchMock as any, 0).catch((e: unknown) => e);
+    const p3 = probeRemoteApiHealth(fetchMock as any, 0).catch((e: unknown) => e);
+
+    const errors = await Promise.all([p1, p2, p3]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    for (const e of errors) {
+      expect(e).toBeInstanceOf(Error);
+      expect((e as Error).message).toBe('HTTP 404');
+    }
   });
 });
