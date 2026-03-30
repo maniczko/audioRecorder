@@ -12,11 +12,6 @@ import {
   createMicrosoftTask,
   renderMicrosoftSignInButton,
 } from '../lib/microsoft';
-import {
-  createTaskFromGoogle,
-  createTaskHistoryEntry,
-  upsertGoogleImportedTasks,
-} from '../lib/tasks';
 
 
 export default function useMicrosoftIntegrations({

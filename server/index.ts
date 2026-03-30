@@ -159,7 +159,7 @@ export async function bootstrap() {
 
 if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
   bootstrap()
-    .then(({ server }) => {
+    .then(({ server, db }) => {
       logger.info(`Attempting to listen on ${HOST}:${PORT}...`);
       server.on('error', (error) => {
         logger.error('SERVER ERROR:', error);
