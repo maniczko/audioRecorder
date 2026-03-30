@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApp } from '../../app.ts';
 
+process.env.RATE_LIMIT_MAX = '20';
+
 describe('Security & Payload Limits', () => {
   let app: ReturnType<typeof createApp>;
 

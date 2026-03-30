@@ -5,6 +5,31 @@ const workletLoadPromises = new WeakMap();
 const fallbackLoadPromises = new WeakMap();
 const rnnoiseNodes = new WeakSet();
 let rnnoiseModulePromise = null;
+let patchedWorkletUrlCache: string | null = null;
+
+/** @internal — reset cached patched URL (testing only) */
+export function __resetPatchedWorkletCache() {
+  patchedWorkletUrlCache = null;
+}
+
+/**
+ * Patch the simple-rnnoise-wasm worklet source to guard against undefined
+ * inputs/outputs in process().  The library (v1.1.0) does not check for
+ * disconnected channels, causing "Cannot convert undefined or null to object
+ * at Float32Array.set" in some browsers / edge cases.
+ */
+async function patchedRnnoiseWorkletUrl(): Promise<string> {
+  if (patchedWorkletUrlCache) return patchedWorkletUrlCache;
+  const rawUrl = toBlobUrl(rnnoiseWorkletUrl);
+  const resp = await fetch(rawUrl);
+  let src = await resp.text();
+  src = src.replace(
+    'process(e,a){if(!this.alive)return!1;',
+    'process(e,a){if(!this.alive)return!1;if(!e[0]||!e[0][0]||!a[0]||!a[0][0])return!0;'
+  );
+  patchedWorkletUrlCache = URL.createObjectURL(new Blob([src], { type: 'application/javascript' }));
+  return patchedWorkletUrlCache;
+}
 
 /**
  * Convert a data: URI to a blob: URL so it passes CSP script-src (which allows
@@ -37,12 +62,12 @@ async function loadRnnoiseModule() {
 export async function ensureNoiseReducerWorklet(audioContext) {
   if (workletLoadPromises.has(audioContext)) return workletLoadPromises.get(audioContext);
 
-  const loadPromise = loadRnnoiseModule()
-    .then(({ RNNoiseNode, rnnoise_loadAssets }) =>
+  const loadPromise = Promise.all([loadRnnoiseModule(), patchedRnnoiseWorkletUrl()])
+    .then(([{ RNNoiseNode, rnnoise_loadAssets }, patchedUrl]) =>
       RNNoiseNode.register(
         audioContext,
         rnnoise_loadAssets({
-          scriptSrc: toBlobUrl(rnnoiseWorkletUrl),
+          scriptSrc: patchedUrl,
           moduleSrc: rnnoiseWasmUrl,
         })
       )

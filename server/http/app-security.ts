@@ -61,7 +61,7 @@ export function applyRequestMetadata(app: Hono<any>) {
 }
 
 const RATE_LIMIT_WINDOW_MS = 60000;
-const MAX_REQUESTS_PER_WINDOW = 100;
+const MAX_REQUESTS_PER_WINDOW = Number(process.env.RATE_LIMIT_MAX) || 100;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 export function applyRateLimiting(app: Hono<any>) {
