@@ -50,11 +50,11 @@ export const options = {
   noThresholdFailures: true,
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:4000';
+const BASE_URL = __ENV?.BASE_URL || 'http://localhost:4000';
 
 // Simple auth token (pre-generated for stress test)
-const authToken = __ENV.AUTH_TOKEN || 'test-token';
-const workspaceId = __ENV.WORKSPACE_ID || 'ws1';
+const authToken = __ENV?.AUTH_TOKEN || 'test-token';
+const workspaceId = __ENV?.WORKSPACE_ID || 'ws1';
 
 export default function () {
   const startTime = Date.now();

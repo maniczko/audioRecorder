@@ -110,7 +110,7 @@ export const options = {
 // Test Data & Setup
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:4000';
+const BASE_URL = __ENV?.BASE_URL || 'http://localhost:4000';
 const TEST_EMAIL = `loadtest_${Date.now()}@example.com`;
 const TEST_PASSWORD = 'LoadTest2026!';
 
