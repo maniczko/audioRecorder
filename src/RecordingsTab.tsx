@@ -808,7 +808,7 @@ export default function RecordingsTab(props) {
           startsAt: new Date().toISOString(),
         });
 
-        const queuedId = await queueRecording(newMeeting.id, file);
+        const queuedId = await queueRecording(newMeeting.id, file, newMeeting);
 
         clearInterval(progressInterval);
         setUploadProgress(queuedId ? 100 : 0);

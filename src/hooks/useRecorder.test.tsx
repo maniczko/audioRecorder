@@ -297,4 +297,44 @@ describe('useRecorder', () => {
     // startRecording on hardware should not be called when no meeting was created
     expect(hardwareState.startRecording).not.toHaveBeenCalled();
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Import fails with "Nie znaleziono spotkania"
+  // Date: 2026-03-30
+  // Bug: createMeetingDirect adds meeting to state synchronously but
+  //      userMeetingsRef is updated only after React re-render (useEffect).
+  //      queueRecording called immediately after couldn't find the meeting.
+  // Fix: queueRecording accepts optional meetingHint (3rd arg) as fallback.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: queueRecording uses meetingHint when meeting not in userMeetings', async () => {
+    saveAudioBlobMock.mockResolvedValue(undefined);
+
+    // Meeting NOT in userMeetings (simulates race after createMeetingDirect)
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const meetingHint = { id: 'new_m', title: 'Import: test', workspaceId: 'ws1' };
+    const file = new File(['audio'], 'test.webm', { type: 'audio/webm' });
+
+    await act(async () => {
+      await result.current.queueRecording('new_m', file, meetingHint);
+    });
+
+    // Queue item should be created successfully using meetingHint
+    expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('queued');
+
+    // Verify the queue item has the meeting snapshot from hint
+    const updater = pipelineState.setRecordingQueue.mock.calls[0][0];
+    const result_queue = updater([]);
+    expect(result_queue[0].meetingSnapshot).toEqual(meetingHint);
+    expect(result_queue[0].meetingId).toBe('new_m');
+  });
 });

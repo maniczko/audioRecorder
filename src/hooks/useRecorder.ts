@@ -203,7 +203,7 @@ export default function useRecorder({
     [pipeline.recordingQueue]
   );
 
-  async function queueRecording(meetingId, file) {
+  async function queueRecording(meetingId, file, meetingHint?) {
     if (!meetingId || !file) {
       pipeline.setRecordingMessage('Nie udalo sie dodac pliku do kolejki.');
       return null;
@@ -213,7 +213,8 @@ export default function useRecorder({
     const blob = file instanceof Blob ? file : new Blob([file]);
     const meeting =
       userMeetingsRef.current.find((item) => item.id === meetingId) ||
-      (selectedMeeting?.id === meetingId ? selectedMeeting : null);
+      (selectedMeeting?.id === meetingId ? selectedMeeting : null) ||
+      meetingHint ||  null;
 
     try {
       hydration.registerAudioUrl(rid, blob);
