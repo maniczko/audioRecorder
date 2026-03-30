@@ -51,7 +51,7 @@ jobs:
         run: pnpm run lint
 
       - name: Stylelint
-        run: pnpm run stylelint
+        run: pnpm run lint:css
 
       - name: Prettier check
         run: pnpm run format-check

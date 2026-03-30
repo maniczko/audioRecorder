@@ -13,7 +13,6 @@ import {
   renderMicrosoftSignInButton,
 } from '../lib/microsoft';
 
-
 export default function useMicrosoftIntegrations({
   currentUser,
   currentWorkspaceId,
@@ -50,7 +49,6 @@ export default function useMicrosoftIntegrations({
   const microsoftEnabled = Boolean(MICROSOFT_CLIENT_ID);
   const openTaskColumnId =
     taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || 'todo';
-
 
   function buildMicrosoftTaskPayloadFromSnapshot(snapshot) {
     return {
@@ -236,11 +234,7 @@ export default function useMicrosoftIntegrations({
         throw new Error('Brak polaczenia z kalendarzem Outlook');
       }
 
-      return await updateOutlookCalendarEvent(
-        microsoftCalendarTokenRef.current,
-        eventId,
-        updates
-      );
+      return await updateOutlookCalendarEvent(microsoftCalendarTokenRef.current, eventId, updates);
     },
     [hasMicrosoftCalendarToken]
   );
