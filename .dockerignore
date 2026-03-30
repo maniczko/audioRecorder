@@ -1,5 +1,7 @@
 node_modules
+**/node_modules/
 .pnpm-store
+**/pnpm-store/
 build
 dist
 dist-server
@@ -23,3 +25,7 @@ data
 *.sqlite
 *.db
 *.tgz
+*.log
+.logs/
+tmp/
+temp/

@@ -124,8 +124,42 @@ function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): n
   }
 }
 
+let _resolvedUploadDir: string | null = null;
+
 export function getUploadDir() {
-  return config.VOICELOG_UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
+  if (_resolvedUploadDir) return _resolvedUploadDir;
+
+  const preferred = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
+  const candidates = [
+    path.resolve(preferred),
+    path.resolve(process.cwd(), 'server', 'data', 'uploads'),
+    path.resolve(process.cwd(), '.tmp', 'uploads'),
+    path.join(os.tmpdir(), 'voicelog', 'uploads'),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) {
+        fs.mkdirSync(candidate, { recursive: true });
+      }
+      const probe = path.join(candidate, `.write-probe-${process.pid}`);
+      fs.writeFileSync(probe, '');
+      fs.unlinkSync(probe);
+      if (candidate !== path.resolve(preferred)) {
+        console.warn(
+          `[transcription] Upload dir ${preferred} not writable, falling back to: ${candidate}`
+        );
+      }
+      _resolvedUploadDir = candidate;
+      return candidate;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  // Last resort — return preferred and let caller handle the error
+  _resolvedUploadDir = path.resolve(preferred);
+  return _resolvedUploadDir;
 }
 
 function getPreprocessCacheDir() {
