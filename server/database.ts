@@ -26,26 +26,28 @@ const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administ
 
 function _resolveWritableUploadDir(preferredDir: string): string {
   const normalizedPreferred = path.resolve(preferredDir);
-  const candidates = Array.from(
-    new Set([
-      normalizedPreferred,
-      path.resolve(process.cwd(), 'server', 'data', 'uploads'),
-      path.resolve(process.cwd(), '.tmp', 'uploads'),
-      path.join(os.tmpdir(), 'voicelog', 'uploads'),
-    ])
-  );
+  const candidates = [
+    normalizedPreferred,
+    path.resolve(process.cwd(), 'server', 'data', 'uploads'),
+    path.resolve(process.cwd(), '.tmp', 'uploads'),
+    path.join(os.tmpdir(), 'voicelog', 'uploads'),
+  ];
 
   let lastError: unknown = null;
 
   for (const candidate of candidates) {
     try {
-      fs.mkdirSync(candidate, { recursive: true });
+      if (!fs.existsSync(candidate)) {
+        fs.mkdirSync(candidate, { recursive: true });
+      }
       const probePath = path.join(candidate, `.write-probe-${process.pid}-${Date.now()}`);
       fs.writeFileSync(probePath, '');
       fs.unlinkSync(probePath);
+
       if (candidate !== normalizedPreferred) {
         logger.warn(
-          `[database] Upload dir ${normalizedPreferred} is not writable, falling back to ${candidate}.`
+          `[database] Preferred upload dir ${normalizedPreferred} is NOT writable. ` +
+            `Falling back to: ${candidate}. WARNING: If this is an ephemeral path, files will be lost on restart.`
         );
       }
       return candidate;
@@ -56,7 +58,7 @@ function _resolveWritableUploadDir(preferredDir: string): string {
 
   throw lastError instanceof Error
     ? lastError
-    : new Error(`No writable upload directory available. Preferred: ${normalizedPreferred}`);
+    : new Error(`No writable upload directory available. Candidates: ${candidates.join(', ')}`);
 }
 
 function _cleanupOldLocalFiles(uploadDir: string): void {

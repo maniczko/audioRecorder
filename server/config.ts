@@ -137,8 +137,8 @@ export function validateRequiredApiKeys() {
     if (isRailway) {
       errors.push(
         'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\n' +
-          '  On Railway, local files are lost after each redeploy.\n' +
-          '  Please set these variables to enable persistent remote storage.'
+          '  On Railway, the local filesystem is ephemeral — your recordings will be LOST after each redeploy.\n' +
+          '  Please set these variables to enable persistent remote storage via Supabase.'
       );
     } else {
       warnings.push(

@@ -1,0 +1,165 @@
+Quality Checks	Set up job	﻿2026-03-30T11:23:24.1581780Z Current runner version: '2.333.0'
+Quality Checks	Set up job	2026-03-30T11:23:24.1608530Z ##[group]Runner Image Provisioner
+Quality Checks	Set up job	2026-03-30T11:23:24.1609759Z Hosted Compute Agent
+Quality Checks	Set up job	2026-03-30T11:23:24.1610306Z Version: 20260213.493
+Quality Checks	Set up job	2026-03-30T11:23:24.1611021Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+Quality Checks	Set up job	2026-03-30T11:23:24.1611696Z Build Date: 2026-02-13T00:28:41Z
+Quality Checks	Set up job	2026-03-30T11:23:24.1612387Z Worker ID: {f69b624b-43cb-4c60-90c8-dda0738dce5a}
+Quality Checks	Set up job	2026-03-30T11:23:24.1613142Z Azure Region: eastus2
+Quality Checks	Set up job	2026-03-30T11:23:24.1613682Z ##[endgroup]
+Quality Checks	Set up job	2026-03-30T11:23:24.1615149Z ##[group]Operating System
+Quality Checks	Set up job	2026-03-30T11:23:24.1615862Z Ubuntu
+Quality Checks	Set up job	2026-03-30T11:23:24.1616349Z 24.04.4
+Quality Checks	Set up job	2026-03-30T11:23:24.1616807Z LTS
+Quality Checks	Set up job	2026-03-30T11:23:24.1617310Z ##[endgroup]
+Quality Checks	Set up job	2026-03-30T11:23:24.1617856Z ##[group]Runner Image
+Quality Checks	Set up job	2026-03-30T11:23:24.1618437Z Image: ubuntu-24.04
+Quality Checks	Set up job	2026-03-30T11:23:24.1619274Z Version: 20260323.65.1
+Quality Checks	Set up job	2026-03-30T11:23:24.1620518Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+Quality Checks	Set up job	2026-03-30T11:23:24.1622474Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+Quality Checks	Set up job	2026-03-30T11:23:24.1623632Z ##[endgroup]
+Quality Checks	Set up job	2026-03-30T11:23:24.1626418Z ##[group]GITHUB_TOKEN Permissions
+Quality Checks	Set up job	2026-03-30T11:23:24.1628720Z Actions: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1629526Z ArtifactMetadata: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1630178Z Attestations: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1630719Z Checks: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1631193Z Contents: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1632084Z Deployments: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1632671Z Discussions: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1633176Z Issues: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1633733Z Metadata: read
+Quality Checks	Set up job	2026-03-30T11:23:24.1634240Z Models: read
+Quality Checks	Set up job	2026-03-30T11:23:24.1634745Z Packages: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1635351Z Pages: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1635937Z PullRequests: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1636508Z RepositoryProjects: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1637144Z SecurityEvents: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1637687Z Statuses: write
+Quality Checks	Set up job	2026-03-30T11:23:24.1638205Z ##[endgroup]
+Quality Checks	Set up job	2026-03-30T11:23:24.1640571Z Secret source: Actions
+Quality Checks	Set up job	2026-03-30T11:23:24.1641545Z Prepare workflow directory
+Quality Checks	Set up job	2026-03-30T11:23:24.1962029Z Prepare all required actions
+Quality Checks	Set up job	2026-03-30T11:23:24.2000244Z Getting action download info
+Quality Checks	Set up job	2026-03-30T11:23:24.5646173Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+Quality Checks	Set up job	2026-03-30T11:23:24.6786329Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Quality Checks	Set up job	2026-03-30T11:23:24.8654865Z Complete job name: Quality Checks
+Quality Checks	Checkout code	﻿2026-03-30T11:23:24.9394029Z ##[group]Run actions/checkout@v4
+Quality Checks	Checkout code	2026-03-30T11:23:24.9394910Z with:
+Quality Checks	Checkout code	2026-03-30T11:23:24.9395327Z   fetch-depth: 0
+Quality Checks	Checkout code	2026-03-30T11:23:24.9395824Z   repository: maniczko/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:24.9396544Z   token: ***
+Quality Checks	Checkout code	2026-03-30T11:23:24.9396943Z   ssh-strict: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9397348Z   ssh-user: git
+Quality Checks	Checkout code	2026-03-30T11:23:24.9397775Z   persist-credentials: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9398245Z   clean: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9398665Z   sparse-checkout-cone-mode: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9399403Z   fetch-tags: false
+Quality Checks	Checkout code	2026-03-30T11:23:24.9399836Z   show-progress: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9400271Z   lfs: false
+Quality Checks	Checkout code	2026-03-30T11:23:24.9400656Z   submodules: false
+Quality Checks	Checkout code	2026-03-30T11:23:24.9401088Z   set-safe-directory: true
+Quality Checks	Checkout code	2026-03-30T11:23:24.9401842Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:25.0462436Z Syncing repository: maniczko/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:25.0464269Z ##[group]Getting Git version info
+Quality Checks	Checkout code	2026-03-30T11:23:25.0465047Z Working directory is '/home/runner/work/audioRecorder/audioRecorder'
+Quality Checks	Checkout code	2026-03-30T11:23:25.0466170Z [command]/usr/bin/git version
+Quality Checks	Checkout code	2026-03-30T11:23:25.0509798Z git version 2.53.0
+Quality Checks	Checkout code	2026-03-30T11:23:25.0535489Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:25.0550012Z Temporarily overriding HOME='/home/runner/work/_temp/c7201a02-3d96-4adf-aaad-bc0f7a3a9ea2' before making global git config changes
+Quality Checks	Checkout code	2026-03-30T11:23:25.0551470Z Adding repository directory to the temporary git global config as a safe directory
+Quality Checks	Checkout code	2026-03-30T11:23:25.0562685Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/audioRecorder/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:25.0593266Z Deleting the contents of '/home/runner/work/audioRecorder/audioRecorder'
+Quality Checks	Checkout code	2026-03-30T11:23:25.0596794Z ##[group]Initializing the repository
+Quality Checks	Checkout code	2026-03-30T11:23:25.0600963Z [command]/usr/bin/git init /home/runner/work/audioRecorder/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:25.0708445Z hint: Using 'master' as the name for the initial branch. This default branch name
+Quality Checks	Checkout code	2026-03-30T11:23:25.0710427Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Quality Checks	Checkout code	2026-03-30T11:23:25.0711860Z hint: to use in all of your new repositories, which will suppress this warning,
+Quality Checks	Checkout code	2026-03-30T11:23:25.0712655Z hint: call:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0713046Z hint:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0713549Z hint: 	git config --global init.defaultBranch <name>
+Quality Checks	Checkout code	2026-03-30T11:23:25.0714139Z hint:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0714871Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Quality Checks	Checkout code	2026-03-30T11:23:25.0715796Z hint: 'development'. The just-created branch can be renamed via this command:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0716518Z hint:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0716900Z hint: 	git branch -m <name>
+Quality Checks	Checkout code	2026-03-30T11:23:25.0717347Z hint:
+Quality Checks	Checkout code	2026-03-30T11:23:25.0717947Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Quality Checks	Checkout code	2026-03-30T11:23:25.0719229Z Initialized empty Git repository in /home/runner/work/audioRecorder/audioRecorder/.git/
+Quality Checks	Checkout code	2026-03-30T11:23:25.0721454Z [command]/usr/bin/git remote add origin https://github.com/maniczko/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:25.0750446Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:25.0751737Z ##[group]Disabling automatic garbage collection
+Quality Checks	Checkout code	2026-03-30T11:23:25.0755320Z [command]/usr/bin/git config --local gc.auto 0
+Quality Checks	Checkout code	2026-03-30T11:23:25.0783926Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:25.0785198Z ##[group]Setting up auth
+Quality Checks	Checkout code	2026-03-30T11:23:25.0791839Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Quality Checks	Checkout code	2026-03-30T11:23:25.0822402Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Quality Checks	Checkout code	2026-03-30T11:23:25.1125071Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Quality Checks	Checkout code	2026-03-30T11:23:25.1156998Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Quality Checks	Checkout code	2026-03-30T11:23:25.1383632Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Quality Checks	Checkout code	2026-03-30T11:23:25.1413610Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Quality Checks	Checkout code	2026-03-30T11:23:25.1650020Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Quality Checks	Checkout code	2026-03-30T11:23:25.1687431Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:25.1700325Z ##[group]Fetching the repository
+Quality Checks	Checkout code	2026-03-30T11:23:25.1701597Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Quality Checks	Checkout code	2026-03-30T11:23:26.0304427Z From https://github.com/maniczko/audioRecorder
+Quality Checks	Checkout code	2026-03-30T11:23:26.0307211Z  * [new branch]      copilot/fix-client-side-runtime-errors -> origin/copilot/fix-client-side-runtime-errors
+Quality Checks	Checkout code	2026-03-30T11:23:26.0308906Z  * [new branch]      copilot/fix-cors       -> origin/copilot/fix-cors
+Quality Checks	Checkout code	2026-03-30T11:23:26.0310451Z  * [new branch]      copilot/fix-cors-502-errors -> origin/copilot/fix-cors-502-errors
+Quality Checks	Checkout code	2026-03-30T11:23:26.0312188Z  * [new branch]      copilot/gh-03-fix-taskqueue-error -> origin/copilot/gh-03-fix-taskqueue-error
+Quality Checks	Checkout code	2026-03-30T11:23:26.0314487Z  * [new branch]      dependabot/github_actions/actions/checkout-6 -> origin/dependabot/github_actions/actions/checkout-6
+Quality Checks	Checkout code	2026-03-30T11:23:26.0317431Z  * [new branch]      dependabot/github_actions/actions/download-artifact-8 -> origin/dependabot/github_actions/actions/download-artifact-8
+Quality Checks	Checkout code	2026-03-30T11:23:26.0320998Z  * [new branch]      dependabot/github_actions/actions/upload-artifact-7 -> origin/dependabot/github_actions/actions/upload-artifact-7
+Quality Checks	Checkout code	2026-03-30T11:23:26.0324752Z  * [new branch]      dependabot/npm_and_yarn/development-dependencies-493812e6d9 -> origin/dependabot/npm_and_yarn/development-dependencies-493812e6d9
+Quality Checks	Checkout code	2026-03-30T11:23:26.0327832Z  * [new branch]      gpt-fix-243-1774775992 -> origin/gpt-fix-243-1774775992
+Quality Checks	Checkout code	2026-03-30T11:23:26.0329709Z  * [new branch]      gpt-fix-245-1774779695 -> origin/gpt-fix-245-1774779695
+Quality Checks	Checkout code	2026-03-30T11:23:26.0331661Z  * [new branch]      gpt-fix-248-1774781287 -> origin/gpt-fix-248-1774781287
+Quality Checks	Checkout code	2026-03-30T11:23:26.0333567Z  * [new branch]      gpt-fix-251-1774784063 -> origin/gpt-fix-251-1774784063
+Quality Checks	Checkout code	2026-03-30T11:23:26.0335252Z  * [new branch]      main                   -> origin/main
+Quality Checks	Checkout code	2026-03-30T11:23:26.0337979Z  * [new branch]      qwen-code-6162d8fb-ec39-4a39-b877-7fb5e713191b -> origin/qwen-code-6162d8fb-ec39-4a39-b877-7fb5e713191b
+Quality Checks	Checkout code	2026-03-30T11:23:26.0358004Z [command]/usr/bin/git branch --list --remote origin/main
+Quality Checks	Checkout code	2026-03-30T11:23:26.0382005Z   origin/main
+Quality Checks	Checkout code	2026-03-30T11:23:26.0390657Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Quality Checks	Checkout code	2026-03-30T11:23:26.0409377Z 1f2aa099cd31021e66a019c154377c610bc8f8d3
+Quality Checks	Checkout code	2026-03-30T11:23:26.0415031Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:26.0416461Z ##[group]Determining the checkout info
+Quality Checks	Checkout code	2026-03-30T11:23:26.0418265Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:26.0420050Z [command]/usr/bin/git sparse-checkout disable
+Quality Checks	Checkout code	2026-03-30T11:23:26.0454277Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Quality Checks	Checkout code	2026-03-30T11:23:26.0481003Z ##[group]Checking out the ref
+Quality Checks	Checkout code	2026-03-30T11:23:26.0483496Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Quality Checks	Checkout code	2026-03-30T11:23:26.1510985Z Switched to a new branch 'main'
+Quality Checks	Checkout code	2026-03-30T11:23:26.1513172Z branch 'main' set up to track 'origin/main'.
+Quality Checks	Checkout code	2026-03-30T11:23:26.1534018Z ##[endgroup]
+Quality Checks	Checkout code	2026-03-30T11:23:26.1568677Z [command]/usr/bin/git log -1 --format=%H
+Quality Checks	Checkout code	2026-03-30T11:23:26.1590447Z 1f2aa099cd31021e66a019c154377c610bc8f8d3
+Quality Checks	Setup Node.js	﻿2026-03-30T11:23:26.1905638Z ##[group]Run actions/setup-node@v4
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1906753Z with:
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1907514Z   node-version: 22
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1908346Z   cache: pnpm
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1909385Z   always-auth: false
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1910287Z   check-latest: false
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1911464Z   token: ***
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.1912250Z ##[endgroup]
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.3713556Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.3721003Z ##[group]Environment details
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.6746513Z node: v22.22.1
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.6748110Z npm: 10.9.4
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.6749583Z yarn: 1.22.22
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.6751473Z ##[endgroup]
+Quality Checks	Setup Node.js	2026-03-30T11:23:26.6804203Z ##[error]Unable to locate executable file: pnpm. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.
+Quality Checks	Post Checkout code	﻿2026-03-30T11:23:26.7201178Z Post job cleanup.
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8148467Z [command]/usr/bin/git version
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8184159Z git version 2.53.0
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8230176Z Temporarily overriding HOME='/home/runner/work/_temp/3b78fbda-bf21-4fce-a351-339b0ede7596' before making global git config changes
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8235060Z Adding repository directory to the temporary git global config as a safe directory
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8239412Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/audioRecorder/audioRecorder
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8276667Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8308588Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8528961Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8549412Z http.https://github.com/.extraheader
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8562238Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8591821Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8804020Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Quality Checks	Post Checkout code	2026-03-30T11:23:26.8835155Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Quality Checks	Complete job	﻿2026-03-30T11:23:26.9200038Z Cleaning up orphan processes
+Quality Checks	Complete job	2026-03-30T11:23:26.9629609Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
