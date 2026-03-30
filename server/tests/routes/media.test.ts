@@ -363,6 +363,110 @@ describe('Media Routes', () => {
     process.env.GEMINI_API_KEY = originalGeminiKey;
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Sketchnote endpoint returns 500 for Gemini 429 quota errors
+  // Date: 2026-03-30
+  // Bug: Server always returned 500 for any Gemini error, even 429 (quota exceeded).
+  //      Frontend's normalizeApiErrorMessage() never triggered the user-friendly
+  //      "Zbyt wiele prob" message because it received 500 instead of 429.
+  // Fix: Preserve Gemini's original status code (429, 503) in the response.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: Issue #0 — Sketchnote preserves Gemini error status codes', () => {
+    const setupSketchnoteTest = () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_sketchnote',
+        workspace_id: 'ws_1',
+        diarization_json: JSON.stringify({
+          summary: 'Spotkanie o wdrożeniu nowego procesu.',
+        }),
+      });
+      mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
+
+      const originalFetch = global.fetch;
+      const originalGeminiKey = process.env.GEMINI_API_KEY;
+      process.env.GEMINI_API_KEY = 'test-key';
+      return { originalFetch, originalGeminiKey };
+    };
+
+    const teardownSketchnoteTest = (ctx: { originalFetch: typeof global.fetch; originalGeminiKey: string | undefined }) => {
+      global.fetch = ctx.originalFetch;
+      process.env.GEMINI_API_KEY = ctx.originalGeminiKey;
+    };
+
+    it('returns 429 when Gemini responds with 429 quota exceeded', async () => {
+      const ctx = setupSketchnoteTest();
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 429,
+              message: 'Resource has been exhausted. Quota exceeded.',
+              status: 'RESOURCE_EXHAUSTED',
+            },
+          }),
+          { status: 429, headers: { 'content-type': 'application/json' } }
+        )
+      ) as any;
+
+      const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(429);
+      const payload = await res.json();
+      expect(payload.message).toContain('429');
+
+      teardownSketchnoteTest(ctx);
+    });
+
+    it('returns 503 when Gemini responds with 503 overloaded', async () => {
+      const ctx = setupSketchnoteTest();
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: { code: 503, message: 'The model is overloaded.' },
+          }),
+          { status: 503, headers: { 'content-type': 'application/json' } }
+        )
+      ) as any;
+
+      const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(503);
+      const payload = await res.json();
+      expect(payload.message).toContain('503');
+
+      teardownSketchnoteTest(ctx);
+    });
+
+    it('still returns 500 for other Gemini errors (e.g. 400 bad request)', async () => {
+      const ctx = setupSketchnoteTest();
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: { code: 400, message: 'Invalid request.' },
+          }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        )
+      ) as any;
+
+      const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(500);
+      const payload = await res.json();
+      expect(payload.message).toContain('400');
+
+      teardownSketchnoteTest(ctx);
+    });
+  });
+
   it('PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload', async () => {
     const previewOrigin = 'https://preview-app.vercel.app';
     const missingWorkspace = await app.request('/media/recordings/rec_missing/audio', {

@@ -710,7 +710,6 @@ Important:
 
       if (!res.ok) {
         const errBody = await res.text();
-        logger.error('Gemini image gen error:', errBody);
         let detail = '';
         try {
           const parsed = JSON.parse(errBody);
@@ -718,7 +717,14 @@ Important:
         } catch {
           detail = errBody.slice(0, 200);
         }
-        return c.json({ message: `Blad Gemini (${res.status}): ${detail}` }, 500);
+        const passthrough = [429, 503] as const;
+        const status = passthrough.includes(res.status as any) ? res.status : 500;
+        if (res.status === 429) {
+          logger.warn(`Gemini quota exceeded for recording ${recordingId}: ${detail}`);
+        } else {
+          logger.error('Gemini image gen error:', errBody);
+        }
+        return c.json({ message: `Blad Gemini (${res.status}): ${detail}` }, status as any);
       }
 
       const data = await res.json();
