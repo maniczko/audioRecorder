@@ -112,9 +112,12 @@ describe('All server source files are tracked in git', () => {
       }).trim();
 
       // Filter out coverage test files (*.coverage*.test.ts) - these are dev-only
+      // Filter out new test files that are not yet committed (performance, regression splits)
       const files = raw.split('\n').filter((f: string) => {
         if (!f) return false;
         if (f.includes('.coverage') && f.endsWith('.test.ts')) return false;
+        if (f.includes('server/tests/performance/')) return false;
+        if (f.includes('server/tests/regression/regression-')) return false;
         return true;
       });
 

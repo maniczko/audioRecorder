@@ -1,25 +1,25 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
-    environment: 'node',
-    include: ['server/**/*.test.ts'],
-    setupFiles: ['./server/tests/setup.ts'],
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/tests/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary', 'lcov'],
-      reportsDirectory: './coverage/server',
-      include: ['server/**/*.{ts,js}'],
+      reportsDirectory: './coverage/frontend',
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        'server/tests/**/*.test.ts',
-        'server/coverage/**',
-        'server/scripts/**',
-        'server/jest.config.js',
-        'server/debug_users.ts',
-        'server/test_diarization.ts',
-        'server/test_scrypt.ts',
-        'server/**/*.d.ts',
-        'server/**/*.test.ts',
+        'src/**/*.test.{ts,tsx}',
+        'src/tests/**',
+        'src/coverage/**',
+        'src/**/*.d.ts',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
       ],
       thresholds: {
         // P1: Raised from 20-23% to 80%+ for production readiness

@@ -300,7 +300,7 @@ describe('mediaService', () => {
       });
     });
 
-    it('getTranscriptionJobStatus fetches GET with retries', async () => {
+    it('getTranscriptionJobStatus fetches GET with reduced retries to avoid poll storm', async () => {
       mockApiRequest.mockResolvedValue({ pipelineStatus: 'done' });
       await createMediaService().getTranscriptionJobStatus('rec-1');
       expect(mockApiRequest).toHaveBeenCalledWith('/media/recordings/rec-1/transcribe', {

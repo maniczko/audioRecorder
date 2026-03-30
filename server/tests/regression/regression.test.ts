@@ -14,6 +14,11 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 
+// P0 Fix: Move vi.unmock() to top level to prevent Vitest warnings
+// These are hoisted anyway, so should be at module top
+vi.unmock('../config');
+vi.unmock('@supabase/supabase-js');
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Issue #341 - supabaseStorage returns undefined instead of null
 // Date: 2026-03-28
@@ -26,10 +31,7 @@ describe('Regression: Issue #341 - supabaseStorage null handling', () => {
     vi.resetModules();
   });
 
-  afterEach(() => {
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
-  });
+  // Remove afterEach with vi.unmock() - already at top level
 
   test('uploadAudioToStorage returns null (not throws) when supabase URL is empty', async () => {
     vi.resetModules();
@@ -287,14 +289,7 @@ describe('Regression: Issue #502 - Rate limiting error handling', () => {
     vi.resetModules();
   });
 
-  afterEach(() => {
-    vi.unmock('../config');
-    // Clear rate limit map between tests
-    vi.doMock('../lib/serverUtils', () => {
-      const actual = vi.importActual('../lib/serverUtils');
-      return { ...actual };
-    });
-  });
+  // P0 Fix: Remove afterEach with vi.unmock() - already at top level
 
   test('rate limit error includes Polish message for better UX', async () => {
     const module = await import('../../lib/serverUtils');
@@ -331,9 +326,7 @@ describe('Regression: Issue #601 - embedTextChunks error handling', () => {
     vi.resetModules();
   });
 
-  afterEach(() => {
-    vi.unmock('../config');
-  });
+  // P0 Fix: Remove afterEach with vi.unmock() - already at top level
 
   test('embedTextChunks returns empty array on API failure (not throw)', async () => {
     vi.doMock('../config', () => ({

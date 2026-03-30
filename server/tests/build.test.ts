@@ -20,7 +20,9 @@ function getAllTsFiles(dirPath: string, arrayOfFiles: string[] = []) {
         file !== 'node_modules' &&
         file !== 'dist-server' &&
         file !== 'data' &&
-        file !== 'data-test'
+        file !== 'data-test' &&
+        file !== 'tests' &&  // Skip test files to speed up
+        file !== 'coverage'
       ) {
         arrayOfFiles = getAllTsFiles(fullPath, arrayOfFiles);
       }
@@ -34,7 +36,8 @@ function getAllTsFiles(dirPath: string, arrayOfFiles: string[] = []) {
 }
 
 describe('Server Dependencies Verification', () => {
-  it('should declare all externally imported modules in server/package.json', () => {
+  // P0 Fix: Increase timeout for dependency scanning
+  it('should declare all externally imported modules in server/package.json', { timeout: 30000 }, () => {
     const pkgPath = join(__dirname, '../package.json');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
 

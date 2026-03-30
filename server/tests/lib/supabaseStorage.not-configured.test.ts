@@ -6,15 +6,16 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 
+// P0 Fix: Move vi.unmock() to top level to prevent Vitest warnings
+vi.unmock('../config');
+vi.unmock('@supabase/supabase-js');
+
 describe('supabaseStorage - Supabase not configured', () => {
   beforeEach(() => {
     vi.resetModules();
   });
 
-  afterEach(() => {
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
-  });
+  // P0 Fix: Remove afterEach with vi.unmock() - already at top level
 
   test('supabase is null when SUPABASE_URL is empty', async () => {
     vi.doMock('../config', () => ({

@@ -1,0 +1,23 @@
+{
+  "extends": [
+    "stylelint-config-standard"
+  ],
+  "plugins": [
+    "stylelint-order"
+  ],
+  "rules": {
+    "order/properties-alphabetical-order": true,
+    "selector-class-pattern": null,
+    "selector-pseudo-class-no-unknown": [true, {
+      "ignorePseudoClasses": ["global"]
+    }],
+    "media-feature-range-notation": null
+  },
+  "ignoreFiles": [
+    "**/*.test.css",
+    "**/*.spec.css",
+    "coverage/**",
+    "build/**",
+    "dist/**"
+  ]
+}
