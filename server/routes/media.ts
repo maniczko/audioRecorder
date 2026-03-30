@@ -336,7 +336,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json(normalizeTranscriptionStatusPayload(result), 202);
     } catch (err: any) {
       console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
-      const status = err?.statusCode || err?.status || 502;
+      const status = err?.statusCode || err?.status || 500;
       return c.json(
         { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
         status
@@ -374,7 +374,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json(normalizeTranscriptionStatusPayload(result), 202);
     } catch (err: any) {
       console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
-      const status = err?.statusCode || err?.status || 502;
+      const status = err?.statusCode || err?.status || 500;
       return c.json(
         { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
         status
@@ -388,6 +388,37 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
+
+      // Detect stuck processing: if status is 'processing' or 'queued' for >15 min
+      // with no transcript data, mark as failed so the frontend can retry.
+      const STUCK_THRESHOLD_MS = 15 * 60 * 1000;
+      if (
+        ['processing', 'queued'].includes(asset.transcription_status) &&
+        asset.updated_at &&
+        Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS
+      ) {
+        const segments = (() => {
+          try {
+            return JSON.parse(String(asset.transcript_json || '[]'));
+          } catch {
+            return [];
+          }
+        })();
+        if (!Array.isArray(segments) || segments.length === 0) {
+          console.warn(
+            `[transcribe-status] Recording ${recordingId} stuck in '${asset.transcription_status}' since ${asset.updated_at}. Marking as failed.`
+          );
+          await transcriptionService.markTranscriptionFailure(
+            recordingId,
+            'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+            null,
+            null
+          );
+          const failedAsset = await transcriptionService.getMediaAsset(recordingId);
+          return c.json(normalizeTranscriptionStatusPayload(failedAsset || asset), 200);
+        }
+      }
+
       return c.json(normalizeTranscriptionStatusPayload(asset), 200);
     } catch (err: any) {
       console.error(`[transcribe-status] Error:`, err?.message);

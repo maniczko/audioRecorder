@@ -32,6 +32,7 @@ describe('Media Routes', () => {
       generateVoiceCoaching: vi.fn(),
       getSpeakerAcousticFeatures: vi.fn(),
       saveTranscriptionResult: vi.fn(),
+      markTranscriptionFailure: vi.fn(),
       diarizeFromTranscript: vi.fn(),
       on: vi.fn(),
       removeListener: vi.fn(),
@@ -572,10 +573,10 @@ describe('Media Routes', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────
-  // Issue #0 — POST /transcribe returns 502 on unhandled pipeline error
-  // Date: 2026-03-29
+  // Issue #0 — POST /transcribe returns 500 on unhandled pipeline error
+  // Date: 2026-03-29 (updated 2026-03-30: changed default from 502 to 500)
   // Bug: startTranscriptionPipeline threw unhandled → global error handler → 500/502 via proxy
-  // Fix: Added try-catch returning structured error with proper status code
+  // Fix: try-catch returning structured error; default status changed to 500
   // ─────────────────────────────────────────────────────────────────
   describe('Regression: #0 — transcribe pipeline error returns structured error, not 502', () => {
     it('POST /transcribe returns error JSON when pipeline throws', async () => {
@@ -595,7 +596,7 @@ describe('Media Routes', () => {
         body: JSON.stringify({ workspaceId: 'ws_1' }),
       });
 
-      expect(res.status).toBe(502);
+      expect(res.status).toBe(500);
       const data = await res.json();
       expect(data.message).toContain('STT provider unreachable');
       expect(data.recordingId).toBe('rec_err');
@@ -619,7 +620,7 @@ describe('Media Routes', () => {
         body: JSON.stringify({}),
       });
 
-      expect(res.status).toBe(502);
+      expect(res.status).toBe(500);
       const data = await res.json();
       expect(data.message).toContain('Database connection lost');
       expect(data.recordingId).toBe('rec_retry_err');
@@ -645,6 +646,95 @@ describe('Media Routes', () => {
       expect(res.status).toBe(429);
       const data = await res.json();
       expect(data.message).toContain('Rate limit exceeded');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — GET /transcribe stuck-processing detection
+  // Date: 2026-03-30
+  // Bug: Pipeline stuck in 'processing' for >15 min with empty segments, frontend polls forever
+  // Fix: GET handler detects stuck state and marks as failed
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — stuck processing detection in GET /transcribe', () => {
+    it('marks asset as failed when stuck in processing for >15 min with empty segments', async () => {
+      const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      mockTranscriptionService.getMediaAsset
+        .mockResolvedValueOnce({
+          id: 'rec_stuck',
+          workspace_id: 'ws_1',
+          transcription_status: 'processing',
+          transcript_json: '[]',
+          diarization_json: '{}',
+          updated_at: staleDate,
+        })
+        .mockResolvedValueOnce({
+          id: 'rec_stuck',
+          workspace_id: 'ws_1',
+          transcription_status: 'failed',
+          transcript_json: '[]',
+          diarization_json: JSON.stringify({
+            errorMessage: 'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+          }),
+          updated_at: new Date().toISOString(),
+        });
+      mockTranscriptionService.markTranscriptionFailure.mockResolvedValue(undefined);
+
+      const res = await app.request('/media/recordings/rec_stuck/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.pipelineStatus).toBe('failed');
+      expect(mockTranscriptionService.markTranscriptionFailure).toHaveBeenCalledWith(
+        'rec_stuck',
+        'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+        null,
+        null
+      );
+    });
+
+    it('does not mark as failed when processing for <15 min', async () => {
+      const recentDate = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_recent',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: recentDate,
+      });
+
+      const res = await app.request('/media/recordings/rec_recent/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.pipelineStatus).toBe('processing');
+      expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+    });
+
+    it('does not mark as failed when processing has segments', async () => {
+      const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_with_data',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: JSON.stringify([{ text: 'hello', start: 0, end: 1 }]),
+        diarization_json: '{}',
+        updated_at: staleDate,
+      });
+
+      const res = await app.request('/media/recordings/rec_with_data/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
     });
   });
 });

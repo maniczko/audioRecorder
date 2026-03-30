@@ -135,7 +135,12 @@ export class Database {
     this._dbPath = dbPath;
 
     if (this.type === 'postgres') {
-      this.pool = new Pool({ connectionString });
+      this.pool = new Pool({
+        connectionString,
+        max: 10,
+        connectionTimeoutMillis: 10_000,
+        idleTimeoutMillis: 30_000,
+      });
       console.log('[DB] Using PostgreSQL (Supabase)');
     } else {
       if (dbPath !== ':memory:') {
