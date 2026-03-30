@@ -29,6 +29,8 @@ export default function useUI() {
     setPendingPersonId,
     dismissNotification,
     setNotificationCenterOpen,
+    studioHomeSignal,
+    triggerStudioHome,
   } = uiState;
 
   // ── Command palette ─────────────────────────────────────
@@ -173,10 +175,18 @@ export default function useUI() {
   );
 
   const openStudio = useCallback(() => {
-    meetings.startNewMeetingDraft();
-    meetings.resetSelectionState();
+    triggerStudioHome();
     setActiveTab('studio');
-  }, [meetings, setActiveTab]);
+  }, [triggerStudioHome, setActiveTab]);
+
+  // React to studioHomeSignal — calls startNewMeetingDraft() on this hook's
+  // meetings instance (the one actually used by TabRouter to render state).
+  // Skip the initial mount (signal === 0).
+  useEffect(() => {
+    if (!studioHomeSignal) return;
+    meetings.startNewMeetingDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studioHomeSignal]);
 
   const openGoogleCalendarForMeeting = useCallback(
     (meetingId: string) => {

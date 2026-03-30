@@ -11,6 +11,7 @@ export const useUIStore = create<any>()(
       layoutPreset: 'modern',
       pendingTaskId: '',
       pendingPersonId: '',
+      studioHomeSignal: 0,
       commandPaletteOpen: false,
       notificationCenterOpen: false,
       notificationState: { dismissedIds: [], deliveredIds: [] },
@@ -41,6 +42,8 @@ export const useUIStore = create<any>()(
 
       setPendingTaskId: (id: string) => set({ pendingTaskId: id }),
       setPendingPersonId: (id: string) => set({ pendingPersonId: id }),
+      triggerStudioHome: () =>
+        set((state: any) => ({ studioHomeSignal: state.studioHomeSignal + 1 })),
       setCommandPaletteOpen: (open: boolean) => set({ commandPaletteOpen: open }),
       setNotificationCenterOpen: (open: boolean) => set({ notificationCenterOpen: open }),
 

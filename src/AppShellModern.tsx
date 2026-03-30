@@ -103,15 +103,14 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
         <div
           className="modern-brand"
           onClick={() => {
-            // Navigate to home/dashboard
-            ui.setActiveTab('studio');
+            ui.openStudio();
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              ui.setActiveTab('studio');
+              ui.openStudio();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}

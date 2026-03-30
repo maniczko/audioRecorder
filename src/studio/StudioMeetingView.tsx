@@ -3211,6 +3211,8 @@ export default function StudioMeetingView({
                                 className="ff-speaker-rename-input"
                                 autoFocus
                                 value={renameValue}
+                                size={Math.max(8, renameValue.length + 2)}
+                                aria-label="Nowa nazwa mówcy"
                                 onChange={(e) => setRenameValue(e.target.value)}
                                 onBlur={() => {
                                   const name = renameValue.trim();
@@ -3229,6 +3231,8 @@ export default function StudioMeetingView({
                                 <button
                                   type="button"
                                   className="ff-speaker-trigger"
+                                  aria-label={`Zmień mówcę: ${name}`}
+                                  title={`Zmień mówcę: ${name}`}
                                   onClick={() =>
                                     setSpeakerDropdownSegId(
                                       speakerDropdownSegId === seg.id ? null : seg.id
