@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { TRANSCRIPTION_PROVIDER, createBrowserTranscriptionController } from './transcription';
+
 let idCounter = 0;
 vi.mock('./storage', () => ({
   createId: (prefix: string) => `${prefix}_${++idCounter}`,
@@ -13,8 +15,6 @@ vi.mock('./recording', () => ({
 vi.mock('./diarization', () => ({
   signatureAroundTimestamp: vi.fn((_timeline, _ts) => 'sig_mock'),
 }));
-
-import { TRANSCRIPTION_PROVIDER, createBrowserTranscriptionController } from './transcription';
 
 function createMockSpeechRecognition() {
   return class MockSpeechRecognition {

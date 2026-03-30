@@ -1,6 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
+import useStoredState from './useStoredState';
+
 const readStorageMock = vi.fn();
 const writeStorageMock = vi.fn();
 const writeStorageAsyncMock = vi.fn();
@@ -11,8 +13,6 @@ vi.mock('../lib/storage', () => ({
   readStorageAsync: vi.fn().mockResolvedValue(undefined),
   writeStorageAsync: (...args: unknown[]) => writeStorageAsyncMock(...args),
 }));
-
-import useStoredState from './useStoredState';
 
 describe('useStoredState', () => {
   beforeEach(() => {

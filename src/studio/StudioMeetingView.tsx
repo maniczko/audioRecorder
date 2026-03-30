@@ -913,6 +913,7 @@ export default function StudioMeetingView({
   // Rename flow (triggered from within the dropdown)
   const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
   const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<any>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
@@ -1361,6 +1362,13 @@ export default function StudioMeetingView({
     (speakerId, speakerName) => {
       const nextName = String(speakerName || '').trim();
       if (!nextName || typeof renameSpeaker !== 'function') return;
+
+      // Uniqueness check — reject if another speaker already has this name
+      const duplicate = Object.entries(displaySpeakerNames).some(
+        ([id, name]) =>
+          String(id) !== String(speakerId) && String(name).toLowerCase() === nextName.toLowerCase()
+      );
+      if (duplicate) return;
 
       renameSpeaker(speakerId, nextName);
       if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(nextName)) return;
@@ -3208,21 +3216,37 @@ export default function StudioMeetingView({
                           <div className="ff-speaker-picker-wrap ff-speaker-picker-inline">
                             {renamingSpeakerId === String(seg.speakerId) ? (
                               <input
-                                className="ff-speaker-rename-input"
+                                className={`ff-speaker-rename-input${renameDuplicate ? ' is-duplicate' : ''}`}
                                 autoFocus
                                 value={renameValue}
                                 size={Math.max(8, renameValue.length + 2)}
                                 aria-label="Nowa nazwa mówcy"
-                                onChange={(e) => setRenameValue(e.target.value)}
+                                title={renameDuplicate ? 'Ta nazwa jest już zajęta' : undefined}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setRenameValue(val);
+                                  const trimmed = val.trim().toLowerCase();
+                                  const isDup = Object.entries(displaySpeakerNames).some(
+                                    ([id, name]) =>
+                                      String(id) !== String(seg.speakerId) &&
+                                      String(name).toLowerCase() === trimmed
+                                  );
+                                  setRenameDuplicate(Boolean(trimmed && isDup));
+                                }}
                                 onBlur={() => {
                                   const name = renameValue.trim();
-                                  if (name) commitSpeakerRename(seg.speakerId, name);
+                                  if (name && !renameDuplicate)
+                                    commitSpeakerRename(seg.speakerId, name);
                                   setRenamingSpeakerId(null);
+                                  setRenameDuplicate(false);
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') (e.target as any).blur();
+                                  if (e.key === 'Enter') {
+                                    if (!renameDuplicate) (e.target as any).blur();
+                                  }
                                   if (e.key === 'Escape') {
                                     setRenamingSpeakerId(null);
+                                    setRenameDuplicate(false);
                                   }
                                 }}
                               />
@@ -3267,6 +3291,7 @@ export default function StudioMeetingView({
                                       setSpeakerDropdownSegId(null);
                                       setRenamingSpeakerId(String(sid));
                                       setRenameValue(labelSpeaker(displaySpeakerNames, sid));
+                                      setRenameDuplicate(false);
                                     }}
                                     onClose={() => setSpeakerDropdownSegId(null)}
                                   />

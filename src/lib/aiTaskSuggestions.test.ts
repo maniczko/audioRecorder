@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { suggestTasksFromTranscript } from './aiTaskSuggestions';
+
 const mockApiRequest = vi.hoisted(() => vi.fn());
 
 vi.mock('../services/httpClient', () => ({
@@ -9,8 +11,6 @@ vi.mock('../services/httpClient', () => ({
 vi.mock('../services/config', () => ({
   API_BASE_URL: 'http://localhost:3001',
 }));
-
-import { suggestTasksFromTranscript } from './aiTaskSuggestions';
 
 describe('aiTaskSuggestions', () => {
   beforeEach(() => {

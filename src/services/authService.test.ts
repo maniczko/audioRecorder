@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { createAuthService } from './authService';
+
 const mockRegisterUser = vi.fn();
 const mockLoginUser = vi.fn();
 const mockRequestPasswordReset = vi.fn();
@@ -30,8 +32,6 @@ vi.mock('./config', () => ({
     return mockAppDataProvider;
   },
 }));
-
-import { createAuthService } from './authService';
 
 describe('createAuthService', () => {
   beforeEach(() => {

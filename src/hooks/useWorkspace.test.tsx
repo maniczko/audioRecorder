@@ -1,6 +1,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
+import useWorkspace from './useWorkspace';
+import { readStorage } from '../lib/storage';
+
 const bootstrapMock = vi.fn();
 const updateMemberRoleMock = vi.fn();
 let onUnauthorizedCb: (() => void) | null = null;
@@ -36,9 +39,6 @@ vi.mock('../lib/storage', () => ({
   readStorageAsync: vi.fn().mockResolvedValue(undefined),
   writeStorageAsync: vi.fn().mockResolvedValue(undefined),
 }));
-
-import useWorkspace from './useWorkspace';
-import { readStorage } from '../lib/storage';
 
 describe('useWorkspace', () => {
   beforeEach(() => {

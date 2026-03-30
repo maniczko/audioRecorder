@@ -4,6 +4,7 @@ import {
   applyAppCors,
   applyRequestMetadata,
   applySecurityHeaders,
+  applyRateLimiting,
   registerAppErrorHandler,
   registerNotFoundHandler,
 } from './http/app-security.ts';
@@ -15,6 +16,7 @@ export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewa
 
   applyAppCors(app, config.allowedOrigins || 'http://localhost:3000');
   applyRequestMetadata(app);
+  applyRateLimiting(app);
   applySecurityHeaders(app);
   registerAppErrorHandler(app);
   registerNotFoundHandler(app);

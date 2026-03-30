@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { createStateService } from './stateService';
+
 const mockApiRequest = vi.fn();
 let mockAppDataProvider = 'local';
 
@@ -12,8 +14,6 @@ vi.mock('./config', () => ({
     return mockAppDataProvider;
   },
 }));
-
-import { createStateService } from './stateService';
 
 describe('stateService', () => {
   beforeEach(() => {

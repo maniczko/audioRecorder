@@ -6,6 +6,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import Topbar from './Topbar';
+
 const mockUI = vi.hoisted(() => ({
   activeTab: 'studio' as string,
   setActiveTab: vi.fn(),
@@ -52,8 +54,6 @@ vi.mock('./NotificationCenter', () => ({
     <div data-testid="notification-center" data-open={props.open} data-unread={props.unreadCount} />
   ),
 }));
-
-import Topbar from './Topbar';
 
 describe('Topbar', () => {
   beforeEach(() => {

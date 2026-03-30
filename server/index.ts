@@ -11,6 +11,9 @@ import TranscriptionService from './services/TranscriptionService.ts';
 import * as audioPipeline from './audioPipeline.ts';
 import * as speakerEmbedder from './speakerEmbedder.ts';
 import { resolveServerPort } from './runtime.ts';
+import { initSentry } from './sentry.ts';
+
+initSentry();
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -115,6 +118,14 @@ export async function bootstrap() {
   const db = getDatabase();
   await db.init();
 
+  // [PROD] Verify DB health on startup
+  const dbHealth = await db.checkHealth();
+  if (!dbHealth.ok) {
+    logger.error(`[Bootstrap] Database health check FAILED: ${dbHealth.status}`);
+  } else {
+    logger.info(`[Bootstrap] Database health check OK (${dbHealth.type})`);
+  }
+
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
 
@@ -156,6 +167,42 @@ if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
       server.listen(PORT, HOST, () => {
         logger.info(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
       });
+
+      // [PROD] Graceful shutdown handling
+      const shutdown = async (signal: string) => {
+        logger.info(`[Process] Received ${signal}. Starting graceful shutdown...`);
+
+        // Force exit after timeout if shutdown hangs
+        const forceExit = setTimeout(() => {
+          logger.error('[Process] Shutdown timed out. Force exiting.');
+          process.exit(1);
+        }, 20000);
+
+        try {
+          server.close(() => {
+            logger.info('[Process] HTTP server closed.');
+          });
+
+          if (server && typeof (server as any).closeAllConnections === 'function') {
+            (server as any).closeAllConnections();
+          }
+
+          if (db && typeof db.pool?.end === 'function') {
+            await db.pool.end();
+            logger.info('[Process] Database connections closed.');
+          }
+
+          clearTimeout(forceExit);
+          logger.info('[Process] Graceful shutdown complete.');
+          process.exit(0);
+        } catch (err) {
+          logger.error('[Process] Error during shutdown:', err);
+          process.exit(1);
+        }
+      };
+
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT', () => shutdown('SIGINT'));
     })
     .catch((error) => {
       logger.error('FAILED TO START SERVER:', error);

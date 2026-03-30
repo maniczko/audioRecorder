@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+import useWorkspaceBackup from './useWorkspaceBackup';
+
 const {
   mockWorkspaceSelectors,
   mockMeetingsStore,
@@ -63,8 +65,6 @@ vi.mock('../lib/workspaceBackup', () => ({
   previewWorkspaceBackupImport: (...args: any[]) => mockPreviewWorkspaceBackupImport(...args),
   mergeWorkspaceBackup: (...args: any[]) => mockMergeWorkspaceBackup(...args),
 }));
-
-import useWorkspaceBackup from './useWorkspaceBackup';
 
 describe('useWorkspaceBackup', () => {
   beforeEach(() => {

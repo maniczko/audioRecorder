@@ -259,6 +259,21 @@ export class Database {
     }
   }
 
+  async checkHealth(): Promise<{ ok: boolean; status: string; type: string }> {
+    try {
+      if (this.type === 'postgres') {
+        await this.pool.query('SELECT 1');
+        return { ok: true, status: 'connected', type: 'postgres' };
+      } else {
+        await this._sendToWorker('query', 'SELECT 1');
+        return { ok: true, status: 'ok', type: 'sqlite' };
+      }
+    } catch (error: any) {
+      logger.error('[DB] Health check failed:', error.message);
+      return { ok: false, status: error.message, type: this.type };
+    }
+  }
+
   async _createSchema(): Promise<void> {
     await this._execute(`
       CREATE TABLE IF NOT EXISTS server_migrations (

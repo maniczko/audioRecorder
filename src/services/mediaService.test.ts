@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { createMediaService, REMOTE_TRANSCRIPTION_PROVIDER } from './mediaService';
+
 const mockApiRequest = vi.fn();
 const mockDiarizeSegments = vi.fn();
 const mockVerifyRecognizedSegments = vi.fn();
@@ -50,8 +52,6 @@ vi.mock('../shared/contracts', () => ({
   normalizeMediaTranscriptionResponse: (...args: any[]) =>
     mockNormalizeMediaTranscriptionResponse(...args),
 }));
-
-import { createMediaService, REMOTE_TRANSCRIPTION_PROVIDER } from './mediaService';
 
 describe('mediaService', () => {
   beforeEach(() => {

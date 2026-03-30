@@ -472,6 +472,11 @@
   max-width: 220px;
 }
 
+.ff-speaker-rename-input.is-duplicate {
+  border-bottom-color: #ef4444;
+  color: #ef4444;
+}
+
 .ff-sync-fab {
   position: sticky;
   bottom: 16px;
@@ -829,14 +834,19 @@
 }
 
 .ff-speaker-dropdown-item.rename {
-  color: #6366f1;
-  font-size: 0.8rem;
-  font-weight: 500;
+  color: #fff;
+  background: #6366f1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 0 0 8px 8px;
+  margin: 2px 0 0;
+  justify-content: center;
+  gap: 6px;
 }
 
 .ff-speaker-dropdown-item.rename:hover {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: #4f46e5;
+  color: #fff;
 }
 
 .ff-spk-dot {

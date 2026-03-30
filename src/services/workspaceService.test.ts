@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { createWorkspaceService } from './workspaceService';
+
 const mockApiRequest = vi.fn();
 let mockAppDataProvider = 'local';
 
@@ -17,8 +19,6 @@ vi.mock('../lib/permissions', () => ({
   normalizeWorkspaceRole: (role: string) =>
     ['owner', 'admin', 'member', 'viewer'].includes(role) ? role : 'member',
 }));
-
-import { createWorkspaceService } from './workspaceService';
 
 describe('workspaceService', () => {
   beforeEach(() => {

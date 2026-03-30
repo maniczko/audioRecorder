@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { semanticSearch, clearSemanticSearchCache } from './aiSearch';
+
 const mockApiRequest = vi.hoisted(() => vi.fn());
 
 vi.mock('../services/httpClient', () => ({
   apiRequest: mockApiRequest,
 }));
-
-import { semanticSearch, clearSemanticSearchCache } from './aiSearch';
 
 describe('aiSearch', () => {
   const sampleItems = [

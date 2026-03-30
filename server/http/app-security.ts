@@ -60,6 +60,37 @@ export function applyRequestMetadata(app: Hono<any>) {
   });
 }
 
+const RATE_LIMIT_WINDOW_MS = 60000;
+const MAX_REQUESTS_PER_WINDOW = 100;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+export function applyRateLimiting(app: Hono<any>) {
+  app.use('/auth/*', async (c, next) => {
+    const ip = c.req.header('x-forwarded-for') || 'local';
+    const now = Date.now();
+    const state = rateLimitMap.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+
+    if (now > state.resetAt) {
+      state.count = 1;
+      state.resetAt = now + RATE_LIMIT_WINDOW_MS;
+    } else {
+      state.count++;
+    }
+
+    rateLimitMap.set(ip, state);
+
+    if (state.count > MAX_REQUESTS_PER_WINDOW) {
+      logger.warn(`[Security] Rate limit exceeded for IP: ${ip}`);
+      return c.json(
+        { message: 'Too many requests.', retryAfter: Math.ceil((state.resetAt - now) / 1000) },
+        429
+      );
+    }
+
+    await next();
+  });
+}
+
 export function applySecurityHeaders(app: Hono<any>) {
   app.use('*', async (c, next) => {
     const headers = securityHeaders();
