@@ -6,12 +6,34 @@
     "stylelint-order"
   ],
   "rules": {
-    "order/properties-alphabetical-order": true,
+    "order/properties-alphabetical-order": null,
     "selector-class-pattern": null,
-    "selector-pseudo-class-no-unknown": [true, {
-      "ignorePseudoClasses": ["global"]
-    }],
-    "media-feature-range-notation": null
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": [
+          "global",
+          "export"
+        ]
+      }
+    ],
+    "selector-pseudo-element-no-unknown": [
+      true,
+      {
+        "ignorePseudoElements": [
+          "ng-deep"
+        ]
+      }
+    ],
+    "media-feature-range-notation": null,
+    "color-function-notation": null,
+    "alpha-value-notation": null,
+    "hue-degree-notation": null,
+    "function-no-unknown": null,
+    "property-no-vendor-prefix": null,
+    "value-no-vendor-prefix": null,
+    "number-max-precision": null,
+    "no-descending-specificity": null
   },
   "ignoreFiles": [
     "**/*.test.css",
