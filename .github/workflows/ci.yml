@@ -45,7 +45,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: TypeScript type check
-        run: pnpm run type-check
+        run: pnpm run typecheck
 
       - name: ESLint
         run: pnpm run lint
