@@ -273,6 +273,9 @@ importers:
       '@sentry/node':
         specifier: ^10.46.0
         version: 10.46.0
+      '@sentry/profiling-node':
+        specifier: ^10.46.0
+        version: 10.46.0
       '@supabase/supabase-js':
         specifier: ^2.100.1
         version: 2.100.1
