@@ -59,6 +59,8 @@ test_full_*.txt
 test_run_*.txt
 test_output.txt
 tsc-err.txt
+server/debug_env.ts
+server_error_captured.txt
 
 # SQLite WAL/SHM files
 *.sqlite-shm
