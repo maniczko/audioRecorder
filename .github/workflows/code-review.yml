@@ -62,7 +62,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - uses: preactjs/compressed-size-action@v2
+      - uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: './build/**/*.{js,css}'
