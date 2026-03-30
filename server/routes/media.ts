@@ -680,11 +680,14 @@ Important:
       if (!res.ok) {
         const errBody = await res.text();
         logger.error('Gemini image gen error:', errBody);
-        const detail = errBody.slice(0, 300);
-        return c.json(
-          { message: 'Blad generowania obrazu Gemini.', status: res.status, detail },
-          500
-        );
+        let detail = '';
+        try {
+          const parsed = JSON.parse(errBody);
+          detail = parsed?.error?.message || errBody.slice(0, 200);
+        } catch {
+          detail = errBody.slice(0, 200);
+        }
+        return c.json({ message: `Blad Gemini (${res.status}): ${detail}` }, 500);
       }
 
       const data = await res.json();
@@ -711,7 +714,7 @@ Important:
       return c.json({ sketchnoteUrl: imageUrl }, 200);
     } catch (e: any) {
       console.error('Sketchnote generation exception:', e);
-      return c.json({ message: 'Blad wywolywania API Gemini.' }, 500);
+      return c.json({ message: `Blad Gemini: ${e?.message || 'nieznany blad'}` }, 500);
     }
   });
 
