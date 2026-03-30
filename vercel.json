@@ -29,6 +29,10 @@
       "destination": "https://audiorecorder-production.up.railway.app/state/:path*"
     },
     {
+      "source": "/voice-profiles",
+      "destination": "https://audiorecorder-production.up.railway.app/voice-profiles"
+    },
+    {
       "source": "/voice-profiles/:path*",
       "destination": "https://audiorecorder-production.up.railway.app/voice-profiles/:path*"
     },
