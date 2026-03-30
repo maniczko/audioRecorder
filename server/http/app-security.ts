@@ -66,6 +66,12 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 export function applyRateLimiting(app: Hono<any>) {
   app.use('/auth/*', async (c, next) => {
+    // [TEST] Skip rate limiting in tests to avoid interference with functional suites
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+      await next();
+      return;
+    }
+
     const ip = c.req.header('x-forwarded-for') || 'local';
     const now = Date.now();
     const state = rateLimitMap.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
