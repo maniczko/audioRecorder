@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StudioMeetingView from './StudioMeetingView';
 import React from 'react';
 import { vi } from 'vitest';
 import AppProviders from '../AppProviders';
+
+const apiRequestMock = vi.hoisted(() => vi.fn());
 
 // Mock dependencies that we don't need to test for basic rendering
 vi.mock('./RecorderPanel', () => ({ default: () => <div data-testid="recorder-panel" /> }));
@@ -17,6 +19,14 @@ vi.mock('../services/config', () => ({
   apiBaseUrlConfigured: () => false,
   remoteApiEnabled: () => false,
 }));
+
+vi.mock('../services/httpClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../services/httpClient')>();
+  return {
+    ...actual,
+    apiRequest: (...args: any[]) => apiRequestMock(...args),
+  };
+});
 
 function renderWithContext(ui: React.ReactElement) {
   return render(<AppProviders>{ui}</AppProviders>);
@@ -293,6 +303,34 @@ describe('StudioMeetingView', () => {
         /Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji\./i
       ).length
     ).toBeGreaterThan(0);
+  });
+
+  test('generates sketchnote using displayRecording id when selectedRecording is missing', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    apiRequestMock.mockResolvedValueOnce({
+      sketchnoteUrl: 'data:image/png;base64,ZmFrZQ==',
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{ id: 'rec-display-only', transcript: [], duration: 60 }}
+        studioAnalysis={{ summary: 'Podsumowanie testowe', decisions: [], actionItems: [] }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Generuj sketchnotk/i }));
+
+    await waitFor(() => {
+      expect(apiRequestMock).toHaveBeenCalledWith('/media/recordings/rec-display-only/sketchnote',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'Brak zapisanego nagrania do wygenerowania wizualizacji.'
+    );
+    alertSpy.mockRestore();
   });
 
   test('renders playback scrubber and lets user seek audio', () => {

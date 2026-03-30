@@ -2353,14 +2353,16 @@ export default function StudioMeetingView({
                             }}
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (!selectedRecording?.id) {
+                              const sketchnoteRecordingId =
+                                selectedRecording?.id || displayRecording?.id;
+                              if (!sketchnoteRecordingId) {
                                 alert('Brak zapisanego nagrania do wygenerowania wizualizacji.');
                                 return;
                               }
                               try {
                                 setIsGeneratingSketchnote(true);
                                 const res = await apiRequest(
-                                  `/media/recordings/${selectedRecording.id}/sketchnote`,
+                                  `/media/recordings/${sketchnoteRecordingId}/sketchnote`,
                                   {
                                     method: 'POST',
                                     body: {
