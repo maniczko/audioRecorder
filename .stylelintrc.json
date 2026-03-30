@@ -62,14 +62,7 @@
     "selector-max-attribute": null,
     "selector-max-pseudo-class": null,
     "selector-max-combinators": null,
-    "selector-no-qualifying-type": null,
-    "selector-combinator-space-after": null,
-    "selector-combinator-space-before": null,
-    "string-quotes": null,
-    "indentation": null,
-    "max-empty-lines": null,
-    "no-eol-whitespace": null,
-    "no-missing-end-of-source-newline": null
+    "selector-no-qualifying-type": null
   },
   "ignoreFiles": [
     "**/*.test.css",
