@@ -135,7 +135,9 @@
     "typecheck:server": "tsc --project server/tsconfig.server.json --noEmit",
     "typecheck:all": "pnpm run typecheck && pnpm run typecheck:server",
     "typecheck:watch": "tsc --noEmit --watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "errors:railway": "node scripts/fetch-railway-errors.js",
+    "errors:railway:json": "node scripts/fetch-railway-errors.js --json"
   },
   "eslintConfig": {
     "extends": [

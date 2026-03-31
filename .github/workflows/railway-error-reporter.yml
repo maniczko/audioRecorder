@@ -1,0 +1,157 @@
+name: Railway Error Reporter
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      log_lines:
+        description: 'Number of log lines to fetch'
+        required: false
+        default: '100'
+        type: number
+      log_filter:
+        description: 'Log filter query (e.g., @level:error)'
+        required: false
+        default: '@level:error'
+        type: string
+      create_issue:
+        description: 'Create GitHub issue for errors'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  fetch-railway-errors:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Login to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway login --token $RAILWAY_TOKEN
+
+      - name: Link to project
+        run: echo "audioRecorder" | railway link
+
+      - name: Fetch Railway Errors
+        env:
+          RAILWAY_LOG_LINES: ${{ github.event.inputs.log_lines || 100 }}
+          RAILWAY_LOG_FILTER: ${{ github.event.inputs.log_filter || '@level:error' }}
+        run: node scripts/fetch-railway-errors.js --json
+
+      - name: Upload error reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: railway-error-reports
+          path: railway-errors/
+          retention-days: 30
+
+      - name: Check for errors
+        id: check-errors
+        run: |
+          # Check if any error logs were found
+          LATEST_REPORT=$(ls -t railway-errors/railway-errors-*.json 2>/dev/null | head -1)
+          if [ -f "$LATEST_REPORT" ] && [ -s "$LATEST_REPORT" ]; then
+            ERROR_COUNT=$(node -e "const logs = require('$LATEST_REPORT'); console.log(logs.length);")
+            if [ "$ERROR_COUNT" -gt 0 ] && [ "$ERROR_COUNT" != "0" ]; then
+              echo "has_errors=true" >> $GITHUB_OUTPUT
+              echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+            else
+              echo "has_errors=false" >> $GITHUB_OUTPUT
+              echo "error_count=0" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+            echo "error_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub issue for errors
+        if: ${{ github.event.inputs.create_issue != 'false' && steps.check-errors.outputs.has_errors == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Find the latest markdown report
+            const reportsDir = path.join(process.cwd(), 'railway-errors');
+            const files = fs.readdirSync(reportsDir)
+              .filter(f => f.endsWith('.md'))
+              .sort()
+              .reverse();
+
+            let mdContent = 'No error report found';
+            if (files.length > 0) {
+              mdContent = fs.readFileSync(path.join(reportsDir, files[0]), 'utf8');
+            }
+
+            // Find the latest JSON report
+            const jsonFiles = fs.readdirSync(reportsDir)
+              .filter(f => f.endsWith('.json'))
+              .sort()
+              .reverse();
+
+            let errorCount = 0;
+            let sampleErrors = [];
+            if (jsonFiles.length > 0) {
+              const jsonContent = JSON.parse(fs.readFileSync(path.join(reportsDir, jsonFiles[0]), 'utf8'));
+              errorCount = jsonContent.length;
+              sampleErrors = jsonContent.slice(0, 5);
+            }
+
+            const errorCount = ${{ steps.check-errors.outputs.error_count || 0 }};
+
+            // Fetch existing open issues
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'railway-error',
+            });
+
+            if (issues.length > 0) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: mdContent + `\n\n---\n\n**Total Errors:** ${errorCount}\n**Updated:** ${new Date().toISOString()}`,
+              });
+              console.log('✅ Updated existing Railway error report issue #' + issues[0].number);
+            } else {
+              // Create new issue
+              const { data: issue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚂 Railway Error Report - ' + new Date().toISOString().split('T')[0],
+                body: mdContent + `\n\n---\n\n**Total Errors:** ${errorCount}\n**Sample Errors:**\n\`\`\`json\n${JSON.stringify(sampleErrors, null, 2)}\n\`\`\``,
+                labels: ['railway-error', 'monitoring'],
+              });
+              console.log('✅ Created new Railway error report issue #' + issue.number);
+            }
