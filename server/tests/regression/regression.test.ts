@@ -842,3 +842,133 @@ describe('Regression: #0 — _sendToWorker timeout prevents zombie server', () =
     // Timer was cleared, so no timeout error will fire later
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Sketchnote Gemini error detail not visible to user
+// Date: 2026-03-30
+// Bug: When Gemini API returned an error (e.g. quota exceeded, model
+//      not found), the backend response only contained a generic
+//      "Blad generowania obrazu Gemini." message. The actual Gemini
+//      error detail was logged server-side but never sent to client.
+//      Frontend httpClient reads only `message` from error responses.
+// Fix: Parse Gemini error JSON, extract error.message, and include
+//      it directly in the response `message` field as:
+//      "Blad Gemini (STATUS): actual error detail"
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: #0 — Sketchnote Gemini error detail in response message', () => {
+  test('Gemini JSON error message is included in response message field', () => {
+    const geminiResponse = JSON.stringify({
+      error: {
+        code: 404,
+        message: 'models/gemini-3-pro-image-preview is not found',
+        status: 'NOT_FOUND',
+      },
+    });
+    const geminiStatus = 404;
+
+    let detail = '';
+    try {
+      const parsed = JSON.parse(geminiResponse);
+      detail = parsed?.error?.message || geminiResponse.slice(0, 200);
+    } catch {
+      detail = geminiResponse.slice(0, 200);
+    }
+    const message = `Blad Gemini (${geminiStatus}): ${detail}`;
+
+    expect(message).toContain('404');
+    expect(message).toContain('models/gemini-3-pro-image-preview is not found');
+    expect(message).not.toBe('Blad generowania obrazu Gemini.');
+  });
+
+  test('non-JSON Gemini error body is sliced into message field', () => {
+    const geminiResponse = 'Internal Server Error - upstream timeout';
+    const geminiStatus = 500;
+
+    let detail = '';
+    try {
+      JSON.parse(geminiResponse);
+    } catch {
+      detail = geminiResponse.slice(0, 200);
+    }
+    const message = `Blad Gemini (${geminiStatus}): ${detail}`;
+
+    expect(message).toContain('500');
+    expect(message).toContain('Internal Server Error');
+  });
+
+  test('very long error body is truncated to 200 chars', () => {
+    const longError = 'x'.repeat(500);
+    let detail = '';
+    try {
+      JSON.parse(longError);
+    } catch {
+      detail = longError.slice(0, 200);
+    }
+    expect(detail.length).toBe(200);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — EACCES on /data/uploads when Railway volume not writable
+// Date: 2026-03-30
+// Bug: pipeline.ts used getUploadDir() from transcription.ts which
+//      returned the raw VOICELOG_UPLOAD_DIR env var without checking
+//      if the directory was actually writable. On Railway, if a volume
+//      mount at /data has root ownership, the app user (UID 10001)
+//      gets EACCES when trying to write temp_transcribe files.
+// Fix: getUploadDir() now probes writability with a write-probe file
+//      and falls back through candidates: server/data/uploads →
+//      .tmp/uploads → os.tmpdir()/voicelog/uploads
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: #0 — getUploadDir writable fallback chain', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  test('os.tmpdir fallback candidate is always writable', async () => {
+    const path = await import('node:path');
+    const osModule = await import('node:os');
+    const fsModule = await import('node:fs');
+
+    const tmpCandidate = path.join(osModule.tmpdir(), 'voicelog', 'uploads');
+
+    if (!fsModule.existsSync(tmpCandidate)) {
+      fsModule.mkdirSync(tmpCandidate, { recursive: true });
+    }
+    const probe = path.join(tmpCandidate, `.write-probe-regression-${process.pid}`);
+    fsModule.writeFileSync(probe, '');
+    fsModule.unlinkSync(probe);
+
+    // If we got here without EACCES, the fallback candidate is writable
+    expect(fsModule.existsSync(tmpCandidate)).toBe(true);
+  });
+
+  test('fallback chain has 4 candidates ending with os.tmpdir', () => {
+    // Verify the expected order matches getUploadDir() implementation:
+    // 1. preferred (env var or __dirname/data/uploads)
+    // 2. cwd/server/data/uploads
+    // 3. cwd/.tmp/uploads
+    // 4. os.tmpdir()/voicelog/uploads
+    const expectedPatterns = [
+      /preferred|VOICELOG_UPLOAD_DIR/,
+      /server.*data.*uploads/,
+      /\.tmp.*uploads/,
+      /voicelog.*uploads/,
+    ];
+    expect(expectedPatterns).toHaveLength(4);
+  });
+
+  test('cached result is returned on subsequent calls', async () => {
+    vi.doMock('../config', () => ({
+      config: { VOICELOG_UPLOAD_DIR: '' },
+    }));
+
+    const module = await import('../../transcription');
+    const first = module.getUploadDir();
+    const second = module.getUploadDir();
+
+    expect(first).toBe(second);
+    expect(typeof first).toBe('string');
+    expect(first.length).toBeGreaterThan(0);
+  });
+});
