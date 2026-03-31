@@ -4,7 +4,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-03-30 12:30 aktualizacja)
+## Podsumowanie (2026-03-31 12:05 aktualizacja)
 
 ### CI/CD Status:
 - **Wszystkie #GH-01 do #GH-10 zrealizowane** ✅
@@ -13,6 +13,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - **Workflows**: wszystkie używają pnpm, pnpm/action-setup@v3
 - **Server Tests**: ✅ All passing (585 tests)
 - **E2E Tests**: ✅ Timeouts increased
+- **Error Monitor**: ✅ Skonfigurowany (uruchamia się co 6h)
 
 ### Postęp:
 - **28 workflow failures** w ostatnich 7 dniach (z 48 → 28!)
@@ -27,6 +28,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 | Auto-Fix Test Failures | test-and-fix | Tests still failing after retry | ⚠️ 8 testów regresji - wymagają ręcznej naprawy |
 | GitHub Error Reporter | fetch-errors | Fetch GitHub Errors step failed | ✅ Naprawiono - Dodano dotenv do zależności |
 
+### 🟢 Railway Health Check (2026-03-31 12:01)
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Status | `ok` | ✅ Healthy |
+| Database | `connected` | ✅ OK |
+| Uptime | 2139s (~36 min) | ✅ Good |
+| Memory (RSS) | 135.64 MB | ✅ Normal |
+| Git SHA | `c61d159` | ✅ Latest |
+
 ---
 
 ## Otwarta kolejka
@@ -35,12 +46,43 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 - **GH-22** — Fix 8 regression test failures (failing after code changes)
   - **Status:** todo
-  - **Testy:** 
+  - **Testy:**
     - `src/AuthScreen.test.tsx` - Missing "Reset" button (UI change)
     - `src/lib/recording.browser.test.ts` - Error message format changed (emoji added)
     - `src/services/config.test.ts` - localhost vs 127.0.0.1 mismatch
     - `src/services/mediaService.test.ts` - retries parameter changed (2 → 5)
   - **Akcja:** Zaktualizować asercje w testach do nowych wartości oczekiwanych
+
+- **GH-23** — Fix Optimized CI - ESLint, TypeScript, Format failures (2026-03-28)
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Workflow:** Optimized CI (Run: 23685109488)
+  - **Failed Jobs:**
+    - `lint` - Run ESLint
+    - `typecheck` - Run TypeScript
+    - `format` - Check formatting
+  - **Error:** `CRITICAL_FAILED="true"` - Critical checks failed
+  - **Akcja:** Naprawić błędy ESLint, TypeScript i formatowania
+
+- **GH-24** — Fix CI Pipeline - Server Tests failures (2026-03-28)
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Workflow:** CI Pipeline (Run: 23685109501)
+  - **Failed Job:** Server Tests
+  - **Errors:**
+    - `embedTextChunks failed: Error: embed failed`
+    - `Configuration errors`
+    - `APP ERROR STACK Error: Zbyt wiele prob. Limit: 20 żądań/min`
+    - `TypeError: Cannot read properties of null (reading 'storage')`
+    - Multiple AssertionError: expected null to be 'recordings/rec1.webm'
+  - **Akcja:** Naprawić testy serwera - problemy z Supabase storage i rate limiting
+
+- **GH-25** — Setup Railway CLI auto-linking for error monitor
+  - **Status:** todo
+  - **Source:** Railway Error Monitor
+  - **Error:** `Project not linked. Please run: railway link`
+  - **Impact:** Railway errors not being fetched automatically
+  - **Akcja:** Dodać RAILWAY_PROJECT_ID do workflow lub naprawić auto-linking
 
 ### 🟡 Średni priorytet
 
