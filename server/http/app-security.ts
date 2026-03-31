@@ -62,9 +62,26 @@ export function applyRequestMetadata(app: Hono<any>) {
 
 const RATE_LIMIT_WINDOW_MS = 60000;
 const MAX_REQUESTS_PER_WINDOW = Number(process.env.RATE_LIMIT_MAX) || 100;
+const RATE_LIMIT_MAX_ENTRIES = 10_000;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
+// Periodic sweep of expired rate-limit entries to prevent unbounded memory growth
+let _rateLimitSweepTimer: ReturnType<typeof setInterval> | null = null;
+export function startRateLimitSweep() {
+  if (_rateLimitSweepTimer) return;
+  _rateLimitSweepTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, state] of rateLimitMap) {
+      if (state.resetAt < now) rateLimitMap.delete(ip);
+    }
+  }, 60_000);
+  // Allow process to exit without waiting for this timer
+  if (_rateLimitSweepTimer.unref) _rateLimitSweepTimer.unref();
+}
+
 export function applyRateLimiting(app: Hono<any>) {
+  startRateLimitSweep();
+
   app.use('/auth/*', async (c, next) => {
     // [TEST] Skip rate limiting in tests to avoid interference with functional suites
     if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
@@ -84,6 +101,16 @@ export function applyRateLimiting(app: Hono<any>) {
     }
 
     rateLimitMap.set(ip, state);
+
+    // Evict oldest entries if map grows too large (memory safety)
+    if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+      const keysIter = rateLimitMap.keys();
+      for (let i = 0; i < 1000; i++) {
+        const k = keysIter.next();
+        if (k.done) break;
+        rateLimitMap.delete(k.value);
+      }
+    }
 
     if (state.count > MAX_REQUESTS_PER_WINDOW) {
       logger.warn(`[Security] Rate limit exceeded for IP: ${ip}`);

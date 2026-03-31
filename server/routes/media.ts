@@ -162,9 +162,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
     await ensureWorkspaceAccess(c, workspaceId);
 
-    const buffer = await c.req.arrayBuffer();
-    if (buffer.byteLength > 100 * 1024 * 1024)
+    // Early rejection based on Content-Length to avoid buffering oversized uploads
+    const contentLength = parseInt(c.req.header('content-length') || '0', 10);
+    if (contentLength > 100 * 1024 * 1024) {
       return c.json({ message: 'Przesłany plik przekracza maksymalny rozmiar.' }, 413);
+    }
+
+    const arrayBuf = await c.req.arrayBuffer();
+    if (arrayBuf.byteLength > 100 * 1024 * 1024)
+      return c.json({ message: 'Przesłany plik przekracza maksymalny rozmiar.' }, 413);
+
+    // Wrap without copying — Buffer.from(ArrayBuffer) shares memory when possible
+    const buffer = Buffer.from(arrayBuf);
 
     let asset: MediaAsset;
     try {
@@ -173,7 +182,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         workspaceId,
         meetingId,
         contentType: c.req.header('content-type') || 'application/octet-stream',
-        buffer: Buffer.from(buffer),
+        buffer,
         createdByUserId: session.user_id,
       });
     } catch (uploadErr: any) {
@@ -448,12 +457,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return streamSSE(c, async (stream) => {
         let active = true;
 
+        const cleanup = () => {
+          if (!active) return;
+          active = false;
+          clearInterval(pingId);
+          clearTimeout(maxLifetimeId);
+          transcriptionService.removeListener(`progress-${recordingId}`, progressCallback);
+        };
+
         const progressCallback = async (data: any) => {
           if (!active) return;
-          await stream.writeSSE({
-            data: JSON.stringify(data),
-            event: 'progress',
-          });
+          try {
+            await stream.writeSSE({
+              data: JSON.stringify(data),
+              event: 'progress',
+            });
+          } catch {
+            cleanup();
+          }
         };
 
         transcriptionService.on(`progress-${recordingId}`, progressCallback);
@@ -462,15 +483,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           if (active) {
             await stream
               .writeSSE({ data: JSON.stringify({ ping: 'stay-alive' }), event: 'ping' })
-              .catch(() => {});
+              .catch(() => cleanup());
           }
         }, 15000);
 
-        c.req.raw.signal.addEventListener('abort', () => {
-          active = false;
-          clearInterval(pingId);
-          transcriptionService.removeListener(`progress-${recordingId}`, progressCallback);
-        });
+        // Safety: force-close SSE after 2 hours to prevent leaked connections
+        const maxLifetimeId = setTimeout(() => cleanup(), 2 * 60 * 60 * 1000);
+
+        c.req.raw.signal.addEventListener('abort', () => cleanup());
 
         await new Promise(() => {});
       });

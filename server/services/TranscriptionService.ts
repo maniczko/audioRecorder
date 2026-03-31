@@ -9,6 +9,8 @@ export default class TranscriptionService extends EventEmitter {
   audioPipeline: any;
   speakerEmbedder: any;
   transcriptionJobs: Map<string, Promise<void>>;
+  private _jobStartTimes: Map<string, number>;
+  private _staleJobTimer: ReturnType<typeof setInterval> | null;
 
   constructor(db: any, workspaceService: any, audioPipeline: any, speakerEmbedder: any) {
     super();
@@ -17,6 +19,26 @@ export default class TranscriptionService extends EventEmitter {
     this.audioPipeline = audioPipeline;
     this.speakerEmbedder = speakerEmbedder;
     this.transcriptionJobs = new Map();
+    this._jobStartTimes = new Map();
+    this._staleJobTimer = null;
+    this._startStaleJobSweep();
+  }
+
+  private _startStaleJobSweep() {
+    const MAX_JOB_AGE_MS = 4 * 60 * 60 * 1000; // 4 hours
+    this._staleJobTimer = setInterval(
+      () => {
+        const now = Date.now();
+        for (const [id, startedAt] of this._jobStartTimes) {
+          if (now - startedAt > MAX_JOB_AGE_MS) {
+            this.transcriptionJobs.delete(id);
+            this._jobStartTimes.delete(id);
+          }
+        }
+      },
+      10 * 60 * 1000
+    ); // every 10 minutes
+    if (this._staleJobTimer.unref) this._staleJobTimer.unref();
   }
 
   get pipeline() {
@@ -245,9 +267,11 @@ export default class TranscriptionService extends EventEmitter {
       })
       .finally(() => {
         this.transcriptionJobs.delete(recordingId);
+        this._jobStartTimes.delete(recordingId);
       });
 
     this.transcriptionJobs.set(recordingId, jobPromise);
+    this._jobStartTimes.set(recordingId, Date.now());
   }
 
   async runEnhancementPostProcess(

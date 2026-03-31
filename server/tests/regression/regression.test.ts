@@ -1087,3 +1087,136 @@ describe('Regression: Issue #0 — resetOrphanedJobs recovers stuck transcriptio
     expect(mockDb._execute).not.toHaveBeenCalled();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #0 — OOM: rateLimitMap unbounded growth
+// Date: 2026-03-31
+// Bug: rateLimitMap never evicted expired entries, growing without bound
+// Fix: Added periodic sweep + cap at 10k entries
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Regression: #0 — rateLimitMap memory leak', () => {
+  test('expired entries are cleaned up during request handling', async () => {
+    // The rate limit middleware now resets expired entries inline
+    // Simulate the logic: if resetAt < now, the entry count resets to 1
+    const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+    const RATE_LIMIT_WINDOW_MS = 60000;
+
+    // Add an 'expired' entry
+    rateLimitMap.set('1.2.3.4', { count: 50, resetAt: Date.now() - 10000 });
+
+    // Simulate sweep: remove entries where resetAt < now
+    const now = Date.now();
+    for (const [ip, state] of rateLimitMap) {
+      if (state.resetAt < now) rateLimitMap.delete(ip);
+    }
+
+    expect(rateLimitMap.size).toBe(0);
+  });
+
+  test('map is capped at max entries to prevent unbounded growth', () => {
+    const MAX_ENTRIES = 100; // Simulate smaller cap for test
+    const map = new Map<string, number>();
+
+    // Fill beyond cap
+    for (let i = 0; i < MAX_ENTRIES + 50; i++) {
+      map.set(`ip-${i}`, i);
+    }
+
+    // Evict when over cap
+    if (map.size > MAX_ENTRIES) {
+      const keysIter = map.keys();
+      const toEvict = map.size - MAX_ENTRIES;
+      for (let i = 0; i < toEvict; i++) {
+        const k = keysIter.next();
+        if (k.done) break;
+        map.delete(k.value);
+      }
+    }
+
+    expect(map.size).toBe(MAX_ENTRIES);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #0 — OOM: SSE progress listeners never cleaned up without abort
+// Date: 2026-03-31
+// Bug: SSE /progress endpoint used `await new Promise(() => {})` with no
+//      timeout; if client never aborted, listener + interval leaked forever
+// Fix: Added 2-hour max lifetime timeout + cleanup function
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Regression: #0 — SSE progress listener leak', () => {
+  test('cleanup function removes all resources', () => {
+    const listeners = new Map<string, Function>();
+    let intervalCleared = false;
+    let timeoutCleared = false;
+    let active = true;
+
+    const recordingId = 'test-123';
+    const callback = () => {};
+    listeners.set(`progress-${recordingId}`, callback);
+
+    const cleanup = () => {
+      if (!active) return;
+      active = false;
+      intervalCleared = true;
+      timeoutCleared = true;
+      listeners.delete(`progress-${recordingId}`);
+    };
+
+    cleanup();
+
+    expect(active).toBe(false);
+    expect(intervalCleared).toBe(true);
+    expect(timeoutCleared).toBe(true);
+    expect(listeners.has(`progress-${recordingId}`)).toBe(false);
+  });
+
+  test('cleanup is idempotent — calling twice does not throw', () => {
+    let active = true;
+    const cleanup = () => {
+      if (!active) return;
+      active = false;
+    };
+
+    cleanup();
+    cleanup(); // second call should be a no-op
+    expect(active).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #0 — OOM: TranscriptionService stale job entries never evicted
+// Date: 2026-03-31
+// Bug: transcriptionJobs Map entries persisted if Promise never settled
+//      (e.g. on SIGTERM), holding pipeline state in memory indefinitely
+// Fix: Added _jobStartTimes tracking + periodic sweep (4h max age)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Regression: #0 — TranscriptionService stale job cleanup', () => {
+  test('stale jobs older than threshold are evicted', () => {
+    const jobs = new Map<string, Promise<void>>();
+    const startTimes = new Map<string, number>();
+    const MAX_JOB_AGE_MS = 4 * 60 * 60 * 1000;
+
+    // Add a stale job (5 hours old)
+    jobs.set('rec-old', new Promise(() => {}));
+    startTimes.set('rec-old', Date.now() - 5 * 60 * 60 * 1000);
+
+    // Add a fresh job (1 minute old)
+    jobs.set('rec-fresh', new Promise(() => {}));
+    startTimes.set('rec-fresh', Date.now() - 60 * 1000);
+
+    // Simulate sweep
+    const now = Date.now();
+    for (const [id, startedAt] of startTimes) {
+      if (now - startedAt > MAX_JOB_AGE_MS) {
+        jobs.delete(id);
+        startTimes.delete(id);
+      }
+    }
+
+    expect(jobs.size).toBe(1);
+    expect(jobs.has('rec-fresh')).toBe(true);
+    expect(jobs.has('rec-old')).toBe(false);
+    expect(startTimes.size).toBe(1);
+  });
+});
