@@ -28,12 +28,7 @@ describe('Regression: Issue #502 - Rate limiting error handling', () => {
   });
 
   afterEach(() => {
-    vi.unmock('../config');
-    // Clear rate limit map between tests
-    vi.doMock('../lib/serverUtils', () => {
-      const actual = vi.importActual('../lib/serverUtils');
-      return { ...actual };
-    });
+    vi.clearAllMocks();
   });
 
   test('rate limit error includes Polish message for better UX', async () => {
@@ -185,15 +180,17 @@ describe('Regression: #0 — httpClient retries on HTTP 502/503/504', () => {
         ok: true,
         status: 200,
         json: () => Promise.resolve({ success: true }),
+        text: () => Promise.resolve(''),
+        headers: new Map(),
       });
     });
 
     const module = await import('../../lib/httpClient');
 
-    const result = await module.apiRequest('/test', { method: 'GET' });
+    const result = await module.httpClient('https://example.com/test', { timeout: 5000 });
 
-    // Should succeed on 3rd attempt
-    expect(result).toEqual({ success: true });
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe(200);
     expect(attemptCount).toBe(3);
   }, 20000);
 
@@ -202,17 +199,17 @@ describe('Regression: #0 — httpClient retries on HTTP 502/503/504', () => {
       ok: false,
       status: 502,
       statusText: 'Bad Gateway',
+      text: () => Promise.resolve('Bad Gateway'),
+      headers: new Map(),
     });
 
     const module = await import('../../lib/httpClient');
 
-    try {
-      await module.apiRequest('/test', { method: 'GET' });
-      expect.fail('Should have thrown');
-    } catch (error: any) {
-      // Should fail after 3 retries
-      expect(error.message).toContain('502');
-    }
+    const result = await module.httpClient('https://example.com/test', { timeout: 5000 });
+
+    // httpClient returns response (doesn't throw), caller checks ok/status
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(502);
   }, 20000);
 
   test('does not retry on 400/401/403/404', async () => {
@@ -224,19 +221,17 @@ describe('Regression: #0 — httpClient retries on HTTP 502/503/504', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        text: () => Promise.resolve('Not Found'),
+        headers: new Map(),
       });
     });
 
     const module = await import('../../lib/httpClient');
 
-    try {
-      await module.apiRequest('/test', { method: 'GET' });
-      expect.fail('Should have thrown');
-    } catch (error: any) {
-      // Should only attempt once (no retry for 404)
-      expect(attemptCount).toBe(1);
-      expect(error.message).toContain('404');
-    }
+    const result = await module.httpClient('https://example.com/test', { timeout: 5000 });
+
+    expect(attemptCount).toBe(1);
+    expect(result.status).toBe(404);
   }, 10000);
 });
 
