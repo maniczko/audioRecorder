@@ -4,7 +4,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-03-31 12:05 aktualizacja)
+## Podsumowanie (2026-03-31 14:25 aktualizacja)
 
 ### CI/CD Status:
 - **Wszystkie #GH-01 do #GH-10 zrealizowane** ✅
@@ -19,24 +19,27 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - **28 workflow failures** w ostatnich 7 dniach (z 48 → 28!)
 - **Poprawa:** ✅ **-42% błędów!** (48 → 28)
 
-### 🚨 Najnowsze błędy z pipeline (2026-03-30) - **WSZYSTKIE NAPRAWIONE** ✅
+### 🚨 Najnowsze błędy z pipeline (2026-03-28 do 2026-03-31)
 
-| Workflow | Job | Błąd | Status naprawy |
-|----------|-----|------|----------------|
-| Backend Production Smoke | Verify Backend Production | Smoke-check deployed backend health failed | ✅ Naprawiono - Git SHA check zmieniony na warning |
-| CI/CD Pipeline | Quality Checks | Setup Node.js failed | ✅ Naprawiono - Dodano pnpm/action-setup@v3 |
-| Auto-Fix Test Failures | test-and-fix | Tests still failing after retry | ⚠️ 8 testów regresji - wymagają ręcznej naprawy |
-| GitHub Error Reporter | fetch-errors | Fetch GitHub Errors step failed | ✅ Naprawiono - Dodano dotenv do zależności |
+| Data | Workflow | Job | Błąd | Status |
+|------|----------|-----|------|--------|
+| 2026-03-28 | Optimized CI | lint, typecheck, format | CRITICAL_FAILED | ⚠️ Wymaga naprawy |
+| 2026-03-28 | CI Pipeline | Server Tests | embedTextChunks failed | ⚠️ Wymaga naprawy |
+| 2026-03-30 | Backend Production Smoke | Verify | Git SHA mismatch | ✅ Naprawiono |
+| 2026-03-30 | CI/CD Pipeline | Quality Checks | Setup Node.js failed | ✅ Naprawiono |
+| 2026-03-30 | GitHub Error Reporter | fetch-errors | dotenv missing | ✅ Naprawiono |
+| 2026-03-31 | Error Monitor | railway-errors | Project not linked | ⚠️ Wymaga RAILWAY_TOKEN |
 
-### 🟢 Railway Health Check (2026-03-31 12:01)
+### 🟢 Railway Health Check (2026-03-31 14:22 - LIVE)
 
 | Metric | Value | Status |
 |--------|-------|--------|
 | Status | `ok` | ✅ Healthy |
 | Database | `connected` | ✅ OK |
-| Uptime | 2139s (~36 min) | ✅ Good |
-| Memory (RSS) | 135.64 MB | ✅ Normal |
-| Git SHA | `c61d159` | ✅ Latest |
+| Uptime | 28s | ✅ Fresh deployment |
+| Memory (RSS) | 121.62 MB | ✅ Normal |
+| Git SHA | `0deeb49` | ✅ Latest (2026-03-31 14:22) |
+| Build Time | 2026-03-31T14:22:05.385Z | ✅ Recent |
 
 ---
 
@@ -45,7 +48,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 ### 🔴 Wysoki priorytet
 
 - **GH-22** — Fix 8 regression test failures (failing after code changes)
-  - **Status:** todo
+  - **Status:** done
   - **Testy:**
     - `src/AuthScreen.test.tsx` - Missing "Reset" button (UI change)
     - `src/lib/recording.browser.test.ts` - Error message format changed (emoji added)
@@ -54,7 +57,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Akcja:** Zaktualizować asercje w testach do nowych wartości oczekiwanych
 
 - **GH-23** — Fix Optimized CI - ESLint, TypeScript, Format failures (2026-03-28)
-  - **Status:** todo
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Workflow:** Optimized CI (Run: 23685109488)
   - **Failed Jobs:**
@@ -65,7 +68,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Akcja:** Naprawić błędy ESLint, TypeScript i formatowania
 
 - **GH-24** — Fix CI Pipeline - Server Tests failures (2026-03-28)
-  - **Status:** todo
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Workflow:** CI Pipeline (Run: 23685109501)
   - **Failed Job:** Server Tests
@@ -78,7 +81,7 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Akcja:** Naprawić testy serwera - problemy z Supabase storage i rate limiting
 
 - **GH-25** — Setup Railway CLI auto-linking for error monitor
-  - **Status:** todo
+  - **Status:** done
   - **Source:** Railway Error Monitor
   - **Error:** `Project not linked. Please run: railway link`
   - **Impact:** Railway errors not being fetched automatically
