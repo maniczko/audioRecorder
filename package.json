@@ -137,7 +137,8 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "prepare": "husky",
     "errors:railway": "node scripts/fetch-railway-errors.js",
-    "errors:railway:json": "node scripts/fetch-railway-errors.js --json"
+    "errors:railway:json": "node scripts/fetch-railway-errors.js --json",
+    "errors:monitor": "echo \"Error Monitor runs every 6 hours via GitHub Actions\""
   },
   "eslintConfig": {
     "extends": [

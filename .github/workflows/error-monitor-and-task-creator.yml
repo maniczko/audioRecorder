@@ -1,0 +1,342 @@
+name: Error Monitor & Task Creator
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+  workflow_dispatch:
+    inputs:
+      check_github:
+        description: 'Check GitHub Actions errors'
+        required: false
+        default: 'true'
+        type: boolean
+      check_railway:
+        description: 'Check Railway errors'
+        required: false
+        default: 'true'
+        type: boolean
+      create_tasks:
+        description: 'Create tasks in TASK_QUEUE.md'
+        required: false
+        default: 'true'
+        type: boolean
+      create_issues:
+        description: 'Create GitHub issues for errors'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  monitor-and-create-tasks:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Railway CLI
+        if: ${{ github.event.inputs.check_railway != 'false' }}
+        run: npm install -g @railway/cli
+
+      - name: Login to Railway
+        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
+
+      - name: Link to Railway project
+        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        run: echo "audioRecorder" | railway link || echo "Railway link failed"
+
+      - name: Fetch GitHub Errors
+        if: ${{ github.event.inputs.check_github != 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          DAYS_BACK: 1
+        run: node scripts/fetch-github-errors.js --verbose
+        continue-on-error: true
+
+      - name: Fetch Railway Errors
+        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        env:
+          RAILWAY_LOG_LINES: 50
+          RAILWAY_LOG_FILTER: '@level:error'
+        run: node scripts/fetch-railway-errors.js --json
+        continue-on-error: true
+
+      - name: Parse and Analyze Errors
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const errors = {
+              github: [],
+              railway: [],
+              timestamp: new Date().toISOString()
+            };
+
+            // Parse GitHub errors
+            try {
+              const githubErrorsDir = './github-errors';
+              if (fs.existsSync(githubErrorsDir)) {
+                const files = fs.readdirSync(githubErrorsDir)
+                  .filter(f => f.endsWith('.json'))
+                  .sort()
+                  .reverse();
+                
+                if (files.length > 0) {
+                  const latest = JSON.parse(fs.readFileSync(path.join(githubErrorsDir, files[0]), 'utf8'));
+                  if (Array.isArray(latest)) {
+                    errors.github = latest.slice(0, 10); // Last 10 errors
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Could not parse GitHub errors:', error.message);
+            }
+
+            // Parse Railway errors
+            try {
+              const railwayErrorsDir = './railway-errors';
+              if (fs.existsSync(railwayErrorsDir)) {
+                const files = fs.readdirSync(railwayErrorsDir)
+                  .filter(f => f.endsWith('.json'))
+                  .sort()
+                  .reverse();
+                
+                if (files.length > 0) {
+                  const latest = JSON.parse(fs.readFileSync(path.join(railwayErrorsDir, files[0]), 'utf8'));
+                  if (Array.isArray(latest)) {
+                    errors.railway = latest.slice(0, 10); // Last 10 errors
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Could not parse Railway errors:', error.message);
+            }
+
+            // Count unique errors
+            const githubErrorCount = errors.github.length;
+            const railwayErrorCount = errors.railway.length;
+            const totalErrors = githubErrorCount + railwayErrorCount;
+
+            console.log(`Found ${githubErrorCount} GitHub errors and ${railwayErrorCount} Railway errors`);
+            console.log(`Total: ${totalErrors} errors`);
+
+            // Save analysis results
+            fs.writeFileSync('./error-analysis.json', JSON.stringify(errors, null, 2));
+
+            // Set outputs
+            core.setOutput('github_errors', githubErrorCount);
+            core.setOutput('railway_errors', railwayErrorCount);
+            core.setOutput('total_errors', totalErrors);
+            core.setOutput('has_errors', totalErrors > 0 ? 'true' : 'false');
+
+      - name: Create Tasks in TASK_QUEUE.md
+        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const errors = JSON.parse(fs.readFileSync('./error-analysis.json', 'utf8'));
+            const timestamp = new Date().toISOString();
+            const dateStr = timestamp.split('T')[0];
+
+            // Read current TASK_QUEUE.md
+            let taskQueue = '';
+            try {
+              taskQueue = fs.readFileSync('./TASK_QUEUE.md', 'utf8');
+            } catch (error) {
+              taskQueue = '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### 🔴 Wysoki priorytet\n\n';
+            }
+
+            // Generate task entries
+            let newTasks = `\n<!-- Auto-generated on ${timestamp} -->\n`;
+            let taskNumber = 1;
+
+            // GitHub Actions tasks
+            if (errors.github.length > 0) {
+              newTasks += `\n### GitHub Actions Errors (${errors.github.length} found)\n\n`;
+              
+              errors.github.forEach((error, idx) => {
+                const taskNum = `GH-AUTO-${dateStr}-${taskNumber++}`;
+                const workflowName = error.workflow || 'Unknown Workflow';
+                const errorMsg = error.message || error.line || 'Unknown error';
+                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                
+                newTasks += `- **${taskNum}** — Fix ${workflowName} failure\n`;
+                newTasks += `  - **Status:** todo\n`;
+                newTasks += `  - **Source:** GitHub Actions\n`;
+                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Created:** ${timestamp}\n`;
+                newTasks += `  - **Priority:** High\n\n`;
+              });
+            }
+
+            // Railway tasks
+            if (errors.railway.length > 0) {
+              newTasks += `\n### Railway Errors (${errors.railway.length} found)\n\n`;
+              
+              errors.railway.forEach((error, idx) => {
+                const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
+                const errorMsg = error.message || 'Unknown Railway error';
+                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                
+                newTasks += `- **${taskNum}** — Fix Railway error\n`;
+                newTasks += `  - **Status:** todo\n`;
+                newTasks += `  - **Source:** Railway\n`;
+                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Created:** ${timestamp}\n`;
+                newTasks += `  - **Priority:** High\n\n`;
+              });
+            }
+
+            // Insert new tasks after "### 🔴 Wysoki priorytet"
+            const prioritySection = '### 🔴 Wysoki priorytet';
+            const insertIndex = taskQueue.indexOf(prioritySection);
+            
+            if (insertIndex !== -1) {
+              const endOfLine = taskQueue.indexOf('\n', insertIndex + prioritySection.length);
+              const updatedQueue = taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
+              fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
+            } else {
+              // If section doesn't exist, append to end
+              fs.writeFileSync('./TASK_QUEUE.md', taskQueue + '\n' + newTasks);
+            }
+
+            console.log(`Created ${taskNumber - 1} new tasks in TASK_QUEUE.md`);
+
+      - name: Commit TASK_QUEUE.md changes
+        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add TASK_QUEUE.md
+          git commit -m "chore: auto-create tasks for ${ steps.analyze.outputs.total_errors }} errors" || echo "No changes to commit"
+          git push
+
+      - name: Create GitHub Issues for Errors
+        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_issues != 'false' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const errors = JSON.parse(fs.readFileSync('./error-analysis.json', 'utf8'));
+            const timestamp = new Date().toISOString();
+            const dateStr = timestamp.split('T')[0];
+
+            // Check for existing open issues from this run
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'auto-generated-error',
+            });
+
+            // Don't create duplicate issues on same day
+            const todayIssues = existingIssues.filter(issue => 
+              issue.created_at.startsWith(dateStr)
+            );
+
+            if (todayIssues.length > 0) {
+              console.log(`Skipping issue creation - ${todayIssues.length} issues already created today`);
+              return;
+            }
+
+            // Create consolidated error report issue
+            let issueBody = `## 🔍 Automated Error Report\n\n`;
+            issueBody += `**Generated:** ${timestamp}\n\n`;
+
+            if (errors.github.length > 0) {
+              issueBody += `### GitHub Actions Errors (${errors.github.length})\n\n`;
+              errors.github.forEach((error, idx) => {
+                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `\`\`\`\n${error.message || error.line || 'Unknown'}\n\`\`\`\n`;
+                issueBody += `\n**Workflow:** ${error.workflow || 'Unknown'}\n`;
+                issueBody += `\n**Run:** ${error.url || 'N/A'}\n`;
+              });
+            }
+
+            if (errors.railway.length > 0) {
+              issueBody += `\n---\n\n### Railway Errors (${errors.railway.length})\n\n`;
+              errors.railway.forEach((error, idx) => {
+                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `\`\`\`\n${error.message || 'Unknown Railway error'}\n\`\`\`\n`;
+              });
+            }
+
+            issueBody += `\n---\n\n`;
+            issueBody += `📋 **Tasks created in TASK_QUEUE.md**\n`;
+            issueBody += `\nCheck the latest commit for auto-generated tasks.\n`;
+            issueBody += `\n---\n\n`;
+            issueBody += `*This issue was automatically created by the Error Monitor workflow.*\n`;
+            issueBody += `\n**Labels:** auto-generated-error, monitoring, priority-high\n`;
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway (${dateStr})`,
+              body: issueBody,
+              labels: ['auto-generated-error', 'monitoring', 'priority-high'],
+            });
+
+            console.log(`Created issue #${issue.number} for ${errors.github.length + errors.railway.length} errors`);
+
+      - name: Upload Error Analysis
+        uses: actions/upload-artifact@v4
+        if: ${{ steps.analyze.outputs.has_errors == 'true' }}
+        with:
+          name: error-analysis-${{ github.run_id }}
+          path: |
+            error-analysis.json
+            github-errors/*.md
+            github-errors/*.json
+            railway-errors/*.md
+            railway-errors/*.json
+          retention-days: 7
+
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          echo "## 📊 Error Monitor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Source | Errors Found |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Actions | ${{ steps.analyze.outputs.github_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Railway | ${{ steps.analyze.outputs.railway_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **${{ steps.analyze.outputs.total_errors || 0 }}** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.analyze.outputs.has_errors }}" = "true" ]; then
+            echo "✅ Tasks created in TASK_QUEUE.md" >> $GITHUB_STEP_SUMMARY
+            echo "✅ GitHub issue created" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No errors found - all systems operational!" >> $GITHUB_STEP_SUMMARY
+          fi
