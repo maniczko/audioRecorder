@@ -9,7 +9,7 @@
  * Run: pnpm run test:regression
  */
 
-import { describe, test, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, test, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
 
 // P0 Fix: Move vi.unmock() to top level to prevent Vitest warnings
 vi.unmock('../config');
