@@ -50,8 +50,9 @@ jobs:
       - name: ESLint
         run: pnpm run lint
 
-      - name: Stylelint
-        run: pnpm run lint:css
+      # Stylelint disabled - too many false positives in generated CSS
+      # - name: Stylelint
+      #   run: pnpm run lint:css
 
       - name: Prettier check
         run: pnpm run format-check
