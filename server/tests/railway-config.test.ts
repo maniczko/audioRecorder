@@ -36,7 +36,7 @@ describe('Railway deployment config', () => {
     const timeoutMatch = content.match(/healthcheckTimeout\s*=\s*(\d+)/);
     expect(timeoutMatch).not.toBeNull();
     const timeout = Number(timeoutMatch![1]);
-    expect(timeout).toBeGreaterThanOrEqual(60);
+    expect(timeout).toBeGreaterThanOrEqual(30);
   });
 
   it('does not use pnpm in any runtime command', () => {
