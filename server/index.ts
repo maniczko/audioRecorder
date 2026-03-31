@@ -126,6 +126,18 @@ export async function bootstrap() {
     logger.info(`[Bootstrap] Database health check OK (${dbHealth.type})`);
   }
 
+  // Reset any transcription jobs orphaned by a previous server instance crash/restart
+  try {
+    const orphanCount = await db.resetOrphanedJobs();
+    if (orphanCount > 0) {
+      logger.warn(
+        `[Bootstrap] Reset ${orphanCount} orphaned transcription job(s) from previous instance.`
+      );
+    }
+  } catch (err: any) {
+    logger.error('[Bootstrap] Failed to reset orphaned jobs:', err?.message || err);
+  }
+
   const authService = new AuthService(db);
   const workspaceService = new WorkspaceService(db);
 

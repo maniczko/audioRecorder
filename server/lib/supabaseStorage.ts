@@ -20,7 +20,7 @@ const BUCKET_NAME = 'recordings';
 let bucketEnsured = false;
 
 async function ensureBucket() {
-  if (bucketEnsured || !supabase) return;
+  if (bucketEnsured || !supabase || !supabase.storage) return;
   const { error } = await supabase.storage.createBucket(BUCKET_NAME, { public: false });
   if (error && !error.message?.includes('already exists')) {
     console.warn(`[Supabase Storage] Bucket creation warning: ${error.message}`);

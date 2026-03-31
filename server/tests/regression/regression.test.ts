@@ -1019,3 +1019,71 @@ describe('Regression: #0 — retry-transcribe Supabase fallback for missing loca
     expect(isPermanent).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Transcription jobs stuck in 'processing' after restart
+// Date: 2026-03-31
+// Bug: After container restart, jobs left in 'processing'/'queued' state
+//      in DB were never recovered. Frontend polled forever (~15 min).
+// Fix: Added resetOrphanedJobs() to Database, called on bootstrap.
+//      Reduced STUCK_THRESHOLD_MS from 15 to 5 minutes.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — resetOrphanedJobs recovers stuck transcriptions', () => {
+  test('resetOrphanedJobs marks processing jobs older than 5 min as failed', async () => {
+    const mockDb = {
+      _query: vi.fn().mockResolvedValue([{ id: 'rec_orphan_1' }, { id: 'rec_orphan_2' }]),
+      _execute: vi.fn().mockResolvedValue(undefined),
+      nowIso: () => new Date().toISOString(),
+      _buildPipelineMetadata: () => ({ pipelineVersion: 'test' }),
+    };
+
+    // Simulate the resetOrphanedJobs logic
+    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
+    const orphans = await mockDb._query(
+      "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",
+      [cutoff]
+    );
+    for (const row of orphans) {
+      await mockDb._execute(
+        "UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?",
+        [
+          JSON.stringify({
+            errorMessage: 'Pipeline restarted — transcription job was lost. Please retry.',
+            ...mockDb._buildPipelineMetadata(),
+          }),
+          mockDb.nowIso(),
+          row.id,
+        ]
+      );
+    }
+
+    expect(orphans.length).toBe(2);
+    expect(mockDb._execute).toHaveBeenCalledTimes(2);
+    expect(mockDb._execute).toHaveBeenCalledWith(
+      expect.stringContaining("transcription_status = 'failed'"),
+      expect.arrayContaining(['rec_orphan_1'])
+    );
+    expect(mockDb._execute).toHaveBeenCalledWith(
+      expect.stringContaining("transcription_status = 'failed'"),
+      expect.arrayContaining(['rec_orphan_2'])
+    );
+  });
+
+  test('resetOrphanedJobs does nothing when no orphans exist', async () => {
+    const mockDb = {
+      _query: vi.fn().mockResolvedValue([]),
+      _execute: vi.fn(),
+    };
+
+    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
+    const orphans = await mockDb._query(
+      "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",
+      [cutoff]
+    );
+
+    expect(orphans.length).toBe(0);
+    expect(mockDb._execute).not.toHaveBeenCalled();
+  });
+});

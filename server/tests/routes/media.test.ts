@@ -24,6 +24,7 @@ describe('Media Routes', () => {
       analyzeAudioQuality: vi.fn(),
       saveAudioQualityDiagnostics: vi.fn(),
       getMediaAsset: vi.fn(),
+      deleteMediaAsset: vi.fn(),
       queueTranscription: vi.fn(),
       ensureTranscriptionJob: vi.fn(),
       queryRAG: vi.fn(),
@@ -758,12 +759,13 @@ describe('Media Routes', () => {
 
   // ─────────────────────────────────────────────────────────────────
   // Issue #0 — GET /transcribe stuck-processing detection
-  // Date: 2026-03-30
-  // Bug: Pipeline stuck in 'processing' for >15 min with empty segments, frontend polls forever
-  // Fix: GET handler detects stuck state and marks as failed
+  // Date: 2026-03-30 (updated 2026-03-31: threshold reduced 15→5 min)
+  // Bug: Pipeline stuck in 'processing' with empty segments, frontend polls forever
+  // Fix: GET handler detects stuck state (>5 min) and marks as failed.
+  //      Also added resetOrphanedJobs on bootstrap for crash recovery.
   // ─────────────────────────────────────────────────────────────────
   describe('Regression: #0 — stuck processing detection in GET /transcribe', () => {
-    it('marks asset as failed when stuck in processing for >15 min with empty segments', async () => {
+    it('marks asset as failed when stuck in processing for >5 min with empty segments', async () => {
       const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
       mockTranscriptionService.getMediaAsset
         .mockResolvedValueOnce({
@@ -802,8 +804,8 @@ describe('Media Routes', () => {
       );
     });
 
-    it('does not mark as failed when processing for <15 min', async () => {
-      const recentDate = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    it('does not mark as failed when processing for <5 min', async () => {
+      const recentDate = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_recent',
         workspace_id: 'ws_1',
@@ -842,6 +844,66 @@ describe('Media Routes', () => {
 
       expect(res.status).toBe(200);
       expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — DELETE /recordings/:id zwraca 404 dla nieistniejącego nagrania
+  // Date: 2026-03-31
+  // Bug: Frontend próbuje usunąć nagranie, które nie istnieje w bazie (np. zostało
+  //      już usunięte, lub było tylko w IndexedDB). Backend powinien zwrócić 404,
+  //      a frontend to obsługuje jako sukces (idempotentność).
+  // Fix: Test weryfikuje, że endpoint DELETE poprawnie zwraca 404 dla brakującego
+  //      nagrania, co jest oczekiwanym zachowaniem, a nie błędem.
+  // ─────────────────────────────────────────────────────────────────
+  describe('DELETE /recordings/:recordingId — Regression: nieistniejące nagranie', () => {
+    it('zwraca 404, gdy nagranie nie istnieje w bazie', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
+
+      const res = await app.request('/media/recordings/recording_nonexistent', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(404);
+      const data = await res.json();
+      expect(data.message).toBe('Nie znaleziono nagrania.');
+      expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
+    });
+
+    it('zwraca 204, gdy nagranie istnieje i zostanie usunięte', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_existing',
+        workspace_id: 'ws_1',
+      });
+      mockTranscriptionService.deleteMediaAsset.mockResolvedValue(undefined);
+
+      const res = await app.request('/media/recordings/rec_existing', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
+        'rec_existing',
+        'ws_1'
+      );
+    });
+
+    it('zwraca 403, gdy użytkownik nie ma dostępu do workspace', async () => {
+      mockWorkspaceService.getMembership.mockResolvedValue(null);
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_forbidden',
+        workspace_id: 'ws_other',
+      });
+
+      const res = await app.request('/media/recordings/rec_forbidden', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
     });
   });
 });

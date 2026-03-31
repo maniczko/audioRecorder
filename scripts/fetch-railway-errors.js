@@ -58,7 +58,7 @@ function checkRailwayCLI() {
 }
 
 // Link to project
-function linkToProject(projectName = 'audioRecorder') {
+function linkToProject(projectName = 'calm-empathy') {
   try {
     console.log(`🔗 Linking to project: ${projectName}`);
     // Use echo to pipe the project name to railway link
@@ -104,13 +104,16 @@ function fetchErrorLogs() {
     // Parse logs if JSON requested
     if (config.json) {
       try {
-        jsonLogs = logs.split('\n').filter(line => line.trim()).map(line => {
-          try {
-            return JSON.parse(line);
-          } catch {
-            return { message: line, timestamp: new Date().toISOString() };
-          }
-        });
+        jsonLogs = logs
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => {
+            try {
+              return JSON.parse(line);
+            } catch {
+              return { message: line, timestamp: new Date().toISOString() };
+            }
+          });
       } catch (error) {
         console.error('⚠️  Could not parse logs as JSON');
       }
@@ -202,18 +205,21 @@ async function main() {
 
   // Print summary
   if (result.logs && result.logs.length > 0) {
-    const errorCount = result.logs.split('\n').filter(line =>
-      line.toLowerCase().includes('error') ||
-      line.toLowerCase().includes('fail') ||
-      line.toLowerCase().includes('exception')
-    ).length;
+    const errorCount = result.logs
+      .split('\n')
+      .filter(
+        (line) =>
+          line.toLowerCase().includes('error') ||
+          line.toLowerCase().includes('fail') ||
+          line.toLowerCase().includes('exception')
+      ).length;
     console.log(`📊 Found ${errorCount} error/failure lines`);
   }
 }
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Fatal error:', error.message);
     process.exit(1);
   });

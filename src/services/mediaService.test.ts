@@ -305,7 +305,7 @@ describe('mediaService', () => {
       await createMediaService().getTranscriptionJobStatus('rec-1');
       expect(mockApiRequest).toHaveBeenCalledWith('/media/recordings/rec-1/transcribe', {
         method: 'GET',
-        retries: 2,
+        retries: 5,
       });
     });
 

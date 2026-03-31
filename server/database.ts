@@ -1405,6 +1405,29 @@ export class Database {
     return this.getMediaAsset(recordingId);
   }
 
+  async resetOrphanedJobs(): Promise<number> {
+    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
+    const orphans = await this._query(
+      "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",
+      [cutoff]
+    );
+    for (const row of orphans) {
+      await this._execute(
+        "UPDATE media_assets SET transcription_status = 'failed', diarization_json = ?, updated_at = ? WHERE id = ?",
+        [
+          JSON.stringify({
+            errorMessage: 'Pipeline restarted — transcription job was lost. Please retry.',
+            ...this._buildPipelineMetadata(),
+          }),
+          this.nowIso(),
+          row.id,
+        ]
+      );
+    }
+    return orphans.length;
+  }
+
   async queueTranscription(recordingId: string, updates: MeetingUpdates = {}): Promise<any> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset) throw new Error('Nie znaleziono nagrania.');

@@ -106,9 +106,11 @@ describe('AuthScreen', () => {
   test('submits login flow after filling all fields', async () => {
     const { submitAuth } = await renderAuthHarness();
 
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jan@example.com' } });
-    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: 'test-password' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Zaloguj sie' }));
+    fireEvent.change(screen.getByLabelText('Adres email'), {
+      target: { value: 'jan@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'test-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Zaloguj się' }));
 
     expect(screen.getByDisplayValue('jan@example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('test-password')).toBeInTheDocument();
@@ -129,9 +131,11 @@ describe('AuthScreen', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Kod zaproszenia'), { target: { value: 'AB12CD' } });
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'anna@example.com' } });
-    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: 'secret-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do workspace' }));
+    fireEvent.change(screen.getByLabelText('Adres email'), {
+      target: { value: 'anna@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'secret-123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do aplikacji' }));
 
     expect(screen.getByDisplayValue('Anna Nowak')).toBeInTheDocument();
     expect(screen.getByDisplayValue('AB12CD')).toBeInTheDocument();
@@ -143,10 +147,10 @@ describe('AuthScreen', () => {
 
     fireEvent.change(screen.getByLabelText('Imie i nazwisko'), { target: { value: 'Anna Nowak' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'anna@example.com' } });
-    fireEvent.change(screen.getByLabelText('Haslo'), { target: { value: '123' } });
+    fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: '123' } });
 
     // Click submit with short password - should not submit
-    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do aplikacji' }));
 
     // Password is too short, form should not submit
     await waitFor(() => {
@@ -161,7 +165,7 @@ describe('AuthScreen', () => {
       resetExpiresAt: '2026-03-21T10:30:00.000Z',
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zapomniałeś hasła?' }));
 
     expect(setAuthModeSpy).toHaveBeenCalledWith('forgot');
 

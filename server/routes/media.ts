@@ -403,9 +403,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
 
-      // Detect stuck processing: if status is 'processing' or 'queued' for >15 min
+      // Detect stuck processing: if status is 'processing' or 'queued' for >5 min
       // with no transcript data, mark as failed so the frontend can retry.
-      const STUCK_THRESHOLD_MS = 15 * 60 * 1000;
+      const STUCK_THRESHOLD_MS = 5 * 60 * 1000;
       if (
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&

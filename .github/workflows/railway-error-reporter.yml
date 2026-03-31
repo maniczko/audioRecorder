@@ -55,7 +55,9 @@ jobs:
         run: railway login --token $RAILWAY_TOKEN
 
       - name: Link to project
-        run: echo "audioRecorder" | railway link
+        env:
+          RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
+        run: railway link --project $RAILWAY_PROJECT_ID
 
       - name: Fetch Railway Errors
         env:
