@@ -63,7 +63,11 @@ function bucketLabel(key, trend) {
   return key.replace('-W', ' / W');
 }
 
-export function buildWorkspaceKpiDashboard(meetings: any[] = [], tasks: any[] = [], options: { rangeDays?: number; trend?: 'weekly' | 'monthly' } = {}) {
+export function buildWorkspaceKpiDashboard(
+  meetings: any[] = [],
+  tasks: any[] = [],
+  options: { rangeDays?: number; trend?: 'weekly' | 'monthly' } = {}
+) {
   const rangeDays = options.rangeDays || 30;
   const trend = options.trend === 'monthly' ? 'monthly' : 'weekly';
   const filteredMeetings = (Array.isArray(meetings) ? meetings : []).filter((meeting) =>

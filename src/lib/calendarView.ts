@@ -246,7 +246,10 @@ export function formatCalendarEventTime(value) {
   }).format(new Date(value));
 }
 
-export function formatCalendarDayLabel(date: any, options: { short?: boolean; month?: boolean } = {}) {
+export function formatCalendarDayLabel(
+  date: any,
+  options: { short?: boolean; month?: boolean } = {}
+) {
   return new Intl.DateTimeFormat('pl-PL', {
     weekday: options.short ? 'short' : 'long',
     day: '2-digit',

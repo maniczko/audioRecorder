@@ -1,6 +1,6 @@
 /**
  * commandPalette.test.ts
- * 
+ *
  * Tests for command palette item builder and search functionality
  */
 

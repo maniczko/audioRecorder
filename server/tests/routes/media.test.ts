@@ -388,7 +388,10 @@ describe('Media Routes', () => {
       return { originalFetch, originalGeminiKey };
     };
 
-    const teardownSketchnoteTest = (ctx: { originalFetch: typeof global.fetch; originalGeminiKey: string | undefined }) => {
+    const teardownSketchnoteTest = (ctx: {
+      originalFetch: typeof global.fetch;
+      originalGeminiKey: string | undefined;
+    }) => {
       global.fetch = ctx.originalFetch;
       process.env.GEMINI_API_KEY = ctx.originalGeminiKey;
     };

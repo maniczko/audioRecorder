@@ -762,19 +762,19 @@ export function buildEmptyTranscriptResult(
 ): any {
   // Szczegółowe komunikaty błędów
   const errorMessages: Record<string, { user: string; detailed: string }> = {
-    'no_segments_from_stt': {
+    no_segments_from_stt: {
       user: 'API transkrypcji nie zwróciło żadnych segmentów.',
       detailed: 'Sprawdź jakość audio lub spróbuj innego formatu.',
     },
-    'segments_removed_by_vad': {
+    segments_removed_by_vad: {
       user: 'Wykryto ciszę - segmenty zostały usunięte.',
       detailed: 'VAD usunął wszystkie segmenty jako ciszę.',
     },
-    'segments_removed_as_hallucinations': {
+    segments_removed_as_hallucinations: {
       user: 'Wykryto zniekształcenia - transkrypcja odrzucona.',
       detailed: `WER: ${transcriptionDiagnostics?.wer || 'N/A'}.`,
     },
-    'all_chunks_discarded_as_too_small': {
+    all_chunks_discarded_as_too_small: {
       user: 'Plik jest za krótki do przetworzenia.',
       detailed: 'Wszystkie chunki zostały odrzucone jako za małe.',
     },

@@ -27,16 +27,37 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
   return (
     <div className="ask-ai-comic-bubble" onClick={(e) => e.stopPropagation()}>
       <div className="comic-bubble-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'var(--accent)',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}
+        >
           <Brain size={18} /> AI RAG Memory
         </div>
         <button type="button" onClick={onClose} className="comic-close-btn">
           <X size={16} />
         </button>
       </div>
-      <h3 style={{ margin: '12px 0 8px 0', fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>Zapytaj o Archiwum</h3>
-      <p style={{ fontSize: '0.95rem', color: 'var(--modern-muted)', marginBottom: 20, lineHeight: 1.5 }}>
-        Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne ustalenia.
+      <h3 style={{ margin: '12px 0 8px 0', fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+        Zapytaj o Archiwum
+      </h3>
+      <p
+        style={{
+          fontSize: '0.95rem',
+          color: 'var(--modern-muted)',
+          marginBottom: 20,
+          lineHeight: 1.5,
+        }}
+      >
+        Przeszukuj archiwalne spotkania, by przypomnieć sobie szczegóły lub dawne merytoryczne
+        ustalenia.
       </p>
 
       <form onSubmit={handleSearch} style={{ position: 'relative', marginTop: 14 }}>
@@ -45,7 +66,15 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
-          style={{ fontSize: '0.95rem', padding: '16px 56px 16px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', color: '#fff', width: '100%' }}
+          style={{
+            fontSize: '0.95rem',
+            padding: '16px 56px 16px 16px',
+            borderRadius: 12,
+            background: 'rgba(255,255,255,0.05)',
+            border: '2px solid rgba(255,255,255,0.1)',
+            color: '#fff',
+            width: '100%',
+          }}
           autoFocus
         />
         <button
@@ -66,18 +95,18 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
             justifyContent: 'center',
             cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
             opacity: loading || !query.trim() ? 0.6 : 1,
-            transition: 'transform 0.1s'
+            transition: 'transform 0.1s',
           }}
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} strokeWidth={3} />}
+          {loading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <ArrowRight size={18} strokeWidth={3} />
+          )}
         </button>
       </form>
-      
-      {answer && (
-        <div className="comic-answer-box">
-          {answer}
-        </div>
-      )}
+
+      {answer && <div className="comic-answer-box">{answer}</div>}
     </div>
   );
 }

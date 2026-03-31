@@ -28,13 +28,11 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
     return peopleProfiles
       .map((p) => p.name)
       .filter((name) => {
-        const n = String(name || '').trim().toLowerCase();
+        const n = String(name || '')
+          .trim()
+          .toLowerCase();
         return (
-          n &&
-          n !== 'nieprzypisane' &&
-          n !== 'unassigned' &&
-          n !== 'system' &&
-          !n.includes('@')
+          n && n !== 'nieprzypisane' && n !== 'unassigned' && n !== 'system' && !n.includes('@')
         );
       })
       .sort()
@@ -45,7 +43,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
     if (!backendApiReady) return;
     apiRequest('/voice-profiles')
       .then((data: VoiceProfilesListPayload) => setProfiles(data.profiles || []))
-      .catch(() => { });
+      .catch(() => {});
   }, [backendApiReady]);
 
   // Grupowanie profili po osobie
@@ -154,7 +152,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
       setProfiles((prev) =>
         prev.map((p: any) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
       );
-    } catch (_) { }
+    } catch (_) {}
   }
 
   function formatElapsed(s) {
@@ -206,7 +204,11 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
               type="button"
               className="primary-button"
               onClick={startRecording}
-              disabled={!selectedPerson.trim() || !backendApiReady || (profilesByPerson[selectedPerson]?.length || 0) >= 5}
+              disabled={
+                !selectedPerson.trim() ||
+                !backendApiReady ||
+                (profilesByPerson[selectedPerson]?.length || 0) >= 5
+              }
               title={
                 !backendApiReady
                   ? 'Skonfiguruj backend API, aby nagrywac profile glosowe.'
@@ -242,9 +244,7 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
                 </span>
                 <div className="voice-profile-person-info">
                   <strong>{personName}</strong>
-                  <span className="voice-profile-samples-count">
-                    {samples.length}/5 próbek
-                  </span>
+                  <span className="voice-profile-samples-count">{samples.length}/5 próbek</span>
                 </div>
               </div>
               <ul className="voice-profile-samples-list">
@@ -292,10 +292,16 @@ function VoiceProfilesSection({ peopleProfiles = [] }) {
                     );
                   }}
                   onMouseUp={(e) =>
-                    updateThreshold(samples[0].id, Number((e.target as HTMLInputElement).value) / 100)
+                    updateThreshold(
+                      samples[0].id,
+                      Number((e.target as HTMLInputElement).value) / 100
+                    )
                   }
                   onTouchEnd={(e) =>
-                    updateThreshold(samples[0].id, Number((e.target as HTMLInputElement).value) / 100)
+                    updateThreshold(
+                      samples[0].id,
+                      Number((e.target as HTMLInputElement).value) / 100
+                    )
                   }
                 />
               </div>
@@ -1088,7 +1094,9 @@ export default function ProfileTab({
                   </div>
                 </div>
                 <div className="integration-card">
-                  <p>{integrationStatusLabel(microsoftCalendarStatus, outlookCalendarEventsCount)}</p>
+                  <p>
+                    {integrationStatusLabel(microsoftCalendarStatus, outlookCalendarEventsCount)}
+                  </p>
                   <div className="button-row">
                     <button
                       type="button"

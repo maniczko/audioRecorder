@@ -90,10 +90,12 @@ export function summarizeSpectrum(data: any) {
   );
 
   const bandSize = Math.max(1, Math.floor(values.length / 3));
-  const lowBand = values.slice(0, bandSize).reduce((sum, value) => sum + (value as number), 0) / total;
+  const lowBand =
+    values.slice(0, bandSize).reduce((sum, value) => sum + (value as number), 0) / total;
   const midBand =
     values.slice(bandSize, bandSize * 2).reduce((sum, value) => sum + (value as number), 0) / total;
-  const highBand = values.slice(bandSize * 2).reduce((sum, value) => sum + (value as number), 0) / total;
+  const highBand =
+    values.slice(bandSize * 2).reduce((sum, value) => sum + (value as number), 0) / total;
 
   return {
     energy: average(normalized),

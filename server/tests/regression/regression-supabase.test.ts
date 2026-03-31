@@ -1,11 +1,11 @@
 /**
  * Regression Tests — Supabase Storage
- * 
+ *
  * Following AGENTS.md §2.1 and §8:
  * - Tests written BEFORE fix (TDD)
  * - Documents the exact bug scenario
  * - Must pass forever - if fails = bug is back!
- * 
+ *
  * Run: pnpm run test:regression
  */
 
@@ -323,7 +323,12 @@ describe('Regression: Issue #703 - Bucket creation error handling', () => {
     }));
 
     const module = await import('../../lib/supabaseStorage');
-    const result = await module.uploadAudioToStorage('rec1', Buffer.from('test'), 'audio/webm', '.webm');
+    const result = await module.uploadAudioToStorage(
+      'rec1',
+      Buffer.from('test'),
+      'audio/webm',
+      '.webm'
+    );
 
     // Should continue with upload despite bucket error
     expect(result).not.toBeNull();
@@ -359,7 +364,12 @@ describe('Regression: Issue #703 - Bucket creation error handling', () => {
     }));
 
     const module = await import('../../lib/supabaseStorage');
-    const result = await module.uploadAudioToStorage('rec1', Buffer.from('test'), 'audio/webm', '.webm');
+    const result = await module.uploadAudioToStorage(
+      'rec1',
+      Buffer.from('test'),
+      'audio/webm',
+      '.webm'
+    );
 
     // Should continue with upload
     expect(result).not.toBeNull();
@@ -368,7 +378,9 @@ describe('Regression: Issue #703 - Bucket creation error handling', () => {
 
   test('ensureBucket is called only once across multiple uploads', async () => {
     const mockCreateBucket = vi.fn().mockResolvedValueOnce({ data: {}, error: null });
-    const mockUpload = vi.fn().mockResolvedValue({ data: { path: 'recordings/rec.webm' }, error: null });
+    const mockUpload = vi
+      .fn()
+      .mockResolvedValue({ data: { path: 'recordings/rec.webm' }, error: null });
 
     vi.doMock('../config', () => ({
       config: {
@@ -443,7 +455,9 @@ describe('Regression: Issue #804 - deleteAudioFromStorage error handling', () =>
     const module = await import('../../lib/supabaseStorage');
 
     // Should not throw - file already deleted is success
-    await expect(module.deleteAudioFromStorage('recordings/nonexistent.webm')).resolves.toBeUndefined();
+    await expect(
+      module.deleteAudioFromStorage('recordings/nonexistent.webm')
+    ).resolves.toBeUndefined();
   });
 
   test('passes path as array element to Supabase remove', async () => {

@@ -36,8 +36,8 @@ export default function AssigneeInput({
     if (e.key === 'Enter') {
       e.preventDefault();
       if (inputValue.trim()) {
-         onChange(inputValue.trim());
-         setInputValue('');
+        onChange(inputValue.trim());
+        setInputValue('');
       }
       setIsFocused(false);
       inputRef.current?.blur();
@@ -59,9 +59,7 @@ export default function AssigneeInput({
       <div className="assignee-input-tokens">
         {value && (
           <div className="assignee-badge">
-            <div className="assignee-avatar-small">
-              {value.charAt(0).toUpperCase()}
-            </div>
+            <div className="assignee-avatar-small">{value.charAt(0).toUpperCase()}</div>
             {value}
             <button
               type="button"
@@ -108,9 +106,7 @@ export default function AssigneeInput({
                 handleSelect(s);
               }}
             >
-              <div className="assignee-avatar">
-                {s.charAt(0).toUpperCase()}
-              </div>
+              <div className="assignee-avatar">{s.charAt(0).toUpperCase()}</div>
               <span>{s}</span>
             </button>
           ))}

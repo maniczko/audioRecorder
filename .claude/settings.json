@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://audiorecorder-production.up.railway.app/health)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://audiorecorder-g2616jlc1-iwoczajka-2703s-projects.vercel.app/health\")",
+      "Bash(curl -s \"https://audiorecorder-g2616jlc1-iwoczajka-2703s-projects.vercel.app/health\")"
     ]
   }
 }

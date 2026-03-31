@@ -1,6 +1,6 @@
 /**
  * speakerColors.test.ts
- * 
+ *
  * Tests for speaker color assignment utilities
  */
 

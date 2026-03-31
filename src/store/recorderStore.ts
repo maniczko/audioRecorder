@@ -563,7 +563,9 @@ export const useRecorderStore = create<any>()(
               }
               if (!finalTranscription) {
                 if (totalPollErrors > 0) {
-                  throw new Error('Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.');
+                  throw new Error(
+                    'Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.'
+                  );
                 }
                 throw new Error('Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.');
               }

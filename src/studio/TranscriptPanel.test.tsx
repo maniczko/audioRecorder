@@ -144,7 +144,9 @@ describe('TranscriptPanel', () => {
 
     expect(screen.getByText(/Brak transkrypcji/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji\./i)
+      screen.getByText(
+        /Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji\./i
+      )
     ).toBeInTheDocument();
   });
 });

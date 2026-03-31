@@ -1,6 +1,6 @@
 /**
  * Audio Quality Enhancement Utilities
- * 
+ *
  * Provides post-processing for recorded audio to remove:
  * - Background noise
  * - Clicks and pops
@@ -11,7 +11,10 @@
 /**
  * Apply simple high-pass filter to remove low-frequency rumble
  */
-export async function applyHighPassFilter(audioBuffer: AudioBuffer, cutoffFreq = 80): Promise<AudioBuffer> {
+export async function applyHighPassFilter(
+  audioBuffer: AudioBuffer,
+  cutoffFreq = 80
+): Promise<AudioBuffer> {
   const offlineContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -117,7 +120,7 @@ export function removeClicks(audioBuffer: AudioBuffer, threshold = 0.95): AudioB
     audioBuffer.length,
     audioBuffer.sampleRate
   );
-  
+
   const output = offlineContext.createBuffer(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -130,7 +133,7 @@ export function removeClicks(audioBuffer: AudioBuffer, threshold = 0.95): AudioB
 
     for (let i = 0; i < inputData.length; i++) {
       const sample = inputData[i];
-      
+
       // Detect clicks (sudden large changes)
       if (i > 0 && i < inputData.length - 1) {
         const prevSample = inputData[i - 1];

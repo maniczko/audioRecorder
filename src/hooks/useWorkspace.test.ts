@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * useWorkspace Hook Tests
- * 
+ *
  * Tests for workspace state management and selectors
  */
 
@@ -96,9 +96,7 @@ describe('useWorkspace', () => {
   it('returns current workspace members', () => {
     const { result } = renderHook(() => useWorkspace());
 
-    expect(result.current.currentWorkspaceMembers).toEqual([
-      { userId: 'u1', role: 'owner' },
-    ]);
+    expect(result.current.currentWorkspaceMembers).toEqual([{ userId: 'u1', role: 'owner' }]);
   });
 
   it('returns current workspace permissions', () => {

@@ -55,43 +55,57 @@ describe('RecordingsTab', () => {
   };
 
   test('renders empty state when no meetings are provided', () => {
-    render(<ToastProvider><RecordingsTab {...defaultProps} userMeetings={[]} /></ToastProvider>);
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} userMeetings={[]} />
+      </ToastProvider>
+    );
     expect(screen.getByText(/Brak spotk/i)).toBeInTheDocument();
   });
 
   test('renders list of meetings and recordings', () => {
-    render(<ToastProvider><RecordingsTab {...defaultProps} /></ToastProvider>);
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} />
+      </ToastProvider>
+    );
     expect(screen.getByText('Weekly Sync')).toBeInTheDocument();
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();
   });
 
   test('shows pipeline diagnostics for selected meeting latest recording', () => {
     render(
-      <ToastProvider><RecordingsTab
-        {...defaultProps}
-        selectedMeeting={{
-          ...mockMeetings[0],
-          latestRecordingId: 'rec_1',
-          recordings: [
-            {
-              id: 'rec_1',
-              createdAt: '2026-03-18T10:00:00Z',
-              duration: 2700,
-              speakerCount: 2,
-              transcript: [{}, {}],
-              pipelineGitSha: 'abc1234',
-              transcriptOutcome: 'empty',
-            },
-          ],
-        }}
-      /></ToastProvider>
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          selectedMeeting={{
+            ...mockMeetings[0],
+            latestRecordingId: 'rec_1',
+            recordings: [
+              {
+                id: 'rec_1',
+                createdAt: '2026-03-18T10:00:00Z',
+                duration: 2700,
+                speakerCount: 2,
+                transcript: [{}, {}],
+                pipelineGitSha: 'abc1234',
+                transcriptOutcome: 'empty',
+              },
+            ],
+          }}
+        />
+      </ToastProvider>
     );
 
     expect(screen.getByText(/Build: abc1234/i)).toBeInTheDocument();
   });
 
   test('calls selectMeeting and setActiveTab when a meeting is clicked in the table', () => {
-    render(<ToastProvider><RecordingsTab {...defaultProps} /></ToastProvider>);
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} />
+      </ToastProvider>
+    );
     fireEvent.click(screen.getByText('Project Alpha'));
 
     expect(defaultProps.selectMeeting).toHaveBeenCalledWith(mockMeetings[1]);
@@ -116,7 +130,11 @@ describe('RecordingsTab', () => {
       ],
     };
 
-    render(<ToastProvider><RecordingsTab {...defaultProps} selectedMeeting={selectedMeeting} /></ToastProvider>);
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} selectedMeeting={selectedMeeting} />
+      </ToastProvider>
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Ponow transkrypcje/i }));
     expect(defaultProps.retryStoredRecording).toHaveBeenCalledWith(
@@ -125,5 +143,4 @@ describe('RecordingsTab', () => {
     );
     expect(screen.getByText(/Chunki z tekstem: 0\/2/i)).toBeInTheDocument();
   });
-
 });

@@ -56,8 +56,8 @@ export function EmptyState({
       <div className="ff-state-icon">{icon}</div>
       <div className="ff-state-title">{title}</div>
       {message && <p className="ff-state-desc">{message}</p>}
-      {action && (
-        actionTooltip ? (
+      {action &&
+        (actionTooltip ? (
           <Tooltip content={actionTooltip} placement="top">
             <button type="button" className="ff-state-action primary-button" onClick={action}>
               {actionText}
@@ -67,8 +67,7 @@ export function EmptyState({
           <button type="button" className="ff-state-action primary-button" onClick={action}>
             {actionText}
           </button>
-        )
-      )}
+        ))}
     </div>
   );
 }

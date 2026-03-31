@@ -214,7 +214,8 @@ export default function useRecorder({
     const meeting =
       userMeetingsRef.current.find((item) => item.id === meetingId) ||
       (selectedMeeting?.id === meetingId ? selectedMeeting : null) ||
-      meetingHint ||  null;
+      meetingHint ||
+      null;
 
     try {
       hydration.registerAudioUrl(rid, blob);

@@ -54,7 +54,7 @@ export async function initializeMsal() {
 
   // Dynamic import to avoid bundling MSAL if not needed
   const { PublicClientApplication } = await import('@azure/msal-browser');
-  
+
   const msalConfig = {
     auth: {
       clientId: MICROSOFT_CLIENT_ID,
@@ -90,9 +90,12 @@ export async function signOutMicrosoft(msalInstance: any): Promise<void> {
 /**
  * Get Microsoft Graph access token
  */
-export async function getMicrosoftAccessToken(msalInstance: any, scopes: string[]): Promise<string> {
+export async function getMicrosoftAccessToken(
+  msalInstance: any,
+  scopes: string[]
+): Promise<string> {
   const accounts = msalInstance.getAllAccounts();
-  
+
   if (accounts.length === 0) {
     throw new Error('No Microsoft account signed in');
   }
@@ -130,7 +133,7 @@ export async function fetchOutlookCalendarEvents(
   options: { timeMin: string; timeMax: string }
 ): Promise<OutlookEvent[]> {
   const { timeMin, timeMax } = options;
-  
+
   const url = new URL('https://graph.microsoft.com/v1.0/me/events');
   url.searchParams.append('startDateTime', timeMin);
   url.searchParams.append('endDateTime', timeMax);
@@ -308,7 +311,8 @@ export async function renderMicrosoftSignInButton(
   onSignIn: (profile: MicrosoftProfile) => void
 ): Promise<void> {
   if (!MICROSOFT_CLIENT_ID) {
-    container.innerHTML = '<div style="color: #666; padding: 10px;">Microsoft integration not configured</div>';
+    container.innerHTML =
+      '<div style="color: #666; padding: 10px;">Microsoft integration not configured</div>';
     return;
   }
 
@@ -317,14 +321,14 @@ export async function renderMicrosoftSignInButton(
 
   // Check if already logged in
   const accounts = msalInstance.getAllAccounts();
-  
+
   if (accounts.length > 0) {
     // Already logged in, get profile
     const tokenResponse = await msalInstance.acquireTokenSilent({
       scopes: ['User.Read'],
       account: accounts[0],
     });
-    
+
     const profile = await fetchMicrosoftProfile(tokenResponse.accessToken);
     onSignIn(profile);
     return;

@@ -323,7 +323,8 @@ describe('StudioMeetingView', () => {
     fireEvent.click(screen.getByRole('button', { name: /Generuj sketchnotk/i }));
 
     await waitFor(() => {
-      expect(apiRequestMock).toHaveBeenCalledWith('/media/recordings/rec-display-only/sketchnote',
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/rec-display-only/sketchnote',
         expect.objectContaining({ method: 'POST' })
       );
     });

@@ -26,7 +26,7 @@ export function getTagColor(tagName) {
 
 export default function TagBadge({ tag, onRemove = undefined, className = '' }) {
   const color = getTagColor(tag);
-  
+
   return (
     <span className={`tag-badge ${onRemove ? 'with-remove' : ''} ${className}`}>
       <span className="tag-badge-dot" style={{ backgroundColor: color }} />

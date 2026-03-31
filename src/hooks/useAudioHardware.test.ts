@@ -408,9 +408,9 @@ describe('useAudioHardware', () => {
     test('non-permission errors do not set recordPermission to denied', async () => {
       const onMessageChange = vi.fn();
       navigator.mediaDevices = {
-        getUserMedia: vi.fn().mockRejectedValue(
-          Object.assign(new Error('Device busy'), { name: 'NotReadableError' })
-        ),
+        getUserMedia: vi
+          .fn()
+          .mockRejectedValue(Object.assign(new Error('Device busy'), { name: 'NotReadableError' })),
       } as any;
 
       const { result } = renderHook(() =>

@@ -227,7 +227,9 @@ export default function TasksTab({
     [onMoveTaskToColumn, runSafely]
   );
 
-  const pendingDeleteRef = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const pendingDeleteRef = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(
+    null
+  );
 
   const safeDeleteTask = useCallback(
     (taskId: string) => {

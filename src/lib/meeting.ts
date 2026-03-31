@@ -69,7 +69,11 @@ export function parseList(text) {
     .filter(Boolean);
 }
 
-export function createMeeting(userId: string, draft: any, options: { workspaceId?: string; createdByUserId?: string; createdByUserName?: string } = {}) {
+export function createMeeting(
+  userId: string,
+  draft: any,
+  options: { workspaceId?: string; createdByUserId?: string; createdByUserName?: string } = {}
+) {
   const now = new Date().toISOString();
 
   return {

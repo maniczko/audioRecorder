@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * useRecordingPipeline Hook Tests
- * 
+ *
  * Tests for recording pipeline state management
  */
 
@@ -85,9 +85,7 @@ describe('useRecordingPipeline', () => {
   });
 
   it('getMeetingQueue returns empty array for unknown meeting', () => {
-    mockRecordingPipelineStore.recordingQueue = [
-      { meetingId: 'm1', id: 'r1', status: 'pending' },
-    ];
+    mockRecordingPipelineStore.recordingQueue = [{ meetingId: 'm1', id: 'r1', status: 'pending' }];
 
     const { result } = renderHook(() => useRecordingPipeline());
 
@@ -135,7 +133,10 @@ describe('useRecordingPipeline', () => {
         result.current.setPipelineProgress(50, 'Transcribing');
       });
 
-      expect(mockRecordingPipelineStore.setPipelineProgress).toHaveBeenCalledWith(50, 'Transcribing');
+      expect(mockRecordingPipelineStore.setPipelineProgress).toHaveBeenCalledWith(
+        50,
+        'Transcribing'
+      );
     });
 
     it('accepts progress without label', () => {
@@ -179,7 +180,9 @@ describe('useRecordingPipeline', () => {
         result.current.updateQueueItem('r1', { status: 'completed' });
       });
 
-      expect(mockRecordingPipelineStore.updateQueueItem).toHaveBeenCalledWith('r1', { status: 'completed' });
+      expect(mockRecordingPipelineStore.updateQueueItem).toHaveBeenCalledWith('r1', {
+        status: 'completed',
+      });
     });
   });
 

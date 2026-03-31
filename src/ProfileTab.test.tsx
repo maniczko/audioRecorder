@@ -354,7 +354,9 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getAllByText((content) => content.includes('Kalendarz')).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText((content) => content.includes('Kalendarz')).length
+      ).toBeGreaterThan(0);
     });
   });
 

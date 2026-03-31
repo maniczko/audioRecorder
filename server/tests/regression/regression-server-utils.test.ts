@@ -1,11 +1,11 @@
 /**
  * Regression Tests — Server Utilities & HTTP Client
- * 
+ *
  * Following AGENTS.md §2.1 and §8:
  * - Tests written BEFORE fix (TDD)
  * - Documents the exact bug scenario
  * - Must pass forever - if fails = bug is back!
- * 
+ *
  * Run: pnpm run test:regression
  */
 
@@ -107,11 +107,14 @@ describe('Regression: Issue #601 - embedTextChunks error handling', () => {
     }));
 
     // Mock fetch to return 500
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: () => Promise.resolve({ error: { message: 'Internal server error' } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: { message: 'Internal server error' } }),
+      })
+    );
 
     const module = await import('../../postProcessing');
 

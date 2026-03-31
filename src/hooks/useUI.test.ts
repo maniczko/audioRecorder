@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * useUI Hook Tests
- * 
+ *
  * Tests for UI state management, command palette, and derived values
  */
 

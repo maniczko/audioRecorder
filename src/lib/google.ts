@@ -161,7 +161,10 @@ export async function requestGoogleTasksAccess({ loginHint }: { loginHint?: stri
   });
 }
 
-export async function fetchPrimaryCalendarEvents(accessToken: string, { timeMin, timeMax }: { timeMin?: string; timeMax?: string }) {
+export async function fetchPrimaryCalendarEvents(
+  accessToken: string,
+  { timeMin, timeMax }: { timeMin?: string; timeMax?: string }
+) {
   const params = new URLSearchParams({
     singleEvents: 'true',
     orderBy: 'startTime',
@@ -216,13 +219,16 @@ function normalizeGoogleEventAttendees(attendees: any[] = []) {
     .filter((attendee) => attendee.email);
 }
 
-export function buildGoogleCalendarEventPayload(entry: any, options: {
-  attendees?: any[];
-  reminders?: number[];
-  summary?: string;
-  description?: string;
-  location?: string;
-} = {}) {
+export function buildGoogleCalendarEventPayload(
+  entry: any,
+  options: {
+    attendees?: any[];
+    reminders?: number[];
+    summary?: string;
+    description?: string;
+    location?: string;
+  } = {}
+) {
   const attendees = normalizeGoogleEventAttendees(options.attendees);
   const reminders = Array.isArray(options.reminders)
     ? {
@@ -323,7 +329,12 @@ export async function createGoogleTask(accessToken: string, taskListId: string, 
   return response.json();
 }
 
-export async function updateGoogleTask(accessToken: string, taskListId: string, taskId: string, updates: any) {
+export async function updateGoogleTask(
+  accessToken: string,
+  taskListId: string,
+  taskId: string,
+  updates: any
+) {
   const response = await fetch(
     `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks/${taskId}`,
     {

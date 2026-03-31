@@ -1,14 +1,14 @@
 /**
  * @vitest-environment jsdom
  * CommandPalette Component — Accessibility Tests
- * 
+ *
  * Following AGENTS.md §2.1 and §5:
  * - WCAG 2.1 AA compliance
  * - Screen reader compatibility
  * - Keyboard navigation (Cmd/Ctrl+K, Arrow keys, Enter, Escape)
  * - Focus management
  * - ARIA live regions for search results
- * 
+ *
  * Run: pnpm run test -- CommandPalette.a11y.test.tsx
  */
 
@@ -58,10 +58,10 @@ describe('CommandPalette — Accessibility', () => {
   it('opens on Cmd/Ctrl+K keyboard shortcut', async () => {
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     // Simulate Cmd/Ctrl+K
     await user.keyboard('{Meta>}k{/Meta}');
-    
+
     await waitFor(() => {
       expect(mockUI.setCommandPaletteOpen).toHaveBeenCalledWith(true);
     });
@@ -71,9 +71,9 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     await user.keyboard('{Escape}');
-    
+
     await waitFor(() => {
       expect(mockUI.setCommandPaletteOpen).toHaveBeenCalledWith(false);
     });
@@ -83,20 +83,20 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     // Wait for results to render
     await waitFor(() => {
       expect(screen.getByRole('listbox')).toBeInTheDocument();
     });
-    
+
     // Arrow down to select first result
     await user.keyboard('{ArrowDown}');
     const firstOption = screen.getByRole('option', { selected: true });
     expect(firstOption).toBeInTheDocument();
-    
+
     // Arrow down to select second result
     await user.keyboard('{ArrowDown}');
-    
+
     // Arrow up to go back
     await user.keyboard('{ArrowUp}');
   });
@@ -105,13 +105,13 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     await waitFor(() => {
       expect(screen.getByRole('listbox')).toBeInTheDocument();
     });
-    
+
     await user.keyboard('{ArrowDown}{Enter}');
-    
+
     // Command should execute
     await waitFor(() => {
       expect(mockUI.setCommandPaletteOpen).toHaveBeenCalledWith(false);
@@ -125,28 +125,28 @@ describe('CommandPalette — Accessibility', () => {
   it('uses dialog role for the palette', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('uses combobox role for the search input', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
   it('uses listbox role for results container', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
 
   it('uses option role for each result item', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const options = screen.getAllByRole('option');
     expect(options.length).toBeGreaterThan(0);
   });
@@ -159,18 +159,18 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     const input = screen.getByRole('combobox');
     input.focus();
-    
+
     // Tab through all focusable elements
     const focusableElements = screen.getAllByRole('option');
-    
+
     for (let i = 0; i < focusableElements.length; i++) {
       await user.keyboard('{Tab}');
       expect(screen.getActiveElement()).toBeInTheDocument();
     }
-    
+
     // After last element, should return to first (focus trap)
     await user.keyboard('{Tab}');
     expect(screen.getActiveElement()).toHaveAttribute('role', 'option');
@@ -184,16 +184,16 @@ describe('CommandPalette — Accessibility', () => {
         <CommandPalette />
       </div>
     );
-    
+
     const trigger = container.querySelector('[data-testid="trigger"]') as HTMLButtonElement;
     trigger.focus();
-    
+
     // Open palette
     await user.keyboard('{Meta>}k{/Meta}');
-    
+
     // Close palette
     await user.keyboard('{Escape}');
-    
+
     // Focus should return to trigger
     await waitFor(() => {
       expect(document.activeElement).toBe(trigger);
@@ -207,10 +207,10 @@ describe('CommandPalette — Accessibility', () => {
   it('associates input with results using aria-controls', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const combobox = screen.getByRole('combobox');
     expect(combobox).toHaveAttribute('aria-controls');
-    
+
     const listboxId = combobox.getAttribute('aria-controls');
     expect(document.getElementById(listboxId!)).toBeInTheDocument();
   });
@@ -219,11 +219,11 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     const combobox = screen.getByRole('combobox');
-    
+
     await user.keyboard('{ArrowDown}');
-    
+
     expect(combobox).toHaveAttribute('aria-activedescendant');
     const activeDescendantId = combobox.getAttribute('aria-activedescendant');
     expect(document.getElementById(activeDescendantId!)).toHaveAttribute('role', 'option');
@@ -232,7 +232,7 @@ describe('CommandPalette — Accessibility', () => {
   it('uses aria-expanded to indicate open/closed state', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const combobox = screen.getByRole('combobox');
     expect(combobox).toHaveAttribute('aria-expanded', 'true');
   });
@@ -244,7 +244,7 @@ describe('CommandPalette — Accessibility', () => {
   it('announces number of results to screen readers', async () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     await waitFor(() => {
       const status = screen.getByRole('status');
       expect(status).toHaveAttribute('aria-live', 'polite');
@@ -257,10 +257,10 @@ describe('CommandPalette — Accessibility', () => {
     mockMeetings.meetings = [];
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     const input = screen.getByRole('combobox');
     await user.type(input, 'nonexistent');
-    
+
     await waitFor(() => {
       const status = screen.getByRole('status');
       expect(status).toHaveTextContent(/brak|no results/i);
@@ -274,15 +274,18 @@ describe('CommandPalette — Accessibility', () => {
   it('provides placeholder text with usage instructions', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const input = screen.getByRole('combobox');
-    expect(input).toHaveAttribute('placeholder', expect.stringMatching(/szukaj|search|cmd|command/i));
+    expect(input).toHaveAttribute(
+      'placeholder',
+      expect.stringMatching(/szukaj|search|cmd|command/i)
+    );
   });
 
   it('displays keyboard shortcuts hint', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     // Should show keyboard shortcut hints
     const hints = screen.getAllByText(/enter|arrow|escape/i);
     expect(hints.length).toBeGreaterThan(0);
@@ -295,9 +298,9 @@ describe('CommandPalette — Accessibility', () => {
   it('does not rely solely on color to indicate selection', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const selectedOption = screen.getByRole('option', { selected: true });
-    
+
     // Should have additional visual indicator beyond color
     expect(selectedOption).toHaveAttribute('aria-selected', 'true');
   });
@@ -309,10 +312,10 @@ describe('CommandPalette — Accessibility', () => {
   it('shows visible focus indicator on selected option', () => {
     mockUI.commandPaletteOpen = true;
     render(<CommandPalette />);
-    
+
     const options = screen.getAllByRole('option');
-    
-    options.forEach(option => {
+
+    options.forEach((option) => {
       // Should have visible focus style
       expect(option).toHaveStyle('outline: none'); // Custom focus style applied
     });
@@ -325,10 +328,10 @@ describe('CommandPalette — Accessibility', () => {
   it('has touch targets of at least 44x44 pixels', () => {
     mockUI.commandPaletteOpen = true;
     const { container } = render(<CommandPalette />);
-    
+
     const options = container.querySelectorAll('[role="option"]');
-    
-    options.forEach(option => {
+
+    options.forEach((option) => {
       const rect = option.getBoundingClientRect();
       expect(rect.height).toBeGreaterThanOrEqual(44);
     });
@@ -338,10 +341,10 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     // Click on backdrop/outside area
     await user.click(document.body);
-    
+
     await waitFor(() => {
       expect(mockUI.setCommandPaletteOpen).toHaveBeenCalledWith(false);
     });
@@ -355,26 +358,29 @@ describe('CommandPalette — Accessibility', () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     const input = screen.getByRole('combobox');
-    
+
     // Type quickly
     await user.type(input, 'meeting');
-    
+
     // Should not trigger search on every keystroke
-    await waitFor(() => {
-      expect(screen.getByRole('listbox')).toBeInTheDocument();
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+      },
+      { timeout: 500 }
+    );
   });
 
   it('handles empty search gracefully', async () => {
     mockUI.commandPaletteOpen = true;
     const user = userEvent.setup();
     render(<CommandPalette />);
-    
+
     const input = screen.getByRole('combobox');
     await user.clear(input);
-    
+
     // Should show all results or recent items
     await waitFor(() => {
       expect(screen.getByRole('listbox')).toBeInTheDocument();

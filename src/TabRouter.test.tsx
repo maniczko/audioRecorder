@@ -149,7 +149,7 @@ describe('createLazyComponent', () => {
   });
 
   it('should log error to console when import fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const importFn = vi.fn().mockRejectedValue(new Error('Test error'));
     const LazyComponent = createLazyComponent(importFn);
 

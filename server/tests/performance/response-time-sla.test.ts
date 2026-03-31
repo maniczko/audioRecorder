@@ -1,11 +1,11 @@
 /**
  * Performance Regression Tests — Response Time SLAs
- * 
+ *
  * Following AGENTS.md §2.1 and §9:
  * - Each test defines maximum acceptable response time (SLA)
  * - Tests fail if response time exceeds threshold
  * - Run: pnpm run test:performance
- * 
+ *
  * SLA Tiers:
  * - P0 (Critical): < 100ms — Health checks, auth sessions
  * - P1 (High): < 500ms — Read operations, simple queries
@@ -29,7 +29,7 @@ interface PerformanceMetrics {
 
 function measurePerformance<T>(fn: () => Promise<T>): Promise<{ result: T; durationMs: number }> {
   const start = performance.now();
-  return fn().then(result => ({
+  return fn().then((result) => ({
     result,
     durationMs: Math.round(performance.now() - start),
   }));
@@ -48,19 +48,19 @@ const SLA = {
   HEALTH_CHECK: 100,
   SESSION_VALIDATION: 100,
   BOOTSTRAP: 500,
-  
+
   // P1 — Read operations
   GET_MEDIA_ASSET: 500,
   GET_WORKSPACE: 500,
   GET_VOICE_PROFILES: 500,
   LIST_RECORDINGS: 500,
-  
+
   // P2 — Write operations
   CREATE_RECORDING: 1000,
   UPDATE_WORKSPACE_STATE: 1000,
   UPLOAD_AUDIO_CHUNK: 1000,
   FINALIZE_RECORDING: 1000,
-  
+
   // P3 — AI/ML operations
   TRANSCRIBE_LIVE: 3000,
   ANALYZE_MEETING: 3000,
@@ -117,7 +117,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return await res.json();
       });
 
-      assertSla({ durationMs, slaMs: SLA.HEALTH_CHECK, passed: durationMs <= SLA.HEALTH_CHECK, marginMs: SLA.HEALTH_CHECK - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.HEALTH_CHECK,
+        passed: durationMs <= SLA.HEALTH_CHECK,
+        marginMs: SLA.HEALTH_CHECK - durationMs,
+      });
     });
 
     test(`GET /auth/session responds within ${SLA.SESSION_VALIDATION}ms (SLA: P0)`, async () => {
@@ -129,7 +134,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.SESSION_VALIDATION, passed: durationMs <= SLA.SESSION_VALIDATION, marginMs: SLA.SESSION_VALIDATION - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.SESSION_VALIDATION,
+        passed: durationMs <= SLA.SESSION_VALIDATION,
+        marginMs: SLA.SESSION_VALIDATION - durationMs,
+      });
     });
   });
 
@@ -144,7 +154,7 @@ describe('Performance Regression — Response Time SLAs', () => {
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/voice-profiles', {
           method: 'GET',
-          headers: { 
+          headers: {
             Authorization: 'Bearer valid-token',
             'X-Workspace-Id': 'ws1',
           },
@@ -152,7 +162,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.GET_VOICE_PROFILES, passed: durationMs <= SLA.GET_VOICE_PROFILES, marginMs: SLA.GET_VOICE_PROFILES - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.GET_VOICE_PROFILES,
+        passed: durationMs <= SLA.GET_VOICE_PROFILES,
+        marginMs: SLA.GET_VOICE_PROFILES - durationMs,
+      });
     });
 
     test(`GET /state/bootstrap responds within ${SLA.BOOTSTRAP}ms (SLA: P1)`, async () => {
@@ -164,7 +179,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.BOOTSTRAP, passed: durationMs <= SLA.BOOTSTRAP, marginMs: SLA.BOOTSTRAP - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.BOOTSTRAP,
+        passed: durationMs <= SLA.BOOTSTRAP,
+        marginMs: SLA.BOOTSTRAP - durationMs,
+      });
     });
   });
 
@@ -179,7 +199,7 @@ describe('Performance Regression — Response Time SLAs', () => {
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/state/workspaces/ws1', {
           method: 'PUT',
-          headers: { 
+          headers: {
             Authorization: 'Bearer valid-token',
             'Content-Type': 'application/json',
           },
@@ -188,7 +208,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.UPDATE_WORKSPACE_STATE, passed: durationMs <= SLA.UPDATE_WORKSPACE_STATE, marginMs: SLA.UPDATE_WORKSPACE_STATE - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.UPDATE_WORKSPACE_STATE,
+        passed: durationMs <= SLA.UPDATE_WORKSPACE_STATE,
+        marginMs: SLA.UPDATE_WORKSPACE_STATE - durationMs,
+      });
     });
 
     test(`POST /voice-profiles responds within ${SLA.CREATE_RECORDING}ms (SLA: P2)`, async () => {
@@ -197,7 +222,7 @@ describe('Performance Regression — Response Time SLAs', () => {
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/voice-profiles', {
           method: 'POST',
-          headers: { 
+          headers: {
             Authorization: 'Bearer valid-token',
             'Content-Type': 'application/json',
             'X-Speaker-Name': 'Test Speaker',
@@ -207,7 +232,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.CREATE_RECORDING, passed: durationMs <= SLA.CREATE_RECORDING, marginMs: SLA.CREATE_RECORDING - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.CREATE_RECORDING,
+        passed: durationMs <= SLA.CREATE_RECORDING,
+        marginMs: SLA.CREATE_RECORDING - durationMs,
+      });
     });
   });
 
@@ -220,11 +250,11 @@ describe('Performance Regression — Response Time SLAs', () => {
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/transcribe/live', {
           method: 'POST',
-          headers: { 
+          headers: {
             Authorization: 'Bearer valid-token',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             recordingId: 'rec1',
             chunk: 'base64data',
             index: 1,
@@ -234,7 +264,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.TRANSCRIBE_LIVE, passed: durationMs <= SLA.TRANSCRIBE_LIVE, marginMs: SLA.TRANSCRIBE_LIVE - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.TRANSCRIBE_LIVE,
+        passed: durationMs <= SLA.TRANSCRIBE_LIVE,
+        marginMs: SLA.TRANSCRIBE_LIVE - durationMs,
+      });
     });
 
     test(`POST /ai/suggest-tasks responds within ${SLA.AI_SUGGEST_TASKS}ms (SLA: P3)`, async () => {
@@ -244,11 +279,11 @@ describe('Performance Regression — Response Time SLAs', () => {
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/ai/suggest-tasks', {
           method: 'POST',
-          headers: { 
+          headers: {
             Authorization: 'Bearer valid-token',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             meetingIds: ['m1'],
             transcript: 'Test transcript content for task suggestion',
           }),
@@ -256,7 +291,12 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
-      assertSla({ durationMs, slaMs: SLA.AI_SUGGEST_TASKS, passed: durationMs <= SLA.AI_SUGGEST_TASKS, marginMs: SLA.AI_SUGGEST_TASKS - durationMs });
+      assertSla({
+        durationMs,
+        slaMs: SLA.AI_SUGGEST_TASKS,
+        passed: durationMs <= SLA.AI_SUGGEST_TASKS,
+        marginMs: SLA.AI_SUGGEST_TASKS - durationMs,
+      });
     });
   });
 });
@@ -276,7 +316,7 @@ describe('Performance Budget — Summary', () => {
       maxP99Ms: 200,
       endpoints: ['/health', '/auth/session'],
     };
-    
+
     expect(budget.maxAverageMs).toBeLessThanOrEqual(100);
   });
 
@@ -288,7 +328,7 @@ describe('Performance Budget — Summary', () => {
       maxP99Ms: 1000,
       endpoints: ['/voice-profiles', '/state/bootstrap', '/media/*'],
     };
-    
+
     expect(budget.maxAverageMs).toBeLessThanOrEqual(500);
   });
 
@@ -300,7 +340,7 @@ describe('Performance Budget — Summary', () => {
       maxP99Ms: 2000,
       endpoints: ['/state/workspaces/*', '/voice-profiles', '/media/recordings/*'],
     };
-    
+
     expect(budget.maxAverageMs).toBeLessThanOrEqual(1000);
   });
 
@@ -312,7 +352,7 @@ describe('Performance Budget — Summary', () => {
       maxP99Ms: 5000,
       endpoints: ['/transcribe/*', '/ai/*', '/analyze/*'],
     };
-    
+
     expect(budget.maxAverageMs).toBeLessThanOrEqual(3000);
   });
 });

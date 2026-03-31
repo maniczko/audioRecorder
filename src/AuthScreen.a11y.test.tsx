@@ -1,14 +1,14 @@
 /**
  * @vitest-environment jsdom
  * AuthScreen Component — Accessibility Tests
- * 
+ *
  * Following AGENTS.md §2.1 and §5:
  * - WCAG 2.1 AA compliance
  * - Screen reader compatibility
  * - Keyboard navigation
  * - Color contrast
  * - Focus management
- * 
+ *
  * Run: pnpm run test -- AuthScreen.a11y.test.tsx
  */
 
@@ -52,7 +52,7 @@ describe('AuthScreen — Accessibility', () => {
 
   it('provides alt text for all images and logos', () => {
     render(<AuthScreen />);
-    
+
     const logo = screen.getByRole('img', { hidden: true });
     expect(logo).toHaveAttribute('alt');
     expect(logo.getAttribute('alt')).not.toBe('');
@@ -64,13 +64,13 @@ describe('AuthScreen — Accessibility', () => {
 
   it('uses proper heading hierarchy (h1 → h2 → h3)', () => {
     render(<AuthScreen />);
-    
+
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1).toBeInTheDocument();
-    
+
     const h2s = screen.getAllByRole('heading', { level: 2 });
     expect(h2s.length).toBeGreaterThan(0);
-    
+
     // No h3 before h2
     const h3s = screen.queryAllByRole('heading', { level: 3 });
     expect(h3s.length).toBeGreaterThanOrEqual(0);
@@ -78,21 +78,21 @@ describe('AuthScreen — Accessibility', () => {
 
   it('associates labels with form inputs using htmlFor', () => {
     render(<AuthScreen />);
-    
+
     const emailLabel = screen.getByLabelText(/email/i);
     expect(emailLabel).toBeInTheDocument();
-    
+
     const passwordLabel = screen.getByLabelText(/hasło/i);
     expect(passwordLabel).toBeInTheDocument();
   });
 
   it('uses fieldset and legend for radio button groups', () => {
     render(<AuthScreen />);
-    
+
     // Tab switching should use proper radio group semantics
     const loginTab = screen.getByRole('tab', { name: /logowanie/i });
     const registerTab = screen.getByRole('tab', { name: /rejestracja/i });
-    
+
     expect(loginTab).toHaveAttribute('aria-selected');
     expect(registerTab).toHaveAttribute('aria-selected');
   });
@@ -103,11 +103,11 @@ describe('AuthScreen — Accessibility', () => {
 
   it('maintains minimum 4.5:1 contrast ratio for text', () => {
     const { container } = render(<AuthScreen />);
-    
+
     // Check that text elements have inline styles or CSS classes for contrast
     const textElements = container.querySelectorAll('label, p, span, button');
-    
-    textElements.forEach(el => {
+
+    textElements.forEach((el) => {
       // In real tests, we would use axe-core or similar to verify contrast
       // For now, verify elements have styling applied
       expect(el).not.toHaveStyle('color: #ccc'); // Example of low contrast
@@ -121,14 +121,14 @@ describe('AuthScreen — Accessibility', () => {
   it('allows tab navigation through all interactive elements', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     // Tab through all focusable elements
     await user.keyboard('{Tab}');
     expect(screen.getActiveElement()).toBeInTheDocument();
-    
+
     await user.keyboard('{Tab}');
     expect(screen.getActiveElement()).toBeInTheDocument();
-    
+
     await user.keyboard('{Tab}');
     expect(screen.getActiveElement()).toBeInTheDocument();
   });
@@ -136,13 +136,13 @@ describe('AuthScreen — Accessibility', () => {
   it('allows Enter key to submit forms', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/hasło/i);
-    
+
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'password123{Enter}');
-    
+
     // Form should submit on Enter
     await waitFor(() => {
       expect(mockAuth.login).toHaveBeenCalled();
@@ -152,9 +152,9 @@ describe('AuthScreen — Accessibility', () => {
   it('allows Escape key to close modal', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     await user.keyboard('{Escape}');
-    
+
     // Modal should close or focus should return to trigger
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -166,14 +166,14 @@ describe('AuthScreen — Accessibility', () => {
   it('maintains logical focus order (top to bottom, left to right)', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     const focusableElements = [
       screen.getByRole('tab', { name: /logowanie/i }),
       screen.getByLabelText(/email/i),
       screen.getByLabelText(/hasło/i),
       screen.getByRole('button', { name: /zaloguj/i }),
     ];
-    
+
     for (const element of focusableElements) {
       await user.keyboard('{Tab}');
       expect(screen.getActiveElement()).toBe(element);
@@ -183,15 +183,15 @@ describe('AuthScreen — Accessibility', () => {
   it('traps focus within modal when open', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     // Tab to last element
     const focusableElements = screen.getAllByRole('button');
     const lastElement = focusableElements[focusableElements.length - 1];
     lastElement.focus();
-    
+
     // Next tab should return to first element (focus trap)
     await user.keyboard('{Tab}');
-    
+
     // Focus should be trapped in modal
     expect(screen.getActiveElement()).toHaveAttribute('data-focusable');
   });
@@ -202,10 +202,10 @@ describe('AuthScreen — Accessibility', () => {
 
   it('provides descriptive link text (not "click here")', () => {
     render(<AuthScreen />);
-    
+
     const links = screen.getAllByRole('link');
-    
-    links.forEach(link => {
+
+    links.forEach((link) => {
       const text = link.textContent?.toLowerCase();
       expect(text).not.toMatch(/click here|tutaj|here/i);
     });
@@ -217,10 +217,10 @@ describe('AuthScreen — Accessibility', () => {
 
   it('uses descriptive headings and labels', () => {
     render(<AuthScreen />);
-    
+
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toMatch(/logowanie|rejestracja|welcome|sign/i);
-    
+
     const emailLabel = screen.getByLabelText(/email/i);
     expect(emailLabel).toHaveAttribute('placeholder');
   });
@@ -232,7 +232,7 @@ describe('AuthScreen — Accessibility', () => {
   it('displays error messages with aria-live region', async () => {
     mockAuth.error = 'Invalid credentials';
     render(<AuthScreen />);
-    
+
     // Error should be announced to screen readers
     const errorRegion = screen.getByRole('alert');
     expect(errorRegion).toBeInTheDocument();
@@ -242,7 +242,7 @@ describe('AuthScreen — Accessibility', () => {
   it('associates error messages with form fields using aria-describedby', async () => {
     mockAuth.error = 'Invalid email format';
     const { rerender } = render(<AuthScreen />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     expect(emailInput).toHaveAttribute('aria-describedby');
   });
@@ -251,10 +251,10 @@ describe('AuthScreen — Accessibility', () => {
     const user = userEvent.setup();
     mockAuth.error = 'Invalid credentials';
     render(<AuthScreen />);
-    
+
     const passwordInput = screen.getByLabelText(/hasło/i);
     await user.type(passwordInput, 'a');
-    
+
     // Error should clear on input
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -267,10 +267,10 @@ describe('AuthScreen — Accessibility', () => {
 
   it('provides placeholder text as additional guidance', () => {
     render(<AuthScreen />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     expect(emailInput).toHaveAttribute('placeholder', /email|e-mail/i);
-    
+
     const passwordInput = screen.getByLabelText(/hasło/i);
     expect(passwordInput).toHaveAttribute('placeholder');
   });
@@ -278,11 +278,11 @@ describe('AuthScreen — Accessibility', () => {
   it('shows password requirements for registration', async () => {
     const user = userEvent.setup();
     render(<AuthScreen />);
-    
+
     // Switch to registration tab
     const registerTab = screen.getByRole('tab', { name: /rejestracja/i });
     await user.click(registerTab);
-    
+
     // Password requirements should be visible
     const requirements = screen.queryByText(/minimum|characters|znak/i);
     expect(requirements).toBeInTheDocument();
@@ -294,7 +294,7 @@ describe('AuthScreen — Accessibility', () => {
 
   it('uses proper ARIA roles for all interactive elements', () => {
     render(<AuthScreen />);
-    
+
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('tablist')).toBeInTheDocument();
     expect(screen.getByRole('form')).toBeInTheDocument();
@@ -303,10 +303,10 @@ describe('AuthScreen — Accessibility', () => {
   it('updates aria-busy during loading state', async () => {
     mockAuth.isLoading = true;
     render(<AuthScreen />);
-    
+
     const form = screen.getByRole('form');
     expect(form).toHaveAttribute('aria-busy', 'true');
-    
+
     const submitButton = screen.getByRole('button', { name: /logowanie/i });
     expect(submitButton).toHaveAttribute('aria-busy', 'true');
   });
@@ -314,13 +314,13 @@ describe('AuthScreen — Accessibility', () => {
   it('disables form controls during loading', async () => {
     mockAuth.isLoading = true;
     render(<AuthScreen />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     expect(emailInput).toBeDisabled();
-    
+
     const passwordInput = screen.getByLabelText(/hasło/i);
     expect(passwordInput).toBeDisabled();
-    
+
     const submitButton = screen.getByRole('button', { name: /logowanie/i });
     expect(submitButton).toBeDisabled();
   });
@@ -333,15 +333,15 @@ describe('AuthScreen — Accessibility', () => {
     const user = userEvent.setup();
     mockAuth.login.mockResolvedValueOnce({ success: true });
     render(<AuthScreen />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/hasło/i);
     const submitButton = screen.getByRole('button', { name: /zaloguj/i });
-    
+
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'password123');
     await user.click(submitButton);
-    
+
     await waitFor(() => {
       // Success message should be announced
       const statusMessage = screen.getByRole('status');
@@ -355,16 +355,16 @@ describe('AuthScreen — Accessibility', () => {
 
   it('has touch targets of at least 44x44 pixels', () => {
     const { container } = render(<AuthScreen />);
-    
+
     const buttons = container.querySelectorAll('button');
-    buttons.forEach(button => {
+    buttons.forEach((button) => {
       const rect = button.getBoundingClientRect();
       expect(rect.width).toBeGreaterThanOrEqual(44);
       expect(rect.height).toBeGreaterThanOrEqual(44);
     });
-    
+
     const inputs = container.querySelectorAll('input');
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       const rect = input.getBoundingClientRect();
       expect(rect.height).toBeGreaterThanOrEqual(44);
     });
@@ -372,7 +372,7 @@ describe('AuthScreen — Accessibility', () => {
 
   it('supports zoom up to 200% without loss of content', () => {
     const { container } = render(<AuthScreen />);
-    
+
     // Verify viewport meta tag allows zoom
     const viewport = document.querySelector('meta[name="viewport"]');
     expect(viewport).toHaveAttribute('content', expect.not.stringContaining('user-scalable=no'));
