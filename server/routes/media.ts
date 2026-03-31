@@ -355,11 +355,25 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: 'Brak ścieżki pliku do ponownego przetworzenia.' }, 409);
     }
 
+    // If the local file is gone (e.g. after Railway redeploy), try Supabase with basename
     if (
       (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
       !existsSync(asset.file_path)
     ) {
-      return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
+      const basename = path.basename(asset.file_path);
+      try {
+        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
+        await downloadAudioFromStorage(basename); // verify it exists
+        console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
+          recordingId,
+          localPath: asset.file_path,
+          supabasePath: basename,
+        });
+        // Update asset to use basename so pipeline downloads from Supabase
+        asset.file_path = basename;
+      } catch {
+        return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
+      }
     }
 
     try {

@@ -146,7 +146,11 @@ function toUserFacingQueueError(error: any) {
 
 function isExpectedDomainFailure(error: any) {
   const errorMessage = String(error?.message || '');
-  return errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.');
+  return (
+    errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.') ||
+    errorMessage.includes('Lokalny plik audio nie istnieje') ||
+    error?.status === 409
+  );
 }
 
 function isTransientNetworkError(error: any) {
@@ -731,8 +735,11 @@ export const useRecorderStore = create<any>()(
             }
             set({ lastQueueErrorKey: errorKey });
           }
+          // 409 = file permanently gone (not on local disk, not in Supabase) — no point retrying
           // Transient network errors always use "failed" (not "failed_permanent") — allows manual retry
-          const isPermanent = !isTransientNetworkError(error) && retryCount >= MAX_AUTO_RETRIES;
+          const isPermanent =
+            error?.status === 409 ||
+            (!isTransientNetworkError(error) && retryCount >= MAX_AUTO_RETRIES);
           get().updateQueueItem(nextItem.recordingId, {
             status: isPermanent ? 'failed_permanent' : 'failed',
             errorMessage: userFacingMessage,

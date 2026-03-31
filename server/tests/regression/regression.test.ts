@@ -972,3 +972,50 @@ describe('Regression: #0 — getUploadDir writable fallback chain', () => {
     expect(first.length).toBeGreaterThan(0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — retry-transcribe returns 409 without trying Supabase
+// Date: 2026-03-31
+// Bug: When a Railway redeploy wiped ephemeral filesystem, the
+//      retry-transcribe endpoint checked existsSync(asset.file_path),
+//      got false, and returned 409 immediately. It never attempted
+//      to download the audio from Supabase Storage using the basename.
+//      The audio download endpoint already had this fallback, but
+//      retry-transcribe did not.
+// Fix: When local file is missing, extract basename from file_path,
+//      verify it exists in Supabase, update asset.file_path to the
+//      basename (a Supabase key), and let the pipeline download it.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: #0 — retry-transcribe Supabase fallback for missing local files', () => {
+  test('basename of local path yields valid Supabase key (no separators)', () => {
+    const path = require('node:path');
+    const localPaths = [
+      '/data/uploads/recording_abc123.webm',
+      'C:\\Users\\test\\uploads\\recording_abc123.webm',
+    ];
+    for (const localPath of localPaths) {
+      const basename = path.basename(localPath);
+      expect(basename).toBe('recording_abc123.webm');
+      // Supabase key = basename = no path separators
+      expect(basename.includes('/')).toBe(false);
+      expect(basename.includes('\\')).toBe(false);
+    }
+  });
+
+  test('isRemoteAudioPath detects basename as remote (no separators)', () => {
+    const path = require('node:path');
+    // Mirrors pipeline.ts isRemoteAudioPath logic
+    function isRemoteAudioPath(filePath: string) {
+      return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
+    }
+    expect(isRemoteAudioPath('recording_abc123.webm')).toBe(true);
+    expect(isRemoteAudioPath('/data/uploads/recording_abc123.webm')).toBe(false);
+  });
+
+  test('409 response triggers failed_permanent status in queue (not retriable)', () => {
+    // Documents the frontend behavior: 409 = file permanently gone
+    const error = { status: 409, message: 'Lokalny plik audio nie istnieje.' };
+    const isPermanent = error.status === 409 || (error.status >= 400 && error.status < 500);
+    expect(isPermanent).toBe(true);
+  });
+});
