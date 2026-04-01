@@ -15,6 +15,11 @@ on:
         required: false
         default: 'true'
         type: boolean
+      check_vercel:
+        description: 'Check Vercel errors'
+        required: false
+        default: 'true'
+        type: boolean
       create_tasks:
         description: 'Create tasks in TASK_QUEUE.md'
         required: false
@@ -87,6 +92,16 @@ jobs:
         run: node scripts/fetch-railway-errors.js --json
         continue-on-error: true
 
+      - name: Fetch Vercel Errors
+        if: ${{ github.event.inputs.check_vercel != 'false' && secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: audiorecorder
+          VERCEL_HOURS_BACK: 6
+          OUTPUT_DIR: ./vercel-errors
+        run: node scripts/fetch-vercel-errors.js --verbose
+        continue-on-error: true
+
       - name: Parse and Analyze Errors
         id: analyze
         uses: actions/github-script@v7
@@ -98,6 +113,7 @@ jobs:
             const errors = {
               github: [],
               railway: [],
+              vercel: [],
               timestamp: new Date().toISOString()
             };
 
@@ -129,7 +145,7 @@ jobs:
                   .filter(f => f.endsWith('.json'))
                   .sort()
                   .reverse();
-                
+
                 if (files.length > 0) {
                   const latest = JSON.parse(fs.readFileSync(path.join(railwayErrorsDir, files[0]), 'utf8'));
                   if (Array.isArray(latest)) {
@@ -141,12 +157,33 @@ jobs:
               console.log('Could not parse Railway errors:', error.message);
             }
 
+            // Parse Vercel errors
+            try {
+              const vercelErrorsDir = './vercel-errors';
+              if (fs.existsSync(vercelErrorsDir)) {
+                const files = fs.readdirSync(vercelErrorsDir)
+                  .filter(f => f.endsWith('.json'))
+                  .sort()
+                  .reverse();
+
+                if (files.length > 0) {
+                  const latest = JSON.parse(fs.readFileSync(path.join(vercelErrorsDir, files[0]), 'utf8'));
+                  if (Array.isArray(latest)) {
+                    errors.vercel = latest.slice(0, 10); // Last 10 errors
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Could not parse Vercel errors:', error.message);
+            }
+
             // Count unique errors
             const githubErrorCount = errors.github.length;
             const railwayErrorCount = errors.railway.length;
-            const totalErrors = githubErrorCount + railwayErrorCount;
+            const vercelErrorCount = errors.vercel.length;
+            const totalErrors = githubErrorCount + railwayErrorCount + vercelErrorCount;
 
-            console.log(`Found ${githubErrorCount} GitHub errors and ${railwayErrorCount} Railway errors`);
+            console.log(`Found ${githubErrorCount} GitHub errors, ${railwayErrorCount} Railway errors, and ${vercelErrorCount} Vercel errors`);
             console.log(`Total: ${totalErrors} errors`);
 
             // Save analysis results
@@ -155,6 +192,7 @@ jobs:
             // Set outputs
             core.setOutput('github_errors', githubErrorCount);
             core.setOutput('railway_errors', railwayErrorCount);
+            core.setOutput('vercel_errors', vercelErrorCount);
             core.setOutput('total_errors', totalErrors);
             core.setOutput('has_errors', totalErrors > 0 ? 'true' : 'false');
 
@@ -202,15 +240,33 @@ jobs:
             // Railway tasks
             if (errors.railway.length > 0) {
               newTasks += `\n### Railway Errors (${errors.railway.length} found)\n\n`;
-              
+
               errors.railway.forEach((error, idx) => {
                 const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || 'Unknown Railway error';
                 const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
-                
+
                 newTasks += `- **${taskNum}** — Fix Railway error\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Railway\n`;
+                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Created:** ${timestamp}\n`;
+                newTasks += `  - **Priority:** High\n\n`;
+              });
+            }
+
+            // Vercel tasks
+            if (errors.vercel.length > 0) {
+              newTasks += `\n### Vercel Errors (${errors.vercel.length} found)\n\n`;
+
+              errors.vercel.forEach((error, idx) => {
+                const taskNum = `VL-AUTO-${dateStr}-${taskNumber++}`;
+                const errorMsg = error.text || 'Unknown Vercel error';
+                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+
+                newTasks += `- **${taskNum}** — Fix Vercel deployment error\n`;
+                newTasks += `  - **Status:** todo\n`;
+                newTasks += `  - **Source:** Vercel\n`;
                 newTasks += `  - **Error:** ${truncatedError}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
@@ -292,6 +348,16 @@ jobs:
               });
             }
 
+            if (errors.vercel.length > 0) {
+              issueBody += `\n---\n\n### Vercel Errors (${errors.vercel.length})\n\n`;
+              errors.vercel.forEach((error, idx) => {
+                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `\`\`\`\n${error.text || 'Unknown Vercel error'}\n\`\`\`\n`;
+                issueBody += `\n**Deployment:** ${error.deploymentId || 'N/A'}\n`;
+                issueBody += `\n**Time:** ${new Date(error.timestamp).toISOString()}\n`;
+              });
+            }
+
             issueBody += `\n---\n\n`;
             issueBody += `📋 **Tasks created in TASK_QUEUE.md**\n`;
             issueBody += `\nCheck the latest commit for auto-generated tasks.\n`;
@@ -302,7 +368,7 @@ jobs:
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway (${dateStr})`,
+              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway + ${errors.vercel.length} Vercel (${dateStr})`,
               body: issueBody,
               labels: ['auto-generated-error', 'monitoring', 'priority-high'],
             });
@@ -320,6 +386,8 @@ jobs:
             github-errors/*.json
             railway-errors/*.md
             railway-errors/*.json
+            vercel-errors/*.md
+            vercel-errors/*.json
           retention-days: 7
 
       - name: Summary
@@ -331,6 +399,7 @@ jobs:
           echo "|--------|--------------|" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Actions | ${{ steps.analyze.outputs.github_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Railway | ${{ steps.analyze.outputs.railway_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vercel | ${{ steps.analyze.outputs.vercel_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | **${{ steps.analyze.outputs.total_errors || 0 }}** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
