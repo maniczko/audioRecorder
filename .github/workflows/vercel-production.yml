@@ -23,7 +23,7 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Deploy the exact SHA that CI tested, not whatever is on main at deploy time
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
