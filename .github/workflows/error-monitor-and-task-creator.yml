@@ -75,9 +75,16 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
 
-      - name: Link to Railway project
+      - name: Configure Railway CLI
         if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
-        run: echo "audioRecorder" | railway link || echo "Railway link failed"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # Link to Railway project
+          echo "audioRecorder" | railway link || true
+          # Set project ID as fallback
+          export RAILWAY_PROJECT_ID="audioRecorder"
+          echo "✅ Railway configured"
 
       - name: Fetch GitHub Errors
         if: ${{ github.event.inputs.check_github != 'false' }}
@@ -92,9 +99,12 @@ jobs:
       - name: Fetch Railway Errors
         if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
         env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: audioRecorder
           RAILWAY_LOG_LINES: 50
           RAILWAY_LOG_FILTER: '@level:error'
-        run: node scripts/fetch-railway-errors.js --json
+          OUTPUT_DIR: ./railway-errors
+        run: node scripts/fetch-railway-errors.js --verbose
         continue-on-error: true
 
       - name: Fetch Vercel Errors
