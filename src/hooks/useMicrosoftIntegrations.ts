@@ -349,7 +349,7 @@ export default function useMicrosoftIntegrations({
         return null;
       }
     },
-    [setManualTasks, openTaskColumnId]
+    [openTaskColumnId]
   );
 
   return {

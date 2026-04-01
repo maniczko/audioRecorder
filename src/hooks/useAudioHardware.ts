@@ -109,7 +109,7 @@ export default function useAudioHardware({
       mounted = false;
       if (permissionStatus) permissionStatus.onchange = null;
     };
-  }, []);
+  }, [onMessageChange]);
 
   function cleanupRecorder() {
     if (typeof window !== 'undefined') {

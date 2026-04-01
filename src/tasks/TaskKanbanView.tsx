@@ -1,7 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { getTaskDependencyDetails } from '../lib/tasks';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
-import { getTaskLastActivity } from '../lib/activityFeed';
 import './TaskKanbanViewStyles.css';
 import TagBadge from '../shared/TagBadge';
 

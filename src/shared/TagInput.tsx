@@ -125,7 +125,6 @@ export default function TagInput({
     } else if (e.key === 'Enter' || e.key === 'Tab') {
       if (isFocused && (filteredSuggestions.length > 0 || canCreate)) {
         e.preventDefault();
-        const total = filteredSuggestions.length + (canCreate ? 1 : 0);
         if (activeIndex >= 0 && activeIndex < filteredSuggestions.length) {
           addTag(filteredSuggestions[activeIndex]);
         } else if (canCreate && activeIndex === filteredSuggestions.length) {

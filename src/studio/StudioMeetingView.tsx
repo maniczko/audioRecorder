@@ -11,26 +11,14 @@ import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
 import TaskCreateModal from '../tasks/TaskCreateModal';
-import {
-  Type,
-  AlignLeft,
-  Users,
-  Folder,
-  Calendar,
-  Clock,
-  Flag,
-  Activity,
-  Tag,
-  ChevronDown,
-  PenTool,
-} from 'lucide-react';
+import { ChevronDown, PenTool } from 'lucide-react';
 
 import PropTypes from 'prop-types';
 import { formatDateTime, formatDuration } from '../lib/storage';
 import { getSpeakerColor } from '../lib/speakerColors';
 import { labelSpeaker } from '../lib/recording';
 import { analyzeSpeakingStyle } from '../lib/speakerAnalysis';
-import { buildSketchnoteDataUrl, buildSketchnoteSvg } from '../lib/sketchnote';
+import { buildSketchnoteSvg } from '../lib/sketchnote';
 import { normalizeMeetingFeedback } from '../shared/meetingFeedback';
 import { apiRequest } from '../services/httpClient';
 import { remoteApiEnabled } from '../services/config';
@@ -630,7 +618,7 @@ export default function StudioMeetingView({
   const [concernDraft, setConcernDraft] = useState('');
   const [debriefCopyMessage, setDebriefCopyMessage] = useState('');
 
-  const [localStoreTick, setLocalStoreTick] = useState(0);
+  const [, setLocalStoreTick] = useState(0);
 
   const [localGuests, setLocalGuests] = useState<string[]>([]);
   const [localTags, setLocalTags] = useState<string[]>([]);
@@ -694,7 +682,7 @@ export default function StudioMeetingView({
     });
 
     return Array.from(pSet).sort();
-  }, [userMeetings, peopleProfiles, currentWorkspaceMembers, localStoreTick]);
+  }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
   const allMeetingTags = useMemo(() => {
     const tSet = new Set();
@@ -728,7 +716,7 @@ export default function StudioMeetingView({
     });
 
     return Array.from(tSet).sort();
-  }, [meetingTasks, userMeetings, localStoreTick]);
+  }, [meetingTasks, userMeetings]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraftValue, setTitleDraftValue] = useState('');
@@ -1150,14 +1138,7 @@ export default function StudioMeetingView({
     }
 
     return bullets.slice(0, 5);
-  }, [
-    autoTaskDrafts,
-    blockers,
-    followUps,
-    risks,
-    studioAnalysis?.decisions,
-    studioAnalysis?.summary,
-  ]);
+  }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions]);
 
   const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
   const [sketchnoteExpanded, setSketchnoteExpanded] = useState(false);
@@ -1174,42 +1155,6 @@ export default function StudioMeetingView({
     studioAnalysis?.summary,
   ]);
   const sketchnoteHasSourceData = Boolean(sketchnoteSummaryText) || summaryBullets.length > 0;
-
-  function handleCreateManualTask() {
-    if (!taskDraft.title.trim() || !selectedMeeting?.id) return;
-
-    const newTask = {
-      title: taskDraft.title.trim(),
-      description: taskDraft.description.trim(),
-      owner: taskDraft.owner.trim(),
-      assignedTo: taskDraft.assignedTo,
-      group: taskDraft.group.trim(),
-      priority: taskDraft.priority,
-      status: taskDraft.status,
-      dueDate: taskDraft.dueDate,
-      reminderAt: taskDraft.reminderAt,
-      tags: taskDraft.tags,
-      sourceMeetingId: selectedMeeting.id,
-      sourceType: 'meeting',
-      sourceMeetingTitle: selectedMeeting.title,
-      sourceMeetingDate: selectedMeeting.startsAt,
-    };
-
-    onCreateTask(newTask);
-    setTaskDraft({
-      title: '',
-      description: '',
-      owner: '',
-      assignedTo: [],
-      group: '',
-      priority: 'medium',
-      status: '',
-      dueDate: '',
-      reminderAt: '',
-      tags: '',
-    });
-    setIsAddingTask(false);
-  }
 
   useEffect(() => {
     if (!selectedRecording?.id || typeof onCreateTask !== 'function' || !autoTaskDrafts.length) {
@@ -1389,7 +1334,13 @@ export default function StudioMeetingView({
         speakerName: nextName,
       });
     },
-    [autoCreateVoiceProfile, autoLearnSpeakerProfiles, enrollSpeakerProfile, renameSpeaker]
+    [
+      autoCreateVoiceProfile,
+      autoLearnSpeakerProfiles,
+      displaySpeakerNames,
+      enrollSpeakerProfile,
+      renameSpeaker,
+    ]
   );
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
