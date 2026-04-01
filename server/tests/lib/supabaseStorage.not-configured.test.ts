@@ -133,7 +133,7 @@ describe('supabaseStorage - Supabase not configured', () => {
     const module = await import('../../lib/supabaseStorage');
 
     await expect(module.downloadAudioFromStorage('recordings/rec1.webm')).rejects.toThrow(
-      'Supabase credentials not configured.'
+      'Supabase Storage not available'
     );
   });
 
@@ -149,7 +149,7 @@ describe('supabaseStorage - Supabase not configured', () => {
     const module = await import('../../lib/supabaseStorage');
 
     await expect(module.deleteAudioFromStorage('recordings/rec1.webm')).rejects.toThrow(
-      'Supabase credentials not configured.'
+      'Supabase Storage not available'
     );
   });
 

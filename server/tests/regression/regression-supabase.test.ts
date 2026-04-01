@@ -119,7 +119,7 @@ describe('Regression: Issue #341 - supabaseStorage null handling', () => {
     const module = await import('../../lib/supabaseStorage');
 
     await expect(module.downloadAudioFromStorage('recordings/rec1.webm')).rejects.toThrow(
-      'Supabase credentials not configured.'
+      'Supabase Storage not available'
     );
   });
 
@@ -135,7 +135,7 @@ describe('Regression: Issue #341 - supabaseStorage null handling', () => {
     const module = await import('../../lib/supabaseStorage');
 
     await expect(module.deleteAudioFromStorage('recordings/rec1.webm')).rejects.toThrow(
-      'Supabase credentials not configured.'
+      'Supabase Storage not available'
     );
   });
 });
