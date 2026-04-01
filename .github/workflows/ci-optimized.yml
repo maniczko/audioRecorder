@@ -20,7 +20,7 @@ jobs:
       config: ${{ steps.filter.outputs.config }}
       package: ${{ steps.filter.outputs.package }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -56,7 +56,7 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -76,7 +76,7 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -96,7 +96,7 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -116,7 +116,7 @@ jobs:
     timeout-minutes: 30
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -142,7 +142,7 @@ jobs:
     timeout-minutes: 30
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -167,7 +167,7 @@ jobs:
     timeout-minutes: 15
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -188,7 +188,7 @@ jobs:
     timeout-minutes: 20
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -213,7 +213,7 @@ jobs:
     timeout-minutes: 10
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v3
         with:
           version: 9
