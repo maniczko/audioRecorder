@@ -6,9 +6,12 @@ const ORIGINAL_ENV = {
 };
 
 function setWindowOrigin(origin: string) {
+  const url = new URL(origin);
   vi.stubGlobal('window', {
     location: {
       origin,
+      hostname: url.hostname,
+      href: origin,
     },
   });
 }
