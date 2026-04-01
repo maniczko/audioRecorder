@@ -148,12 +148,15 @@ describe('Regression: Issue #341 - supabaseStorage null handling', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Regression: Issue #456 - Recording ID sanitization', () => {
+  let mockCreateBucket: any;
+  let mockUpload: any;
+
   beforeEach(() => {
     vi.resetModules();
-  });
 
-  const mockCreateBucket = vi.fn();
-  const mockUpload = vi.fn();
+    mockCreateBucket = vi.fn();
+    mockUpload = vi.fn();
+  });
 
   beforeEach(() => {
     vi.doMock('../config', () => ({
@@ -177,8 +180,7 @@ describe('Regression: Issue #456 - Recording ID sanitization', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
+    // P0 Fix: Remove vi.unmock() - already at top level (line 19-20)
   });
 
   test('sanitizes Polish unicode characters to underscores', async () => {
@@ -415,12 +417,15 @@ describe('Regression: Issue #601 - embedTextChunks error handling', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Regression: Issue #703 - Bucket creation error handling', () => {
+  let mockCreateBucket: any;
+  let mockUpload: any;
+
   beforeEach(() => {
     vi.resetModules();
-  });
 
-  const mockCreateBucket = vi.fn();
-  const mockUpload = vi.fn();
+    mockCreateBucket = vi.fn();
+    mockUpload = vi.fn();
+  });
 
   beforeEach(() => {
     vi.doMock('../config', () => ({
@@ -444,8 +449,7 @@ describe('Regression: Issue #703 - Bucket creation error handling', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
+    // P0 Fix: Remove vi.unmock() - already at top level (line 19-20)
   });
 
   test('continues upload when bucket already exists', async () => {
@@ -577,11 +581,13 @@ describe('Regression: Issue #0 — Audio path detection cross-platform', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Regression: Issue #804 - deleteAudioFromStorage error handling', () => {
+  let mockRemove: any;
+
   beforeEach(() => {
     vi.resetModules();
-  });
 
-  const mockRemove = vi.fn();
+    mockRemove = vi.fn();
+  });
 
   beforeEach(() => {
     vi.doMock('../config', () => ({
@@ -604,8 +610,7 @@ describe('Regression: Issue #804 - deleteAudioFromStorage error handling', () =>
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
+    // P0 Fix: Remove vi.unmock() - already at top level (line 19-20)
   });
 
   test('does not throw when file not found (already deleted)', async () => {
