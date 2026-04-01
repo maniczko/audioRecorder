@@ -458,7 +458,7 @@ jobs:
             console.log(`Created issue #${issue.number} for ${errors.github.length + errors.railway.length} errors`);
 
       - name: Upload Error Analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ steps.analyze.outputs.has_errors == 'true' }}
         with:
           name: error-analysis-${{ github.run_id }}
