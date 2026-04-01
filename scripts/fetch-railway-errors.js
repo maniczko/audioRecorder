@@ -221,7 +221,6 @@ async function main() {
 }
 
 // Run if called directly
-import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const isMain = process.argv[1] === __filename;
 
