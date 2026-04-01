@@ -7,14 +7,18 @@
  * and generates error reports.
  */
 
-// Load environment variables from .env.local FIRST (takes precedence)
-require('dotenv').config({ path: '.env.local' });
-// Then load .env as fallback
-require('dotenv').config();
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables from .env.local FIRST (takes precedence)
+dotenv.config({ path: '.env.local' });
+// Then load .env as fallback
+dotenv.config();
 
 // Configuration
 const config = {
