@@ -134,8 +134,22 @@ export default class TranscriptionService extends EventEmitter {
     );
   }
 
+  static MAX_CONCURRENT_JOBS = 2;
+
   async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
     if (!recordingId || this.transcriptionJobs.has(recordingId)) {
+      return;
+    }
+
+    // Reject new jobs when we're already at capacity to prevent OOM
+    if (this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS) {
+      console.warn(
+        `[Pipeline] Rejecting job ${recordingId}: ${this.transcriptionJobs.size} concurrent jobs (max ${TranscriptionService.MAX_CONCURRENT_JOBS})`
+      );
+      await this.markTranscriptionFailure(
+        recordingId,
+        'Serwer jest przeciążony — spróbuj ponownie za chwilę.'
+      );
       return;
     }
 

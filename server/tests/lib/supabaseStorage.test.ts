@@ -43,6 +43,7 @@ let supabase: any;
 let uploadAudioToStorage: any;
 let uploadAudioFileToStorage: any;
 let downloadAudioFromStorage: any;
+let downloadAudioToFile: any;
 let deleteAudioFromStorage: any;
 
 describe('supabaseStorage', () => {
@@ -63,6 +64,7 @@ describe('supabaseStorage', () => {
     uploadAudioToStorage = module.uploadAudioToStorage;
     uploadAudioFileToStorage = module.uploadAudioFileToStorage;
     downloadAudioFromStorage = module.downloadAudioFromStorage;
+    downloadAudioToFile = module.downloadAudioToFile;
     deleteAudioFromStorage = module.deleteAudioFromStorage;
   });
 
@@ -1129,6 +1131,42 @@ describe('supabaseStorage', () => {
 
       // createBucket should only be called once
       expect(mockCreateBucket).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('downloadAudioToFile()', () => {
+    test('streams blob content to disk file', async () => {
+      const testData = Buffer.from('fake-audio-data');
+      const blob = new Blob([testData]);
+      mockDownload.mockResolvedValue({ data: blob, error: null });
+
+      const os = await import('node:os');
+      const path = await import('node:path');
+      const actualFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+      const destPath = path.join(os.tmpdir(), `test_download_${Date.now()}.bin`);
+
+      try {
+        await downloadAudioToFile('test-file.webm', destPath);
+        const written = actualFs.readFileSync(destPath);
+        expect(written.toString()).toBe('fake-audio-data');
+        expect(mockFrom).toHaveBeenCalledWith('recordings');
+        expect(mockDownload).toHaveBeenCalledWith('test-file.webm');
+      } finally {
+        try {
+          actualFs.unlinkSync(destPath);
+        } catch {}
+      }
+    });
+
+    test('throws when Supabase returns an error', async () => {
+      mockDownload.mockResolvedValue({
+        data: null,
+        error: { message: 'File not found' },
+      });
+
+      await expect(downloadAudioToFile('missing.webm', '/tmp/out.bin')).rejects.toThrow(
+        'Failed to download from Supabase Storage: File not found'
+      );
     });
   });
 });

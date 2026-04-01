@@ -248,4 +248,36 @@ describe('TranscriptionService', () => {
     expect(service.computeEmbedding).toBeDefined();
     expect(typeof service.computeEmbedding).toBe('function');
   });
+
+  it('rejects new transcription jobs when MAX_CONCURRENT_JOBS is reached', async () => {
+    const service = new TranscriptionService(
+      mockDb,
+      mockWorkspaceService,
+      mockAudioPipeline,
+      mockSpeakerEmbedder
+    );
+
+    // Simulate two long-running jobs by manually inserting promises
+    let resolveJob1!: () => void;
+    let resolveJob2!: () => void;
+    service.transcriptionJobs.set('rec_a', new Promise<void>((r) => (resolveJob1 = r)));
+    service.transcriptionJobs.set('rec_b', new Promise<void>((r) => (resolveJob2 = r)));
+
+    const asset = { id: 'asset_3', file_path: 'test.wav', workspace_id: 'ws_1' };
+    await service.ensureTranscriptionJob('rec_c', asset, {});
+
+    // rec_c should have been rejected (markTranscriptionFailure called)
+    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
+      'rec_c',
+      expect.stringContaining('przeciążony'),
+      null,
+      null
+    );
+    // rec_c should NOT be in the job map
+    expect(service.transcriptionJobs.has('rec_c')).toBe(false);
+
+    // Cleanup
+    resolveJob1();
+    resolveJob2();
+  });
 });

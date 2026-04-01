@@ -1,9 +1,10 @@
 import { EventEmitter } from 'node:events';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkRateLimit,
   corsHeaders,
   getBearerToken,
+  getMemoryPressure,
   readBinaryBody,
   readJsonBody,
   securityHeaders,
@@ -21,6 +22,11 @@ function createMockRequest() {
 describe('serverUtils', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    process.env.SKIP_RATE_LIMIT = 'false';
+  });
+
+  afterEach(() => {
+    process.env.SKIP_RATE_LIMIT = 'true';
   });
 
   it('builds CORS and security headers for localhost, vercel and fallback origins', () => {
@@ -107,5 +113,45 @@ describe('serverUtils', () => {
     const abortedPromise = readBinaryBody(abortedRequest, 1024);
     abortedRequest.emit('close');
     await expect(abortedPromise).rejects.toThrow(/Request closed or aborted/);
+  });
+
+  describe('getMemoryPressure', () => {
+    it('returns current memory status with numeric fields', () => {
+      const result = getMemoryPressure();
+      expect(result).toHaveProperty('ok');
+      expect(result).toHaveProperty('heapUsedMB');
+      expect(result).toHaveProperty('heapTotalMB');
+      expect(result).toHaveProperty('rssMB');
+      expect(result).toHaveProperty('ratio');
+      expect(typeof result.ok).toBe('boolean');
+      expect(result.heapUsedMB).toBeGreaterThan(0);
+      expect(result.heapTotalMB).toBeGreaterThan(0);
+      expect(result.ratio).toBeGreaterThan(0);
+      expect(result.ratio).toBeLessThan(1);
+    });
+
+    it('reports ok=true under normal test conditions', () => {
+      const result = getMemoryPressure();
+      expect(result.ok).toBe(true);
+    });
+
+    it('reports ok=false when heap usage ratio exceeds 85%', () => {
+      const originalMemoryUsage = process.memoryUsage;
+      process.memoryUsage = (() => ({
+        heapUsed: 900 * 1024 * 1024,
+        heapTotal: 1000 * 1024 * 1024,
+        rss: 1100 * 1024 * 1024,
+        external: 0,
+        arrayBuffers: 0,
+      })) as any;
+
+      try {
+        const result = getMemoryPressure();
+        expect(result.ok).toBe(false);
+        expect(result.ratio).toBeCloseTo(0.9, 1);
+      } finally {
+        process.memoryUsage = originalMemoryUsage;
+      }
+    });
   });
 });

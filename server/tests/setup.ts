@@ -112,6 +112,7 @@ vi.mock('node:fs', async () => {
   const mockFs = {
     existsSync: existsSyncMock,
     createReadStream: createReadStreamMock,
+    createWriteStream: (actualFs as any).createWriteStream,
     statSync: statSyncMock,
     readFileSync: readFileSyncMock,
     writeFileSync: writeFileSyncMock,

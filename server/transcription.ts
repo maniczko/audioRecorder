@@ -211,8 +211,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
   let tempFilePath = '';
   try {
     if (filePath && !filePath.includes(path.sep) && !filePath.includes('/')) {
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
-      const buffer = await downloadAudioFromStorage(filePath);
+      const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
       const baseMime = String(options.contentType || '')
         .toLowerCase()
         .split(';')[0]
@@ -229,7 +228,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_analyze_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
-      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+      await downloadAudioToFile(filePath, tempFilePath);
       filePath = tempFilePath;
     }
 
@@ -642,6 +641,19 @@ export function mergeChunkedPayloads(payloads: any[], fileSizeBytes = 0) {
   };
 }
 
+export function getMemoryAwareConcurrency(configLimit: number): number {
+  const mem = process.memoryUsage();
+  const heapUsedMB = mem.heapUsed / (1024 * 1024);
+  const heapTotalMB = mem.heapTotal / (1024 * 1024);
+  const heapUsageRatio = heapUsedMB / heapTotalMB;
+
+  // Each STT chunk ≈ 10s of 16kHz mono WAV ≈ 320 KB buffer + overhead
+  // Be conservative — reduce when heap is >70% used
+  if (heapUsageRatio > 0.85) return 1;
+  if (heapUsageRatio > 0.7) return Math.max(1, Math.min(configLimit, 2));
+  return configLimit;
+}
+
 export async function transcribeInChunks(
   filePath: string,
   contentType: string,
@@ -655,13 +667,14 @@ export async function transcribeInChunks(
   };
 
   const payloads = [];
-  const CONCURRENCY_LIMIT = config.STT_CONCURRENCY_LIMIT || 6;
+  const BASE_CONCURRENCY = config.STT_CONCURRENCY_LIMIT || 6;
   let offsetSeconds = 0;
   let hasMore = true;
   let currentOverlap = CHUNK_OVERLAP_SECONDS;
   let allSpeechSegments: any[] = []; // Track all speech segments for adaptive overlap
 
   while (hasMore && !options.signal?.aborted) {
+    const CONCURRENCY_LIMIT = getMemoryAwareConcurrency(BASE_CONCURRENCY);
     const batchPromises = [];
     for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
       const currentOffset = offsetSeconds;

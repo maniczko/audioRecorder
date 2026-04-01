@@ -1,6 +1,31 @@
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuta
 const rateLimitMap = new Map();
 
+/**
+ * Returns current memory pressure level.
+ * Used to reject heavy operations (upload, transcribe) before OOM on Railway.
+ */
+export function getMemoryPressure(): {
+  ok: boolean;
+  heapUsedMB: number;
+  heapTotalMB: number;
+  rssMB: number;
+  ratio: number;
+} {
+  const mem = process.memoryUsage();
+  const heapUsedMB = Math.round(mem.heapUsed / (1024 * 1024));
+  const heapTotalMB = Math.round(mem.heapTotal / (1024 * 1024));
+  const rssMB = Math.round(mem.rss / (1024 * 1024));
+  const ratio = heapTotalMB > 0 ? mem.heapUsed / mem.heapTotal : 0;
+  return {
+    ok: ratio < 0.85,
+    heapUsedMB,
+    heapTotalMB,
+    rssMB,
+    ratio,
+  };
+}
+
 // Czyszczenie starych wpisów co 5 minut
 setInterval(
   () => {
@@ -21,8 +46,9 @@ setInterval(
  * - stt: 5 żądań/min (transkrypcja - kosztowne)
  */
 export function checkRateLimit(ip: string, route: string, max?: number) {
-  // Bypass rate limiting in tests to allow heavy automated suite runs
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+  // Bypass rate limiting in tests IF SKIP_RATE_LIMIT is explicitly set
+  // This allows regression suites to run fast while still allowing unit tests to verify the logic.
+  if (process.env.SKIP_RATE_LIMIT === 'true') {
     return { limit: 9999, remaining: 9999, resetAt: Date.now() + 60000 };
   }
 

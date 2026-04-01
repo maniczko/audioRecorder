@@ -142,8 +142,7 @@ async function runTranscriptionAttempt(
 
     if (!options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
       notify(10, 'Pobieranie nagrania z bazy danych...');
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
-      const buffer = await downloadAudioFromStorage(workingFilePath);
+      const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
       const baseMime = String(asset.content_type || '')
         .toLowerCase()
         .split(';')[0]
@@ -160,7 +159,7 @@ async function runTranscriptionAttempt(
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
-      fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+      await downloadAudioToFile(workingFilePath, tempFilePath);
       workingFilePath = tempFilePath;
     }
 
@@ -861,8 +860,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
 
   if (needsSourceMaterialization && remoteSource) {
     try {
-      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
-      const buffer = await downloadAudioFromStorage(asset.file_path);
+      const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
       const baseMime = String(asset.content_type || '')
         .toLowerCase()
         .split(';')[0]
@@ -879,7 +877,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
       const uploadDir = getUploadDir();
       sourceTempPath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(sourceTempPath), { recursive: true });
-      fs.writeFileSync(sourceTempPath, Buffer.from(buffer));
+      await downloadAudioToFile(asset.file_path, sourceTempPath);
       sourceFilePath = sourceTempPath;
     } catch (error: any) {
       if (!options.signal?.aborted) {

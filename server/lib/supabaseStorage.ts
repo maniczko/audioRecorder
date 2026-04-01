@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
+import { createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
 import { config } from '../config.js';
 
 const SUPABASE_URL = config.SUPABASE_URL || '';
@@ -38,8 +41,8 @@ export async function uploadAudioToStorage(
   contentType: string,
   extension: string
 ): Promise<string | null> {
-  if (!supabase) {
-    return null; // Supabase not configured — caller falls back to local fs
+  if (!supabase || !supabase.storage) {
+    return null; // Supabase not configured or missing storage — caller falls back to local fs
   }
 
   await ensureBucket();
@@ -65,7 +68,7 @@ export async function uploadAudioFileToStorage(
   contentType: string,
   extension: string
 ): Promise<string | null> {
-  if (!supabase) {
+  if (!supabase || !supabase.storage) {
     return null;
   }
 
@@ -92,8 +95,8 @@ export async function uploadAudioFileToStorage(
  * @returns The file content as an ArrayBuffer.
  */
 export async function downloadAudioFromStorage(path: string): Promise<ArrayBuffer> {
-  if (!supabase) {
-    throw new Error('Supabase credentials not configured.');
+  if (!supabase || !supabase.storage) {
+    throw new Error('Supabase Storage not available (client or storage module missing).');
   }
 
   const { data, error } = await supabase.storage.from('recordings').download(path);
@@ -106,12 +109,35 @@ export async function downloadAudioFromStorage(path: string): Promise<ArrayBuffe
 }
 
 /**
+ * Downloads a file from Supabase Storage directly to a local file path.
+ * Uses streaming to avoid loading entire file into Node.js heap — critical for
+ * large audio files on memory-constrained environments (Railway 512 MB).
+ */
+export async function downloadAudioToFile(storagePath: string, destPath: string): Promise<void> {
+  if (!supabase || !supabase.storage) {
+    throw new Error('Supabase Storage not available (client or storage module missing).');
+  }
+
+  const { data, error } = await supabase.storage.from('recordings').download(storagePath);
+
+  if (error) {
+    throw new Error(`Failed to download from Supabase Storage: ${error.message}`);
+  }
+
+  // Blob → ReadableStream → Node Readable → file on disk
+  const webStream = data.stream();
+  const nodeReadable = Readable.fromWeb(webStream as any);
+  const dest = createWriteStream(destPath);
+  await pipeline(nodeReadable, dest);
+}
+
+/**
  * Deletes a file from Supabase Storage.
  * @param path The storage path of the file.
  */
 export async function deleteAudioFromStorage(path: string): Promise<void> {
-  if (!supabase) {
-    throw new Error('Supabase credentials not configured.');
+  if (!supabase || !supabase.storage) {
+    throw new Error('Supabase Storage not available (client or storage module missing).');
   }
 
   const { error } = await supabase.storage.from('recordings').remove([path]);

@@ -8,6 +8,7 @@ import { streamSSE } from 'hono/streaming';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
 import type { MediaAsset } from '../lib/types.ts';
+import { getMemoryPressure } from '../lib/serverUtils.ts';
 
 /**
  * Checks available disk space and returns true if there's enough space.
@@ -166,6 +167,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const contentLength = parseInt(c.req.header('content-length') || '0', 10);
     if (contentLength > 100 * 1024 * 1024) {
       return c.json({ message: 'Przesłany plik przekracza maksymalny rozmiar.' }, 413);
+    }
+
+    // Reject when memory pressure is too high to safely buffer the upload
+    const memPressure = getMemoryPressure();
+    if (!memPressure.ok) {
+      console.warn(
+        `[memory] Rejecting upload: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%), RSS ${memPressure.rssMB} MB`
+      );
+      return c.json(
+        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
+        503
+      );
     }
 
     const arrayBuf = await c.req.arrayBuffer();
@@ -335,6 +348,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
     await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
+    // Guard against OOM — reject when memory is already tight
+    const memPressure = getMemoryPressure();
+    if (!memPressure.ok) {
+      console.warn(
+        `[memory] Rejecting transcription ${recordingId}: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%)`
+      );
+      return c.json(
+        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
+        503
+      );
+    }
+
     try {
       const result = await startTranscriptionPipeline(recordingId, asset, {
         ...body,
@@ -371,8 +396,11 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     ) {
       const basename = path.basename(asset.file_path);
       try {
+        // Just verify the file exists on Supabase — use a HEAD-like check via download
+        // but only need to confirm it doesn't throw, so we use downloadAudioFromStorage
+        // TODO: replace with a lighter existence check when Supabase SDK supports it
         const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-        await downloadAudioFromStorage(basename); // verify it exists
+        await downloadAudioFromStorage(basename);
         console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
           recordingId,
           localPath: asset.file_path,
