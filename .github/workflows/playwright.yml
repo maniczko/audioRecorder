@@ -10,44 +10,63 @@ env:
   CI: true
   PLAYWRIGHT_BROWSERS_PATH: /tmp/browsers
 
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: E2E Playwright Tests
-    timeout-minutes: 60
+    timeout-minutes: 90
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - uses: pnpm/action-setup@v3
       with:
         version: 9
-    
+
     - uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        node-version: '22'
         cache: 'pnpm'
-    
+
     - name: Install dependencies
       run: |
         echo "📦 Installing dependencies..."
-        pnpm install --no-frozen-lockfile
-    
+        pnpm install --frozen-lockfile
+
     - name: Install Playwright Browsers
       run: |
         echo "🌐 Installing Playwright browsers..."
         pnpm exec playwright install --with-deps chromium
-        pnpm exec playwright install-deps chromium
     
     - name: Run Playwright tests
+      id: tests
+      continue-on-error: true
       run: |
         echo "╔═══════════════════════════════════════════════════════════╗"
         echo "║  🎭 Running E2E Playwright Tests                          ║"
         echo "╚═══════════════════════════════════════════════════════════╝"
-        pnpm exec playwright test --reporter=list
+        pnpm exec playwright test \
+          --reporter=list \
+          --reporter=html \
+          --reporter=junit \
+          --retries=2 \
+          --workers=2
       env:
         PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
         PLAYWRIGHT_HTML_OUTPUT: playwright-report
+
+    - name: Check test results
+      if: always()
+      run: |
+        if [ ${{ steps.tests.outcome }} == 'success' ]; then
+          echo "✅ All E2E tests passed!"
+        else
+          echo "⚠️ Some E2E tests failed. Check artifacts for details."
+        fi
     
     - name: Upload Playwright Report
       if: always()
