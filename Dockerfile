@@ -16,13 +16,21 @@ WORKDIR /app
 
 FROM base AS deps
 
+# Limit Node.js heap during pnpm resolution to prevent Railway build OOM
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+
 COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --link server/package.json ./server/package.json
 
-RUN pnpm install --frozen-lockfile
+# --ignore-scripts: skip postinstall hooks during resolution (saves memory)
+# Then rebuild only ffmpeg/ffprobe to download their binaries
+RUN pnpm install --frozen-lockfile --ignore-scripts && \
+    pnpm rebuild ffmpeg-static ffprobe-static
 
 
 FROM deps AS build
+
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 COPY --link server/ ./server/
 COPY --link src/shared/ ./src/shared/
