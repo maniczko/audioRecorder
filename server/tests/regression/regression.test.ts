@@ -989,17 +989,17 @@ describe('Regression: #0 — getUploadDir writable fallback chain', () => {
 describe('Regression: #0 — retry-transcribe Supabase fallback for missing local files', () => {
   test('basename of local path yields valid Supabase key (no separators)', () => {
     const path = require('node:path');
-    const localPaths = [
-      '/data/uploads/recording_abc123.webm',
-      'C:\\Users\\test\\uploads\\recording_abc123.webm',
-    ];
-    for (const localPath of localPaths) {
-      const basename = path.basename(localPath);
-      expect(basename).toBe('recording_abc123.webm');
-      // Supabase key = basename = no path separators
-      expect(basename.includes('/')).toBe(false);
-      expect(basename.includes('\\')).toBe(false);
-    }
+    // Test POSIX paths
+    const posixPath = '/data/uploads/recording_abc123.webm';
+    const posixBasename = path.posix.basename(posixPath);
+    expect(posixBasename).toBe('recording_abc123.webm');
+    expect(posixBasename.includes('/')).toBe(false);
+
+    // Test Windows paths
+    const windowsPath = 'C:\\Users\\test\\uploads\\recording_abc123.webm';
+    const windowsBasename = path.win32.basename(windowsPath);
+    expect(windowsBasename).toBe('recording_abc123.webm');
+    expect(windowsBasename.includes('\\')).toBe(false);
   });
 
   test('isRemoteAudioPath detects basename as remote (no separators)', () => {
