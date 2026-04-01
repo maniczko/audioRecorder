@@ -123,3 +123,108 @@
   background: #f17d72;
   flex-shrink: 0;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Topbar (2026-04-01)                         */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+  .tab-switcher {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .tab-pill {
+    padding-inline: 8px;
+    font-size: 0.85rem;
+    min-height: 36px;
+  }
+
+  .tab-back-btn {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    margin-right: 2px;
+  }
+
+  .workspace-switch {
+    min-width: 140px;
+    gap: 4px;
+  }
+
+  .workspace-switch span {
+    font-size: 0.75rem;
+  }
+
+  .command-palette-launcher {
+    padding: 6px 10px;
+    gap: 4px;
+    font-size: 0.8rem;
+  }
+
+  .command-palette-launcher span {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+  }
+
+  .topbar-record-btn {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    gap: 4px;
+    min-height: 36px;
+  }
+
+  .settings-button {
+    padding: 6px 10px;
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Hide labels on very small screens */
+  .tab-pill span {
+    display: none;
+  }
+
+  .tab-pill {
+    padding-inline: 6px;
+    min-height: 32px;
+  }
+
+  .tab-switcher {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .workspace-switch {
+    display: none;
+  }
+
+  /* Command palette becomes icon-only */
+  .command-palette-launcher {
+    padding: 4px 8px;
+  }
+
+  .command-palette-launcher span {
+    display: none;
+  }
+
+  /* Record button becomes more compact */
+  .topbar-record-btn {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    min-height: 32px;
+    gap: 2px;
+  }
+
+  .topbar-record-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .settings-button {
+    padding: 4px 8px;
+    min-height: 32px;
+    min-width: 32px;
+  }
+}

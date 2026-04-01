@@ -278,22 +278,159 @@
   }
 }
 
+/* ================================================================ */
+/* MOBILE & RESPONSIVE DESIGN (Updated 2026-04-01)                  */
+/* ================================================================ */
+
+/* Tablet and below (max 768px) */
 @media (max-width: 768px) {
+  [data-layout="modern"] {
+    --modern-sidebar-width: 100%;
+    --modern-header-height: 60px;
+  }
+
+  [data-layout="modern"] .app-shell-modern {
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Sidebar becomes a drawer */
   [data-layout="modern"] .modern-sidebar {
     position: fixed;
+    width: 75vw;
+    max-width: 280px;
+    height: 100vh;
     transform: translateX(-100%);
+    z-index: 100;
+    transition: transform 0.3s ease;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
   }
 
   [data-layout="modern"].sidebar-open .modern-sidebar {
     transform: translateX(0);
   }
 
+  /* Header adjustments for mobile */
   [data-layout="modern"] .modern-header {
-    padding: 0 16px;
+    padding: 0 12px;
+    height: 60px;
+    gap: 8px;
+  }
+
+  [data-layout="modern"] .modern-header-left {
+    gap: 8px;
+  }
+
+  [data-layout="modern"] .modern-header-right {
+    gap: 8px;
+  }
+
+  /* Search button becomes icon-only on small screens */
+  [data-layout="modern"] .modern-search-btn {
+    width: auto;
+    padding: 8px 10px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  [data-layout="modern"] .modern-search-btn-left {
+    display: flex;
+  }
+
+  [data-layout="modern"] .modern-search-shortcut {
+    display: none;
+  }
+
+  /* Record button */
+  [data-layout="modern"] .modern-record-btn {
+    padding: 6px 12px;
+    min-height: 44px;
+    font-size: 0.85rem;
+  }
+
+  /* Content area takes full width */
+  [data-layout="modern"] .modern-main {
+    width: 100%;
+    height: calc(100vh - 60px);
   }
 
   [data-layout="modern"] .modern-content-wrapper {
-    padding: 16px;
+    padding: 12px;
+    padding-bottom: 140px;
+  }
+
+  /* Comic bubble positioning for mobile */
+  .ask-ai-comic-bubble {
+    position: fixed;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 80px !important;
+    width: auto;
+    max-width: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .ask-ai-comic-bubble::before {
+    display: none;
+  }
+
+  /* Player bar adjustments */
+  [data-layout="modern"] .ff-player-bar {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100%;
+  }
+}
+
+/* Small phones (max 480px) */
+@media (max-width: 480px) {
+  [data-layout="modern"] {
+    --modern-header-height: 56px;
+  }
+
+  [data-layout="modern"] .modern-sidebar {
+    width: 85vw;
+  }
+
+  [data-layout="modern"] .modern-header {
+    height: 56px;
+    padding: 0 8px;
+  }
+
+  [data-layout="modern"] .modern-brand {
+    margin-bottom: 24px;
+    gap: 8px;
+  }
+
+  [data-layout="modern"] .modern-brand h1 {
+    font-size: 1rem;
+  }
+
+  [data-layout="modern"] .modern-brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  [data-layout="modern"] .modern-content-wrapper {
+    padding: 8px;
+    padding-bottom: 130px;
+  }
+
+  [data-layout="modern"] .modern-main {
+    height: calc(100vh - 56px);
+  }
+
+  /* Hamburger menu button */
+  [data-layout="modern"] .modern-toggle-layout {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

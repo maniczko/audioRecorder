@@ -1714,3 +1714,141 @@ select:focus {
 /* Idle actions */
 
 /* ── Voice Profiles ─────────────────────────────── */
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE STYLES (2026-04-01)                           */
+/* ================================================================ */
+
+/* Touch-friendly button sizing - minimum 44x44px */
+@media (max-width: 768px) {
+  button,
+  .pill,
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .danger-button,
+  .status-chip,
+  .need-chip,
+  .live-pill {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Workspace layout */
+  .workspace-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Main grid */
+  .main-grid-skeleton {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Topbar */
+  .topbar {
+    padding: 16px 12px;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .topbar h1 {
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+  }
+
+  .topbar-title {
+    gap: 8px;
+  }
+
+  /* Panel header */
+  .panel-header {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .panel-header h2 {
+    font-size: 1.1rem;
+  }
+
+  /* Input fields */
+  input,
+  textarea,
+  select {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Status chips */
+  .status-chip,
+  .need-chip,
+  .live-pill {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+}
+
+/* Small phones (max 480px) */
+@media (max-width: 480px) {
+  /* Hide scroll behavior labels on mobile */
+  .mode-switch,
+  .status-cluster,
+  .hero-meta,
+  .brief-columns,
+  .analysis-columns {
+    flex-direction: column;
+  }
+
+  .topbar {
+    padding: 12px 8px;
+  }
+
+  .topbar h1 {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+  }
+
+  /* Reduce spacing */
+  .panel-header {
+    padding: 0 8px;
+  }
+
+  /* Button text ellipsis for small screens */
+  .pill,
+  .primary-button,
+  .secondary-button,
+  .ghost-button {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Reduce padding globally on mobile */
+  [data-layout="modern"] .panel {
+    padding: 12px;
+  }
+
+  /* Modals and overlays should be full-screen on small devices */
+  .modal,
+  .popover {
+    border-radius: 12px;
+  }
+}
+
+/* Extra large phones / tablets (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .workspace-layout {
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+  }
+
+  .main-grid-skeleton {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Moderate padding on tablets */
+  [data-layout="modern"] .modern-content-wrapper {
+    padding: 20px;
+  }
+}

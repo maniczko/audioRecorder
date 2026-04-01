@@ -47,3 +47,77 @@
   font-weight: 600;
   background: rgba(116, 208, 191, 0.08);
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Calendar Tab (2026-04-01)                   */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+  /* Calendar layout becomes single column */
+  .calendar-main-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Mini calendar smaller on mobile */
+  .mini-calendar {
+    padding: 8px;
+  }
+
+  .mini-day {
+    font-size: 0.7rem;
+    padding: 6px;
+  }
+
+  /* Agenda panel adjusts */
+  .agenda-panel {
+    padding: 12px;
+  }
+
+  .agenda-card {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* View controls stack */
+  .calendar-view-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .calendar-view-button {
+    width: 100%;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Mini calendar takes less space */
+  .mini-day {
+    font-size: 0.65rem;
+    padding: 4px;
+  }
+
+  .mini-calendar-header {
+    font-size: 0.85rem;
+  }
+
+  /* Agenda cards minimal padding */
+  .agenda-card {
+    padding: 6px;
+    margin-bottom: 6px;
+  }
+
+  .agenda-card-title {
+    font-size: 0.8rem;
+  }
+
+  .agenda-card-time {
+    font-size: 0.7rem;
+  }
+
+  /* Hide agenda meta on very small screens */
+  .agenda-card-meta {
+    display: none;
+  }
+}

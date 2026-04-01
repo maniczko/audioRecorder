@@ -612,3 +612,123 @@ input[type="date"].recordings-library-filter-control::-webkit-calendar-picker-in
     flex: auto;
   }
 }
+
+/* Tablet (768px - 900px) */
+@media (max-width: 768px) {
+  .studio-picker-dropdown {
+    width: 90vw;
+    left: 5vw;
+  }
+
+  .studio-picker-item-title {
+    font-size: 0.8rem;
+  }
+
+  .studio-picker-header-title {
+    font-size: 1rem;
+  }
+
+  .studio-picker-header-meta {
+    font-size: 0.7rem;
+  }
+
+  /* Recording library table becomes scrollable */
+  .studio-recordings-table {
+    overflow-x: auto;
+  }
+
+  .studio-recordings-table tbody tr td {
+    padding: 10px 8px;
+    font-size: 0.85rem;
+  }
+
+  /* Upload section */
+  .recordings-tab-upload-box-fixed {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  /* Library header */
+  .recordings-library-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .recordings-library-header button {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Picker items */
+  .studio-picker-item {
+    padding: 8px 12px;
+  }
+}
+
+/* Small phones (max 480px) */
+@media (max-width: 480px) {
+  .studio-picker-dropdown {
+    width: 95vw;
+    left: 2.5vw;
+    max-width: none;
+  }
+
+  .studio-picker-header-top {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .studio-picker-header-title {
+    font-size: 0.95rem;
+  }
+
+  /* Recordings table columns become stacked on very small screens */
+  .studio-recordings-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .studio-recordings-table tbody tr td {
+    padding: 4px 0;
+  }
+
+  /* Hide metadata columns on small screens, show only title and actions */
+  .studio-recordings-table tbody tr td:nth-child(2),
+  .studio-recordings-table tbody tr td:nth-child(3),
+  .studio-recordings-table tbody tr td:nth-child(4) {
+    display: none;
+  }
+
+  /* Make title full width */
+  .studio-recordings-table tbody tr td:first-child {
+    grid-column: 1;
+  }
+
+  /* Make actions full width */
+  .studio-recordings-table tbody tr td:last-child {
+    grid-column: 1;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Upload box */
+  .recordings-tab-upload-box-fixed {
+    padding: 8px;
+  }
+
+  .recordings-tab-upload-box-text {
+    font-size: 0.85rem;
+  }
+
+  /* Library header stacks vertically */
+  .recordings-library-header {
+    flex-direction: column;
+  }
+
+  .recordings-library-header button {
+    width: 100%;
+  }
+}

@@ -176,3 +176,91 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Notification Center (2026-04-01)            */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+  .notification-panel {
+    width: min(90vw, 360px);
+    max-height: 60vh;
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .notification-card {
+    padding: 12px;
+    border-radius: 16px;
+    gap: 8px;
+  }
+
+  .notification-card-main {
+    gap: 4px;
+  }
+
+  .notification-tone {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .notification-panel-header,
+  .notification-panel-tools {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-trigger {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notification-trigger-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 0.65rem;
+  }
+
+  .notification-panel {
+    position: fixed;
+    right: 8px;
+    left: 8px;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 65vh;
+    border-radius: 20px 20px 0 0;
+    padding: 12px;
+  }
+
+  .notification-card {
+    padding: 10px;
+    border-radius: 12px;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .notification-card-main {
+    font-size: 0.85rem;
+  }
+
+  .notification-card-main p {
+    font-size: 0.8rem;
+  }
+
+  .notification-dismiss {
+    align-self: flex-start;
+  }
+
+  .notification-panel-header {
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .notification-tone {
+    padding: 3px 6px;
+    font-size: 0.65rem;
+  }
+}

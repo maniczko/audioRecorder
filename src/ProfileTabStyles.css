@@ -694,3 +694,117 @@
 .profile-grid-span-two {
   grid-column: span 2;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Profile Tab (2026-04-01)                    */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+  /* Profile layout becomes single column */
+  .profile-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .profile-grid-span-two {
+    grid-column: span 1;
+  }
+
+  /* Profile header adjusts */
+  .profile-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .profile-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.1rem;
+  }
+
+  /* Tabs stack */
+  .profile-tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .profile-tab-button {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  /* Voice profile sections */
+  .voice-profile-item {
+    padding: 12px;
+  }
+
+  .voice-profile-title {
+    font-size: 0.95rem;
+  }
+
+  .voice-profile-threshold-container {
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  /* Category views */
+  .profile-category-view-spaced {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Minimal layout on small phones */
+  .profile-header {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .profile-info h2 {
+    font-size: 1rem;
+  }
+
+  .profile-info p {
+    font-size: 0.85rem;
+  }
+
+  /* Tab buttons become icon-only or text wrapping */
+  .profile-tab-button {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    min-height: 40px;
+  }
+
+  /* Voice profiles ultra-compact */
+  .voice-profile-item {
+    padding: 8px;
+  }
+
+  .voice-profile-title {
+    font-size: 0.85rem;
+  }
+
+  .profile-samples-info {
+    font-size: 0.75rem;
+  }
+
+  /* Hide less important sections */
+  .profile-category-view-spaced {
+    margin-top: 12px;
+  }
+
+  .voice-profile-threshold-container {
+    padding-top: 6px;
+    margin-top: 6px;
+  }
+}

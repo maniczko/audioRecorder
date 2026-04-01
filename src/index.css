@@ -7,6 +7,7 @@
 /* Inline style migration utilities */
 @import "./styles/inline-migration.css";
 @import "./styles/foundation.css";
+@import "./styles/mobile-utilities.css";
 
 html {
   color-scheme: dark;

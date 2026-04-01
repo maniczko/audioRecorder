@@ -329,3 +329,103 @@
 .people-ghost-button-sm {
   font-size: 0.8rem;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - People Tab (2026-04-01)                     */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+  /* People layout becomes single column */
+  .people-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* People list items stack better */
+  .person-row {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .person-name,
+  .person-title {
+    font-size: 0.95rem;
+  }
+
+  .person-role {
+    font-size: 0.8rem;
+  }
+
+  /* Sentiment chart responsive */
+  .people-sentiment-svg {
+    max-height: 250px;
+  }
+
+  /* Button group stacks */
+  .person-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .person-actions button {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Filter section */
+  .people-filter-section {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Minimal layout on small phones */
+  .person-row {
+    padding: 8px;
+  }
+
+  .person-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .person-title,
+  .person-role {
+    font-size: 0.75rem;
+  }
+
+  /* Hide metadata on very small screens */
+  .person-metadata {
+    display: none;
+  }
+
+  /* Show only name and action button */
+  .person-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .person-actions {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .person-actions button {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Sentiment chart full width */
+  .people-sentiment-copy {
+    font-size: 0.75rem;
+  }
+
+  .people-soft-copy-sm {
+    font-size: 0.8rem;
+  }
+}
