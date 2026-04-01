@@ -221,11 +221,15 @@ async function main() {
 }
 
 // Run if called directly
-if (require.main === module) {
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] === __filename;
+
+if (isMain) {
   main().catch((error) => {
     console.error('❌ Fatal error:', error.message);
     process.exit(1);
   });
 }
 
-module.exports = { fetchErrorLogs, checkRailwayCLI, linkToProject };
+export { fetchErrorLogs, checkRailwayCLI, linkToProject };
