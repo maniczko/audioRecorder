@@ -38,6 +38,6 @@ describe('services/config resolveApiBaseUrl', () => {
 
     const config = await import('./config');
 
-    expect(config.API_BASE_URL).toBe('http://localhost:4000');
+    expect(config.API_BASE_URL).toBe('http://127.0.0.1:4000');
   });
 });

@@ -17,7 +17,7 @@ export const REMOTE_TRANSCRIPTION_PROVIDER = {
 
 const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
 // Keep polling resilient, but avoid retry storms during deploy-window 502 outages.
-const TRANSCRIPTION_STATUS_RETRIES = 2;
+const TRANSCRIPTION_STATUS_RETRIES = 5;
 const PROGRESS_MAX_RECONNECT_ERRORS = 20;
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 

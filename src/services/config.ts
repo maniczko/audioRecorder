@@ -38,6 +38,12 @@ function readDefaultApiBaseUrl() {
   const env = (import.meta as any).env;
   const isProd = Boolean(env?.PROD);
   if (!isProd) {
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      const hostname = window.location.hostname;
+      if (hostname === '127.0.0.1' || hostname === 'localhost') {
+        return `http://${hostname}:4000`;
+      }
+    }
     return 'http://localhost:4000';
   }
 

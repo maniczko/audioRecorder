@@ -193,10 +193,11 @@ export default function AuthScreen({
           {isForgot ? (
             <div className="auth-form">
               <div className="auth-input-group">
-                <label>Adres email</label>
+                <label htmlFor="reset-email">Adres email</label>
                 <div className="auth-input-wrapper">
                   <Mail />
                   <input
+                    id="reset-email"
                     type="email"
                     value={resetValues.email}
                     onChange={(event) =>
@@ -208,7 +209,7 @@ export default function AuthScreen({
               </div>
 
               <button type="button" className="auth-submit-btn mb-6" onClick={requestResetCode}>
-                Wyslij kod resetu
+                Wyślij kod resetu
               </button>
 
               {resetPreviewCode ? (
@@ -219,10 +220,11 @@ export default function AuthScreen({
               ) : null}
 
               <div className="auth-input-group">
-                <label>Kod z emaila (Lokalnie: podaj z góry)</label>
+                <label htmlFor="reset-code">Kod z emaila (Lokalnie: podaj z góry)</label>
                 <div className="auth-input-wrapper">
                   <KeyRound />
                   <input
+                    id="reset-code"
                     type="text"
                     value={resetValues.code}
                     onChange={(event) =>
@@ -234,10 +236,11 @@ export default function AuthScreen({
               </div>
 
               <div className="auth-input-group">
-                <label>Nowe hasło</label>
+                <label htmlFor="new-password">Nowe hasło</label>
                 <div className="auth-input-wrapper">
                   <Lock />
                   <input
+                    id="new-password"
                     type="password"
                     value={resetValues.newPassword}
                     onChange={(event) =>
@@ -252,10 +255,11 @@ export default function AuthScreen({
               </div>
 
               <div className="auth-input-group">
-                <label>Potwierdź nowe hasło</label>
+                <label htmlFor="confirm-password">Potwierdź nowe hasło</label>
                 <div className="auth-input-wrapper">
                   <Lock />
                   <input
+                    id="confirm-password"
                     type="password"
                     value={resetValues.confirmPassword}
                     onChange={(event) =>
@@ -286,10 +290,11 @@ export default function AuthScreen({
               {isRegister ? (
                 <>
                   <div className="auth-input-group">
-                    <label>Imię i nazwisko</label>
+                    <label htmlFor="auth-name">Imię i nazwisko</label>
                     <div className="auth-input-wrapper">
                       <User />
                       <input
+                        id="auth-name"
                         placeholder="np. Anna Nowak"
                         value={authValues.name}
                         onChange={(event) =>
@@ -301,10 +306,11 @@ export default function AuthScreen({
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="auth-input-group">
-                      <label>Stanowisko</label>
+                      <label htmlFor="auth-role">Stanowisko</label>
                       <div className="auth-input-wrapper">
                         <Briefcase />
                         <input
+                          id="auth-role"
                           placeholder="np. Manager"
                           value={authValues.role}
                           onChange={(event) =>
@@ -314,10 +320,11 @@ export default function AuthScreen({
                       </div>
                     </div>
                     <div className="auth-input-group">
-                      <label>Firma</label>
+                      <label htmlFor="auth-company">Firma</label>
                       <div className="auth-input-wrapper">
                         <User />
                         <input
+                          id="auth-company"
                           placeholder="np. Acme Corp"
                           value={authValues.company}
                           onChange={(event) =>
@@ -334,10 +341,11 @@ export default function AuthScreen({
               ) : null}
 
               <div className="auth-input-group">
-                <label>Adres email</label>
+                <label htmlFor="auth-email">Adres email</label>
                 <div className="auth-input-wrapper">
                   <Mail />
                   <input
+                    id="auth-email"
                     type="email"
                     placeholder="name@company.com"
                     value={authValues.email}
@@ -356,7 +364,7 @@ export default function AuthScreen({
                     alignItems: 'baseline',
                   }}
                 >
-                  <label>Hasło</label>
+                  <label htmlFor="auth-password">Hasło</label>
                   {!isRegister && (
                     <button
                       type="button"
@@ -371,6 +379,7 @@ export default function AuthScreen({
                 <div className="auth-input-wrapper">
                   <Lock />
                   <input
+                    id="auth-password"
                     type="password"
                     placeholder="Minimum 6 znaków"
                     value={authValues.password}
@@ -386,30 +395,33 @@ export default function AuthScreen({
                   <div className="auth-divider">Workspace</div>
 
                   <div className="workspace-choice-cards">
-                    <div
+                    <button
+                      type="button"
                       className={`workspace-choice-card ${authValues.workspaceMode === 'create' ? 'active' : ''}`}
                       onClick={() =>
                         setAuthDraft((previous) => ({ ...previous, workspaceMode: 'create' }))
                       }
                     >
                       Nowy zespół
-                    </div>
-                    <div
+                    </button>
+                    <button
+                      type="button"
                       className={`workspace-choice-card ${authValues.workspaceMode === 'join' ? 'active' : ''}`}
                       onClick={() =>
                         setAuthDraft((previous) => ({ ...previous, workspaceMode: 'join' }))
                       }
                     >
                       Dołącz z kodu
-                    </div>
+                    </button>
                   </div>
 
                   {authValues.workspaceMode === 'create' ? (
                     <div className="auth-input-group">
-                      <label>Nazwa nowej przestrzeni (Workspace)</label>
+                      <label htmlFor="workspace-name">Nazwa nowej przestrzeni (Workspace)</label>
                       <div className="auth-input-wrapper">
                         <Users />
                         <input
+                          id="workspace-name"
                           placeholder="np. Zespół Sprzedaży"
                           value={authValues.workspaceName}
                           onChange={(event) =>
@@ -423,10 +435,11 @@ export default function AuthScreen({
                     </div>
                   ) : (
                     <div className="auth-input-group">
-                      <label>Kod zaproszenia</label>
+                      <label htmlFor="invite-code">Kod zaproszenia</label>
                       <div className="auth-input-wrapper">
                         <KeyRound />
                         <input
+                          id="invite-code"
                           placeholder="Wprowadź kod z maila"
                           value={authValues.workspaceCode}
                           onChange={(event) =>
