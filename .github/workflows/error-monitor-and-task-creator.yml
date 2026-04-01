@@ -20,6 +20,11 @@ on:
         required: false
         default: 'true'
         type: boolean
+      check_sentry:
+        description: 'Check Sentry errors'
+        required: false
+        default: 'true'
+        type: boolean
       create_tasks:
         description: 'Create tasks in TASK_QUEUE.md'
         required: false
@@ -102,6 +107,16 @@ jobs:
         run: node scripts/fetch-vercel-errors.js --verbose
         continue-on-error: true
 
+      - name: Fetch Sentry Errors
+        if: ${{ github.event.inputs.check_sentry != 'false' && secrets.SENTRY_AUTH_TOKEN }}
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG || 'vatlar' }}
+          SENTRY_HOURS_BACK: 6
+          OUTPUT_DIR: ./sentry-errors
+        run: node scripts/fetch-sentry-errors.js --verbose
+        continue-on-error: true
+
       - name: Parse and Analyze Errors
         id: analyze
         uses: actions/github-script@v7
@@ -114,6 +129,7 @@ jobs:
               github: [],
               railway: [],
               vercel: [],
+              sentry: [],
               timestamp: new Date().toISOString()
             };
 
@@ -177,13 +193,34 @@ jobs:
               console.log('Could not parse Vercel errors:', error.message);
             }
 
+            // Parse Sentry errors
+            try {
+              const sentryErrorsDir = './sentry-errors';
+              if (fs.existsSync(sentryErrorsDir)) {
+                const files = fs.readdirSync(sentryErrorsDir)
+                  .filter(f => f.endsWith('.json'))
+                  .sort()
+                  .reverse();
+
+                if (files.length > 0) {
+                  const latest = JSON.parse(fs.readFileSync(path.join(sentryErrorsDir, files[0]), 'utf8'));
+                  if (Array.isArray(latest)) {
+                    errors.sentry = latest.slice(0, 10); // Last 10 errors
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Could not parse Sentry errors:', error.message);
+            }
+
             // Count unique errors
             const githubErrorCount = errors.github.length;
             const railwayErrorCount = errors.railway.length;
             const vercelErrorCount = errors.vercel.length;
-            const totalErrors = githubErrorCount + railwayErrorCount + vercelErrorCount;
+            const sentryErrorCount = errors.sentry.length;
+            const totalErrors = githubErrorCount + railwayErrorCount + vercelErrorCount + sentryErrorCount;
 
-            console.log(`Found ${githubErrorCount} GitHub errors, ${railwayErrorCount} Railway errors, and ${vercelErrorCount} Vercel errors`);
+            console.log(`Found ${githubErrorCount} GitHub, ${railwayErrorCount} Railway, ${vercelErrorCount} Vercel, ${sentryErrorCount} Sentry errors`);
             console.log(`Total: ${totalErrors} errors`);
 
             // Save analysis results
@@ -193,6 +230,7 @@ jobs:
             core.setOutput('github_errors', githubErrorCount);
             core.setOutput('railway_errors', railwayErrorCount);
             core.setOutput('vercel_errors', vercelErrorCount);
+            core.setOutput('sentry_errors', sentryErrorCount);
             core.setOutput('total_errors', totalErrors);
             core.setOutput('has_errors', totalErrors > 0 ? 'true' : 'false');
 
@@ -268,6 +306,26 @@ jobs:
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Vercel\n`;
                 newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Created:** ${timestamp}\n`;
+                newTasks += `  - **Priority:** High\n\n`;
+              });
+            }
+
+            // Sentry tasks
+            if (errors.sentry.length > 0) {
+              newTasks += `\n### Sentry Errors (${errors.sentry.length} found)\n\n`;
+
+              errors.sentry.forEach((error, idx) => {
+                const taskNum = `ST-AUTO-${dateStr}-${taskNumber++}`;
+                const errorMsg = error.message || error.title || 'Unknown error';
+                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+
+                newTasks += `- **${taskNum}** — Fix Sentry error: ${error.title}\n`;
+                newTasks += `  - **Status:** todo\n`;
+                newTasks += `  - **Source:** Sentry (${error.project})\n`;
+                newTasks += `  - **Type:** ${error.type || 'unknown'}\n`;
+                newTasks += `  - **Message:** ${truncatedError}\n`;
+                newTasks += `  - **Count:** ${error.count || 1}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
               });
@@ -358,6 +416,18 @@ jobs:
               });
             }
 
+            if (errors.sentry.length > 0) {
+              issueBody += `\n---\n\n### Sentry Errors (${errors.sentry.length})\n\n`;
+              errors.sentry.forEach((error, idx) => {
+                issueBody += `\n#### Error ${idx + 1}: ${error.title}\n`;
+                issueBody += `**Project:** \`${error.project}\`\n`;
+                issueBody += `**Type:** \`${error.type || 'unknown'}\`\n`;
+                issueBody += `**Count:** ${error.count || 1}\n`;
+                issueBody += `\`\`\`\n${error.message || 'No message'}\n\`\`\`\n`;
+                issueBody += `\n**Sentry Link:** ${error.url}\n`;
+              });
+            }
+
             issueBody += `\n---\n\n`;
             issueBody += `📋 **Tasks created in TASK_QUEUE.md**\n`;
             issueBody += `\nCheck the latest commit for auto-generated tasks.\n`;
@@ -368,7 +438,7 @@ jobs:
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway + ${errors.vercel.length} Vercel (${dateStr})`,
+              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway + ${errors.vercel.length} Vercel + ${errors.sentry.length} Sentry (${dateStr})`,
               body: issueBody,
               labels: ['auto-generated-error', 'monitoring', 'priority-high'],
             });
@@ -388,6 +458,8 @@ jobs:
             railway-errors/*.json
             vercel-errors/*.md
             vercel-errors/*.json
+            sentry-errors/*.md
+            sentry-errors/*.json
           retention-days: 7
 
       - name: Summary
@@ -400,6 +472,7 @@ jobs:
           echo "| GitHub Actions | ${{ steps.analyze.outputs.github_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Railway | ${{ steps.analyze.outputs.railway_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Vercel | ${{ steps.analyze.outputs.vercel_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sentry (User Errors) | ${{ steps.analyze.outputs.sentry_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | **${{ steps.analyze.outputs.total_errors || 0 }}** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           

@@ -10,29 +10,40 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### ✅ Aktualny Status
 - **GitHub Actions Monitoring**: ✅ Skonfigurowany
-- **Railway Monitoring**: ⚠️ Wymaga `RAILWAY_TOKEN` w GitHub Secrets
-- **Vercel Monitoring**: ⚠️ Wymaga `VERCEL_TOKEN` w GitHub Secrets
+- **Railway Monitoring**: ✅ Skonfigurowany (RAILWAY_TOKEN)
+- **Vercel Monitoring**: ✅ Skonfigurowany (VERCEL_TOKEN)
+- **Sentry Monitoring**: ⚠️ Wymaga `SENTRY_AUTH_TOKEN` i `SENTRY_ORG` w GitHub Secrets
 
 ### 📋 Checklist Setup (jeden raz)
 
-Aby włączyć automatyczne pobieranie błędów co 6 godzin:
+Aby włączyć automatyczne pobieranie błędów co 6 godzin z **wszystkich 4 źródeł**:
 
 1. **GitHub Secrets** (Settings → Secrets and variables → Actions)
    - `RAILWAY_TOKEN` — token z https://railway.app/account/tokens
-     - Skopiuj token i dodaj jako secret
    - `VERCEL_TOKEN` — token z https://vercel.com/account/tokens
-     - Skopiuj token i dodaj jako secret
+   - `SENTRY_AUTH_TOKEN` — token z https://sentry.io/settings/auth-tokens/ (Personal Auth Token)
+   - `SENTRY_ORG` — organizacja z Sentry URL (e.g., `vatlar`)
 
 2. **Workflow Details**
    - **Cron Schedule:** `0 */6 * * *` (co 6 godzin: 00:00, 06:00, 12:00, 18:00 UTC)
-   - **Auto-create tasks:** Tak — nowe zadania w TASK_QUEUE.md
+   - **Auto-create tasks:** Tak — nowe zadania w TASK_QUEUE.md z prefiksami:
+     - `GH-AUTO-*` — GitHub Actions errors
+     - `RW-AUTO-*` — Railway errors
+     - `VL-AUTO-*` — Vercel errors
+     - `ST-AUTO-*` — Sentry errors (user-facing)
    - **Auto-create issues:** Tak — konsolidowane issues z błędami
    - **Artifacts upload:** 7 dni — markdown + JSON reports
 
-3. **Manual Trigger**
+3. **Error Sources**
+   - **GitHub Actions:** CI/CD pipeline failures, workflow errors
+   - **Railway:** Server runtime errors, deployment issues
+   - **Vercel:** Frontend deployment errors, build issues
+   - **Sentry:** User-facing errors (backend + frontend), exceptions, crashes
+
+4. **Manual Trigger**
    ```
    Settings → Actions → Error Monitor & Task Creator → Run workflow
-   Wybierz które źródła sprawdzić (GitHub/Railway/Vercel/wszystkie)
+   Wybierz które źródła sprawdzić (GitHub/Railway/Vercel/Sentry/wszystkie)
    ```
 
 ---
