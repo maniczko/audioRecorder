@@ -111,6 +111,57 @@ Aby włączyć automatyczne pobieranie błędów co 6 godzin z **wszystkich 4 ź
 
 ### 🔴 Wysoki priorytet
 
+<!-- Auto-generated on 2026-04-01T20:16:09.818Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-01-1** — Fix CI Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** TypeError: Cannot read properties of null (reading 'upload')
+  - **Created:** 2026-04-01T20:16:09.818Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-01-2** — Fix E2E Tests failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** Timeout: Test exceeded 30000ms
+  - **Created:** 2026-04-01T20:16:09.818Z
+  - **Priority:** High
+
+
+### Railway Errors (1 found)
+
+- **RW-AUTO-2026-04-01-3** — Fix Railway error
+  - **Status:** todo
+  - **Source:** Railway
+  - **Error:** Connection refused: Cannot connect to Supabase
+  - **Created:** 2026-04-01T20:16:09.818Z
+  - **Priority:** High
+
+
+### Vercel Errors (1 found)
+
+- **VL-AUTO-2026-04-01-4** — Fix Vercel deployment error
+  - **Status:** todo
+  - **Source:** Vercel
+  - **Error:** Build failed: Module not found: 'react-hook-form'
+  - **Created:** 2026-04-01T20:16:09.818Z
+  - **Priority:** High
+
+
+### Sentry Errors (1 found)
+
+- **ST-AUTO-2026-04-01-5** — Fix Sentry error: ReferenceError: config is not defined
+  - **Status:** todo
+  - **Source:** Sentry (backend)
+  - **Type:** ReferenceError
+  - **Message:** config is not defined at route handler /api/recording/upload
+  - **Count:** 5
+  - **Created:** 2026-04-01T20:16:09.818Z
+  - **Priority:** High
+
+
 - **GH-22** — Fix 8 regression test failures (failing after code changes)
   - **Status:** todo
   - **Testy:**
