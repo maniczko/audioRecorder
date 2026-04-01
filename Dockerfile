@@ -22,10 +22,7 @@ ENV NODE_OPTIONS="--max-old-space-size=1536"
 COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --link server/package.json ./server/package.json
 
-# --ignore-scripts: skip postinstall hooks during resolution (saves memory)
-# Then rebuild only ffmpeg/ffprobe to download their binaries
-RUN pnpm install --frozen-lockfile --ignore-scripts && \
-    pnpm rebuild ffmpeg-static ffprobe-static
+RUN pnpm install --frozen-lockfile
 
 
 FROM deps AS build
