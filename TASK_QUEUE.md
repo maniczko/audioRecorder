@@ -4,6 +4,39 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
+---
+
+## 🔧 ERROR MONITORING SETUP (wymagane dla workflows)
+
+### ✅ Aktualny Status
+- **GitHub Actions Monitoring**: ✅ Skonfigurowany
+- **Railway Monitoring**: ⚠️ Wymaga `RAILWAY_TOKEN` w GitHub Secrets
+- **Vercel Monitoring**: ⚠️ Wymaga `VERCEL_TOKEN` w GitHub Secrets
+
+### 📋 Checklist Setup (jeden raz)
+
+Aby włączyć automatyczne pobieranie błędów co 6 godzin:
+
+1. **GitHub Secrets** (Settings → Secrets and variables → Actions)
+   - `RAILWAY_TOKEN` — token z https://railway.app/account/tokens
+     - Skopiuj token i dodaj jako secret
+   - `VERCEL_TOKEN` — token z https://vercel.com/account/tokens
+     - Skopiuj token i dodaj jako secret
+
+2. **Workflow Details**
+   - **Cron Schedule:** `0 */6 * * *` (co 6 godzin: 00:00, 06:00, 12:00, 18:00 UTC)
+   - **Auto-create tasks:** Tak — nowe zadania w TASK_QUEUE.md
+   - **Auto-create issues:** Tak — konsolidowane issues z błędami
+   - **Artifacts upload:** 7 dni — markdown + JSON reports
+
+3. **Manual Trigger**
+   ```
+   Settings → Actions → Error Monitor & Task Creator → Run workflow
+   Wybierz które źródła sprawdzić (GitHub/Railway/Vercel/wszystkie)
+   ```
+
+---
+
 ## Podsumowanie (2026-03-31 15:10 aktualizacja)
 
 ### CI/CD Status:
