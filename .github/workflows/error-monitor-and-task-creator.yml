@@ -70,17 +70,27 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Login to Railway
-        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        if: ${{ github.event.inputs.check_railway != 'false' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
+        run: |
+          if [ -n "$RAILWAY_TOKEN" ]; then
+            railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
+          else
+            echo "RAILWAY_TOKEN not set, skipping Railway login"
+          fi
 
       - name: Link to Railway project (if needed)
-        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        if: ${{ github.event.inputs.check_railway != 'false' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
-        run: railway link --project $RAILWAY_PROJECT_ID || echo "Skipping link, using project ID directly"
+        run: |
+          if [ -n "$RAILWAY_TOKEN" ]; then
+            railway link --project $RAILWAY_PROJECT_ID || echo "Skipping link, using project ID directly"
+          else
+            echo "RAILWAY_TOKEN not set, skipping Railway link"
+          fi
 
       - name: Fetch GitHub Errors
         if: ${{ github.event.inputs.check_github != 'false' }}
@@ -93,7 +103,7 @@ jobs:
         continue-on-error: true
 
       - name: Fetch Railway Errors
-        if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
+        if: ${{ github.event.inputs.check_railway != 'false' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
@@ -104,7 +114,7 @@ jobs:
         continue-on-error: true
 
       - name: Fetch Vercel Errors
-        if: ${{ github.event.inputs.check_vercel != 'false' && secrets.VERCEL_TOKEN }}
+        if: ${{ github.event.inputs.check_vercel != 'false' }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: audiorecorder
@@ -114,7 +124,7 @@ jobs:
         continue-on-error: true
 
       - name: Fetch Sentry Errors
-        if: ${{ github.event.inputs.check_sentry != 'false' && secrets.SENTRY_AUTH_TOKEN }}
+        if: ${{ github.event.inputs.check_sentry != 'false' }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG || 'vatlar' }}
