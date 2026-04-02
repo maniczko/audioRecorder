@@ -161,7 +161,17 @@ jobs:
                 if (files.length > 0) {
                   const latest = JSON.parse(fs.readFileSync(path.join(githubErrorsDir, files[0]), 'utf8'));
                   if (Array.isArray(latest)) {
-                    errors.github = latest.slice(0, 10); // Last 10 errors
+                    errors.github = latest.slice(0, 10);
+                  } else if (latest && latest.failures) {
+                    // fetch-github-errors.js saves { failures: [...], summary: {} }
+                    errors.github = latest.failures.slice(0, 10).flatMap(f =>
+                      (f.errors || [{ jobName: 'unknown', stepName: 'unknown', errors: [] }]).map(e => ({
+                        workflow: f.runName || 'Unknown Workflow',
+                        message: (e.errors || []).map(err => err.line || err.message || '').filter(Boolean).join('\n')
+                          || `Job "${e.jobName}" step "${e.stepName}" failed`,
+                        url: f.htmlUrl,
+                      }))
+                    ).slice(0, 10);
                   }
                 }
               }

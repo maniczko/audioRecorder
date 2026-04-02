@@ -32,9 +32,9 @@ if (!fs.existsSync(config.outputDir)) {
 // Helper to run railway CLI commands
 function runRailwayCommand(args) {
   try {
-    const projectId = process.env.RAILWAY_PROJECT_ID;
-    const projectFlag = projectId ? `--project ${projectId}` : '';
-    const cmd = `railway ${args} ${projectFlag}`.trim();
+    // RAILWAY_PROJECT_ID is picked up automatically by Railway CLI via env var
+    // Do NOT append --project flag — it is not supported by all railway commands (e.g. logs)
+    const cmd = `railway ${args}`.trim();
     
     if (config.verbose) {
       console.log(`Executing: ${cmd}`);
@@ -191,11 +191,13 @@ ${deploymentInfo}
   fs.writeFileSync(outputFile, report);
   console.log(`📝 Written markdown report: ${outputFile}`);
 
-  // Write JSON report if requested
-  if (config.json && jsonLogs.length > 0) {
-    fs.writeFileSync(jsonFile, JSON.stringify(jsonLogs, null, 2));
-    console.log(`📊 Written JSON report: ${jsonFile}`);
-  }
+  // Always write JSON report so the workflow Parse step can read it
+  const errorsToSave = jsonLogs.length > 0 ? jsonLogs : logs
+    .split('\n')
+    .filter(line => line.trim() && !line.startsWith('#'))
+    .map(line => ({ message: line.trim(), timestamp: new Date().toISOString() }));
+  fs.writeFileSync(jsonFile, JSON.stringify(errorsToSave, null, 2));
+  console.log(`📊 Written JSON report: ${jsonFile}`);
 
   return { outputFile, jsonFile: config.json ? jsonFile : null, logs };
 }

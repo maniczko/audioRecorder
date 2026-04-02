@@ -181,10 +181,12 @@ async function main() {
   console.log(`✅ Found ${deployments.length} deployments from last ${config.hoursBack}h\n`);
 
   // Fetch logs for each deployment
+  // Vercel API v6 returns uid (not id) as the deployment identifier
   let allErrors = [];
   for (const deployment of deployments) {
-    if (config.verbose) console.log(`📋 Fetching logs for ${(deployment.id || '').substring(0, 8)}...`);
-    const logs = await getDeploymentLogs(deployment.id);
+    const deploymentId = deployment.uid || deployment.id;
+    if (config.verbose) console.log(`📋 Fetching logs for ${(deploymentId || '').substring(0, 8)}...`);
+    const logs = await getDeploymentLogs(deploymentId);
     allErrors = allErrors.concat(logs);
   }
 
