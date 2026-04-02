@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { seedLoggedInUser, seedMeeting, seedTask } from './helpers/seed.js';
 
 async function openPalette(page) {
-  await page.locator('.command-palette-launcher').click();
+  await page.locator('.modern-search-btn').click();
   await expect(page.locator('.command-palette')).toBeVisible();
 }
 
