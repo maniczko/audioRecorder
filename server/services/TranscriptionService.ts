@@ -1,7 +1,23 @@
 import { EventEmitter } from 'node:events';
 import { config } from '../config.ts';
-import { Document } from '@langchain/core/documents';
-import { RagVectorStore } from '../lib/ragVectorStore.ts';
+
+// LangChain Document and RagVectorStore loaded lazily to reduce startup memory
+let _Document: any = null;
+let _RagVectorStore: any = null;
+async function getDocument() {
+  if (!_Document) {
+    const mod = await import('@langchain/core/documents');
+    _Document = mod.Document;
+  }
+  return _Document;
+}
+async function getRagVectorStore() {
+  if (!_RagVectorStore) {
+    const mod = await import('../lib/ragVectorStore.ts');
+    _RagVectorStore = mod.RagVectorStore;
+  }
+  return _RagVectorStore;
+}
 
 export default class TranscriptionService extends EventEmitter {
   db: any;
@@ -499,8 +515,9 @@ export default class TranscriptionService extends EventEmitter {
   ) {
     if (!this.audioPipeline?.embedTextChunks) return;
     const crypto = await import('node:crypto');
+    const Document = await getDocument();
 
-    const chunks: Document[] = [];
+    const chunks: any[] = [];
     for (let i = 0; i < segments.length; i += 3) {
       const slice = segments.slice(i, i + 3);
       if (!slice.length) continue;
@@ -523,6 +540,7 @@ export default class TranscriptionService extends EventEmitter {
 
     if (!chunks.length) return;
 
+    const RagVectorStore = await getRagVectorStore();
     const vectorStore = new RagVectorStore({
       workspaceId,
       db: this.db,
@@ -535,6 +553,7 @@ export default class TranscriptionService extends EventEmitter {
 
   async queryRAG(workspaceId: string, question: string) {
     if (!this.audioPipeline?.embedTextChunks) return null;
+    const RagVectorStore = await getRagVectorStore();
     const vectorStore = new RagVectorStore({
       workspaceId,
       db: this.db,

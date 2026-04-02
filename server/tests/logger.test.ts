@@ -8,6 +8,8 @@ vi.mock('@sentry/node', () => ({
   captureException: vi.fn(),
 }));
 
+const flushPromises = () => new Promise((r) => setTimeout(r, 0));
+
 describe('logger', () => {
   const originalEnv = process.env;
   let consoleLogSpy: any;
@@ -93,6 +95,7 @@ describe('logger', () => {
       const { logger } = await import('../logger.ts');
 
       logger.warn('Test warning');
+      await flushPromises();
 
       expect(consoleWarnSpy).toHaveBeenCalled();
       expect(Sentry.captureMessage).toHaveBeenCalledWith('Test warning', 'warning');
@@ -143,6 +146,7 @@ describe('logger', () => {
       const error = new Error('Test error');
 
       logger.error('Test error', error);
+      await flushPromises();
 
       expect(consoleErrorSpy).toHaveBeenCalled();
       expect(Sentry.captureException).toHaveBeenCalledWith(error);
@@ -154,6 +158,7 @@ describe('logger', () => {
       const { logger } = await import('../logger.ts');
 
       logger.error('Test error', 'string error');
+      await flushPromises();
 
       expect(consoleErrorSpy).toHaveBeenCalled();
       expect(Sentry.captureMessage).toHaveBeenCalledWith('Test error', 'error');
@@ -188,18 +193,14 @@ describe('logger', () => {
   });
 
   describe('Sentry initialization', () => {
-    it('initializes Sentry when SENTRY_DSN is configured', async () => {
+    it('does not initialize Sentry at import time (deferred to sentry.ts)', async () => {
       process.env.SENTRY_DSN = 'https://test@sentry.io/123';
       process.env.NODE_ENV = 'production';
 
       await import('../logger.ts');
 
-      expect(Sentry.init).toHaveBeenCalledWith(
-        expect.objectContaining({
-          dsn: 'https://test@sentry.io/123',
-          environment: 'production',
-        })
-      );
+      // logger.ts no longer calls Sentry.init — it's done in sentry.ts
+      expect(Sentry.init).not.toHaveBeenCalled();
     });
 
     it('does not initialize Sentry when SENTRY_DSN is not configured', async () => {

@@ -42,16 +42,19 @@ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \
 RUN node -e " \
   const fs=require('fs'); \
   const path=require('path'); \
-  const pnpmDir='/app/node_modules/.pnpm'; \
-  const ffmpegPkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffmpeg-static@')); \
-  const ffprobePkg=fs.readdirSync(pnpmDir).find((name)=>name.startsWith('ffprobe-static@')); \
-  if(!ffmpegPkg || !ffprobePkg){ throw new Error('Missing ffmpeg-static or ffprobe-static in pnpm store'); } \
-  const ffmpeg=require(path.join(pnpmDir,ffmpegPkg,'node_modules','ffmpeg-static')); \
-  const ffprobe=require(path.join(pnpmDir,ffprobePkg,'node_modules','ffprobe-static')).path; \
-  fs.copyFileSync(ffmpeg,'/tmp/ffmpeg'); \
-  fs.copyFileSync(ffprobe,'/tmp/ffprobe'); \
-  fs.chmodSync('/tmp/ffmpeg',0o755); \
-  fs.chmodSync('/tmp/ffprobe',0o755);"
+  try { \
+    const ffmpegPath = require('ffmpeg-static'); \
+    const ffprobePath = require('ffprobe-static').path; \
+    if (!ffmpegPath || !ffprobePath) throw new Error('Binaries not found'); \
+    fs.copyFileSync(ffmpegPath, '/tmp/ffmpeg'); \
+    fs.copyFileSync(ffprobePath, '/tmp/ffprobe'); \
+    fs.chmodSync('/tmp/ffmpeg', 0o755); \
+    fs.chmodSync('/tmp/ffprobe', 0o755); \
+    console.log('✅ Successfully extracted ffmpeg and ffprobe'); \
+  } catch (e) { \
+    console.error('❌ Failed to extract binaries:', e.message); \
+    process.exit(1); \
+  }"
 
 FROM build AS prod-deps
 
@@ -72,7 +75,7 @@ ENV VOICELOG_API_HOST=0.0.0.0
 ENV FFMPEG_BINARY=ffmpeg
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
-ENV NODE_OPTIONS="--max-old-space-size=384"
+ENV NODE_OPTIONS="--max-old-space-size=460"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

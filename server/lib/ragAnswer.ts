@@ -1,5 +1,19 @@
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import { ChatOpenAI } from '@langchain/openai';
+// LangChain modules loaded lazily to reduce startup memory (Railway 512MB container)
+let _langchain: { HumanMessage: any; SystemMessage: any; ChatOpenAI: any } | null = null;
+async function getLangChain() {
+  if (!_langchain) {
+    const [messages, openai] = await Promise.all([
+      import('@langchain/core/messages'),
+      import('@langchain/openai'),
+    ]);
+    _langchain = {
+      HumanMessage: messages.HumanMessage,
+      SystemMessage: messages.SystemMessage,
+      ChatOpenAI: openai.ChatOpenAI,
+    };
+  }
+  return _langchain;
+}
 
 type RagChunk = {
   recording_id?: string;
@@ -56,6 +70,8 @@ export async function generateRagAnswer({
   if (!apiKey) {
     throw new Error('Brak klucza API do RAG LLMa.');
   }
+
+  const { ChatOpenAI, SystemMessage, HumanMessage } = await getLangChain();
 
   const contextStr = buildRagContext(chunks);
   const model = new ChatOpenAI({
