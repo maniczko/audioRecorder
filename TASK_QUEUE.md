@@ -4,20 +4,19 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-04-02 12:00 aktualizacja)
+## Podsumowanie (2026-04-02 aktualizacja — po GH-25 fix)
 
 ### CI/CD Status:
 - **GH-01 do GH-24**: ✅ Zrealizowane
-- **GH-25 do GH-35**: 8 ✅ done, 3 ⚠️ blocked (zewnętrzne secrety)
+- **GH-25 do GH-35**: 9 ✅ done, 2 ⚠️ blocked (zewnętrzne secrety)
 - **ESLint**: 0 ostrzeżeń
 - **Vitest Frontend**: 1050 testów passing, 0 failures (91 plików)
 - **Vitest Server**: 680 testów passing, 0 failures (49 plików)
-- **E2E Tests**: ✅ Naprawione importy ESM (seed.js)
+- **Error Monitor workflow**: ✅ Działa (run `23895325679` — 52s, bez błędów)
 
 ### Postęp:
-- **8 z 11 zadań naprawionych** w commitach `088de86` i `bf406cc`
-- **3 zadania zablokowane** — wymagają konfiguracji secrets w GitHub:
-  - GH-25: `RAILWAY_TOKEN`
+- **9 z 11 zadań naprawionych**
+- **2 zadania zablokowane** — wymagają konfiguracji zewnętrznych:
   - GH-26: PAT z `workflows` scope
   - GH-33: Claude API key
 
@@ -67,35 +66,28 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ## Otwarta kolejka
 
-### 🔴 Wysoki priorytet — BLOCKED (wymaga konfiguracji zewnętrznej)
+### ⚠️ BLOCKED (wymaga konfiguracji zewnętrznej)
 
-- **GH-25** — Setup Railway CLI auto-linking for error monitor
+- **GH-26** — Fix Error Monitor workflow dispatch failures
   - **Status:** blocked
-  - **Source:** Railway Error Monitor
-  - **Error:** `Project not linked. Please run: railway link`
-  - **Code fix:** ✅ Dodano `railway link --project $RAILWAY_PROJECT_ID` do obu workflows (commit `088de86`)
-  - **Blokada:** Wymaga `RAILWAY_TOKEN` w GitHub Actions Secrets — bez tego workflow pomija krok Railway
-  - **Akcja:** Dodaj secret `RAILWAY_TOKEN` w Settings → Secrets → Actions
+  - **Error:** HTTP 403 — Resource not accessible by personal access token
+  - **Code fix:** ✅ Permissions w workflow ustawione
+  - **Blokada:** PAT (Personal Access Token) nie ma scope `workflows`
+  - **Akcja:** GitHub → Settings → Developer Settings → Personal access tokens → dodaj scope `workflow`
 
-- **GH-26** — Fix Error Monitor workflow dispatch failures (2026-03-31)
+- **GH-33** — "Remote boom" bootstrap failure (Code Review + Auto-Fix)
   - **Status:** blocked
-  - **Source:** GitHub Actions
-  - **Workflow:** Error Monitor & Task Creator
-  - **Error:** HTTP 403 - Resource not accessible by personal access token
-  - **Code fix:** ✅ Permissions `actions: write, issues: write, contents: write, pull-requests: write` ustawione
-  - **Blokada:** Personal Access Token nie ma uprawnień `workflows: write` — wymaga PAT z workflow scope
-  - **Akcja:** Zaktualizuj PAT w GitHub Developer Settings lub użyj `GITHUB_TOKEN` z odpowiednimi permissions
+  - **Error:** `Remote workspace bootstrap failed. Error: Remote boom`
+  - **Blokada:** Brak Claude API key w GitHub Actions Secrets
+  - **Akcja:** Dodaj secret `ANTHROPIC_API_KEY` lub `CLAUDE_API_KEY` w GitHub → Settings → Secrets → Actions
 
-- **GH-33** — Fix "Remote boom" bootstrap failure (Code Review + Auto-Fix, x8)
-  - **Status:** blocked
-  - **Source:** GitHub Actions
-  - **Workflow:** Code Review, Auto-Fix Test Failures
-  - **Error:** `Remote workspace bootstrap failed. Error: Remote boom` (x8, 2026-04-01)
-  - **Code fix:** Brak — nie jest to problem kodu, lecz zewnętrznej konfiguracji
-  - **Blokada:** Brakuje klucza Claude API / konfiguracji remote workspace
-  - **Akcja:** Sprawdzić i dodać odpowiedni secret Claude API w GitHub Actions
+### ✅ Zakończone (naprawione w commitach `088de86`, `bf406cc`, `f419e8a`, `c830618`, `fd4f8e0`)
 
-### ✅ Zakończone (naprawione w commitach `088de86` i `bf406cc`)
+- **GH-25** — Railway CLI auto-linking ✅
+  - RAILWAY_TOKEN dodany przez użytkownika
+  - Naprawiono błędy w workflow (secrets context w if:, railway login --token)
+  - Naprawiono skrypty fetch-railway-errors.js, fetch-vercel-errors.js, fetch-sentry-errors.js
+  - Workflow Error Monitor przeszedł ✅ (run 23895325679, 52s)
 
 - **GH-27** — Fix Docker Build failures ✅
   - Dockerfile prawidłowo skonfigurowany (Node.js 22, multi-stage build, ffmpeg)
