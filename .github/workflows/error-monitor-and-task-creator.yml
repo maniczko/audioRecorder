@@ -135,7 +135,7 @@ jobs:
 
       - name: Parse and Analyze Errors
         id: analyze
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -262,7 +262,7 @@ jobs:
 
       - name: Create Tasks in TASK_QUEUE.md
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -385,7 +385,7 @@ jobs:
 
       - name: Create GitHub Issues for Errors
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_issues != 'false' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         with:
