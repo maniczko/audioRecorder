@@ -278,19 +278,34 @@ jobs:
               taskQueue = '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### 🔴 Wysoki priorytet\n\n';
             }
 
+            // Read TASK_DONE.md to check resolved errors
+            let taskDone = '';
+            try {
+              taskDone = fs.readFileSync('./TASK_DONE.md', 'utf8');
+            } catch (_) {}
+
+            // Deduplication: skip errors whose fingerprint already appears in TASK_QUEUE or TASK_DONE
+            function isAlreadyTracked(errorMsg) {
+              const fingerprint = errorMsg.substring(0, 80).replace(/\s+/g, ' ').trim();
+              return taskQueue.includes(fingerprint) || taskDone.includes(fingerprint);
+            }
+
             // Generate task entries
             let newTasks = `\n<!-- Auto-generated on ${timestamp} -->\n`;
             let taskNumber = 1;
+            let addedCount = 0;
 
             // GitHub Actions tasks
-            if (errors.github.length > 0) {
-              newTasks += `\n### GitHub Actions Errors (${errors.github.length} found)\n\n`;
+            const newGhErrors = errors.github.filter(e => !isAlreadyTracked(e.message || e.line || ''));
+            if (newGhErrors.length > 0) {
+              newTasks += `\n### GitHub Actions Errors (${newGhErrors.length} found)\n\n`;
               
-              errors.github.forEach((error, idx) => {
+              newGhErrors.forEach((error, idx) => {
                 const taskNum = `GH-AUTO-${dateStr}-${taskNumber++}`;
                 const workflowName = error.workflow || 'Unknown Workflow';
                 const errorMsg = error.message || error.line || 'Unknown error';
                 const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                addedCount++;
                 
                 newTasks += `- **${taskNum}** — Fix ${workflowName} failure\n`;
                 newTasks += `  - **Status:** todo\n`;
@@ -302,13 +317,15 @@ jobs:
             }
 
             // Railway tasks
-            if (errors.railway.length > 0) {
-              newTasks += `\n### Railway Errors (${errors.railway.length} found)\n\n`;
+            const newRwErrors = errors.railway.filter(e => !isAlreadyTracked(e.message || ''));
+            if (newRwErrors.length > 0) {
+              newTasks += `\n### Railway Errors (${newRwErrors.length} found)\n\n`;
 
-              errors.railway.forEach((error, idx) => {
+              newRwErrors.forEach((error, idx) => {
                 const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || 'Unknown Railway error';
                 const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                addedCount++;
 
                 newTasks += `- **${taskNum}** — Fix Railway error\n`;
                 newTasks += `  - **Status:** todo\n`;
@@ -320,13 +337,15 @@ jobs:
             }
 
             // Vercel tasks
-            if (errors.vercel.length > 0) {
-              newTasks += `\n### Vercel Errors (${errors.vercel.length} found)\n\n`;
+            const newVlErrors = errors.vercel.filter(e => !isAlreadyTracked(e.text || ''));
+            if (newVlErrors.length > 0) {
+              newTasks += `\n### Vercel Errors (${newVlErrors.length} found)\n\n`;
 
-              errors.vercel.forEach((error, idx) => {
+              newVlErrors.forEach((error, idx) => {
                 const taskNum = `VL-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.text || 'Unknown Vercel error';
                 const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                addedCount++;
 
                 newTasks += `- **${taskNum}** — Fix Vercel deployment error\n`;
                 newTasks += `  - **Status:** todo\n`;
@@ -338,13 +357,15 @@ jobs:
             }
 
             // Sentry tasks
-            if (errors.sentry.length > 0) {
-              newTasks += `\n### Sentry Errors (${errors.sentry.length} found)\n\n`;
+            const newStErrors = errors.sentry.filter(e => !isAlreadyTracked(e.message || e.title || ''));
+            if (newStErrors.length > 0) {
+              newTasks += `\n### Sentry Errors (${newStErrors.length} found)\n\n`;
 
-              errors.sentry.forEach((error, idx) => {
+              newStErrors.forEach((error, idx) => {
                 const taskNum = `ST-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || error.title || 'Unknown error';
                 const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
+                addedCount++;
 
                 newTasks += `- **${taskNum}** — Fix Sentry error: ${error.title}\n`;
                 newTasks += `  - **Status:** todo\n`;
@@ -357,20 +378,25 @@ jobs:
               });
             }
 
-            // Insert new tasks after "### 🔴 Wysoki priorytet"
-            const prioritySection = '### 🔴 Wysoki priorytet';
-            const insertIndex = taskQueue.indexOf(prioritySection);
-
-            if (insertIndex !== -1) {
-              const endOfLine = taskQueue.indexOf('\n', insertIndex + prioritySection.length);
-              const updatedQueue = taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
-              fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
+            // Only update file if there are new unique tasks to add
+            if (addedCount === 0) {
+              console.log('All errors already tracked in TASK_QUEUE.md or TASK_DONE.md — no new tasks added.');
             } else {
-              // If section doesn't exist, append to end
-              fs.writeFileSync('./TASK_QUEUE.md', taskQueue + '\n' + newTasks);
-            }
+              // Insert new tasks after "### 🔴 Wysoki priorytet"
+              const prioritySection = '### 🔴 Wysoki priorytet';
+              const insertIndex = taskQueue.indexOf(prioritySection);
 
-            console.log(`Created ${taskNumber - 1} new tasks in TASK_QUEUE.md`);
+              if (insertIndex !== -1) {
+                const endOfLine = taskQueue.indexOf('\n', insertIndex + prioritySection.length);
+                const updatedQueue = taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
+                fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
+              } else {
+                // If section doesn't exist, append to end
+                fs.writeFileSync('./TASK_QUEUE.md', taskQueue + '\n' + newTasks);
+              }
+
+              console.log(`Created ${addedCount} new tasks in TASK_QUEUE.md (skipped duplicates)`);
+            }
 
       - name: Commit TASK_QUEUE.md changes
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
