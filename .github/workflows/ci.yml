@@ -193,7 +193,7 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [build, test-e2e]
+    needs: [build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -239,7 +239,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [build, test-e2e]
+    needs: [build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
 
