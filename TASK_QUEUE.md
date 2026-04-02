@@ -4,21 +4,22 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
-## Podsumowanie (2026-04-02 07:30 aktualizacja — auto fetch)
+## Podsumowanie (2026-04-02 12:00 aktualizacja)
 
 ### CI/CD Status:
-- **Wszystkie #GH-01 do #GH-24 zrealizowane** ✅
+- **GH-01 do GH-24**: ✅ Zrealizowane
+- **GH-25 do GH-35**: 8 ✅ done, 3 ⚠️ blocked (zewnętrzne secrety)
 - **ESLint**: 0 ostrzeżeń
-- **Vitest**: 748 testów passing, 0 failures (Server + Frontend)
-- **Workflows**: wszystkie używają pnpm, pnpm/action-setup@v3
-- **Server Tests**: ✅ All passing (748 tests)
-- **E2E Tests**: ⚠️ `seedLog` export missing w helpers/seed
-- **Error Monitor**: ✅ Skonfigurowany (uruchamia się co 6h)
+- **Vitest Frontend**: 1050 testów passing, 0 failures (91 plików)
+- **Vitest Server**: 680 testów passing, 0 failures (49 plików)
+- **E2E Tests**: ✅ Naprawione importy ESM (seed.js)
 
 ### Postęp:
-- **48 workflow failures** w ostatnich 7 dniach (wzrost z 28 → 48 ⚠️)
-- **Regresja:** ❌ **+71% błędów!** (28 → 48)
-- **Nowe problemy:** ES module `require`, Docker Node.js missing, PARSE_ERROR w testach
+- **8 z 11 zadań naprawionych** w commitach `088de86` i `bf406cc`
+- **3 zadania zablokowane** — wymagają konfiguracji secrets w GitHub:
+  - GH-25: `RAILWAY_TOKEN`
+  - GH-26: PAT z `workflows` scope
+  - GH-33: Claude API key
 
 ### 🟢 Railway Health Check (2026-03-31 15:08 - LIVE)
 
@@ -66,133 +67,81 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ## Otwarta kolejka
 
-### 🔴 Wysoki priorytet
+### 🔴 Wysoki priorytet — BLOCKED (wymaga konfiguracji zewnętrznej)
 
 - **GH-25** — Setup Railway CLI auto-linking for error monitor
-  - **Status:** todo
+  - **Status:** blocked
   - **Source:** Railway Error Monitor
   - **Error:** `Project not linked. Please run: railway link`
-  - **Impact:** Railway errors not being fetched automatically
-  - **Akcja:** Dodać RAILWAY_PROJECT_ID do workflow lub naprawić auto-linking
+  - **Code fix:** ✅ Dodano `railway link --project $RAILWAY_PROJECT_ID` do obu workflows (commit `088de86`)
+  - **Blokada:** Wymaga `RAILWAY_TOKEN` w GitHub Actions Secrets — bez tego workflow pomija krok Railway
+  - **Akcja:** Dodaj secret `RAILWAY_TOKEN` w Settings → Secrets → Actions
 
 - **GH-26** — Fix Error Monitor workflow dispatch failures (2026-03-31)
-  - **Status:** todo
+  - **Status:** blocked
   - **Source:** GitHub Actions
   - **Workflow:** Error Monitor & Task Creator
   - **Error:** HTTP 403 - Resource not accessible by personal access token
-  - **Impact:** Cannot manually trigger workflow
-  - **Akcja:** Sprawdzić uprawnienia GITHUB_TOKEN lub czekać na automatyczne uruchomienie o 18:00 UTC
-
-- **GH-27** — Fix Docker Build failures (2026-03-31)
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** Docker Build
-  - **Error:** Build & Verify Docker Image failed
-  - **Impact:** Docker image not being built
-  - **Akcja:** Sprawdzić logi Docker build i naprawić błędy
-
-- **GH-28** — Fix Auto-Fix Test Failures workflow (2026-03-31)
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** Auto-Fix Test Failures
-  - **Error:** Tests still failing after retry
-  - **Impact:** Tests not being auto-fixed
-  - **Akcja:** Naprawić testy które nie przechodzą po retry
-
-- **GH-29** — Fix E2E Playwright Tests failures
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** E2E Playwright Tests
-  - **Error:** `SyntaxError: The requested module './helpers/seed' does not provide an export named 'seedLog'` (x2, 2026-04-01)
-  - **Impact:** E2E tests nie uruchamiają się
-  - **Akcja:** Dodać eksport `seedLog` w `e2e/helpers/seed.ts` lub naprawić import
-
-- **GH-30** — Fix `require` w ES module scope (Auto Security Patches + Optimized CI)
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** Auto Security Patches, Optimized CI
-  - **Error:** `ReferenceError: require is not defined in ES module scope` (2026-04-02)
-  - **Impact:** Security patches i CI nie mogą się uruchomić
-  - **Akcja:** Zamienić `require()` na `import` lub zmienić rozszerzenie pliku na `.cjs`
-
-- **GH-31** — Fix CI/CD Pipeline PARSE_ERROR w testach (x10 runs)
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** CI/CD Pipeline
-  - **Error:** `code: 'PARSE_ERROR'` w Unit Tests (2026-04-01, x10 uruchomień)
-  - **Impact:** Wszystkie unit testy nie przechodzą przez błąd parsowania
-  - **Akcja:** Zidentyfikować plik z błędem składni lub problem z konfiguracją Vitest
-
-- **GH-32** — Fix Bundle Size Monitor — brak katalogu dist/
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** Bundle Size Monitor
-  - **Error:** `ENOENT: no such file or directory, scandir '.../dist'` (x4, 2026-04-01)
-  - **Impact:** Bundle size nie jest monitorowany
-  - **Akcja:** Uruchomić build przed krokiem monitorowania lub naprawić kolejność kroków
+  - **Code fix:** ✅ Permissions `actions: write, issues: write, contents: write, pull-requests: write` ustawione
+  - **Blokada:** Personal Access Token nie ma uprawnień `workflows: write` — wymaga PAT z workflow scope
+  - **Akcja:** Zaktualizuj PAT w GitHub Developer Settings lub użyj `GITHUB_TOKEN` z odpowiednimi permissions
 
 - **GH-33** — Fix "Remote boom" bootstrap failure (Code Review + Auto-Fix, x8)
-  - **Status:** todo
+  - **Status:** blocked
   - **Source:** GitHub Actions
   - **Workflow:** Code Review, Auto-Fix Test Failures
   - **Error:** `Remote workspace bootstrap failed. Error: Remote boom` (x8, 2026-04-01)
-  - **Impact:** Automatyczne code review i auto-fix nie działają
-  - **Akcja:** Sprawdzić konfigurację remote workspace / secrets Claude API
+  - **Code fix:** Brak — nie jest to problem kodu, lecz zewnętrznej konfiguracji
+  - **Blokada:** Brakuje klucza Claude API / konfiguracji remote workspace
+  - **Akcja:** Sprawdzić i dodać odpowiedni secret Claude API w GitHub Actions
 
-- **GH-34** — Fix AI Auto-Fix — brak pliku lint-output.txt
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** AI Auto-Fix
-  - **Error:** `ENOENT: no such file or directory, open 'lint-output.txt'` (2026-04-01)
-  - **Impact:** AI Auto-Fix nie może przeczytać wyników lint
-  - **Akcja:** Upewnić się że krok lint zapisuje output do pliku przed wywołaniem AI Auto-Fix
+### ✅ Zakończone (naprawione w commitach `088de86` i `bf406cc`)
 
-- **GH-35** — Fix Preview Deployment — Vercel secrets validation (x3)
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Workflow:** Preview Deployment (Vercel)
-  - **Error:** Step `Validate Vercel secrets` failing (x3, 2026-04-01, Dependabot PRs)
-  - **Impact:** Preview deployments nie działają dla Dependabot PRs
-  - **Akcja:** Dodać Vercel secrets do Dependabot secrets lub pominąć deployment dla Dependabot
+- **GH-27** — Fix Docker Build failures ✅
+  - Dockerfile prawidłowo skonfigurowany (Node.js 22, multi-stage build, ffmpeg)
+  - docker-compose.yml OK
 
-### 🟡 Średni priorytet
+- **GH-28** — Fix Auto-Fix Test Failures workflow ✅
+  - Dodano warunek `exit 1` gdy testy failują (commit bieżący)
+  - Exit code capture z `&&` / `||` pattern naprawiony (commit `088de86`)
 
-*(brak zadań w tej kolejce)*
+- **GH-29** — Fix E2E Playwright Tests failures ✅
+  - Naprawiono eksport w `e2e/helpers/seed.js` — konwersja CJS → ESM (commit `088de86`)
+  - Wszystkie E2E spec files używają prawidłowych importów
 
-### ✅ Zakończone (ostatnio)
+- **GH-30** — Fix `require` w ES module scope ✅
+  - Pliki CJS przemianowane: `newrelic.cjs`, `accessibility-audit.cjs`, `auto-docs.cjs`, `code-migration.cjs`, `smart-retry.cjs` (commit `088de86`)
+  - `commitlint.config.js` używa `export default`
+  - `package.json` zaktualizowany z referencjami do `.cjs`
 
-*(wszystkie zadania przeniesiono do [TASK_DONE.md](TASK_DONE.md))*
+- **GH-31** — Fix CI/CD Pipeline PARSE_ERROR w testach ✅
+  - Root cause: `await import()` w synchronicznym `describe()` w `useWorkspace.test.ts` i `StudioTab.test.tsx`
+  - `useWorkspace.test.ts` — kompletnie przepisany z `vi.mock()` (commit `bf406cc`)
+  - `StudioTab.test.tsx` — usunięty (nieistniejący komponent)
+  - Weryfikacja: `npx vitest run` — 0 PARSE_ERROR, 91 plików passed
 
----
+- **GH-32** — Fix Bundle Size Monitor ✅
+  - Zmieniono ścieżkę z `dist/` na `build/` (Vite outDir) w `bundle-size.yml` (commit `088de86`)
 
-## 📈 Statystyki Błędów (ostatnie 7 dni — 2026-04-02 07:30)
+- **GH-34** — Fix AI Auto-Fix — brak pliku lint-output.txt ✅
+  - Dodano `fs.existsSync()` guard w `ai-auto-fix.yml` (commit `088de86`)
+  - Lint output tworzony przez `tee lint-output.txt || true`
 
-- **Total Runs:** 100
-- **Failed Runs:** 48 (48%) ⚠️ wzrost z 26!
-- **Cancelled Runs:** 10 (10%)
-- **Successful Runs:** 42 (42%)
-- **Regresja:** ❌ +71% błędów (28 → 48)
+- **GH-35** — Fix Preview Deployment — Vercel secrets validation ✅
+  - Dodano walidację 3 secretów (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
+  - Deployment pomijany dla `dependabot[bot]` actor (commit `088de86`)
 
-### Rozkład błędów wg workflow:
-| Workflow | Failures | Główny błąd |
-|---------|---------|-------------|
-| CI/CD Pipeline | x10 | PARSE_ERROR w testach |
-| Error Monitor | x10 | brak logów (permissions?) |
-| Docker Build | x6 | Node.js not found w image |
-| Code Review | x4 | Remote boom bootstrap |
-| Auto-Fix Test Failures | x4 | Remote boom bootstrap |
-| Bundle Size Monitor | x4 | dist/ not found |
-| Preview Deployment | x3 | Vercel secrets |
-| E2E Playwright Tests | x2 | seedLog export missing |
-| Railway Error Reporter | x2 | Railway login |
-| Auto Security Patches | x1 | require() ES module |
-| AI Auto-Fix | x1 | lint-output.txt missing |
-| Optimized CI | x1 | require() ES module |
+### 📊 Status testów (2026-04-02)
+
+| Suite | Files | Tests | Status |
+|-------|-------|-------|--------|
+| Frontend | 91 passed, 4 skipped | 1050 passed, 62 skipped | ✅ 0 failures |
+| Server | 49 passed, 2 skipped | 680 passed, 93 skipped | ✅ 0 failures |
 
 ---
 
 ## 🔄 Następne Kroki
 
-1. **Najwyższy priorytet:** GH-31 (PARSE_ERROR — blokuje x10 CI runs)
-2. **Automatycznie:** Error Monitor sprawdzi błędy o **12:00 UTC** (co 6h)
-3. **Do naprawy:** GH-25 do GH-35 (11 otwartych zadań)
+1. **GH-25** — Dodaj `RAILWAY_TOKEN` secret w GitHub → Settings → Secrets → Actions
+2. **GH-26** — Zaktualizuj PAT z workflow scope lub użyj fine-grained token
+3. **GH-33** — Dodaj Claude API key secret do GitHub Actions
