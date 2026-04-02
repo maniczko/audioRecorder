@@ -17,7 +17,9 @@ test.describe('Smoke product flows', () => {
     await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
 
     // Wait for Studio tab to be visible with retry
-    await expect(page.getByRole('button', { name: 'Tab Studio' })).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.locator('.modern-nav-item').filter({ hasText: 'Studio' }).first()
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test('creates a meeting from studio', async ({ page }) => {
@@ -42,7 +44,7 @@ test.describe('Smoke product flows', () => {
 
     const taskTitle = `Smoke task ${Date.now()}`;
 
-    await page.getByRole('button', { name: 'Tab Zadania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
     await page.getByPlaceholder('Dodaj zadanie (N)').fill(taskTitle);
     await page.getByRole('button', { name: 'Dodaj' }).click();
 
@@ -68,7 +70,7 @@ test.describe('Smoke product flows', () => {
     });
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Tab Nagrania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
 
     // Wait for meeting title with retry
     await expect(page.getByText('Meeting with recording').first()).toBeVisible({ timeout: 15_000 });
