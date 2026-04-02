@@ -3,18 +3,18 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: false,
+  fullyParallel: true,
 
   // Retry failed tests in CI to handle flakiness
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
 
   // Use multiple workers for parallel test execution
-  workers: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 4 : 2,
 
   // Timeout settings
-  timeout: 90_000, // 90 seconds per test (increased from 60s)
+  timeout: 45_000, // 45 seconds per test
   expect: {
-    timeout: 20_000, // 20 seconds for expect assertions (increased from 10s)
+    timeout: 10_000, // 10 seconds for expect assertions
   },
 
   reporter: process.env.CI ? 'github' : 'list',
@@ -24,12 +24,7 @@ export default defineConfig({
     trace: 'retain-on-failure', // Keep trace for debugging
     screenshot: 'only-on-failure',
     video: 'retain-on-failure', // Keep video for debugging
-    actionTimeout: 20_000, // 20 seconds for actions like click, fill, etc. (increased from 15s)
-
-    // Launch options for better stability
-    launchOptions: {
-      slowMo: process.env.CI ? 500 : 0, // Slow down actions in CI
-    },
+    actionTimeout: 15_000, // 15 seconds for actions like click, fill, etc.
   },
 
   projects: [
