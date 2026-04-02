@@ -138,3 +138,96 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Error:** Invalid RAILWAY_TOKEN. Please check that it is valid and has access to the resource you're trying to use.
   - **Created:** 2026-04-02T12:00:11.969Z
   - **Priority:** High
+
+
+<!-- Auto-generated on 2026-04-02T13:08:42.341Z -->
+
+### GitHub Actions Errors (10 found)
+
+- **GH-AUTO-2026-04-02-1** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T13:01:10.0318758Z #22 [build 4/4] RUN node --input-type=commonjs -e "   const fs=require('fs');   const path=require('path');   try {     const ffmpegPath = require('ffmpeg-static');     co...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-2** — Fix Railway Error Reporter failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** Job "fetch-railway-errors" step "Login to Railway" failed
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-3** — Fix Auto-merge Dependabot failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** Job "dependabot" step "Enable auto-merge for Dependabot PRs" failed
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-4** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:51:00.1427269Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-02T12:51:00.1564825Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:52:21.0036537Z   code: 'PARSE_ERROR',
+2026-04-02T12:52:21.5480927Z ERROR: Coverage for lines (58.28%) does not meet global threshold (80%)
+2026-04-02T12:52:21.5482156Z ERROR: Coverage fo...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-6** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:51:01.3870450Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-02T12:51:01.4180260Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-7** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:54:27.9807230Z [36;1mCRITICAL_FAILED="false"[0m
+2026-04-02T12:54:27.9810367Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m
+2026-04-02T12:54:27.9811882Z [36...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-8** — Fix AI Auto-Fix failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** Job "ai-auto-fix" step "Checkout code" failed
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-9** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:50:40.4427326Z #22 [build 4/4] RUN node --input-type=commonjs -e "   const fs=require('fs');   const path=require('path');   try {     const ffmpegPath = require('ffmpeg-static');     co...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-02-10** — Fix Code Review failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-02T12:50:16.6079124Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-02T12:50:16.6221186Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
+
+### Railway Errors (1 found)
+
+- **RW-AUTO-2026-04-02-11** — Fix Railway error
+  - **Status:** todo
+  - **Source:** Railway
+  - **Error:** Error fetching logs: Railway command failed: Command failed: railway logs --lines 50
+  - **Created:** 2026-04-02T13:08:42.341Z
+  - **Priority:** High
+
