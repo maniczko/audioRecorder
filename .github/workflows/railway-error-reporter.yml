@@ -54,13 +54,14 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway login --token $RAILWAY_TOKEN
 
-      - name: Link to project
+      - name: Link to project (if needed)
         env:
           RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
-        run: railway link --project $RAILWAY_PROJECT_ID
+        run: railway link --project $RAILWAY_PROJECT_ID || echo "Skipping link, using project ID directly"
 
       - name: Fetch Railway Errors
         env:
+          RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
           RAILWAY_LOG_LINES: ${{ github.event.inputs.log_lines || 100 }}
           RAILWAY_LOG_FILTER: ${{ github.event.inputs.log_filter || '@level:error' }}
         run: node scripts/fetch-railway-errors.js --json
@@ -79,7 +80,7 @@ jobs:
           # Check if any error logs were found
           LATEST_REPORT=$(ls -t railway-errors/railway-errors-*.json 2>/dev/null | head -1)
           if [ -f "$LATEST_REPORT" ] && [ -s "$LATEST_REPORT" ]; then
-            ERROR_COUNT=$(node -e "const logs = require('$LATEST_REPORT'); console.log(logs.length);")
+            ERROR_COUNT=$(node -e "import('fs').then(fs => { const logs = JSON.parse(fs.readFileSync('$LATEST_REPORT', 'utf8')); console.log(logs.length); })")
             if [ "$ERROR_COUNT" -gt 0 ] && [ "$ERROR_COUNT" != "0" ]; then
               echo "has_errors=true" >> $GITHUB_OUTPUT
               echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
@@ -126,8 +127,6 @@ jobs:
               errorCount = jsonContent.length;
               sampleErrors = jsonContent.slice(0, 5);
             }
-
-            const errorCount = ${{ steps.check-errors.outputs.error_count || 0 }};
 
             // Fetch existing open issues
             const { data: issues } = await github.rest.issues.listForRepo({

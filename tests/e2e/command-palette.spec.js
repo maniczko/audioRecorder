@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
-const { seedLoggedInUser, seedMeeting, seedTask } = require("./helpers/seed");
+import { test, expect } from '@playwright/test';
+import { seedLoggedInUser, seedMeeting, seedTask } from './helpers/seed.js';
 
 async function openPalette(page) {
   await page.locator(".command-palette-launcher").click();

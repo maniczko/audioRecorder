@@ -53,7 +53,7 @@ export default function StudioBriefModal({
           </button>
         </div>
 
-        <div className="studio-brief-modal-body ms-todo">
+        <div className="studio-brief-modal-body ms-todo" data-clarity-mask="true">
           {/* Tytuł */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Tytuł">

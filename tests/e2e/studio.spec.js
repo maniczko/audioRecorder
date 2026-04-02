@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
-const { seedLoggedInUser } = require("./helpers/seed");
+import { test, expect } from '@playwright/test';
+import { seedLoggedInUser } from './helpers/seed.js';
 
 test.describe("StudioMeetingView — zakładki i AI", () => {
   test.beforeEach(async ({ page }) => {

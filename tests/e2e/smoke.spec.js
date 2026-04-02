@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
-const { seedLoggedInUser, seedMeeting } = require('./helpers/seed');
+import { test, expect } from '@playwright/test';
+import { seedLoggedInUser, seedMeeting } from './helpers/seed.js';
 
 // Increase timeout for smoke tests
 test.describe.configure({ timeout: 90_000 });

@@ -5,7 +5,7 @@ name: CI Failure Triage
 # and starts Gemini High working on a fix automatically.
 on:
   workflow_run:
-    workflows: ['CI Pipeline']
+    workflows: ['CI/CD Pipeline']
     types: [completed]
     branches: [main]
 

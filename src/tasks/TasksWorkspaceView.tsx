@@ -139,7 +139,7 @@ function TasksWorkspaceView({
 
   return (
     <section className="todo-main">
-      <div className="todo-shell">
+      <div className="todo-shell" data-clarity-mask="true">
         <section className={isSummary ? 'todo-toolbar-panel summary' : 'todo-toolbar-panel'}>
           <div className="todo-commandbar">
             <div className="todo-commandbar-left">

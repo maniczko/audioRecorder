@@ -569,7 +569,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   const hasFilters = deferredSearchQuery.trim() || selectedTags.length > 0;
 
   return (
-    <div className="notes-layout">
+    <div className="notes-layout" data-clarity-mask="true">
       {/* ─ Sidebar ─────────────────────────────────────── */}
       <aside className="notes-sidebar">
         <div className="notes-sidebar-actions">

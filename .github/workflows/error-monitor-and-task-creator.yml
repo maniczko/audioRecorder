@@ -40,7 +40,7 @@ jobs:
   monitor-and-create-tasks:
     runs-on: ubuntu-latest
     permissions:
-      actions: read
+      actions: write
       issues: write
       contents: write
       pull-requests: write
@@ -75,16 +75,12 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
 
-      - name: Configure Railway CLI
+      - name: Link to Railway project (if needed)
         if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          # Link to Railway project
-          echo "audioRecorder" | railway link || true
-          # Set project ID as fallback
-          export RAILWAY_PROJECT_ID="audioRecorder"
-          echo "✅ Railway configured"
+          RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
+        run: railway link --project $RAILWAY_PROJECT_ID || echo "Skipping link, using project ID directly"
 
       - name: Fetch GitHub Errors
         if: ${{ github.event.inputs.check_github != 'false' }}
@@ -100,7 +96,7 @@ jobs:
         if: ${{ github.event.inputs.check_railway != 'false' && secrets.RAILWAY_TOKEN }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: audioRecorder
+          RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
           RAILWAY_LOG_LINES: 50
           RAILWAY_LOG_FILTER: '@level:error'
           OUTPUT_DIR: ./railway-errors

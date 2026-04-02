@@ -44,24 +44,21 @@ jobs:
         continue-on-error: true
         run: |
           echo "Running ESLint auto-fix..."
-          pnpm run lint:fix
-          echo "lint_status=$?" >> $GITHUB_OUTPUT
+          pnpm run lint:fix && echo "lint_status=0" >> $GITHUB_OUTPUT || echo "lint_status=1" >> $GITHUB_OUTPUT
 
       - name: Run format
         id: format
         continue-on-error: true
         run: |
           echo "Running format..."
-          pnpm run format
-          echo "format_status=$?" >> $GITHUB_OUTPUT
+          pnpm run format && echo "format_status=0" >> $GITHUB_OUTPUT || echo "format_status=1" >> $GITHUB_OUTPUT
 
       - name: Run tests with retry
         id: tests
         continue-on-error: true
         run: |
           echo "Running tests with retry..."
-          pnpm run test:retry
-          echo "tests_status=$?" >> $GITHUB_OUTPUT
+          pnpm run test:retry && echo "tests_status=0" >> $GITHUB_OUTPUT || echo "tests_status=1" >> $GITHUB_OUTPUT
 
       - name: Commit fixes
         if: steps.lint.outputs.lint_status == '0' || steps.format.outputs.format_status == '0'
@@ -95,9 +92,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const lintStatus = ${{ steps.lint.outputs.lint_status }};
-            const formatStatus = ${{ steps.format.outputs.format_status }};
-            const testsStatus = ${{ steps.tests.outputs.tests_status }};
+            const lintStatus = Number('${{ steps.lint.outputs.lint_status }}' || '1');
+            const formatStatus = Number('${{ steps.format.outputs.format_status }}' || '1');
+            const testsStatus = Number('${{ steps.tests.outputs.tests_status }}' || '1');
 
             const hasFixes = lintStatus === 0 || formatStatus === 0;
             const allPassing = lintStatus === 0 && formatStatus === 0 && testsStatus === 0;

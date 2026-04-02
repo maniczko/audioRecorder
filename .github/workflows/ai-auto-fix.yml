@@ -84,8 +84,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const lintErrors = require('fs').readFileSync('lint-output.txt', 'utf8');
-            const typeErrors = require('fs').readFileSync('typecheck-output.txt', 'utf8');
+            const fs = require('fs');
+            const lintErrors = fs.existsSync('lint-output.txt') ? fs.readFileSync('lint-output.txt', 'utf8') : '';
+            const typeErrors = fs.existsSync('typecheck-output.txt') ? fs.readFileSync('typecheck-output.txt', 'utf8') : '';
             
             const hasLintErrors = lintErrors.trim().length > 0;
             const hasTypeErrors = typeErrors.trim().length > 0;

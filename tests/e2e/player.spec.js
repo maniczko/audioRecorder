@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
-const { seedLoggedInUser, seedMeeting, seedQueueItem } = require("./helpers/seed");
+import { test, expect } from '@playwright/test';
+import { seedLoggedInUser, seedMeeting, seedQueueItem } from './helpers/seed.js';
 
 test.describe("Studio — odtwarzacz i pasek statusu", () => {
   test.beforeEach(async ({ page }) => {

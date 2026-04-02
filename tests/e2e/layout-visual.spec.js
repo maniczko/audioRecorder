@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
+import { test, expect } from '@playwright/test';
 
 test.skip(process.env.CI === "true", "Visual baselines sa utrzymywane lokalnie, nie w glownym CI.");
 

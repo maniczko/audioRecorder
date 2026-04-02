@@ -32,7 +32,14 @@ if (!fs.existsSync(config.outputDir)) {
 // Helper to run railway CLI commands
 function runRailwayCommand(args) {
   try {
-    const cmd = `railway ${args}`;
+    const projectId = process.env.RAILWAY_PROJECT_ID;
+    const projectFlag = projectId ? `--project ${projectId}` : '';
+    const cmd = `railway ${args} ${projectFlag}`.trim();
+    
+    if (config.verbose) {
+      console.log(`Executing: ${cmd}`);
+    }
+    
     return execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (error) {
     if (error.status === 1 && error.stdout) {
@@ -61,16 +68,17 @@ function checkRailwayCLI() {
 }
 
 // Link to project
-function linkToProject(projectName = 'calm-empathy') {
+function linkToProject(projectName) {
+  const finalProject = projectName || process.env.RAILWAY_PROJECT_ID || 'audioRecorder';
   try {
-    console.log(`🔗 Linking to project: ${projectName}`);
+    console.log(`🔗 Linking to project: ${finalProject}`);
     // Use echo to pipe the project name to railway link
     const platform = process.platform;
     let cmd;
     if (platform === 'win32') {
-      cmd = `echo ${projectName} | railway link`;
+      cmd = `echo ${finalProject} | railway link`;
     } else {
-      cmd = `echo "${projectName}" | railway link`;
+      cmd = `echo "${finalProject}" | railway link`;
     }
     execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
     console.log('✅ Linked to project');

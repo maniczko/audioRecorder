@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
-const { seedLoggedInUser, seedTask } = require("./helpers/seed");
+import { test, expect } from '@playwright/test';
+import { seedLoggedInUser, seedTask } from './helpers/seed.js';
 
 test.describe("Tasks — CRUD zadan", () => {
   test.beforeEach(async ({ page }) => {

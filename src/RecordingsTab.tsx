@@ -240,6 +240,7 @@ function UnifiedLibrary({
   return (
     <section
       className="panel meetings-library recordings-library-panel"
+      data-clarity-mask="true"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}

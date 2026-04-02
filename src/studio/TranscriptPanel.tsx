@@ -1014,7 +1014,7 @@ export default function TranscriptPanel({
         </>
       ) : null}
 
-      <div className="ff-transcript-wrapper">
+      <div className="ff-transcript-wrapper" data-clarity-mask="true">
         <div className="ff-sticky-header">
           <div className="ff-tabs">
             <button className="ff-tab active" type="button">

@@ -44,7 +44,7 @@ jobs:
         uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: './dist/**/*.{js,css}'
+          pattern: './build/**/*.{js,css}'
           exclude: '**/*.map,**/*.svg,**/*.png,**/*.jpg'
           minimum-change-threshold: '1KB'
           build-script: 'build'
@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: build-bundle
-          path: dist/
+          path: build/
           retention-days: 7
       
       - name: Comment on PR with bundle size
@@ -65,7 +65,7 @@ jobs:
             const path = require('path');
             
             // Calculate bundle sizes
-            const distDir = path.join(process.cwd(), 'dist');
+            const distDir = path.join(process.cwd(), 'build');
             let totalSize = 0;
             let jsSize = 0;
             let cssSize = 0;

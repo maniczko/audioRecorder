@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require("@playwright/test");
+import { test, expect } from '@playwright/test';
 
 test.describe("Auth — rejestracja i logowanie", () => {
   test.beforeEach(async ({ page }) => {

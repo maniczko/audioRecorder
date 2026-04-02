@@ -33,8 +33,6 @@ export default defineConfig({
       reportOnFailure: true,
       // Skip files that are only type definitions or setup
       skipFull: false,
-      // Fail immediately when threshold not met
-      autoUpdate: false,
     },
   },
 });
