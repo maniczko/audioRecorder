@@ -39,7 +39,7 @@ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \
     --outdir=dist-server \
     --packages=external
 
-RUN node --input-type=commonjs -e " \
+RUN cd server && node --input-type=commonjs -e " \
   const fs=require('fs'); \
   const path=require('path'); \
   try { \
@@ -50,9 +50,9 @@ RUN node --input-type=commonjs -e " \
     fs.copyFileSync(ffprobePath, '/tmp/ffprobe'); \
     fs.chmodSync('/tmp/ffmpeg', 0o755); \
     fs.chmodSync('/tmp/ffprobe', 0o755); \
-    console.log('✅ Successfully extracted ffmpeg and ffprobe'); \
+    console.log('Successfully extracted ffmpeg and ffprobe'); \
   } catch (e) { \
-    console.error('❌ Failed to extract binaries:', e.message); \
+    console.error('Failed to extract binaries:', e.message); \
     process.exit(1); \
   }"
 
