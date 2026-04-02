@@ -68,6 +68,17 @@ test_output.txt
 tsc-err.txt
 server/debug_env.ts
 server_error_captured.txt
+test-results/
+# Temp output files created during debugging
+*_test_output*.txt
+*_test_fail*.txt
+*_test_log*.txt
+*_log.txt
+auth_test_fail*.txt
+config_test_fail*.txt
+fe_test_output*.txt
+push_log*.txt
+server_test_output*.txt
 
 # SQLite WAL/SHM files
 *.sqlite-shm
