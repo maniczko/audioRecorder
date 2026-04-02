@@ -13,7 +13,7 @@ test.describe('Command Palette - nawigacja', () => {
     await seedMeeting(page, { title: 'Spotkanie Demo' });
     await seedTask(page, { title: 'Task Demo' });
     await page.goto('/');
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
   test('przycisk na pasku otwiera command palette', async ({ page }) => {
@@ -35,7 +35,9 @@ test.describe('Command Palette - nawigacja', () => {
     await firstResult.click();
 
     await expect(page.locator('.command-palette')).not.toBeVisible();
-    await expect(page.locator('.tab-pill.active').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(
+      page.locator('.modern-nav-item.active').filter({ hasText: 'Studio' })
+    ).toBeVisible();
   });
 
   test('Escape zamyka command palette', async ({ page }) => {

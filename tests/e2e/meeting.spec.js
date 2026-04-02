@@ -7,7 +7,7 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     await seedLoggedInUser(page);
     await page.goto('/');
     // Ensure we are on Studio tab
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
   // ── Create meeting — happy path ───────────────────────────────────────────

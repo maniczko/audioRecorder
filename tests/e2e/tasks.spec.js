@@ -7,7 +7,7 @@ test.describe('Tasks — CRUD zadan', () => {
     await seedLoggedInUser(page);
     await page.goto('/');
     // Navigate to Tasks tab
-    await page.locator('.tab-pill').filter({ hasText: 'Zadania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
     await expect(page.locator('.tasks-layout')).toBeVisible();
   });
 
@@ -51,7 +51,7 @@ test.describe('Tasks — CRUD zadan', () => {
   test('edycja tytulu zadania aktualizuje widok', async ({ page }) => {
     await seedTask(page, { title: 'Zadanie do edycji' });
     await page.reload();
-    await page.locator('.tab-pill').filter({ hasText: 'Zadania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
 
     // Click on the task to open details
     await page
@@ -74,7 +74,7 @@ test.describe('Tasks — CRUD zadan', () => {
   test('usuniecie zadania usuwa je z listy', async ({ page }) => {
     await seedTask(page, { title: 'Zadanie do usuniecia' });
     await page.reload();
-    await page.locator('.tab-pill').filter({ hasText: 'Zadania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
 
     await page
       .locator('.todo-table-row, .todo-kanban-card')
@@ -97,7 +97,7 @@ test.describe('Tasks — CRUD zadan', () => {
   test('zaznaczenie zadania jako ukonczone zmienia jego status', async ({ page }) => {
     await seedTask(page, { title: 'Zadanie do ukonczenia' });
     await page.reload();
-    await page.locator('.tab-pill').filter({ hasText: 'Zadania' }).click();
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
 
     // Find the completion checkbox/button for the task
     const taskRow = page

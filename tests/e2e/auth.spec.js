@@ -22,7 +22,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
 
     // After successful registration the auth screen disappears and
     // the main app with the Studio tab should be visible.
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
   // â”€â”€ Registration â€” error: duplicate email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -78,7 +78,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
 
     // Should be logged in now â€” wait for main app
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
 
     // Log out via Profile
     await page.locator('.settings-button').click();
@@ -93,7 +93,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
     await page.getByRole('button', { name: 'Zaloguj' }).click();
 
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
   // â”€â”€ Login â€” error: wrong password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -108,7 +108,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
 
     // Log out
-    await expect(page.locator('.tab-pill').filter({ hasText: 'Studio' })).toBeVisible();
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
     await page.locator('.settings-button').click();
     await page.getByRole('button', { name: 'Wyloguj' }).click();
 
