@@ -153,7 +153,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:coverage
         name: Run coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
