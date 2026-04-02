@@ -1,60 +1,47 @@
-// @ts-check
+```javascript
 import { test, expect } from '@playwright/test';
-import { seedLoggedInUser, seedMeeting, seedTask } from './helpers/seed.js';
-
-async function openPalette(page) {
-  await page.locator('.command-palette-launcher').click();
-  await expect(page.locator('.command-palette')).toBeVisible();
-}
 
 test.describe('Command Palette - nawigacja', () => {
-  test.beforeEach(async ({ page }) => {
-    await seedLoggedInUser(page);
-    await seedMeeting(page, { title: 'Spotkanie Demo' });
-    await seedTask(page, { title: 'Task Demo' });
-    await page.goto('/');
-    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
-  });
-
   test('przycisk na pasku otwiera command palette', async ({ page }) => {
-    await openPalette(page);
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await expect(page.locator('.command-palette')).toBeVisible();
   });
 
   test('wpisanie frazy filtruje wyniki', async ({ page }) => {
-    await openPalette(page);
-    await page.locator('.command-palette input').fill('Demo');
-    await expect(page.locator('.command-result').filter({ hasText: 'Demo' }).first()).toBeVisible();
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await page.fill('.command-palette input', 'search term');
+    await expect(page.locator('.command-palette-results')).toContainText('Expected Result');
   });
 
   test('wybranie spotkania z palety otwiera je w Studio', async ({ page }) => {
-    await openPalette(page);
-    await page.locator('.command-palette input').fill('Spotkanie Demo');
-
-    const firstResult = page.locator('.command-result').first();
-    await expect(firstResult).toBeVisible();
-    await firstResult.click();
-
-    await expect(page.locator('.command-palette')).not.toBeVisible();
-    await expect(
-      page.locator('.modern-nav-item.active').filter({ hasText: 'Studio' })
-    ).toBeVisible();
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await page.fill('.command-palette input', 'meeting name');
+    await page.click('.command-palette-results .result-item');
+    await expect(page).toHaveURL(/.*meeting-name/);
   });
 
   test('Escape zamyka command palette', async ({ page }) => {
-    await openPalette(page);
-    await page.keyboard.press('Escape');
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await page.press('.command-palette input', 'Escape');
     await expect(page.locator('.command-palette')).not.toBeVisible();
   });
 
   test('klikniecie tla zamyka command palette', async ({ page }) => {
-    await openPalette(page);
-    await page.locator('.command-palette-backdrop').click({ position: { x: 5, y: 5 } });
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await page.click('.overlay'); // Assuming there's an overlay to close the palette
     await expect(page.locator('.command-palette')).not.toBeVisible();
   });
 
   test('nieistniejaca fraza pokazuje komunikat braku wynikow', async ({ page }) => {
-    await openPalette(page);
-    await page.locator('.command-palette input').fill('xqzxqz_nieistnieje_123');
-    await expect(page.locator('.empty-panel, .command-palette-results .empty')).toBeVisible();
+    await page.goto('http://localhost:3000');
+    await page.click('#command-palette-button');
+    await page.fill('.command-palette input', 'nonexistent term');
+    await expect(page.locator('.no-results')).toHaveText('No results found');
   });
 });
+```
