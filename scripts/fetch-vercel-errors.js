@@ -183,7 +183,7 @@ async function main() {
   // Fetch logs for each deployment
   let allErrors = [];
   for (const deployment of deployments) {
-    if (config.verbose) console.log(`📋 Fetching logs for ${deployment.id.substring(0, 8)}...`);
+    if (config.verbose) console.log(`📋 Fetching logs for ${(deployment.id || '').substring(0, 8)}...`);
     const logs = await getDeploymentLogs(deployment.id);
     allErrors = allErrors.concat(logs);
   }

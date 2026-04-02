@@ -52,17 +52,21 @@ function runRailwayCommand(args) {
 // Check if Railway CLI is available and logged in
 function checkRailwayCLI() {
   try {
+    // Railway CLI auto-authenticates using RAILWAY_TOKEN env var — no need to check whoami
+    if (process.env.RAILWAY_TOKEN) {
+      console.log('✅ Railway CLI will authenticate via RAILWAY_TOKEN');
+      return true;
+    }
     const whoami = runRailwayCommand('whoami');
-    if (whoami.includes('Logged in')) {
+    if (whoami && whoami.length > 0) {
       console.log('✅ Railway CLI is available and logged in');
       return true;
     }
-    console.error('❌ Not logged in to Railway. Run: railway login');
+    console.error('❌ Not logged in to Railway. Set RAILWAY_TOKEN env var');
     return false;
   } catch (error) {
-    console.error('❌ Railway CLI not available or not logged in');
+    console.error('❌ Railway CLI not available');
     console.error('   Install: npm i -g @railway/cli');
-    console.error('   Login: railway login');
     return false;
   }
 }

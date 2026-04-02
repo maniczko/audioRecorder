@@ -82,8 +82,8 @@ function makeSentryRequest(path, options = {}) {
  */
 async function checkSentryToken() {
   if (!SENTRY_AUTH_TOKEN) {
-    console.error('❌ SENTRY_AUTH_TOKEN not set');
-    process.exit(1);
+    console.warn('⚠️  SENTRY_AUTH_TOKEN not set — skipping Sentry error fetch');
+    process.exit(0);
   }
 
   try {
@@ -93,8 +93,9 @@ async function checkSentryToken() {
       return true;
     }
   } catch (err) {
-    console.error('❌ Invalid Sentry token:', err.message);
-    process.exit(1);
+    console.warn('⚠️  Invalid Sentry token:', err.message);
+    console.warn('   Sentry integration is optional — skipping');
+    process.exit(0);
   }
 }
 

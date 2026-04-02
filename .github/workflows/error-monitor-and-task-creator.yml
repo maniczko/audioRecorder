@@ -75,9 +75,9 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "$RAILWAY_TOKEN" ]; then
-            railway login --token $RAILWAY_TOKEN || echo "Railway login failed"
+            echo "RAILWAY_TOKEN is set — CLI will authenticate automatically"
           else
-            echo "RAILWAY_TOKEN not set, skipping Railway login"
+            echo "RAILWAY_TOKEN not set, skipping Railway operations"
           fi
 
       - name: Link to Railway project (if needed)
