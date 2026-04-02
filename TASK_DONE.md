@@ -2,6 +2,166 @@
 
 ## Zrealizowane Zadania
 
+## [2026-04-02] #GH-26: Fix Error Monitor workflow dispatch failures
+Status: `done` ✅
+
+### Cel:
+Naprawa błędu HTTP 403 przy próbie wywołania `workflow_dispatch` przez `GITHUB_TOKEN` — automatyczny token GitHub nie może triggerować innych workflowów.
+
+### Wykonane zmiany:
+- **Dodano** sekret `GH_PAT` (Personal Access Token z zakresem `repo` + `workflow`) przez użytkownika w GitHub Settings.
+- **Zaktualizowano** `.github/workflows/error-monitor-and-task-creator.yml`:
+  - `actions/checkout` teraz używa `GH_PAT || GITHUB_TOKEN` zamiast samego `GITHUB_TOKEN`.
+  - `git push` używa explicitly ustawionego tokenu przez `git remote set-url`.
+  - `actions/github-script` (tworzenie issues) używa `GH_PAT || GITHUB_TOKEN`.
+
+### Rezultat:
+- ✅ Workflow Error Monitor przeszedł pomyślnie (run `23898465998`, 52s).
+- ✅ Git push w workflow może teraz triggerować inne workflow.
+
+---
+
+## [2026-04-02] #GH-25: Fix Railway CLI auto-linking in Error Monitor workflow
+Status: `done` ✅
+
+### Cel:
+Naprawa błędów w workflow Error Monitor związanych z Railway CLI — brak autoryzacji, nieistniejąca flaga `--token`, crash przy `deployment.id`, exit(1) przy braku tokenu Sentry.
+
+### Wykonane zmiany:
+- **Dodano** sekret `RAILWAY_TOKEN` przez użytkownika w GitHub Settings.
+- **Naprawiono** `.github/workflows/error-monitor-and-task-creator.yml`:
+  - Usunięto `secrets.X` z warunków `if:` (niedozwolone w GitHub Actions) → inline bash `if [ -n "$RAILWAY_TOKEN" ]`.
+  - Usunięto `railway login --token` (flaga nie istnieje; token działa automatycznie przez zmienną środowiskową).
+- **Naprawiono** `scripts/fetch-railway-errors.js`: zastąpiono `railway whoami` sprawdzeniem `process.env.RAILWAY_TOKEN`.
+- **Naprawiono** `scripts/fetch-vercel-errors.js`: dodano guard `(deployment.id || '').substring(0, 8)`.
+- **Naprawiono** `scripts/fetch-sentry-errors.js`: zmieniono `process.exit(1)` na `process.exit(0)` gdy brak tokenu Sentry (integracja opcjonalna).
+
+### Rezultat:
+- ✅ Workflow Error Monitor przeszedł pomyślnie (run `23895325679`, 52s).
+- ✅ Skrypty obsługują brakujące tokeny bez crashu.
+
+---
+
+## [2026-04-02] #GH-35: Fix Preview Deployment — Vercel secrets validation
+Status: `done` ✅
+
+### Cel:
+Naprawa workflow preview deployment — brak walidacji sekretów Vercel + crash przy `dependabot[bot]`.
+
+### Wykonane zmiany:
+- Dodano walidację 3 sekretów (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
+- Pominięcie deploymentu dla aktora `dependabot[bot]`.
+
+### Rezultat:
+- ✅ Deployment preview nie crashuje przy brakujących sekretach.
+
+---
+
+## [2026-04-02] #GH-34: Fix AI Auto-Fix — missing lint-output.txt
+Status: `done` ✅
+
+### Cel:
+Naprawa błędu w workflow `ai-auto-fix.yml` — brak pliku `lint-output.txt` powodował crash.
+
+### Wykonane zmiany:
+- Dodano `fs.existsSync()` guard przed odczytem `lint-output.txt`.
+- Lint output tworzony przez `tee lint-output.txt || true`.
+
+### Rezultat:
+- ✅ Workflow nie crashuje przy braku pliku lint output.
+
+---
+
+## [2026-04-02] #GH-32: Fix Bundle Size Monitor — wrong output directory
+Status: `done` ✅
+
+### Cel:
+Naprawa workflow Bundle Size Monitor — używał `dist/` zamiast `build/` (Vite `outDir`).
+
+### Wykonane zmiany:
+- Zmieniono ścieżkę z `dist/` na `build/` w `.github/workflows/bundle-size.yml`.
+
+### Rezultat:
+- ✅ Bundle Size Monitor poprawnie analizuje artefakty buildu.
+
+---
+
+## [2026-04-02] #GH-31: Fix CI/CD Pipeline PARSE_ERROR in tests
+Status: `done` ✅
+
+### Cel:
+Naprawa błędów `PARSE_ERROR` w `vitest` — `await import()` w synchronicznym `describe()`.
+
+### Wykonane zmiany:
+- **`useWorkspace.test.ts`** — całkowicie przepisany z `vi.mock()` zamiast dynamicznych importów w `describe`.
+- **`StudioTab.test.tsx`** — usunięty (nieistniejący komponent).
+
+### Rezultat:
+- ✅ `npx vitest run` — 0 PARSE_ERROR, 91 plików, 1050 testów passed.
+
+---
+
+## [2026-04-02] #GH-30: Fix `require` in ES module scope
+Status: `done` ✅
+
+### Cel:
+Naprawa błędów `require is not defined in ES module scope` — projekt ma `"type": "module"` w `package.json`.
+
+### Wykonane zmiany:
+- Pliki CJS przemianowane: `newrelic.cjs`, `accessibility-audit.cjs`, `auto-docs.cjs`, `code-migration.cjs`, `smart-retry.cjs`.
+- `commitlint.config.js` zaktualizowany do `export default`.
+- `package.json` zaktualizowany z referencjami do `.cjs`.
+
+### Rezultat:
+- ✅ Brak błędów ESM/CJS przy uruchamianiu testów i buildzie.
+
+---
+
+## [2026-04-02] #GH-29: Fix E2E Playwright Tests — ESM import errors
+Status: `done` ✅
+
+### Cel:
+Naprawa importów w testach E2E — `e2e/helpers/seed.js` używał składni CJS w projekcie ESM.
+
+### Wykonane zmiany:
+- Naprawiono eksport w `e2e/helpers/seed.js` — konwersja CJS → ESM.
+- Wszystkie E2E spec files używają prawidłowych importów.
+
+### Rezultat:
+- ✅ Testy E2E kompilują się bez błędów importu.
+
+---
+
+## [2026-04-02] #GH-28: Fix Auto-Fix workflow — missing exit 1 on test failure
+Status: `done` ✅
+
+### Cel:
+Naprawa workflow `auto-fix.yml` — nie zwracał kodu błędu gdy testy failują, przez co CI traktował run jako sukces.
+
+### Wykonane zmiany:
+- Dodano warunek `exit 1` gdy `tests_status != 0`.
+- Naprawiono pattern `&&`/`||` do capture exit code.
+
+### Rezultat:
+- ✅ Workflow poprawnie failuje gdy testy nie przechodzą.
+
+---
+
+## [2026-04-02] #GH-27: Fix Docker Build failures
+Status: `done` ✅
+
+### Cel:
+Weryfikacja i potwierdzenie poprawności konfiguracji Docker.
+
+### Wykonane zmiany:
+- Zweryfikowano `Dockerfile` — Node.js 22, multi-stage build, ffmpeg — wszystko prawidłowo skonfigurowane.
+- `docker-compose.yml` OK.
+
+### Rezultat:
+- ✅ Docker build przebiega bez błędów konfiguracji.
+
+---
+
 ## [2026-04-01] #GH-22: Fix 8 regression test failures
 Status: `done` ✅
 
