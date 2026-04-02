@@ -22,7 +22,7 @@ jobs:
       - name: Checkout code (dependabot)
         uses: actions/checkout@v6
         if: github.event_name == 'pull_request_target'
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -33,13 +33,13 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Build project
         run: pnpm run build
-      
+
       - name: Check bundle size
         uses: preactjs/compressed-size-action@v3
         with:
@@ -48,14 +48,14 @@ jobs:
           exclude: '**/*.map,**/*.svg,**/*.png,**/*.jpg'
           minimum-change-threshold: '1KB'
           build-script: 'build'
-          
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: build-bundle
           path: build/
           retention-days: 7
-      
+
       - name: Comment on PR with bundle size
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -63,13 +63,13 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             // Calculate bundle sizes
             const distDir = path.join(process.cwd(), 'build');
             let totalSize = 0;
             let jsSize = 0;
             let cssSize = 0;
-            
+
             function calculateSize(dir) {
               const files = fs.readdirSync(dir);
               
@@ -88,23 +88,23 @@ jobs:
                 }
               }
             }
-            
+
             calculateSize(distDir);
-            
+
             function formatSize(bytes) {
               if (bytes < 1024) return `${bytes} B`;
               if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
               return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
             }
-            
+
             // Get base branch sizes (if available)
             let baseTotalSize = 0;
             let sizeChange = 0;
             let sizeChangePercent = 0;
-            
+
             // Try to read from previous runs (simplified)
             // In production, you'd use GitHub API to compare with base branch
-            
+
             let comment = '## 📦 Bundle Size Report\n\n';
             comment += '### Build Artifacts\n\n';
             comment += `| Type | Size |\n`;
@@ -112,7 +112,7 @@ jobs:
             comment += `| JavaScript | ${formatSize(jsSize)} |\n`;
             comment += `| CSS | ${formatSize(cssSize)} |\n`;
             comment += `| **Total** | **${formatSize(totalSize)}** |\n\n`;
-            
+
             if (github.event_name === 'pull_request') {
               comment += '### Changes\n\n';
               
@@ -124,26 +124,26 @@ jobs:
                 comment += '🚨 **Critical:** Bundle size is over 1MB\n\n';
               }
             }
-            
+
             comment += '### Recommendations\n\n';
             comment += '- Keep bundle size under 500KB for optimal performance\n';
             comment += '- Use code splitting for large features\n';
             comment += '- Tree-shake unused dependencies\n';
             comment += '- Compress assets with gzip/brotli\n\n';
-            
+
             comment += '---\n*This is an automated report from Bundle Size Monitor.*\n';
-            
+
             // Delete existing comment if exists
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
+
             const existingComment = comments.find(c => 
               c.body.includes('Bundle Size Report')
             );
-            
+
             if (existingComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,

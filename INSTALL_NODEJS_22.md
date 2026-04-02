@@ -39,6 +39,7 @@ node --version
 Wejdź na: https://nodejs.org/en/download/
 
 Lub bezpośrednio:
+
 - **Node.js 22.14.0 LTS**: https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi
 
 ### Krok 2: Zainstaluj
@@ -120,6 +121,7 @@ pnpm start
 ### "node nie jest rozpoznawany"
 
 **Rozwiązanie:**
+
 1. Zamknij terminal
 2. Otwórz nowy terminal
 3. Spróbuj ponownie
@@ -127,12 +129,14 @@ pnpm start
 ### "Access denied"
 
 **Rozwiązanie:**
+
 1. Uruchom PowerShell jako **Administrator**
 2. Spróbuj ponownie
 
 ### "Port 4000 zajęty"
 
 **Rozwiązanie:**
+
 ```bash
 # Zabij proces na porcie 4000
 netstat -ano | findstr :4000

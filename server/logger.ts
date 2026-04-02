@@ -6,10 +6,12 @@ function getSentry(): any {
   if (_Sentry) return _Sentry;
   if (!process.env.SENTRY_DSN) return null;
   if (!_sentryLoading) {
-    _sentryLoading = import('@sentry/node').then((mod) => {
-      _Sentry = mod;
-      return mod;
-    }).catch(() => null);
+    _sentryLoading = import('@sentry/node')
+      .then((mod) => {
+        _Sentry = mod;
+        return mod;
+      })
+      .catch(() => null);
   }
   return _Sentry; // null until first await completes
 }
@@ -19,10 +21,12 @@ async function getSentryAsync(): Promise<any> {
   if (_Sentry) return _Sentry;
   if (!process.env.SENTRY_DSN) return null;
   if (!_sentryLoading) {
-    _sentryLoading = import('@sentry/node').then((mod) => {
-      _Sentry = mod;
-      return mod;
-    }).catch(() => null);
+    _sentryLoading = import('@sentry/node')
+      .then((mod) => {
+        _Sentry = mod;
+        return mod;
+      })
+      .catch(() => null);
   }
   return _sentryLoading;
 }

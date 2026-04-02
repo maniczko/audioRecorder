@@ -6,6 +6,7 @@
 ## Available Skills
 
 ### `anti-regression-tdd`
+
 TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 `@anti-regression-tdd` invocation.
 
@@ -17,17 +18,16 @@ TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 4. **Communicate in Polish**, code and commits in English.
 5. **Implement directly** — don't just suggest changes.
 
-
 ---
 
 ## 🧩 Dostępne Komendy
 
-| Komenda | Opis |
-|---------|------|
-| `pnpm run tdd [feature]` | Uruchom TDD check dla funkcji |
-| `pnpm run tdd:check [feature]` | To samo co `tdd` |
-| `pnpm run test:regression` | Uruchom wszystkie testy regresji |
-| `pnpm exec vitest --watch` | Watch mode dla TDD |
+| Komenda                        | Opis                             |
+| ------------------------------ | -------------------------------- |
+| `pnpm run tdd [feature]`       | Uruchom TDD check dla funkcji    |
+| `pnpm run tdd:check [feature]` | To samo co `tdd`                 |
+| `pnpm run test:regression`     | Uruchom wszystkie testy regresji |
+| `pnpm exec vitest --watch`     | Watch mode dla TDD               |
 
 ---
 
@@ -35,18 +35,21 @@ TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 
 ```markdown
 ## Przed implementacją:
+
 - [ ] Napisałem testy ZANIM kodem?
 - [ ] Czy testy FAILUJĄ przed implementacją? (RED)
 - [ ] Czy testy przechodzą po implementacji? (GREEN)
 - [ ] Czy refaktoryzowałem z zielonymi testami? (REFACTOR)
 
 ## Po implementacji:
+
 - [ ] Dodałem test regresji jeśli to bug fix?
 - [ ] Dodałem testy edge cases?
 - [ ] Dodałem testy error handling?
 - [ ] Czy coverage nie spadł?
 
 ## Przed mergem:
+
 - [ ] Wszystkie testy przechodzą? `pnpm run test`
 - [ ] Coverage jest OK? `pnpm run test:coverage`
 - [ ] Lint przechodzi? `pnpm run lint`
@@ -58,13 +61,13 @@ TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 
 ## 📊 Metrics
 
-| Metric | Target | How to measure |
-|--------|--------|----------------|
-| Test coverage | 90%+ | `pnpm run test:coverage` |
-| Tests before code | 100% | Code review checklist |
-| Regression tests | 1 per bug | Count in `tests/regression/` |
-| CI pass rate | 95%+ | GitHub Actions analytics |
-| Bug recurrence | 0% | Regression test failures |
+| Metric            | Target    | How to measure               |
+| ----------------- | --------- | ---------------------------- |
+| Test coverage     | 90%+      | `pnpm run test:coverage`     |
+| Tests before code | 100%      | Code review checklist        |
+| Regression tests  | 1 per bug | Count in `tests/regression/` |
+| CI pass rate      | 95%+      | GitHub Actions analytics     |
+| Bug recurrence    | 0%        | Regression test failures     |
 
 ---
 
@@ -72,30 +75,41 @@ TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 
 ### Task: Napraw bug #123 - supabaseStorage returns undefined instead of null
 
-```markdown
+````markdown
 @anti-regression-tdd
 
 Task: Fix bug #123 - supabaseStorage returns undefined instead of null
 
 ## 1. Understand
+
 - Bug: Function returns undefined when supabase not configured
 - Expected: Should return null for fallback to local storage
 
 ## 2. Write Test (RED)
+
 Created: server/tests/lib/supabaseStorage.test.ts
+
 ```typescript
 test('returns null when supabase is not configured', async () => {
   vi.doMock('../config', () => ({
     config: { SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '' },
   }));
   const module = await import('../../lib/supabaseStorage');
-  const result = await module.uploadAudioToStorage('rec1', Buffer.from('test'), 'audio/webm', '.webm');
+  const result = await module.uploadAudioToStorage(
+    'rec1',
+    Buffer.from('test'),
+    'audio/webm',
+    '.webm'
+  );
   expect(result).toBeNull(); // ❌ FAIL: Returns undefined
 });
 ```
+````
 
 ## 3. Implement (GREEN)
+
 Fixed: server/lib/supabaseStorage.ts
+
 ```typescript
 if (!supabase) {
   return null; // ✅ Now returns null
@@ -103,11 +117,14 @@ if (!supabase) {
 ```
 
 ## 4. Refactor (REFACTOR)
+
 - Extracted sanitizeRecordingId helper function
 - All tests still pass ✅
 
 ## 5. Regression Test
+
 Created: server/tests/regression/123-supabaseStorage-null.test.ts
+
 ```typescript
 describe('Regression: Issue #123', () => {
   test('should return null (not undefined) when supabase not configured', async () => {
@@ -117,10 +134,12 @@ describe('Regression: Issue #123', () => {
 ```
 
 ## 6. Verify
+
 - ✅ All tests pass: `pnpm run test`
 - ✅ Coverage OK: 95%
 - ✅ Lint passes: `pnpm run lint`
 - ✅ Build passes: `pnpm run build`
+
 ```
 
 ---
@@ -160,3 +179,4 @@ After each sprint:
 **Remember:** Tests are not a burden. They are your safety net. 🛡️
 
 **Golden Rule:** No code without tests. Period.
+```

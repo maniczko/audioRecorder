@@ -1,0 +1,59 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+    - generic [ref=e3]:
+        - complementary [ref=e4]:
+            - button "VoiceBóbr" [ref=e5] [cursor=pointer]:
+                - img [ref=e7]
+                - heading "VoiceBóbr" [level=1] [ref=e33]
+            - navigation [ref=e34]:
+                - button "Studio" [ref=e35] [cursor=pointer]:
+                    - img [ref=e36]
+                    - text: Studio
+                - button "Nagrania" [ref=e37] [cursor=pointer]:
+                    - img [ref=e38]
+                    - text: Nagrania
+                - button "Kalendarz" [ref=e42] [cursor=pointer]:
+                    - img [ref=e43]
+                    - text: Kalendarz
+                - button "Zadania" [ref=e45] [cursor=pointer]:
+                    - img [ref=e46]
+                    - text: Zadania
+                - button "Osoby" [ref=e49] [cursor=pointer]:
+                    - img [ref=e50]
+                    - text: Osoby
+                - button "Zapytaj AI" [ref=e54] [cursor=pointer]:
+                    - img [ref=e55]
+                    - text: Zapytaj AI
+            - generic [ref=e64]: E2E Workspace
+        - main [ref=e65]:
+            - generic [ref=e67]:
+                - button "Szukaj wszędzie... Ctrl + K" [ref=e68] [cursor=pointer]:
+                    - generic [ref=e69]:
+                        - img [ref=e70]
+                        - text: Szukaj wszędzie...
+                    - generic [ref=e73]:
+                        - generic [ref=e74]: Ctrl
+                        - text: +
+                        - generic [ref=e75]: K
+                - button "Powiadomienia" [ref=e77] [cursor=pointer]: ⏰
+                - button "Rozpocznij nagrywanie" [ref=e78] [cursor=pointer]:
+                    - generic [ref=e79]:
+                        - img [ref=e80]
+                        - text: Rozpocznij nagrywanie
+                - button "E" [ref=e82] [cursor=pointer]:
+                    - generic [ref=e83]: E
+            - main [ref=e88]:
+                - generic [ref=e90]:
+                    - generic [ref=e91]: Studio
+                    - heading "Brak aktywnego spotkania" [level=2] [ref=e92]
+                    - paragraph [ref=e93]:
+                        - text: Przejdź do zakładki
+                        - strong [ref=e94]: Nagrania
+                        - text: ', aby wybrać nagranie do analizy lub uruchom nagranie ad hoc.'
+                    - generic [ref=e95]:
+                        - button "⬤ Nagraj ad hoc" [ref=e96] [cursor=pointer]
+                        - button "Przygotuj brief" [ref=e97] [cursor=pointer]
+    - status
+```

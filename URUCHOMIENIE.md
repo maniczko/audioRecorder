@@ -11,6 +11,7 @@ Twoje `.env` jest **skompletne i poprawne**. Wszystkie klucze API są ustawione.
 ## 🔧 KROK 1: HuggingFace Token (wymagane)
 
 ### Dlaczego potrzebujesz?
+
 - **Diarizacja** - rozpoznawanie kto mówi (Speaker A, Speaker B, etc.)
 - Bez tokena: transkrypcja działa, ale bez podziału na mówców
 
@@ -42,6 +43,7 @@ HF_TOKEN=hf_AbCdEfGhIjKlMnOpQrStUvWxYz123456
 ## 🔧 KROK 2: Problem z Node.js
 
 ### ❌ Problem
+
 Masz **Node.js 24.14.0**, ale projekt wymaga **Node.js 22.x**
 
 To powoduje błędy przy uruchamianiu serwera backend.
@@ -58,6 +60,7 @@ To powoduje błędy przy uruchamianiu serwera backend.
    - Zainstaluj (nadpisze 24.x)
 
 3. **Sprawdź wersję:**
+
    ```bash
    node --version
    # Powinno być: v22.x.x
@@ -97,6 +100,7 @@ pnpm run start:server
 ```
 
 **Powinieneś zobaczyć:**
+
 ```
 ✅ Configuration loaded successfully
 [Bootstrap] Database initialized
@@ -111,6 +115,7 @@ pnpm start
 ```
 
 **Powinieneś zobaczyć:**
+
 ```
 VITE v5.x.x  ready in xxx ms
 
@@ -124,11 +129,13 @@ VITE v5.x.x  ready in xxx ms
 ### 1. Sprawdź backend
 
 Otwórz w przeglądarce:
+
 ```
 http://127.0.0.1:4000/health
 ```
 
 **Powinno zwrócić:**
+
 ```json
 {
   "status": "ok",
@@ -140,6 +147,7 @@ http://127.0.0.1:4000/health
 ### 2. Sprawdź frontend
 
 Otwórz:
+
 ```
 http://localhost:3000
 ```
@@ -161,6 +169,7 @@ pnpm start
 ```
 
 **Funkcje:**
+
 - ✅ Transkrypcja z Whisper (Groq/OpenAI)
 - ✅ Diarizacja (HuggingFace)
 - ✅ Analizy AI (Claude/Gemini)
@@ -175,6 +184,7 @@ pnpm start
 ```
 
 **Funkcje:**
+
 - ✅ Nagrywanie audio
 - ✅ Podstawowa transkrypcja (jeśli backend działa)
 - ❌ Analizy AI (wymagają backend)
@@ -189,6 +199,7 @@ pnpm start
 **Przyczyna:** Serwer nie działa
 
 **Rozwiązanie:**
+
 ```bash
 # 1. Sprawdź Node.js
 node --version
@@ -208,6 +219,7 @@ netstat -ano | findstr :4000
 **Przyczyna:** Któryś klucz jest niepoprawny
 
 **Rozwiązanie:**
+
 ```bash
 # Sprawdź .env
 notepad c:\Users\user\new\audioRecorder\.env
@@ -223,6 +235,7 @@ notepad c:\Users\user\new\audioRecorder\.env
 **Przyczyna:** Supabase nie odpowiada
 
 **Rozwiązanie:**
+
 ```bash
 # Użyj lokalnej bazy SQLite
 # W .env dodaj:

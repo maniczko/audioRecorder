@@ -7,6 +7,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ## ✅ Wdrożone Funkcje
 
 ### 1. **Code Review Automation** ✅
+
 - **Plik:** `.github/workflows/code-review.yml`
 - **Działanie:** Automatyczne code review na każdym PR
 - **Komponenty:**
@@ -20,6 +21,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 2. **Coverage Enforcement** ✅
+
 - **Pliki:** `vitest.config.js`
 - **Thresholds:**
   - Lines: 80%
@@ -32,6 +34,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 3. **Bundle Size Monitoring** ✅
+
 - **Plik:** `.github/workflows/code-review.yml`
 - **Działanie:** Monitoruje rozmiar bundle na każdym PR
 - **Narzędzie:** `preactjs/compressed-size-action`
@@ -41,6 +44,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 4. **Security Scanning** ✅
+
 - **Plik:** `.github/workflows/code-review.yml`
 - **Działanie:** Automatyczne skanowanie bezpieczeństwa
 - **Narzędzia:**
@@ -52,6 +56,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 5. **Smart Retry Script** ✅
+
 - **Plik:** `scripts/smart-retry.js`
 - **Skrypt:** `npm run test:smart-retry`
 - **Działanie:** Inteligentne retry z logowaniem
@@ -66,6 +71,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 6. **PR Templates** ✅
+
 - **Plik:** `.github/PULL_REQUEST_TEMPLATE.md`
 - **Działanie:** Standaryzuje opis PR
 - **Sekcje:**
@@ -82,11 +88,13 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 ---
 
 ### 7. **Issue Templates** ✅
+
 - **Pliki:**
   - `.github/ISSUE_TEMPLATE/bug_report.md`
   - `.github/ISSUE_TEMPLATE/feature_request.md`
 
 **Bug Report zawiera:**
+
 - Opis błędu
 - Kroki do reprodukcji
 - Expected vs Actual behavior
@@ -95,6 +103,7 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 - Possible solution
 
 **Feature Request zawiera:**
+
 - Problem statement
 - Proposed solution
 - Alternative solutions
@@ -109,21 +118,22 @@ Dodatkowe usprawnienia automatyzacji wdrożone w projekcie VoiceLog.
 
 ## 📊 Porównanie Przed/Po
 
-| Metryka | Przed | Po | Zysk |
-|---------|-------|----|----|
-| **Code Review** | Manual | Auto | 100% coverage |
-| **Coverage Threshold** | 28% | 80% | +186% |
-| **Bundle Monitoring** | ❌ | ✅ | Detect bloat |
-| **Security Scan** | ❌ | ✅ | Auto detect vulns |
-| **Retry Logging** | Basic | Smart | Better debug |
-| **PR Quality** | Mixed | Standardized | 100% template |
-| **Issue Quality** | Mixed | Standardized | Better reports |
+| Metryka                | Przed  | Po           | Zysk              |
+| ---------------------- | ------ | ------------ | ----------------- |
+| **Code Review**        | Manual | Auto         | 100% coverage     |
+| **Coverage Threshold** | 28%    | 80%          | +186%             |
+| **Bundle Monitoring**  | ❌     | ✅           | Detect bloat      |
+| **Security Scan**      | ❌     | ✅           | Auto detect vulns |
+| **Retry Logging**      | Basic  | Smart        | Better debug      |
+| **PR Quality**         | Mixed  | Standardized | 100% template     |
+| **Issue Quality**      | Mixed  | Standardized | Better reports    |
 
 ---
 
 ## 📋 Dostępne Skrypty
 
 ### Testy
+
 ```bash
 # Standard retry
 npm run test:retry
@@ -136,6 +146,7 @@ npm run test:coverage:fix
 ```
 
 ### Code Quality
+
 ```bash
 # Formatowanie
 npm run format
@@ -154,6 +165,7 @@ npm run commitlint
 ## 🔄 Workflow
 
 ### Przed commit:
+
 ```bash
 # 1. Formatowanie
 npm run format
@@ -169,12 +181,14 @@ git commit -m "feat: add new feature"
 ```
 
 ### Przed push:
+
 ```bash
 # Automatycznie przez pre-push hook:
 npm run test:server:retry
 ```
 
 ### Na GitHub:
+
 ```bash
 # Automatycznie na PR:
 1. ESLint review
@@ -187,32 +201,35 @@ npm run test:server:retry
 
 ## 📁 Nowe Pliki
 
-| Plik | Opis |
-|------|------|
-| `.github/workflows/code-review.yml` | Code review workflow |
-| `.github/PULL_REQUEST_TEMPLATE.md` | PR template |
-| `.github/ISSUE_TEMPLATE/bug_report.md` | Bug report template |
-| `.github/ISSUE_TEMPLATE/feature_request.md` | Feature request template |
-| `scripts/smart-retry.js` | Smart retry script |
-| `vitest.config.js` | Zaktualizowane thresholds |
+| Plik                                        | Opis                      |
+| ------------------------------------------- | ------------------------- |
+| `.github/workflows/code-review.yml`         | Code review workflow      |
+| `.github/PULL_REQUEST_TEMPLATE.md`          | PR template               |
+| `.github/ISSUE_TEMPLATE/bug_report.md`      | Bug report template       |
+| `.github/ISSUE_TEMPLATE/feature_request.md` | Feature request template  |
+| `scripts/smart-retry.js`                    | Smart retry script        |
+| `vitest.config.js`                          | Zaktualizowane thresholds |
 
 ---
 
 ## 🎯 Korzyści
 
 ### Dla Deweloperów:
+
 - ✅ Mniej manualnej pracy
 - ✅ Lepsze feedback loops
 - ✅ Standardyzacja
 - ✅ Łatwiejsze debugowanie
 
 ### Dla Projektu:
+
 - ✅ Wyższa jakość kodu
 - ✅ Większe coverage
 - ✅ Mniej bugów w production
 - ✅ Lepsze security
 
 ### Dla Reviewers:
+
 - ✅ Standaryzowane PR
 - ✅ Auto-checks przed review
 - ✅ Mniej czasu na review
@@ -223,16 +240,19 @@ npm run test:server:retry
 ## 🚀 Następne Kroki (Opcjonalne)
 
 ### Wysoki Priorytet:
+
 1. **Performance Regression** (30 min)
 2. **Visual Regression** (45 min)
 3. **Automated Changelog** (15 min)
 
 ### Średni Priorytet:
+
 4. **Auto-label PRs** (10 min)
 5. **Stale PR Detection** (5 min)
 6. **TypeScript Strict Mode** (20 min)
 
 ### Niski Priorytet:
+
 7. **Sentry Integration** (30 min)
 8. **Auto Rollback** (45 min)
 

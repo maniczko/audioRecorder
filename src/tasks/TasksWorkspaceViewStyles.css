@@ -1,4 +1,3 @@
-
 .tasks-layout.ms-todo .todo-settings-dropdown-wrap {
   display: inline-block;
 }
@@ -15,7 +14,7 @@
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   min-width: 210px;
   display: flex;
   flex-direction: column;
@@ -32,8 +31,12 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.tasks-layout.ms-todo .todo-settings-item:last-child { border-bottom: none; }
-.tasks-layout.ms-todo .todo-settings-item:hover { background: rgba(117, 214, 196, 0.08); }
+.tasks-layout.ms-todo .todo-settings-item:last-child {
+  border-bottom: none;
+}
+.tasks-layout.ms-todo .todo-settings-item:hover {
+  background: rgba(117, 214, 196, 0.08);
+}
 .tasks-layout.ms-todo .todo-summary-view {
   padding: 0 0 24px;
   display: flex;

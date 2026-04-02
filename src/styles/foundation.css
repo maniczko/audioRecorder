@@ -2,8 +2,8 @@ html {
   color-scheme: dark;
 }
 
-html[data-theme="light"],
-html[data-theme="beaver"] {
+html[data-theme='light'],
+html[data-theme='beaver'] {
   color-scheme: light;
 }
 
@@ -138,7 +138,7 @@ body {
   min-width: 0;
 }
 
-.ui-split-pane[data-columns="one"] {
+.ui-split-pane[data-columns='one'] {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -146,19 +146,19 @@ body {
   width: 100%;
 }
 
-.ui-split-pane[data-columns="two"] {
+.ui-split-pane[data-columns='two'] {
   grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr);
 }
 
-.ui-split-pane[data-columns="two"][data-sidebar-width="wide"] {
+.ui-split-pane[data-columns='two'][data-sidebar-width='wide'] {
   grid-template-columns: var(--layout-sidebar-wide) minmax(0, 1fr);
 }
 
-.ui-split-pane[data-columns="three"] {
+.ui-split-pane[data-columns='three'] {
   grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr) var(--layout-aside-width);
 }
 
-.ui-split-pane[data-columns="three"][data-sidebar-width="wide"] {
+.ui-split-pane[data-columns='three'][data-sidebar-width='wide'] {
   grid-template-columns: var(--layout-sidebar-wide) minmax(0, 1fr) var(--layout-aside-width);
 }
 
@@ -267,22 +267,22 @@ select:focus-visible {
 }
 
 @media (max-width: 1320px) {
-  .ui-split-pane[data-columns="three"],
-  .ui-split-pane[data-columns="three"][data-sidebar-width="wide"] {
+  .ui-split-pane[data-columns='three'],
+  .ui-split-pane[data-columns='three'][data-sidebar-width='wide'] {
     grid-template-columns: minmax(280px, var(--layout-sidebar-width)) minmax(0, 1fr);
   }
 
-  .ui-split-pane[data-columns="three"] .ui-split-pane__aside,
-  .ui-split-pane[data-columns="three"][data-sidebar-width="wide"] .ui-split-pane__aside {
+  .ui-split-pane[data-columns='three'] .ui-split-pane__aside,
+  .ui-split-pane[data-columns='three'][data-sidebar-width='wide'] .ui-split-pane__aside {
     grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 1120px) {
-  .ui-split-pane[data-columns="two"],
-  .ui-split-pane[data-columns="two"][data-sidebar-width="wide"],
-  .ui-split-pane[data-columns="three"],
-  .ui-split-pane[data-columns="three"][data-sidebar-width="wide"] {
+  .ui-split-pane[data-columns='two'],
+  .ui-split-pane[data-columns='two'][data-sidebar-width='wide'],
+  .ui-split-pane[data-columns='three'],
+  .ui-split-pane[data-columns='three'][data-sidebar-width='wide'] {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -478,7 +478,9 @@ select:focus-visible {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .skeleton {

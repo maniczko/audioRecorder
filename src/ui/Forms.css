@@ -67,7 +67,7 @@
 }
 
 /* Input Checkbox overrides */
-input[type="checkbox"].ui-input {
+input[type='checkbox'].ui-input {
   width: 20px;
   height: 20px;
   padding: 0;

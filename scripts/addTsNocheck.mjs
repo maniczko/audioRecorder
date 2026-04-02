@@ -9,14 +9,14 @@ try {
   const output = error.stdout ? error.stdout.toString() : '';
   const lines = output.split('\n');
   const files = new Set();
-  
+
   // Also match standard errors
   const standardRegex = /^([a-zA-Z0-9_\-\.\/\\]+\.tsx?):\d+:\d+ - error/gm;
   let m;
   while ((m = standardRegex.exec(output)) !== null) {
-     let p = m[1].replace(/\\/g, '/');
-     if(p.startsWith('./')) p = p.slice(2);
-     files.add(p);
+    let p = m[1].replace(/\\/g, '/');
+    if (p.startsWith('./')) p = p.slice(2);
+    files.add(p);
   }
 
   // Match summary lines like "    11  src/lib/diarization.ts:78"
@@ -27,11 +27,11 @@ try {
       files.add(match[1]);
     }
   }
-  
+
   console.log(`Found ${files.size} files with TS errors.`);
-  
+
   let modified = 0;
-  files.forEach(file => {
+  files.forEach((file) => {
     if (fs.existsSync(file)) {
       const content = fs.readFileSync(file, 'utf8');
       if (!content.trim().startsWith('// @ts-nocheck')) {
@@ -40,6 +40,6 @@ try {
       }
     }
   });
-  
+
   console.log(`Added // @ts-nocheck to ${modified} files.`);
 }

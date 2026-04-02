@@ -27,6 +27,7 @@
 ### Opcja A: Kliknij i pobierz (najłatwiej)
 
 **Kliknij ten link:**
+
 ```
 https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi
 ```
@@ -72,6 +73,7 @@ Plik zapisze się w folderze **Pobrane**.
 Jeśli widzisz `v22.14.0` - **gratulacje!** ✅
 
 Jeśli nadal widzisz `v24.x.x`:
+
 - Zamknij **wszystkie** terminale
 - Otwórz **nowy** terminal
 - Spróbuj ponownie
@@ -88,12 +90,14 @@ Jeśli nadal widzisz `v24.x.x`:
 ### Opcja B: Ręcznie
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd c:\Users\user\new\audioRecorder
 pnpm run start:server
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 cd c:\Users\user\new\audioRecorder
 pnpm start
@@ -104,18 +108,23 @@ pnpm start
 ## KROK 7: Sprawdź czy działa
 
 ### Frontend:
+
 Otwórz w przeglądarce:
+
 ```
 http://localhost:3000
 ```
 
 ### Backend:
+
 Otwórz w przeglądarce:
+
 ```
 http://127.0.0.1:4000/health
 ```
 
 **Powinno zwrócić:**
+
 ```json
 {
   "status": "ok",
@@ -130,6 +139,7 @@ http://127.0.0.1:4000/health
 ### Problem: "node nie jest rozpoznawany"
 
 **Rozwiązanie:**
+
 1. Zamknij terminal
 2. Otwórz **NOWY** terminal
 3. Spróbuj ponownie
@@ -137,6 +147,7 @@ http://127.0.0.1:4000/health
 ### Problem: "v24.x nadal"
 
 **Rozwiązanie:**
+
 1. Zrestartuj komputer (ważne!)
 2. Otwórz nowy terminal
 3. Sprawdź: `node --version`
@@ -144,6 +155,7 @@ http://127.0.0.1:4000/health
 ### Problem: "Port 3000 zajęty"
 
 **Rozwiązanie:**
+
 ```bash
 # Zabij proces na porcie 3000
 netstat -ano | findstr :3000
@@ -153,6 +165,7 @@ taskkill /F /PID <NUMER_Z_PRAWA>
 ### Problem: "Brak uprawnień"
 
 **Rozwiązanie:**
+
 1. Kliknij prawym na terminal
 2. **Uruchom jako administrator**
 
@@ -172,6 +185,7 @@ Gdy widzisz `v22.14.0` i oba serwery działają:
 ## 📞 POTRZEBUJESZ POMOCY?
 
 Jeśli utknąłeś na którymś kroku:
+
 1. Zrób zrzut ekranu (Windows + Shift + S)
 2. Wyślij mi informację gdzie utknąłeś
 3. Pomogę rozwiązać problem!

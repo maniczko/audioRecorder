@@ -5,7 +5,7 @@ import selectorParser from 'postcss-selector-parser';
 import { globSync } from 'fs'; // Use basic fs/promises if glob not available. Instead we'll implement a simple walker.
 
 function walkDir(dir, callback) {
-  fs.readdirSync(dir).forEach(f => {
+  fs.readdirSync(dir).forEach((f) => {
     const dirPath = path.join(dir, f);
     const isDirectory = fs.statSync(dirPath).isDirectory();
     if (isDirectory) walkDir(dirPath, callback);
@@ -15,7 +15,7 @@ function walkDir(dir, callback) {
 
 async function splitCss() {
   const jsxFiles = [];
-  walkDir('src', f => {
+  walkDir('src', (f) => {
     if (f.endsWith('.jsx')) jsxFiles.push(f);
   });
 
@@ -34,13 +34,13 @@ async function splitCss() {
   const appCssContent = fs.readFileSync('src/styles/studio.css', 'utf8');
   const root = postcss.parse(appCssContent);
 
-  const fileToRules = new Map(); 
-  
+  const fileToRules = new Map();
+
   // Extract classes from a selector string using parser
   function getClassesFromSelector(selector) {
     const classes = new Set();
-    selectorParser(selectors => {
-      selectors.walkClasses(node => {
+    selectorParser((selectors) => {
+      selectors.walkClasses((node) => {
         classes.add(node.value);
       });
     }).processSync(selector);
@@ -49,13 +49,13 @@ async function splitCss() {
 
   // Iterate over root nodes (rules, atRules(media queries), comments)
   const appCssNodes = [];
-  
-  root.nodes.forEach(node => {
+
+  root.nodes.forEach((node) => {
     if (node.type === 'comment') {
       appCssNodes.push(node);
       return;
     }
-    
+
     let targetFile = null;
 
     if (node.type === 'rule') {
@@ -67,7 +67,7 @@ async function splitCss() {
           if (possibleFiles === null) {
             possibleFiles = new Set(filesUsed);
           } else {
-            possibleFiles = new Set([...possibleFiles].filter(x => filesUsed.has(x)));
+            possibleFiles = new Set([...possibleFiles].filter((x) => filesUsed.has(x)));
           }
         }
         if (possibleFiles && possibleFiles.size === 1) {
@@ -78,14 +78,14 @@ async function splitCss() {
       // media queries logic -> check if all internal rules target the SAME file
       const nestedFiles = new Set();
       let hasGlobal = false;
-      node.walkRules(innerRule => {
+      node.walkRules((innerRule) => {
         const classes = getClassesFromSelector(innerRule.selector);
         if (classes.length > 0) {
           let innerPossible = null;
           for (const cls of classes) {
             const filesUsed = classUsage.get(cls) || new Set();
             if (innerPossible === null) innerPossible = new Set(filesUsed);
-            else innerPossible = new Set([...innerPossible].filter(x => filesUsed.has(x)));
+            else innerPossible = new Set([...innerPossible].filter((x) => filesUsed.has(x)));
           }
           if (innerPossible && innerPossible.size === 1) {
             nestedFiles.add(Array.from(innerPossible)[0]);
@@ -111,7 +111,7 @@ async function splitCss() {
 
   // Re-assemble CSS
   root.removeAll();
-  appCssNodes.forEach(n => root.append(n));
+  appCssNodes.forEach((n) => root.append(n));
   fs.writeFileSync('src/styles/studio.css', root.toString());
 
   console.log(`Remaining studio.css rules/nodes: ${appCssNodes.length}`);
@@ -119,28 +119,31 @@ async function splitCss() {
   for (const [file, nodes] of fileToRules.entries()) {
     if (nodes.length < 5) {
       // If only a few rules, keep them in App.css to avoid creating a million tiny files
-      nodes.forEach(n => root.append(n));
+      nodes.forEach((n) => root.append(n));
       continue;
     }
-    
+
     const cssFile = file.replace('.jsx', 'Styles.css');
     let cssText = '';
-    
+
     if (fs.existsSync(cssFile)) {
-       cssText = fs.readFileSync(cssFile, 'utf8') + '\n';
+      cssText = fs.readFileSync(cssFile, 'utf8') + '\n';
     }
-    
+
     const newRoot = postcss.root();
-    nodes.forEach(n => newRoot.append(n.clone()));
+    nodes.forEach((n) => newRoot.append(n.clone()));
     cssText += newRoot.toString();
     fs.writeFileSync(cssFile, cssText);
-    
+
     // Inject import if not already there
     const code = fs.readFileSync(file, 'utf8');
     const baseName = path.basename(cssFile);
     if (!code.includes(`import './${baseName}';`)) {
       const lines = code.split('\n');
-      const lastImportIndex = lines.reduce((acc, line, i) => line.startsWith('import ') ? i : acc, -1);
+      const lastImportIndex = lines.reduce(
+        (acc, line, i) => (line.startsWith('import ') ? i : acc),
+        -1
+      );
       lines.splice(lastImportIndex + 1, 0, `import './${baseName}';`);
       fs.writeFileSync(file, lines.join('\n'));
     }

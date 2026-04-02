@@ -18,19 +18,19 @@
 }
 
 /* Variants */
-.progress-bar[data-variant="success"] .progress-bar-fill {
+.progress-bar[data-variant='success'] .progress-bar-fill {
   background: var(--success, #67d59f);
 }
 
-.progress-bar[data-variant="warning"] .progress-bar-fill {
+.progress-bar[data-variant='warning'] .progress-bar-fill {
   background: var(--warning, #f3ca72);
 }
 
-.progress-bar[data-variant="danger"] .progress-bar-fill {
+.progress-bar[data-variant='danger'] .progress-bar-fill {
   background: var(--danger, #f17d72);
 }
 
-.progress-bar[data-variant="upload"] .progress-bar-fill {
+.progress-bar[data-variant='upload'] .progress-bar-fill {
   background: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%);
 }
 
@@ -57,7 +57,7 @@
   }
 }
 
-.progress-bar[data-variant="upload"] .progress-bar-fill {
+.progress-bar[data-variant='upload'] .progress-bar-fill {
   background-size: 200% 100%;
   animation: progress-shimmer 2s linear infinite;
 }

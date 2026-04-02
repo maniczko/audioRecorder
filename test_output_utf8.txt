@@ -1,0 +1,130 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.2 [39m[90mC:/Users/user/new/audioRecorder[39m
+
+ [31mÔŁ»[39m src/lib/speakerColors.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 79[2mms[22m[39m
+       [32mÔťô[39m returns consistent color for same speaker ID[32m 10[2mms[22m[39m
+       [32mÔťô[39m returns different colors for different speaker IDs[32m 4[2mms[22m[39m
+       [32mÔťô[39m handles numeric speaker IDs[32m 2[2mms[22m[39m
+       [32mÔťô[39m handles string numeric IDs[32m 1[2mms[22m[39m
+[31m       [31m├Ś[31m handles empty string speaker ID[39m[32m 28[2mms[22m[39m
+[31m       [31m├Ś[31m handles null speaker ID[39m[32m 4[2mms[22m[39m
+       [32mÔťô[39m handles undefined speaker ID[32m 1[2mms[22m[39m
+       [32mÔťô[39m handles negative speaker ID[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns valid hex color format[32m 2[2mms[22m[39m
+       [32mÔťô[39m wraps around for large indices[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns teal for speaker 0[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns indigo for speaker 1[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns orange for speaker 2[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns pink for speaker 3[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns dimmed color for speaker ID[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns consistent dimmed color for same speaker[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns different dimmed colors for different speakers[32m 1[2mms[22m[39m
+       [32mÔťô[39m handles negative speaker ID[32m 1[2mms[22m[39m
+       [32mÔťô[39m returns dimmed teal for speaker 0[32m 1[2mms[22m[39m
+       [32mÔťô[39m colors are consistent across multiple calls[32m 2[2mms[22m[39m
+       [32mÔťô[39m dimmed colors are consistent across multiple calls[32m 2[2mms[22m[39m
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/
+node.exe" "C:\Program Files\n
+odejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (:String  
+  ) [], RemoteException
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3
+9m[1m[41m Failed Tests 2 [
+49m[22m[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m src
+/lib/speakerColors.test.ts[2
+m > [22mspeakerColors[2m > 
+[22mgetSpeakerColor[2m > [
+22mhandles empty string speak
+er ID
+[31m[1mAssertionError[22m:
+ expected '#75d6c4' to be 'va
+r(--accent, #75d6c4)' // Obje
+ct.is equality[39m
+
+Expected: [32m"[7mvar(--acc
+ent, [27m#75d6c4[7m)[27m"
+[39m
+Received: [31m"#75d6c4"[39m
+
+[36m [2mÔŁ»[22m src/lib/sp
+eakerColors.test.ts:[2m46:21
+[22m[39m
+    [90m 44|[39m       [35
+mconst[39m color [33m=[39m
+ [34mgetSpeakerColor[39m([
+32m''[39m)[33m;[39m
+    [90m 45|[39m
+    [90m 46|[39m       [34
+mexpect[39m(color)[33m.[39
+m[34mtoBe[39m([32m'var(--a
+ccent, #75d6c4)'[39m)[33m;
+[39m
+    [90m   |[39m           
+          [31m^[39m
+    [90m 47|[39m     })[33
+m;[39m
+    [90m 48|[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/2]Ô
+Ä»[22m[39m
+
+[41m[1m FAIL [22m[49m src
+/lib/speakerColors.test.ts[2
+m > [22mspeakerColors[2m > 
+[22mgetSpeakerColor[2m > [
+22mhandles null speaker ID
+[31m[1mAssertionError[22m:
+ expected '#75d6c4' to be 'va
+r(--accent, #75d6c4)' // Obje
+ct.is equality[39m
+
+Expected: [32m"[7mvar(--acc
+ent, [27m#75d6c4[7m)[27m"
+[39m
+Received: [31m"#75d6c4"[39m
+
+[36m [2mÔŁ»[22m src/lib/sp
+eakerColors.test.ts:[2m52:21
+[22m[39m
+    [90m 50|[39m       [35
+mconst[39m color [33m=[39m
+ [34mgetSpeakerColor[39m([
+35mnull[39m [35mas[39m any
+)[33m;[39m
+    [90m 51|[39m
+    [90m 52|[39m       [34
+mexpect[39m(color)[33m.[39
+m[34mtoBe[39m([32m'var(--a
+ccent, #75d6c4)'[39m)[33m;
+[39m
+    [90m   |[39m           
+          [31m^[39m
+    [90m 53|[39m     })[33
+m;[39m
+    [90m 54|[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/2]Ô
+Ä»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m19 passed[39m[22m[90m (21)[39m
+[2m   Start at [22m 17:35:03
+[2m   Duration [22m 7.30s[2m (transform 253ms, setup 1.48s, import 89ms, tests 79ms, environment 4.91s)[22m
+

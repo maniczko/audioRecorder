@@ -9,19 +9,19 @@
 
 :root {
   /* Default theme: Sakura */
-  --jp-primary: #F8B4D9;
-  --jp-primary-dark: #E88BB8;
-  --jp-secondary: #FFD7E8;
-  --jp-accent: #7FBF7F;
-  --jp-background: #FFFBFE;
-  --jp-surface: #FFFFFF;
-  --jp-text: #4A4A4A;
-  --jp-text-muted: #8B8B8B;
-  --jp-border: #F0E6EA;
-  --jp-error: #D46A6A;
-  --jp-success: #7FBF7F;
-  --jp-warning: #F4B942;
-  
+  --jp-primary: #f8b4d9;
+  --jp-primary-dark: #e88bb8;
+  --jp-secondary: #ffd7e8;
+  --jp-accent: #7fbf7f;
+  --jp-background: #fffbfe;
+  --jp-surface: #ffffff;
+  --jp-text: #4a4a4a;
+  --jp-text-muted: #8b8b8b;
+  --jp-border: #f0e6ea;
+  --jp-error: #d46a6a;
+  --jp-success: #7fbf7f;
+  --jp-warning: #f4b942;
+
   /* Spacing - based on traditional Japanese measurements */
   --jp-space-xs: 4px;
   --jp-space-sm: 8px;
@@ -29,22 +29,22 @@
   --jp-space-lg: 24px;
   --jp-space-xl: 32px;
   --jp-space-2xl: 48px;
-  
+
   /* Typography */
   --jp-font-sans: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
   --jp-font-serif: 'Noto Serif JP', Georgia, serif;
-  
+
   /* Border Radius - subtle, minimal */
   --jp-radius-sm: 4px;
   --jp-radius-md: 8px;
   --jp-radius-lg: 12px;
   --jp-radius-full: 9999px;
-  
+
   /* Shadows - extremely subtle for flat design */
   --jp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --jp-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06);
   --jp-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.08);
-  
+
   /* Transitions */
   --jp-transition-fast: 150ms ease;
   --jp-transition-normal: 250ms ease;
@@ -56,99 +56,99 @@
    ============================================ */
 
 .theme-sakura {
-  --jp-primary: #F8B4D9;
-  --jp-primary-dark: #E88BB8;
-  --jp-secondary: #FFD7E8;
-  --jp-accent: #7FBF7F;
-  --jp-background: #FFFBFE;
-  --jp-surface: #FFFFFF;
-  --jp-text: #4A4A4A;
-  --jp-text-muted: #8B8B8B;
-  --jp-border: #F0E6EA;
+  --jp-primary: #f8b4d9;
+  --jp-primary-dark: #e88bb8;
+  --jp-secondary: #ffd7e8;
+  --jp-accent: #7fbf7f;
+  --jp-background: #fffbfe;
+  --jp-surface: #ffffff;
+  --jp-text: #4a4a4a;
+  --jp-text-muted: #8b8b8b;
+  --jp-border: #f0e6ea;
 }
 
 .theme-matcha {
-  --jp-primary: #7CB342;
-  --jp-primary-dark: #558B2F;
-  --jp-secondary: #DCEDC8;
-  --jp-accent: #FFB74D;
-  --jp-background: #F9FBF7;
-  --jp-surface: #FFFFFF;
-  --jp-text: #3D4035;
-  --jp-text-muted: #7D8075;
-  --jp-border: #E8ECE5;
+  --jp-primary: #7cb342;
+  --jp-primary-dark: #558b2f;
+  --jp-secondary: #dcedc8;
+  --jp-accent: #ffb74d;
+  --jp-background: #f9fbf7;
+  --jp-surface: #ffffff;
+  --jp-text: #3d4035;
+  --jp-text-muted: #7d8075;
+  --jp-border: #e8ece5;
 }
 
 .theme-indigo {
-  --jp-primary: #3F51B5;
-  --jp-primary-dark: #303F9F;
-  --jp-secondary: #9FA8DA;
-  --jp-accent: #FF7043;
-  --jp-background: #F5F7FA;
-  --jp-surface: #FFFFFF;
-  --jp-text: #2C3E50;
-  --jp-text-muted: #6C7A89;
-  --jp-border: #E1E8F0;
+  --jp-primary: #3f51b5;
+  --jp-primary-dark: #303f9f;
+  --jp-secondary: #9fa8da;
+  --jp-accent: #ff7043;
+  --jp-background: #f5f7fa;
+  --jp-surface: #ffffff;
+  --jp-text: #2c3e50;
+  --jp-text-muted: #6c7a89;
+  --jp-border: #e1e8f0;
 }
 
 .theme-sumi {
-  --jp-primary: #2C2C2C;
-  --jp-primary-dark: #1A1A1A;
-  --jp-secondary: #5A5A5A;
-  --jp-accent: #C41E3A;
-  --jp-background: #FAFAFA;
-  --jp-surface: #FFFFFF;
-  --jp-text: #1A1A1A;
+  --jp-primary: #2c2c2c;
+  --jp-primary-dark: #1a1a1a;
+  --jp-secondary: #5a5a5a;
+  --jp-accent: #c41e3a;
+  --jp-background: #fafafa;
+  --jp-surface: #ffffff;
+  --jp-text: #1a1a1a;
   --jp-text-muted: #666666;
-  --jp-border: #E0E0E0;
+  --jp-border: #e0e0e0;
 }
 
 .theme-momiji {
-  --jp-primary: #D84315;
-  --jp-primary-dark: #BF360C;
-  --jp-secondary: #FFAB91;
-  --jp-accent: #FFD54F;
-  --jp-background: #FEF9F7;
-  --jp-surface: #FFFFFF;
-  --jp-text: #3E2723;
+  --jp-primary: #d84315;
+  --jp-primary-dark: #bf360c;
+  --jp-secondary: #ffab91;
+  --jp-accent: #ffd54f;
+  --jp-background: #fef9f7;
+  --jp-surface: #ffffff;
+  --jp-text: #3e2723;
   --jp-text-muted: #795548;
-  --jp-border: #F5E6E0;
+  --jp-border: #f5e6e0;
 }
 
 .theme-wabi-sabi {
-  --jp-primary: #8D6E63;
-  --jp-primary-dark: #6D4C41;
-  --jp-secondary: #D7CCC8;
-  --jp-accent: #78909C;
-  --jp-background: #F5F0EB;
-  --jp-surface: #FAF8F5;
-  --jp-text: #4E342E;
-  --jp-text-muted: #8D6E63;
-  --jp-border: #E6DED8;
+  --jp-primary: #8d6e63;
+  --jp-primary-dark: #6d4c41;
+  --jp-secondary: #d7ccc8;
+  --jp-accent: #78909c;
+  --jp-background: #f5f0eb;
+  --jp-surface: #faf8f5;
+  --jp-text: #4e342e;
+  --jp-text-muted: #8d6e63;
+  --jp-border: #e6ded8;
 }
 
 .theme-koi {
-  --jp-primary: #FF7043;
-  --jp-primary-dark: #E64A19;
-  --jp-secondary: #FFCCBC;
-  --jp-accent: #4DB6AC;
-  --jp-background: #E8F5F4;
-  --jp-surface: #FFFFFF;
+  --jp-primary: #ff7043;
+  --jp-primary-dark: #e64a19;
+  --jp-secondary: #ffccbc;
+  --jp-accent: #4db6ac;
+  --jp-background: #e8f5f4;
+  --jp-surface: #ffffff;
   --jp-text: #263238;
-  --jp-text-muted: #546E7A;
-  --jp-border: #B2DFDB;
+  --jp-text-muted: #546e7a;
+  --jp-border: #b2dfdb;
 }
 
 .theme-miyabi {
-  --jp-primary: #9C27B0;
-  --jp-primary-dark: #7B1FA2;
-  --jp-secondary: #CE93D8;
-  --jp-accent: #FFD700;
-  --jp-background: #FDF7FF;
-  --jp-surface: #FFFFFF;
-  --jp-text: #4A148C;
-  --jp-text-muted: #7B1FA2;
-  --jp-border: #E1BEE7;
+  --jp-primary: #9c27b0;
+  --jp-primary-dark: #7b1fa2;
+  --jp-secondary: #ce93d8;
+  --jp-accent: #ffd700;
+  --jp-background: #fdf7ff;
+  --jp-surface: #ffffff;
+  --jp-text: #4a148c;
+  --jp-text-muted: #7b1fa2;
+  --jp-border: #e1bee7;
 }
 
 /* ============================================
@@ -493,13 +493,13 @@
 }
 
 .jp-alert-error {
-  background: #FFEBEE;
+  background: #ffebee;
   border-left: 4px solid var(--jp-error);
   color: var(--jp-text);
 }
 
 .jp-alert-warning {
-  background: #FFF8E1;
+  background: #fff8e1;
   border-left: 4px solid var(--jp-warning);
   color: var(--jp-text);
 }
@@ -523,19 +523,19 @@
   .jp-profile-container {
     padding: var(--jp-space-md);
   }
-  
+
   .jp-profile-title {
     font-size: 1.5rem;
   }
-  
+
   .jp-theme-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .jp-section {
     padding: var(--jp-space-lg);
   }
-  
+
   .jp-toggle-grid {
     grid-template-columns: 1fr;
   }
@@ -564,13 +564,34 @@
    Utility Classes
    ============================================ */
 
-.jp-text-center { text-align: center; }
-.jp-text-right { text-align: right; }
-.jp-mt-lg { margin-top: var(--jp-space-lg); }
-.jp-mb-lg { margin-bottom: var(--jp-space-lg); }
-.jp-flex { display: flex; }
-.jp-flex-between { justify-content: space-between; }
-.jp-flex-center { align-items: center; justify-content: center; }
-.jp-gap-md { gap: var(--jp-space-md); }
-.jp-hidden { display: none; }
-.jp-visible { display: block; }
+.jp-text-center {
+  text-align: center;
+}
+.jp-text-right {
+  text-align: right;
+}
+.jp-mt-lg {
+  margin-top: var(--jp-space-lg);
+}
+.jp-mb-lg {
+  margin-bottom: var(--jp-space-lg);
+}
+.jp-flex {
+  display: flex;
+}
+.jp-flex-between {
+  justify-content: space-between;
+}
+.jp-flex-center {
+  align-items: center;
+  justify-content: center;
+}
+.jp-gap-md {
+  gap: var(--jp-space-md);
+}
+.jp-hidden {
+  display: none;
+}
+.jp-visible {
+  display: block;
+}

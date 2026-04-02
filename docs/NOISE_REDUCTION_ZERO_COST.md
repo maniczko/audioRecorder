@@ -31,26 +31,27 @@ Nasze noise reduction działa **w 100% po stronie klienta (w przeglądarce)** - 
 
 ### Technologie
 
-| Komponent | Technologia | Koszt | Gdzie działa |
-|-----------|-------------|-------|--------------|
-| **Noise Reduction** | RNNoise (WebAssembly) | $0 | Client CPU |
-| **Audio Processing** | AudioWorklet API | $0 | Client Browser |
-| **Voice Activity Detection** | Web Audio API | $0 | Client Browser |
-| **Visualizer** | Canvas API | $0 | Client GPU |
+| Komponent                    | Technologia           | Koszt | Gdzie działa   |
+| ---------------------------- | --------------------- | ----- | -------------- |
+| **Noise Reduction**          | RNNoise (WebAssembly) | $0    | Client CPU     |
+| **Audio Processing**         | AudioWorklet API      | $0    | Client Browser |
+| **Voice Activity Detection** | Web Audio API         | $0    | Client Browser |
+| **Visualizer**               | Canvas API            | $0    | Client GPU     |
 
 ### Porównanie z alternatywami
 
-| Rozwiązanie | Koszt / miesiąc | Opóźnienie | Jakość |
-|-------------|-----------------|------------|--------|
-| **RNNoise (nasze)** | **$0** | **0ms** | ⭐⭐⭐⭐ |
-| Krisp API | $5-15/user | ~50ms | ⭐⭐⭐⭐⭐ |
-| Adobe Podcast Enhance | $0.05/min | API call | ⭐⭐⭐⭐⭐ |
-| NVIDIA Broadcast | $0 (GPU req) | 0ms | ⭐⭐⭐⭐⭐ |
-| Dolby.io | $0.005/min | API call | ⭐⭐⭐⭐ |
+| Rozwiązanie           | Koszt / miesiąc | Opóźnienie | Jakość     |
+| --------------------- | --------------- | ---------- | ---------- |
+| **RNNoise (nasze)**   | **$0**          | **0ms**    | ⭐⭐⭐⭐   |
+| Krisp API             | $5-15/user      | ~50ms      | ⭐⭐⭐⭐⭐ |
+| Adobe Podcast Enhance | $0.05/min       | API call   | ⭐⭐⭐⭐⭐ |
+| NVIDIA Broadcast      | $0 (GPU req)    | 0ms        | ⭐⭐⭐⭐⭐ |
+| Dolby.io              | $0.005/min      | API call   | ⭐⭐⭐⭐   |
 
 **Oszczędności:** Przy 100 użytkownikach × 2h nagrań dziennie:
+
 - Krisp: ~$1500/miesiąc
-- Adobe: ~$300/miesiąc  
+- Adobe: ~$300/miesiąc
 - **Nasze RNNoise: $0/miesiąc** 🎉
 
 ## Jak włączyć/wyłączyć?
@@ -80,9 +81,9 @@ import { enhanceAudioQuality } from './lib/audioEnhancer';
 
 // Client-side post-processing (still free!)
 const enhancedBlob = await enhanceAudioQuality(originalBlob, {
-  removeNoise: true,      // High-pass filter + spectral reduction
-  removeClicks: false,    // Remove clicks/pops
-  normalizeVolume: true,  // Noise gate
+  removeNoise: true, // High-pass filter + spectral reduction
+  removeClicks: false, // Remove clicks/pops
+  normalizeVolume: true, // Noise gate
 });
 
 // Upload enhanced audio instead
@@ -96,13 +97,15 @@ await uploadAudio(enhancedBlob);
 ### Noise reduction nie działa?
 
 1. **Sprawdź konsolę:**
+
    ```
    [NoiseReducer] Fallback to raw audio: <error>
    ```
 
 2. **Sprawdź zmienną globalną:**
+
    ```javascript
-   window.__NOISE_REDUCTION_ENABLED  // powinno być true
+   window.__NOISE_REDUCTION_ENABLED; // powinno być true
    ```
 
 3. **Przyczyny:**
@@ -124,14 +127,15 @@ await uploadAudio(enhancedBlob);
 
 ## Wydajność
 
-| Metryka | Wartość |
-|---------|---------|
-| **CPU Usage** | ~5-10% (single core) |
-| **Memory** | ~2-5 MB |
-| **Latency** | <10ms (real-time) |
-| **Battery Impact** | Minimalny (~1%/h) |
+| Metryka            | Wartość              |
+| ------------------ | -------------------- |
+| **CPU Usage**      | ~5-10% (single core) |
+| **Memory**         | ~2-5 MB              |
+| **Latency**        | <10ms (real-time)    |
+| **Battery Impact** | Minimalny (~1%/h)    |
 
 Testowane na:
+
 - ✅ MacBook Pro M1: 3% CPU
 - ✅ Dell XPS 15: 8% CPU
 - ✅ Lenovo ThinkPad: 12% CPU
@@ -139,6 +143,7 @@ Testowane na:
 ## Podsumowanie
 
 ✅ **Noise reduction jest:**
+
 - Darmowe ($0 kosztów serwera)
 - Real-time (<10ms opóźnienia)
 - Client-side (prywatność)

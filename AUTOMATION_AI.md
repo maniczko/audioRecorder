@@ -7,6 +7,7 @@ Kompletna automatyzacja naprawy błędów z wykorzystaniem AI w projekcie VoiceL
 ## ✅ Wdrożone Funkcje AI
 
 ### 1. **AI Auto-Fix Workflow** ✅
+
 - **Plik:** `.github/workflows/ai-auto-fix.yml`
 - **Wyzwalacze:** PR opened, synchronize, reopened
 - **Działanie:**
@@ -23,6 +24,7 @@ Kompletna automatyzacja naprawy błędów z wykorzystaniem AI w projekcie VoiceL
 ---
 
 ### 2. **Issue-to-PR Auto-Fix** ✅
+
 - **Plik:** `.github/workflows/issue-to-pr.yml`
 - **Wyzwalacze:** Issue labeled as `auto-fixable` lub `good first issue`
 - **Działanie:**
@@ -38,6 +40,7 @@ Kompletna automatyzacja naprawy błędów z wykorzystaniem AI w projekcie VoiceL
 ---
 
 ### 3. **Pre-commit AI Review** ✅
+
 - **Plik:** `.husky/pre-commit-ai`
 - **Wyzwalacze:** Przed każdym commitem
 - **Działanie:**
@@ -53,6 +56,7 @@ Kompletna automatyzacja naprawy błędów z wykorzystaniem AI w projekcie VoiceL
 ## 📋 Dostępne Skrypty
 
 ### AI-Powered
+
 ```bash
 # Pełny auto-fix z testami
 npm run test:ai-fix
@@ -65,6 +69,7 @@ npm run format
 ```
 
 ### Manualne Trigger
+
 ```bash
 # Local AI review przed commitem
 .husky/pre-commit-ai
@@ -179,9 +184,11 @@ $ git commit -m "feat: add button"
 
 #### ESLint Errors
 ```
+
 src/components/Button.tsx
-  15:5  error  Missing semicolon  semi
-  23:1  error  Expected indentation  indent
+15:5 error Missing semicolon semi
+23:1 error Expected indentation indent
+
 ```
 
 ### Actions Taken:
@@ -230,12 +237,14 @@ Please review the changes before merging.
 ## ⚙️ Konfiguracja
 
 ### Wymagane Secrets (GitHub):
+
 ```yaml
 # Nie wymaga dodatkowych secrets!
 # Wszystkie workflow używają standardowych GitHub Actions
 ```
 
 ### Opcjonalne (dla zaawansowanych):
+
 ```yaml
 # .github/workflows/ai-auto-fix.yml
 # Można dodać OpenAI API key dla AI-powered fixes
@@ -275,12 +284,12 @@ git commit --no-verify  # Omija pre-commit-ai
 
 ## 📈 Metryki
 
-| Metryka | Przed | Po | Zysk |
-|---------|-------|----|----|
-| **Time to fix** | 30 min | 2 min | -93% |
-| **Errors in main** | 20% | 2% | -90% |
+| Metryka              | Przed  | Po     | Zysk |
+| -------------------- | ------ | ------ | ---- |
+| **Time to fix**      | 30 min | 2 min  | -93% |
+| **Errors in main**   | 20%    | 2%     | -90% |
 | **Code review time** | 60 min | 15 min | -75% |
-| **Auto-fix rate** | 0% | 90% | +90% |
+| **Auto-fix rate**    | 0%     | 90%    | +90% |
 
 ---
 
@@ -289,6 +298,7 @@ git commit --no-verify  # Omija pre-commit-ai
 ### Problem: Pre-commit AI blokuje commit
 
 **Rozwiązanie:**
+
 ```bash
 # Sprawdź jakie błędy
 npm run lint
@@ -309,6 +319,7 @@ git commit
 ### Problem: AI Auto-Fix workflow nie działa
 
 **Rozwiązanie:**
+
 1. Sprawdź `.github/workflows/ai-auto-fix.yml`
 2. Sprawdź GitHub Actions logs
 3. Upewnij się że `pnpm install` działa
@@ -316,6 +327,7 @@ git commit
 ### Problem: Issue-to-PR nie tworzy PR
 
 **Rozwiązanie:**
+
 1. Sprawdź czy issue ma label `auto-fixable` lub `good first issue`
 2. Sprawdź `.github/workflows/issue-to-pr.yml`
 3. Sprawdź GitHub Actions logs
@@ -325,6 +337,7 @@ git commit
 ## 🚀 Następne Kroki (Opcjonalne)
 
 ### 1. **AI-Powered Code Suggestions** (60 min)
+
 ```yaml
 # Integracja z GitHub Copilot
 - uses: github/copilot@v1
@@ -333,12 +346,14 @@ git commit
 ```
 
 ### 2. **Automated Performance Fixes** (40 min)
+
 ```yaml
 # Wykrywa i naprawia problemy wydajnościowe
 - uses: benchmark-action/github-action-benchmark@v1
 ```
 
 ### 3. **Self-Healing Tests** (60 min)
+
 ```javascript
 // scripts/auto-heal.js
 // Automatycznie naprawia failing testy

@@ -1,0 +1,2597 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.2 [39m[90mC:/Users/user/new/audioRecorder[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+node.exe : [90mstderr[2m | server/tests/regression/regression-server-utils.te
+st.ts[2m > [22m[2mRegression: Issue #502 - Rate limiting error handling[2m 
+> [22m[2mrate limit error includes Polish message for better UX
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...e for better UX 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[RATE LIMIT] test-ip exceeded 5 req/min on /login. Retry after 60s
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  durationMs: [32m'25.83'[39m,
+  confidence: [33m0[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mfalls back to injected audioPipeline and calls transcribeRecording
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'internal-stt'[39m, recordingId: [32m'rec_1'[39m }
+
+[90mstderr[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscripti
+onService[2m > [22m[2mthrows a descriptive error if transcribeRecording is m
+issing
+[22m[39m[TranscriptionService] audioPipeline looks like an empty object (circ
+ular dep?).
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_1'[39m,
+  durationMs: [32m'1.41'[39m,
+  confidence: [33m0.91[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mdeduplicates in-flight transcription jobs and persists successful results
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'internal-stt'[39m, recordingId: [32m'rec_1'[39m }
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: Issue #601 - embedTextChunks error handling[2m > [22m[
+2membedTextChunks returns empty array on API failure (not throw)
+[22m[39membedTextChunks failed: Error: embed failed
+    at C:/Users/user/new/audioRecorder/server/tests/regression/regression-serve
+r-utils.test.ts:85:49
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:302:11
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:26
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel [90m(file:///C:/Users/user/new/audioRecorder/[39mnode_mo
+dules/[4m.pnpm[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/
+dist/chunk-artifact.js:2313:10[90m)[39m
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/user/new/audioRecorder/[39mnode_m
+odules/[4m.pnpm[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m
+/dist/chunk-artifact.js:2262:10[90m)[39m
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2945:64
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: Issue #601 - embedTextChunks error handling[2m > [22m[
+2membedTextChunks returns empty array on HTTP 500
+[22m[39membedTextChunks failed: Error: Embeddings API error
+    at Module.embedTextChunks (C:/Users/user/new/audioRecorder/server/postProce
+ssing.ts:229:24)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+[39m
+    at C:/Users/user/new/audioRecorder/server/tests/regression/regression-serve
+r-utils.test.ts:116:20
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:20
+
+(node:37612) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+(node:47592) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+(node:13468) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: Issue #601 - embedTextChunks error handling[2m > [22m[
+2membedTextChunks returns empty array when OPENAI_API_KEY not configured
+[22m[39membedTextChunks failed: TypeError: Cannot read properties of undefine
+d (reading 'ok')
+    at Module.embedTextChunks (C:/Users/user/new/audioRecorder/server/postProce
+ssing.ts:229:14)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+[39m
+    at C:/Users/user/new/audioRecorder/server/tests/regression/regression-serve
+r-utils.test.ts:129:20
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:20
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 20260320_rag_chunks.sql 
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstdout[2m | server/tests/auth.test.ts[2m > [22m[2mAuthentication Logic (Server Layer)
+[22m[39m[INFO] Applying migration: 20260323_voice_profiles_multi_sample.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 20260320_rag_chunks.sql 
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)
+[22m[39m[INFO] Applying migration: 20260323_voice_profiles_multi_sample.sql 
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[INFO] Applying migration: 20260320_rag_chunks.sql 
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests
+[22m[39m[INFO] Applying migration: 20260323_voice_profiles_multi_sample.sql 
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)[2m > [22m[2mshould persist data across simulated 'deploys' (process restarts)
+[22m[39m[DB] Using local async SQLite Worker at: C:\Users\user\new\audioRecorder\server\tests\test_uploads_db_layer\data.sqlite
+
+ [32mÔťô[39m server/tests/lib/supabaseStorage.not-configured.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1139[2mms[22m[39m
+     [33m[2mÔťô[22m[39m supabase is null when SUPABASE_URL is empty [33m 670[2mms[22m[39m
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: Issue #502 - Rate limiting error handling[2m > [22m[2mrate limit er
+ror includes Polish message for better UX
+[22m[39m[RATE LIMIT] test-ip exceeded 5 req/min on /login. Retry after 60s
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m
+[2mretries on 502 and eventually succeeds
+[22m[39m[httpClient] Retry 1/3 after HTTP 502 for GET https://example.com/tes
+t
+
+(node:47592) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)[2m > [22m[2mshould persist data across simulated 'deploys' (process restarts)
+[22m[39m[DB] Using local async SQLite Worker at: C:\Users\user\new\audioRecorder\server\tests\test_uploads_db_layer\data.sqlite
+
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async 
+Worker SQLite)[2m > [22m[2mshould persist data across simulated 'deploys' (p
+rocess restarts)
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)[2m > [22m[2mshould persist data across simulated 'deploys' (process restarts)
+[22m[39m[DB] Using local async SQLite Worker at: C:\Users\user\new\audioRecorder\server\tests\test_uploads_db_layer\data.sqlite
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null/empty values when OpenAI key is not configured
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=MISSING
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: Issue #601 - embedTextChunks error handling[2m > [22m[2membedTextCh
+unks returns empty array on API failure (not throw)
+[22m[39membedTextChunks failed: Error: embed failed
+    at C:/Users/user/new/audioRecorder/server/tests/regression/regression.test.
+ts:342:58
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:302:11
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:26
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel [90m(file:///C:/Users/user/new/audioRecorder/[39mnode_mo
+dules/[4m.pnpm[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/
+dist/chunk-artifact.js:2313:10[90m)[39m
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/user/new/audioRecorder/[39mnode_m
+odules/[4m.pnpm[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m
+/dist/chunk-artifact.js:2262:10[90m)[39m
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:2945:64
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: Issue #601 - embedTextChunks error handling[2m > [22m[2membedTextCh
+unks returns empty array on HTTP 500
+[22m[39membedTextChunks failed: Error: Embeddings API error
+    at Module.embedTextChunks (C:/Users/user/new/audioRecorder/server/postProce
+ssing.ts:229:24)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+[39m
+    at C:/Users/user/new/audioRecorder/server/tests/regression/regression.test.
+ts:374:20
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:20
+
+(node:47592) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async Worker SQLite)[2m > [22m[2mshould persist pipeline metadata on successful transcription results
+[22m[39m[DB] Using local async SQLite Worker at: C:\Users\user\new\audioRecorder\server\tests\test_uploads_db_layer\data.sqlite
+
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async 
+Worker SQLite)[2m > [22m[2mshould persist pipeline metadata on successful tr
+anscription results
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m
+[2mretries on 502 and eventually succeeds
+[22m[39m[httpClient] Retry 2/3 after HTTP 502 for GET https://example.com/tes
+t
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null/empty values when OpenAI key is not configured
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mreturns null/empty values when OpenAI key is no
+t configured
+[22m[39m[stt] groq network error: Cannot read properties of undefined (readin
+g 'status') url=https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: Issue #601 - embedTextChunks error handling[2m > [22m[2membedTextCh
+unks returns empty array when OPENAI_API_KEY not configured
+[22m[39membedTextChunks failed: [TypeError: fetch failed] {
+  [cause]: InvalidArgumentError: invalid keep-alive header
+  [90m    at processHeader (node:internal/deps/undici/undici:3085:15)[39m
+  [90m    at new Request (node:internal/deps/undici/undici:2912:15)[39m
+  [90m    at Client.[dispatch] (node:internal/deps/undici/undici:9139:25)[39m
+  [90m    at Client.dispatch (node:internal/deps/undici/undici:2234:33)[39m
+  [90m    at Pool.[dispatch] (node:internal/deps/undici/undici:2505:32)[39m
+  [90m    at Pool.dispatch (node:internal/deps/undici/undici:2234:33)[39m
+  [90m    at Agent.[dispatch] (node:internal/deps/undici/undici:9605:27)[39m
+  [90m    at Agent.dispatch (node:internal/deps/undici/undici:2234:33)[39m
+  [90m    at node:internal/deps/undici/undici:12838:55[39m
+      at new Promise (<anonymous>) {
+    code: [32m'UND_ERR_INVALID_ARG'[39m
+  }
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mcaches preprocessed audio and reuses the cached file on subsequent calls
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=MISSING
+
+ [32mÔťô[39m server/tests/ragAnswer.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1790[2mms[22m[39m
+     [33m[2mÔťô[22m[39m uses LangChain to generate the answer [33m 1774[2mms[22m[39m
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mmarks transcription failure and clears the job map on pipeline error
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_2'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mdiarizes transcript text using chat completions when API key is configured
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mmarks transcription failure and clears the job map on pipeline error
+[22m[39m[RAG] Pomyslnie zindeksowano 1 wektorow na archiwum spotkania.
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null for diarization when upstream returns empty assignments or non-ok response
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+(node:47592) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/routes/digest.test.ts[2m > [22m[2mDigest routes[2m > [22m[2mreturns preview mode when SMTP is not configured
+[22m[39m[INFO] [REQ] GET /digest/daily - 200 [90.3ms] {
+  requestId: [32m'3b7a116a-789f-4604-bb50-6f2dc91e1c99'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/digest/daily'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'90.27'[39m
+}
+
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async 
+Worker SQLite)[2m > [22m[2mshould persist pipeline metadata on successful tr
+anscription results
+[22m[39m[Supabase Storage] Bucket creation warning: fetch failed
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m[2mretries o
+n 502 and eventually succeeds
+[22m[39m[httpClient] Retry 1/3 after HTTP 502 for GET https://api.example.com
+/test
+
+(node:47592) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async 
+Worker SQLite)[2m > [22m[2mshould persist pipeline metadata on successful tr
+anscription results
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2manalyzes meetings and embeds text chunks through OpenAI endpoints
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstderr[2m | server/tests/database.test.ts[2m > [22m[2mDatabase (Async 
+Worker SQLite)[2m > [22m[2mshould persist pipeline metadata on failures and 
+clear old errors when re-queueing
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/services/TranscriptionService.additional.test.ts[2m > [22m[2mTranscriptionService - Additional Coverage[2m > [22m[2mvectorizeTranscriptionResultToRAG()[2m > [22m[2mchunks segments and vectorizes for RAG
+[22m[39m[RAG] Pomyslnie zindeksowano 2 wektorow na archiwum spotkania.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [Metrics] Uploaded audio chunk {
+  requestId: [32m'f44b7b06-3dc1-4e10-a92e-fee13b4de80d'[39m,
+  recordingId: [32m'rec_new'[39m,
+  sizeBytes: [33m512[39m,
+  durationMs: [32m'5.06'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns null or empty arrays when analysis and embeddings upstream calls fail
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_new/audio - 200 [20.5ms] {
+  requestId: [32m'f44b7b06-3dc1-4e10-a92e-fee13b4de80d'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_new/audio'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'20.46'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mreturns null or empty arrays when analysis and 
+embeddings upstream calls fail
+[22m[39m[postProcessing] analyzeMeetingWithOpenAI failed: OpenAI analyze HTTP
+ 500
+
+[90mstdout[2m | server/tests/routes/digest.test.ts[2m > [22m[2mDigest routes[2m > [22m[2msends digest email when SMTP is configured
+[22m[39m[INFO] [REQ] GET /digest/daily - 200 [4.3ms] {
+  requestId: [32m'4d723123-9453-4f5c-a347-fd3f8167fd7d'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/digest/daily'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'4.26'[39m
+}
+
+ [32mÔťô[39m server/tests/database.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1584[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should persist data across simulated 'deploys' (process restarts) [33m 532[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should persist pipeline metadata on successful transcription results [33m 615[2mms[22m[39m
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mreturns null or empty arrays when analysis and 
+embeddings upstream calls fail
+[22m[39membedTextChunks failed: Error: embed failed
+    at C:/Users/user/new/audioRecorder/server/tests/audio-pipeline.unit.test.ts
+:266:30
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+[39m
+    at [90mfile:///C:/Users/user/new/audioRecorder/[39mnode_modules/[4m.pnpm
+[24m/@vitest+runner@4.1.2/node_modules/[4m@vitest/runner[24m/dist/chunk-arti
+fact.js:1893:20
+
+[90mstderr[2m | Worker.<anonymous> (C:\Users\user\new\audioRecorder\server\da
+tabase.ts:186:17)
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstdout[2m | Database._spawnWorker (C:\Users\user\new\audioRecorder\server\database.ts:194:13)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/transcribe - queues job
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_1/transcribe - 202 [4.1ms] {
+  requestId: [32m'1eaa3d41-b90f-4a99-a898-708f3e5ea803'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_1/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'4.07'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribes live chunks when API key is configured and returns empty string on upstream failure
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mGET /media/recordings/:recordingId/transcribe - returns payload
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_2/transcribe - 200 [1.3ms] {
+  requestId: [32m'1474c2f2-2ffc-4182-9712-63e04d8cdd90'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_2/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.27'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribes live chunks when API key is configured and returns empty string on upstream failure
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribes live chunks when API key is configured and returns empty string on upstream failure
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mtranscribes live chunks when API key is configu
+red and returns empty string on upstream failure
+[22m[39m[stt] groq failed: status=500 body={"error":{"message":"broken"}}
+
+ [32mÔťô[39m server/tests/routes/digest.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2838[2mms[22m[39m
+     [33m[2mÔťô[22m[39m returns preview mode when SMTP is not configured [33m 2684[2mms[22m[39m
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribes live chunks when API key is configured and returns empty string on upstream failure
+[22m[39m[stt] openai model=whisper-large-v3 Ôćĺ POST https://api.example.test/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mtranscribes live chunks when API key is configu
+red and returns empty string on upstream failure
+[22m[39m[stt] openai network error: Cannot read properties of undefined (read
+ing 'status') url=https://api.example.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/database/database.coverage.100.test.ts[2m > [22m[2mDatabase - 100% Coverage Tests[2m > [22m[2mrequestPasswordReset()[2m > [22m[2mrequests password reset
+[22m[39m[DEV] Password reset requested for resetuser1775121863802@test.com (expires 2026-04-02T09:39:23.958Z)
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_retry/retry-transcribe - 202 [8.3ms] {
+  requestId: [32m'baebac36-3e15-4255-88db-a0f7028c9aeb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'8.31'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns analysis result when transcription service returns data
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [18.4ms] {
+  requestId: [32m'ea3cff07-f864-4d1f-a872-b280eaf6130b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'18.37'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mpersists empty transcript results without marking failure or vectorizing RAG
+[22m[39m[INFO] [Pipeline] Starting transcription job. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  processingMode: [32m'fast'[39m
+}
+
+[90mstdout[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscriptionService[2m > [22m[2mpersists empty transcript results without marking failure or vectorizing RAG
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'internal-stt'[39m,
+  recordingId: [32m'rec_empty'[39m,
+  durationMs: [32m'1.37'[39m,
+  confidence: [33m0[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_empty_retry/retry-transcribe - 202 [3.0ms] {
+  requestId: [32m'947a2903-28dd-4904-8239-e25dba91bff3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_empty_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'2.95'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 200 [4.7ms] {
+  requestId: [32m'9119c66a-5e7e-411e-b68d-b9677247297e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'4.66'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstderr[2m | server/tests/transcription.test.ts[2m > [22m[2mTranscripti
+onService[2m > [22m[2mrejects new transcription jobs when MAX_CONCURRENT_JOB
+S is reached
+[22m[39m[Pipeline] Rejecting job rec_c: 2 concurrent jobs (max 2)
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 429 when Gemini responds with 429 quota exceeded
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstdout[2m | server/tests/services/TranscriptionService.additional.test.ts
+[22m[39m[INFO] [Pipeline] Starting transcription job. { requestId: [32m'req-1'[39m, recordingId: [32m'rec1'[39m, processingMode: [32m'fast'[39m }
+
+[90mstdout[2m | server/tests/services/TranscriptionService.additional.test.ts
+[22m[39m[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: [32m'req-1'[39m,
+  recordingId: [32m'rec1'[39m,
+  durationMs: [32m'25.59'[39m,
+  confidence: [33m0.9[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mreturns 429 when Gemini responds with 429 quota exceede
+d
+[22m[39m[WARN] Gemini quota exceeded for recording rec_sketchnote: Resource h
+as been exhausted. Quota exceeded. 
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/analyze[2m > [22m[2mreturns no-key mode when analysis returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [2.6ms] {
+  requestId: [32m'223079cd-7c33-4132-bd03-bf4857e43a7b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.60'[39m
+}
+
+[90mstdout[2m | server/tests/services/TranscriptionService.additional.test.ts
+[22m[39m[INFO] [Pipeline] Background post-process completed. { requestId: [32m'req-1'[39m, recordingId: [32m'rec1'[39m }
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 429 when Gemini responds with 429 quota exceeded
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 429 [6.3ms] {
+  requestId: [32m'69c40357-917f-40a6-b765-c573a97db658'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m429[39m,
+  durationMs: [32m'6.33'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[diarization] Local pyannote diarization is disabled.
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mbuilds transcript segments from word-level outp
+ut when the STT payload has no segments
+[22m[39m[transcription] Silero VAD JSON parse failed: Unexpected end of JSON 
+input
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mbuilds transcript segments from word-level output when the STT payload has no segments
+[22m[39m[diarization] Local pyannote diarization is disabled.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The m
+odel is overloaded."}}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 503 [3.7ms] {
+  requestId: [32m'272d61ad-fa8f-43e3-8f2a-fa1ddd517f5b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m503[39m,
+  durationMs: [32m'3.71'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad request)
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad
+ request)
+[22m[39m[ERROR] Gemini image gen error: {"error":{"code":400,"message":"Inval
+id request."}}
+
+ [32mÔťô[39m server/tests/transcription.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 2011[2mms[22m[39m
+     [33m[2mÔťô[22m[39m deduplicates in-flight transcription jobs and persists successful results [33m 1361[2mms[22m[39m
+     [33m[2mÔťô[22m[39m marks transcription failure and clears the job map on pipeline error [33m 514[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad request)
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 500 [4.4ms] {
+  requestId: [32m'153be5f0-6a7d-423f-933e-27989dbe85cb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'4.37'[39m
+}
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m
+[2mreturns 502 after all retries exhausted
+[22m[39m[httpClient] Retry 1/3 after HTTP 502 for GET https://example.com/tes
+t
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m[2mretries o
+n 502 and eventually succeeds
+[22m[39m[httpClient] Retry 2/3 after HTTP 502 for GET https://api.example.com
+/test
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_missing/audio - 400 [0.5ms] {
+  requestId: [32m'd19eb01e-b481-405d-b80e-14e9860a18fb'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_missing/audio'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'0.52'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 401 [3.1ms] {
+  requestId: [32m'a67172ab-3eec-467e-b32d-414bc89c32eb'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'3.06'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[diarization] Local pyannote diarization is disabled.
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mreturns an empty transcript result when STT pay
+load has no segments, words or text
+[22m[39m[transcription] Silero VAD JSON parse failed: Unexpected end of JSON 
+input
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+ [32mÔťô[39m server/tests/services/TranscriptionService.additional.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 1984[2mms[22m[39m
+       [33m[2mÔťô[22m[39m chunks segments and vectorizes for RAG [33m 1569[2mms[22m[39m
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mreturns an empty transcript result when STT payload has no segments, words or text
+[22m[39m[diarization] Local pyannote diarization is disabled.
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when X-Workspace-Id is missing
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.8ms] {
+  requestId: [32m'18c911e6-f6be-49fc-9ee8-0dce0ce03e67'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.76'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mextracts speaker audio clips, normalizes audio 
+and generates voice coaching with mocked exec/fs
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when index/total parameters are invalid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [3.4ms] {
+  requestId: [32m'05cfd6e4-04f5-4740-9a95-903ad1b450f2'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'3.42'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2msurfaces voice coaching API errors and still cl
+eans up temp clip
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 400 when total > 600
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 400 [1.3ms] {
+  requestId: [32m'49bc2324-1243-48ca-85b8-63de611e4085'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.28'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when ANTHR
+OPIC_API_KEY is not configured
+[22m[39m[ai/person-profile] error: Anthropic 401: {"type":"error","error":{"t
+ype":"authentication_error","message":"invalid x-api-key"},"request_id":"req_01
+1CZehhk45C1P1osd6TozLH"}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when ANTHROPIC_API_KEY is not configured
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [514.7ms] {
+  requestId: [32m'5df08386-116d-4e7a-9866-949cfeb93cdc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'514.73'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2manalyzeAudioQuality returns good quality metric
+s from ffprobe and volumedetect
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_large/audio - 413 [154.1ms] {
+  requestId: [32m'c8dc43c4-1a01-411a-92b0-7a30bf226c68'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_large/audio'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'154.05'[39m
+}
+
+(node:36080) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 413 when chunk > 3MB
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 413 [6.1ms] {
+  requestId: [32m'8994f150-dd55-4a48-938c-0dbaa883f957'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'6.07'[39m
+}
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/normalize - 200 [1.3ms] {
+  requestId: [32m'a93a698e-4015-407a-8c7c-b4cc8c4cc568'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/normalize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.35'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when personName is missing
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [1.3ms] {
+  requestId: [32m'aaea34f7-2125-4a89-8573-b5f929f69f82'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.35'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/voice-coaching - 200 [1.4ms] {
+  requestId: [32m'0025b072-2ef2-4e0d-ad8f-9bc34680d39b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/voice-coaching'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.43'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/acoustic-features - 200 [0.9ms] {
+  requestId: [32m'ba43a3fc-1bbf-45d2-bd10-e4060249e8ec'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/acoustic-features'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.90'[39m
+}
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 20260320_rag_chunks.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_voice/voice-profiles/from-speaker - 201 [1.7ms] {
+  requestId: [32m'834381b6-e49b-4d21-bd96-08158fe2416d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_voice/voice-profiles/from-speaker'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'1.68'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2manalyzeAudioQuality classifies poor quality whe
+n volume is very low and silence ratio is high
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_missing/rediarize - 400 [1.4ms] {
+  requestId: [32m'f646ad5c-cb1f-4e3c-a94d-fc8e78226a6f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_missing/rediarize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.43'[39m
+}
+
+[90mstdout[2m | server/tests/database/database.additional.test.ts[2m > [22m[2mDatabase - Additional Coverage Tests
+[22m[39m[INFO] Applying migration: 20260323_voice_profiles_multi_sample.sql 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_ok/rediarize - 200 [1.3ms] {
+  requestId: [32m'4cb8640d-aa63-448b-92cd-9a4d3e21aced'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_ok/rediarize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.29'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/rediarize returns 422 when diarization fails
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_fail/rediarize - 422 [0.6ms] {
+  requestId: [32m'60d320c7-310c-4bba-8834-9d2eb0d4f693'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_fail/rediarize'[39m,
+  status: [33m422[39m,
+  durationMs: [32m'0.63'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/analyze returns fallback when analysis service returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [2.9ms] {
+  requestId: [32m'7c0860dc-4bdf-4f57-baca-f7256d5eabde'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.89'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when allSegments has less than 5 items
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [1.6ms] {
+  requestId: [32m'532b5a56-b5f3-413d-8133-64b8014b1bdb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.56'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /transcribe returns error JSON when pipelin
+e throws
+[22m[39m[transcribe] Pipeline error for rec_err: STT provider unreachable
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /transcribe returns error JSON when pipeline throws
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_err/transcribe - 500 [1.9ms] {
+  requestId: [32m'38aa3306-ed73-4018-8438-0203c5da226b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_err/transcribe'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.86'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2manalyzeAudioQuality returns error when file doe
+s not exist
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstderr[2m | server/tests/regression/regression-server-utils.test.ts[2m >
+ [22m[2mRegression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m
+[2mreturns 502 after all retries exhausted
+[22m[39m[httpClient] Retry 2/3 after HTTP 502 for GET https://example.com/tes
+t
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /retry-transcribe returns error JSON when p
+ipeline throws
+[22m[39m[retry-transcribe] Pipeline error for rec_retry_err: Database connect
+ion lost
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /retry-transcribe returns error JSON when pipeline throws
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_retry_err/retry-transcribe - 500 [2.4ms] {
+  requestId: [32m'8e45f0d3-498c-44d4-9a00-38c08da90b64'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_retry_err/retry-transcribe'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'2.44'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2manalyzeAudioQuality returns aborted error immed
+iately when signal is already aborted
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPUT /media/recordings/:recordingId/audio/chunk[2m > [22m[2mreturns 200 and saves chunk when valid
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec1/audio/chunk - 200 [40.9ms] {
+  requestId: [32m'b7939ebc-9ba2-493f-8de1-ff3081232800'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec1/audio/chunk'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'40.87'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /transcribe returns custom status code from
+ error
+[22m[39m[transcribe] Pipeline error for rec_429: Rate limit exceeded
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /transcribe returns custom status code from error
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_429/transcribe - 429 [2.5ms] {
+  requestId: [32m'445738cf-0478-4790-a620-e539bcdc47cd'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_429/transcribe'[39m,
+  status: [33m429[39m,
+  durationMs: [32m'2.50'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mnormalizeRecording cleans up tmp file and rethrows when ffmpeg fails
+[22m[39m[stt] Provider chain: openai
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcrib
+e[2m > [22m[2mmarks asset as failed when stuck in processing for >5 min with
+ empty segments
+[22m[39m[transcribe-status] Recording rec_stuck stuck in 'processing' since 2
+026-04-02T09:04:24.746Z. Marking as failed.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mmarks asset as failed when stuck in processing for >5 min with empty segments
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_stuck/transcribe - 200 [1.8ms] {
+  requestId: [32m'c5e4ca6e-fc40-449f-a9e2-19e01081a51b'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_stuck/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.84'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 401 when not authenticated
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 401 [1.0ms] {
+  requestId: [32m'3b2fb543-d263-4657-8eca-080e2e30754d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'1.00'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mnormalizeRecording succeeds and renames tmp fil
+e
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mcalls Anthropic API and returns parsed profile when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [2.6ms] {
+  requestId: [32m'f2483a28-002a-49c9-95fe-1a982656d92f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.56'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mdoes not mark as failed when processing for <5 min
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_recent/transcribe - 200 [5.0ms] {
+  requestId: [32m'f1dd8fa5-c60c-4d28-89c3-e379f3fed838'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_recent/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'4.98'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mdoes not mark as failed when processing has segments
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_with_data/transcribe - 200 [0.9ms] {
+  requestId: [32m'201ddb58-755b-45f3-9659-6fe88ff83705'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_with_data/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.95'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when workspaceId is missing
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [2.0ms] {
+  requestId: [32m'342c71e5-ac60-402e-9239-0c4287ca5316'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.98'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 404, gdy nagranie nie istnieje w bazie
+[22m[39m[INFO] [REQ] DELETE /media/recordings/recording_nonexistent - 404 [1.0ms] {
+  requestId: [32m'e5d84a6d-ef91-4b15-9997-2ca98781c600'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/recording_nonexistent'[39m,
+  status: [33m404[39m,
+  durationMs: [32m'1.01'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthr
+opic API fails
+[22m[39m[ai/person-profile] error: Network error
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic API fails
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [2.6ms] {
+  requestId: [32m'075ce2c3-b834-47c0-91ae-1795cd6cbfcc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.59'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 400 when total is missing or invalid
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [1.2ms] {
+  requestId: [32m'ec1c3fd9-7306-4f9b-9808-25d74f4e36e1'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.19'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mextractSpeakerAudioClip extracts clips for vali
+d segments
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 204, gdy nagranie istnieje i zostanie usuni─Öte
+[22m[39m[INFO] [REQ] DELETE /media/recordings/rec_existing - 204 [0.5ms] {
+  requestId: [32m'463f1805-517d-4759-a5cc-9b0fc0d1db68'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/rec_existing'[39m,
+  status: [33m204[39m,
+  durationMs: [32m'0.46'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthr
+opic returns non-JSON response
+[22m[39m[ai/person-profile] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/person-profile[2m > [22m[2mreturns no-key mode when Anthropic returns non-JSON response
+[22m[39m[INFO] [REQ] POST /ai/person-profile - 200 [2.9ms] {
+  requestId: [32m'bded9fd1-afe2-4e6d-a0f5-e08a5cf57683'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/person-profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.92'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce 
+nagranie[2m > [22m[2mzwraca 403, gdy u┼╝ytkownik nie ma dost─Öpu do workspac
+e
+[22m[39mAPP ERROR STACK Error: Nie masz dostepu do tego workspace.
+    at ensureWorkspaceAccess (C:/Users/user/new/audioRecorder/server/routes/mid
+dleware.ts:57:19)
+    at C:/Users/user/new/audioRecorder/server/routes/media.ts:333:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at authMiddleware (C:/Users/user/new/audioRecorder/server/routes/middleware
+.ts:50:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:46:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:30:5
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 403, gdy u┼╝ytkownik nie ma dost─Öpu do workspace
+[22m[39m[INFO] [REQ] DELETE /media/recordings/rec_forbidden - 403 [24.1ms] {
+  requestId: [32m'dfd707c8-f5b3-4b8c-a202-3194f2e37f91'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/rec_forbidden'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'24.09'[39m
+}
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mextractSpeakerAudioClip throws error when no va
+lid segments
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstdout[2m | server/tests/routes/media.additional.test.ts[2m > [22m[2mMedia Routes - Additional Coverage[2m > [22m[2mPOST /media/recordings/:recordingId/audio/finalize[2m > [22m[2mreturns 413 when assembled file > 100MB
+[22m[39m[INFO] [REQ] POST /media/recordings/rec1/audio/finalize - 400 [21.8ms] {
+  requestId: [32m'ff54cd88-f217-43ec-87e5-e60304dbd589'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec1/audio/finalize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'21.83'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2minserts new media asset with local storage fallback
+[22m[39m[Supabase Storage] Bucket creation warning: fetch failed
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2minserts new media asset with local storage fallback
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mextractSpeakerAudioClip limits to 15 segments m
+aximum
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when ANTHRO
+PIC_API_KEY is not configured
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when ANTHROPIC_API_KEY is not configured
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [2.7ms] {
+  requestId: [32m'2b165eda-5ab7-462d-a0b3-93f1876d07a1'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.72'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mupdates existing media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mupdates existing media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mhandles different audio formats correctly
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+ [32mÔťô[39m server/tests/routes/media.additional.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 3930[2mms[22m[39m
+       [33m[2mÔťô[22m[39m returns analysis result when transcription service returns data [33m 2931[2mms[22m[39m
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mhandles different audio formats correctly
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2mextractSpeakerAudioClip passes signal option to
+ exec
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+ [32mÔťô[39m server/tests/routes/media.test.ts [2m([22m[2m27 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m[33m 1384[2mms[22m[39m
+     [33m[2mÔťô[22m[39m PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload [33m 353[2mms[22m[39m
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mhandles different audio formats correctly
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mhandles different audio formats correctly
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2mhandles different audio formats correctly
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2msanitizes recording ID to prevent path traversal
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when transcript is empty
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [0.9ms] {
+  requestId: [32m'a1f6bb62-68d8-4538-8de1-d9905b8d45c0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.90'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2msanitizes recording ID to prevent path traversal
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m 
+> [22m[2msanitizes recording ID to prevent path traversal
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mgetMediaAsset()[2m > 
+[22m[2mreturns media asset by ID
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudio
+Pipeline exports[2m > [22m[2manalyzeAcousticFeatures throws error when file 
+does not exist
+[22m[39m[stt] WARNING: No STT providers configured. Set OPENAI_API_KEY or GRO
+Q_API_KEY.
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mdeleteMediaAsset()[2m 
+> [22m[2mdeletes media asset and cleans up file
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2mdeleteMediaAsset()[2m 
+> [22m[2mdoes not delete if workspace ID does not match
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m[2mreturns 5
+02 after all retries exhausted
+[22m[39m[httpClient] Retry 1/3 after HTTP 502 for GET https://api.example.com
+/test
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2msaveAudioQualityDiagnos
+tics()[2m > [22m[2msaves audio quality metrics to diarization_json
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.additional.test.ts[2m > [22m
+[2mDatabase - Additional Coverage Tests[2m > [22m[2msaveAudioQualityDiagnos
+tics()[2m > [22m[2mhandles null audio quality gracefully
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting
+[22m[39m[stt] Provider chain: openai
+[stt]   openai: model=gpt-4o-transcribe url=https://api.example.test/v1/audio/transcriptions key=key-1...
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mcalls Anthropic API and returns extracted tasks when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [8.0ms] {
+  requestId: [32m'd5f846b6-d417-442e-9b2a-6e3a6f30a260'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'7.99'[39m
+}
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting
+[22m[39m[stt] openai model=whisper-1 Ôćĺ POST https://api.example.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/audio-pipeline.unit.test.ts[2m > [22m[2maudioPipeline exports[2m > [22m[2mtranscribeRecording uses pyannote for diarization and exercises word-level speaker splitting
+[22m[39m[diarization] Local pyannote diarization is disabled.
+
+[90mstdout[2m | server/tests/httpClient.test.ts[2m > [22m[2mhttpClient[2m > [22m[2mretries on network error up to MAX_RETRIES times
+[22m[39m[httpClient] Retry 1/3 after 200ms due to: Failed to fetch
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthro
+pic API fails
+[22m[39m[ai/suggest-tasks] error: Network error
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic API fails
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [1.5ms] {
+  requestId: [32m'0bac879c-9e55-4fc9-a909-6857e54876eb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.55'[39m
+}
+
+ [32mÔťô[39m server/tests/audio-pipeline.unit.test.ts [2m([22m[2m31 tests[22m[2m | [22m[33m8 skipped[39m[2m)[22m[33m 4264[2mms[22m[39m
+     [33m[2mÔťô[22m[39m returns null/empty values when OpenAI key is not configured [33m 2164[2mms[22m[39m
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthro
+pic returns non-JSON response
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when Anthropic returns non-JSON response
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [5.9ms] {
+  requestId: [32m'8d8d77c0-8777-46d2-93c7-adc0ed2eaef5'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'5.91'[39m
+}
+
+ [32mÔťô[39m server/tests/database/database.additional.test.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 1142[2mms[22m[39m
+       [33m[2mÔťô[22m[39m inserts new media asset with local storage fallback [33m 422[2mms[22m[39m
+[90mstdout[2m | server/tests/httpClient.test.ts[2m > [22m[2mhttpClient[2m > [22m[2mretries on network error up to MAX_RETRIES times
+[22m[39m[httpClient] Retry 2/3 after 400ms due to: Failed to fetch
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when respon
+se has no tasks array
+[22m[39m[ai/suggest-tasks] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/suggest-tasks[2m > [22m[2mreturns empty tasks when response has no tasks array
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [2.0ms] {
+  requestId: [32m'48f9ab6e-3964-4941-91fa-79c85920794e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.04'[39m
+}
+
+[90mstderr[2m | Worker.<anonymous> (C:\Users\user\new\audioRecorder\server\da
+tabase.ts:186:17)
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstdout[2m | Database._spawnWorker (C:\Users\user\new\audioRecorder\server\database.ts:194:13)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m > [
+22m[2minserts new media asset
+[22m[39m[Supabase Storage] Bucket creation warning: fetch failed
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m > [
+22m[2minserts new media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mGET /media/recordings/.../audio - 401 Unauthorized without token
+[22m[39m[INFO] [REQ] GET /media/recordings/ignored/audio - 401 [15.0ms] {
+  requestId: [32m'bd179057-7fe8-4c5c-a9fb-ed33b021b21d'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/ignored/audio'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'15.02'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m > [
+22m[2mupdates existing media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mupsertMediaAsset()[2m > [
+22m[2mupdates existing media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mGET /voice-profiles - 401 Unauthorized without token
+[22m[39m[INFO] [REQ] GET /voice-profiles - 401 [1.1ms] {
+  requestId: [32m'7adc1318-3d34-41b6-9422-64968f4ba80f'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'1.07'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mgetMediaAsset()[2m > [22m
+[2mreturns media asset by ID
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mdeleteMediaAsset()[2m > [
+22m[2mdeletes media asset
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /voice-profiles - 413 Payload Too Large if > 1MB
+[22m[39m[INFO] [REQ] POST /voice-profiles - 413 [12.9ms] {
+  requestId: [32m'baa50184-e77d-46df-b9d4-658a95527887'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'12.94'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mdeleteMediaAsset()[2m > [
+22m[2mdoes not delete if workspace ID does not match
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2msaveAudioQualityDiagnostics
+()[2m > [22m[2msaves audio quality diagnostics
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/regression/regression.test.ts[2m > [22m[2mReg
+ression: #0 ÔÇö httpClient retries on HTTP 502/503/504[2m > [22m[2mreturns 5
+02 after all retries exhausted
+[22m[39m[httpClient] Retry 2/3 after HTTP 502 for GET https://api.example.com
+/test
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mreturns no-key mode when ANTHROPIC_API_KEY is not configured
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [2.2ms] {
+  requestId: [32m'0cf0f16c-34d7-4aae-b31d-859cb9a4f653'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.24'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mupdateTranscriptionMetadata
+()[2m > [22m[2mupdates transcription metadata
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+ [32mÔťô[39m server/tests/regression/regression-server-utils.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 4969[2mms[22m[39m
+     [33m[2mÔťô[22m[39m rate limit error includes Polish message for better UX [33m 347[2mms[22m[39m
+     [33m[2mÔťô[22m[39m embedTextChunks returns empty array on API failure (not throw) [33m 1290[2mms[22m[39m
+     [33m[2mÔťô[22m[39m retries on 502 and eventually succeeds [33m 1604[2mms[22m[39m
+     [33m[2mÔťô[22m[39m returns 502 after all retries exhausted [33m 1514[2mms[22m[39m
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mmarkTranscriptionProcessing
+()[2m > [22m[2mmarks transcription as processing
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mqueueTranscription()[2m > 
+[22m[2mqueues transcription
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mreturns no-key mode when query is empty or too short
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [3.3ms] {
+  requestId: [32m'b03e8243-be63-4ff4-9151-c341acb5a2c7'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.33'[39m
+}
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2mmarkTranscriptionFailure()
+[2m > [22m[2mmarks transcription as failed
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+[90mstderr[2m | server/tests/database/database.coverage.100.test.ts[2m > [2
+2m[2mDatabase - 100% Coverage Tests[2m > [22m[2msaveTranscriptionResult()[
+2m > [22m[2msaves successful transcription result
+[22m[39m[WARN] [database] Supabase upload failed, falling back to local: { me
+ssage: [32m'Failed to upload to Supabase Storage: fetch failed'[39m }
+
+ [32mÔťô[39m server/tests/auth.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 3701[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should login successfully with correct credentials [33m 396[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should fail login with wrong password [33m 327[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should handle case-insensitive email during login [33m 313[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should handle Polish characters in passwords [33m 312[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should trim leading/trailing spaces in email during login [33m 315[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should support multiple workspaces and selecting preferred one [33m 405[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should reject login to a workspace the user does not belong to [33m 484[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mreturns no-key mode when items are empty
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [2.5ms] {
+  requestId: [32m'0a65cbe3-540e-4d57-b4e6-4312acf3c2dd'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.52'[39m
+}
+
+[90mstderr[2m | Worker.<anonymous> (C:\Users\user\new\audioRecorder\server\da
+tabase.ts:186:17)
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstdout[2m | Database._spawnWorker (C:\Users\user\new\audioRecorder\server\database.ts:194:13)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPUT /media/recordings/:id/audio - 413 Payload Too Large if > 100MB
+[22m[39m[INFO] [REQ] PUT /media/recordings/test_rec/audio - 413 [167.5ms] {
+  requestId: [32m'907d9ee8-80ed-4267-972a-1edd09d06bc6'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/test_rec/audio'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'167.47'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/search[2m > [22m[2mreturns empty matches when Anthropic A
+PI fails
+[22m[39m[ai/search] error: Network error
+
+ [32mÔťô[39m server/tests/httpClient.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 815[2mms[22m[39m
+     [33m[2mÔťô[22m[39m retries on network error up to MAX_RETRIES times [33m 629[2mms[22m[39m
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 422 (or 400) when passing bad JSON/Content-Type
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [5.3ms] {
+  requestId: [32m'85079d81-bcc6-49d7-804e-71a8ab619fde'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'5.30'[39m
+}
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mreturns empty matches when Anthropic API fails
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [2.3ms] {
+  requestId: [32m'442b2bf4-d72b-4f3f-86c0-be01dd6ef0d5'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.34'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 422 Unprocessable Entity passing missing required fields
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [3.1ms] {
+  requestId: [32m'a4724c2f-86b3-42f5-a4c0-816dd21fc38f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'3.07'[39m
+}
+
+ [32mÔťô[39m server/tests/database/database.coverage.100.test.ts [2m([22m[2m57 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[33m 3792[2mms[22m[39m
+       [33m[2mÔťô[22m[39m _verifyPassword() validates password [33m 459[2mms[22m[39m
+       [33m[2mÔťô[22m[39m changes password with valid current password [33m 442[2mms[22m[39m
+       [33m[2mÔťô[22m[39m inserts new media asset [33m 486[2mms[22m[39m
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.7ms] {
+  requestId: [32m'3e594557-644d-4f1c-a149-f3b85d33f77a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.70'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.1ms] {
+  requestId: [32m'c6ed477d-e21f-4339-b73f-083beb47a05e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.08'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.8ms] {
+  requestId: [32m'7bccd4cb-c4a9-4f33-9efa-d49c71e5dcf6'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.82'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.1ms] {
+  requestId: [32m'c762a901-3ad4-4819-bcdb-52a555d2194e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.08'[39m
+}
+
+[90mstderr[2m | Worker.<anonymous> (C:\Users\user\new\audioRecorder\server\da
+tabase.ts:186:17)
+[22m[39m[DB] SQLite Worker exited with code 1, restarting...
+
+[90mstdout[2m | Database._spawnWorker (C:\Users\user\new\audioRecorder\server\database.ts:194:13)
+[22m[39m[DB] Using local async SQLite Worker at: :memory:
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [4.4ms] {
+  requestId: [32m'349bcdfc-f446-4413-84d5-68adae93a041'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'4.43'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [2.6ms] {
+  requestId: [32m'8560fc57-c789-4963-9da7-876468775874'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.57'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.8ms] {
+  requestId: [32m'a136f961-9c92-4ec9-a130-738cb07fae82'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.78'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [2.0ms] {
+  requestId: [32m'4fb84ddb-4c20-4d8c-9919-73f5549bdeec'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.98'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.0ms] {
+  requestId: [32m'6c029cf7-8067-4fbc-875e-c43c7fe38957'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.02'[39m
+}
+
+[90mstderr[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m >
+ [22m[2mPOST /ai/search[2m > [22m[2mreturns empty matches when Anthropic r
+eturns non-JSON response
+[22m[39m[ai/search] error: No JSON in response
+
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mreturns empty matches when Anthropic returns non-JSON response
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [2.8ms] {
+  requestId: [32m'9404d21f-5034-4c5b-abbc-03533e424793'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.81'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.0ms] {
+  requestId: [32m'e6963c3a-33de-43a5-915d-ef42da9a9b20'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.03'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.0ms] {
+  requestId: [32m'48e1659a-9761-47d7-ad24-f6d75dd3e1c2'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.97'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.5ms] {
+  requestId: [32m'9d28db07-eccd-45d7-b41f-45e40bb4efa8'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.54'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [2.0ms] {
+  requestId: [32m'729731b0-cb81-48e9-81b7-1510a18772c2'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.03'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.3ms] {
+  requestId: [32m'a8c662b6-7b57-4466-8e41-c1a6c932ce58'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.28'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.1ms] {
+  requestId: [32m'edd99bbd-5899-4624-9281-39d8d6209b65'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.09'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.6ms] {
+  requestId: [32m'429b4d35-a03f-4230-a36f-038fb775c9da'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.62'[39m
+}
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.1ms] {
+  requestId: [32m'14f700d1-547e-4855-88d2-83a37be4a3cc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.06'[39m
+}
+
+ [32mÔťô[39m server/tests/build.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 3572[2mms[22m[39m
+     [33m[2mÔťô[22m[39m should declare all externally imported modules in server/package.json [33m 3562[2mms[22m[39m
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.3ms] {
+  requestId: [32m'40d1f825-69ff-457c-be80-bc18fb925fcb'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.30'[39m
+}
+
+[90mstderr[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity
+ & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after
+ exceeding limit
+[22m[39m[RATE LIMIT] unknown exceeded 20 req/min on /auth-login. Retry after 
+60s
+
+[90mstderr[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity
+ & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after
+ exceeding limit
+[22m[39mAPP ERROR STACK Error: Zbyt wiele prob. Limit: 20 ┼╝─ůda┼ä/min. Sprob
+uj ponownie za 60s.
+    at checkRateLimit (C:/Users/user/new/audioRecorder/server/lib/serverUtils.t
+s:83:19)
+    at C:/Users/user/new/audioRecorder/server/routes/middleware.ts:28:7
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.9/n
+ode_modules/hono/dist/compose.js:22:46
+    at C:/Users/user/new/audioRecorder/server/routes/auth.ts:15:13
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.9/n
+ode_modules/hono/dist/compose.js:22:46
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:11
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:23)
+    at file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hono@4.12.9/n
+ode_modules/hono/dist/compose.js:22:46
+
+[90mstdout[2m | server/tests/security/payload.test.ts[2m > [22m[2mSecurity & Payload Limits[2m > [22m[2mPOST /auth/login - 429 Too Many Requests after exceeding limit
+[22m[39m[INFO] [REQ] POST /auth/login - 429 [23.1ms] {
+  requestId: [32m'75a3d377-e3ce-4d0b-b4c8-ec0a315ef520'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m429[39m,
+  durationMs: [32m'23.13'[39m
+}
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP0 ÔÇö Critical Paths[2m > [22m[2mGET /health responds within 100ms (SLA: P0)
+[22m[39m[INFO] [REQ] GET /health - 200 [12.9ms] {
+  requestId: [32m'2d804925-293e-496e-b571-fad168fb270e'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/health'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'12.92'[39m
+}
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP0 ÔÇö Critical Paths[2m > [22m[2mGET /health responds within 100ms (SLA: P0)
+[22m[39m[INFO] [REQ] GET /health - 200 [3.7ms] {
+  requestId: [32m'11b07655-4d83-4446-a174-220dc8d35148'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/health'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.67'[39m
+}
+
+ [32mÔťô[39m server/tests/security/payload.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 768[2mms[22m[39m
+     [33m[2mÔťô[22m[39m PUT /media/recordings/:id/audio - 413 Payload Too Large if > 100MB [33m 366[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/ai.test.ts[2m > [22m[2mAI Routes[2m > [22m[2mPOST /ai/search[2m > [22m[2mcalls Anthropic API and returns ranked matches when API key is configured
+[22m[39m[INFO] [REQ] POST /ai/search - 200 [1.8ms] {
+  requestId: [32m'0d33cc5c-6e17-4dd3-bdf7-954a8a9ab64b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/search'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.76'[39m
+}
+
+[90mstderr[2m | server/tests/performance/response-time-sla.test.ts[2m > [22
+m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP0 ÔÇö Critic
+al Paths[2m > [22m[2mGET /auth/session responds within 100ms (SLA: P0)
+[22m[39mAPP ERROR STACK TypeError: authService.buildSessionPayload is not a f
+unction
+    at C:/Users/user/new/audioRecorder/server/routes/auth.ts:117:37
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at authMiddleware (C:/Users/user/new/audioRecorder/server/routes/middleware
+.ts:50:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/routes/auth.ts:15:7
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:88:7
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP0 ÔÇö Critical Paths[2m > [22m[2mGET /auth/session responds within 100ms (SLA: P0)
+[22m[39m[INFO] [REQ] GET /auth/session - 500 [25.5ms] {
+  requestId: [32m'ec0ec26c-cd3c-40dc-a391-c0cf403c850c'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/auth/session'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'25.54'[39m
+}
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP1 ÔÇö Read Operations[2m > [22m[2mGET /voice-profiles responds within 500ms (SLA: P1)
+[22m[39m[INFO] [REQ] GET /voice-profiles - 200 [1.9ms] {
+  requestId: [32m'c8071e16-2256-4638-adc0-b18d156f9d62'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.90'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/ai.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 5587[2mms[22m[39m
+       [33m[2mÔťô[22m[39m returns no-key mode when ANTHROPIC_API_KEY is not configured [33m 3725[2mms[22m[39m
+[90mstderr[2m | server/tests/performance/response-time-sla.test.ts[2m > [22
+m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP1 ÔÇö Read O
+perations[2m > [22m[2mGET /state/bootstrap responds within 500ms (SLA: P1)
+[22m[39mAPP ERROR STACK TypeError: authService.buildSessionPayload is not a f
+unction
+    at C:/Users/user/new/audioRecorder/server/routes/workspaces.ts:44:37
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at authMiddleware (C:/Users/user/new/audioRecorder/server/routes/middleware
+.ts:50:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:46:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:30:5
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP1 ÔÇö Read Operations[2m > [22m[2mGET /state/bootstrap responds within 500ms (SLA: P1)
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 500 [7.5ms] {
+  requestId: [32m'fda31a2c-9981-4b9c-b114-29862ebe9760'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'7.49'[39m
+}
+
+[90mstderr[2m | server/tests/performance/response-time-sla.test.ts[2m > [22
+m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP2 ÔÇö Write 
+Operations[2m > [22m[2mPUT /state/workspaces/:id responds within 1000ms (SLA
+: P2)
+[22m[39mAPP ERROR STACK TypeError: workspaceService.saveWorkspaceState is not
+ a function
+    at C:/Users/user/new/audioRecorder/server/routes/workspaces.ts:54:39
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at authMiddleware (C:/Users/user/new/audioRecorder/server/routes/middleware
+.ts:50:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:46:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:30:5
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP2 ÔÇö Write Operations[2m > [22m[2mPUT /state/workspaces/:id responds within 1000ms (SLA: P2)
+[22m[39m[INFO] [REQ] PUT /state/workspaces/ws1 - 500 [3.8ms] {
+  requestId: [32m'64123a15-91f9-4cf5-a5d6-3604a0791868'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/state/workspaces/ws1'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'3.80'[39m
+}
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP2 ÔÇö Write Operations[2m > [22m[2mPOST /voice-profiles responds within 1000ms (SLA: P2)
+[22m[39m[INFO] [REQ] POST /voice-profiles - 400 [3.0ms] {
+  requestId: [32m'481831b1-4f58-4091-8637-cfcf8de02c72'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.98'[39m
+}
+
+(node:8204) ExperimentalWarning: SQLite is an experimental feature and might ch
+ange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP3 ÔÇö AI/ML Operations[2m > [22m[2mPOST /transcribe/live responds within 3000ms (SLA: P3)
+[22m[39m[INFO] [REQ] POST /transcribe/live - 200 [1.9ms] {
+  requestId: [32m'a5ef8281-1610-4fb6-aa6e-7e72914f5a63'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.94'[39m
+}
+
+[90mstdout[2m | server/tests/performance/response-time-sla.test.ts[2m > [22m[2mPerformance Regression ÔÇö Response Time SLAs[2m > [22m[2mP3 ÔÇö AI/ML Operations[2m > [22m[2mPOST /ai/suggest-tasks responds within 3000ms (SLA: P3)
+[22m[39m[INFO] [REQ] POST /ai/suggest-tasks - 200 [6.1ms] {
+  requestId: [32m'a4234dec-76bf-4d91-be0b-bfaeb003227f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/ai/suggest-tasks'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'6.11'[39m
+}
+
+ [32mÔťô[39m server/tests/performance/response-time-sla.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1709[2mms[22m[39m
+       [33m[2mÔťô[22m[39m GET /health responds within 100ms (SLA: P0) [33m 1147[2mms[22m[39m
+ [32mÔťô[39m server/tests/config.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 586[2mms[22m[39m
+     [33m[2mÔťô[22m[39m loads default config when no env vars are set [33m 398[2mms[22m[39m
+[90mstdout[2m | server/tests/security.test.ts
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.openai.com/v1/audio/transcriptions key=sk-proj-...
+
+[90mstdout[2m | server/tests/regression/regression.test.ts[2m > [22m[2mRegression: #0 ÔÇö getUploadDir writable fallback chain[2m > [22m[2mcached result is returned on subsequent calls
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.openai.com/v1/audio/transcriptions key=sk-proj-...
+
+ [32mÔťô[39m server/tests/regression/regression.test.ts [2m([22m[2m47 tests[22m[2m)[22m[33m 6045[2mms[22m[39m
+     [33m[2mÔťô[22m[39m uploadAudioToStorage returns null (not throws) when supabase URL is empty [33m 974[2mms[22m[39m
+     [33m[2mÔťô[22m[39m retries on 502 and eventually succeeds [33m 1533[2mms[22m[39m
+     [33m[2mÔťô[22m[39m returns 502 after all retries exhausted [33m 1524[2mms[22m[39m
+ [32mÔťô[39m server/tests/sqliteWorker.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 595[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mreturns empty text for too-small live chunks
+[22m[39m[INFO] [REQ] POST /transcribe/live - 200 [11.5ms] {
+  requestId: [32m'fd59e89a-dcf7-4a5f-9fa8-cae0c6c92dc3'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'11.54'[39m
+}
+
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mrejects oversized live transcription payloads
+[22m[39m[INFO] [REQ] POST /transcribe/live - 413 [7.7ms] {
+  requestId: [32m'5228eef9-2a41-4473-bd47-66a0bc6e2846'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'7.67'[39m
+}
+
+[90mstdout[2m | server/tests/routes/transcribe.test.ts[2m > [22m[2mTranscribe Routes[2m > [22m[2mwrites temp file, transcribes, and cleans up successful live chunk
+[22m[39m[INFO] [REQ] POST /transcribe/live - 200 [36.3ms] {
+  requestId: [32m'558763f3-4e2a-40ea-82a4-78c10907aeff'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/transcribe/live'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'36.32'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/transcribe.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 384[2mms[22m[39m
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mmakes POST to correct URL with Authorization header
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mpasses request.signal to httpClient
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mthrows with API error message on HTTP 401
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt provide
+rs ÔÇö HTTP behavior[2m > [22m[2mthrows with API error message on HTTP 401
+[22m[39m[stt] openai failed: status=401 body={"error":{"message":"Invalid API
+ key provided."}}
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mthrows with fallback message on HTTP 400 with non-JSON body
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt provide
+rs ÔÇö HTTP behavior[2m > [22m[2mthrows with fallback message on HTTP 400 wi
+th non-JSON body
+[22m[39m[stt] openai failed: status=400 body=bad request
+
+ [32mÔťô[39m server/tests/lib/rag.coverage.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 3031[2mms[22m[39m
+     [33m[2mÔťô[22m[39m uses VOICELOG_OPENAI_API_KEY if available [33m 2974[2mms[22m[39m
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mtranscribeWithProviders falls through to second provider on first failure
+[22m[39m[stt] groq model=gpt-4o-transcribe Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt provide
+rs ÔÇö HTTP behavior[2m > [22m[2mtranscribeWithProviders falls through to se
+cond provider on first failure
+[22m[39m[stt] groq network error: Groq network error url=https://api.groq.com
+/openai/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mtranscribeWithProviders falls through to second provider on first failure
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mcreateFormData appends file with correct name
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö HTTP behavior[2m > [22m[2mcreateFormData appends array fields with [] suffix
+[22m[39m[stt] openai model=gpt-4o-transcribe Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö Groq model override in requestFactory[2m > [22m[2muses Groq provider.defaultModel (whisper-large-v3) when fields.model is an OpenAI model
+[22m[39m[stt] openai model=whisper-1 Ôćĺ POST https://api.openai.test/v1/audio/transcriptions
+
+[90mstderr[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt provide
+rs ÔÇö Groq model override in requestFactory[2m > [22m[2muses Groq provider.
+defaultModel (whisper-large-v3) when fields.model is an OpenAI model
+[22m[39m[stt] openai network error: OpenAI network error url=https://api.open
+ai.test/v1/audio/transcriptions
+
+[90mstdout[2m | server/tests/stt.providers.test.ts[2m > [22m[2mstt providers ÔÇö Groq model override in requestFactory[2m > [22m[2muses Groq provider.defaultModel (whisper-large-v3) when fields.model is an OpenAI model
+[22m[39m[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+
+ [32mÔťô[39m server/tests/stt.providers.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 181[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mPUT /users/:userId/profile updates only current user profile
+[22m[39m[INFO] [REQ] PUT /users/u1/profile - 200 [11.9ms] {
+  requestId: [32m'1aef10a1-ea80-4688-8756-62c8a6f8b39e'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u1/profile'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'11.94'[39m
+}
+
+ [32mÔťô[39m server/tests/dockerfile.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 467[2mms[22m[39m
+     [33m[2mÔťô[22m[39m no untracked files in server/ or src/shared/ that would break Railway esbuild [33m 435[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] PUT /users/u2/profile - 403 [0.7ms] {
+  requestId: [32m'1ba4e67e-8508-4ed0-9fa6-043e43c9409c'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/users/u2/profile'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.75'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mblocks profile and password changes for other users
+[22m[39m[INFO] [REQ] POST /users/u2/password - 403 [1.1ms] {
+  requestId: [32m'e889da22-06dd-4587-8f9e-2c00ce64bafc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/users/u2/password'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'1.07'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 200 [1.5ms] {
+  requestId: [32m'f79fbcd9-74fe-4f33-8eb3-963b691862c5'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.47'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - unauthorized without token
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 401 [16.8ms] {
+  requestId: [32m'c3d3dd76-7e75-4926-a9f1-e3610f3fdccf'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'16.75'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mupdates workspace member roles only for owner/admin memberships
+[22m[39m[INFO] [REQ] PUT /workspaces/ws1/members/u2/role - 403 [0.7ms] {
+  requestId: [32m'7f48d30a-87d1-4e09-a6ba-6450c2030d0a'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/workspaces/ws1/members/u2/role'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'0.69'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 400 [1.3ms] {
+  requestId: [32m'd0de0432-9995-44dc-96d8-48e2ea99519d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.33'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /health - returns build metadata without requiring auth
+[22m[39m[INFO] [REQ] GET /health - 200 [2.1ms] {
+  requestId: [32m'5c21eb2e-d0a2-44e2-895f-0bc645373abe'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/health'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.09'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 200 [0.8ms] {
+  requestId: [32m'6b67f447-5640-4654-8b54-afd7b1a7e875'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.78'[39m
+}
+
+[90mstdout[2m | server/tests/routes/workspaces.test.ts[2m > [22m[2mWorkspace Routes[2m > [22m[2mhandles RAG ask validation, no-results and LLM failure paths
+[22m[39m[INFO] [REQ] POST /workspaces/ws1/rag/ask - 500 [1.1ms] {
+  requestId: [32m'91b8bec2-761d-4643-b171-7bb0df7bb725'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/workspaces/ws1/rag/ask'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.12'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - unauthorized response still keeps preview CORS headers
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 401 [0.6ms] {
+  requestId: [32m'147a0a16-3c89-45d4-9a55-20420227c457'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'0.60'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mGET /state/bootstrap - success with valid token
+[22m[39m[INFO] [REQ] GET /state/bootstrap - 200 [3.0ms] {
+  requestId: [32m'fcd37297-cae2-4bca-989d-6866f8f9200e'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/state/bootstrap'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.96'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/workspaces.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 280[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mPUT /state/workspaces/:workspaceId - state update
+[22m[39m[INFO] [REQ] PUT /state/workspaces/w123 - 200 [3.5ms] {
+  requestId: [32m'920f4f8f-b666-4ee5-8b57-a4e1e21e075e'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/state/workspaces/w123'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.52'[39m
+}
+
+[90mstdout[2m | server/tests/routes/state.test.ts[2m > [22m[2mState Routes[2m > [22m[2mPATCH /state/workspaces/:workspaceId - delta update
+[22m[39m[INFO] [REQ] PATCH /state/workspaces/w123 - 200 [2.4ms] {
+  requestId: [32m'cead91b3-c68c-49be-8bcb-97ef3373afc0'[39m,
+  method: [32m'PATCH'[39m,
+  route: [32m'/state/workspaces/w123'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.42'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mGET /voice-profiles - happy path
+[22m[39m[INFO] [REQ] GET /voice-profiles - 200 [16.2ms] {
+  requestId: [32m'4b56ed1a-835a-442a-87a7-49ac1b55e86c'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'16.19'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/state.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 411[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mPOST /voice-profiles - fails when X-Speaker-Name is missing
+[22m[39m[INFO] [REQ] POST /voice-profiles - 400 [2.4ms] {
+  requestId: [32m'f8915d09-f146-41e6-a46d-a03394ba1627'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.41'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mPOST /voice-profiles - happy path
+[22m[39m[INFO] [REQ] POST /voice-profiles - 201 [4.8ms] {
+  requestId: [32m'83ae7de7-82d2-4039-8abe-1854e40f0083'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'4.76'[39m
+}
+
+[90mstdout[2m | server/tests/routes/voice-profiles.test.ts[2m > [22m[2mVoice Profiles Routes[2m > [22m[2mDELETE /voice-profiles/:id
+[22m[39m[INFO] [REQ] DELETE /voice-profiles/vp_1 - 204 [1.0ms] {
+  requestId: [32m'8e9d78e4-1d28-4d4a-8260-2c1a3c781410'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/voice-profiles/vp_1'[39m,
+  status: [33m204[39m,
+  durationMs: [32m'0.96'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/health.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 216[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/register - happy path
+[22m[39m[INFO] [REQ] POST /auth/register - 201 [19.4ms] {
+  requestId: [32m'4be6d4e3-e8bd-471a-b6fd-32580f7dcf9d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/register'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'19.44'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/voice-profiles.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 260[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/login - missing password
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [3.8ms] {
+  requestId: [32m'861105f3-a333-4f35-866f-e879fe2f3405'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'3.81'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mPOST /auth/login - happy path
+[22m[39m[INFO] [REQ] POST /auth/login - 200 [1.7ms] {
+  requestId: [32m'1a1d1169-9e0b-418e-8b7b-69c73be74a0a'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.69'[39m
+}
+
+[90mstderr[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio
+ Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcr
+ibe -> Review Status -> Fallback Failure
+[22m[39m[mediaRoutes] Audio quality analysis failed for rec_flow_1: transcrip
+tionService.analyzeAudioQuality is not a function
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [Metrics] Uploaded audio chunk {
+  requestId: [32m'9e4ba3ce-abf9-43e7-98ca-463b615df4b6'[39m,
+  recordingId: [32m'rec_flow_1'[39m,
+  sizeBytes: [33m512[39m,
+  durationMs: [32m'11.23'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth.test.ts[2m > [22m[2mAuth Routes[2m > [22m[2mGET /auth/session - returns 401 on missing token
+[22m[39m[INFO] [REQ] GET /auth/session - 401 [1.8ms] {
+  requestId: [32m'16ec5c52-6b09-42e4-a223-e90992dc5602'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/auth/session'[39m,
+  status: [33m401[39m,
+  durationMs: [32m'1.75'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_flow_1/audio - 200 [24.3ms] {
+  requestId: [32m'9e4ba3ce-abf9-43e7-98ca-463b615df4b6'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_flow_1/audio'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'24.25'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_flow_1/transcribe - 202 [4.4ms] {
+  requestId: [32m'2607228f-be80-47e5-9de4-d10d76326fb2'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_flow_1/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'4.40'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_flow_1/transcribe - 200 [1.8ms] {
+  requestId: [32m'd999188a-af83-4a69-89b6-b8dcccef85c9'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_flow_1/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.76'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_flow_failed/transcribe - 202 [1.4ms] {
+  requestId: [32m'e6893882-7342-4fc5-b082-ebadf527441e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_flow_failed/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'1.36'[39m
+}
+
+[90mstdout[2m | server/tests/flow/audio-pipeline.test.ts[2m > [22m[2mAudio Pipeline Full Integration Flow[2m > [22m[2mFull scenario: Upload -> Transcribe -> Review Status -> Fallback Failure
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_flow_failed/transcribe - 200 [0.8ms] {
+  requestId: [32m'156f22d8-1f21-4446-a28a-d8484a9b5400'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_flow_failed/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.82'[39m
+}
+
+ [32mÔťô[39m server/tests/speakerEmbedder.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32mÔťô[39m server/tests/audioPipeline.utils.test.ts [2m([22m[2m117 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/auth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 313[2mms[22m[39m
+ [32mÔťô[39m server/tests/flow/audio-pipeline.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 267[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/password/reset/request - 200 [16.9ms] {
+  requestId: [32m'01e8d154-4fcc-4555-ad82-a948332e9cce'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/password/reset/request'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'16.89'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/password/reset/confirm - 200 [2.6ms] {
+  requestId: [32m'fd7b52f9-2e4a-46ef-87ce-d5044ddb0c60'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/password/reset/confirm'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.57'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mhandles password reset request/confirm and google login
+[22m[39m[INFO] [REQ] POST /auth/google - 200 [2.0ms] {
+  requestId: [32m'4c8626ba-731e-4f9e-8930-0704402f46e5'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/google'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'2.00'[39m
+}
+
+[90mstdout[2m | server/tests/routes/auth-extended.test.ts[2m > [22m[2mAuth Routes Extended[2m > [22m[2mreturns session payload when auth and workspace access pass
+[22m[39m[INFO] [REQ] GET /auth/session - 200 [3.8ms] {
+  requestId: [32m'b619890a-e3e8-4d85-aed2-95d32943c3e7'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/auth/session'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.78'[39m
+}
+
+ [32mÔťô[39m server/tests/logger.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 164[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/auth-extended.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 227[2mms[22m[39m
+ [32mÔťô[39m server/tests/middleware.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+[90mstderr[2m | server/tests/serverUtils.test.ts[2m > [22m[2mserverUtils[
+2m > [22m[2mthrows 429 after exceeding rate limit
+[22m[39m[RATE LIMIT] 127.0.0.1 exceeded 2 req/min on /auth. Retry after 60s
+[RATE LIMIT] 127.0.0.1 exceeded 0 req/min on /upload. Retry after 60s
+
+ [32mÔťô[39m server/tests/serverUtils.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32mÔťô[39m server/tests/stt/stt.providers.extended.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32mÔťô[39m server/tests/runtime.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32mÔťô[39m server/tests/ragRetriever.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32mÔťô[39m server/tests/diarization.unit.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+[90mstdout[2m | server/tests/transcription.helpers.test.ts
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.openai.com/v1/audio/transcriptions key=sk-proj-...
+
+ [32mÔťô[39m server/tests/services/services.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32mÔťô[39m server/tests/transcription.helpers.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32mÔťô[39m server/tests/railway-config.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+Warning: A vi.unmock("../config") call in "C:/Users/user/new/audioRecorder/serv
+er/tests/regression/regression-supabase.test.ts" is not at the top level of the
+ module. Although it appears nested, it will be hoisted and executed before any
+ tests run. Move it to the top level to reflect its actual execution order. Thi
+s will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("@supabase/supabase-js") call in "C:/Users/user/new/audioR
+ecorder/server/tests/regression/regression-supabase.test.ts" is not at the top 
+level of the module. Although it appears nested, it will be hoisted and execute
+d before any tests run. Move it to the top level to reflect its actual executio
+n order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("../config") call in "C:/Users/user/new/audioRecorder/serv
+er/tests/regression/regression-supabase.test.ts" is not at the top level of the
+ module. Although it appears nested, it will be hoisted and executed before any
+ tests run. Move it to the top level to reflect its actual execution order. Thi
+s will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("@supabase/supabase-js") call in "C:/Users/user/new/audioR
+ecorder/server/tests/regression/regression-supabase.test.ts" is not at the top 
+level of the module. Although it appears nested, it will be hoisted and execute
+d before any tests run. Move it to the top level to reflect its actual executio
+n order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("../config") call in "C:/Users/user/new/audioRecorder/serv
+er/tests/regression/regression-supabase.test.ts" is not at the top level of the
+ module. Although it appears nested, it will be hoisted and executed before any
+ tests run. Move it to the top level to reflect its actual execution order. Thi
+s will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("@supabase/supabase-js") call in "C:/Users/user/new/audioR
+ecorder/server/tests/regression/regression-supabase.test.ts" is not at the top 
+level of the module. Although it appears nested, it will be hoisted and execute
+d before any tests run. Move it to the top level to reflect its actual executio
+n order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("../config") call in "C:/Users/user/new/audioRecorder/serv
+er/tests/regression/regression-supabase.test.ts" is not at the top level of the
+ module. Although it appears nested, it will be hoisted and executed before any
+ tests run. Move it to the top level to reflect its actual execution order. Thi
+s will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.unmock("@supabase/supabase-js") call in "C:/Users/user/new/audioR
+ecorder/server/tests/regression/regression-supabase.test.ts" is not at the top 
+level of the module. Although it appears nested, it will be hoisted and execute
+d before any tests run. Move it to the top level to reflect its actual executio
+n order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+[90mstderr[2m | server/tests/reproduce.test.ts[2m > [22m[2mTranscriptionSe
+rvice Reproduction[2m > [22m[2mshould throw a clear error if pipeline is mis
+sing transcribeRecording
+[22m[39m[TranscriptionService] audioPipeline looks like an empty object (circ
+ular dep?).
+
+[90mstdout[2m | server/tests/memoryAwareConcurrency.test.ts
+[22m[39m[stt] Provider chain: groq Ôćĺ openai
+[stt]   groq: model=whisper-large-v3 url=https://api.groq.com/openai/v1/audio/transcriptions key=gsk_RmZm...
+[stt]   openai: model=gpt-4o-transcribe url=https://api.openai.com/v1/audio/transcriptions key=sk-proj-...
+
+ [32mÔťô[39m server/tests/reproduce.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [2m[90mÔćô[39m[22m server/tests/lib/supabaseStorage.test.ts [2m([22m[2m64 tests[22m[2m | [22m[33m64 skipped[39m[2m)[22m
+ [32mÔťô[39m server/tests/memoryAwareConcurrency.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [2m[90mÔćô[39m[22m server/tests/regression/regression-supabase.test.ts [2m([22m[2m15 tests[22m[2m | [22m[33m15 skipped[39m[2m)[22m
+ [32mÔťô[39m server/tests/speaker_embedder.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mÔťô[39m server/tests/ragVectorStore.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 23[2mms[22m[39m
+[90mstdout[2m | server/tests/security.test.ts
+[22m[39m[INFO] [Sentry] No DSN provided, skipping initialization. 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] [Bootstrap] Disk space OK: 1.91GB free. 
+[DB] Using local async SQLite Worker at: :memory:
+
+(node:49272) ExperimentalWarning: SQLite is an experimental feature and might c
+hange at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 001_initial_schema.sql 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 002_add_indexes.sql 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 003_add_missing_indexes.sql 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 20260320_rag_chunks.sql 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] Applying migration: 20260323_voice_profiles_multi_sample.sql 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] [Bootstrap] Database health check OK (sqlite) 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests
+[22m[39m[INFO] [Bootstrap] Initializing TranscriptionService with audioPipeline (object, keys: transcribeRecording, analyzeAudioQuality, preprocessAudio, transcribeLiveChunk, buildAudioPreprocessCacheKey, getPreprocessCachePath, isPreprocessCacheFile, normalizeRecording, extractSpeakerAudioClip, generateVoiceCoaching, analyzeAcousticFeatures, diarizeFromTranscript, analyzeMeetingWithOpenAI, embedTextChunks) 
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests[2m > [22m[2m[H-01/M-04] POST /voice-profiles - Should reject >1MB JSON Body with 413 (Denial of Service & JSON Bomb)
+[22m[39m[INFO] [REQ] POST /voice-profiles - 413 [35.5ms] {
+  requestId: [32m'09ef592a-19be-4459-9824-93cb00aaade7'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'35.54'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests[2m > [22m[2m[H-04] GET /health - Should not leak dbPath or uploadDir (Information Disclosure)
+[22m[39m[INFO] [REQ] GET /health - 200 [1.6ms] {
+  requestId: [32m'0748af68-3ded-4974-b9e5-abfb2ff4e4c6'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/health'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.57'[39m
+}
+
+[90mstderr[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Reg
+ression Tests[2m > [22m[2m[M-03] GET /media/recordings/:id/audio - Should fa
+llback Content-Type if invalid (Stored XSS)
+[22m[39m[media] Audio 404 ÔÇö no media_assets row { recordingId: [32m'non_ex
+istent_id'[39m }
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests[2m > [22m[2m[M-03] GET /media/recordings/:id/audio - Should fallback Content-Type if invalid (Stored XSS)
+[22m[39m[INFO] [REQ] GET /media/recordings/non_existent_id/audio - 404 [2.9ms] {
+  requestId: [32m'e1425255-8f07-4d83-88a7-525d7e686e22'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/non_existent_id/audio'[39m,
+  status: [33m404[39m,
+  durationMs: [32m'2.88'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests[2m > [22m[2m[M-06] POST /voice-profiles - Should cap arbitrarily long X-Speaker-Name header (Data Storage Abuse)
+[22m[39m[INFO] [REQ] POST /voice-profiles - 400 [2.3ms] {
+  requestId: [32m'0ca818be-b808-4c4f-93bc-6b8f1068a83b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/voice-profiles'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'2.33'[39m
+}
+
+[90mstdout[2m | server/tests/security.test.ts[2m > [22m[2mAPI Security Regression Tests[2m > [22m[2m[H-02] X-Forwarded-For Spoofing Bypass check
+[22m[39m[INFO] [REQ] POST /auth/login - 400 [6.4ms] {
+  requestId: [32m'fbad7f93-d8b7-4fcb-8aa6-b7cddc63f92b'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/auth/login'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'6.43'[39m
+}
+
+ [32mÔťô[39m server/tests/security.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 485[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m49 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (51)[39m
+[2m      Tests [22m [1m[32m680 passed[39m[22m[2m | [22m[33m93 skipped[39m[90m (773)[39m
+[2m   Start at [22m 11:24:19
+[2m   Duration [22m 13.85s[2m (transform 17.51s, setup 4.83s, import 40.83s, tests 61.59s, environment 26ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   69.37 |    58.94 |   76.86 |    70.7 |                   
+ server            |   68.06 |    58.33 |   80.57 |    69.4 |                   
+  app.ts           |     100 |       75 |     100 |     100 | 17                
+  audioPipeline.ts |       0 |        0 |       0 |       0 |                   
+  ...line.utils.ts |   96.92 |    82.85 |     100 |   97.82 | ...15,677,716,907 
+  config.ts        |   60.31 |    39.62 |      80 |   63.33 | ...73-174,179-189 
+  database.ts      |   75.04 |    63.47 |   89.58 |   77.79 | ...1558,1619-1620 
+  datadog.ts       |       0 |        0 |     100 |       0 | 12-76             
+  dd-tracer.ts     |       0 |      100 |     100 |       0 | 3                 
+  debug_env.ts     |       0 |        0 |       0 |       0 | 6-26              
+  diarization.ts   |    82.6 |    63.41 |   95.45 |   85.18 | ...38-439,443-463 
+  index.ts         |   45.45 |    41.17 |    8.33 |   46.39 | ...33-138,173-221 
+  logger.ts        |   61.76 |    66.66 |   63.63 |   68.96 | 6-14,25           
+  pipeline.ts      |   50.29 |    44.65 |   75.86 |   51.55 | ...32-950,963-964 
+  ...Processing.ts |   63.28 |    57.77 |   54.54 |   65.76 | 38-70,351-392     
+  runtime.ts       |     100 |      100 |     100 |     100 |                   
+  sentry.ts        |      50 |    33.33 |      50 |      50 | 12-13,21-27       
+  ...erEmbedder.ts |   66.66 |    51.06 |    87.5 |   64.93 | ...23-124,140-169 
+  sqliteWorker.ts  |   77.92 |    74.13 |    87.5 |   78.37 | ...17,148,157-167 
+  transcription.ts |   55.17 |    49.69 |   72.72 |   55.48 | ...24-553,663-785 
+ server/agents     |       0 |        0 |       0 |       0 |                   
+  dispatcher.ts    |       0 |        0 |       0 |       0 | 10-206            
+ server/http       |   66.94 |    61.66 |   76.19 |   68.14 |                   
+  app-routes.ts    |      50 |      100 |      25 |      50 | 19-20,24-25,29-34 
+  app-security.ts  |   65.06 |       54 |   86.66 |   66.66 | ...44,157-158,162 
+  health.ts        |     100 |      100 |     100 |     100 |                   
+ server/lib        |   79.64 |     70.7 |   83.54 |    80.9 |                   
+  httpClient.ts    |   78.94 |    86.79 |   63.63 |   78.84 | ...20,157,165,168 
+  ragAnswer.ts     |   70.37 |    55.26 |    87.5 |      72 | 36-46             
+  ragRetriever.ts  |      96 |       90 |     100 |     100 | 48                
+  ...ectorStore.ts |   84.37 |    67.18 |     100 |   89.09 | ...16,130,149-151 
+  serverUtils.ts   |   82.72 |     77.5 |   70.83 |   84.11 | ...12-214,249-250 
+  ...aseStorage.ts |    64.7 |    60.78 |   83.33 |      64 | ...,85-89,102-131 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ server/routes     |   71.49 |    58.13 |   70.67 |   73.79 |                   
+  ai.ts            |   93.18 |       75 |   78.94 |   97.33 | 63,118            
+  auth.ts          |   97.61 |       50 |     100 |   97.61 | 19                
+  digest.ts        |   89.13 |    63.26 |    90.9 |   91.01 | ...61-162,177-178 
+  media.ts         |   58.23 |    49.07 |   57.62 |   59.79 | ...1009,1018-1027 
+  middleware.ts    |     100 |     82.6 |     100 |     100 | 21-26             
+  workspaces.ts    |   83.18 |    65.45 |      60 |   89.32 | 34-35,113,188-200 
+ server/services   |   84.64 |    70.17 |    82.6 |   84.93 |                   
+  AuthService.ts   |     100 |      100 |     100 |     100 |                   
+  ...icsService.ts |   48.27 |    44.44 |   16.66 |   51.85 | 38,44-69          
+  ...ionService.ts |    89.1 |     73.2 |    87.8 |   88.94 | ...55-359,505-506 
+  ...aceService.ts |   84.61 |      100 |   83.33 |   83.33 | 39,47             
+ server/stt        |   54.61 |    43.93 |   63.63 |   54.76 |                   
+  localWhisper.ts  |       0 |        0 |       0 |       0 | 16-192            
+  modelSelector.ts |      50 |       50 |      50 |      50 | 21-25             
+  providers.ts     |   93.24 |    77.46 |     100 |   93.05 | 47,50,72,91,117   
+-------------------|---------|----------|---------|---------|-------------------

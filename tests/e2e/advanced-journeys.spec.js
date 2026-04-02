@@ -1,11 +1,11 @@
 /**
  * E2E Tests — Advanced Critical User Journeys
- * 
+ *
  * Following AGENTS.md §2.1:
  * - Tests cover complete user workflows
  * - Each test is independent and can run in isolation
  * - Tests use realistic data and scenarios
- * 
+ *
  * Run: pnpm run test:e2e:advanced
  */
 
@@ -18,7 +18,9 @@ test.describe('Advanced Critical User Journeys', () => {
   // ───────────────────────────────────────────────────────────────────────────
 
   test.describe('Recording Studio Workflow', () => {
-    test('complete recording workflow: start → pause → resume → stop → review', async ({ page }) => {
+    test('complete recording workflow: start → pause → resume → stop → review', async ({
+      page,
+    }) => {
       await seedLoggedInUser(page);
       await page.goto('/');
 
@@ -45,7 +47,9 @@ test.describe('Advanced Critical User Journeys', () => {
       await expect(page.locator('[data-testid="processing-indicator"]')).toBeVisible();
 
       // Step 6: Wait for processing to complete
-      await expect(page.locator('[data-testid="processing-indicator"]')).not.toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-testid="processing-indicator"]')).not.toBeVisible({
+        timeout: 30000,
+      });
 
       // Step 7: Verify recording appears in list
       await page.click('[data-tab="meetings"]');
@@ -103,8 +107,12 @@ test.describe('Advanced Critical User Journeys', () => {
       });
 
       // Step 3: Wait for diarization to complete
-      await expect(page.locator('[data-testid="diarization-status"]')).toContainText('Przetwarzanie');
-      await expect(page.locator('[data-testid="diarization-status"]')).toContainText('Gotowe', { timeout: 60000 });
+      await expect(page.locator('[data-testid="diarization-status"]')).toContainText(
+        'Przetwarzanie'
+      );
+      await expect(page.locator('[data-testid="diarization-status"]')).toContainText('Gotowe', {
+        timeout: 60000,
+      });
 
       // Step 4: Verify speaker labels
       const speakerALabels = page.locator('[data-testid="speaker-label"]:has-text("Alice")');
@@ -114,15 +122,19 @@ test.describe('Advanced Critical User Journeys', () => {
 
       // Step 5: Assign speaker name to unknown speaker
       const unknownSpeaker = page.locator('[data-testid="speaker-label"]:has-text("Speaker")');
-      if (await unknownSpeaker.count() > 0) {
+      if ((await unknownSpeaker.count()) > 0) {
         await unknownSpeaker.first().click();
         await page.fill('[data-testid="speaker-name-input"]', 'Charlie');
         await page.click('[data-testid="save-speaker-name-btn"]');
-        await expect(page.locator('[data-testid="speaker-label"]:has-text("Charlie")')).toBeVisible();
+        await expect(
+          page.locator('[data-testid="speaker-label"]:has-text("Charlie")')
+        ).toBeVisible();
       }
     });
 
-    test('voice profile matching: record → create profile → auto-assign speakers', async ({ page }) => {
+    test('voice profile matching: record → create profile → auto-assign speakers', async ({
+      page,
+    }) => {
       await seedLoggedInUser(page);
       await page.goto('/people');
 
@@ -138,7 +150,9 @@ test.describe('Advanced Critical User Journeys', () => {
       await page.click('[data-testid="save-voice-profile-btn"]');
 
       // Step 2: Verify profile created
-      await expect(page.locator('[data-testid="voice-profile-item"]:has-text("Test User Profile")')).toBeVisible();
+      await expect(
+        page.locator('[data-testid="voice-profile-item"]:has-text("Test User Profile")')
+      ).toBeVisible();
 
       // Step 3: Create meeting with voice profile matching enabled
       await page.goto('/');
@@ -155,7 +169,9 @@ test.describe('Advanced Critical User Journeys', () => {
       });
 
       // Wait for voice matching
-      await expect(page.locator('[data-testid="voice-match-status"]')).toContainText('Gotowe', { timeout: 60000 });
+      await expect(page.locator('[data-testid="voice-match-status"]')).toContainText('Gotowe', {
+        timeout: 60000,
+      });
 
       // Verify speaker was auto-assigned
       const matchedSpeaker = page.locator('[data-testid="speaker-label"]:has-text("Test User")');
@@ -181,7 +197,9 @@ test.describe('Advanced Critical User Journeys', () => {
       await expect(page.locator('[data-testid="ai-tasks-loading"]')).toBeVisible();
 
       // Step 3: Wait for AI suggestions
-      await expect(page.locator('[data-testid="ai-tasks-loading"]')).not.toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-testid="ai-tasks-loading"]')).not.toBeVisible({
+        timeout: 30000,
+      });
 
       // Step 4: Review suggestions
       const suggestedTasks = page.locator('[data-testid="suggested-task-item"]');
@@ -197,14 +215,19 @@ test.describe('Advanced Critical User Journeys', () => {
       await expect(page.locator('[data-testid="task-item"]:last-child')).toBeVisible();
     });
 
-    test('task lifecycle: create → assign → set priority → track status → complete', async ({ page }) => {
+    test('task lifecycle: create → assign → set priority → track status → complete', async ({
+      page,
+    }) => {
       await seedLoggedInUser(page);
       await page.goto('/tasks');
 
       // Step 1: Create new task
       await page.click('[data-testid="create-task-btn"]');
       await page.fill('[data-testid="task-title-input"]', 'E2E Advanced Task');
-      await page.fill('[data-testid="task-description-input"]', 'This is a comprehensive E2E test task');
+      await page.fill(
+        '[data-testid="task-description-input"]',
+        'This is a comprehensive E2E test task'
+      );
 
       // Step 2: Assign to person
       await page.click('[data-testid="task-assignee-select"]');
@@ -259,15 +282,19 @@ test.describe('Advanced Critical User Journeys', () => {
       // Step 3: Drag task from TODO to IN PROGRESS
       const taskCard = page.locator('[data-testid="kanban-card"]:has-text("Kanban Test Task")');
       const inProgressColumn = page.locator('[data-testid="kanban-column-in-progress"]');
-      
+
       await taskCard.dragTo(inProgressColumn);
 
       // Step 4: Verify task is now in IN PROGRESS column
-      await expect(inProgressColumn.locator('[data-testid="kanban-card"]:has-text("Kanban Test Task")')).toBeVisible();
+      await expect(
+        inProgressColumn.locator('[data-testid="kanban-card"]:has-text("Kanban Test Task")')
+      ).toBeVisible();
 
       // Step 5: Refresh page and verify state persisted
       await page.reload();
-      await expect(inProgressColumn.locator('[data-testid="kanban-card"]:has-text("Kanban Test Task")')).toBeVisible();
+      await expect(
+        inProgressColumn.locator('[data-testid="kanban-card"]:has-text("Kanban Test Task")')
+      ).toBeVisible();
     });
   });
 
@@ -284,12 +311,17 @@ test.describe('Advanced Critical User Journeys', () => {
       await page.click('[data-testid="ai-search-btn"]');
 
       // Step 2: Enter semantic query
-      await page.fill('[data-testid="ai-search-input"]', 'What were the main decisions from last week?');
+      await page.fill(
+        '[data-testid="ai-search-input"]',
+        'What were the main decisions from last week?'
+      );
       await page.click('[data-testid="ai-search-submit"]');
 
       // Step 3: Wait for AI response
       await expect(page.locator('[data-testid="ai-search-loading"]')).toBeVisible();
-      await expect(page.locator('[data-testid="ai-search-loading"]')).not.toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-testid="ai-search-loading"]')).not.toBeVisible({
+        timeout: 30000,
+      });
 
       // Step 4: Verify AI answer
       const aiAnswer = page.locator('[data-testid="ai-search-answer"]');
@@ -315,7 +347,7 @@ test.describe('Advanced Critical User Journeys', () => {
 
       // Step 2: Search for meeting
       await page.fill('[data-testid="command-palette-input"]', 'meeting');
-      
+
       // Step 3: Select first meeting result
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('Enter');
@@ -349,7 +381,9 @@ test.describe('Advanced Critical User Journeys', () => {
       await expect(page.locator('[data-testid="invite-success"]')).toBeVisible();
 
       // Step 2: Verify pending invite
-      const pendingInvite = page.locator('[data-testid="pending-invite"]:has-text("newmember@example.com")');
+      const pendingInvite = page.locator(
+        '[data-testid="pending-invite"]:has-text("newmember@example.com")'
+      );
       await expect(pendingInvite).toBeVisible();
 
       // Step 3: Assign member role (owner/member)
@@ -367,9 +401,12 @@ test.describe('Advanced Critical User Journeys', () => {
       await expect(page.locator('[data-testid="share-success"]')).toBeVisible();
     });
 
-    test('workspace state sync: edit on one tab → verify update on another', async ({ page, context }) => {
+    test('workspace state sync: edit on one tab → verify update on another', async ({
+      page,
+      context,
+    }) => {
       await seedLoggedInUser(page);
-      
+
       // Step 1: Open two tabs
       const tab1 = page;
       const tab2 = await context.newPage();
@@ -383,7 +420,9 @@ test.describe('Advanced Critical User Journeys', () => {
 
       // Step 3: Refresh tab 2 and verify sync
       await tab2.reload();
-      await expect(tab2.locator('[data-testid="workspace-name"]')).toContainText('Updated Workspace Name');
+      await expect(tab2.locator('[data-testid="workspace-name"]')).toContainText(
+        'Updated Workspace Name'
+      );
 
       // Step 4: Close tab 2
       await tab2.close();

@@ -8,14 +8,14 @@
 
 ## 1. Stack
 
-| Layer | Tech |
-|-------|------|
-| Frontend | React 19, TypeScript 5.9, Vite, Zustand 5, TailwindCSS, shadcn/ui |
-| Backend | Hono (Node.js 22), LangChain/LangGraph, Supabase, PostgreSQL |
-| Testing | Vitest 4 + @testing-library/react 16, Playwright (e2e) |
-| Package manager | pnpm 9 (monorepo: root = frontend, `server/` = backend) |
-| Formatting | Prettier + ESLint (react-app), Stylelint for CSS |
-| Commits | Conventional Commits, max 72 chars subject, English, imperative mood |
+| Layer           | Tech                                                                 |
+| --------------- | -------------------------------------------------------------------- |
+| Frontend        | React 19, TypeScript 5.9, Vite, Zustand 5, TailwindCSS, shadcn/ui    |
+| Backend         | Hono (Node.js 22), LangChain/LangGraph, Supabase, PostgreSQL         |
+| Testing         | Vitest 4 + @testing-library/react 16, Playwright (e2e)               |
+| Package manager | pnpm 9 (monorepo: root = frontend, `server/` = backend)              |
+| Formatting      | Prettier + ESLint (react-app), Stylelint for CSS                     |
+| Commits         | Conventional Commits, max 72 chars subject, English, imperative mood |
 
 ---
 
@@ -25,14 +25,14 @@
 
 ### 2.1 When to write tests
 
-| Change type | Required action | Minimum tests |
-|-------------|----------------|---------------|
-| New hook | `useXxx.test.ts` next to `useXxx.ts` | ≥ 5 (happy, edge, error, cleanup, re-render) |
-| New service/util | `xxx.test.ts` next to source | ≥ 5 (happy, edge, error, boundary mocks) |
-| New component | `Xxx.test.tsx` next to source | ≥ 3 (render, interaction, conditional, a11y) |
-| New API route | `server/tests/routes/xxx.test.ts` | ≥ 4 (success, validation, auth, edge) |
-| Bug fix | Failing test FIRST, then fix | ≥ 1 regression test |
-| Refactor | Run tests before AND after | No coverage drop allowed |
+| Change type      | Required action                      | Minimum tests                                |
+| ---------------- | ------------------------------------ | -------------------------------------------- |
+| New hook         | `useXxx.test.ts` next to `useXxx.ts` | ≥ 5 (happy, edge, error, cleanup, re-render) |
+| New service/util | `xxx.test.ts` next to source         | ≥ 5 (happy, edge, error, boundary mocks)     |
+| New component    | `Xxx.test.tsx` next to source        | ≥ 3 (render, interaction, conditional, a11y) |
+| New API route    | `server/tests/routes/xxx.test.ts`    | ≥ 4 (success, validation, auth, edge)        |
+| Bug fix          | Failing test FIRST, then fix         | ≥ 1 regression test                          |
+| Refactor         | Run tests before AND after           | No coverage drop allowed                     |
 
 ### 2.2 TDD workflow (Red → Green → Refactor)
 
@@ -142,14 +142,14 @@ npx playwright test
 
 ## 4. File Naming
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Component | `PascalCase.tsx` + `.module.css` | `MeetingCard.tsx` |
-| Hook | `useXxx.ts` + `useXxx.test.ts` | `useRecorder.ts` |
-| Service | `xxxService.ts` + `xxxService.test.ts` | `mediaService.ts` |
-| Store | `xxxStore.ts` | `meetingStore.ts` |
-| Server route | `server/routes/xxx.ts` | `server/routes/ai.ts` |
-| Server test | `server/tests/routes/xxx.test.ts` | `server/tests/routes/ai.test.ts` |
+| Type         | Pattern                                | Example                          |
+| ------------ | -------------------------------------- | -------------------------------- |
+| Component    | `PascalCase.tsx` + `.module.css`       | `MeetingCard.tsx`                |
+| Hook         | `useXxx.ts` + `useXxx.test.ts`         | `useRecorder.ts`                 |
+| Service      | `xxxService.ts` + `xxxService.test.ts` | `mediaService.ts`                |
+| Store        | `xxxStore.ts`                          | `meetingStore.ts`                |
+| Server route | `server/routes/xxx.ts`                 | `server/routes/ai.ts`            |
+| Server test  | `server/tests/routes/xxx.test.ts`      | `server/tests/routes/ai.test.ts` |
 
 Tests are **always colocated** next to source (frontend) or in `server/tests/` mirroring structure (backend).
 
@@ -180,11 +180,11 @@ Tests are **always colocated** next to source (frontend) or in `server/tests/` m
 Each AI agent should have a **thin pointer file** in its own config directory
 that references this document. Do NOT duplicate these rules.
 
-| Agent | Config location | What to put there |
-|-------|----------------|-------------------|
-| GitHub Copilot | `.github/copilot-instructions.md` | `→ See AGENTS.md` + agent-specific overrides only |
-| Qwen | `.qwen/skills/*.md` | `→ See AGENTS.md` + Qwen-specific skill syntax only |
-| Cursor | `.cursor/rules/*.md` | `→ See AGENTS.md` + Cursor-specific rules only |
+| Agent          | Config location                   | What to put there                                   |
+| -------------- | --------------------------------- | --------------------------------------------------- |
+| GitHub Copilot | `.github/copilot-instructions.md` | `→ See AGENTS.md` + agent-specific overrides only   |
+| Qwen           | `.qwen/skills/*.md`               | `→ See AGENTS.md` + Qwen-specific skill syntax only |
+| Cursor         | `.cursor/rules/*.md`              | `→ See AGENTS.md` + Cursor-specific rules only      |
 
 ---
 
@@ -229,6 +229,7 @@ When using AI agents (Qwen, Copilot, Cursor), invoke the skill:
 Task: [Description]
 
 Following TDD workflow:
+
 1. ✅ Understand task
 2. ✅ Write tests first (RED)
 3. ✅ Implement minimum code (GREEN)
@@ -253,6 +254,7 @@ No exceptions — a fix without a test is incomplete.
 ### 9.1 When this applies
 
 A change is a "bug fix" if ANY of these is true:
+
 - Commit type is `fix(…)`
 - User reports something broken / not working as expected
 - Test suite was failing and agent is correcting it
@@ -274,12 +276,12 @@ A change is a "bug fix" if ANY of these is true:
 
 ### 9.3 Where regression tests go
 
-| Bug location | Regression test location | Naming |
-|-------------|-------------------------|--------|
-| Frontend hook/service/lib | Next to source: `xxx.test.ts` (add `describe('Regression: …')` block) | `Regression: #issue — description` |
-| Frontend component | Next to source: `Xxx.test.tsx` (add `describe('Regression: …')` block) | `Regression: #issue — description` |
-| Server route/lib | `server/tests/regression/regression.test.ts` (append new `describe`) | `Regression: Issue #NNN — description` |
-| Cross-cutting / unclear | `server/tests/regression/regression.test.ts` | `Regression: Issue #NNN — description` |
+| Bug location              | Regression test location                                               | Naming                                 |
+| ------------------------- | ---------------------------------------------------------------------- | -------------------------------------- |
+| Frontend hook/service/lib | Next to source: `xxx.test.ts` (add `describe('Regression: …')` block)  | `Regression: #issue — description`     |
+| Frontend component        | Next to source: `Xxx.test.tsx` (add `describe('Regression: …')` block) | `Regression: #issue — description`     |
+| Server route/lib          | `server/tests/regression/regression.test.ts` (append new `describe`)   | `Regression: Issue #NNN — description` |
+| Cross-cutting / unclear   | `server/tests/regression/regression.test.ts`                           | `Regression: Issue #NNN — description` |
 
 ### 9.4 Regression test format
 
@@ -314,6 +316,7 @@ When committing a bug fix, the agent MUST verify:
 ### 9.6 What if there's no issue number?
 
 Use `#0` and a descriptive title. Example:
+
 ```
 // Issue #0 — MentionTextarea crashes with object suggestions
 ```

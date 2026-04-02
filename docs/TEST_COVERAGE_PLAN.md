@@ -2,16 +2,16 @@
 
 ## 📊 Aktualny status
 
-| Plik | Coverage | Status | Priorytet |
-|------|----------|--------|-----------|
-| `audioPipeline.ts` | 22% | 🔴 | **P0** |
-| `sqliteWorker.ts` | 0% | 🔴 | **P0** |
-| `supabaseStorage.ts` | 26% | 🔴 | **P0** |
-| `database.ts` | 56% | 🟡 | P1 |
-| `TranscriptionService.ts` | 68% | 🟡 | P1 |
-| `speakerEmbedder.ts` | 68% | 🟡 | P1 |
-| `logger.ts` | 46% | 🔴 | P2 |
-| `index.ts` | 61% | 🟡 | P2 |
+| Plik                      | Coverage | Status | Priorytet |
+| ------------------------- | -------- | ------ | --------- |
+| `audioPipeline.ts`        | 22%      | 🔴     | **P0**    |
+| `sqliteWorker.ts`         | 0%       | 🔴     | **P0**    |
+| `supabaseStorage.ts`      | 26%      | 🔴     | **P0**    |
+| `database.ts`             | 56%      | 🟡     | P1        |
+| `TranscriptionService.ts` | 68%      | 🟡     | P1        |
+| `speakerEmbedder.ts`      | 68%      | 🟡     | P1        |
+| `logger.ts`               | 46%      | 🔴     | P2        |
+| `index.ts`                | 61%      | 🟡     | P2        |
 
 ---
 
@@ -19,7 +19,8 @@
 
 ### 🔹 Funkcje czyste (unit tests) - **2 dni**
 
-#### 1. `buildWhisperPrompt()` 
+#### 1. `buildWhisperPrompt()`
+
 ```typescript
 // server/tests/audioPipeline/buildWhisperPrompt.test.ts
 describe('buildWhisperPrompt', () => {
@@ -40,7 +41,15 @@ describe('buildWhisperPrompt', () => {
   });
 
   it('includes tags (max 6)', () => {
-    const tags = ['budget', 'timeline', 'resources', 'risks', 'stakeholders', 'deliverables', 'extra'];
+    const tags = [
+      'budget',
+      'timeline',
+      'resources',
+      'risks',
+      'stakeholders',
+      'deliverables',
+      'extra',
+    ];
     const prompt = buildWhisperPrompt({ tags });
     expect(prompt).toContain('Tematy:');
     expect(prompt).not.toContain('extra');
@@ -59,9 +68,9 @@ describe('buildWhisperPrompt', () => {
   });
 
   it('handles empty arrays gracefully', () => {
-    const prompt = buildWhisperPrompt({ 
-      participants: [], 
-      tags: [] 
+    const prompt = buildWhisperPrompt({
+      participants: [],
+      tags: [],
     });
     expect(prompt).not.toContain('Uczestnicy:');
     expect(prompt).not.toContain('Tematy:');
@@ -75,6 +84,7 @@ describe('buildWhisperPrompt', () => {
 ```
 
 #### 2. `isHallucination()`
+
 ```typescript
 // server/tests/audioPipeline/isHallucination.test.ts
 describe('isHallucination', () => {
@@ -121,6 +131,7 @@ describe('isHallucination', () => {
 ```
 
 #### 3. `textSimilarity()`
+
 ```typescript
 // server/tests/audioPipeline/textSimilarity.test.ts
 describe('textSimilarity', () => {
@@ -155,6 +166,7 @@ describe('textSimilarity', () => {
 ```
 
 #### 4. `mergeShortSegments()`
+
 ```typescript
 // server/tests/audioPipeline/mergeShortSegments.test.ts
 describe('mergeShortSegments', () => {
@@ -193,8 +205,20 @@ describe('mergeShortSegments', () => {
 
   it('preserves verification status', () => {
     const segments = [
-      { text: 'Hello', timestamp: 0, endTimestamp: 0.5, speakerId: 0, verificationStatus: 'review' },
-      { text: 'world', timestamp: 0.6, endTimestamp: 1, speakerId: 0, verificationStatus: 'verified' },
+      {
+        text: 'Hello',
+        timestamp: 0,
+        endTimestamp: 0.5,
+        speakerId: 0,
+        verificationStatus: 'review',
+      },
+      {
+        text: 'world',
+        timestamp: 0.6,
+        endTimestamp: 1,
+        speakerId: 0,
+        verificationStatus: 'verified',
+      },
     ];
     const result = mergeShortSegments(segments, 1.2);
     expect(result[0].verificationStatus).toBe('review'); // Lower status preserved
@@ -203,6 +227,7 @@ describe('mergeShortSegments', () => {
 ```
 
 #### 5. `normalizeText()` i `tokenize()`
+
 ```typescript
 // server/tests/audioPipeline/textUtils.test.ts
 describe('normalizeText', () => {
@@ -239,6 +264,7 @@ describe('tokenize', () => {
 ### 🔹 Funkcje z zależnościami (integration tests) - **3 dni**
 
 #### 6. `runPyannoteDiarization()`
+
 ```typescript
 // server/tests/audioPipeline/runPyannoteDiarization.test.ts
 describe('runPyannoteDiarization', () => {
@@ -302,6 +328,7 @@ describe('runPyannoteDiarization', () => {
 ```
 
 #### 7. `runSileroVAD()`
+
 ```typescript
 // server/tests/audioPipeline/runSileroVAD.test.ts
 describe('runSileroVAD', () => {
@@ -336,6 +363,7 @@ describe('runSileroVAD', () => {
 ```
 
 #### 8. `mergeWithPyannote()`
+
 ```typescript
 // server/tests/audioPipeline/mergeWithPyannote.test.ts
 describe('mergeWithPyannote', () => {
@@ -385,6 +413,7 @@ describe('mergeWithPyannote', () => {
 ### 🔹 Główna funkcja `transcribeRecording()` - **4 dni**
 
 #### 9. Scenariusze testowe
+
 ```typescript
 // server/tests/audioPipeline/transcribeRecording.test.ts
 describe('transcribeRecording', () => {
@@ -396,13 +425,15 @@ describe('transcribeRecording', () => {
   it('transcribes small audio file directly', async () => {
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 * 1024 } as any); // 1MB
     vi.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('audio'));
-    
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      text: vi.fn().mockResolvedValue(JSON.stringify({
-        text: 'Hello world',
-        segments: [{ text: 'Hello', start: 0, end: 1 }],
-      })),
+      text: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          text: 'Hello world',
+          segments: [{ text: 'Hello', start: 0, end: 1 }],
+        })
+      ),
     });
 
     const result = await transcribeRecording({
@@ -417,7 +448,7 @@ describe('transcribeRecording', () => {
 
   it('chunks large audio files', async () => {
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 30 * 1024 * 1024 } as any); // 30MB
-    
+
     const mockSpawn = vi.spyOn(childProcess, 'spawn');
     mockSpawn.mockImplementation(() => {
       const child = new EventEmitter() as any;
@@ -447,7 +478,7 @@ describe('transcribeRecording', () => {
   it('handles empty STT output', async () => {
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 } as any);
     vi.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('audio'));
-    
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       text: vi.fn().mockResolvedValue(JSON.stringify({})),
@@ -466,36 +497,42 @@ describe('transcribeRecording', () => {
   it('handles STT API errors', async () => {
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 } as any);
     vi.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('audio'));
-    
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      text: vi.fn().mockResolvedValue(JSON.stringify({
-        error: { message: 'API error' },
-      })),
+      text: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          error: { message: 'API error' },
+        })
+      ),
     });
 
-    await expect(transcribeRecording({
-      id: 'rec_error',
-      file_path: '/tmp/audio.wav',
-      content_type: 'audio/wav',
-    })).rejects.toThrow('Transkrypcja STT nie powiodla sie');
+    await expect(
+      transcribeRecording({
+        id: 'rec_error',
+        file_path: '/tmp/audio.wav',
+        content_type: 'audio/wav',
+      })
+    ).rejects.toThrow('Transkrypcja STT nie powiodla sie');
   });
 
   it('filters out hallucinated segments', async () => {
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 } as any);
     vi.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('audio'));
-    
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      text: vi.fn().mockResolvedValue(JSON.stringify({
-        text: 'Thank you. Normalne zdanie. Dziękuję.',
-        segments: [
-          { text: 'Thank you.', start: 0, end: 1 },
-          { text: 'Normalne zdanie.', start: 1, end: 3 },
-          { text: 'Dziękuję.', start: 3, end: 4 },
-        ],
-      })),
+      text: vi.fn().mockResolvedValue(
+        JSON.stringify({
+          text: 'Thank you. Normalne zdanie. Dziękuję.',
+          segments: [
+            { text: 'Thank you.', start: 0, end: 1 },
+            { text: 'Normalne zdanie.', start: 1, end: 3 },
+            { text: 'Dziękuję.', start: 3, end: 4 },
+          ],
+        })
+      ),
     });
 
     const result = await transcribeRecording({
@@ -505,20 +542,20 @@ describe('transcribeRecording', () => {
     });
 
     // Hallucination segments should be filtered out
-    expect(result.segments.some(s => s.text === 'Thank you.')).toBe(false);
-    expect(result.segments.some(s => s.text === 'Normalne zdanie.')).toBe(true);
+    expect(result.segments.some((s) => s.text === 'Thank you.')).toBe(false);
+    expect(result.segments.some((s) => s.text === 'Normalne zdanie.')).toBe(true);
   });
 
   it('applies VAD when enabled', async () => {
     process.env.VAD_ENABLED = 'true';
     vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1024 } as any);
-    
+
     const mockSpawn = vi.spyOn(childProcess, 'spawn');
     mockSpawn.mockImplementation((cmd, args) => {
       const child = new EventEmitter() as any;
       child.stdout = new EventEmitter();
       child.stdout.setEncoding = vi.fn();
-      
+
       if (String(cmd).includes('vad.py')) {
         setTimeout(() => {
           child.stdout.emit('data', '[]'); // No speech detected
@@ -543,14 +580,17 @@ describe('transcribeRecording', () => {
     vi.spyOn(childProcess, 'exec').mockImplementation((cmd, opts, cb) => {
       cb(null, '', '');
     });
-    
-    global.fetch = vi.fn()
+
+    global.fetch = vi
+      .fn()
       .mockResolvedValueOnce({
         ok: true,
-        text: vi.fn().mockResolvedValue(JSON.stringify({
-          text: 'Hello',
-          segments: [{ text: 'Hello', start: 0, end: 1, speaker: 0 }],
-        })),
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({
+            text: 'Hello',
+            segments: [{ text: 'Hello', start: 0, end: 1, speaker: 0 }],
+          })
+        ),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -574,7 +614,7 @@ describe('transcribeRecording', () => {
 
 ## 🎯 PRIORYTET 2: `TranscriptionService.ts` (68% → 85%)
 
-### Testy do dodania - **1 dzień
+### Testy do dodania - \*\*1 dzień
 
 ```typescript
 // server/tests/services/TranscriptionService.additional.test.ts
@@ -620,7 +660,7 @@ describe('TranscriptionService', () => {
 
 ## 🎯 PRIORYTET 3: `database.ts` (56% → 80%)
 
-### Testy do dodania - **1 dzień
+### Testy do dodania - \*\*1 dzień
 
 ```typescript
 // server/tests/database/database.additional.test.ts
@@ -662,29 +702,29 @@ describe('Database', () => {
 
 ## 📅 Harmonogram prac
 
-| Tydzień | Zadanie | Oczekiwany coverage |
-|---------|---------|---------------------|
-| **1** | `audioPipeline.ts` - funkcje czyste | 22% → 45% |
-| **2** | `audioPipeline.ts` - funkcje z zależnościami | 45% → 65% |
-| **3** | `audioPipeline.ts` - `transcribeRecording()` | 65% → 80% |
-| **4** | `TranscriptionService.ts` + `database.ts` | 68% → 85% |
-| **5** | `sqliteWorker.ts` + `supabaseStorage.ts` | 0% → 70% |
-| **6** | `logger.ts` + `index.ts` + cleanup | 46% → 80% |
+| Tydzień | Zadanie                                      | Oczekiwany coverage |
+| ------- | -------------------------------------------- | ------------------- |
+| **1**   | `audioPipeline.ts` - funkcje czyste          | 22% → 45%           |
+| **2**   | `audioPipeline.ts` - funkcje z zależnościami | 45% → 65%           |
+| **3**   | `audioPipeline.ts` - `transcribeRecording()` | 65% → 80%           |
+| **4**   | `TranscriptionService.ts` + `database.ts`    | 68% → 85%           |
+| **5**   | `sqliteWorker.ts` + `supabaseStorage.ts`     | 0% → 70%            |
+| **6**   | `logger.ts` + `index.ts` + cleanup           | 46% → 80%           |
 
 ---
 
 ## 📊 Docelowy coverage
 
-| Plik | Obecnie | Cel |
-|------|---------|-----|
-| `audioPipeline.ts` | 22% | 80% |
-| `TranscriptionService.ts` | 68% | 85% |
-| `database.ts` | 56% | 80% |
-| `speakerEmbedder.ts` | 68% | 80% |
-| `sqliteWorker.ts` | 0% | 70% |
-| `supabaseStorage.ts` | 26% | 70% |
-| `logger.ts` | 46% | 70% |
-| `index.ts` | 61% | 80% |
+| Plik                      | Obecnie | Cel |
+| ------------------------- | ------- | --- |
+| `audioPipeline.ts`        | 22%     | 80% |
+| `TranscriptionService.ts` | 68%     | 85% |
+| `database.ts`             | 56%     | 80% |
+| `speakerEmbedder.ts`      | 68%     | 80% |
+| `sqliteWorker.ts`         | 0%      | 70% |
+| `supabaseStorage.ts`      | 26%     | 70% |
+| `logger.ts`               | 46%     | 70% |
+| `index.ts`                | 61%     | 80% |
 
 **Średni coverage servera:** 47% → **78%**
 

@@ -12,11 +12,11 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -27,17 +27,17 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Create branch
         id: create-branch
         run: |
           BRANCH_NAME="auto-fix-issue-${{ github.event.issue.number }}"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           git checkout -b $BRANCH_NAME
-      
+
       - name: Analyze issue and create fix
         id: analyze
         uses: actions/github-script@v7
@@ -46,32 +46,32 @@ jobs:
             const issue = context.payload.issue;
             const issueBody = issue.body || '';
             const issueTitle = issue.title;
-            
+
             // Extract potential fix information from issue
             let fixDescription = '';
-            
+
             // Look for code blocks in the issue
             const codeBlocks = issueBody.match(/```[\s\S]*?```/g);
             if (codeBlocks) {
               fixDescription = 'Found code suggestions in issue';
             }
-            
+
             // Look for file paths mentioned
             const filePaths = issueBody.match(/`([^\`]+\.(ts|tsx|js|jsx))`/g);
             if (filePaths) {
               fixDescription += '\nFound file references: ' + filePaths.join(', ');
             }
-            
+
             console.log('Issue Analysis:');
             console.log('Title:', issueTitle);
             console.log('Description:', fixDescription || 'No specific fix identified');
-            
+
             // Create a simple fix based on issue type
             if (issueTitle.includes('typo') || issueTitle.includes('typo')) {
               console.log('🔧 This appears to be a typo fix issue');
               // For typo fixes, we would need AI to analyze and fix
             }
-            
+
             if (issueTitle.includes('format') || issueTitle.includes('prettier')) {
               console.log('🔧 This appears to be a formatting issue');
               // Run prettier fix
@@ -83,7 +83,7 @@ jobs:
                 console.log('⚠️ Formatting fix failed');
               }
             }
-            
+
             if (issueTitle.includes('lint') || issueTitle.includes('eslint')) {
               console.log('🔧 This appears to be a linting issue');
               // Run lint fix
@@ -95,62 +95,62 @@ jobs:
                 console.log('⚠️ Linting fix failed');
               }
             }
-            
+
             return { fixDescription };
-      
+
       - name: Check for changes
         id: git-check
         run: |
           git diff --quiet || echo "has_changes=true" >> $GITHUB_OUTPUT
-      
+
       - name: Commit auto-fixes
         if: steps.git-check.outputs.has_changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "fix: auto-fix for #${{ github.event.issue.number }} - ${{ github.event.issue.title }} [skip ci]"
-          commit_options: "--no-verify"
+          commit_message: 'fix: auto-fix for #${{ github.event.issue.number }} - ${{ github.event.issue.title }} [skip ci]'
+          commit_options: '--no-verify'
           branch: ${{ steps.create-branch.outputs.branch_name }}
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
-      
+
       - name: Create Pull Request
         if: steps.git-check.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.create-branch.outputs.branch_name }}
-          title: "fix: Auto-fix for #${{ github.event.issue.number }} - ${{ github.event.issue.title }}"
+          title: 'fix: Auto-fix for #${{ github.event.issue.number }} - ${{ github.event.issue.title }}'
           body: |
             ## 🤖 Auto-Fix Pull Request
-            
+
             This PR was automatically generated to fix issue #${{ github.event.issue.number }}.
-            
+
             ### Issue
             ${{ github.event.issue.title }}
-            
+
             ### Changes
             - Auto-applied formatting fixes
             - Auto-applied linting fixes
             - Auto-applied type fixes
-            
+
             ### Review Required
             Please review the changes before merging.
-            
+
             ---
             *This is an automated PR. Please review carefully.*
           labels: |
             automated-pr
             ${{ github.event.label.name }}
           issue: ${{ github.event.issue.number }}
-      
+
       - name: Comment on issue
         uses: actions/github-script@v7
         with:
           script: |
             const hasChanges = '${{ steps.git-check.outputs.has_changes }}' === 'true';
-            
+
             let comment = '## 🤖 Auto-Fix Bot\n\n';
-            
+
             if (hasChanges) {
               comment += '### ✅ Auto-Fix Applied!\n\n';
               comment += 'I\'ve analyzed this issue and created an automated fix.\n\n';
@@ -166,7 +166,7 @@ jobs:
               comment += 'This issue requires manual intervention or the fix is too complex for automation.\n\n';
               comment += '---\n*This is an automated comment from the Auto-Fix Bot.*\n';
             }
-            
+
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -12,14 +12,56 @@ const COVERAGE_HTML = path.join(__dirname, '..', 'coverage', 'server', 'index.ht
 
 // Dane o jakości testów z audytu
 const TEST_QUALITY_DATA = [
-  { category: 'Backend (server/)', files: 18, tests: '~50', passRate: '95%', score: '🟢 9/10', scoreNum: 9 },
-  { category: 'Frontend Components', files: 15, tests: '~60', passRate: '85%', score: '🟡 7/10', scoreNum: 7 },
+  {
+    category: 'Backend (server/)',
+    files: 18,
+    tests: '~50',
+    passRate: '95%',
+    score: '🟢 9/10',
+    scoreNum: 9,
+  },
+  {
+    category: 'Frontend Components',
+    files: 15,
+    tests: '~60',
+    passRate: '85%',
+    score: '🟡 7/10',
+    scoreNum: 7,
+  },
   { category: 'Hooks', files: 12, tests: '~50', passRate: '60%', score: '🔴 5/10', scoreNum: 5 },
   { category: 'Services', files: 6, tests: '~30', passRate: '50%', score: '🔴 4/10', scoreNum: 4 },
-  { category: 'Stores (Zustand)', files: 5, tests: '~30', passRate: '70%', score: '🟡 6/10', scoreNum: 6 },
-  { category: 'Lib (pure functions)', files: 15, tests: '~50', passRate: '98%', score: '🟢 9/10', scoreNum: 9 },
-  { category: 'Context Providers', files: 2, tests: '~10', passRate: '50%', score: '🔴 5/10', scoreNum: 5 },
-  { category: 'Integration/E2E', files: 2, tests: '~15', passRate: '70%', score: '🟡 6/10', scoreNum: 6 },
+  {
+    category: 'Stores (Zustand)',
+    files: 5,
+    tests: '~30',
+    passRate: '70%',
+    score: '🟡 6/10',
+    scoreNum: 6,
+  },
+  {
+    category: 'Lib (pure functions)',
+    files: 15,
+    tests: '~50',
+    passRate: '98%',
+    score: '🟢 9/10',
+    scoreNum: 9,
+  },
+  {
+    category: 'Context Providers',
+    files: 2,
+    tests: '~10',
+    passRate: '50%',
+    score: '🔴 5/10',
+    scoreNum: 5,
+  },
+  {
+    category: 'Integration/E2E',
+    files: 2,
+    tests: '~15',
+    passRate: '70%',
+    score: '🟡 6/10',
+    scoreNum: 6,
+  },
 ];
 
 function formatPercent(value) {
@@ -58,19 +100,19 @@ function printTestQualityTable() {
     'Plików'.padStart(8),
     'Testów'.padStart(8),
     'Pass Rate'.padStart(11),
-    'Ocena'.padStart(10)
+    'Ocena'.padStart(10),
   ].join(' │ ');
 
   console.log(header);
   console.log('─'.repeat(80));
 
-  TEST_QUALITY_DATA.forEach(row => {
+  TEST_QUALITY_DATA.forEach((row) => {
     const line = [
       row.category.padEnd(25),
       row.files.toString().padStart(8),
       row.tests.padStart(8),
       row.passRate.padStart(11),
-      getScoreColor(row.score).padStart(10)
+      getScoreColor(row.score).padStart(10),
     ].join(' │ ');
     console.log(line);
   });
@@ -82,8 +124,9 @@ function printTestQualityTable() {
 }
 
 function generateQualityTableHTML() {
-  const rows = TEST_QUALITY_DATA.map(row => {
-    const scoreClass = row.scoreNum >= 8 ? 'score-good' : (row.scoreNum >= 5 ? 'score-medium' : 'score-bad');
+  const rows = TEST_QUALITY_DATA.map((row) => {
+    const scoreClass =
+      row.scoreNum >= 8 ? 'score-good' : row.scoreNum >= 5 ? 'score-medium' : 'score-bad';
     return `
       <tr>
         <td class="category">${row.category}</td>
@@ -229,7 +272,11 @@ function updateHTMLReport() {
 
   // Wstaw tabelę przed </body>
   const qualityTableHTML = generateQualityTableHTML();
-  htmlContent = htmlContent.slice(0, insertPosition) + qualityTableHTML + '\n' + htmlContent.slice(insertPosition);
+  htmlContent =
+    htmlContent.slice(0, insertPosition) +
+    qualityTableHTML +
+    '\n' +
+    htmlContent.slice(insertPosition);
 
   // Zapisz zaktualizowany plik
   fs.writeFileSync(COVERAGE_HTML, htmlContent, 'utf8');
@@ -250,9 +297,15 @@ try {
   console.log('📊 PODSUMOWANIE COVERAGE - SERVER');
   console.log('='.repeat(50));
   console.log('\n');
-  console.log(`Statements:  ${formatPercent(total.statements.pct)}  ${getStatusIcon(total.statements.pct)}`);
-  console.log(`Branches:    ${formatPercent(total.branches.pct)}  ${getStatusIcon(total.branches.pct)}`);
-  console.log(`Functions:   ${formatPercent(total.functions.pct)}  ${getStatusIcon(total.functions.pct)}`);
+  console.log(
+    `Statements:  ${formatPercent(total.statements.pct)}  ${getStatusIcon(total.statements.pct)}`
+  );
+  console.log(
+    `Branches:    ${formatPercent(total.branches.pct)}  ${getStatusIcon(total.branches.pct)}`
+  );
+  console.log(
+    `Functions:   ${formatPercent(total.functions.pct)}  ${getStatusIcon(total.functions.pct)}`
+  );
   console.log(`Lines:       ${formatPercent(total.lines.pct)}  ${getStatusIcon(total.lines.pct)}`);
   console.log('\n');
   console.log('Szczegóły: coverage/server/index.html');
@@ -269,7 +322,6 @@ try {
   printTestQualityTable();
 
   updateHTMLReport();
-
 } catch (error) {
   console.error('❌ Błąd:', error.message);
   process.exit(1);

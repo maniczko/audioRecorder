@@ -1,5 +1,3 @@
-
-
 .schedule-toolbar {
   display: flex;
   align-items: center;
@@ -20,9 +18,13 @@
   overflow: hidden;
 }
 
-.schedule-grid-14 { grid-template-columns: repeat(14, minmax(80px, 1fr)); }
+.schedule-grid-14 {
+  grid-template-columns: repeat(14, minmax(80px, 1fr));
+}
 
-.schedule-grid-35 { grid-template-columns: repeat(7, minmax(80px, 1fr)); }
+.schedule-grid-35 {
+  grid-template-columns: repeat(7, minmax(80px, 1fr));
+}
 
 .schedule-day {
   min-height: 80px;
@@ -33,7 +35,9 @@
   transition: background 0.15s;
 }
 
-.schedule-day:last-child { border-right: none; }
+.schedule-day:last-child {
+  border-right: none;
+}
 
 .schedule-day.today {
   background: rgba(90, 146, 255, 0.06);

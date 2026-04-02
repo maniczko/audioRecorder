@@ -124,28 +124,30 @@ async function fetchJobLogs(jobId, jobName) {
       if (res.statusCode === 302 && res.headers.location) {
         // Follow the redirect to S3
         const redirectUrl = new URL(res.headers.location);
-        https.get(redirectUrl, (s3Res) => {
-          let data = '';
-          s3Res.on('data', (chunk) => data += chunk);
-          s3Res.on('end', () => {
-            if (s3Res.statusCode !== 200) {
-              console.log(`  ⚠️  Failed to fetch logs: ${s3Res.statusCode}`);
-              resolve(null);
-            } else {
-              resolve({ jobId, logs: data });
-            }
+        https
+          .get(redirectUrl, (s3Res) => {
+            let data = '';
+            s3Res.on('data', (chunk) => (data += chunk));
+            s3Res.on('end', () => {
+              if (s3Res.statusCode !== 200) {
+                console.log(`  ⚠️  Failed to fetch logs: ${s3Res.statusCode}`);
+                resolve(null);
+              } else {
+                resolve({ jobId, logs: data });
+              }
+            });
+          })
+          .on('error', (error) => {
+            console.log(`  ⚠️  Redirect error: ${error.message}`);
+            resolve(null);
           });
-        }).on('error', (error) => {
-          console.log(`  ⚠️  Redirect error: ${error.message}`);
-          resolve(null);
-        });
       } else if (res.statusCode !== 200) {
         console.log(`  ⚠️  Failed to fetch logs: ${res.statusCode}`);
         resolve(null);
       } else {
         // Logs are returned as raw text, not JSON
         let data = '';
-        res.on('data', (chunk) => data += chunk);
+        res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
           resolve({ jobId, logs: data });
         });
@@ -333,16 +335,17 @@ async function createIssue(report, files) {
 | Cancelled Runs | ${report.summary.cancelledRuns} |
 | Successful Runs | ${report.summary.successfulRuns} |
 
-${report.failures.length > 0
-      ? `
+${
+  report.failures.length > 0
+    ? `
 ### Failed Workflows
 
 ${report.failures.map((f) => `- [${f.runName}](${f.htmlUrl}) - ${f.commit}`).join('\n')}
 `
-      : `
+    : `
 ### ✅ All workflows passed!
 `
-    }
+}
 
 ### Attachments
 

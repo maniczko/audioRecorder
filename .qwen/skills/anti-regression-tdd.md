@@ -17,47 +17,48 @@ Every agent MUST follow this workflow before implementing any feature or bug fix
 
 ## Test Template
 
-`	ypescript
+` ypescript
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('[FeatureName]', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+beforeEach(() => {
+vi.useFakeTimers();
+});
 
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-  });
+afterEach(() => {
+vi.useRealTimers();
+vi.restoreAllMocks();
+});
 
-  // RED: should FAIL before implementation
-  test('should [EXPECTED] when [CONDITION]', async () => {
-    // Arrange → Act → Assert
-  });
+// RED: should FAIL before implementation
+test('should [EXPECTED] when [CONDITION]', async () => {
+// Arrange → Act → Assert
+});
 
-  // Edge cases
-  test('should handle [EDGE_CASE]', async () => {});
+// Edge cases
+test('should handle [EDGE_CASE]', async () => {});
 
-  // Error handling
-  test('should throw when [INVALID]', async () => {});
+// Error handling
+test('should throw when [INVALID]', async () => {});
 });
 `
 
 ## Regression Test Template
 
-`	ypescript
-/**
- * Regression: Issue #[NUMBER]
- * Bug: [DESCRIPTION]
- * Fixed: [DATE]
- * DO NOT DELETE without understanding the original bug.
- */
-describe('Regression: #[NUMBER] — [BUG]', () => {
+` ypescript
+/\*\*
+
+- Regression: Issue #[NUMBER]
+- Bug: [DESCRIPTION]
+- Fixed: [DATE]
+- DO NOT DELETE without understanding the original bug.
+  \*/
+  describe('Regression: #[NUMBER] — [BUG]', () => {
   test('should not [BUG_BEHAVIOR] anymore', async () => {
-    // exact scenario that caused the bug
+  // exact scenario that caused the bug
   });
-});
-`
+  });
+  `
 
 ## Verification Checklist
 

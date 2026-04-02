@@ -10,7 +10,7 @@
  * No external dependencies — runs entirely inside AudioWorkletGlobalScope.
  */
 
-"use strict";
+'use strict';
 
 const FFT_SIZE = 512;
 const HOP_SIZE = 128; // one AudioWorklet quantum = 128 samples
@@ -32,8 +32,12 @@ function bitRev(re, im, n) {
     for (; j & bit; bit >>= 1) j ^= bit;
     j ^= bit;
     if (i < j) {
-      let t = re[i]; re[i] = re[j]; re[j] = t;
-      t = im[i]; im[i] = im[j]; im[j] = t;
+      let t = re[i];
+      re[i] = re[j];
+      re[j] = t;
+      t = im[i];
+      im[i] = im[j];
+      im[j] = t;
     }
   }
 }
@@ -43,7 +47,7 @@ function fft(re, im) {
   bitRev(re, im, n);
   for (let len = 2; len <= n; len <<= 1) {
     const half = len >> 1;
-    const wStep = -2 * Math.PI / len;
+    const wStep = (-2 * Math.PI) / len;
     for (let i = 0; i < n; i += len) {
       for (let k = 0; k < half; k++) {
         const a = wStep * k;
@@ -97,7 +101,7 @@ class NoiseReducerProcessor extends AudioWorkletProcessor {
     this.bypassed = false;
 
     this.port.onmessage = (e) => {
-      if (e.data.type === "bypass") this.bypassed = !!e.data.value;
+      if (e.data.type === 'bypass') this.bypassed = !!e.data.value;
     };
   }
 
@@ -141,11 +145,10 @@ class NoiseReducerProcessor extends AudioWorkletProcessor {
 
     // ── 5. Wiener gain (skip during warmup to collect noise profile) ─────────
     if (this.tick >= this.warmup) {
-      const OVER = 2.5;   // over-subtraction factor (stronger reduction)
+      const OVER = 2.5; // over-subtraction factor (stronger reduction)
       const FLOOR = 0.03; // spectral floor to prevent musical noise
       for (let k = 0; k < NUM_BINS; k++) {
-        const snr = (re[k] * re[k] + im[k] * im[k]) /
-                    (this.noiseFloor[k] * OVER + 1e-20);
+        const snr = (re[k] * re[k] + im[k] * im[k]) / (this.noiseFloor[k] * OVER + 1e-20);
         const g = Math.max(FLOOR, snr / (snr + 1));
         re[k] *= g;
         im[k] *= g;
@@ -174,4 +177,4 @@ class NoiseReducerProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("noise-reducer", NoiseReducerProcessor);
+registerProcessor('noise-reducer', NoiseReducerProcessor);

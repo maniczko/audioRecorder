@@ -14,7 +14,7 @@ jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: quality
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -86,7 +86,7 @@ jobs:
 
       - name: Run unit tests
         run: pnpm test -- --coverage --reporter=junit --outputFile=reports/junit.xml
-        
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         with:
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [quality, test-unit]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: build
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -195,7 +195,7 @@ jobs:
     timeout-minutes: 20
     needs: [build, test-e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -242,7 +242,7 @@ jobs:
     needs: [build, test-e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

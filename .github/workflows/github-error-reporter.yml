@@ -2,7 +2,7 @@ name: GitHub Error Reporter
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM
+    - cron: '0 9 * * *' # Daily at 9 AM
   workflow_dispatch:
     inputs:
       days_back:
@@ -23,11 +23,11 @@ jobs:
       actions: read
       issues: write
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -38,10 +38,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Fetch GitHub Errors
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,7 +49,7 @@ jobs:
           GITHUB_REPO: ${{ github.event.repository.name }}
           DAYS_BACK: ${{ github.event.inputs.days_back || 7 }}
         run: node scripts/fetch-github-errors.js --verbose
-      
+
       - name: Upload error reports
         uses: actions/upload-artifact@v7
         if: always()
@@ -57,7 +57,7 @@ jobs:
           name: github-error-reports
           path: github-errors/
           retention-days: 30
-      
+
       - name: Create Issue for Failures
         if: ${{ github.event.inputs.create_issue != 'false' }}
         uses: actions/github-script@v7

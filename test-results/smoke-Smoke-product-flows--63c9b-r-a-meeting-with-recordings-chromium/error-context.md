@@ -1,0 +1,116 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+    - generic [ref=e3]:
+        - complementary [ref=e4]:
+            - button "VoiceBóbr" [ref=e5] [cursor=pointer]:
+                - img [ref=e7]
+                - heading "VoiceBóbr" [level=1] [ref=e33]
+            - navigation [ref=e34]:
+                - button "Studio" [ref=e35] [cursor=pointer]:
+                    - img [ref=e36]
+                    - text: Studio
+                - button "Nagrania" [ref=e37] [cursor=pointer]:
+                    - img [ref=e38]
+                    - text: Nagrania
+                - button "Kalendarz" [ref=e42] [cursor=pointer]:
+                    - img [ref=e43]
+                    - text: Kalendarz
+                - button "Zadania" [ref=e45] [cursor=pointer]:
+                    - img [ref=e46]
+                    - text: Zadania
+                - button "Osoby" [ref=e49] [cursor=pointer]:
+                    - img [ref=e50]
+                    - text: Osoby
+                - button "Zapytaj AI" [ref=e54] [cursor=pointer]:
+                    - img [ref=e55]
+                    - text: Zapytaj AI
+            - generic [ref=e64]: E2E Workspace
+        - main [ref=e65]:
+            - generic [ref=e67]:
+                - button "Szukaj wszędzie... Ctrl + K" [ref=e68] [cursor=pointer]:
+                    - generic [ref=e69]:
+                        - img [ref=e70]
+                        - text: Szukaj wszędzie...
+                    - generic [ref=e73]:
+                        - generic [ref=e74]: Ctrl
+                        - text: +
+                        - generic [ref=e75]: K
+                - button "Powiadomienia" [ref=e77] [cursor=pointer]: ⏰
+                - button "Rozpocznij nagrywanie" [ref=e78] [cursor=pointer]:
+                    - generic [ref=e79]:
+                        - img [ref=e80]
+                        - text: Rozpocznij nagrywanie
+                - button "E" [ref=e82] [cursor=pointer]:
+                    - generic [ref=e83]: E
+            - main [ref=e88]:
+                - generic [ref=e89]:
+                    - generic [ref=e90]:
+                        - generic [ref=e91]:
+                            - heading "Ad hoc" [level=1] [ref=e92] [cursor=pointer]:
+                                - text: Ad hoc
+                                - img [ref=e93]
+                            - paragraph [ref=e96]: 20 mar 2026, 11:00 · 05:20
+                        - generic [ref=e97]:
+                            - button "Podsumowanie spotkania" [ref=e98] [cursor=pointer]
+                            - button "Potrzeby i obawy" [ref=e99] [cursor=pointer]
+                            - button "Profil psychologiczny" [ref=e100] [cursor=pointer]
+                            - button "Twój feedback" [ref=e101] [cursor=pointer]
+                            - button "Zadania" [ref=e102] [cursor=pointer]
+                        - generic [ref=e103]:
+                            - button "Eksport" [ref=e104] [cursor=pointer]:
+                                - img [ref=e105]
+                                - text: Eksport
+                            - button "+ Brief" [ref=e108] [cursor=pointer]
+                            - button "Rozpocznij nagrywanie" [ref=e110] [cursor=pointer]:
+                                - img [ref=e111]
+                                - text: Rozpocznij nagrywanie
+                        - generic [ref=e115]:
+                            - generic [ref=e117]:
+                                - generic [ref=e118]: AI ? podsumowanie
+                                - generic [ref=e119]:
+                                    - heading "Podsumowanie spotkania" [level=2] [ref=e120]
+                                    - button "✏️ Edytuj" [ref=e121] [cursor=pointer]
+                            - generic [ref=e122]:
+                                - list [ref=e124]:
+                                    - listitem [ref=e125]:
+                                        - generic [ref=e126]: 🧾
+                                        - generic [ref=e127]:
+                                            - strong [ref=e128]: 'Podsumowanie:'
+                                            - generic [ref=e129]: OK
+                                - generic [ref=e130]:
+                                    - generic [ref=e131]:
+                                        - heading "Uczestnicy" [level=3] [ref=e133]
+                                        - textbox "Wpisz lub wybierz z listy..." [ref=e137]
+                                    - generic [ref=e138]:
+                                        - heading "Tagi" [level=3] [ref=e140]
+                                        - textbox "Dodaj tag..." [ref=e144]
+                                    - generic [ref=e145]:
+                                        - heading "Decyzje" [level=3] [ref=e147]
+                                        - paragraph [ref=e148]: Brak wykrytych decyzji.
+                                    - generic [ref=e149]:
+                                        - heading "Nastepne kroki" [level=3] [ref=e151]
+                                        - paragraph [ref=e152]: Brak dodatkowych krokow.
+                                    - generic [ref=e153]:
+                                        - heading "Ryzyka i blokery" [level=3] [ref=e155]
+                                        - paragraph [ref=e156]: Brak ryzyk i blokad.
+                                - generic "Rozwiń wizualizację" [ref=e158] [cursor=pointer]:
+                                    - generic [ref=e159]:
+                                        - button:
+                                            - img
+                                        - heading "Wizualizacja (Sketchnote)" [level=3] [ref=e160]
+                                    - button "🎨 Generuj sketchnotkę" [ref=e162]
+                    - generic [ref=e163]:
+                        - generic [ref=e164]:
+                            - button "Transkrypcja" [ref=e167] [cursor=pointer]
+                            - generic [ref=e168]:
+                                - img [ref=e169]
+                                - textbox "Szukaj lub zamień..." [ref=e172]
+                        - generic [ref=e174]:
+                            - img [ref=e175]
+                            - paragraph [ref=e179]:
+                                - text: Brak transkrypcji
+                                - text: dla tego nagrania.
+    - status
+```

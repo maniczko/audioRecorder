@@ -2,7 +2,6 @@
 
 Auto-generated API documentation.
 
-
 ## /ai
 
 - `POST /person-profile`

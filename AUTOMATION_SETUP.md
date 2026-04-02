@@ -85,6 +85,7 @@ ssh-keygen -t rsa -b 4096 -C "github-$(date +%Y%m%d)"
 **Dodaj klucz do GitHub:**
 
 1. Skopiuj klucz publiczny:
+
    ```bash
    cat ~/.ssh/id_ed25519.pub
    # lub Windows:
@@ -130,13 +131,13 @@ Automatyczne przygotowanie commita i pusha.
 
 Skrypt automatycznie wykrywa typ zmian:
 
-| Zmienione pliki | Commit message |
-|-----------------|----------------|
-| `TASK_QUEUE.md` | `chore: update task queue` |
-| `.github/workflows/` | `ci: update workflows` |
-| `src/` | `feat: frontend updates` |
-| `server/` | `feat: backend updates` |
-| Inne | `chore: project updates` |
+| Zmienione pliki      | Commit message             |
+| -------------------- | -------------------------- |
+| `TASK_QUEUE.md`      | `chore: update task queue` |
+| `.github/workflows/` | `ci: update workflows`     |
+| `src/`               | `feat: frontend updates`   |
+| `server/`            | `feat: backend updates`    |
+| Inne                 | `chore: project updates`   |
 
 ### `setup-github-auth.sh`
 
@@ -183,16 +184,16 @@ jobs:
   deploy:
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Make changes
         run: |
           echo "new content" >> file.txt
-      
+
       - name: Auto commit and push
         uses: ./.github/workflows/auto-push.yml
         with:
-          commit_message: "chore: automated update"
-          branch: "main"
+          commit_message: 'chore: automated update'
+          branch: 'main'
 ```
 
 ### `gpt-fix.yml`
@@ -221,6 +222,7 @@ Automatyczna naprawa failing CI tests z AI.
 ### `git push` nie działa
 
 **Problem:**
+
 ```
 remote: Support for password authentication was removed
 ```
@@ -241,6 +243,7 @@ git push
 ### `Permission denied (publickey)`
 
 **Problem:**
+
 ```
 git@github.com: Permission denied (publickey).
 ```
@@ -261,6 +264,7 @@ ssh -T git@github.com
 ### Branch diverged
 
 **Problem:**
+
 ```
 Your branch and 'origin/main' have diverged
 ```

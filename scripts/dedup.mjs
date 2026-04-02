@@ -7,21 +7,21 @@ async function dedup() {
 
   let studioRules = new Set();
   const studioRoot = postcss.parse(studioCssContent);
-  studioRoot.walk(node => {
+  studioRoot.walk((node) => {
     if (node.type === 'rule') {
       const decls = [];
-      node.walkDecls(decl => decls.push(`${decl.prop}:${decl.value}`));
-      studioRules.add(node.selector.trim() + "|||" + decls.join(';'));
+      node.walkDecls((decl) => decls.push(`${decl.prop}:${decl.value}`));
+      studioRules.add(node.selector.trim() + '|||' + decls.join(';'));
     }
   });
 
   const appRoot = postcss.parse(appCssContent);
   let removed = 0;
-  appRoot.walk(node => {
+  appRoot.walk((node) => {
     if (node.type === 'rule') {
       const decls = [];
-      node.walkDecls(decl => decls.push(`${decl.prop}:${decl.value}`));
-      const key = node.selector.trim() + "|||" + decls.join(';');
+      node.walkDecls((decl) => decls.push(`${decl.prop}:${decl.value}`));
+      const key = node.selector.trim() + '|||' + decls.join(';');
       if (studioRules.has(key)) {
         node.remove();
         removed++;

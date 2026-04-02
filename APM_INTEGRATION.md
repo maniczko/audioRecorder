@@ -11,6 +11,7 @@ Integracja Application Performance Monitoring (APM) dla monitorowania aplikacji 
 ### 1. **DataDog APM** (Rekomendowane)
 
 **Zalety:**
+
 - Full-stack observability
 - Real-time monitoring
 - Automatic instrumentation
@@ -19,6 +20,7 @@ Integracja Application Performance Monitoring (APM) dla monitorowania aplikacji 
 - Synthetic monitoring
 
 **Koszty:**
+
 - $15/host/month (APM)
 - Darmowy tier: 1 host
 
@@ -27,6 +29,7 @@ Integracja Application Performance Monitoring (APM) dla monitorowania aplikacji 
 ### 2. **New Relic APM**
 
 **Zalety:**
+
 - Generous free tier (100GB/month)
 - Easy setup
 - Good Node.js support
@@ -34,6 +37,7 @@ Integracja Application Performance Monitoring (APM) dla monitorowania aplikacji 
 - Alerting
 
 **Koszty:**
+
 - Free: 100GB/month
 - Standard: $99/month
 - Enterprise: Custom
@@ -43,11 +47,13 @@ Integracja Application Performance Monitoring (APM) dla monitorowania aplikacji 
 ### 3. **Open Source Alternatives**
 
 #### Prometheus + Grafana
+
 - Darmowe
 - Self-hosted
 - Wymaga więcej konfiguracji
 
 #### Jaeger
+
 - Distributed tracing
 - Open source
 - Good for microservices
@@ -94,9 +100,7 @@ tracer.init({
   runtimeMetrics: true,
   profiling: true,
   // Sampling rate
-  samplingRules: [
-    { service: 'voicelog-server', sampleRate: 1.0 }
-  ],
+  samplingRules: [{ service: 'voicelog-server', sampleRate: 1.0 }],
   // DataDog Agent URL
   hostname: process.env.DD_AGENT_HOST || 'localhost',
   port: parseInt(process.env.DD_TRACE_AGENT_PORT || '8126', 10),
@@ -132,10 +136,10 @@ const app = new Hono();
 // Middleware do trackowania błędów
 app.use('*', async (c, next) => {
   const span = tracer.scope().active();
-  
+
   try {
     await next();
-    
+
     // Track response
     if (span) {
       span.setTag('http.status', c.res.status);
@@ -187,37 +191,34 @@ Stwórz plik `newrelic.js` w root:
 exports.config = {
   app_name: ['voicelog-server'],
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
-  
+
   logging: {
     level: 'info',
     filepath: 'logs/newrelic_agent.log',
   },
-  
+
   application_logging: {
     forwarding: {
       enabled: true,
     },
   },
-  
+
   distributed_tracing: {
     enabled: true,
   },
-  
+
   transaction_tracer: {
     enabled: true,
     transaction_threshold: 'apdex_f',
   },
-  
+
   error_collector: {
     enabled: true,
     ignore_status_codes: [404],
   },
-  
+
   rules: {
-    ignore: [
-      /^\/health$/,
-      /^\/ready$/,
-    ],
+    ignore: [/^\/health$/, /^\/ready$/],
   },
 };
 ```
@@ -238,21 +239,21 @@ import newrelic from 'newrelic';
 
 app.use('*', async (c, next) => {
   const transaction = newrelic.getTransaction();
-  
+
   if (transaction) {
     transaction.addCustomAttribute('workspaceId', c.get('workspaceId'));
   }
-  
+
   await next();
 });
 
 // Track custom metrics
 app.post('/api/meetings', async (c) => {
   // ... logic
-  
+
   newrelic.incrementMetric('Custom/Meetings/Created', 1);
   newrelic.recordMetric('Custom/Meeting/ProcessingTime', duration);
-  
+
   return c.json({ success: true });
 });
 ```
@@ -274,29 +275,29 @@ NEW_RELIC_LOG_LEVEL=info
 
 ### Application Metrics
 
-| Metryka | Opis | Alert Threshold |
-|---------|------|-----------------|
-| Response Time | Średni czas odpowiedzi | > 500ms |
-| Error Rate | % błędnych żądań | > 1% |
-| Throughput | Żądania na sekundę | Nagłe spadki |
-| Apdex Score | Satisfaction score | < 0.7 |
+| Metryka       | Opis                   | Alert Threshold |
+| ------------- | ---------------------- | --------------- |
+| Response Time | Średni czas odpowiedzi | > 500ms         |
+| Error Rate    | % błędnych żądań       | > 1%            |
+| Throughput    | Żądania na sekundę     | Nagłe spadki    |
+| Apdex Score   | Satisfaction score     | < 0.7           |
 
 ### System Metrics
 
-| Metryka | Opis | Alert Threshold |
-|---------|------|-----------------|
-| CPU Usage | Użycie procesora | > 80% |
-| Memory Usage | Użycie pamięci RAM | > 85% |
-| Disk I/O | Operacje dyskowe | > 90% |
-| Network I/O | Ruch sieciowy | Nagłe skoki |
+| Metryka      | Opis               | Alert Threshold |
+| ------------ | ------------------ | --------------- |
+| CPU Usage    | Użycie procesora   | > 80%           |
+| Memory Usage | Użycie pamięci RAM | > 85%           |
+| Disk I/O     | Operacje dyskowe   | > 90%           |
+| Network I/O  | Ruch sieciowy      | Nagłe skoki     |
 
 ### Business Metrics
 
-| Metryka | Opis |
-|---------|------|
-| Meetings Created | Liczba utworzonych spotkań |
-| Recordings Processed | Przetworzone nagrania |
-| Active Users | Aktywni użytkownicy |
+| Metryka               | Opis                             |
+| --------------------- | -------------------------------- |
+| Meetings Created      | Liczba utworzonych spotkań       |
+| Recordings Processed  | Przetworzone nagrania            |
+| Active Users          | Aktywni użytkownicy              |
 | API Calls by Endpoint | Użycie poszczególnych endpointów |
 
 ---
@@ -414,24 +415,24 @@ import tracer from 'dd-trace';
 
 async function processRecording(recording: Recording) {
   const span = tracer.startSpan('process.recording');
-  
+
   try {
     return tracer.scope().activate(span, async () => {
       // Step 1: Transcribe
       const transcriptionSpan = tracer.startSpan('transcribe.audio');
       const transcript = await transcribe(recording.audioUrl);
       transcriptionSpan.finish();
-      
+
       // Step 2: Analyze
       const analysisSpan = tracer.startSpan('analyze.sentiment');
       const sentiment = await analyzeSentiment(transcript);
       analysisSpan.finish();
-      
+
       // Step 3: Store
       const storeSpan = tracer.startSpan('store.results');
       await storeResults(transcript, sentiment);
       storeSpan.finish();
-      
+
       return { transcript, sentiment };
     });
   } catch (error) {
@@ -492,6 +493,7 @@ k6 run load-test.js
 ### Best Practices
 
 1. **Nigdy nie commituj kluczy API**
+
    ```bash
    # Dodaj do .gitignore
    .env
@@ -499,12 +501,14 @@ k6 run load-test.js
    ```
 
 2. **Używaj secrets manager**
+
    ```bash
    # AWS Secrets Manager
    DD_API_KEY=$(aws secretsmanager get-secret-value --secret-id datadog/api-key --query SecretString --output text)
    ```
 
 3. **Ogranicz dane w trace**
+
    ```typescript
    // Nie loguj wrażliwych danych
    span.setTag('user.email', sanitize(email)); // Nie raw email
@@ -514,8 +518,8 @@ k6 run load-test.js
    ```typescript
    // Mniejszy sampling dla wysokich ruchów
    samplingRules: [
-     { service: 'voicelog-server', sampleRate: 0.1 } // 10%
-   ]
+     { service: 'voicelog-server', sampleRate: 0.1 }, // 10%
+   ];
    ```
 
 ---

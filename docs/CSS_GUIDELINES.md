@@ -57,13 +57,18 @@ Używaj **kebab-case** dla klas CSS:
 
 ```css
 /* ✅ DOBRZE */
-.user-profile-card { }
-.task-list-item { }
-.btn-primary { }
+.user-profile-card {
+}
+.task-list-item {
+}
+.btn-primary {
+}
 
 /* ❌ ŹLE */
-.userProfileCard { }
-.task_list_item { }
+.userProfileCard {
+}
+.task_list_item {
+}
 ```
 
 ### Zmienne CSS
@@ -75,15 +80,15 @@ Używaj **kebab-case** z prefiksem typu:
   /* Kolory */
   --color-primary: #3b82f6;
   --color-danger: #ef4444;
-  
+
   /* Spacing */
   --space-1: 4px;
   --space-2: 8px;
-  
+
   /* Font sizes */
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
-  
+
   /* Radius */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -96,13 +101,18 @@ Używaj **kebab-case** z sufiksem animacji:
 
 ```css
 /* ✅ DOBRZE */
-@keyframes fade-in { }
-@keyframes slide-up { }
-@keyframes comic-pop { }
+@keyframes fade-in {
+}
+@keyframes slide-up {
+}
+@keyframes comic-pop {
+}
 
 /* ❌ ŹLE */
-@keyframes fadeIn { }
-@keyframes SlideUp { }
+@keyframes fadeIn {
+}
+@keyframes SlideUp {
+}
 ```
 
 ---
@@ -115,24 +125,32 @@ Zawsze używaj **najmniej specyficznego** selektora który działa:
 
 ```css
 /* ✅ DOBRZE - niska specyficzność */
-.btn { }
-.card-title { }
+.btn {
+}
+.card-title {
+}
 
 /* ❌ ŹLE - wysoka specyficzność */
-div.container .card .card-body .card-title { }
-#main .btn { }
+div.container .card .card-body .card-title {
+}
+#main .btn {
+}
 ```
 
 ### Unikaj ID w selectorach
 
 ```css
 /* ❌ ŹLE */
-#header { }
-#sidebar-nav { }
+#header {
+}
+#sidebar-nav {
+}
 
 /* ✅ DOBRZE */
-.header { }
-.sidebar-nav { }
+.header {
+}
+.sidebar-nav {
+}
 ```
 
 ### BEM-lite (opcjonalnie)
@@ -141,15 +159,20 @@ Dla złożonych komponentów używaj uproszczonego BEM:
 
 ```css
 /* Blok */
-.card { }
+.card {
+}
 
 /* Element */
-.card-title { }
-.card-body { }
+.card-title {
+}
+.card-body {
+}
 
 /* Modyfikator */
-.card--highlighted { }
-.btn--large { }
+.card--highlighted {
+}
+.btn--large {
+}
 ```
 
 ---
@@ -191,9 +214,11 @@ Zobacz `src/index.css` dla pełnej listy dostępnych tokenów:
 }
 
 /* ❌ ŹLE */
-.selector{property:value;}
 .selector {
-property: value;
+  property: value;
+}
+.selector {
+  property: value;
 }
 ```
 
@@ -207,29 +232,29 @@ Grupuj właściwości logicznie:
   position: relative;
   z-index: 10;
   top: 0;
-  
+
   /* Display & Box */
   display: flex;
   flex-direction: column;
   width: 100%;
   height: auto;
-  
+
   /* Spacing */
   margin: 0;
   padding: 16px;
-  
+
   /* Border */
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  
+
   /* Colors & Background */
   background: var(--surface);
   color: var(--text);
-  
+
   /* Typography */
   font-size: var(--font-size-base);
   line-height: 1.5;
-  
+
   /* Effects */
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
@@ -270,10 +295,10 @@ Pisz style mobile-first, dodawaj media queries dla większych ekranów:
 
 ```css
 /* Dostępne breakpointy (zdefiniowane w index.css) */
---breakpoint-sm: 640px;   /* Small devices (landscape phones) */
---breakpoint-md: 768px;   /* Medium devices (tablets) */
---breakpoint-lg: 1024px;  /* Large devices (desktops) */
---breakpoint-xl: 1280px;  /* Extra large devices */
+--breakpoint-sm: 640px; /* Small devices (landscape phones) */
+--breakpoint-md: 768px; /* Medium devices (tablets) */
+--breakpoint-lg: 1024px; /* Large devices (desktops) */
+--breakpoint-xl: 1280px; /* Extra large devices */
 --breakpoint-2xl: 1536px; /* 2X extra large devices */
 ```
 
@@ -367,7 +392,9 @@ Konfiguracja w `.stylelintrc.json`:
   background: var(--surface-panel);
   border: 1px solid var(--stroke);
   border-radius: var(--radius-md);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .task-card:hover {
@@ -433,4 +460,4 @@ Konfiguracja w `.stylelintrc.json`:
 
 ---
 
-*Ostatnia aktualizacja: 2026-03-26*
+_Ostatnia aktualizacja: 2026-03-26_

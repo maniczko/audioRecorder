@@ -1,6 +1,7 @@
 # Lokalne Przetwarzanie Audio - Instrukcja
 
 ## 📋 Spis treści
+
 1. [Tryby przetwarzania](#tryby-przetwarzania)
 2. [Konfiguracja API (domyślna)](#konfiguracja-api-domyślna)
 3. [Lokalne przetwarzanie z Whisper.cpp](#lokalne-przetwarzanie-z-whispercpp)
@@ -13,11 +14,11 @@
 
 VoiceLog OS obsługuje **3 tryby transkrypcji**:
 
-| Tryb | Wymagania | Prędkość | Koszt | Prywatność |
-|------|-----------|----------|-------|------------|
-| **OpenAI Whisper API** | `OPENAI_API_KEY` | ⚡⚡⚡ | $0.006/min | 🔒 Dane wysyłane do OpenAI |
-| **Groq Whisper API** | `GROQ_API_KEY` | ⚡⚡⚡⚡ | Darmowe (limit) | 🔒 Dane wysyłane do Groq |
-| **Lokalny Whisper** | whisper.cpp LUB faster-whisper | ⚡⚡ | Darmowe | 🔐🔐🔐 Wszystko lokalnie |
+| Tryb                   | Wymagania                      | Prędkość | Koszt           | Prywatność                 |
+| ---------------------- | ------------------------------ | -------- | --------------- | -------------------------- |
+| **OpenAI Whisper API** | `OPENAI_API_KEY`               | ⚡⚡⚡   | $0.006/min      | 🔒 Dane wysyłane do OpenAI |
+| **Groq Whisper API**   | `GROQ_API_KEY`                 | ⚡⚡⚡⚡ | Darmowe (limit) | 🔒 Dane wysyłane do Groq   |
+| **Lokalny Whisper**    | whisper.cpp LUB faster-whisper | ⚡⚡     | Darmowe         | 🔐🔐🔐 Wszystko lokalnie   |
 
 ---
 
@@ -26,12 +27,14 @@ VoiceLog OS obsługuje **3 tryby transkrypcji**:
 ### Krok 1: Uzyskaj klucze API
 
 **OpenAI Whisper:**
+
 1. Wejdź na https://platform.openai.com/api-keys
 2. Zaloguj się / załóż konto
 3. Kliknij "Create new secret key"
 4. Skopiuj klucz (zaczyna się od `sk-proj-`)
 
 **Groq (darmowe, szybsze):**
+
 1. Wejdź na https://console.groq.com/keys
 2. Zaloguj się / załóż konto
 3. Wygeneruj nowy klucz
@@ -73,6 +76,7 @@ Otwórz http://localhost:3000 i zaimportuj nagranie.
 ### Krok 1: Pobierz whisper.cpp
 
 **Windows:**
+
 ```powershell
 # Opcja A: Pre-built binary (najłatwiej)
 # Pobierz z: https://github.com/ggerganov/whisper.cpp/releases
@@ -85,11 +89,13 @@ make whisper-main
 ```
 
 **macOS (Homebrew):**
+
 ```bash
 brew install whisper.cpp
 ```
 
 **Linux:**
+
 ```bash
 git clone https://github.com/ggerganov/whisper.cpp
 cd whisper.cpp
@@ -100,15 +106,16 @@ make whisper-main
 
 Modele GGML (wybierz jeden):
 
-| Model | Rozmiar | Prędkość | Jakość |
-|-------|---------|----------|--------|
-| `ggml-tiny.bin` | 75 MB | ⚡⚡⚡⚡⚡ | Słaba |
-| `ggml-base.bin` | 142 MB | ⚡⚡⚡⚡ | Dobra |
-| `ggml-small.bin` | 466 MB | ⚡⚡⚡ | Bardzo dobra |
-| `ggml-medium.bin` | 1.5 GB | ⚡⚡ | Doskonała |
-| `ggml-large-v3.bin` | 3 GB | ⚡ | Najlepsza |
+| Model               | Rozmiar | Prędkość   | Jakość       |
+| ------------------- | ------- | ---------- | ------------ |
+| `ggml-tiny.bin`     | 75 MB   | ⚡⚡⚡⚡⚡ | Słaba        |
+| `ggml-base.bin`     | 142 MB  | ⚡⚡⚡⚡   | Dobra        |
+| `ggml-small.bin`    | 466 MB  | ⚡⚡⚡     | Bardzo dobra |
+| `ggml-medium.bin`   | 1.5 GB  | ⚡⚡       | Doskonała    |
+| `ggml-large-v3.bin` | 3 GB    | ⚡         | Najlepsza    |
 
 **Pobierz (przykład - base):**
+
 ```bash
 cd c:\Users\user\new\audioRecorder
 mkdir models
@@ -158,6 +165,7 @@ Faster-Whisper to Pythonowa implementacja - łatwiejsza w instalacji, szybsza na
 ### Krok 1: Zainstaluj Python (jeśli nie masz)
 
 **Windows:**
+
 ```powershell
 # Z Microsoft Store lub https://python.org
 # Upewnij się że Python jest w PATH
@@ -206,6 +214,7 @@ python server/whisper_local.py --help
 ### Błąd: "Pipeline zakończył przetwarzanie, ale nie zwrócił segmentów"
 
 **Przyczyny:**
+
 1. ❌ Brak kluczy API
 2. ❌ Plik audio uszkodzony
 3. ❌ Zbyt ciche nagranie

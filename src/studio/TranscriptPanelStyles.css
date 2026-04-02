@@ -1,5 +1,3 @@
-
-
 .transcript-timeline-panel,
 .transcript-range-editor,
 .transcript-range-actions,
@@ -75,7 +73,12 @@
   width: 100%;
   height: 100%;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0) 100%
+    ),
     repeating-linear-gradient(
       90deg,
       rgba(255, 255, 255, 0.16) 0,
@@ -100,7 +103,7 @@
   font-size: 0.82rem;
 }
 
-.transcript-range-editor input[type="range"] {
+.transcript-range-editor input[type='range'] {
   padding: 0;
   background: transparent;
   border: none;
@@ -270,7 +273,6 @@
   margin-top: 0;
 }
 
-
 .transcript-timeline-panel,
 .transcript-range-editor,
 .transcript-range-actions,
@@ -346,7 +348,12 @@
   width: 100%;
   height: 100%;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0) 100%
+    ),
     repeating-linear-gradient(
       90deg,
       rgba(255, 255, 255, 0.16) 0,
@@ -371,7 +378,7 @@
   font-size: 0.82rem;
 }
 
-.transcript-range-editor input[type="range"] {
+.transcript-range-editor input[type='range'] {
   padding: 0;
   background: transparent;
   border: none;
@@ -562,8 +569,8 @@
   max-width: 100%;
 }
 
-[data-theme="dark"] .ff-transcript-wrapper,
-[data-theme="dark"] .ff-sticky-header {
+[data-theme='dark'] .ff-transcript-wrapper,
+[data-theme='dark'] .ff-sticky-header {
   background: var(--bg-surface, #12121f);
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
@@ -595,7 +602,9 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   color: var(--muted);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .ff-search-bar:focus-within {

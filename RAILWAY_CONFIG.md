@@ -66,6 +66,7 @@ VOICELOG_TRUST_PROXY=true
 Go to **Railway Dashboard** → **Variables** → **Add Variable**
 
 Add these:
+
 - `HF_TOKEN` = (your Hugging Face token)
 - `OPENAI_API_KEY` = (your OpenAI key)
 - `SUPABASE_URL` = (your Supabase project URL)
@@ -77,6 +78,7 @@ Add these:
 Railway automatically mounts `/app/server/data` as persistent volume.
 
 If upload dir is not writable:
+
 ```bash
 # In Railway Dashboard → Settings → Volumes
 # Ensure /app/server/data is mounted
@@ -85,11 +87,13 @@ If upload dir is not writable:
 ### 3. Health Check
 
 After deployment, check:
+
 ```
 https://audiorecorder-production.up.railway.app/api/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -107,12 +111,14 @@ Expected response:
 **Automatic fix:** Server auto-cleans old files on startup
 
 **Manual fix:**
+
 ```bash
 # In Railway Dashboard → Logs
 # Click "Redeploy" - cleanup runs on bootstrap
 ```
 
 **Prevent:**
+
 - Set up scheduled cleanup (cron job)
 - Increase Railway disk quota
 
@@ -127,6 +133,7 @@ Expected response:
 Railway uses `/app/server/data/uploads` by default.
 
 Fix in `.env`:
+
 ```env
 VOICELOG_UPLOAD_DIR=/app/server/data/uploads
 ```
@@ -136,17 +143,20 @@ VOICELOG_UPLOAD_DIR=/app/server/data/uploads
 ## Monitoring
 
 ### Disk Usage
+
 ```bash
 # Check via Railway Logs
 df -h /app/server/data
 ```
 
 ### API Health
+
 ```bash
 curl https://audiorecorder-production.up.railway.app/api/health
 ```
 
 ### Logs
+
 Railway Dashboard → Logs
 
 ---
@@ -154,11 +164,13 @@ Railway Dashboard → Logs
 ## Cost Optimization
 
 Railway charges based on:
+
 - **Memory**: 512MB default (upgrade if needed)
 - **Disk**: 20GB included
 - **Compute hours**: ~$5/month for always-on
 
 **Tips:**
+
 - Enable auto-sleep for dev environments
 - Clean up old recordings regularly
 - Use Groq for faster/cheaper STT

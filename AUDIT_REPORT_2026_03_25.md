@@ -1,4 +1,5 @@
 # 🔍 AUDIT REPORT - VoiceLog OS
+
 **Data audytu:** 25 marca 2026  
 **Ścieżka projektu:** `c:\Users\user\new\audioRecorder`  
 **Wersja aplikacji:** 0.1.0
@@ -7,14 +8,14 @@
 
 ## 📊 PODSUMOWANIE WYKONAWCZE
 
-| Kategoria | Status | Krytyczne | Wysokie | Średnie | Niskie |
-|-----------|--------|-----------|---------|---------|--------|
-| **Bezpieczeństwo** | ⚠️ UWAGI | 0 | 2 | 3 | 2 |
-| **Wydajność** | ✅ DOBRY | 0 | 1 | 2 | 1 |
-| **Jakość kodu** | ✅ DOBRY | 0 | 0 | 2 | 3 |
-| **Testy** | ✅ DOBRY | 0 | 0 | 1 | 2 |
-| **Accessibility** | ⚠️ UWAGI | 0 | 1 | 2 | 0 |
-| **Zależności** | ⚠️ UWAGI | 0 | 1 | 2 | 4 |
+| Kategoria          | Status   | Krytyczne | Wysokie | Średnie | Niskie |
+| ------------------ | -------- | --------- | ------- | ------- | ------ |
+| **Bezpieczeństwo** | ⚠️ UWAGI | 0         | 2       | 3       | 2      |
+| **Wydajność**      | ✅ DOBRY | 0         | 1       | 2       | 1      |
+| **Jakość kodu**    | ✅ DOBRY | 0         | 0       | 2       | 3      |
+| **Testy**          | ✅ DOBRY | 0         | 0       | 1       | 2      |
+| **Accessibility**  | ⚠️ UWAGI | 0         | 1       | 2       | 0      |
+| **Zależności**     | ⚠️ UWAGI | 0         | 1       | 2       | 4      |
 
 **Łącznie:** 0 krytycznych, 5 wysokich, 12 średnich, 12 niskich priorytetów
 
@@ -23,6 +24,7 @@
 ## 1. 🔐 BEZPIECZEŃSTWO
 
 ### ✅ Co działa dobrze:
+
 - **Brak podatności w zależnościach** - `pnpm audit` nie wykrył żadnych znanych podatności
 - **CORS poprawnie skonfigurowane** - Backend (Hono) ma zaimplementowane zabezpieczenia CORS z walidacją origins
 - **Haszowanie haseł** - Użycie `crypto.scryptSync` z solą do haszowania haseł
@@ -35,10 +37,12 @@
 #### **WYSOKI PRIORYTET**
 
 ##### 1.1. Brak Content Security Policy (CSP)
+
 **Lokalizacja:** `vercel.json`, `index.html`  
 **Opis:** Aplikacja nie definiuje nagłówków Content-Security-Policy, co naraża na ataki XSS.
 
 **Rekomendacja:**
+
 ```json
 // vercel.json
 {
@@ -69,13 +73,16 @@
 ```
 
 ##### 1.2. Console.log z danymi wrażliwymi
-**Lokalizacja:** 
+
+**Lokalizacja:**
+
 - `server/database.ts:687` - logowanie kodu resetu hasła
 - `server/config.ts:144` - logowanie statusu HF_TOKEN
 
 **Opis:** Wrażliwe dane mogą wyciec do logów.
 
 **Rekomendacja:**
+
 ```typescript
 // Zamiast:
 console.log(`[DEV] Password reset code for ${email}: ${recoveryCode}`);
@@ -89,26 +96,31 @@ if (process.env.NODE_ENV === 'development') {
 #### **ŚREDNI PRIORYTET**
 
 ##### 1.3. dangerouslySetInnerHTML
+
 **Lokalizacja:**
+
 - `src/NotesTab.tsx:314`
 - `src/studio/StudioMeetingView.tsx:1513`
 
 **Opis:** Użycie `dangerouslySetInnerHTML` nawet z `sanitizeHtml` może być ryzykowne.
 
 **Rekomendacja:** Upewnij się, że `sanitizeHtml` używa restrykcyjnej konfiguracji:
+
 ```typescript
 import DOMPurify from 'dompurify';
 
 const sanitized = DOMPurify.sanitize(html, {
   ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-  ALLOWED_ATTR: []
+  ALLOWED_ATTR: [],
 });
 ```
 
 ##### 1.4. Brak .env.example
+
 **Opis:** Projekt nie zawiera pliku `.env.example` z dokumentacją wymaganych zmiennych środowiskowych.
 
 **Rekomendacja:** Utwórz plik:
+
 ```bash
 # .env.example
 # Frontend
@@ -129,6 +141,7 @@ LANGSMITH_API_KEY=
 ```
 
 ##### 1.5. Debug logging w produkcji
+
 **Lokalizacja:** `server/database.ts`  
 **Opis:** Logi z danymi użytkowników mogą być widoczne w produkcji.
 
@@ -137,10 +150,12 @@ LANGSMITH_API_KEY=
 #### **NISKI PRIORYTET**
 
 ##### 1.6. Google OAuth tokens w useRef
+
 **Lokalizacja:** `src/hooks/useGoogleIntegrations.ts`  
 **Opis:** Tokeny przechowywane w useRef, brak refresh mechanizmu.
 
 ##### 1.7. Brak rate limitingu na endpointach
+
 **Opis:** API nie implementuje rate limitingu poza Docker limits.
 
 ---
@@ -148,12 +163,14 @@ LANGSMITH_API_KEY=
 ## 2. ⚡ WYDAJNOŚĆ
 
 ### ✅ Co działa dobrze:
+
 - **Bundle splitting** - Vite automatycznie dzieli kod na chunki
 - **Gzip compression** - Wszystkie assety są skompresowane
 - **Code splitting per route** - Tab-y ładowane osobno (CalendarTab, TasksTab, etc.)
 - **Lazy loading** - Niektóre komponenty ładowane dynamicznie
 
 ### 📊 Bundle Size Analysis:
+
 ```
 Total JavaScript: ~540 KB (gzip: ~160 KB)
 Total CSS: ~90 KB (gzip: ~19 KB)
@@ -169,9 +186,11 @@ Largest chunks:
 #### **WYSOKI PRIORYTET**
 
 ##### 2.1. Duży main bundle (index.js)
+
 **Opis:** Główny bundle ma 414 KB, co przekracza zalecane 300 KB.
 
 **Rekomendacja:**
+
 1. Włącz code splitting dla vendor chunks
 2. Zastosuj lazy loading dla ciężkich bibliotek (LangChain, transformers)
 3. Usuń nieużywane zależności z głównego bundle
@@ -194,10 +213,12 @@ build: {
 #### **ŚREDNI PRIORYTET**
 
 ##### 2.2. Brak lazy loading dla ciężkich komponentów
+
 **Lokalizacja:** `src/MainApp.tsx`  
 **Opis:** Wszystkie tab-y są importowane statycznie.
 
 **Rekomendacja:**
+
 ```typescript
 const CalendarTab = lazy(() => import('./CalendarTab'));
 const TasksTab = lazy(() => import('./TasksTab'));
@@ -205,6 +226,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 ```
 
 ##### 2.3. Brak image optimization
+
 **Opis:** Brak konfiguracji optymalizacji obrazków.
 
 **Rekomendacja:** Dodaj plugin `vite-plugin-image-optimizer`.
@@ -212,6 +234,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 #### **NISKI PRIORYTET**
 
 ##### 2.4. Wasm bundle bez lazy loading
+
 **Lokalizacja:** `rnnoise-DAHyAIZp.wasm` (125.56 KB)  
 **Opis:** WASM ładowany od razu, może być opóźnione.
 
@@ -220,6 +243,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 ## 3. 📝 JAKOŚĆ KODU
 
 ### ✅ Co działa dobrze:
+
 - **TypeScript** - Cały kod w TypeScript
 - **Strict mode częściowo** - Niektóre flagi strict włączone
 - **Modularna struktura** - Podział na `src/`, `server/`, `tests/`
@@ -231,7 +255,9 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 #### **ŚREDNI PRIORYTET**
 
 ##### 3.1. Wyłączone checki TypeScript
+
 **Lokalizacja:** `tsconfig.json`
+
 ```json
 {
   "strict": false,
@@ -242,6 +268,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 ```
 
 **Rekomendacja:** Włącz stopniowo:
+
 ```json
 {
   "strict": true,
@@ -252,7 +279,9 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 ```
 
 ##### 3.2. @ts-ignore w kodzie
+
 **Lokalizacja:**
+
 - `src/App.integration.test.tsx` (2x)
 - `src/runtime/browserRuntime.ts`
 - `src/services/config.ts` (3x)
@@ -262,14 +291,17 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 #### **NISKI PRIORYTET**
 
 ##### 3.3. tailwind.config.js pusty
+
 **Opis:** Plik istnieje, ale nie definiuje żadnej konfiguracji.
 
 **Rekomendacja:** Usuń plik jeśli nie jest używany (Tailwind v4 nie wymaga).
 
 ##### 3.4. Mieszanie React App i Vite config
+
 **Opis:** `eslintConfig` odnosi się do `react-app`, ale projekt używa Vite.
 
 ##### 3.5. Deprecated optimizeDeps.esbuildOptions
+
 **Lokalizacja:** `vite.config.js`  
 **Opis:** Vite 8 używa Rolldown, nie esbuild.
 
@@ -278,6 +310,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 ## 4. 🧪 TESTY
 
 ### ✅ Co działa dobrze:
+
 - **62 pliki testowe** w `src/`
 - **Różne typy testów:** unit, integration, e2e (Playwright)
 - **Testy accessibility** - `Topbar.a11y.test.tsx`
@@ -285,6 +318,7 @@ const PeopleTab = lazy(() => import('./PeopleTab'));
 - **CI/CD z testami** - GitHub Actions uruchamia testy
 
 ### 📊 Struktura testów:
+
 ```
 Frontend: 62 pliki .test.{ts,tsx}
 Server: vitest config
@@ -296,9 +330,11 @@ E2E: Playwright (tests/e2e/)
 #### **ŚREDNI PRIORYTET**
 
 ##### 4.1. Brak globalnego vitest.config.ts
+
 **Opis:** Konfiguracja testów jest rozproszona.
 
 **Rekomendacja:** Dodaj `vitest.config.ts` w root:
+
 ```typescript
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -312,18 +348,20 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/setupTests.ts']
-    }
-  }
+      exclude: ['node_modules/', 'src/setupTests.ts'],
+    },
+  },
 });
 ```
 
 #### **NISKI PRIORYTET**
 
 ##### 4.2. Brak coverage threshold
+
 **Opis:** Nie ma minimalnego progu coverage.
 
 **Rekomendacja:** Dodaj do `package.json`:
+
 ```json
 {
   "vitest": {
@@ -342,6 +380,7 @@ export default defineConfig({
 ```
 
 ##### 4.3. Playwright tylko dla Chromium
+
 **Lokalizacja:** `playwright.config.js`  
 **Opis:** Testy E2E tylko dla jednej przeglądarki.
 
@@ -350,6 +389,7 @@ export default defineConfig({
 ## 5. ♿ ACCESSIBILITY (A11Y)
 
 ### ✅ Co działa dobrze:
+
 - **aria-label** - 66 wystąpień w kodzie
 - **role attributes** - Używane role (button, tablist, progressbar)
 - **tabindex** - Poprawne użycie dla interaktywnych elementów
@@ -360,9 +400,11 @@ export default defineConfig({
 #### **WYSOKI PRIORYTET**
 
 ##### 5.1. Brak focus indicators
+
 **Opis:** Nie znaleziono stylów dla `:focus-visible` w CSS.
 
 **Rekomendacja:** Dodaj do global CSS:
+
 ```css
 *:focus-visible {
   outline: 2px solid var(--accent);
@@ -373,14 +415,17 @@ export default defineConfig({
 #### **ŚREDNI PRIORYTET**
 
 ##### 5.2. Brak skip links
+
 **Opis:** Brak mechanizmu pomijania nawigacji dla czytników ekranowych.
 
 **Rekomendacja:** Dodaj na początku `<body>`:
+
 ```html
 <a href="#main-content" class="skip-link">Przejdź do treści</a>
 ```
 
 ##### 5.3. Niekompletne testy a11y
+
 **Opis:** Tylko jeden komponent (Topbar) ma testy accessibility.
 
 ---
@@ -388,6 +433,7 @@ export default defineConfig({
 ## 6. 📦 ZALEŻNOŚCI
 
 ### ✅ Co działa dobrze:
+
 - **Brak podatności** - `pnpm audit` clean
 - **PNPM** - Użycie pnpm zamiast npm (szybszy, mniej duplikatów)
 - **Workspace** - Monorepo z `server/` workspace
@@ -397,10 +443,12 @@ export default defineConfig({
 #### **WYSOKI PRIORYTET**
 
 ##### 6.1. ESLint v8 (deprecated)
+
 **Status:** `eslint@8.57.1` jest deprecated  
 **Latest:** `eslint@10.1.0`
 
 **Rekomendacja:** Aktualizuj ostrożnie:
+
 ```bash
 pnpm add -D eslint@latest @typescript-eslint/eslint-plugin@latest
 ```
@@ -408,23 +456,29 @@ pnpm add -D eslint@latest @typescript-eslint/eslint-plugin@latest
 #### **ŚREDNI PRIORYTET**
 
 ##### 6.2. Tailwind CSS v4.1.0 → v4.2.2
+
 **Opis:** Dostępna nowsza wersja z poprawkami.
 
 ##### 6.3. web-vitals v2.1.4 → v5.2.0
+
 **Opis:** Duża luka wersji (major update).
 
 ##### 6.4. @testing-library/user-event v13.5.0 → v14.6.1
+
 **Opis:** Luka wersji, może brakować nowych feature'ów.
 
 #### **NISKI PRIORYTET**
 
 ##### 6.5. lucide-react v1.0.1 → v1.7.0
+
 **Opis:** Dostępne nowe ikony.
 
 ##### 6.6. rollup-plugin-visualizer v5.11.0 → v7.0.1
+
 **Opis:** Dostępna nowsza wersja.
 
 ##### 6.7. typescript v5.9.3 → v6.0.2
+
 **Opis:** Nowa major wersja TypeScript.
 
 ---
@@ -432,12 +486,14 @@ pnpm add -D eslint@latest @typescript-eslint/eslint-plugin@latest
 ## 7. 🏗️ ARCHITEKTURA
 
 ### ✅ Co działa dobrze:
+
 - **Modularność** - Podział na feature folders
 - **Separation of concerns** - Frontend / Backend / Shared
 - **Docker** - Dobrze skonfigurowany multi-stage build
 - **CI/CD** - Kompletne GitHub Actions workflows
 
 ### 📊 Struktura projektu:
+
 ```
 audioRecorder/
 ├── src/                    # Frontend React
@@ -463,6 +519,7 @@ audioRecorder/
 ## 8. 🎯 REKOMENDACJE - PLAN DZIAŁANIA
 
 ### 🔴 Krytyczne (0)
+
 Brak problemów krytycznych.
 
 ### 🟠 Wysoki priorytet (5)
@@ -511,17 +568,17 @@ Brak problemów krytycznych.
 
 ## 9. 📈 METRYKI PROJEKTU
 
-| Metryka | Wartość | Status |
-|---------|---------|--------|
-| **Zależności** | 44 dependencies + 17 devDependencies | ✅ |
-| **Podatności** | 0 | ✅ |
-| **Test files** | 62 | ✅ |
-| **Bundle size (JS)** | 540 KB | ⚠️ |
-| **Bundle size (CSS)** | 90 KB | ✅ |
-| **Build time** | ~2s | ✅ |
-| **TypeScript strict** | false | ⚠️ |
-| **Coverage threshold** | brak | ⚠️ |
-| **A11y tests** | 1 file | ⚠️ |
+| Metryka                | Wartość                              | Status |
+| ---------------------- | ------------------------------------ | ------ |
+| **Zależności**         | 44 dependencies + 17 devDependencies | ✅     |
+| **Podatności**         | 0                                    | ✅     |
+| **Test files**         | 62                                   | ✅     |
+| **Bundle size (JS)**   | 540 KB                               | ⚠️     |
+| **Bundle size (CSS)**  | 90 KB                                | ✅     |
+| **Build time**         | ~2s                                  | ✅     |
+| **TypeScript strict**  | false                                | ⚠️     |
+| **Coverage threshold** | brak                                 | ⚠️     |
+| **A11y tests**         | 1 file                               | ⚠️     |
 
 ---
 

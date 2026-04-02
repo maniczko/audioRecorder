@@ -9,6 +9,7 @@ Automated error monitoring system that checks for errors every 6 hours and autom
 ## ⏰ Schedule
 
 **Runs every 6 hours at:**
+
 - 00:00 UTC
 - 06:00 UTC
 - 12:00 UTC
@@ -21,11 +22,13 @@ Automated error monitoring system that checks for errors every 6 hours and autom
 ## 🔍 What It Monitors
 
 ### 1. GitHub Actions Errors
+
 - Failed workflow runs
 - Error messages from logs
 - Workflow names and URLs
 
 ### 2. Railway Errors
+
 - Application errors (`@level:error`)
 - Deployment failures
 - Runtime exceptions
@@ -85,18 +88,18 @@ You can manually run the workflow:
 
 ### Required Secrets
 
-| Secret | Required For | How to Get |
-|--------|--------------|------------|
-| `GITHUB_TOKEN` | GitHub errors | Automatic (provided by GitHub) |
+| Secret          | Required For   | How to Get                         |
+| --------------- | -------------- | ---------------------------------- |
+| `GITHUB_TOKEN`  | GitHub errors  | Automatic (provided by GitHub)     |
 | `RAILWAY_TOKEN` | Railway errors | https://railway.app/account/tokens |
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DAYS_BACK` | 1 | How many days of GitHub errors to check |
-| `RAILWAY_LOG_LINES` | 50 | Number of Railway log lines to fetch |
-| `RAILWAY_LOG_FILTER` | `@level:error` | Railway log filter query |
+| Variable             | Default        | Description                             |
+| -------------------- | -------------- | --------------------------------------- |
+| `DAYS_BACK`          | 1              | How many days of GitHub errors to check |
+| `RAILWAY_LOG_LINES`  | 50             | Number of Railway log lines to fetch    |
+| `RAILWAY_LOG_FILTER` | `@level:error` | Railway log filter query                |
 
 ---
 
@@ -122,6 +125,7 @@ After each run, check the **Summary** tab for:
 ### Artifacts
 
 Download error reports from the workflow run:
+
 - `error-analysis-<run_id>.zip`
 - Contains: JSON analysis, markdown reports
 
@@ -136,10 +140,11 @@ Edit `.github/workflows/error-monitor-and-task-creator.yml`:
 ```yaml
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Change to your schedule
+    - cron: '0 */6 * * *' # Change to your schedule
 ```
 
 Examples:
+
 - Every hour: `0 * * * *`
 - Every 12 hours: `0 */12 * * *`
 - Daily at 9 AM: `0 9 * * *`
@@ -159,7 +164,7 @@ Set `create_issues: false` when triggering manually, or edit the workflow:
 
 ```yaml
 - name: Create GitHub Issues for Errors
-  if: ${{ false }}  # Disabled
+  if: ${{ false }} # Disabled
 ```
 
 ---
@@ -169,6 +174,7 @@ Set `create_issues: false` when triggering manually, or edit the workflow:
 Tasks are added to `TASK_QUEUE.md` under **### 🔴 Wysoki priorytet**
 
 Format:
+
 ```markdown
 - **{ID}** — {Title}
   - **Status:** todo
@@ -185,6 +191,7 @@ Format:
 ### "Railway login failed"
 
 Make sure `RAILWAY_TOKEN` secret is set:
+
 ```bash
 # Check if secret exists
 gh secret list | grep RAILWAY_TOKEN
@@ -196,6 +203,7 @@ gh secret set RAILWAY_TOKEN
 ### "No errors found" but I see errors
 
 Check the filter:
+
 - GitHub: Checks last 1 day by default
 - Railway: Checks last 50 lines with `@level:error` filter
 
@@ -204,6 +212,7 @@ Adjust in workflow inputs or environment variables.
 ### Tasks not appearing in TASK_QUEUE.md
 
 Check the workflow logs for:
+
 - "Created X new tasks in TASK_QUEUE.md"
 - Commit message: "chore: auto-create tasks for X errors"
 
@@ -212,6 +221,7 @@ Check the workflow logs for:
 ## 📈 Metrics
 
 Track error trends over time:
+
 - Check workflow run history
 - Download artifacts for analysis
 - Monitor TASK_QUEUE.md for recurring errors

@@ -37,7 +37,7 @@ function makeVercelRequest(path, options = {}) {
       path,
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${config.token}`,
+        Authorization: `Bearer ${config.token}`,
         'User-Agent': 'audioRecorder-error-monitor/1.0',
         ...options.headers,
       },
@@ -45,7 +45,9 @@ function makeVercelRequest(path, options = {}) {
 
     const req = https.request(reqOptions, (res) => {
       let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           try {
@@ -80,7 +82,9 @@ async function getDeployments() {
   try {
     if (config.verbose) console.log(`🔍 Fetching deployments from project: ${config.projectId}`);
 
-    const response = await makeVercelRequest(`/v6/deployments?projectId=${config.projectId}&limit=50`);
+    const response = await makeVercelRequest(
+      `/v6/deployments?projectId=${config.projectId}&limit=50`
+    );
 
     if (!response.deployments) {
       console.warn('⚠️  No deployments found');
@@ -88,8 +92,8 @@ async function getDeployments() {
     }
 
     // Filter by time
-    const cutoffTime = Date.now() - (config.hoursBack * 60 * 60 * 1000);
-    return response.deployments.filter(d => new Date(d.created).getTime() > cutoffTime);
+    const cutoffTime = Date.now() - config.hoursBack * 60 * 60 * 1000;
+    return response.deployments.filter((d) => new Date(d.created).getTime() > cutoffTime);
   } catch (error) {
     console.error('❌ Failed to fetch deployments:', error.message);
     return [];
@@ -105,15 +109,16 @@ async function getDeploymentLogs(deploymentId) {
 
     // Extract error events
     return response
-      .filter(event => event.type === 'error' || event.text?.includes('error'))
-      .map(event => ({
+      .filter((event) => event.type === 'error' || event.text?.includes('error'))
+      .map((event) => ({
         timestamp: event.timestamp || new Date().toISOString(),
         type: event.type,
         text: event.text,
         deploymentId,
       }));
   } catch (error) {
-    if (config.verbose) console.warn(`⚠️  Could not fetch logs for ${deploymentId}:`, error.message);
+    if (config.verbose)
+      console.warn(`⚠️  Could not fetch logs for ${deploymentId}:`, error.message);
     return [];
   }
 }
@@ -137,7 +142,7 @@ function formatErrorsMarkdown(errors, deployments) {
 
   // Group by deployment
   const grouped = {};
-  errors.forEach(error => {
+  errors.forEach((error) => {
     if (!grouped[error.deploymentId]) grouped[error.deploymentId] = [];
     grouped[error.deploymentId].push(error);
   });
@@ -145,7 +150,7 @@ function formatErrorsMarkdown(errors, deployments) {
   markdown += `## Errors by Deployment\n\n`;
 
   for (const [depId, depErrors] of Object.entries(grouped)) {
-    const deployment = deployments.find(d => d.id === depId);
+    const deployment = deployments.find((d) => d.id === depId);
     const branch = deployment?.meta?.githubBranch || 'unknown';
     const commit = deployment?.meta?.githubCommitSha?.substring(0, 7) || 'unknown';
 
@@ -185,7 +190,8 @@ async function main() {
   let allErrors = [];
   for (const deployment of deployments) {
     const deploymentId = deployment.uid || deployment.id;
-    if (config.verbose) console.log(`📋 Fetching logs for ${(deploymentId || '').substring(0, 8)}...`);
+    if (config.verbose)
+      console.log(`📋 Fetching logs for ${(deploymentId || '').substring(0, 8)}...`);
     const logs = await getDeploymentLogs(deploymentId);
     allErrors = allErrors.concat(logs);
   }
@@ -210,7 +216,7 @@ async function main() {
   console.log(`   🔴 Total errors: ${allErrors.length}`);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('❌ Fatal error:', error.message);
   process.exit(1);
 });

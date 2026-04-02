@@ -8,18 +8,19 @@ Both frontend and backend coverage thresholds have been raised from **20-23%** t
 
 ## 📋 Threshold Values
 
-| Metric | Threshold | Description |
-|--------|-----------|-------------|
-| **Lines** | 80% | 80% of all code lines must be executed |
-| **Functions** | 80% | 80% of all functions must be called |
-| **Statements** | 80% | 80% of all statements must be executed |
-| **Branches** | 75% | 75% of all branches (if/else) must be taken |
+| Metric         | Threshold | Description                                 |
+| -------------- | --------- | ------------------------------------------- |
+| **Lines**      | 80%       | 80% of all code lines must be executed      |
+| **Functions**  | 80%       | 80% of all functions must be called         |
+| **Statements** | 80%       | 80% of all statements must be executed      |
+| **Branches**   | 75%       | 75% of all branches (if/else) must be taken |
 
 ---
 
 ## 📁 Configuration Files
 
 ### Backend (Server)
+
 **File:** `server/vitest.config.ts`
 
 ```typescript
@@ -36,6 +37,7 @@ coverage: {
 ```
 
 ### Frontend
+
 **File:** `vitest.config.ts`
 
 ```typescript
@@ -56,6 +58,7 @@ coverage: {
 ## 🧪 Running Coverage Tests
 
 ### Server Coverage
+
 ```bash
 # Run server tests with coverage
 pnpm run test:coverage:server
@@ -65,6 +68,7 @@ pnpm run coverage:open
 ```
 
 ### Frontend Coverage
+
 ```bash
 # Run frontend tests with coverage
 pnpm run test:coverage
@@ -74,6 +78,7 @@ pnpm run coverage:open:frontend
 ```
 
 ### All Coverage
+
 ```bash
 # Run both server and frontend
 pnpm run test:coverage:all
@@ -86,13 +91,13 @@ pnpm run coverage:summary
 
 ## 📊 Coverage Reports Location
 
-| Type | Path |
-|------|------|
-| Server HTML | `coverage/server/index.html` |
-| Frontend HTML | `coverage/frontend/index.html` |
-| Server JSON Summary | `coverage/server/coverage-summary.json` |
-| Frontend JSON Summary | `coverage/frontend/coverage-summary.json` |
-| LCOV (CI) | `coverage/server/lcov.info`, `coverage/frontend/lcov.info` |
+| Type                  | Path                                                       |
+| --------------------- | ---------------------------------------------------------- |
+| Server HTML           | `coverage/server/index.html`                               |
+| Frontend HTML         | `coverage/frontend/index.html`                             |
+| Server JSON Summary   | `coverage/server/coverage-summary.json`                    |
+| Frontend JSON Summary | `coverage/frontend/coverage-summary.json`                  |
+| LCOV (CI)             | `coverage/server/lcov.info`, `coverage/frontend/lcov.info` |
 
 ---
 
@@ -112,6 +117,7 @@ pnpm run coverage:summary
 ### How to Fix Low Coverage
 
 1. **Identify uncovered files:**
+
    ```bash
    pnpm run test:coverage:server
    # Open coverage/server/index.html in browser
@@ -124,6 +130,7 @@ pnpm run coverage:summary
    - Yellow lines = partially covered (branches)
 
 3. **Write tests for uncovered code:**
+
    ```typescript
    // Example: Add test for edge case
    test('handles null input gracefully', () => {
@@ -142,6 +149,7 @@ pnpm run coverage:summary
 ## 🎯 Best Practices
 
 ### ✅ DO:
+
 - Write tests **before** implementing features (TDD)
 - Test happy path, edge cases, and error scenarios
 - Use `describe()` blocks to organize tests by feature
@@ -149,6 +157,7 @@ pnpm run coverage:summary
 - Test both success and failure paths
 
 ### ❌ DON'T:
+
 - Write tests just to hit the threshold (test quality matters!)
 - Test implementation details (test behavior, not internals)
 - Skip error handling tests
@@ -162,6 +171,7 @@ pnpm run coverage:summary
 Some files should be excluded from coverage calculation:
 
 **Already Excluded:**
+
 - Test files (`*.test.ts`, `*.test.tsx`)
 - Type definitions (`*.d.ts`)
 - Setup files
@@ -169,6 +179,7 @@ Some files should be excluded from coverage calculation:
 - Build artifacts
 
 **To Add More Exclusions:**
+
 ```typescript
 coverage: {
   exclude: [
@@ -193,7 +204,7 @@ Add to your CI/CD pipeline:
   run: |
     pnpm run test:coverage:all
     pnpm run coverage:summary
-    
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v4
   with:
@@ -203,6 +214,7 @@ Add to your CI/CD pipeline:
 ### Coverage Trend Dashboard
 
 Use services like:
+
 - **Codecov** (free for open source)
 - **Coveralls** (free tier available)
 - **SonarQube** (self-hosted or cloud)
@@ -214,6 +226,7 @@ Use services like:
 ### "Coverage threshold not met" — What to do?
 
 1. **Check which files have low coverage:**
+
    ```bash
    # Look at the HTML report
    start coverage/server/index.html
@@ -225,12 +238,13 @@ Use services like:
    - Focus on error handling
 
 3. **Write targeted tests:**
+
    ```typescript
    // Before: 60% coverage
    function calculateTotal(items) {
      return items.reduce((sum, item) => sum + item.price, 0);
    }
-   
+
    // After: Add test
    test('calculates total for multiple items', () => {
      const items = [{ price: 10 }, { price: 20 }];

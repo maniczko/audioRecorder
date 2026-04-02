@@ -32,14 +32,14 @@ coverage/
 
 ## 🔧 Dostępne komendy
 
-| Komenda | Opis |
-|---------|------|
-| `npm run test:coverage:server` | Testy servera z coverage |
-| `npm run test:coverage` | Testy frontendu z coverage |
-| `npm run test:coverage:all` | Wszystkie testy z coverage |
-| `npm run coverage:report` | Generuj raporty (skrypt batch) |
-| `npm run coverage:open` | Otwórz raport servera w przeglądarce |
-| `npm run coverage:open:frontend` | Otwórz raport frontendu |
+| Komenda                          | Opis                                 |
+| -------------------------------- | ------------------------------------ |
+| `npm run test:coverage:server`   | Testy servera z coverage             |
+| `npm run test:coverage`          | Testy frontendu z coverage           |
+| `npm run test:coverage:all`      | Wszystkie testy z coverage           |
+| `npm run coverage:report`        | Generuj raporty (skrypt batch)       |
+| `npm run coverage:open`          | Otwórz raport servera w przeglądarce |
+| `npm run coverage:open:frontend` | Otwórz raport frontendu              |
 
 ## 📊 Jak czytać raport HTML
 
@@ -51,12 +51,12 @@ coverage/
 
 ### Metryki
 
-| Metryka | Opis | Cel |
-|---------|------|-----|
-| **Statements** | % wykonanych instrukcji | ≥80% |
-| **Branches** | % przetestowanych gałęzi (if/else) | ≥70% |
-| **Functions** | % przetestowanych funkcji | ≥80% |
-| **Lines** | % pokrytych linii kodu | ≥80% |
+| Metryka        | Opis                               | Cel  |
+| -------------- | ---------------------------------- | ---- |
+| **Statements** | % wykonanych instrukcji            | ≥80% |
+| **Branches**   | % przetestowanych gałęzi (if/else) | ≥70% |
+| **Functions**  | % przetestowanych funkcji          | ≥80% |
+| **Lines**      | % pokrytych linii kodu             | ≥80% |
 
 ## 🔄 Automatyczna aktualizacja
 
@@ -71,6 +71,7 @@ npm run test:coverage         # → coverage/frontend/index.html
 ## 🎯 Przykładowy workflow
 
 ### 1. Przed commitowaniem
+
 ```bash
 # Sprawdź coverage przed commitowaniem
 npm run coverage:report
@@ -78,12 +79,14 @@ npm run coverage:open
 ```
 
 ### 2. Po dodaniu nowych testów
+
 ```bash
 # Wygeneruj świeży raport
 npm run test:coverage:all
 ```
 
 ### 3. Analiza konkretnego pliku
+
 ```bash
 # Otwórz raport i wyszukaj plik
 npm run coverage:open
@@ -93,6 +96,7 @@ npm run coverage:open
 ## 📈 Coverage Thresholds
 
 ### Server (`server/vitest.config.ts`)
+
 ```javascript
 thresholds: {
   lines: 20,      // Minimalny % linii
@@ -103,6 +107,7 @@ thresholds: {
 ```
 
 ### Frontend (`vitest.config.js`)
+
 ```javascript
 thresholds: {
   lines: 28,
@@ -115,6 +120,7 @@ thresholds: {
 ## ⚠️ Rozwiązywanie problemów
 
 ### Problem: Brak pamięci (OOM)
+
 ```bash
 # Zwiększ pamięć dla Node.js
 set NODE_OPTIONS=--max-old-space-size=8192
@@ -122,6 +128,7 @@ npm run test:coverage:server
 ```
 
 ### Problem: Raport nie jest generowany
+
 ```bash
 # Wyczyść stare raporty
 rm -rf coverage/
@@ -129,11 +136,13 @@ npm run test:coverage:server
 ```
 
 ### Problem: Testy padają ale coverage jest potrzebny
+
 Raport jest generowany nawet przy padających testach dzięki `reportOnFailure: true` w konfiguracji.
 
 ## 🔗 Integracja z CI/CD
 
 ### GitHub Actions przykład
+
 ```yaml
 - name: Run tests with coverage
   run: npm run test:coverage:all
@@ -148,22 +157,24 @@ Raport jest generowany nawet przy padających testach dzięki `reportOnFailure: 
 ## 📊 Aktualny status (2026-03-22)
 
 ### Server Coverage
-| Metryka | Coverage | Status |
-|---------|----------|--------|
-| Statements | 47.19% | 🟡 |
-| Branches | 35.5% | 🔴 |
-| Functions | 50.85% | 🟡 |
-| Lines | 47.4% | 🟡 |
+
+| Metryka    | Coverage | Status |
+| ---------- | -------- | ------ |
+| Statements | 47.19%   | 🟡     |
+| Branches   | 35.5%    | 🔴     |
+| Functions  | 50.85%   | 🟡     |
+| Lines      | 47.4%    | 🟡     |
 
 ## 📊 Aktualny status (2026-03-22)
 
 ### Server Coverage
-| Metryka | Coverage | Status |
-|---------|----------|--------|
-| Statements | 47.19% | 🔴 |
-| Branches | 35.5% | 🔴 |
-| Functions | 50.85% | 🟡 |
-| Lines | 47.4% | 🔴 |
+
+| Metryka    | Coverage | Status |
+| ---------- | -------- | ------ |
+| Statements | 47.19%   | 🔴     |
+| Branches   | 35.5%    | 🔴     |
+| Functions  | 50.85%   | 🟡     |
+| Lines      | 47.4%    | 🔴     |
 
 ### Jakość testów wg kategorii
 
@@ -181,16 +192,17 @@ Integration/E2E           │        2 │      ~15 │         70% │ 🟡 6/1
 ```
 
 ### Najważniejsze pliki do poprawy
+
 - `audioPipeline.ts` - 22% coverage 🔴
 - `sqliteWorker.ts` - 0% coverage 🔴
 - `supabaseStorage.ts` - 26% coverage 🔴
 
 ### Priorytety napraw
 
-| Priorytet | Kategoria | Działanie |
-|-----------|-----------|-----------|
-| 🔴 P0 | Hooks | Naprawić testy z brakującymi providerami |
-| 🔴 P0 | Services | Naprawić mocki fetch/API |
-| 🔴 P0 | Context Providers | Dodać wrappery z providerami |
-| 🟡 P1 | Frontend Components | Naprawić testy integracyjne |
-| 🟡 P1 | Stores | Naprawić testy z async state |
+| Priorytet | Kategoria           | Działanie                                |
+| --------- | ------------------- | ---------------------------------------- |
+| 🔴 P0     | Hooks               | Naprawić testy z brakującymi providerami |
+| 🔴 P0     | Services            | Naprawić mocki fetch/API                 |
+| 🔴 P0     | Context Providers   | Dodać wrappery z providerami             |
+| 🟡 P1     | Frontend Components | Naprawić testy integracyjne              |
+| 🟡 P1     | Stores              | Naprawić testy z async state             |

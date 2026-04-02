@@ -2,7 +2,6 @@
 
 Auto-generated React component documentation.
 
-
 ## MeetingsSyncManager
 
 No description available.

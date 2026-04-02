@@ -1,40 +1,40 @@
-:root[data-theme="light"] body {
+:root[data-theme='light'] body {
   background:
-    radial-gradient(circle at top left, rgba(26, 122, 104, 0.10), transparent 28%),
+    radial-gradient(circle at top left, rgba(26, 122, 104, 0.1), transparent 28%),
     radial-gradient(circle at 85% 15%, rgba(243, 152, 69, 0.08), transparent 26%),
     linear-gradient(160deg, #e8f0f8 0%, #f0f4f8 50%, #f5f8fc 100%);
 }
 
-:root[data-theme="light"] .topbar,
-:root[data-theme="light"] .panel,
-:root[data-theme="light"] .auth-panel {
+:root[data-theme='light'] .topbar,
+:root[data-theme='light'] .panel,
+:root[data-theme='light'] .auth-panel {
   background: var(--bg-panel);
   border-color: var(--stroke);
 }
 
-:root[data-theme="light"] input,
-:root[data-theme="light"] textarea,
-:root[data-theme="light"] select {
+:root[data-theme='light'] input,
+:root[data-theme='light'] textarea,
+:root[data-theme='light'] select {
   background: rgba(255, 255, 255, 0.9);
   color: var(--text);
   border-color: rgba(30, 80, 120, 0.2);
 }
 
-:root[data-theme="light"] .tab-pill {
+:root[data-theme='light'] .tab-pill {
   color: var(--muted);
 }
 
-:root[data-theme="light"] .tab-pill.active {
+:root[data-theme='light'] .tab-pill.active {
   background: rgba(26, 122, 104, 0.12);
   color: var(--accent);
 }
 
-:root[data-theme="light"] .ghost-button {
+:root[data-theme='light'] .ghost-button {
   color: var(--muted);
   border-color: rgba(30, 80, 120, 0.18);
 }
 
-:root[data-theme="light"] .ghost-button:hover {
+:root[data-theme='light'] .ghost-button:hover {
   background: rgba(26, 122, 104, 0.08);
   color: var(--accent);
 }
@@ -51,7 +51,7 @@ body {
     radial-gradient(circle at 85% 15%, rgba(242, 150, 69, 0.2), transparent 26%),
     linear-gradient(160deg, #050c12 0%, #08131d 50%, #091824 100%);
   color: var(--text);
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 button,
@@ -134,7 +134,7 @@ select {
 .hero-panel h2,
 .panel h2 {
   margin: 10px 0 0;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   letter-spacing: -0.03em;
 }
 
@@ -212,7 +212,7 @@ select {
 
 .auth-divider::before,
 .auth-divider::after {
-  content: "";
+  content: '';
   flex: 1;
   height: 1px;
   background: rgba(255, 255, 255, 0.08);
@@ -358,7 +358,9 @@ textarea:focus,
 select:focus {
   outline: 1px solid rgba(158, 242, 219, 0.55);
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(117, 214, 196, 0.14), 0 0 26px rgba(117, 214, 196, 0.16);
+  box-shadow:
+    0 0 0 4px rgba(117, 214, 196, 0.14),
+    0 0 26px rgba(117, 214, 196, 0.16);
 }
 
 .inline-alert {

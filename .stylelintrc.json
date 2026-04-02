@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "stylelint-config-standard"
-  ],
+  "extends": ["stylelint-config-standard"],
   "rules": {
     "indentation": null,
     "max-empty-lines": null,
@@ -43,11 +41,5 @@
     "declaration-block-no-redundant-longhand-properties": null,
     "shorthand-property-no-redundant-values": null
   },
-  "ignoreFiles": [
-    "**/*.test.css",
-    "**/*.spec.css",
-    "coverage/**",
-    "build/**",
-    "dist/**"
-  ]
+  "ignoreFiles": ["**/*.test.css", "**/*.spec.css", "coverage/**", "build/**", "dist/**"]
 }

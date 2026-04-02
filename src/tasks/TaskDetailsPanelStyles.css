@@ -54,7 +54,7 @@
   left: 0;
   z-index: 200;
   background: rgba(8, 22, 36, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.42);
   min-width: 180px;
@@ -124,7 +124,7 @@
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid rgba(117, 214, 196, 0.22);
-  background: rgba(117, 214, 196, 0.10);
+  background: rgba(117, 214, 196, 0.1);
   color: var(--text);
   cursor: pointer;
 }
@@ -145,7 +145,7 @@
   display: flex;
   flex-direction: column;
   background: rgba(8, 22, 36, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.42);
 }
@@ -160,7 +160,7 @@
 }
 
 .todo-tag-option:hover {
-  background: rgba(117, 214, 196, 0.10);
+  background: rgba(117, 214, 196, 0.1);
   color: var(--accent);
 }
 
@@ -937,10 +937,10 @@
   padding: 6px 8px;
 }
 
-.todo-detail-unified-field[type="datetime-local"],
+.todo-detail-unified-field[type='datetime-local'],
 select.todo-detail-unified-field {
-  height: auto; 
-  cursor: pointer; 
+  height: auto;
+  cursor: pointer;
 }
 
 select.todo-detail-unified-field option {

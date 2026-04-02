@@ -1,4 +1,3 @@
-
 .brief-tab-bar {
   display: flex;
   align-items: center;
@@ -16,7 +15,9 @@
   color: var(--muted);
   font-size: 0.84rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .brief-tab.active {
@@ -58,9 +59,9 @@
   left: 0;
   right: 0;
   background: var(--panel);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 200;
   max-height: 180px;
   overflow-y: auto;
@@ -79,7 +80,7 @@
 }
 
 .attendee-suggestion-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-recordings-panel {
@@ -93,7 +94,7 @@
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--bg-input, rgba(255,255,255,0.05));
+  background: var(--bg-input, rgba(255, 255, 255, 0.05));
   color: var(--text);
   font-size: 0.84rem;
   box-sizing: border-box;
@@ -119,12 +120,12 @@
 }
 
 .sidebar-recording-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-recording-item.active {
-  background: rgba(158,242,219,0.08);
-  border-color: rgba(158,242,219,0.22);
+  background: rgba(158, 242, 219, 0.08);
+  border-color: rgba(158, 242, 219, 0.22);
 }
 
 .sidebar-recording-title {
@@ -161,7 +162,7 @@
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--bg-input, rgba(255,255,255,0.05));
+  background: var(--bg-input, rgba(255, 255, 255, 0.05));
   color: var(--text);
   font-size: 0.84rem;
   box-sizing: border-box;
@@ -184,14 +185,14 @@
   border: 1px solid transparent;
 }
 .sidebar-recording-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 .sidebar-recording-item.active {
-  background: rgba(158,242,219,0.08);
-  border-color: rgba(158,242,219,0.22);
+  background: rgba(158, 242, 219, 0.08);
+  border-color: rgba(158, 242, 219, 0.22);
 }
 .sidebar-recording-item.meeting-active:not(.active) {
-  border-color: rgba(158,242,219,0.1);
+  border-color: rgba(158, 242, 219, 0.1);
 }
 .sidebar-recording-title {
   font-size: 0.85rem;

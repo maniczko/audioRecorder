@@ -7,13 +7,15 @@ Automatyzacja migracji kodu i generowania dokumentacji w projekcie VoiceLog.
 ## ✅ Wdrożone Funkcje
 
 ### 1. **Code Migration Script** ✅ (45 min)
+
 - **Plik:** `scripts/code-migration.js`
-- **Skrypty:** 
+- **Skrypty:**
   - `npm run migrate` - Uruchom migrację
   - `npm run migrate:dry` - Dry run (podgląd)
 - **Dependency:** `ts-morph`
 
 **Działanie:**
+
 - Automatycznie wykrywa deprecated API
 - Sugeruje i aplikuje fixy
 - Wspiera migracje:
@@ -27,6 +29,7 @@ Automatyzacja migracji kodu i generowania dokumentacji w projekcie VoiceLog.
 ---
 
 ### 2. **Automated Documentation** ✅ (30 min)
+
 - **Plik:** `scripts/auto-docs.js`
 - **Skrypty:**
   - `npm run docs:generate` - Generuj dokumentację
@@ -34,6 +37,7 @@ Automatyzacja migracji kodu i generowania dokumentacji w projekcie VoiceLog.
 - **Output:** `docs/` directory
 
 **Generowane dokumenty:**
+
 - `API.md` - API endpoint documentation
 - `COMPONENTS.md` - React component documentation
 - `SCRIPTS.md` - Script/utility documentation
@@ -46,6 +50,7 @@ Automatyzacja migracji kodu i generowania dokumentacji w projekcie VoiceLog.
 ## 📋 Dostępne Skrypty
 
 ### Code Migration
+
 ```bash
 # Dry run - zobacz co będzie zmienione
 npm run migrate:dry
@@ -58,6 +63,7 @@ npm run migrate -- --verbose
 ```
 
 ### Documentation
+
 ```bash
 # Generate all docs
 npm run docs:generate
@@ -80,14 +86,14 @@ npm run migrate:dry
 # 🔧 Starting automated code migration...
 # 📁 Scanning source files...
 # Found 263 TypeScript files
-# 
+#
 # 🔄 Running migration: React 19 Compatibility
 #    Update React 18 → 19 patterns
-# 
+#
 #    Would migrate: App.tsx
 #    Would migrate: MainApp.tsx
 #    Would migrate: AuthScreen.tsx
-# 
+#
 # ⚠️  Dry run mode - no files were modified
 
 # 2. Zastosuj migracje
@@ -97,12 +103,12 @@ npm run migrate
 # 🔄 Running migration: React 19 Compatibility
 #    - Migrating ReactDOM.render in App.tsx
 #    - Migrating React.FC in AuthScreen.tsx
-# 
+#
 # 📊 Migration Summary:
 #    Total files checked: 263
 #    Files migrated: 15
 #    Errors: 0
-# 
+#
 # ✅ Migration complete!
 ```
 
@@ -117,19 +123,19 @@ npm run docs:generate
 # Output:
 # 📚 Starting automated documentation generation...
 # 🚀 Running documentation generators...
-# 
+#
 # 📝 Generating API documentation...
 #    ✓ Generated: docs/API.md
-# 
+#
 # 📝 Generating component documentation...
 #    ✓ Generated: docs/COMPONENTS.md
-# 
+#
 # 📝 Generating script documentation...
 #    ✓ Generated: docs/SCRIPTS.md
-# 
+#
 # 📝 Updating README...
 #    ✓ Updated: README.md
-# 
+#
 # ✅ Documentation generation complete!
 ```
 
@@ -152,6 +158,7 @@ docs/
 ### React 19 Compatibility
 
 **Before:**
+
 ```typescript
 // React 18
 ReactDOM.render(<App />, document.getElementById('root'));
@@ -160,6 +167,7 @@ const MyComponent: React.FC<Props> = (props) => { ... }
 ```
 
 **After:**
+
 ```typescript
 // React 19
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
@@ -172,6 +180,7 @@ const MyComponent = (props: Props) => { ... }
 ### Vitest 4 Compatibility
 
 **Before:**
+
 ```typescript
 // Vitest 3
 vi.mock('./module', async (importOriginal) => {
@@ -181,6 +190,7 @@ vi.mock('./module', async (importOriginal) => {
 ```
 
 **After:**
+
 ```typescript
 // Vitest 4
 vi.mock('./module', async () => {
@@ -193,13 +203,13 @@ vi.mock('./module', async () => {
 
 ## 📁 Pliki
 
-| Plik | Opis |
-|------|------|
-| `scripts/code-migration.js` | Code migration script |
-| `scripts/auto-docs.js` | Auto documentation generator |
-| `docs/API.md` | Generated API docs |
-| `docs/COMPONENTS.md` | Generated component docs |
-| `docs/SCRIPTS.md` | Generated script docs |
+| Plik                        | Opis                         |
+| --------------------------- | ---------------------------- |
+| `scripts/code-migration.js` | Code migration script        |
+| `scripts/auto-docs.js`      | Auto documentation generator |
+| `docs/API.md`               | Generated API docs           |
+| `docs/COMPONENTS.md`        | Generated component docs     |
+| `docs/SCRIPTS.md`           | Generated script docs        |
 
 ---
 
@@ -221,9 +231,7 @@ const migrations = [
     migrate: (file) => {
       // Apply migration
       let changes = 0;
-      file.replaceWithText(
-        file.getText().replace(/deprecated-api/g, 'new-api')
-      );
+      file.replaceWithText(file.getText().replace(/deprecated-api/g, 'new-api'));
       changes++;
       return changes;
     },
@@ -255,11 +263,11 @@ const generators = [
 
 ## 📈 Metryki
 
-| Metryka | Przed | Po | Zysk |
-|---------|-------|----|----|
-| **Migration time** | 4 hours | 5 min | -98% |
-| **Docs update time** | 2 hours | 30 sec | -99% |
-| **Docs accuracy** | 60% | 100% | +67% |
+| Metryka                  | Przed           | Po            | Zysk |
+| ------------------------ | --------------- | ------------- | ---- |
+| **Migration time**       | 4 hours         | 5 min         | -98% |
+| **Docs update time**     | 2 hours         | 30 sec        | -99% |
+| **Docs accuracy**        | 60%             | 100%          | +67% |
 | **Developer time saved** | 6 hours/release | 5 min/release | -99% |
 
 ---
@@ -269,6 +277,7 @@ const generators = [
 ### Problem: Migration fails on some files
 
 **Rozwiązanie:**
+
 ```bash
 # Run with verbose to see errors
 npm run migrate -- --verbose
@@ -284,6 +293,7 @@ npm run migrate
 ### Problem: Docs not generating
 
 **Rozwiązanie:**
+
 ```bash
 # Check if docs directory exists
 ls docs/
@@ -300,6 +310,7 @@ npm run docs:watch
 ### Problem: ts-morph not found
 
 **Rozwiązanie:**
+
 ```bash
 # Install dependency
 pnpm add -D -w ts-morph

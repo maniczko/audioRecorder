@@ -41,7 +41,7 @@ function makeSentryRequest(path, options = {}) {
       path,
       method: options.method || 'GET',
       headers: {
-        'Authorization': `Bearer ${SENTRY_AUTH_TOKEN}`,
+        Authorization: `Bearer ${SENTRY_AUTH_TOKEN}`,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -246,7 +246,8 @@ async function main() {
           count: issue.count || 1,
           firstSeen: issue.firstSeen,
           lastSeen: issue.lastSeen,
-          url: issue.permalink || `https://sentry.io/organizations/${SENTRY_ORG}/issues/${issue.id}/`,
+          url:
+            issue.permalink || `https://sentry.io/organizations/${SENTRY_ORG}/issues/${issue.id}/`,
         });
       }
     }

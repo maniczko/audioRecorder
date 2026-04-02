@@ -1,5 +1,3 @@
-
-
 .workspace-kpi-panel,
 .workspace-kpi-grid,
 .workspace-kpi-toolbar,
@@ -50,7 +48,7 @@
 }
 
 .workspace-kpi-card strong {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 1.8rem;
 }
 

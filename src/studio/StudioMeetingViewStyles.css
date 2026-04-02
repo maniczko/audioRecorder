@@ -1,6 +1,5 @@
 @import url('./StudioMeetingViewStyles.mobile.css');
 
-
 .risk-item {
   display: flex;
   align-items: baseline;
@@ -159,7 +158,9 @@
   color: var(--muted);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .ff-tb-lang:hover {
@@ -178,7 +179,9 @@
   color: var(--text);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .ff-tb-btn:hover:not(:disabled) {
@@ -320,10 +323,12 @@
   font-family: inherit;
   font-size: 0.9rem;
   line-height: 1.5;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
-[data-theme="light"] .editable-analysis-textarea {
+[data-theme='light'] .editable-analysis-textarea {
   background: var(--surface2, #f9fafb);
   border-color: var(--border, #e5e7eb);
 }
@@ -391,7 +396,7 @@
 }
 
 .ff-rec-timer-xl {
-  font-family: "Space Grotesk", "Inter", monospace;
+  font-family: 'Space Grotesk', 'Inter', monospace;
   font-size: clamp(2.4rem, 6vw, 3.6rem);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -430,7 +435,9 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 
 .ff-sidebar-action-btn:hover:not(:disabled) {
@@ -490,19 +497,25 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 999px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   color: #374151;
   font-family: inherit;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
   white-space: nowrap;
 }
 
 .ff-sync-fab:hover {
   border-color: #d1d5db;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.14),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 .ff-sync-fab svg {
@@ -665,12 +678,13 @@
 .ff-player-scrubber::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background:
-    linear-gradient(90deg,
-      var(--accent, #75d6c4) 0%,
-      var(--accent, #75d6c4) var(--ff-player-progress, 0%),
-      rgba(255, 255, 255, 0.12) var(--ff-player-progress, 0%),
-      rgba(255, 255, 255, 0.12) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--accent, #75d6c4) 0%,
+    var(--accent, #75d6c4) var(--ff-player-progress, 0%),
+    rgba(255, 255, 255, 0.12) var(--ff-player-progress, 0%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
 }
 
 .ff-player-scrubber::-webkit-slider-thumb {
@@ -734,7 +748,9 @@
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
   text-decoration: none;
 }
 
@@ -755,7 +771,9 @@
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s, transform 0.1s;
+  transition:
+    background 0.12s,
+    transform 0.1s;
 }
 
 .ff-player-play:hover {
@@ -777,7 +795,7 @@
   min-height: 2px;
 }
 
-[data-theme="light"] .ff-player-bar {
+[data-theme='light'] .ff-player-bar {
   border-top-color: #e5e7eb;
 }
 
@@ -797,15 +815,23 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.13), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.13),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   padding: 4px 0;
   animation: ff-dropdown-in 0.12s ease;
 }
 
 @keyframes ff-dropdown-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ff-speaker-dropdown-item {
@@ -1032,7 +1058,9 @@
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .ff-voice-coaching-btn.secondary {
@@ -1114,7 +1142,7 @@
   box-shadow: var(--shadow-panel);
 }
 
-[data-theme="dark"] .ff-studio-right-col {
+[data-theme='dark'] .ff-studio-right-col {
   background: var(--surface-panel);
   border-color: var(--surface-stroke);
 }
@@ -1168,7 +1196,7 @@
 }
 
 .analysis-list li::before {
-  content: "•";
+  content: '•';
   position: absolute;
   left: 0;
   color: #74d0bf;
@@ -1187,7 +1215,9 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 16px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .insight-card:hover {
@@ -1202,7 +1232,7 @@
   color: #74d0bf;
 }
 
-.insight-card>div {
+.insight-card > div {
   font-size: 13px;
   margin-bottom: 6px;
   color: var(--text-muted, #7c7c8c);
@@ -1454,7 +1484,7 @@
 }
 
 .feedback-list li::before {
-  content: "•";
+  content: '•';
   position: absolute;
   left: 0;
   color: #74d0bf;
@@ -1955,7 +1985,10 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .meeting-task-open:hover {
@@ -2120,7 +2153,6 @@
 }
 
 @media (max-width: 1100px) {
-
   .summary-metrics,
   .summary-grid {
     grid-template-columns: 1fr 1fr;
@@ -2133,7 +2165,6 @@
 }
 
 @media (max-width: 760px) {
-
   .studio-analysis-summary-panel .panel-header.compact,
   .summary-card-head {
     align-items: flex-start;
@@ -2191,7 +2222,9 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .insight-card-v2:hover {
@@ -2412,7 +2445,7 @@
 }
 
 .icard-tips-list li::before {
-  content: "→";
+  content: '→';
   position: absolute;
   left: 0;
   color: #74d0bf;
@@ -3204,7 +3237,7 @@
 }
 
 .sketchnote-image-frame.sketchnote-zoomed .sketchnote-image,
-.sketchnote-image-frame.sketchnote-zoomed>div,
+.sketchnote-image-frame.sketchnote-zoomed > div,
 .sketchnote-image-frame.sketchnote-zoomed .sketchnote-inline-svg svg {
   max-width: 100%;
 }
@@ -3397,7 +3430,9 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   color: var(--muted);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .ff-search-bar:focus-within {
@@ -3452,7 +3487,9 @@
   border: 1px solid transparent;
   border-radius: 5px;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .ff-speaker-trigger:hover {

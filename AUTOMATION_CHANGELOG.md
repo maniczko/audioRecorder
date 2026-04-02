@@ -7,6 +7,7 @@ Automatyczne generowanie CHANGELOG.md z commit message w projekcie VoiceLog.
 ## ✅ Wdrożone Funkcje
 
 ### 1. **Changelog Generator** ✅ (15 min)
+
 - **Plik:** `.versionrc.json`
 - **Skrypty:**
   - `npm run changelog` - Update changelog
@@ -15,6 +16,7 @@ Automatyczne generowanie CHANGELOG.md z commit message w projekcie VoiceLog.
 - **Dependency:** `conventional-changelog-cli`
 
 **Działanie:**
+
 - Parsuje commit message (conventional commits)
 - Grupuje zmiany po typach (feat, fix, perf, etc.)
 - Auto-linkuje issues i PRs
@@ -25,12 +27,14 @@ Automatyczne generowanie CHANGELOG.md z commit message w projekcie VoiceLog.
 ---
 
 ### 2. **GitHub Actions Workflow** ✅
+
 - **Plik:** `.github/workflows/changelog.yml`
 - **Wyzwalacze:**
-  - Push tagów (v*)
+  - Push tagów (v\*)
   - Manual trigger (workflow_dispatch)
 
 **Działanie:**
+
 - Generuje changelog na CI
 - Commituje zmiany do CHANGELOG.md
 - Tworzy GitHub Release z notatkami
@@ -42,6 +46,7 @@ Automatyczne generowanie CHANGELOG.md z commit message w projekcie VoiceLog.
 ## 📋 Konwencja Commit Message
 
 ### Format
+
 ```
 <type>(<scope>): <subject>
 
@@ -52,22 +57,22 @@ Automatyczne generowanie CHANGELOG.md z commit message w projekcie VoiceLog.
 
 ### Typy Commitów
 
-| Typ | Opis | Sekcja w CHANGELOG |
-|-----|------|-------------------|
-| `feat` | Nowa funkcjonalność | Features |
-| `fix` | Naprawa błędu | Bug Fixes |
-| `perf` | Poprawa wydajności | Performance Improvements |
-| `docs` | Zmiany w dokumentacji | Documentation |
-| `style` | Formatowanie, brak zmian w logice | Styles |
-| `refactor` | Refaktoryzacja kodu | Code Refactoring |
-| `test` | Dodanie testów | Tests |
-| `build` | Zmiany w buildzie | Build System |
-| `ci` | Zmiany w CI/CD | Continuous Integration |
-| `config` | Zmiany w konfiguracji | Configuration |
-| `deps` | Aktualizacja dependency | Dependencies |
-| `devops` | Zmiany DevOps | DevOps |
-| `infra` | Zmiany infrastruktury | Infrastructure |
-| `types` | Zmiany w typach TypeScript | Type Definitions |
+| Typ        | Opis                              | Sekcja w CHANGELOG       |
+| ---------- | --------------------------------- | ------------------------ |
+| `feat`     | Nowa funkcjonalność               | Features                 |
+| `fix`      | Naprawa błędu                     | Bug Fixes                |
+| `perf`     | Poprawa wydajności                | Performance Improvements |
+| `docs`     | Zmiany w dokumentacji             | Documentation            |
+| `style`    | Formatowanie, brak zmian w logice | Styles                   |
+| `refactor` | Refaktoryzacja kodu               | Code Refactoring         |
+| `test`     | Dodanie testów                    | Tests                    |
+| `build`    | Zmiany w buildzie                 | Build System             |
+| `ci`       | Zmiany w CI/CD                    | Continuous Integration   |
+| `config`   | Zmiany w konfiguracji             | Configuration            |
+| `deps`     | Aktualizacja dependency           | Dependencies             |
+| `devops`   | Zmiany DevOps                     | DevOps                   |
+| `infra`    | Zmiany infrastruktury             | Infrastructure           |
+| `types`    | Zmiany w typach TypeScript        | Type Definitions         |
 
 ---
 
@@ -128,6 +133,7 @@ Feat: Add New Feature (powinno być feat: lowercase)
 ## 🔄 Workflow
 
 ### Local Development:
+
 ```bash
 # 1. Make changes
 git add .
@@ -140,6 +146,7 @@ git push
 ```
 
 ### Release Process:
+
 ```bash
 # 1. Create version tag
 git tag v1.0.0
@@ -155,6 +162,7 @@ git push --follow-tags
 ```
 
 ### GitHub Actions (automatic):
+
 ```
 Push tag v1.0.0
         ↓
@@ -175,10 +183,10 @@ Done!
 
 ## 📁 Pliki
 
-| Plik | Opis |
-|------|------|
-| `.versionrc.json` | Changelog configuration |
-| `CHANGELOG.md` | Generated changelog |
+| Plik                              | Opis                    |
+| --------------------------------- | ----------------------- |
+| `.versionrc.json`                 | Changelog configuration |
+| `CHANGELOG.md`                    | Generated changelog     |
 | `.github/workflows/changelog.yml` | GitHub Actions workflow |
 
 ---
@@ -194,39 +202,39 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-* add automated changelog generation (#123)
-* implement AI auto-fix for PRs
-* add smart lint staging
+- add automated changelog generation (#123)
+- implement AI auto-fix for PRs
+- add smart lint staging
 
 ### Bug Fixes
 
-* fix pre-commit hook blocking commits ([#125](https://github.com/owner/repo/issues/125))
-* resolve null pointer in auth service
+- fix pre-commit hook blocking commits ([#125](https://github.com/owner/repo/issues/125))
+- resolve null pointer in auth service
 
 ### Performance Improvements
 
-* optimize CI/CD pipeline (50% faster)
-* reduce bundle size by 20%
+- optimize CI/CD pipeline (50% faster)
+- reduce bundle size by 20%
 
 ### Documentation
 
-* update README with automation guide
-* add comprehensive documentation
+- update README with automation guide
+- add comprehensive documentation
 
 ### Code Refactoring
 
-* simplify authentication logic
-* extract token validation
+- simplify authentication logic
+- extract token validation
 
 ### Tests
 
-* add unit tests for auth service
-* add integration tests for endpoints
+- add unit tests for auth service
+- add integration tests for endpoints
 
 ### Continuous Integration
 
-* add automated changelog workflow
-* configure dependabot
+- add automated changelog workflow
+- configure dependabot
 ```
 
 ---
@@ -254,6 +262,7 @@ All notable changes to this project will be documented in this file.
 ### Problem: Changelog nie generuje się
 
 **Rozwiązanie:**
+
 ```bash
 # Sprawdź format commit message
 git log --oneline -10
@@ -272,6 +281,7 @@ npm run changelog:init
 ### Problem: GitHub Actions nie działa
 
 **Rozwiązanie:**
+
 1. Sprawdź `.github/workflows/changelog.yml`
 2. Sprawdź logs w GitHub Actions
 3. Upewnij się że tag zaczyna się od `v` (v1.0.0)
@@ -279,6 +289,7 @@ npm run changelog:init
 ### Problem: CHANGELOG.md jest pusty
 
 **Rozwiązanie:**
+
 ```bash
 # Initialize changelog from all commits
 npm run changelog:init
@@ -292,12 +303,12 @@ git commit -m "docs: initialize changelog"
 
 ## 📈 Metryki
 
-| Metryka | Przed | Po | Zysk |
-|---------|-------|----|----|
+| Metryka                     | Przed          | Po    | Zysk  |
+| --------------------------- | -------------- | ----- | ----- |
 | **Time to write changelog** | 30 min/release | 0 min | -100% |
-| **Release time** | 15 min | 1 min | -93% |
-| **Changelog accuracy** | 60% | 100% | +67% |
-| **Developer satisfaction** | 6/10 | 9/10 | +50% |
+| **Release time**            | 15 min         | 1 min | -93%  |
+| **Changelog accuracy**      | 60%            | 100%  | +67%  |
+| **Developer satisfaction**  | 6/10           | 9/10  | +50%  |
 
 ---
 

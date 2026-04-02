@@ -1,5 +1,3 @@
-
-
 .notes-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 380px;
@@ -31,8 +29,12 @@
   margin: 6px 0 12px;
   outline: none;
 }
-.notes-new-title-input::placeholder { color: var(--muted); }
-.notes-new-title-input:focus { border-bottom-color: rgba(116, 208, 191, 0.6); }
+.notes-new-title-input::placeholder {
+  color: var(--muted);
+}
+.notes-new-title-input:focus {
+  border-bottom-color: rgba(116, 208, 191, 0.6);
+}
 .notes-tag-chips-input {
   display: flex;
   flex-wrap: wrap;
@@ -52,7 +54,9 @@
   font-size: 0.82rem;
   padding: 2px 0;
 }
-.notes-tag-text-input::placeholder { color: var(--muted); }
+.notes-tag-text-input::placeholder {
+  color: var(--muted);
+}
 .note-tag-chip .tag-chip-remove {
   background: none;
   border: none;
@@ -63,7 +67,9 @@
   font-size: 1em;
   line-height: 1;
 }
-.note-tag-chip .tag-chip-remove:hover { opacity: 1; }
+.note-tag-chip .tag-chip-remove:hover {
+  opacity: 1;
+}
 .notes-new-panel-actions {
   display: flex;
   gap: 8px;
@@ -99,7 +105,9 @@
   border-radius: 6px;
   font-size: 0.85rem;
   line-height: 1;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .wysiwyg-btn:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -132,17 +140,29 @@
   padding-left: 20px;
   margin: 6px 0;
 }
-.wysiwyg-body li { margin: 3px 0; }
+.wysiwyg-body li {
+  margin: 3px 0;
+}
 .notes-html-content ul,
 .notes-html-content ol {
   padding-left: 20px;
   margin: 6px 0;
 }
-.notes-html-content li { margin: 3px 0; }
-.notes-html-content p { margin: 0 0 8px; }
-.notes-html-content strong { font-weight: 700; }
-.notes-html-content em { font-style: italic; }
-.notes-html-content u { text-decoration: underline; }
+.notes-html-content li {
+  margin: 3px 0;
+}
+.notes-html-content p {
+  margin: 0 0 8px;
+}
+.notes-html-content strong {
+  font-weight: 700;
+}
+.notes-html-content em {
+  font-style: italic;
+}
+.notes-html-content u {
+  text-decoration: underline;
+}
 .notes-search-wrap {
   position: relative;
   margin-bottom: 12px;
@@ -224,7 +244,9 @@
   font-size: 0.84rem;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .notes-filter-tag:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -283,7 +305,10 @@
   color: var(--text);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+  transition:
+    border-color 0.18s,
+    background 0.18s,
+    box-shadow 0.18s;
 }
 .note-card:hover {
   background: rgba(10, 24, 38, 0.92);

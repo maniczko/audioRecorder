@@ -61,6 +61,7 @@ server/benchmarks/
 ## Metryki
 
 ### WER Proxy (Word Error Rate)
+
 - **Im niższy, tym lepiej**
 - 0.0 = idealne dopasowanie
 - 1.0 = complete mismatch
@@ -71,16 +72,19 @@ server/benchmarks/
   - N = liczba słów w referencji
 
 ### Failure Rate
+
 - Procent nieudanych transkrypcji
 - Im niższy, tym lepiej
 
 ### Average Duration
+
 - Średni czas przetwarzania na próbkę
 - Im niższy, tym szybciej
 
 ## Providerzy
 
 Domyślnie testowani:
+
 - **OpenAI Whisper** (whisper-1)
 - **Groq Whisper** (whisper-large-v3)
 - **Google Cloud STT** (jeśli skonfigurowany)
@@ -95,7 +99,7 @@ Dodaj do GitHub Actions:
   run: |
     pnpm run benchmark:stt:run benchmarks/pl-dataset.json
     pnpm run benchmark:stt:latest > benchmark-report.md
-    
+
 - name: Upload Benchmark Results
   uses: actions/upload-artifact@v4
   with:
@@ -116,14 +120,15 @@ Dodaj do GitHub Actions:
 ## 🏆 Winner
 
 **Groq Whisper** (groq-whisper)
+
 - WER Proxy: **0.0842**
 
 ## 📈 Provider Results
 
-| Provider | Model | WER Proxy ↓ | Failure Rate ↓ | Avg Duration (ms) |
-|----------|-------|-------------|----------------|-------------------|
-| 🥇 Groq Whisper | whisper-large-v3 | 0.0842 | 0.0% | 1234 |
-| OpenAI Whisper | whisper-1 | 0.0956 | 0.0% | 5678 |
+| Provider        | Model            | WER Proxy ↓ | Failure Rate ↓ | Avg Duration (ms) |
+| --------------- | ---------------- | ----------- | -------------- | ----------------- |
+| 🥇 Groq Whisper | whisper-large-v3 | 0.0842      | 0.0%           | 1234              |
+| OpenAI Whisper  | whisper-1        | 0.0956      | 0.0%           | 5678              |
 ```
 
 ## Konfiguracja
@@ -149,14 +154,17 @@ AZURE_SPEECH_REGION=...
 ## Troubleshooting
 
 ### "No providers available"
+
 - Sprawdź czy API keys są ustawione w `.env`
 - Uruchom `pnpm run test:smoke` aby przetestować połączenie
 
 ### "Manifest not found"
+
 - Upewnij się że plik manifestu istnieje
 - Sprawdź ścieżkę: `benchmarks/pl-dataset.json`
 
 ### High WER Proxy
+
 - Sprawdź jakość audio (szum, ciche nagranie)
 - Upewnij się że transkrypcja referencyjna jest dokładna
 - Rozważ użycie lepszego modelu (np. whisper-large-v3)

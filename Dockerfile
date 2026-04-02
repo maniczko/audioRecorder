@@ -39,7 +39,7 @@ RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \
     --outdir=dist-server \
     --packages=external
 
-RUN node -e " \
+RUN node --input-type=commonjs -e " \
   const fs=require('fs'); \
   const path=require('path'); \
   try { \

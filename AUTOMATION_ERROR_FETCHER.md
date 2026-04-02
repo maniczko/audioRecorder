@@ -7,6 +7,7 @@ Automatyczne pobieranie błędów z GitHub Actions w projekcie VoiceLog.
 ## ✅ Wdrożone Funkcje
 
 ### 1. **Error Fetcher Script** ✅ (15 min)
+
 - **Plik:** `scripts/fetch-github-errors.js`
 - **Skrypty:**
   - `npm run errors:fetch` - Pobierz błędy
@@ -14,6 +15,7 @@ Automatyczne pobieranie błędów z GitHub Actions w projekcie VoiceLog.
 - **Output:** `github-errors/` directory
 
 **Działanie:**
+
 - Łączy się z GitHub API
 - Pobiera failed workflow runs z ostatnich 7 dni
 - Ekstrahuje logi błędów
@@ -25,11 +27,13 @@ Automatyczne pobieranie błędów z GitHub Actions w projekcie VoiceLog.
 ---
 
 ### 2. **Automated Error Reporter Workflow** ✅
+
 - **Plik:** `.github/workflows/github-error-reporter.yml`
 - **Harmonogram:** Codziennie o 9:00
 - **Manual trigger:** workflow_dispatch
 
 **Działanie:**
+
 - Uruchamia fetch-github-errors.js
 - Uploaduje raporty jako artifacts
 - Tworzy/aktualizuje GitHub issue z błędami
@@ -41,6 +45,7 @@ Automatyczne pobieranie błędów z GitHub Actions w projekcie VoiceLog.
 ## 📋 Dostępne Skrypty
 
 ### Local Fetch
+
 ```bash
 # Basic fetch
 npm run errors:fetch
@@ -53,6 +58,7 @@ DAYS_BACK=30 npm run errors:fetch
 ```
 
 ### GitHub Actions (Automatic)
+
 ```yaml
 # Runs daily at 9 AM
 # Or manually from Actions tab
@@ -88,6 +94,7 @@ Email/Slack Notification (optional)
 ## 📊 Przykładowy Raport
 
 ### JSON Report
+
 ```json
 {
   "generated": "2026-03-25T09:00:00.000Z",
@@ -126,6 +133,7 @@ Email/Slack Notification (optional)
 ```
 
 ### Markdown Report
+
 ```markdown
 # GitHub Actions Error Report
 
@@ -135,12 +143,12 @@ Email/Slack Notification (optional)
 
 ## Summary
 
-| Metric | Count |
-|--------|-------|
-| Total Runs | 45 |
-| Failed Runs | 3 |
-| Cancelled Runs | 2 |
-| Successful Runs | 40 |
+| Metric          | Count |
+| --------------- | ----- |
+| Total Runs      | 45    |
+| Failed Runs     | 3     |
+| Cancelled Runs  | 2     |
+| Successful Runs | 40    |
 
 ## Failures
 
@@ -152,12 +160,14 @@ Email/Slack Notification (optional)
 - **URL:** https://github.com/.../actions/runs/123456
 
 #### Job: test
+
 **Step:** Run tests
 
 **Errors:**
-
 ```
+
 Line 42: Error: Test suite failed
+
 ```
 
 ---
@@ -200,11 +210,11 @@ DAYS_BACK=7
 
 ## 📁 Pliki
 
-| Plik | Opis |
-|------|------|
-| `scripts/fetch-github-errors.js` | Error fetcher script |
-| `.github/workflows/github-error-reporter.yml` | Automated workflow |
-| `github-errors/` | Output directory for reports |
+| Plik                                          | Opis                         |
+| --------------------------------------------- | ---------------------------- |
+| `scripts/fetch-github-errors.js`              | Error fetcher script         |
+| `.github/workflows/github-error-reporter.yml` | Automated workflow           |
+| `github-errors/`                              | Output directory for reports |
 
 ---
 
@@ -252,6 +262,7 @@ cat github-errors/github-errors-2026-03-25.md
 ### Problem: 403 Forbidden
 
 **Rozwiązanie:**
+
 ```bash
 # Check token permissions
 # Token needs: repo, actions, issues scopes
@@ -262,6 +273,7 @@ cat github-errors/github-errors-2026-03-25.md
 ### Problem: No errors found
 
 **Rozwiązanie:**
+
 ```bash
 # Check if there are actual failures
 # Go to Actions tab and verify
@@ -273,6 +285,7 @@ DAYS_BACK=30 npm run errors:fetch
 ### Problem: Issue not created
 
 **Rozwiązanie:**
+
 ```bash
 # Check workflow permissions
 # Needs: issues: write permission
@@ -284,12 +297,12 @@ DAYS_BACK=30 npm run errors:fetch
 
 ## 📈 Metryki
 
-| Metryka | Przed | Po | Zysk |
-|---------|-------|----|----|
-| **Time to detect errors** | Manual | Auto | -100% |
-| **Error report time** | 30 min | 0 min | -100% |
-| **Error visibility** | Low | High | +100% |
-| **MTTR** | 4 hours | 1 hour | -75% |
+| Metryka                   | Przed   | Po     | Zysk  |
+| ------------------------- | ------- | ------ | ----- |
+| **Time to detect errors** | Manual  | Auto   | -100% |
+| **Error report time**     | 30 min  | 0 min  | -100% |
+| **Error visibility**      | Low     | High   | +100% |
+| **MTTR**                  | 4 hours | 1 hour | -75%  |
 
 ---
 

@@ -11,7 +11,7 @@
  *   5. DC Bias Removal and Pre-emphasis for Voice Clarity.
  */
 
-"use strict";
+'use strict';
 
 const FFT_SIZE = 512;
 const HOP_SIZE = 128; // Standard AudioWorklet quantum
@@ -21,8 +21,8 @@ const SAMPLE_RATE = 48000; // Expected sample rate
 // ── Perceptual Band Mapping (Bark Scale) ─────────────────────────────────────
 // Mapping 257 FFT bins to 24 Bark-scale bands for efficient processing.
 const BARK_BANDS = [
-  0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 
-  2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500
+  0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700,
+  4400, 5300, 6400, 7700, 9500, 12000, 15500,
 ];
 
 const BIN_TO_BAND = new Uint8Array(NUM_BINS);
@@ -55,11 +55,12 @@ function fft(re, im) {
   }
   for (let len = 2; len <= n; len <<= 1) {
     const half = len >> 1;
-    const step = -2 * Math.PI / len;
+    const step = (-2 * Math.PI) / len;
     for (let i = 0; i < n; i += len) {
       for (let k = 0; k < half; k++) {
         const a = step * k;
-        const wr = Math.cos(a), wi = Math.sin(a);
+        const wr = Math.cos(a),
+          wi = Math.sin(a);
         const tr = wr * re[i + k + half] - wi * im[i + k + half];
         const ti = wi * re[i + k + half] + wr * im[i + k + half];
         re[i + k + half] = re[i + k] - tr;
@@ -75,7 +76,10 @@ function ifft(re, im) {
   for (let i = 0; i < re.length; i++) im[i] = -im[i];
   fft(re, im);
   const inv = 1 / re.length;
-  for (let i = 0; i < re.length; i++) { re[i] *= inv; im[i] *= -inv; }
+  for (let i = 0; i < re.length; i++) {
+    re[i] *= inv;
+    im[i] *= -inv;
+  }
 }
 
 // ── Advanced Noise Processor ─────────────────────────────────────────────────
@@ -86,14 +90,14 @@ class AdvancedNoiseProcessor extends AudioWorkletProcessor {
     this.olaBuf = new Float32Array(FFT_SIZE + HOP_SIZE);
     this.tick = 0;
     this.bypassed = false;
-    
+
     // Per-band state
     this.bandNoise = new Float32Array(NUM_BARK_BANDS).fill(1e-6);
     this.bandMin = new Float32Array(NUM_BARK_BANDS).fill(1e8);
     this.bandGain = new Float32Array(NUM_BARK_BANDS).fill(1.0);
-    
+
     this.port.onmessage = (e) => {
-      if (e.data.type === "bypass") this.bypassed = !!e.data.value;
+      if (e.data.type === 'bypass') this.bypassed = !!e.data.value;
     };
   }
 
@@ -130,11 +134,12 @@ class AdvancedNoiseProcessor extends AudioWorkletProcessor {
     }
 
     // ── 2. Update Noise Floor (Minimum Statistics) ───────────────────────────
-    if (this.tick % 40 === 0) { // Every ~100ms
+    if (this.tick % 40 === 0) {
+      // Every ~100ms
       for (let b = 0; b < NUM_BARK_BANDS; b++) {
         // Slow adaptation: 0.95 IIR
         this.bandNoise[b] = 0.95 * this.bandNoise[b] + 0.05 * this.bandMin[b];
-        this.bandMin[b] = 1e8; 
+        this.bandMin[b] = 1e8;
       }
     }
 
@@ -142,13 +147,13 @@ class AdvancedNoiseProcessor extends AudioWorkletProcessor {
     for (let b = 0; b < NUM_BARK_BANDS; b++) {
       const noise = this.bandNoise[b] * 2.0; // Over-subtraction margin
       const snr = bandPower[b] / (noise + 1e-12);
-      
+
       // Target Gain: Wiener principle
       let targetG = snr / (snr + 1.0);
-      
+
       // Spectral Floor: prevent dead silence which sounds unnatural
       targetG = Math.max(0.1, targetG);
-      
+
       // Temporal Smoothing: Prevent rapid gain fluctuations ("musical noise")
       this.bandGain[b] = 0.7 * this.bandGain[b] + 0.3 * targetG;
     }
@@ -183,4 +188,4 @@ class AdvancedNoiseProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("advanced-noise-reducer", AdvancedNoiseProcessor);
+registerProcessor('advanced-noise-reducer', AdvancedNoiseProcessor);

@@ -37,7 +37,7 @@ describe('Build & Deploy Configuration', () => {
 
   test('vite.config.js manualChunks is a function (required by Rolldown/Vite 8+)', () => {
     const viteConfig = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf-8');
-    
+
     // Object-style manualChunks: { 'name': ['path'] } is NOT supported by Rolldown
     const hasObjectChunks = /manualChunks:\s*\{/.test(viteConfig);
     expect(hasObjectChunks).toBe(false);
@@ -54,15 +54,17 @@ describe('Build & Deploy Configuration', () => {
     const outDirMatch = viteConfig.match(/outDir:\s*['"]([^'"]+)['"]/);
     const outDir = outDirMatch ? outDirMatch[1] : 'dist';
     const indexPath = path.join(ROOT, outDir, 'index.html');
-    
+
     // This test validates that a previous build succeeded.
     // CI runs `npm run build` before tests, so this file should exist.
     // Locally, skip gracefully if no build has been run.
     if (!fs.existsSync(path.join(ROOT, outDir))) {
-      console.warn(`⚠ Build directory "${outDir}/" not found — skipping (run "npm run build" first)`);
+      console.warn(
+        `⚠ Build directory "${outDir}/" not found — skipping (run "npm run build" first)`
+      );
       return;
     }
-    
+
     expect(fs.existsSync(indexPath)).toBe(true);
   });
 });

@@ -8,16 +8,16 @@
 
 ## 🎨 Dostępne Motywy
 
-| Nazwa | Kolor Główny | Inspiracja |
-|-------|--------------|------------|
-| 🌸 Sakura | Różowy | Kwiat wiśni |
-| 🍵 Matcha | Zielony | Herbata matcha |
-| 🌊 Indigo | Niebieski | Tradycyjny barwnik |
-| 🌑 Sumi | Czarny | Tusz sumi |
-| 🍁 Momiji | Czerwony | Liście klonu |
-| 🏯 Wabi-Sabi | Brązowy | Niedoskonałe piękno |
-| 🎌 Koi | Pomarańczowy | Ryba koi |
-| 👘 Miyabi | Fioletowy | Elegancja |
+| Nazwa        | Kolor Główny | Inspiracja          |
+| ------------ | ------------ | ------------------- |
+| 🌸 Sakura    | Różowy       | Kwiat wiśni         |
+| 🍵 Matcha    | Zielony      | Herbata matcha      |
+| 🌊 Indigo    | Niebieski    | Tradycyjny barwnik  |
+| 🌑 Sumi      | Czarny       | Tusz sumi           |
+| 🍁 Momiji    | Czerwony     | Liście klonu        |
+| 🏯 Wabi-Sabi | Brązowy      | Niedoskonałe piękno |
+| 🎌 Koi       | Pomarańczowy | Ryba koi            |
+| 👘 Miyabi    | Fioletowy    | Elegancja           |
 
 ## 🚀 Jak Użyć
 
@@ -65,6 +65,7 @@ const handleThemeChange = (theme: Japane seTheme) => {
 ## 🎯 Flat Design Principles
 
 ### Zasady
+
 - ✅ **Brak gradientów** - jednolite kolory
 - ✅ **Brak cieni 3D** - płaskie elementy
 - ✅ **Minimalizm** - tylko niezbędne elementy
@@ -72,6 +73,7 @@ const handleThemeChange = (theme: Japane seTheme) => {
 - ✅ **Kontrast** - wyraźne rozróżnienie
 
 ### CSS Variables
+
 ```css
 --jp-primary       /* Kolor główny */
 --jp-secondary     /* Kolor drugorzędny */
@@ -86,6 +88,7 @@ const handleThemeChange = (theme: Japane seTheme) => {
 ## 📱 Responsive
 
 Layout jest w pełni responsywny:
+
 - **Desktop**: Grid z kartami motywów
 - **Mobile**: Pojedyncza kolumna
 - **Tablet**: 2 kolumny
@@ -107,10 +110,7 @@ import './styles/JapaneseFlatDesign.css';
 function App() {
   return (
     <div className="jp-profile-layout">
-      <JapaneseThemeSelector
-        currentTheme={currentTheme}
-        onThemeChange={handleThemeChange}
-      />
+      <JapaneseThemeSelector currentTheme={currentTheme} onThemeChange={handleThemeChange} />
     </div>
   );
 }
@@ -145,6 +145,7 @@ const defaultTheme: Japane seTheme = 'matcha'; // domyślnie 'sakura'
 ## 📊 Preview
 
 Każdy motyw zawiera podgląd na żywo z:
+
 - Przyciskami
 - Polami formularzy
 - Toggle cards

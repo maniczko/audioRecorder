@@ -8,25 +8,25 @@
  */
 
 const SEED_USER = {
-  id: "user_e2e",
-  email: "e2e@voicelog.test",
-  name: "E2E Tester",
-  provider: "local",
-  passwordHash: "e2e_hash",
-  workspaceIds: ["ws_e2e"],
-  defaultWorkspaceId: "ws_e2e",
+  id: 'user_e2e',
+  email: 'e2e@voicelog.test',
+  name: 'E2E Tester',
+  provider: 'local',
+  passwordHash: 'e2e_hash',
+  workspaceIds: ['ws_e2e'],
+  defaultWorkspaceId: 'ws_e2e',
 };
 
 const SEED_WORKSPACE = {
-  id: "ws_e2e",
-  name: "E2E Workspace",
-  memberIds: ["user_e2e"],
-  inviteCode: "E2ETEST",
+  id: 'ws_e2e',
+  name: 'E2E Workspace',
+  memberIds: ['user_e2e'],
+  inviteCode: 'E2ETEST',
 };
 
 const SEED_SESSION = {
-  userId: "user_e2e",
-  workspaceId: "ws_e2e",
+  userId: 'user_e2e',
+  workspaceId: 'ws_e2e',
 };
 
 /**
@@ -37,7 +37,7 @@ async function seedLoggedInUser(page) {
   await page.addInitScript(
     ({ user, workspace, session }) => {
       localStorage.setItem(
-        "voicelog_workspace_store",
+        'voicelog_workspace_store',
         JSON.stringify({
           state: {
             users: [user],
@@ -47,7 +47,7 @@ async function seedLoggedInUser(page) {
           version: 0,
         })
       );
-      localStorage.setItem("voicelog.e2e", "true");
+      localStorage.setItem('voicelog.e2e', 'true');
     },
     { user: SEED_USER, workspace: SEED_WORKSPACE, session: SEED_SESSION }
   );
@@ -58,16 +58,16 @@ async function seedLoggedInUser(page) {
  */
 async function seedMeeting(page, meeting) {
   const defaultMeeting = {
-    id: "meeting_e2e",
-    title: "E2E Meeting",
-    context: "",
+    id: 'meeting_e2e',
+    title: 'E2E Meeting',
+    context: '',
     startsAt: new Date().toISOString(),
     durationMinutes: 30,
-    attendees: "",
+    attendees: '',
     tags: [],
     createdAt: new Date().toISOString(),
-    workspaceId: "ws_e2e",
-    createdByUserId: "user_e2e",
+    workspaceId: 'ws_e2e',
+    createdByUserId: 'user_e2e',
     updatedAt: new Date().toISOString(),
     recordings: [],
     tasks: [],
@@ -76,11 +76,11 @@ async function seedMeeting(page, meeting) {
   const merged = { ...defaultMeeting, ...(meeting || {}) };
   await page.addInitScript(
     ({ meetings }) => {
-      const existingRaw = localStorage.getItem("voicelog_meetings_store");
+      const existingRaw = localStorage.getItem('voicelog_meetings_store');
       const existing = existingRaw ? JSON.parse(existingRaw) : null;
       const existingState = existing?.state || {};
       localStorage.setItem(
-        "voicelog_meetings_store",
+        'voicelog_meetings_store',
         JSON.stringify({
           state: {
             meetings,
@@ -104,26 +104,26 @@ async function seedMeeting(page, meeting) {
  */
 async function seedTask(page, task) {
   const defaultTask = {
-    id: "task_e2e",
-    title: "E2E Task",
-    status: "todo",
-    priority: "medium",
-    owner: "E2E Tester",
+    id: 'task_e2e',
+    title: 'E2E Task',
+    status: 'todo',
+    priority: 'medium',
+    owner: 'E2E Tester',
     tags: [],
     completed: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    workspaceId: "ws_e2e",
-    createdByUserId: "user_e2e",
+    workspaceId: 'ws_e2e',
+    createdByUserId: 'user_e2e',
   };
   const merged = { ...defaultTask, ...(task || {}) };
   await page.addInitScript(
     ({ tasks }) => {
-      const existingRaw = localStorage.getItem("voicelog_meetings_store");
+      const existingRaw = localStorage.getItem('voicelog_meetings_store');
       const existing = existingRaw ? JSON.parse(existingRaw) : null;
       const existingState = existing?.state || {};
       localStorage.setItem(
-        "voicelog_meetings_store",
+        'voicelog_meetings_store',
         JSON.stringify({
           state: {
             meetings: existingState.meetings || [],
@@ -147,18 +147,18 @@ async function seedTask(page, task) {
  */
 async function seedQueueItem(page, item) {
   const defaultItem = {
-    id: "q_e2e_1",
-    recordingId: "rec_e2e_1",
-    meetingId: "meeting_e2e",
-    status: "failed",
+    id: 'q_e2e_1',
+    recordingId: 'rec_e2e_1',
+    meetingId: 'meeting_e2e',
+    status: 'failed',
     addedAt: new Date().toISOString(),
     retryCount: 0,
-    error: "Mock error",
+    error: 'Mock error',
   };
   const merged = { ...defaultItem, ...(item || {}) };
   await page.addInitScript(
     ({ statePayload }) => {
-      localStorage.setItem("voicelog.recordingQueue.v1", JSON.stringify(statePayload));
+      localStorage.setItem('voicelog.recordingQueue.v1', JSON.stringify(statePayload));
     },
     { statePayload: { state: { recordingQueue: [merged] }, version: 0 } }
   );

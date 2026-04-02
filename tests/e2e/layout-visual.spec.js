@@ -1,42 +1,45 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-test.skip(process.env.CI === "true", "Visual baselines sa utrzymywane lokalnie, nie w glownym CI.");
+test.skip(process.env.CI === 'true', 'Visual baselines sa utrzymywane lokalnie, nie w glownym CI.');
 
-async function seedUi(page, { theme = "dark", layoutPreset = "default" } = {}) {
-  await page.addInitScript(({ payload }) => {
-    localStorage.setItem(
-      "voicelog_ui_store",
-      JSON.stringify({
-        state: {
-          theme: payload.theme,
-          layoutPreset: payload.layoutPreset,
-          notificationState: { dismissedIds: [], deliveredIds: [] },
-        },
-        version: 0,
-      })
-    );
-  }, { payload: { theme, layoutPreset } });
+async function seedUi(page, { theme = 'dark', layoutPreset = 'default' } = {}) {
+  await page.addInitScript(
+    ({ payload }) => {
+      localStorage.setItem(
+        'voicelog_ui_store',
+        JSON.stringify({
+          state: {
+            theme: payload.theme,
+            layoutPreset: payload.layoutPreset,
+            notificationState: { dismissedIds: [], deliveredIds: [] },
+          },
+          version: 0,
+        })
+      );
+    },
+    { payload: { theme, layoutPreset } }
+  );
 }
 
-test.describe("Layout visual regression", () => {
+test.describe('Layout visual regression', () => {
   test.beforeEach(async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
   });
 
-  test("auth layout w dark/default pozostaje stabilny", async ({ page }) => {
-    await seedUi(page, { theme: "dark", layoutPreset: "default" });
+  test('auth layout w dark/default pozostaje stabilny', async ({ page }) => {
+    await seedUi(page, { theme: 'dark', layoutPreset: 'default' });
     await page.setViewportSize({ width: 1440, height: 1100 });
-    await page.goto("/");
+    await page.goto('/');
 
-    await expect(page.locator(".auth-shell")).toHaveScreenshot("auth-dark-default.png");
+    await expect(page.locator('.auth-shell')).toHaveScreenshot('auth-dark-default.png');
   });
 
-  test("auth layout w wariancie beaver/bobr pozostaje spojny", async ({ page }) => {
-    await seedUi(page, { theme: "beaver", layoutPreset: "bobr" });
+  test('auth layout w wariancie beaver/bobr pozostaje spojny', async ({ page }) => {
+    await seedUi(page, { theme: 'beaver', layoutPreset: 'bobr' });
     await page.setViewportSize({ width: 1440, height: 1200 });
-    await page.goto("/");
+    await page.goto('/');
 
-    await expect(page.locator(".auth-shell")).toHaveScreenshot("auth-beaver-bobr.png");
+    await expect(page.locator('.auth-shell')).toHaveScreenshot('auth-beaver-bobr.png');
   });
 });

@@ -2,33 +2,35 @@
 import { test, expect } from '@playwright/test';
 import { seedLoggedInUser } from './helpers/seed.js';
 
-test.describe("StudioMeetingView — zakładki i AI", () => {
+test.describe('StudioMeetingView — zakładki i AI', () => {
   test.beforeEach(async ({ page }) => {
     await seedLoggedInUser(page);
-    await page.goto("/");
+    await page.goto('/');
     // We navigate to Studio Tab by creating a quick meeting and opening it
     const meetingTitle = `E2E Studio Check ${Date.now()}`;
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
-    await page.locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']").fill(meetingTitle);
-    await page.locator(".brief-actions .primary-button").click();
-    await expect(page.locator(".ff-header-title")).toHaveText(meetingTitle);
+    await page
+      .locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']")
+      .fill(meetingTitle);
+    await page.locator('.brief-actions .primary-button').click();
+    await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle);
   });
 
-  test("Zadania tab is the default active tab", async ({ page }) => {
+  test('Zadania tab is the default active tab', async ({ page }) => {
     // Assert that 'Zadania' pill has the active class correctly
-    const tasksTab = page.locator(".ff-int-tab.active");
-    await expect(tasksTab).toHaveText("Zadania");
+    const tasksTab = page.locator('.ff-int-tab.active');
+    await expect(tasksTab).toHaveText('Zadania');
   });
 
-  test("Clicking Podsumowanie switches away from Zadania", async ({ page }) => {
+  test('Clicking Podsumowanie switches away from Zadania', async ({ page }) => {
     // Click 'Podsumowanie spotkania'
-    await page.locator(".ff-int-tab").filter({ hasText: "Podsumowanie spotkania" }).click();
+    await page.locator('.ff-int-tab').filter({ hasText: 'Podsumowanie spotkania' }).click();
 
     // Check it's the new active tab
-    const activeTab = page.locator(".ff-int-tab.active");
-    await expect(activeTab).toHaveText("Podsumowanie spotkania");
+    const activeTab = page.locator('.ff-int-tab.active');
+    await expect(activeTab).toHaveText('Podsumowanie spotkania');
 
     // The Ai task suggestions panel should be hidden now
-    await expect(page.locator(".ai-task-suggestions-panel")).toBeHidden();
+    await expect(page.locator('.ai-task-suggestions-panel')).toBeHidden();
   });
 });

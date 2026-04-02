@@ -7,6 +7,7 @@ Monitorowanie rozmiaru bundle w projekcie VoiceLog.
 ## ✅ Wdrożone Funkcje
 
 ### 1. **Bundle Size Workflow** ✅ (20 min)
+
 - **Plik:** `.github/workflows/bundle-size.yml`
 - **Wyzwalacze:**
   - Pull request do main/master
@@ -14,6 +15,7 @@ Monitorowanie rozmiaru bundle w projekcie VoiceLog.
 - **Narzędzie:** `preactjs/compressed-size-action`
 
 **Działanie:**
+
 - Buduje projekt
 - Analizuje rozmiar plików JS/CSS
 - Komentarz na PR z raportem
@@ -30,11 +32,11 @@ Monitorowanie rozmiaru bundle w projekcie VoiceLog.
 
 ### Build Artifacts
 
-| Type | Size |
-|------|------|
-| JavaScript | 245.32 KB |
-| CSS | 32.15 KB |
-| **Total** | **277.47 KB** |
+| Type       | Size          |
+| ---------- | ------------- |
+| JavaScript | 245.32 KB     |
+| CSS        | 32.15 KB      |
+| **Total**  | **277.47 KB** |
 
 ### Changes
 
@@ -48,7 +50,8 @@ Monitorowanie rozmiaru bundle w projekcie VoiceLog.
 - Compress assets with gzip/brotli
 
 ---
-*This is an automated report from Bundle Size Monitor.*
+
+_This is an automated report from Bundle Size Monitor._
 ```
 
 ---
@@ -78,11 +81,11 @@ Review & Merge
 
 ### Thresholds
 
-| Metryka | Threshold | Action |
-|---------|-----------|--------|
-| **Warning** | >500KB | Comment alert |
-| **Critical** | >1MB | Block merge (optional) |
-| **Change Alert** | >10KB increase | Comment alert |
+| Metryka          | Threshold      | Action                 |
+| ---------------- | -------------- | ---------------------- |
+| **Warning**      | >500KB         | Comment alert          |
+| **Critical**     | >1MB           | Block merge (optional) |
+| **Change Alert** | >10KB increase | Comment alert          |
 
 ### Exclude Patterns
 
@@ -100,8 +103,8 @@ minimum-change-threshold: '1KB'
 
 ## 📁 Pliki
 
-| Plik | Opis |
-|------|------|
+| Plik                                | Opis                 |
+| ----------------------------------- | -------------------- |
 | `.github/workflows/bundle-size.yml` | Bundle size workflow |
 
 ---
@@ -141,12 +144,12 @@ const logo = 'data:image/png;base64,...'; // ❌
 
 ## 📈 Metryki
 
-| Metryka | Cel | Current | Status |
-|---------|-----|---------|--------|
-| **Total Bundle** | <500KB | ~277KB | ✅ |
-| **JavaScript** | <400KB | ~245KB | ✅ |
-| **CSS** | <50KB | ~32KB | ✅ |
-| **Initial Load** | <300KB | ~250KB | ✅ |
+| Metryka          | Cel    | Current | Status |
+| ---------------- | ------ | ------- | ------ |
+| **Total Bundle** | <500KB | ~277KB  | ✅     |
+| **JavaScript**   | <400KB | ~245KB  | ✅     |
+| **CSS**          | <50KB  | ~32KB   | ✅     |
+| **Initial Load** | <300KB | ~250KB  | ✅     |
 
 ---
 
@@ -155,6 +158,7 @@ const logo = 'data:image/png;base64,...'; // ❌
 ### Problem: Bundle size too large
 
 **Rozwiązanie:**
+
 ```bash
 # Analyze bundle
 npm run build -- --analyze
@@ -169,6 +173,7 @@ npm ls --depth=0 --size
 ### Problem: Workflow nie działa
 
 **Rozwiązanie:**
+
 1. Sprawdź `.github/workflows/bundle-size.yml`
 2. Sprawdź GitHub Actions logs
 3. Upewnij się że `npm run build` działa lokalnie
@@ -176,9 +181,10 @@ npm ls --depth=0 --size
 ### Problem: False positive alerts
 
 **Rozwiązanie:**
+
 ```yaml
 # Increase threshold
-minimum-change-threshold: '5KB'  # Instead of 1KB
+minimum-change-threshold: '5KB' # Instead of 1KB
 ```
 
 ---
@@ -186,6 +192,7 @@ minimum-change-threshold: '5KB'  # Instead of 1KB
 ## 🚀 Optymalizacje
 
 ### 1. Code Splitting
+
 ```javascript
 // React.lazy for route-based splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -193,6 +200,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 ```
 
 ### 2. Tree Shaking
+
 ```javascript
 // Use ES modules
 import { debounce } from 'lodash-es';
@@ -201,6 +209,7 @@ import { debounce } from 'lodash-es';
 ```
 
 ### 3. Compression
+
 ```javascript
 // vite.config.js
 export default {
@@ -218,6 +227,7 @@ export default {
 ```
 
 ### 4. Image Optimization
+
 ```bash
 pnpm add -D imagemin-cli
 npx imagemin dist/images/* --out-dir=dist/images

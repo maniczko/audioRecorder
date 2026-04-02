@@ -1,10 +1,13 @@
 # ==========================================
+
 # VoiceLog OS - Quality Assurance Guide
+
 # ==========================================
 
 ## 📋 Checklista przed commitowaniem
 
 ### Przed każdym commitem:
+
 - [ ] Uruchom testy: `npm test`
 - [ ] Uruchom lint: `npm run lint`
 - [ ] Uruchom build: `npm run build`
@@ -12,6 +15,7 @@
 - [ ] Upewnij się, że .env nie jest commitowane
 
 ### Przed merge do main:
+
 - [ ] Wszystkie testy przechodzą
 - [ ] Code review zatwierdzone
 - [ ] Dokumentacja zaktualizowana
@@ -22,6 +26,7 @@
 ## 🧪 System testów
 
 ### Struktura testów:
+
 ```
 src/
   ├── *.test.tsx          # Testy komponentów
@@ -33,6 +38,7 @@ src/
 ### Rodzaje testów:
 
 #### 1. Unit Testy (Vitest)
+
 ```bash
 npm test                    # Uruchom wszystkie testy
 npm test -- --watch        # Tryb watch (dev)
@@ -40,12 +46,14 @@ npm test -- --coverage     # Z raportem coverage
 ```
 
 #### 2. Integration Testy (Playwright)
+
 ```bash
 npm run test:e2e           # Testy end-to-end
 npm run test:e2e:ui        # Z interfejsem graficznym
 ```
 
 #### 3. Linting & Type Checking
+
 ```bash
 npm run lint               # ESLint
 npm run type-check         # TypeScript
@@ -72,27 +80,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Type check
         run: pnpm run type-check
-      
+
       - name: Lint
         run: pnpm run lint
-      
+
       - name: Test
         run: pnpm test -- --coverage
-      
+
       - name: Build
         run: pnpm run build
-      
+
       - name: E2E Tests
         run: pnpm run test:e2e
 ```
@@ -104,6 +112,7 @@ jobs:
 ### Skrypty w .husky/:
 
 #### pre-commit
+
 ```bash
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
@@ -114,6 +123,7 @@ pnpm test -- --bail
 ```
 
 #### commit-msg
+
 ```bash
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
@@ -130,6 +140,7 @@ fi
 ## 🛡️ Best Practices
 
 ### 1. **Code Review Checklist**
+
 - [ ] Kod jest czytelny i zrozumiały
 - [ ] Brak console.log w produkcyjnym kodzie
 - [ ] Obsłużone przypadki brzegowe
@@ -137,6 +148,7 @@ fi
 - [ ] Dokumentacja zaktualizowana
 
 ### 2. **Git Branch Strategy**
+
 ```
 main          - produkcja
 develop       - rozwój
@@ -146,6 +158,7 @@ hotfix/*      - pilne naprawy
 ```
 
 ### 3. **Commit Message Convention**
+
 ```
 feat: dodanie nowego komponentu X
 fix: naprawa błędu Y
@@ -161,11 +174,13 @@ chore: aktualizacja zależności
 ## 📊 Coverage Requirements
 
 ### Minimalne wymagania:
+
 - **Lines:** 80%
 - **Functions:** 80%
 - **Branches:** 70%
 
 ### Check coverage:
+
 ```bash
 npm test -- --coverage
 open coverage/index.html
@@ -176,6 +191,7 @@ open coverage/index.html
 ## 🔍 Code Quality Tools
 
 ### Zainstalowane:
+
 - ✅ ESLint - linting kodu
 - ✅ Prettier - formatowanie
 - ✅ TypeScript - type checking
@@ -186,6 +202,7 @@ open coverage/index.html
 ### Konfiguracja:
 
 #### .eslintrc.json
+
 ```json
 {
   "extends": [
@@ -202,6 +219,7 @@ open coverage/index.html
 ```
 
 #### .prettierrc
+
 ```json
 {
   "semi": true,
@@ -216,6 +234,7 @@ open coverage/index.html
 ## 📚 Dokumentacja
 
 ### Wymagana dokumentacja:
+
 1. **README.md** - główny opis projektu
 2. **CHANGELOG.md** - lista zmian
 3. **CONTRIBUTING.md** - jak kontrybuować
@@ -223,6 +242,7 @@ open coverage/index.html
 5. **DEPLOYMENT.md** - instrukcja deploy
 
 ### Generowanie dokumentacji:
+
 ```bash
 npm run docs              # Generuj dokumentację
 npm run docs:serve        # Podgląd na localhost
@@ -259,6 +279,7 @@ npm run deploy           # Deploy na produkcję
 ## 🚨 Error Prevention
 
 ### 1. **TypeScript Strict Mode**
+
 ```json
 {
   "compilerOptions": {
@@ -272,14 +293,17 @@ npm run deploy           # Deploy na produkcję
 ```
 
 ### 2. **Error Boundaries**
+
 - Wszystkie komponenty owinięte w ErrorBoundary
 - Logowanie błędów do Sentry
 
 ### 3. **Runtime Validation**
+
 - Zod schema validation dla API
 - PropTypes dla komponentów
 
 ### 4. **Monitoring**
+
 - Sentry dla error tracking
 - LangSmith dla AI monitoring
 - Custom metrics w Prometheus
@@ -289,12 +313,14 @@ npm run deploy           # Deploy na produkcję
 ## 📈 Continuous Improvement
 
 ### Cotygodniowe zadania:
+
 - [ ] Review coverage report
 - [ ] Check Sentry errors
 - [ ] Update dependencies
 - [ ] Review and refactor tech debt
 
 ### Comiesięczne zadania:
+
 - [ ] Security audit
 - [ ] Performance audit
 - [ ] Documentation review

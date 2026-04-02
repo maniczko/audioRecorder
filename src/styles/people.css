@@ -1,5 +1,3 @@
-
-
 .person-task-card-clickable {
   width: 100%;
   text-align: left;
@@ -7,7 +5,9 @@
   border: inherit;
   color: inherit;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .person-task-card-clickable:hover {
@@ -258,18 +258,20 @@
   font-size: 0.78rem;
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid rgba(117,214,196,0.3);
-  background: rgba(117,214,196,0.08);
+  border: 1px solid rgba(117, 214, 196, 0.3);
+  background: rgba(117, 214, 196, 0.08);
   color: var(--accent);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   font-weight: 500;
 }
 
 .people-add-task-btn:hover {
-  background: rgba(117,214,196,0.18);
-  border-color: rgba(117,214,196,0.6);
+  background: rgba(117, 214, 196, 0.18);
+  border-color: rgba(117, 214, 196, 0.6);
 }
 
 .person-notes-list {
@@ -303,7 +305,9 @@
   font-size: 0.9rem;
   line-height: 1;
   opacity: 0;
-  transition: opacity 0.12s, color 0.12s;
+  transition:
+    opacity 0.12s,
+    color 0.12s;
   flex-shrink: 0;
 }
 

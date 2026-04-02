@@ -1,5 +1,3 @@
-
-
 .ai-suggestions-panel {
   grid-column: span 2;
 }
@@ -114,7 +112,7 @@
   min-width: 80px;
 }
 
-.ai-suggestion-meta-row input[type="date"] {
+.ai-suggestion-meta-row input[type='date'] {
   width: auto;
   flex: 0 0 150px;
   min-width: 120px;
@@ -124,7 +122,6 @@
   padding-top: 4px;
 }
 
-
 .ai-suggestions-panel {
   grid-column: span 2;
 }
@@ -239,7 +236,7 @@
   min-width: 80px;
 }
 
-.ai-suggestion-meta-row input[type="date"] {
+.ai-suggestion-meta-row input[type='date'] {
   width: auto;
   flex: 0 0 150px;
   min-width: 120px;

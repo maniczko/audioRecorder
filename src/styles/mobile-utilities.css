@@ -10,11 +10,11 @@ html {
 /* Touch-friendly minimum sizing */
 button,
 a,
-input[type="button"],
-input[type="submit"],
-input[type="reset"],
-input[type="checkbox"],
-input[type="radio"],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='checkbox'],
+input[type='radio'],
 select,
 textarea {
   min-height: 44px;
@@ -87,10 +87,10 @@ select {
   }
 
   /* Full-width inputs and buttons */
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
   textarea,
   select,
   .primary-button,
@@ -119,12 +119,20 @@ select {
     font-size: 14px;
   }
 
-  h1 { font-size: clamp(1rem, 5vw, 1.5rem); }
-  h2 { font-size: clamp(0.9rem, 4vw, 1.25rem); }
-  h3 { font-size: clamp(0.85rem, 3.5vw, 1rem); }
+  h1 {
+    font-size: clamp(1rem, 5vw, 1.5rem);
+  }
+  h2 {
+    font-size: clamp(0.9rem, 4vw, 1.25rem);
+  }
+  h3 {
+    font-size: clamp(0.85rem, 3.5vw, 1rem);
+  }
 
   /* Reduce line-height for compact display */
-  p, span, label {
+  p,
+  span,
+  label {
     line-height: 1.4;
   }
 
@@ -147,8 +155,12 @@ select {
     padding-bottom: 0;
   }
 
-  h1 { font-size: 1.2rem; }
-  h2 { font-size: 1rem; }
+  h1 {
+    font-size: 1.2rem;
+  }
+  h2 {
+    font-size: 1rem;
+  }
 
   /* Compact buttons for landscape */
   button {

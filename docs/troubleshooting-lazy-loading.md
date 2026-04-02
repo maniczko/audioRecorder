@@ -1,6 +1,7 @@
 # 🔧 Troubleshooting - Lazy Loading Errors
 
 ## Problem
+
 ```
 TypeError: Failed to fetch dynamically imported module
 ```
@@ -38,10 +39,12 @@ pnpm run build
 ### 3. Browser Cache
 
 **Hard reload:**
+
 - Windows/Linux: `Ctrl + Shift + R`
 - macOS: `Cmd + Shift + R`
 
 **Wyczyść cache przeglądarki:**
+
 1. DevTools (F12)
 2. Application tab
 3. Clear storage → Clear site data
@@ -97,9 +100,10 @@ rm -rf node_modules/.vite && pnpm install
 
 ```javascript
 // W konsoli przeglądarki
-performance.getEntriesByType('resource')
-  .filter(r => r.name.includes('ProfileTab'))
-  .forEach(r => console.log(r.name, r.encodedBodySize));
+performance
+  .getEntriesByType('resource')
+  .filter((r) => r.name.includes('ProfileTab'))
+  .forEach((r) => console.log(r.name, r.encodedBodySize));
 ```
 
 ### 2. Loguj błędy lazy loading

@@ -1,5 +1,3 @@
-
-
 .feature-card,
 .metric-card,
 .answer-card,
@@ -256,7 +254,9 @@
   color: var(--accent-strong);
 }
 
-.recordings-library { margin: 0 0 24px; }
+.recordings-library {
+  margin: 0 0 24px;
+}
 
 .recordings-library-meeting {
   max-width: 260px;
@@ -272,7 +272,6 @@
 }
 
 @media (max-width: 1120px) {
-
   .recorder-panel,
   .transcript-panel,
   .recordings-panel {
@@ -419,5 +418,5 @@
 }
 
 .sidebar-recording-item.meeting-active:not(.active) {
-  border-color: rgba(158,242,219,0.1);
+  border-color: rgba(158, 242, 219, 0.1);
 }

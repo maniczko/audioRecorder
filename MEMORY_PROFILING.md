@@ -21,10 +21,12 @@ pnpm start:0x
 ```
 
 **Output:**
+
 - Generuje flame graph w HTML
 - Lokalizacja: `./flamegraph.html`
 
 **Analiza:**
+
 1. Otwórz `flamegraph.html` w przeglądarce
 2. Szukaj szerokich "płomieni" - to funkcje zużywające najwięcej CPU
 3. Kliknij na płomień, aby zobaczyć szczegóły
@@ -42,11 +44,13 @@ pnpm start:clinic
 ```
 
 **Co robi:**
+
 - Automatycznie wykrywa problemy z wydajnością
 - Analizuje CPU, memory, event loop
 - Generuje raport z rekomendacjami
 
 **Output:**
+
 - Raport w `./clinic-[pid].html`
 
 ---
@@ -108,17 +112,20 @@ clinic doctor -- node dist-server/index.js
 ## 📈 Metryki do monitorowania
 
 ### Memory
+
 - **Heap Used**: Powinien być stabilny
 - **Heap Total**: Może rosnąć, ale nie powinien ciągle rosnąć
 - **External**: Pamięć poza V8 (np. buffery)
 - **RSS**: Całkowita pamięć procesu
 
 ### CPU
+
 - **Event Loop Latency**: < 100ms (idealnie < 50ms)
 - **CPU Usage**: < 70% średnio
 - **GC Frequency**: Rzadkie GC = dobry znak
 
 ### I/O
+
 - **File Descriptors**: Nie powinny wyciekać
 - **Network Connections**: Powinny być zamykane
 
@@ -129,17 +136,20 @@ clinic doctor -- node dist-server/index.js
 ### 1. Memory Leak
 
 **Objawy:**
+
 - RSS ciągle rośnie
 - GC nie odzyskuje pamięci
 - Aplikacja zwalnia z czasem
 
 **Przyczyny:**
+
 - Globalne zmienne
 - Zamknięcia (closures) z dużymi danymi
 - Nieodpięte event listenery
 - Zapomniane timery/intervale
 
 **Naprawa:**
+
 ```javascript
 // ŹLE - memory leak
 const cache = new Map();
@@ -162,20 +172,23 @@ function processData(data) {
 ### 2. CPU Bottleneck
 
 **Objawy:**
+
 - Wysokie CPU usage
 - Wolne odpowiedzi API
 - Event loop blocked
 
 **Przyczyny:**
+
 - Synchroniczne operacje
 - Pętle na dużych tablicach
 - Heavy computations w main thread
 
 **Naprawa:**
+
 ```javascript
 // ŹLE - blokuje event loop
 function processLargeArray(arr) {
-  return arr.map(item => heavyComputation(item));
+  return arr.map((item) => heavyComputation(item));
 }
 
 // DOBRZE - użyj worker threads lub chunking
@@ -186,7 +199,7 @@ async function processInChunks(arr, chunkSize = 100) {
   const results = [];
   for (let i = 0; i < arr.length; i += chunkSize) {
     const chunk = arr.slice(i, i + chunkSize);
-    results.push(...chunk.map(item => heavyComputation(item)));
+    results.push(...chunk.map((item) => heavyComputation(item)));
     await Promise.resolve(); // Odciąż event loop
   }
   return results;
@@ -196,11 +209,13 @@ async function processInChunks(arr, chunkSize = 100) {
 ### 3. Event Loop Lag
 
 **Objawy:**
+
 - Opóźnione callbacki
 - Timeouty bez powodu
 - Nieregularne odpowiedzi
 
 **Diagnostyka:**
+
 ```javascript
 const { monitorEventLoopDelay } = require('perf_hooks');
 const { histogram } = monitorEventLoopDelay({ resolution: 10 });
@@ -315,14 +330,17 @@ Przykładowy raport:
 ## Memory Profiling Report - 2026-03-28
 
 ### Znalezione problemy:
+
 1. Memory leak w /api/meetings - 50MB/hour
 2. Event loop lag przy przetwarzaniu nagrań - 250ms P99
 
 ### Akcje naprawcze:
+
 1. Naprawiono wyciek streamów (#403)
 2. Dodano chunking dla dużych plików (#404)
 
 ### Wyniki po naprawie:
+
 - Memory: stabilny na 120MB
 - Event loop: P99 < 50ms
 ```

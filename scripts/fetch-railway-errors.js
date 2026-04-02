@@ -35,11 +35,11 @@ function runRailwayCommand(args) {
     // RAILWAY_PROJECT_ID is picked up automatically by Railway CLI via env var
     // Do NOT append --project flag — it is not supported by all railway commands (e.g. logs)
     const cmd = `railway ${args}`.trim();
-    
+
     if (config.verbose) {
       console.log(`Executing: ${cmd}`);
     }
-    
+
     return execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (error) {
     if (error.status === 1 && error.stdout) {
@@ -112,9 +112,10 @@ function fetchErrorLogs() {
   let deploymentInfo = '';
 
   try {
-    // First try to get error logs
-    console.log(`📊 Fetching logs with filter: "${config.filter}"`);
-    logs = runRailwayCommand(`logs --lines ${config.lines} --filter "${config.filter}"`);
+    // Fetch all recent logs — railway CLI does not support --filter flag
+    // Filter for errors in Node.js after fetching
+    console.log(`📊 Fetching last ${config.lines} log lines...`);
+    logs = runRailwayCommand(`logs --lines ${config.lines}`);
 
     // Parse logs if JSON requested
     if (config.json) {
@@ -192,12 +193,37 @@ ${deploymentInfo}
   console.log(`📝 Written markdown report: ${outputFile}`);
 
   // Always write JSON report so the workflow Parse step can read it
-  const errorsToSave = jsonLogs.length > 0 ? jsonLogs : logs
+  // Filter logs to only error-related lines (since we can't use --filter flag)
+  const errorKeywords = [
+    'error',
+    'Error',
+    'ERROR',
+    'fatal',
+    'FATAL',
+    'warn',
+    'WARN',
+    'failed',
+    'Failed',
+  ];
+  const isErrorLine = (line) => errorKeywords.some((k) => line.includes(k));
+  const errorLines = logs
     .split('\n')
-    .filter(line => line.trim() && !line.startsWith('#'))
-    .map(line => ({ message: line.trim(), timestamp: new Date().toISOString() }));
-  fs.writeFileSync(jsonFile, JSON.stringify(errorsToSave, null, 2));
-  console.log(`📊 Written JSON report: ${jsonFile}`);
+    .filter((line) => line.trim() && !line.startsWith('#') && isErrorLine(line));
+
+  const errorsToSave =
+    jsonLogs.length > 0
+      ? jsonLogs
+      : errorLines.length > 0
+        ? errorLines.map((line) => ({ message: line.trim(), timestamp: new Date().toISOString() }))
+        : [];
+
+  if (errorsToSave.length > 0) {
+    fs.writeFileSync(jsonFile, JSON.stringify(errorsToSave, null, 2));
+    console.log(`📊 Written JSON report: ${jsonFile} (${errorsToSave.length} error lines)`);
+    console.log(`📊 Found ${errorsToSave.length} error/failure lines`);
+  } else {
+    console.log('ℹ️  No error lines found in Railway logs');
+  }
 
   return { outputFile, jsonFile: config.json ? jsonFile : null, logs };
 }

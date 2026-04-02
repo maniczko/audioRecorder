@@ -13,7 +13,7 @@ const TABS = {
 function matchesAny(selector) {
   const matched = new Set();
   for (const [tab, keywords] of Object.entries(TABS)) {
-    if (keywords.some(k => selector.includes(`.${k}`) || selector.includes(`#${k}`))) {
+    if (keywords.some((k) => selector.includes(`.${k}`) || selector.includes(`#${k}`))) {
       matched.add(tab);
     }
   }
@@ -23,18 +23,18 @@ function matchesAny(selector) {
 const plugin = postcss.plugin('splitter', (options) => {
   return (root) => {
     const splits = {};
-    Object.keys(TABS).forEach(tab => {
+    Object.keys(TABS).forEach((tab) => {
       splits[tab] = postcss.root();
     });
-    
+
     const nodesToRemove = [];
-    
-    root.each(node => {
+
+    root.each((node) => {
       if (node.type === 'rule') {
         let pushed = false;
-        node.selectors.forEach(sel => {
+        node.selectors.forEach((sel) => {
           const matched = matchesAny(sel);
-          matched.forEach(t => {
+          matched.forEach((t) => {
             splits[t].append(node.clone());
             pushed = true;
           });
@@ -43,13 +43,13 @@ const plugin = postcss.plugin('splitter', (options) => {
       } else if (node.type === 'atrule' && node.name === 'media') {
         let keepMediaNode = false;
         const mediaSplits = {};
-        
-        node.each(child => {
+
+        node.each((child) => {
           if (child.type === 'rule') {
             let pushedInMedia = false;
-            child.selectors.forEach(sel => {
+            child.selectors.forEach((sel) => {
               const matched = matchesAny(sel);
-              matched.forEach(t => {
+              matched.forEach((t) => {
                 if (!mediaSplits[t]) {
                   mediaSplits[t] = node.clone({ nodes: [] });
                 }
@@ -64,19 +64,19 @@ const plugin = postcss.plugin('splitter', (options) => {
             }
           }
         });
-        
+
         for (const [t, mNode] of Object.entries(mediaSplits)) {
           if (mNode.nodes.length > 0) splits[t].append(mNode);
         }
-        
+
         if (!keepMediaNode || node.nodes.length === 0) {
           nodesToRemove.push(node);
         }
       }
     });
-    
-    nodesToRemove.forEach(n => n.remove());
-    
+
+    nodesToRemove.forEach((n) => n.remove());
+
     for (const [tab, root] of Object.entries(splits)) {
       if (root.nodes.length > 0) {
         const outPath = `./src/styles/${tab}.css`;
@@ -93,9 +93,9 @@ async function run() {
   }
 
   const parserStats = {};
-  
+
   // Clean first
-  Object.keys(TABS).forEach(t => {
+  Object.keys(TABS).forEach((t) => {
     if (fs.existsSync(`src/styles/${t}.css`)) fs.rmSync(`src/styles/${t}.css`);
   });
 
@@ -103,7 +103,7 @@ async function run() {
   console.log('Processing', file);
   const css = fs.readFileSync(file, 'utf8');
   const result = await postcss([plugin({ stats: parserStats })]).process(css, { from: file });
-  
+
   fs.writeFileSync(file, result.css);
 
   console.log('Extracted chunks:');

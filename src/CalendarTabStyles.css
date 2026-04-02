@@ -1,5 +1,3 @@
-
-
 .mini-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -24,14 +22,17 @@
   color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background 0.15s ease, color 0.15s ease, font-weight 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    font-weight 0.15s ease;
 }
 
 .mini-day:hover:not(.selected) {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.mini-day[data-faded="true"] {
+.mini-day[data-faded='true'] {
   color: var(--muted);
 }
 
