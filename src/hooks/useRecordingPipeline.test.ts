@@ -10,29 +10,57 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import useRecordingPipeline from './useRecordingPipeline';
 
-// Mock store
-const mockRecordingPipelineStore = vi.hoisted(() => ({
+// Mock store (must match recorderStore shape)
+const mockRecorderStore = vi.hoisted(() => ({
   recordingQueue: [],
   analysisStatus: 'idle',
   pipelineProgressPercent: 0,
   pipelineStageLabel: '',
   recordingMessage: '',
+  isProcessingQueue: false,
   setRecordingQueue: vi.fn(),
   setAnalysisStatus: vi.fn(),
   setPipelineProgress: vi.fn(),
   setRecordingMessage: vi.fn(),
   retryRecordingQueueItem: vi.fn(),
+  retryStoredRecording: vi.fn(),
   updateQueueItem: vi.fn(),
   removeQueueItem: vi.fn(),
+  processQueue: vi.fn(),
 }));
 
-vi.mock('../store/recordingPipelineStore', () => ({
-  useRecordingPipelineStore: () => mockRecordingPipelineStore,
+vi.mock('../store/recorderStore', () => ({
+  useRecorderStore: () => mockRecorderStore,
 }));
+
+const mockBuildSummary = vi.hoisted(() =>
+  vi.fn(() => ({ total: 0, pending: 0, processing: 0, completed: 0, failed: 0 }))
+);
+const mockGetMeetingQueue = vi.hoisted(() => vi.fn(() => []));
+
+vi.mock('../lib/recordingQueue', () => ({
+  buildRecordingQueueSummary: mockBuildSummary,
+  getRecordingQueueForMeeting: mockGetMeetingQueue,
+}));
+
+// Default hook params
+const defaultParams = {
+  userMeetingsRef: { current: [] },
+  attachCompletedRecording: vi.fn(),
+  setCurrentSegments: vi.fn(),
+  isHydratingRemoteState: false,
+};
 
 describe('useRecordingPipeline', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset store state
+    mockRecorderStore.recordingQueue = [];
+    mockRecorderStore.analysisStatus = 'idle';
+    mockRecorderStore.pipelineProgressPercent = 0;
+    mockRecorderStore.pipelineStageLabel = '';
+    mockRecorderStore.recordingMessage = '';
+    mockRecorderStore.isProcessingQueue = false;
   });
 
   afterEach(() => {
@@ -40,7 +68,7 @@ describe('useRecordingPipeline', () => {
   });
 
   it('returns recording queue state', () => {
-    const { result } = renderHook(() => useRecordingPipeline());
+    const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
     expect(result.current.recordingQueue).toEqual([]);
     expect(result.current.analysisStatus).toBe('idle');
@@ -50,7 +78,7 @@ describe('useRecordingPipeline', () => {
   });
 
   it('returns queue management methods', () => {
-    const { result } = renderHook(() => useRecordingPipeline());
+    const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
     expect(result.current.setRecordingQueue).toBeDefined();
     expect(result.current.setAnalysisStatus).toBeDefined();
@@ -62,33 +90,27 @@ describe('useRecordingPipeline', () => {
   });
 
   it('returns getMeetingQueue method', () => {
-    const { result } = renderHook(() => useRecordingPipeline());
+    const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
     expect(result.current.getMeetingQueue).toBeDefined();
     expect(typeof result.current.getMeetingQueue).toBe('function');
   });
 
-  it('getMeetingQueue filters queue by meeting ID', () => {
-    mockRecordingPipelineStore.recordingQueue = [
-      { meetingId: 'm1', id: 'r1', status: 'pending' },
-      { meetingId: 'm2', id: 'r2', status: 'processing' },
-      { meetingId: 'm1', id: 'r3', status: 'completed' },
-    ];
+  it('getMeetingQueue delegates to getRecordingQueueForMeeting', () => {
+    const filtered = [{ meetingId: 'm1', id: 'r1', status: 'pending' }];
+    mockGetMeetingQueue.mockReturnValue(filtered);
 
-    const { result } = renderHook(() => useRecordingPipeline());
+    const { result } = renderHook(() => useRecordingPipeline(defaultParams));
+    const queue = result.current.getMeetingQueue('m1');
 
-    const meeting1Queue = result.current.getMeetingQueue('m1');
-    const meeting2Queue = result.current.getMeetingQueue('m2');
-
-    expect(meeting1Queue).toHaveLength(2);
-    expect(meeting2Queue).toHaveLength(1);
+    expect(mockGetMeetingQueue).toHaveBeenCalledWith([], 'm1');
+    expect(queue).toEqual(filtered);
   });
 
   it('getMeetingQueue returns empty array for unknown meeting', () => {
-    mockRecordingPipelineStore.recordingQueue = [{ meetingId: 'm1', id: 'r1', status: 'pending' }];
+    mockGetMeetingQueue.mockReturnValue([]);
 
-    const { result } = renderHook(() => useRecordingPipeline());
-
+    const { result } = renderHook(() => useRecordingPipeline(defaultParams));
     const unknownQueue = result.current.getMeetingQueue('unknown');
 
     expect(unknownQueue).toEqual([]);
@@ -96,17 +118,17 @@ describe('useRecordingPipeline', () => {
 
   describe('setAnalysisStatus', () => {
     it('sets analysis status', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setAnalysisStatus('analyzing');
       });
 
-      expect(mockRecordingPipelineStore.setAnalysisStatus).toHaveBeenCalledWith('analyzing');
+      expect(mockRecorderStore.setAnalysisStatus).toHaveBeenCalledWith('analyzing');
     });
 
     it('accepts different status values', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setAnalysisStatus('idle');
@@ -121,66 +143,63 @@ describe('useRecordingPipeline', () => {
         result.current.setAnalysisStatus('failed');
       });
 
-      expect(mockRecordingPipelineStore.setAnalysisStatus).toHaveBeenCalledTimes(4);
+      expect(mockRecorderStore.setAnalysisStatus).toHaveBeenCalledTimes(4);
     });
   });
 
   describe('setPipelineProgress', () => {
     it('sets pipeline progress', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setPipelineProgress(50, 'Transcribing');
       });
 
-      expect(mockRecordingPipelineStore.setPipelineProgress).toHaveBeenCalledWith(
-        50,
-        'Transcribing'
-      );
+      expect(mockRecorderStore.setPipelineProgress).toHaveBeenCalledWith(50, 'Transcribing');
     });
 
     it('accepts progress without label', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setPipelineProgress(75);
       });
 
-      expect(mockRecordingPipelineStore.setPipelineProgress).toHaveBeenCalledWith(75, undefined);
+      expect(mockRecorderStore.setPipelineProgress).toHaveBeenCalledWith(75);
     });
   });
 
   describe('setRecordingMessage', () => {
     it('sets recording message', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setRecordingMessage('Processing...');
       });
 
-      expect(mockRecordingPipelineStore.setRecordingMessage).toHaveBeenCalledWith('Processing...');
+      expect(mockRecorderStore.setRecordingMessage).toHaveBeenCalledWith('Processing...');
     });
 
     it('clears message with empty string', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.setRecordingMessage('');
       });
 
-      expect(mockRecordingPipelineStore.setRecordingMessage).toHaveBeenCalledWith('');
+      expect(mockRecorderStore.setRecordingMessage).toHaveBeenCalledWith('');
     });
   });
 
   describe('updateQueueItem', () => {
     it('updates queue item by ID', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.updateQueueItem('r1', { status: 'completed' });
       });
 
-      expect(mockRecordingPipelineStore.updateQueueItem).toHaveBeenCalledWith('r1', {
+      expect(mockRecorderStore.updateQueueItem).toHaveBeenCalledWith('r1', {
         status: 'completed',
       });
     });
@@ -188,31 +207,31 @@ describe('useRecordingPipeline', () => {
 
   describe('removeQueueItem', () => {
     it('removes queue item by ID', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.removeQueueItem('r1');
       });
 
-      expect(mockRecordingPipelineStore.removeQueueItem).toHaveBeenCalledWith('r1');
+      expect(mockRecorderStore.removeQueueItem).toHaveBeenCalledWith('r1');
     });
   });
 
   describe('retryRecordingQueueItem', () => {
     it('retries failed queue item', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       act(() => {
         result.current.retryRecordingQueueItem('r1');
       });
 
-      expect(mockRecordingPipelineStore.retryRecordingQueueItem).toHaveBeenCalledWith('r1');
+      expect(mockRecorderStore.retryRecordingQueueItem).toHaveBeenCalledWith('r1');
     });
   });
 
   describe('setRecordingQueue', () => {
     it('sets new recording queue', () => {
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       const newQueue = [
         { id: 'r1', meetingId: 'm1', status: 'pending' },
@@ -223,17 +242,15 @@ describe('useRecordingPipeline', () => {
         result.current.setRecordingQueue(newQueue);
       });
 
-      expect(mockRecordingPipelineStore.setRecordingQueue).toHaveBeenCalledWith(newQueue);
+      expect(mockRecorderStore.setRecordingQueue).toHaveBeenCalledWith(newQueue);
     });
   });
 
   describe('state updates', () => {
     it('reflects updated queue state', () => {
-      mockRecordingPipelineStore.recordingQueue = [
-        { id: 'r1', meetingId: 'm1', status: 'completed' },
-      ];
+      mockRecorderStore.recordingQueue = [{ id: 'r1', meetingId: 'm1', status: 'completed' }];
 
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       expect(result.current.recordingQueue).toEqual([
         { id: 'r1', meetingId: 'm1', status: 'completed' },
@@ -241,29 +258,43 @@ describe('useRecordingPipeline', () => {
     });
 
     it('reflects updated analysis status', () => {
-      mockRecordingPipelineStore.analysisStatus = 'analyzing';
+      mockRecorderStore.analysisStatus = 'analyzing';
 
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       expect(result.current.analysisStatus).toBe('analyzing');
     });
 
     it('reflects updated progress', () => {
-      mockRecordingPipelineStore.pipelineProgressPercent = 75;
-      mockRecordingPipelineStore.pipelineStageLabel = 'Diarization';
+      mockRecorderStore.pipelineProgressPercent = 75;
+      mockRecorderStore.pipelineStageLabel = 'Diarization';
 
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       expect(result.current.pipelineProgressPercent).toBe(75);
       expect(result.current.pipelineStageLabel).toBe('Diarization');
     });
 
     it('reflects updated message', () => {
-      mockRecordingPipelineStore.recordingMessage = 'Uploading...';
+      mockRecorderStore.recordingMessage = 'Uploading...';
 
-      const { result } = renderHook(() => useRecordingPipeline());
+      const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
       expect(result.current.recordingMessage).toBe('Uploading...');
+    });
+  });
+
+  describe('processQueue', () => {
+    it('calls processQueue on mount when not hydrating', () => {
+      renderHook(() => useRecordingPipeline(defaultParams));
+
+      expect(mockRecorderStore.processQueue).toHaveBeenCalled();
+    });
+
+    it('skips processQueue when hydrating remote state', () => {
+      renderHook(() => useRecordingPipeline({ ...defaultParams, isHydratingRemoteState: true }));
+
+      expect(mockRecorderStore.processQueue).not.toHaveBeenCalled();
     });
   });
 });

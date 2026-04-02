@@ -16,14 +16,16 @@ const mockUIStore = vi.hoisted(() => ({
   setActiveTab: vi.fn(),
   commandPaletteOpen: false,
   setCommandPaletteOpen: vi.fn(),
-  notificationState: { items: [], unreadCount: 0 },
+  notificationState: { items: [], unreadCount: 0, dismissedIds: [] },
   notificationPermission: 'default',
   setNotificationCenterOpen: vi.fn(),
   dismissNotification: vi.fn(),
+  deliverBrowserNotifications: vi.fn(),
   studioHomeSignal: false,
   triggerStudioHome: vi.fn(),
   setPendingTaskId: vi.fn(),
   setPendingPersonId: vi.fn(),
+  tabHistory: [],
 }));
 
 const mockWorkspaceStore = vi.hoisted(() => ({
@@ -31,6 +33,8 @@ const mockWorkspaceStore = vi.hoisted(() => ({
   currentWorkspaceId: 'ws1',
   currentWorkspaceMembers: [],
   users: [],
+  switchWorkspace: vi.fn(),
+  logout: vi.fn(),
 }));
 
 const mockRecorderCtx = vi.hoisted(() => ({
@@ -38,12 +42,18 @@ const mockRecorderCtx = vi.hoisted(() => ({
   recordingMeetingId: null,
   currentSegments: [],
   audioUrls: {},
+  audioHydrationErrors: {},
+  audioHydrationStatusByRecordingId: {},
+  hydrateRecordingAudio: vi.fn(),
+  clearAudioHydrationError: vi.fn(),
 }));
 
 const mockGoogleCtx = vi.hoisted(() => ({
   googleEnabled: false,
   calendarEvents: [],
   upcomingReminders: [],
+  googleCalendarEvents: [],
+  resetGoogleSession: vi.fn(),
 }));
 
 const mockMeetings = vi.hoisted(() => ({
@@ -52,6 +62,13 @@ const mockMeetings = vi.hoisted(() => ({
   peopleProfiles: [],
   selectedMeeting: null,
   selectedRecording: null,
+  taskNotifications: [],
+  calendarMeta: {},
+  selectMeeting: vi.fn(),
+  startNewMeetingDraft: vi.fn(),
+  syncLinkedGoogleCalendarEvents: vi.fn(),
+  createTaskFromComposer: vi.fn(),
+  resetSelectionState: vi.fn(),
 }));
 
 // Mock modules
@@ -86,7 +103,7 @@ vi.mock('../lib/commandPalette', () => ({
 }));
 
 vi.mock('../lib/notifications', () => ({
-  buildWorkspaceNotifications: vi.fn(() => ({ items: [], unreadCount: 0 })),
+  buildWorkspaceNotifications: vi.fn(() => []),
 }));
 
 vi.mock('../lib/storage', () => ({
@@ -168,6 +185,7 @@ describe('useUI', () => {
       { speakerId: 0, text: 'Hello' },
       { speakerId: 1, text: 'Hi' },
     ];
+    mockMeetings.selectedMeeting = { id: 'm1', title: 'Test Meeting' };
 
     const { result } = renderHook(() => useUI());
 
@@ -226,31 +244,31 @@ describe('useUI', () => {
   it('provides export helpers', () => {
     const { result } = renderHook(() => useUI());
 
-    expect(result.current.downloadTextFile).toBeDefined();
-    expect(result.current.formatDateTime).toBeDefined();
-    expect(result.current.formatDuration).toBeDefined();
-    expect(result.current.buildMeetingNotesText).toBeDefined();
-    expect(result.current.printMeetingPdf).toBeDefined();
+    expect(result.current.exportTranscript).toBeDefined();
+    expect(result.current.exportMeetingNotes).toBeDefined();
+    expect(result.current.exportMeetingPdfFile).toBeDefined();
   });
 
   it('provides calendar helpers', () => {
     const { result } = renderHook(() => useUI());
 
-    expect(result.current.buildCalendarEntries).toBeDefined();
-    expect(result.current.buildUpcomingReminders).toBeDefined();
-    expect(result.current.buildGoogleCalendarUrl).toBeDefined();
+    expect(result.current.calendarEntries).toBeDefined();
+    expect(result.current.upcomingReminders).toBeDefined();
+    expect(result.current.openGoogleCalendarForMeeting).toBeDefined();
   });
 
-  it('provides notification builders', () => {
+  it('provides notification items', () => {
     const { result } = renderHook(() => useUI());
 
-    expect(result.current.buildWorkspaceNotifications).toBeDefined();
+    expect(result.current.notificationItems).toBeDefined();
+    expect(result.current.unreadNotificationCount).toBeDefined();
   });
 
-  it('provides command palette helpers', () => {
+  it('provides command palette items', () => {
     const { result } = renderHook(() => useUI());
 
-    expect(result.current.buildCommandPaletteItems).toBeDefined();
+    expect(result.current.commandPaletteItems).toBeDefined();
+    expect(result.current.handleCommandPaletteSelect).toBeDefined();
   });
 
   it('returns studioHomeSignal and triggerStudioHome', () => {
@@ -289,13 +307,12 @@ describe('useUI', () => {
   it('prevents default on Ctrl+K shortcut', () => {
     renderHook(() => useUI());
 
-    const preventDefaultSpy = vi.fn();
-    const keyboardEvent = {
+    const keyboardEvent = new KeyboardEvent('keydown', {
       key: 'k',
       ctrlKey: true,
-      metaKey: false,
-      preventDefault: preventDefaultSpy,
-    } as any;
+      cancelable: true,
+    });
+    const preventDefaultSpy = vi.spyOn(keyboardEvent, 'preventDefault');
 
     window.dispatchEvent(keyboardEvent);
 

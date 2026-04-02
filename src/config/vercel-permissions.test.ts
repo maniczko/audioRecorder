@@ -1,4 +1,4 @@
-przete; // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 // Issue #0 — Permissions-Policy header blocked microphone & camera
 // Date: 2026-03-29
 // Bug: vercel.json had microphone=(), camera=() which completely

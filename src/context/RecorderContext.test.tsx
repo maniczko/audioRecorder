@@ -49,11 +49,11 @@ describe('RecorderContext', () => {
 
   describe('RecorderProvider', () => {
     it('renders children without crashing', () => {
-      const { container } = renderHook(() => null, {
+      const { result } = renderHook(() => useRecorderCtx(), {
         wrapper: RecorderProvider,
       });
 
-      expect(container).toBeInTheDocument();
+      expect(result.current).toBeDefined();
     });
 
     it('provides recorder context value', () => {

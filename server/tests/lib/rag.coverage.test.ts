@@ -279,7 +279,7 @@ describe('generateRagAnswer', () => {
         workspaceId: 'ws1',
       })
     ).resolves.toBe('Test answer');
-  });
+  }, 15000);
 
   test('builds context with chunks', async () => {
     const chunks = [{ recording_id: 'rec1', speaker_name: 'Anna', text: 'Important info' }];

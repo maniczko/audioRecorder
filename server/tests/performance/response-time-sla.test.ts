@@ -112,6 +112,9 @@ describe('Performance Regression — Response Time SLAs', () => {
 
   describe('P0 — Critical Paths', () => {
     test(`GET /health responds within ${SLA.HEALTH_CHECK}ms (SLA: P0)`, async () => {
+      // Warmup request — first request pays cold-start cost (JIT, module init)
+      await app.request('/health', { method: 'GET' });
+
       const { durationMs } = await measurePerformance(async () => {
         const res = await app.request('/health', { method: 'GET' });
         return await res.json();

@@ -5,14 +5,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildCommandPaletteItems, searchCommandPalette } from './commandPalette';
+import { buildCommandPaletteItems, filterCommandPaletteItems } from './commandPalette';
 
 describe('commandPalette', () => {
   describe('buildCommandPaletteItems', () => {
-    it('returns empty array when no data provided', () => {
+    it('returns tab items when no data provided', () => {
       const items = buildCommandPaletteItems({});
 
-      expect(items).toEqual([]);
+      expect(items).toHaveLength(5);
     });
 
     it('returns tab items by default', () => {
@@ -113,16 +113,16 @@ describe('commandPalette', () => {
 
     it('handles null/undefined data gracefully', () => {
       const items = buildCommandPaletteItems({
-        meetings: null as any,
+        meetings: undefined as any,
         tasks: undefined as any,
-        people: null as any,
+        people: undefined as any,
       });
 
       expect(items).toHaveLength(5);
     });
   });
 
-  describe('searchCommandPalette', () => {
+  describe('filterCommandPaletteItems', () => {
     const mockItems = [
       { id: '1', title: 'Studio', keywords: ['studio', 'nagrywanie'], weight: 10 },
       { id: '2', title: 'Kalendarz', keywords: ['kalendarz', 'spotkania'], weight: 10 },
@@ -132,47 +132,47 @@ describe('commandPalette', () => {
     ];
 
     it('returns all items when no query', () => {
-      const results = searchCommandPalette(mockItems, '');
+      const results = filterCommandPaletteItems(mockItems, '');
 
       expect(results).toHaveLength(5);
     });
 
     it('filters items by title', () => {
-      const results = searchCommandPalette(mockItems, 'Studio');
+      const results = filterCommandPaletteItems(mockItems, 'Studio');
 
       expect(results).toHaveLength(1);
       expect(results[0].title).toBe('Studio');
     });
 
     it('filters items case-insensitively', () => {
-      const results = searchCommandPalette(mockItems, 'studio');
+      const results = filterCommandPaletteItems(mockItems, 'studio');
 
       expect(results).toHaveLength(1);
       expect(results[0].title).toBe('Studio');
     });
 
     it('filters items by keywords', () => {
-      const results = searchCommandPalette(mockItems, 'nagrywanie');
+      const results = filterCommandPaletteItems(mockItems, 'nagrywanie');
 
       expect(results).toHaveLength(1);
       expect(results[0].title).toBe('Studio');
     });
 
     it('matches partial keywords', () => {
-      const results = searchCommandPalette(mockItems, 'stud');
+      const results = filterCommandPaletteItems(mockItems, 'stud');
 
       expect(results).toHaveLength(1);
       expect(results[0].title).toBe('Studio');
     });
 
     it('returns empty array when no matches', () => {
-      const results = searchCommandPalette(mockItems, 'nonexistent');
+      const results = filterCommandPaletteItems(mockItems, 'nonexistent');
 
       expect(results).toHaveLength(0);
     });
 
     it('sorts results by score', () => {
-      const results = searchCommandPalette(mockItems, 'task');
+      const results = filterCommandPaletteItems(mockItems, 'task');
 
       expect(results).toHaveLength(2);
       // Task item should be first (exact keyword match)
@@ -180,14 +180,14 @@ describe('commandPalette', () => {
     });
 
     it('handles special characters in query', () => {
-      const results = searchCommandPalette(mockItems, 'Fix bug');
+      const results = filterCommandPaletteItems(mockItems, 'Fix bug');
 
       expect(results).toHaveLength(1);
       expect(results[0].title).toBe('Task: Fix bug');
     });
 
     it('handles empty items array', () => {
-      const results = searchCommandPalette([], 'query');
+      const results = filterCommandPaletteItems([], 'query');
 
       expect(results).toHaveLength(0);
     });
@@ -198,14 +198,14 @@ describe('commandPalette', () => {
         { id: '2', title: 'My Task', keywords: ['task'], weight: 0 },
       ];
 
-      const results = searchCommandPalette(items, 'task');
+      const results = filterCommandPaletteItems(items, 'task');
 
       // First item should be first (title starts with query)
       expect(results[0].title).toBe('Task Manager');
     });
 
     it('includes score in results', () => {
-      const results = searchCommandPalette(mockItems, 'Studio');
+      const results = filterCommandPaletteItems(mockItems, 'Studio');
 
       expect(results[0]).toHaveProperty('score');
       expect(results[0].score).toBeGreaterThan(0);

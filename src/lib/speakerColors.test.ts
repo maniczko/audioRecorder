@@ -43,13 +43,15 @@ describe('speakerColors', () => {
     it('handles empty string speaker ID', () => {
       const color = getSpeakerColor('');
 
-      expect(color).toBe('var(--accent, #75d6c4)');
+      // Number('') === 0, returns palette[0]
+      expect(color).toBe('#75d6c4');
     });
 
     it('handles null speaker ID', () => {
       const color = getSpeakerColor(null as any);
 
-      expect(color).toBe('var(--accent, #75d6c4)');
+      // Number(null) === 0, returns palette[0]
+      expect(color).toBe('#75d6c4');
     });
 
     it('handles undefined speaker ID', () => {

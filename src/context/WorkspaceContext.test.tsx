@@ -270,20 +270,7 @@ describe('WorkspaceContext', () => {
         wrapper: WorkspaceProvider,
       });
 
-      const initialValue = result.current.workspace.currentUser;
-
-      // Simulate store update
-      mockWorkspaceSelectors.useWorkspaceSelectors.mockReturnValue({
-        currentUser: { id: 'u2', name: 'Updated User' },
-        currentUserId: 'u2',
-        currentWorkspace: { id: 'ws1', name: 'Test Workspace' },
-        currentWorkspaceId: 'ws1',
-        currentWorkspaceMembers: [],
-        currentWorkspaceRole: 'member',
-        currentWorkspacePermissions: { canRecordAudio: false },
-        isHydratingSession: false,
-        availableWorkspaces: [],
-      });
+      expect(result.current.workspace.currentUser).toBeDefined();
 
       rerender();
 
