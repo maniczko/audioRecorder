@@ -69,11 +69,9 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 ### ⚠️ BLOCKED (wymaga konfiguracji zewnętrznej)
 
 - **GH-26** — Fix Error Monitor workflow dispatch failures
-  - **Status:** blocked
-  - **Error:** HTTP 403 — Resource not accessible by personal access token
-  - **Code fix:** ✅ Permissions w workflow ustawione
-  - **Blokada:** PAT (Personal Access Token) nie ma scope `workflows`
-  - **Akcja:** GitHub → Settings → Developer Settings → Personal access tokens → dodaj scope `workflow`
+  - **Status:** done
+  - **Fix:** GH_PAT secret dodany przez użytkownika, workflow zaktualizowany do użycia `GH_PAT || GITHUB_TOKEN` dla checkout i git push
+  - Workflow przeszedł ✅ (run 23898465998, 52s)
 
 - **GH-33** — "Remote boom" bootstrap failure (Code Review + Auto-Fix)
   - **Status:** blocked
@@ -88,6 +86,10 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - Naprawiono błędy w workflow (secrets context w if:, railway login --token)
   - Naprawiono skrypty fetch-railway-errors.js, fetch-vercel-errors.js, fetch-sentry-errors.js
   - Workflow Error Monitor przeszedł ✅ (run 23895325679, 52s)
+
+- **GH-26** — Fix Error Monitor workflow dispatch failures ✅
+  - GH_PAT secret dodany przez użytkownika, workflow zaktualizowany (commit d90bf87)
+  - Workflow przeszedł ✅ (run 23898465998, 52s)
 
 - **GH-27** — Fix Docker Build failures ✅
   - Dockerfile prawidłowo skonfigurowany (Node.js 22, multi-stage build, ffmpeg)
