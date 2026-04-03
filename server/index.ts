@@ -58,8 +58,10 @@ export async function bootstrap() {
     const path = await import('node:path');
 
     if (fs.existsSync(uploadDir)) {
-      const files = fs.readdirSync(uploadDir);
       let deletedCount = 0;
+
+      // Clean top-level temp files
+      const files = fs.readdirSync(uploadDir);
       for (const file of files) {
         if (
           file.startsWith('temp_') ||
@@ -69,14 +71,41 @@ export async function bootstrap() {
           try {
             fs.unlinkSync(path.join(uploadDir, file));
             deletedCount++;
-          } catch (err) {
+          } catch (_) {
             // Ignore unlink errors
           }
         }
       }
+
+      // Clean chunks subdirectory
+      const chunksDir = path.join(uploadDir, 'chunks');
+      if (fs.existsSync(chunksDir)) {
+        for (const file of fs.readdirSync(chunksDir)) {
+          try {
+            fs.unlinkSync(path.join(chunksDir, file));
+            deletedCount++;
+          } catch (_) {
+            // Ignore
+          }
+        }
+      }
+
+      // Clean preprocessed cache
+      const cacheDir = path.join(uploadDir, '.cache', 'preprocessed');
+      if (fs.existsSync(cacheDir)) {
+        for (const file of fs.readdirSync(cacheDir)) {
+          try {
+            fs.unlinkSync(path.join(cacheDir, file));
+            deletedCount++;
+          } catch (_) {
+            // Ignore
+          }
+        }
+      }
+
       if (deletedCount > 0) {
         logger.info(
-          `[Bootstrap] Cleared ${deletedCount} temporary audio files from ${uploadDir} to free up disk space.`
+          `[Bootstrap] Cleared ${deletedCount} temporary audio files from ${uploadDir} (incl. chunks & cache) to free up disk space.`
         );
       }
     }
@@ -179,6 +208,47 @@ if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
       server.listen(PORT, HOST, () => {
         logger.info(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);
       });
+
+      // [PROD] Periodic temp file cleanup (every 30 min)
+      const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
+      const cleanupTimer = setInterval(async () => {
+        try {
+          const uploadDir = config.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+          const fs = await import('node:fs');
+          const pathMod = await import('node:path');
+          const now = Date.now();
+          const MAX_AGE = 60 * 60 * 1000; // 1 hour
+          let cleaned = 0;
+
+          const cleanDir = (dir: string, filterFn?: (f: string) => boolean) => {
+            if (!fs.existsSync(dir)) return;
+            for (const file of fs.readdirSync(dir)) {
+              if (filterFn && !filterFn(file)) continue;
+              const fp = pathMod.join(dir, file);
+              try {
+                const stat = fs.statSync(fp);
+                if (stat.isFile() && now - stat.mtimeMs > MAX_AGE) {
+                  fs.unlinkSync(fp);
+                  cleaned++;
+                }
+              } catch (_) {
+                /* ignore */
+              }
+            }
+          };
+
+          cleanDir(uploadDir, (f) => f.startsWith('temp_') || f.startsWith('preprocess_'));
+          cleanDir(pathMod.join(uploadDir, 'chunks'));
+          cleanDir(pathMod.join(uploadDir, '.cache', 'preprocessed'));
+
+          if (cleaned > 0) {
+            logger.info(`[Cleanup] Periodic: removed ${cleaned} stale temp files.`);
+          }
+        } catch (err) {
+          logger.warn('[Cleanup] Periodic cleanup error:', err);
+        }
+      }, CLEANUP_INTERVAL_MS);
+      cleanupTimer.unref(); // Don't prevent process exit
 
       // [PROD] Graceful shutdown handling
       const shutdown = async (signal: string) => {

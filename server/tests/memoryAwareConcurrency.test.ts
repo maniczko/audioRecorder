@@ -12,38 +12,48 @@ describe('getMemoryAwareConcurrency', () => {
     process.memoryUsage = originalMemoryUsage;
   });
 
-  function mockHeapUsage(usedMB: number, totalMB: number) {
+  function mockMemory(usedMB: number, totalMB: number, rssMB: number) {
     process.memoryUsage = (() => ({
       heapUsed: usedMB * 1024 * 1024,
       heapTotal: totalMB * 1024 * 1024,
-      rss: (totalMB + 100) * 1024 * 1024,
+      rss: rssMB * 1024 * 1024,
       external: 0,
       arrayBuffers: 0,
     })) as any;
   }
 
-  it('returns full concurrency when heap usage is low (<70%)', () => {
-    mockHeapUsage(100, 384);
-    expect(getMemoryAwareConcurrency(6)).toBe(6);
+  it('returns capped concurrency (max 3) when heap and RSS are low', () => {
+    mockMemory(100, 384, 400); // heap 26%, RSS 400MB
+    expect(getMemoryAwareConcurrency(6)).toBe(3); // capped at 3
   });
 
-  it('reduces concurrency to 2 when heap is between 70–85%', () => {
-    mockHeapUsage(300, 384); // ~78%
+  it('reduces concurrency to 2 when heap is between 65–80%', () => {
+    mockMemory(270, 384, 400); // heap ~70%, RSS 400MB (under 500)
     expect(getMemoryAwareConcurrency(6)).toBe(2);
   });
 
-  it('reduces concurrency to 1 when heap is above 85%', () => {
-    mockHeapUsage(350, 384); // ~91%
+  it('reduces concurrency to 1 when heap is above 80%', () => {
+    mockMemory(320, 384, 400); // heap ~83%, RSS 400MB
     expect(getMemoryAwareConcurrency(6)).toBe(1);
   });
 
+  it('reduces concurrency to 1 when RSS exceeds 700MB', () => {
+    mockMemory(100, 384, 750); // heap low, but RSS high
+    expect(getMemoryAwareConcurrency(6)).toBe(1);
+  });
+
+  it('reduces concurrency to 2 when RSS exceeds 500MB', () => {
+    mockMemory(100, 384, 550); // heap low, RSS moderate
+    expect(getMemoryAwareConcurrency(6)).toBe(2);
+  });
+
   it('respects configLimit as upper bound even at low usage', () => {
-    mockHeapUsage(50, 384); // ~13%
-    expect(getMemoryAwareConcurrency(3)).toBe(3);
+    mockMemory(50, 384, 300); // heap ~13%, RSS low
+    expect(getMemoryAwareConcurrency(2)).toBe(2);
   });
 
   it('never returns less than 1', () => {
-    mockHeapUsage(380, 384); // ~99%
+    mockMemory(380, 384, 800); // heap ~99%, RSS very high
     expect(getMemoryAwareConcurrency(1)).toBeGreaterThanOrEqual(1);
   });
 });

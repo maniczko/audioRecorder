@@ -50,9 +50,9 @@ export const VERIFY_SCORE_THRESHOLD = 0.65;
 
 /**
  * Chunk duration in seconds for large audio files.
- * ~17.3 MB wav@16k mono, keeps chunks below the STT limit.
+ * ~5.8 MB wav@16k mono — keeps memory low under Railway constraints.
  */
-export const CHUNK_DURATION_SECONDS = 540;
+export const CHUNK_DURATION_SECONDS = 180;
 
 /**
  * Overlap between consecutive chunks in seconds.

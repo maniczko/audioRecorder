@@ -75,7 +75,7 @@ ENV VOICELOG_API_HOST=0.0.0.0
 ENV FFMPEG_BINARY=ffmpeg
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
-ENV NODE_OPTIONS="--max-old-space-size=460"
+ENV NODE_OPTIONS="--max-old-space-size=768 --expose-gc"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

@@ -645,13 +645,14 @@ export function getMemoryAwareConcurrency(configLimit: number): number {
   const mem = process.memoryUsage();
   const heapUsedMB = mem.heapUsed / (1024 * 1024);
   const heapTotalMB = mem.heapTotal / (1024 * 1024);
+  const rssMB = mem.rss / (1024 * 1024);
   const heapUsageRatio = heapUsedMB / heapTotalMB;
 
-  // Each STT chunk ≈ 10s of 16kHz mono WAV ≈ 320 KB buffer + overhead
-  // Be conservative — reduce when heap is >70% used
-  if (heapUsageRatio > 0.85) return 1;
-  if (heapUsageRatio > 0.7) return Math.max(1, Math.min(configLimit, 2));
-  return configLimit;
+  // Each STT chunk ≈ 3min of 16kHz mono WAV ≈ 5.8 MB buffer + overhead
+  // Be conservative — Railway trial has limited memory
+  if (rssMB > 700 || heapUsageRatio > 0.8) return 1;
+  if (rssMB > 500 || heapUsageRatio > 0.65) return Math.max(1, Math.min(configLimit, 2));
+  return Math.min(configLimit, 3);
 }
 
 export async function transcribeInChunks(
@@ -667,11 +668,14 @@ export async function transcribeInChunks(
   };
 
   const payloads = [];
-  const BASE_CONCURRENCY = config.STT_CONCURRENCY_LIMIT || 6;
+  const BASE_CONCURRENCY = config.STT_CONCURRENCY_LIMIT || 3;
   let offsetSeconds = 0;
   let hasMore = true;
   let currentOverlap = CHUNK_OVERLAP_SECONDS;
   let allSpeechSegments: any[] = []; // Track all speech segments for adaptive overlap
+
+  // Hint GC before heavy chunked transcription to free up memory
+  if (typeof globalThis.gc === 'function') globalThis.gc();
 
   while (hasMore && !options.signal?.aborted) {
     const CONCURRENCY_LIMIT = getMemoryAwareConcurrency(BASE_CONCURRENCY);

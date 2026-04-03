@@ -29,7 +29,7 @@ describe('audioPipeline.utils', () => {
     });
 
     it('exports CHUNK_DURATION_SECONDS', () => {
-      expect(utils.CHUNK_DURATION_SECONDS).toBe(540);
+      expect(utils.CHUNK_DURATION_SECONDS).toBe(180);
     });
 
     it('exports MAX_FILE_SIZE_BYTES', () => {
