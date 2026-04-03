@@ -70,19 +70,15 @@ jobs:
           echo "║  🔧 Verifying Binaries                                    ║"
           echo "╚═══════════════════════════════════════════════════════════╝"
 
-          # Check Node.js (required)
+          # Check Node.js (required) - use shell entrypoint to run command
           echo "Checking Node.js..."
-          docker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "node --version" || (echo "❌ Node.js not found" && exit 1)
 
           # Note: pnpm is only in the build stage, not in runtime (multi-stage Docker build)
 
           # Optional: Check ffmpeg if available
           echo "Checking ffmpeg (optional)..."
-          docker run --rm --entrypoint="" voicelog:test ffmpeg -version 2>/dev/null | head -1 || echo "⚠️  ffmpeg not found (optional)"
-
-          # Optional: Check Python if available
-          echo "Checking Python (optional)..."
-          docker run --rm --entrypoint="" voicelog:test python3 --version 2>/dev/null || echo "⚠️  Python not found (optional)"
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "ffmpeg -version 2>/dev/null | head -1" || echo "⚠️  ffmpeg not found (optional)"
 
           echo ""
           echo "✅ Core binaries verified!"

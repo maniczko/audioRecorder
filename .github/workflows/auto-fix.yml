@@ -142,12 +142,11 @@ jobs:
             }
 
       - name: Fail workflow if critical checks failed
-        if: steps.lint.outputs.lint_status != '0' || steps.tests.outputs.tests_status != '0'
+        if: failure() && (steps.lint.outcome == 'failure' || steps.tests.outcome == 'failure')
         run: |
-          if [ "${{ steps.lint.outputs.lint_status }}" != "0" ]; then
-            echo "❌ ESLint auto-fix failed. Please fix manually."
-          fi
-          if [ "${{ steps.tests.outputs.tests_status }}" != "0" ]; then
-            echo "❌ Tests still failing after auto-fix. Please fix manually."
-          fi
+          echo "❌ Auto-fix workflow encountered failures:"
+          echo "- ESLint: ${{ steps.lint.outcome == 'success' && '✅ Fixed' || '⚠️ Issues remain' }}"
+          echo "- Tests: ${{ steps.tests.outcome == 'success' && '✅ Fixed' || '⚠️ Issues remain' }}"
+          echo ""
+          echo "Please review the logs and fix manually if needed."
           exit 1

@@ -39,6 +39,10 @@ jobs:
         run: node scripts/validate-env.js
         continue-on-error: true
         env:
+          VITE_DATA_PROVIDER: remote
+          VITE_MEDIA_PROVIDER: remote
+          VITE_API_BASE_URL: http://127.0.0.1:4000
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
