@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import { useErrorLogStore } from '../store/errorLogStore';
 import './ErrorBoundaryStyles.css';
 
 interface ErrorBoundaryProps {
@@ -24,6 +25,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     console.error(`[ErrorBoundary:${this.props.label || 'App'}]`, error, info?.componentStack);
     this.setState({ info });
+    try {
+      useErrorLogStore.getState().addError({
+        type: 'react-boundary',
+        message: error.message,
+        stack: error.stack,
+        context: `ErrorBoundary:${this.props.label || 'App'}`,
+      });
+    } catch {
+      // store may not be ready
+    }
   }
 
   render(): ReactNode {

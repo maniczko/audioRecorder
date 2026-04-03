@@ -11,6 +11,7 @@ import { JapaneseThemeSelector } from './components/JapaneseThemeSelector';
 import { type JapaneseTheme } from './styles/japaneseThemes';
 import './styles/JapaneseFlatDesign.css';
 import TagInput from './shared/TagInput';
+import { ErrorLogSection } from './components/ErrorLogSection';
 
 function VoiceProfilesSection({ peopleProfiles = [] }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
@@ -835,6 +836,7 @@ export default function ProfileTab({
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
     { id: 'tools', label: 'Narzędzia AI', icon: '🛠️' },
     { id: 'review', label: 'Ustawienia wyciszone', icon: '📦' },
+    { id: 'errorlog', label: 'Dziennik błędów', icon: '🐛' },
   ];
 
   return (
@@ -1345,6 +1347,14 @@ export default function ProfileTab({
               <section className="panel profile-grid-span-two">
                 <ChangelogSection />
               </section>
+            </div>
+          </div>
+        )}
+
+        {activeCategory === 'errorlog' && (
+          <div className="profile-category-view profile-category-view-spaced">
+            <div className="profile-grid">
+              <ErrorLogSection />
             </div>
           </div>
         )}
