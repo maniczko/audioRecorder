@@ -50,9 +50,10 @@ export const VERIFY_SCORE_THRESHOLD = 0.65;
 
 /**
  * Chunk duration in seconds for large audio files.
- * ~5.8 MB wav@16k mono — keeps memory low under Railway constraints.
+ * ~3.8 MB wav@16k mono — smaller chunks reduce memory pressure and
+ * prevent OOM crashes on Railway (observed at ~56% with 180s chunks).
  */
-export const CHUNK_DURATION_SECONDS = 180;
+export const CHUNK_DURATION_SECONDS = 120;
 
 /**
  * Overlap between consecutive chunks in seconds.

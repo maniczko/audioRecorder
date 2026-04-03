@@ -56,7 +56,7 @@ const envSchema = z.object({
   ),
   STT_CONCURRENCY_LIMIT: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().optional())
-    .default(3),
+    .default(2),
   VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('fast'),
   VOICELOG_STT_MODEL_FAST: z.string().default('whisper-tiny'), // Fast mode: whisper-tiny for 3x speedup
   VOICELOG_STT_MODEL_FULL: z.string().default('whisper-1'), // Full mode: whisper-1 for accuracy

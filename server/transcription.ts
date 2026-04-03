@@ -648,11 +648,11 @@ export function getMemoryAwareConcurrency(configLimit: number): number {
   const rssMB = mem.rss / (1024 * 1024);
   const heapUsageRatio = heapUsedMB / heapTotalMB;
 
-  // Each STT chunk ≈ 3min of 16kHz mono WAV ≈ 5.8 MB buffer + overhead
-  // Be conservative — Railway trial has limited memory
-  if (rssMB > 700 || heapUsageRatio > 0.8) return 1;
-  if (rssMB > 500 || heapUsageRatio > 0.65) return Math.max(1, Math.min(configLimit, 2));
-  return Math.min(configLimit, 3);
+  // Conservative thresholds — Railway containers have limited memory.
+  // Each chunk: ffmpeg child process + ~3.8 MB WAV buffer + STT upload.
+  if (rssMB > 500 || heapUsageRatio > 0.75) return 1;
+  if (rssMB > 350 || heapUsageRatio > 0.6) return Math.max(1, Math.min(configLimit, 2));
+  return Math.min(configLimit, 2);
 }
 
 export async function transcribeInChunks(
@@ -668,11 +668,12 @@ export async function transcribeInChunks(
   };
 
   const payloads = [];
-  const BASE_CONCURRENCY = config.STT_CONCURRENCY_LIMIT || 3;
+  const BASE_CONCURRENCY = config.STT_CONCURRENCY_LIMIT || 2;
   let offsetSeconds = 0;
   let hasMore = true;
   let currentOverlap = CHUNK_OVERLAP_SECONDS;
   let allSpeechSegments: any[] = []; // Track all speech segments for adaptive overlap
+  const MAX_CHUNK_RETRIES = 2;
 
   // Hint GC before heavy chunked transcription to free up memory
   if (typeof globalThis.gc === 'function') globalThis.gc();
@@ -742,39 +743,53 @@ export async function transcribeInChunks(
           }
           diagnostics.vadFlaggedSilent = Boolean(chunkSpeech && chunkSpeech.length === 0);
 
-          try {
-            diagnostics.sentToStt = true;
-            const sttResult = await requestAudioTranscription({
-              buffer,
-              filename: `chunk_${currentOffset}.wav`,
-              contentType: 'audio/wav',
-              fields,
-              signal: options.signal,
-            });
-            const payload = sttResult?.payload || null;
-            diagnostics.hasSegments =
-              Array.isArray(payload?.segments) && payload.segments.length > 0;
-            diagnostics.hasWords = getRawWords(payload).length > 0;
-            diagnostics.hasText = Boolean(
-              clean(payload?.text || payload?.transcript || payload?.results?.text)
-            );
-            diagnostics.providerId = sttResult?.providerId || '';
-            diagnostics.providerLabel = sttResult?.providerLabel || '';
-            diagnostics.providerModel = sttResult?.model || '';
-            return { payload, offsetSeconds: currentOffset, diagnostics, sttResult };
-          } catch (error: any) {
-            diagnostics.sentToStt = true;
-            diagnostics.sttFailed = true;
-            diagnostics.sttErrorMessage = clean(error?.message || 'STT request failed');
-            diagnostics.sttAttempts = Array.isArray(error?.sttAttempts) ? error.sttAttempts : [];
-            return { payload: null, offsetSeconds: currentOffset, diagnostics };
+          // Retry STT per chunk — prevents losing a chunk on transient API errors
+          for (let attempt = 0; attempt < MAX_CHUNK_RETRIES; attempt++) {
+            try {
+              diagnostics.sentToStt = true;
+              const sttResult = await requestAudioTranscription({
+                buffer,
+                filename: `chunk_${currentOffset}.wav`,
+                contentType: 'audio/wav',
+                fields,
+                signal: options.signal,
+              });
+              const payload = sttResult?.payload || null;
+              diagnostics.hasSegments =
+                Array.isArray(payload?.segments) && payload.segments.length > 0;
+              diagnostics.hasWords = getRawWords(payload).length > 0;
+              diagnostics.hasText = Boolean(
+                clean(payload?.text || payload?.transcript || payload?.results?.text)
+              );
+              diagnostics.providerId = sttResult?.providerId || '';
+              diagnostics.providerLabel = sttResult?.providerLabel || '';
+              diagnostics.providerModel = sttResult?.model || '';
+              diagnostics.sttFailed = false;
+              return { payload, offsetSeconds: currentOffset, diagnostics, sttResult };
+            } catch (error: any) {
+              diagnostics.sentToStt = true;
+              diagnostics.sttFailed = true;
+              diagnostics.sttErrorMessage = clean(error?.message || 'STT request failed');
+              diagnostics.sttAttempts = Array.isArray(error?.sttAttempts) ? error.sttAttempts : [];
+              if (attempt < MAX_CHUNK_RETRIES - 1) {
+                const delay = 1000 * (attempt + 1);
+                console.warn(
+                  `[transcription] Chunk at ${currentOffset}s failed (attempt ${attempt + 1}/${MAX_CHUNK_RETRIES}), retrying in ${delay}ms: ${diagnostics.sttErrorMessage}`
+                );
+                await new Promise((resolve) => setTimeout(resolve, delay));
+              }
+            }
           }
+          return { payload: null, offsetSeconds: currentOffset, diagnostics };
         })()
       );
     }
 
     const results = await Promise.all(batchPromises);
     payloads.push(...results.filter(Boolean));
+
+    // Free memory between batches — critical for preventing OOM on Railway
+    if (typeof globalThis.gc === 'function') globalThis.gc();
 
     notify(
       Math.min(60, 40 + payloads.length * 5),
