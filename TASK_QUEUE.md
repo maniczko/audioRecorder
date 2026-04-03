@@ -68,3 +68,81 @@ _Brak aktualnych zadań._
 
 1. � **GH-33** — dodaj ANTHROPIC_API_KEY secret (wymaga konfiguracji w GitHub Settings)
 2. 🟢 **GH-AUTO-VITE** — opcjonalnie dodaj VITE_* sekrety w GitHub Settings
+
+
+<!-- Auto-generated on 2026-04-03T12:59:39.749Z -->
+
+### GitHub Actions Errors (9 found)
+
+- **GH-AUTO-2026-04-03-1** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T11:19:50.0774858Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-03T11:19:50.0919981Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-2** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T11:20:11.1948710Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T11:20:11.1950016Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T11:21:34.0951443Z   code: 'PARSE_ERROR',
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-4** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T11:19:44.1981003Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-03T11:19:44.2115834Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-5** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T11:23:15.0666553Z [36;1mCRITICAL_FAILED="false"[0m
+2026-04-03T11:23:15.0670021Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m
+2026-04-03T11:23:15.0671630Z [36...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-6** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T10:48:34.4506715Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T10:48:34.4508083Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-7** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T10:13:39.5434512Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T10:13:39.5435827Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-8** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T09:10:19.6223670Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T09:10:19.6224998Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-9** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T07:34:30.0063100Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T07:34:30.0064491Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T12:59:39.749Z
+  - **Priority:** High
+
