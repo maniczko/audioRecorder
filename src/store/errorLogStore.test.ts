@@ -1,9 +1,17 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useErrorLogStore } from './errorLogStore';
+
+// Mock config for auto-send
+vi.mock('../services/config', () => ({
+  API_BASE_URL: 'http://localhost:4000',
+  apiBaseUrlConfigured: () => true,
+}));
+
+import { useErrorLogStore, _resetPendingForTest } from './errorLogStore';
 
 describe('errorLogStore', () => {
   beforeEach(() => {
     useErrorLogStore.setState({ errors: [] });
+    _resetPendingForTest();
   });
 
   afterEach(() => {
@@ -99,5 +107,60 @@ describe('errorLogStore', () => {
     }
     expect(useErrorLogStore.getState().errors).toHaveLength(5);
     expect(useErrorLogStore.getState().errors.map((e) => e.type)).toEqual([...types]);
+  });
+
+  describe('auto-send to server', () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ ok: true, received: 1 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('sends errors to server after delay', async () => {
+      useErrorLogStore.getState().addError({ type: 'runtime', message: 'Auto-sent' });
+
+      // Not sent immediately
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      // Advance past flush delay (5s)
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://localhost:4000/api/client-errors',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    test('batches multiple errors into one request', async () => {
+      useErrorLogStore.getState().addError({ type: 'runtime', message: 'Err 1' });
+      useErrorLogStore.getState().addError({ type: 'network', message: 'Err 2' });
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+      expect(body).toHaveLength(2);
+    });
+
+    test('does not crash when fetch fails', async () => {
+      fetchSpy.mockRejectedValueOnce(new Error('Network down'));
+
+      useErrorLogStore.getState().addError({ type: 'runtime', message: 'Err during failure' });
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // Should not throw — error still in local store
+      expect(useErrorLogStore.getState().errors).toHaveLength(1);
+    });
   });
 });

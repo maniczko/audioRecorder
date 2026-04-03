@@ -5,6 +5,7 @@ import { createDigestRoutes } from '../routes/digest.ts';
 import { createWorkspacesRoutes } from '../routes/workspaces.ts';
 import { createMediaRoutes, createTranscribeRoutes } from '../routes/media.ts';
 import { createAiRoutes } from '../routes/ai.ts';
+import { createClientErrorRoutes } from '../routes/clientErrors.ts';
 import { registerHealthRoute } from './health.ts';
 import { MetricsService } from '../services/MetricsService.ts';
 
@@ -40,4 +41,5 @@ export function registerAppRoutes(
   app.route('/transcribe', createTranscribeRoutes(services, middlewares));
   app.route('/digest', createDigestRoutes(services, middlewares));
   app.route('/ai', createAiRoutes(middlewares));
+  app.route('/api/client-errors', createClientErrorRoutes());
 }
