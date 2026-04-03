@@ -74,9 +74,7 @@ jobs:
           echo "Checking Node.js..."
           docker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)
 
-          # Check pnpm (required)
-          echo "Checking pnpm..."
-          docker run --rm --entrypoint="" voicelog:test pnpm --version || (echo "❌ pnpm not found" && exit 1)
+          # Note: pnpm is only in the build stage, not in runtime (multi-stage Docker build)
 
           # Optional: Check ffmpeg if available
           echo "Checking ffmpeg (optional)..."

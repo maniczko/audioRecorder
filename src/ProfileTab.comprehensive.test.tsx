@@ -16,7 +16,11 @@ vi.mock('./services/httpClient', () => ({
 
 // Mock config
 vi.mock('./services/config', () => ({
+  API_BASE_URL: 'http://localhost:4000',
+  APP_DATA_PROVIDER: 'local',
+  MEDIA_PIPELINE_PROVIDER: 'local',
   apiBaseUrlConfigured: vi.fn(() => true),
+  remoteApiEnabled: vi.fn(() => false),
 }));
 
 // Mock useWorkspaceBackup hook
