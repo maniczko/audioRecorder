@@ -1,4 +1,4 @@
-Ôªø# TASK_QUEUE
+# TASK_QUEUE
 
 Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
@@ -54,74 +54,74 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### GitHub Actions Errors (10 found)
 
-- **GH-AUTO-2026-04-02-1** ‚Äî Fix CI/CD Pipeline failure (E2E selector)
+- **GH-AUTO-2026-04-02-1** ó Fix CI/CD Pipeline failure (E2E selector)
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Fix:** E2E tests used `.tab-pill` selector (old Topbar) but app now uses `.modern-nav-item` (AppShellModern sidebar). All `.tab-pill` ‚Üí `.modern-nav-item` in auth/command-palette/meeting/tasks spec files.
+  - **Fix:** E2E tests used `.tab-pill` selector (old Topbar) but app now uses `.modern-nav-item` (AppShellModern sidebar). All `.tab-pill` õ `.modern-nav-item` in auth/command-palette/meeting/tasks spec files.
   - **Created:** 2026-04-02T18:09:15.711Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-2** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-2** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Fix:** `cd server &&` added before ffmpeg-static check (commit 2c57566). Docker ‚úÖ passing since run 23914920737.
+  - **Fix:** `cd server &&` added before ffmpeg-static check (commit 2c57566). Docker ? passing since run 23914920737.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-3** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-3** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions  
-  - **Fix:** Same as GH-AUTO-2. Docker Build ‚úÖ passing.
+  - **Fix:** Same as GH-AUTO-2. Docker Build ? passing.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-4** ‚Äî Fix CI/CD Pipeline failure (E2E click timeout)
+- **GH-AUTO-2026-04-02-4** ó Fix CI/CD Pipeline failure (E2E click timeout)
   - **Status:** done
   - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-1. `.tab-pill` selector not found causing `.click()` timeout. Fixed by updating to `.modern-nav-item`.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-5** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-5** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Fix:** Same as GH-AUTO-2. Docker Build ‚úÖ passing.
+  - **Fix:** Same as GH-AUTO-2. Docker Build ? passing.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-6** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-6** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Fix:** `cd server &&` added before ffmpeg-static check (commit 2c57566).
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-7** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-7** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-6.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-8** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-8** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-6.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-9** ‚Äî Fix Docker Build failure
+- **GH-AUTO-2026-04-02-9** ó Fix Docker Build failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-6.
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-10** ‚Äî Fix Railway Error Reporter failure
+- **GH-AUTO-2026-04-02-10** ó Fix Railway Error Reporter failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Fix:** Removed `railway login --token` step (unsupported flag). Reporter now uses RAILWAY_TOKEN env var directly. Run 23915129717 ‚úÖ success.
+  - **Fix:** Removed `railway login --token` step (unsupported flag). Reporter now uses RAILWAY_TOKEN env var directly. Run 23915129717 ? success.
   - **Priority:** High
 
 
 ### Railway Errors (1 found)
 
-- **RW-AUTO-2026-04-02-11** ‚Äî Fix Railway error
+- **RW-AUTO-2026-04-02-11** ó Fix Railway error
   - **Status:** done
   - **Source:** Railway
-  - **Fix:** Part of Railway Error Reporter fix (GH-AUTO-10). Reporter run 23915129717 ‚úÖ success.
+  - **Fix:** Part of Railway Error Reporter fix (GH-AUTO-10). Reporter run 23915129717 ? success.
   - **Priority:** High
 
 
@@ -130,16 +130,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### GitHub Actions Errors (10 found)
 
-- **GH-AUTO-2026-04-02-1** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-1** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:30:46.0786765Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T18:30:46.0786765Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T18:30:46.0788107Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-2** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-2** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -147,16 +147,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-3** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-3** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:26:46.4572437Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T18:26:46.4572437Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T18:26:46.4573781Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-4** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-4** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -164,16 +164,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-5** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-5** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:10:11.8200597Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T18:10:11.8200597Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T18:10:11.8202343Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-6** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-6** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 2026-04-02T18:17:59.8008001Z     Error: element(s) not found
@@ -181,8 +181,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-7** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-7** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T15:03:12.5220236Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 2026-04-02T15:03:12.5223310Z     Error: element(s) not found
@@ -190,24 +190,24 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-8** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-8** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T14:55:57.6584424Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T14:55:57.6584424Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T14:55:57.6585744Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-9** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-9** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T14:23:18.1463146Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T14:23:18.1463146Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T14:23:18.1465235Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-02-10** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-02-10** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T14:33:53.7127890Z     TimeoutError: page.click: Timeout 15000ms exceeded.
 2026-04-02T14:33:53.7155264Z     TimeoutError: page.click: Timeout 15000ms exceeded.
@@ -218,8 +218,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### Railway Errors (1 found)
 
-- **RW-AUTO-2026-04-02-11** ‚Äî Fix Railway error
-  - **Status:** todo
+- **RW-AUTO-2026-04-02-11** ó Fix Railway error
+  - **Status:** done
   - **Source:** Railway
   - **Error:** Error fetching logs: Railway command failed: Command failed: railway logs --lines 50
   - **Created:** 2026-04-02T18:54:56.503Z
@@ -231,16 +231,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 
 ### GitHub Actions Errors (7 found)
 
-- **GH-AUTO-2026-04-03-1** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-1** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T20:15:20.4907957Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T20:15:20.4907957Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T20:15:20.4909280Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-2** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-2** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T20:20:33.4608506Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T20:20:33.4630440Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -248,16 +248,16 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-3** ‚Äî Fix Docker Build failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-3** ó Fix Docker Build failure
+  - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:56:15.4342195Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "‚ùå Node.js not found" && exit 1)[0m
+  - **Error:** 2026-04-02T18:56:15.4342195Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
 2026-04-02T18:56:15.4343511Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-4** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-4** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T19:03:03.1295832Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T19:03:03.1323463Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -265,8 +265,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-5** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-5** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -274,8 +274,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-6** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-6** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
 2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
@@ -283,8 +283,8 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-03-7** ‚Äî Fix CI/CD Pipeline failure
-  - **Status:** todo
+- **GH-AUTO-2026-04-03-7** ó Fix CI/CD Pipeline failure
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 2026-04-02T18:17:59.8008001Z     Error: element(s) not found
