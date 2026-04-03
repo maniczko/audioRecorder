@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
 // Note: This test reads the actual Dockerfile, so fs is not mocked here
@@ -102,7 +103,6 @@ describe('Dockerfile hardening', () => {
 
 describe('All server source files are tracked in git', () => {
   it('no untracked files in server/ or src/shared/ that would break Railway esbuild', () => {
-    const { execSync } = require('node:child_process');
     let untracked = '';
     try {
       // List untracked files, excluding coverage test files which are dev-only

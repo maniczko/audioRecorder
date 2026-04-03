@@ -13,6 +13,7 @@
 
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
+import path from 'node:path';
 
 // P0 Fix: Move vi.unmock() to top level to prevent Vitest warnings
 // These are hoisted anyway, so should be at module top
@@ -993,7 +994,6 @@ describe('Regression: #0 — getUploadDir writable fallback chain', () => {
 // ─────────────────────────────────────────────────────────────────
 describe('Regression: #0 — retry-transcribe Supabase fallback for missing local files', () => {
   test('basename of local path yields valid Supabase key (no separators)', () => {
-    const path = require('node:path');
     // Test POSIX paths
     const posixPath = '/data/uploads/recording_abc123.webm';
     const posixBasename = path.posix.basename(posixPath);
@@ -1008,7 +1008,6 @@ describe('Regression: #0 — retry-transcribe Supabase fallback for missing loca
   });
 
   test('isRemoteAudioPath detects basename as remote (no separators)', () => {
-    const path = require('node:path');
     // Mirrors pipeline.ts isRemoteAudioPath logic
     function isRemoteAudioPath(filePath: string) {
       return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));

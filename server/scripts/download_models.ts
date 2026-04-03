@@ -1,4 +1,4 @@
-const { AutoModel, AutoProcessor, env } = require('@xenova/transformers');
+import { AutoModel, AutoProcessor, env } from '@xenova/transformers';
 
 async function download() {
   console.log('Pre-downloading WavLM model...');

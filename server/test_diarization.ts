@@ -2,7 +2,12 @@
  * Diagnostic test for diarizeFromTranscript + full pipeline.
  * Run: node server/test_diarization.js
  */
-require('dotenv').config({ path: require('node:path').resolve(__dirname, '../.env') });
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = String(

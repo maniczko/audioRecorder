@@ -1,4 +1,12 @@
-import { existsSync, createReadStream, createWriteStream, statSync, mkdirSync } from 'node:fs';
+import {
+  existsSync,
+  createReadStream,
+  createWriteStream,
+  statSync,
+  mkdirSync,
+  readdirSync,
+  statfsSync,
+} from 'node:fs';
 import { unlink, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -19,8 +27,7 @@ function checkDiskSpace(
   minBytes: number = 100 * 1024 * 1024
 ): { ok: boolean; freeBytes?: number } {
   try {
-    const fs = require('node:fs');
-    const stats = fs.statfsSync ? fs.statfsSync(uploadDir) : null;
+    const stats = typeof statfsSync === 'function' ? statfsSync(uploadDir) : null;
 
     if (stats) {
       const freeBytes = stats.bavail * stats.bsize;
@@ -55,7 +62,7 @@ async function cleanupOldChunks(
   let bytesFreed = 0;
 
   try {
-    const files = require('node:fs').readdirSync(chunksDir);
+    const files = readdirSync(chunksDir);
     for (const file of files) {
       if (!file.endsWith('.chunk')) continue;
 

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { EventEmitter } from 'events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.example.test/v1' } = {}) {
@@ -27,8 +28,6 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
   vi.doMock('node:child_process', () => ({
     exec: vi.fn((cmd, opts, callback) => {
       (globalThis as any).__audioPipelineExecCalls += 1;
-      const fs = require('node:fs');
-      const path = require('node:path');
       const quoted = Array.from(String(cmd || '').matchAll(/"([^"]+)"/g)).map(
         (match: any) => match[1]
       );
@@ -47,7 +46,6 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
       return { stdout: { on: vi.fn() }, on: vi.fn() };
     }),
     spawn: vi.fn(() => {
-      const { EventEmitter } = require('events');
       const child = new EventEmitter();
       child.stdout = new EventEmitter();
       child.stdout.setEncoding = vi.fn();

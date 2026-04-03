@@ -1,6 +1,7 @@
 // Global test setup - runs before all tests
 import { vi } from 'vitest';
 import path from 'node:path';
+import { EventEmitter } from 'events';
 
 // Mock Supabase credentials for tests
 process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -138,7 +139,6 @@ vi.mock('node:child_process', () => ({
     return { stdout: { on: vi.fn() }, on: vi.fn() };
   }),
   spawn: vi.fn(() => {
-    const { EventEmitter } = require('events');
     const child = new EventEmitter();
     child.stdout = new EventEmitter();
     child.stdout.setEncoding = vi.fn();
