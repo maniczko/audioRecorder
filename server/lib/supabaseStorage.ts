@@ -110,22 +110,34 @@ export async function downloadAudioFromStorage(path: string): Promise<ArrayBuffe
 
 /**
  * Downloads a file from Supabase Storage directly to a local file path.
- * Uses streaming to avoid loading entire file into Node.js heap — critical for
- * large audio files on memory-constrained environments (Railway 512 MB).
+ * Uses signed URL + fetch streaming to avoid buffering entire file into Node.js heap.
+ * Critical for large audio files on memory-constrained environments (Railway).
  */
 export async function downloadAudioToFile(storagePath: string, destPath: string): Promise<void> {
   if (!supabase || !supabase.storage) {
     throw new Error('Supabase Storage not available (client or storage module missing).');
   }
 
-  const { data, error } = await supabase.storage.from('recordings').download(storagePath);
+  // Create a short-lived signed URL (60s) and stream via fetch — avoids Blob buffering
+  const { data: signedData, error: signedError } = await supabase.storage
+    .from('recordings')
+    .createSignedUrl(storagePath, 60);
 
-  if (error) {
-    throw new Error(`Failed to download from Supabase Storage: ${error.message}`);
+  if (signedError || !signedData?.signedUrl) {
+    throw new Error(
+      `Failed to create signed URL for Supabase Storage: ${signedError?.message || 'no URL returned'}`
+    );
   }
 
-  // Blob → ReadableStream → Node Readable → file on disk
-  const webStream = data.stream();
+  const response = await fetch(signedData.signedUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to download from Supabase Storage: HTTP ${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error('Supabase Storage returned empty response body.');
+  }
+
+  const webStream = response.body;
   const nodeReadable = Readable.fromWeb(webStream as any);
   const dest = createWriteStream(destPath);
   await pipeline(nodeReadable, dest);

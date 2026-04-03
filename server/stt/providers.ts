@@ -81,9 +81,10 @@ function createFormData(request: SttAudioRequest) {
 
   form.append(
     'file',
-    new File([new Uint8Array(audioBuffer)], safeFilename, {
+    new Blob([audioBuffer], {
       type: request.contentType || 'application/octet-stream',
-    }) as any
+    }),
+    safeFilename
   );
 
   Object.entries(request.fields || {}).forEach(([key, value]) => {

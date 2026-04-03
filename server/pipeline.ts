@@ -76,6 +76,15 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ── Memory diagnostics ────────────────────────────────────────────────────────
+function logMemory(stage: string) {
+  const mem = process.memoryUsage();
+  const fmt = (b: number) => (b / 1024 / 1024).toFixed(1);
+  console.log(
+    `[pipeline:memory] stage=${stage} rss=${fmt(mem.rss)}MB heap=${fmt(mem.heapUsed)}/${fmt(mem.heapTotal)}MB external=${fmt(mem.external)}MB arrayBuffers=${fmt(mem.arrayBuffers)}MB`
+  );
+}
+
 // ── Config ────────────────────────────────────────────────────────────────────
 const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
@@ -138,6 +147,7 @@ async function runTranscriptionAttempt(
   };
 
   try {
+    logMemory('pipeline-start');
     if (!workingFilePath) throw new Error('Brak ścieżki do pliku audio.');
 
     if (!options.workingFilePath && isRemoteAudioPath(workingFilePath)) {
@@ -161,6 +171,7 @@ async function runTranscriptionAttempt(
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
       await downloadAudioToFile(workingFilePath, tempFilePath);
       workingFilePath = tempFilePath;
+      logMemory('after-download');
     }
 
     if (!fs.existsSync(workingFilePath)) {
@@ -288,6 +299,7 @@ async function runTranscriptionAttempt(
         temperature: whisperTemperature,
       };
 
+      logMemory('before-transcription');
       notify(40, 'Transkrypcja AI rozkłada pętle paczek...');
 
       let whisperPayload: any = null;
@@ -327,6 +339,7 @@ async function runTranscriptionAttempt(
               fields,
               options
             );
+            logMemory('after-chunked-transcription');
             whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
             sttProviderInfo = whisperPayload?.sttProviderInfo || null;
             transcriptionDiagnostics = {

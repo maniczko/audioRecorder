@@ -700,7 +700,7 @@ export async function transcribeInChunks(
             hasText: false,
           };
 
-          const buffer = await extractAudioSegmentMemory(
+          let buffer = await extractAudioSegmentMemory(
             filePath,
             currentOffset,
             CHUNK_DURATION_SECONDS,
@@ -765,6 +765,8 @@ export async function transcribeInChunks(
               diagnostics.providerLabel = sttResult?.providerLabel || '';
               diagnostics.providerModel = sttResult?.model || '';
               diagnostics.sttFailed = false;
+              // Release audio buffer immediately after successful STT to reduce heap pressure
+              buffer = null as any;
               return { payload, offsetSeconds: currentOffset, diagnostics, sttResult };
             } catch (error: any) {
               diagnostics.sentToStt = true;
@@ -780,6 +782,8 @@ export async function transcribeInChunks(
               }
             }
           }
+          // Release audio buffer after all STT attempts exhausted
+          buffer = null as any;
           return { payload: null, offsetSeconds: currentOffset, diagnostics };
         })()
       );
@@ -787,6 +791,12 @@ export async function transcribeInChunks(
 
     const results = await Promise.all(batchPromises);
     payloads.push(...results.filter(Boolean));
+
+    // Log memory after each batch for OOM diagnostics
+    const mem = process.memoryUsage();
+    console.log(
+      `[transcription:memory] batch=${payloads.length} rss=${(mem.rss / 1024 / 1024).toFixed(1)}MB heap=${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB`
+    );
 
     // Free memory between batches — critical for preventing OOM on Railway
     if (typeof globalThis.gc === 'function') globalThis.gc();
