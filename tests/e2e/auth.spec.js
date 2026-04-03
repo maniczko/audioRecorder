@@ -81,7 +81,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
 
     // Log out via Profile
-    await page.locator('.settings-button').click();
+    await page.locator('[title="Ustawienia profilu"]').click();
     await page.getByRole('button', { name: 'Wyloguj' }).click();
 
     // Back to auth screen
@@ -109,7 +109,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
 
     // Log out
     await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
-    await page.locator('.settings-button').click();
+    await page.locator('[title="Ustawienia profilu"]').click();
     await page.getByRole('button', { name: 'Wyloguj' }).click();
 
     // Try wrong password
