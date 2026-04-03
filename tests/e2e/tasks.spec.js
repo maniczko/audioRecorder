@@ -60,7 +60,7 @@ test.describe('Tasks — CRUD zadan', () => {
       .click();
 
     // Find title input in the details panel and update it
-    const titleInput = page.locator(".todo-details label:has-text('Tytul') input").first();
+    const titleInput = page.locator('.todo-detail-title-input');
     await titleInput.waitFor({ state: 'visible' });
     await titleInput.fill('Zadanie po edycji');
     await titleInput.press('Tab');
@@ -81,11 +81,9 @@ test.describe('Tasks — CRUD zadan', () => {
       .filter({ hasText: 'Zadanie do usuniecia' })
       .click();
 
-    // Delete via button in details panel
-    const deleteButton = page
-      .locator('.todo-details button')
-      .filter({ hasText: /usun|ukryj/i })
-      .last();
+    // Delete via button in details panel (aria-label="Usun zadanie", triggers window.confirm)
+    page.on('dialog', (dialog) => dialog.accept());
+    const deleteButton = page.locator('[aria-label="Usun zadanie"]');
     await deleteButton.click();
 
     await expect(

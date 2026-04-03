@@ -16,10 +16,10 @@ test.describe('StudioMeetingView — zakładki i AI', () => {
     await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle);
   });
 
-  test('Zadania tab is the default active tab', async ({ page }) => {
-    // Assert that 'Zadania' pill has the active class correctly
-    const tasksTab = page.locator('.ff-int-tab.active');
-    await expect(tasksTab).toHaveText('Zadania');
+  test('Podsumowanie spotkania is the default active tab', async ({ page }) => {
+    // Default tab is 'summary' (Podsumowanie spotkania) per studioAnalysisTab useState('summary')
+    const activeTab = page.locator('.ff-int-tab.active');
+    await expect(activeTab).toHaveText('Podsumowanie spotkania');
   });
 
   test('Clicking Podsumowanie switches away from Zadania', async ({ page }) => {
