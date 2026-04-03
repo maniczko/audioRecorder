@@ -2,6 +2,62 @@
 
 ## Zrealizowane Zadania
 
+## [2026-04-03] #GH-AUTO: Fix 9 GitHub Actions CI/CD errors
+
+Status: `done` ✅
+
+### Naprawione zadania:
+
+- **GH-AUTO-2026-04-03-1, GH-AUTO-2026-04-03-4** — Auto-Fix Test Failures / Optimized CI: Remote workspace bootstrap failed
+  - Fix: corrected failure detection logic in `.github/workflows/auto-fix.yml`
+  - Commits: `004fcffe`
+
+- **GH-AUTO-2026-04-03-2, GH-AUTO-2026-04-03-6, GH-AUTO-2026-04-03-7, GH-AUTO-2026-04-03-8, GH-AUTO-2026-04-03-9** — Docker Build: Node.js not found
+  - Fix: `--entrypoint=""` → `--entrypoint /bin/sh -c "node --version"` w `.github/workflows/docker-build.yml`
+  - Commits: `004fcffe`
+
+- **GH-AUTO-2026-04-03-3** — CI/CD Pipeline: PARSE_ERROR
+  - Fix: dodano brakujące zmienne `VITE_*` do `validate-env.js` w `.github/workflows/ci.yml`
+  - Commits: `004fcffe`
+
+- **GH-AUTO-2026-04-03-5** — Optimized CI: CRITICAL_FAILED logic
+  - Fix: corrected CRITICAL_FAILED detection logic
+  - Commits: `004fcffe`
+
+- **GH-PROFILE-MOCK** — Dodano brakujące eksporty do vi.mock
+  - Commits: `b6693393`
+
+- **GH-DOCKER-PNPM** — Usunięto pnpm check z Docker runtime
+  - Commits: `b6693393`
+
+- **GH-COVERAGE-LOW** — Wyrównano progi .js do .ts (55/50/55/48)
+  - Commits: `ee334eaa`
+
+- **GH-CSP-CLARITY** — Dodano clarity.ms do CSP + guard
+  - Commits: `f3f3dce7`
+
+- **GH-HUSKY-WIN** — Naprawiono core.hooksPath (.husky/_ → .husky)
+  - Commits: `b6693393`
+
+- **GH-RAILWAY-STALE** — Railway wdrożony via `railway up` (buildTime 2026-04-03T12:15:06Z)
+  - Commits: `b6693393`
+
+- **GH-CLIENT-ERRORS-SILENT** — Endpoint działa end-to-end (POST + GET + DELETE zweryfikowane)
+  - Commits: `c6371e32`
+
+- **GH-SECURITY-REQUIRE** — Zamieniono require() na ESM import we wszystkich plikach serwera
+  - Commits: `c6371e32`
+
+### Rezultat:
+
+- ✅ Docker Build: binaria weryfikowane przez `/bin/sh`
+- ✅ Auto-Fix: poprawna detekcja błędów
+- ✅ CI/CD Pipeline: wszystkie zmienne VITE_* dostępne
+- ✅ Optimized CI: CRITICAL_FAILED działa poprawnie
+- ✅ Wszystkie 9 zadań zamkniętych, TASK_QUEUE wyczyszczony
+
+---
+
 ## [2026-04-02] #GH-AUTO: Fix 7 auto-generated CI/CD errors
 
 Status: `done` ✅
