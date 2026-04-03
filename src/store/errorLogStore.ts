@@ -135,4 +135,14 @@ if (typeof window !== 'undefined') {
     );
   };
   console.info('[VoiceLog] error auto-send active, API_BASE_URL =', API_BASE_URL);
+
+  // On startup, queue any existing errors from localStorage that haven't been sent yet
+  setTimeout(() => {
+    const stored = useErrorLogStore.getState().errors;
+    if (stored.length > 0 && pendingErrors.length === 0) {
+      console.info(`[VoiceLog] queueing ${stored.length} existing errors from localStorage`);
+      pendingErrors.push(...stored);
+      scheduleFlush();
+    }
+  }, 3000);
 }
