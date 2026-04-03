@@ -300,6 +300,15 @@ export const useRecorderStore = create<any>()(
         if (!nextItem) {
           const blocked = getNextPendingRecordingQueueItem(state.recordingQueue);
           if (blocked && !resolveMeetingForQueueItem(blocked)?.id) {
+            // Give hydration / state sync time before permanently failing.
+            // The meeting may not yet be in userMeetingsRef after page reload.
+            const attempts = blocked.attempts || 0;
+            if (attempts < 3) {
+              get().updateQueueItem(blocked.recordingId, {
+                attempts: attempts + 1,
+              });
+              return;
+            }
             get().updateQueueItem(blocked.recordingId, {
               status: 'failed',
               errorMessage: 'Nie znaleziono spotkania.',

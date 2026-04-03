@@ -100,12 +100,24 @@ describe('recorderStore', () => {
     expect(useRecorderStore.getState().retryStoredRecording({ id: 'm1' }, null)).toBeNull();
   });
 
-  test('fails blocked queue item when meeting cannot be resolved', async () => {
+  test('retries blocked queue item before failing when meeting cannot be resolved', async () => {
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
-      recordingQueue: [{ recordingId: 'rec1', status: 'queued', uploaded: false }],
+      recordingQueue: [{ recordingId: 'rec1', status: 'queued', uploaded: false, attempts: 0 }],
     });
 
+    // First 3 calls should increment attempts without failing
+    for (let i = 0; i < 3; i++) {
+      await useRecorderStore.getState().processQueue(() => null, vi.fn(), vi.fn());
+    }
+
+    // After 3 retries, the item should still be queued (not yet failed)
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: 'queued',
+      attempts: 3,
+    });
+
+    // 4th call should mark as failed
     await useRecorderStore.getState().processQueue(() => null, vi.fn(), vi.fn());
 
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
@@ -113,6 +125,70 @@ describe('recorderStore', () => {
       errorMessage: 'Nie znaleziono spotkania.',
     });
     expect(useRecorderStore.getState().analysisStatus).toBe('error');
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Queue item immediately fails with "Nie znaleziono spotkania"
+  // Date: 2026-04-03
+  // Bug: processQueue marked items as failed on first attempt if meeting wasn't
+  //      yet in userMeetingsRef (race condition after import/page reload)
+  // Fix: retry 3 times before permanently failing, giving hydration time
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — processQueue race condition with meeting resolution', () => {
+    test('does not immediately fail queue item when meeting is temporarily unavailable', async () => {
+      const { useRecorderStore } = await import('./recorderStore');
+      useRecorderStore.setState({
+        recordingQueue: [
+          {
+            recordingId: 'rec_import',
+            status: 'queued',
+            uploaded: false,
+            attempts: 0,
+            meetingId: 'm_new',
+          },
+        ],
+      });
+
+      // Simulate meeting not yet hydrated
+      await useRecorderStore.getState().processQueue(() => null, vi.fn(), vi.fn());
+
+      const item = useRecorderStore.getState().recordingQueue[0];
+      expect(item.status).toBe('queued');
+      expect(item.attempts).toBe(1);
+      expect(item.errorMessage || '').not.toBe('Nie znaleziono spotkania.');
+    });
+
+    test('succeeds when meeting becomes available after initial miss', async () => {
+      const { useRecorderStore } = await import('./recorderStore');
+      useRecorderStore.setState({
+        recordingQueue: [
+          {
+            recordingId: 'rec_import2',
+            status: 'queued',
+            uploaded: false,
+            attempts: 1,
+            meetingId: 'm_new',
+          },
+        ],
+      });
+
+      // Meeting now available — resolver returns it
+      const resolver = (item: any) =>
+        item.meetingId === 'm_new' ? { id: 'm_new', workspaceId: 'ws1' } : null;
+
+      // processQueue should find the item now (canProcess returns true)
+      // It will proceed to processing — we just verify it doesn't fail
+      const { getAudioBlob } = await import('../lib/audioStore');
+      (getAudioBlob as any).mockResolvedValueOnce(null);
+      const { createMediaService } = await import('../services/mediaService');
+      (createMediaService as any).mockReturnValue({ mode: 'local' });
+
+      await useRecorderStore.getState().processQueue(resolver, vi.fn(), vi.fn());
+
+      const item = useRecorderStore.getState().recordingQueue[0];
+      // It should NOT be 'failed' with meeting error — it proceeds into the normal flow
+      expect(item.errorMessage).not.toBe('Nie znaleziono spotkania.');
+    });
   });
 
   test('fails queue item when local audio blob is missing', async () => {
