@@ -380,13 +380,13 @@ describe('Regression: Issue #601 - embedTextChunks error handling', () => {
   });
 
   test('embedTextChunks returns empty array when OPENAI_API_KEY not configured', async () => {
-    vi.resetModules();
     vi.doMock('../config', () => ({
       config: {
         OPENAI_API_KEY: '',
         OPENAI_BASE_URL: '',
       },
     }));
+    vi.resetModules();
 
     const module = await import('../../postProcessing');
 
