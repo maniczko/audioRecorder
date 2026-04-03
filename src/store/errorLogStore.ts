@@ -29,9 +29,15 @@ const FLUSH_DELAY_MS = 5000; // batch & send every 5s
 let isFlushing = false;
 
 async function sendErrorsToServer(errors: ErrorLogEntry[]): Promise<boolean> {
-  if (!apiBaseUrlConfigured() || errors.length === 0) return false;
+  if (!apiBaseUrlConfigured() || errors.length === 0) {
+    if (errors.length > 0) {
+      console.warn('[VoiceLog] auto-send skipped — API not configured');
+    }
+    return false;
+  }
   try {
-    const resp = await fetch(`${API_BASE_URL}/api/client-errors`, {
+    const url = `${API_BASE_URL}/api/client-errors`;
+    const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
@@ -41,9 +47,12 @@ async function sendErrorsToServer(errors: ErrorLogEntry[]): Promise<boolean> {
         }))
       ),
     });
+    if (!resp.ok) {
+      console.warn(`[VoiceLog] auto-send failed: ${resp.status} ${resp.statusText}`);
+    }
     return resp.ok;
-  } catch {
-    // Silently fail — error reporting should never break the app
+  } catch (err) {
+    console.warn('[VoiceLog] auto-send error:', err);
     return false;
   }
 }
@@ -115,3 +124,15 @@ export const useErrorLogStore = create<ErrorLogState>()(
     }
   )
 );
+
+// Expose manual flush for debugging (browser console: __voicelogFlush())
+if (typeof window !== 'undefined') {
+  (window as any).__voicelogFlush = async () => {
+    const store = useErrorLogStore.getState();
+    await store.flushToServer();
+    console.info(
+      `[VoiceLog] flushed. pending=${pendingErrors.length}, stored=${store.errors.length}`
+    );
+  };
+  console.info('[VoiceLog] error auto-send active, API_BASE_URL =', API_BASE_URL);
+}
