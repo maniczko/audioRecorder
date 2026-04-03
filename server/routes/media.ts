@@ -753,29 +753,49 @@ Important:
 - use a 4:3 composition
 - prioritize visual clarity over dense text`;
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': process.env.GEMINI_API_KEY,
+      const geminiUrl =
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+      const geminiBody = JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: {
+            aspectRatio: '4:3',
+            imageSize: '4K',
           },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseModalities: ['TEXT', 'IMAGE'],
-              imageConfig: {
-                aspectRatio: '4:3',
-                imageSize: '4K',
-              },
-              thinkingConfig: {
-                thinkingLevel: 'medium',
-              },
-            },
-          }),
+          thinkingConfig: {
+            thinkingLevel: 'medium',
+          },
+        },
+      });
+      const geminiHeaders = {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY!,
+      };
+
+      const MAX_RETRIES = 2;
+      const RETRY_DELAYS = process.env.NODE_ENV === 'test' ? [10, 10] : [5000, 15000];
+      let lastRes: Response | null = null;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        lastRes = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: geminiHeaders,
+          body: geminiBody,
+        });
+
+        if (lastRes.ok || (lastRes.status !== 429 && lastRes.status !== 503)) break;
+
+        if (attempt < MAX_RETRIES) {
+          const delay = RETRY_DELAYS[attempt] || 15000;
+          logger.warn(
+            `Gemini ${lastRes.status} for recording ${recordingId}, retry ${attempt + 1}/${MAX_RETRIES} in ${delay / 1000}s`
+          );
+          await new Promise((r) => setTimeout(r, delay));
         }
-      );
+      }
+
+      const res = lastRes!;
 
       if (!res.ok) {
         const errBody = await res.text();

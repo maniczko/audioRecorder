@@ -343,7 +343,11 @@ export async function analyzeAcousticFeatures(filePath: string, options: any = {
     throw new Error('Plik audio nie istnieje.');
   }
   if (!fs.existsSync(ACOUSTIC_FEATURES_SCRIPT)) {
-    throw new Error('Brak skryptu acoustic_features.py.');
+    const err: any = new Error(
+      'Analiza akustyczna niedostepna — brak skryptu acoustic_features.py.'
+    );
+    err.statusCode = 501;
+    throw err;
   }
 
   return new Promise((resolve, reject) => {

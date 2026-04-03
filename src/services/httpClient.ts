@@ -97,6 +97,10 @@ function normalizeApiErrorMessage(message = '', status?: number) {
     return 'Zbyt wiele prob. Sprobuj ponownie za chwile.';
   }
 
+  if (status === 501) {
+    return 'Funkcja niedostepna na serwerze.';
+  }
+
   if (status === 502 || status === 503) {
     return 'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.';
   }
