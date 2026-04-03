@@ -43,6 +43,15 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
 - **GH-RAILWAY-STALE** ✅ — Railway wdrożony via `railway up` (buildTime 2026-04-03T12:15:06Z)
 - **GH-CLIENT-ERRORS-SILENT** ✅ — Endpoint działa end-to-end (POST + GET + DELETE zweryfikowane)
 - **GH-SECURITY-REQUIRE** ✅ — Zamieniono require() na ESM import we wszystkich plikach serwera (commit c6371e32)
+- **GH-AUTO-2026-04-03-1** ✅ — Fix Auto-Fix Test Failures: corrected failure detection logic (commit 004fcffe)
+- **GH-AUTO-2026-04-03-2** ✅ — Fix Docker Build: use /bin/sh entrypoint for binary verification (commit 004fcffe)
+- **GH-AUTO-2026-04-03-3** ✅ — Fix CI/CD Pipeline: added missing VITE_* env vars to validate-env.js (commit 004fcffe)
+- **GH-AUTO-2026-04-03-4** ✅ — Fix Optimized CI: corrected failure detection logic (commit 004fcffe)
+- **GH-AUTO-2026-04-03-5** ✅ — Fix Optimized CI: corrected CRITICAL_FAILED logic (commit 004fcffe)
+- **GH-AUTO-2026-04-03-6** ✅ — Fix Docker Build: use /bin/sh entrypoint for binary verification (commit 004fcffe)
+- **GH-AUTO-2026-04-03-7** ✅ — Fix Docker Build: use /bin/sh entrypoint for binary verification (commit 004fcffe)
+- **GH-AUTO-2026-04-03-8** ✅ — Fix Docker Build: use /bin/sh entrypoint for binary verification (commit 004fcffe)
+- **GH-AUTO-2026-04-03-9** ✅ — Fix Docker Build: use /bin/sh entrypoint for binary verification (commit 004fcffe)
 
 ### TODO
 
