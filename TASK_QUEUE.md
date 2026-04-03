@@ -373,3 +373,44 @@ Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
+
+
+<!-- Auto-generated on 2026-04-03T07:07:29.383Z -->
+
+### GitHub Actions Errors (4 found)
+
+- **GH-AUTO-2026-04-03-1** — Fix Docker Build failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T07:06:47.6964035Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "❌ Node.js not found" && exit 1)[0m
+2026-04-03T07:06:47.6965720Z [36;1mdocker run --rm --ent...
+  - **Created:** 2026-04-03T07:07:29.383Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T06:40:19.2743821Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T06:40:19.2761593Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T06:40:19.2779...
+  - **Created:** 2026-04-03T07:07:29.383Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T06:28:49.7375089Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T06:28:49.7398640Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T06:28:49.7419...
+  - **Created:** 2026-04-03T07:07:29.383Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-03-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-03T02:13:25.7202068Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T02:13:25.7223580Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
+2026-04-03T02:13:25.7240...
+  - **Created:** 2026-04-03T07:07:29.383Z
+  - **Priority:** High
+
