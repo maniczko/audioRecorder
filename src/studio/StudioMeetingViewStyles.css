@@ -3470,7 +3470,7 @@
 }
 
 .fireflies-segment-spaced {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .ff-speaker-picker-inline {
@@ -3497,13 +3497,27 @@
   border-color: #e5e7eb;
 }
 
+[data-theme='dark'] .ff-speaker-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 .ff-speaker-trigger:hover .fireflies-speaker {
   color: #4f46e5;
+}
+
+[data-theme='dark'] .ff-speaker-trigger:hover .fireflies-speaker {
+  color: #a78bfa;
 }
 
 .ff-speaker-trigger:hover .fireflies-chevron {
   opacity: 1;
   color: #4f46e5;
+}
+
+[data-theme='dark'] .ff-speaker-trigger:hover .fireflies-chevron {
+  opacity: 1;
+  color: #a78bfa;
 }
 
 .ff-rec-pulse-ring-sm {

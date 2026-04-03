@@ -3286,6 +3286,9 @@ export default function StudioMeetingView({
                           >
                             {formatDuration(Math.floor(seg.timestamp))}
                           </button>
+                          <label className="fireflies-select" title="Zaznacz">
+                            <input type="checkbox" />
+                          </label>
                         </div>
                         <div className="fireflies-text-area">
                           <textarea
@@ -3300,7 +3303,12 @@ export default function StudioMeetingView({
                         </div>
 
                         <div className="fireflies-actions">
-                          <button type="button" className="icon-button" aria-label="Copy">
+                          <button
+                            type="button"
+                            className="icon-button"
+                            aria-label="Copy"
+                            title="Kopiuj"
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               width="14"
@@ -3320,6 +3328,7 @@ export default function StudioMeetingView({
                             type="button"
                             className="icon-button"
                             aria-label="Create Soundbite"
+                            title="Soundbite"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -3337,9 +3346,6 @@ export default function StudioMeetingView({
                               <line x1="12" x2="12" y1="19" y2="22" />
                             </svg>
                           </button>
-                          <label className="fireflies-select" title="Zaznacz">
-                            <input type="checkbox" />
-                          </label>
                         </div>
                       </div>
                     </div>
