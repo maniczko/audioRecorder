@@ -9,6 +9,8 @@ import {
   upsertMeeting,
 } from '../lib/meeting';
 import { createId } from '../lib/storage';
+import { apiRequest } from '../services/httpClient';
+import { remoteApiEnabled } from '../services/config';
 
 const MEETING_DRAFT_FIELDS = [
   'title',
@@ -383,6 +385,62 @@ export default function useMeetingLifecycle({
     setMeetingDraftState(freshDraft);
     setWorkspaceMessage('');
   }
+
+  // -- Auto-hydrate empty transcript from server when recording is done but transcript is missing --
+  const hydrateAttemptedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!selectedMeeting || !selectedRecording) return;
+    if (!remoteApiEnabled()) return;
+
+    const hasTranscript =
+      Array.isArray(selectedRecording.transcript) && selectedRecording.transcript.length > 0;
+    const isDone = selectedRecording.pipelineStatus === 'done';
+    if (hasTranscript || !isDone) return;
+    if (hydrateAttemptedRef.current.has(selectedRecording.id)) return;
+
+    hydrateAttemptedRef.current.add(selectedRecording.id);
+    const meetingId = selectedMeeting.id;
+    const recordingId = selectedRecording.id;
+
+    apiRequest(`/media/recordings/${recordingId}/transcribe`, { method: 'GET', retries: 2 })
+      .then((response: any) => {
+        const segments = Array.isArray(response?.segments) ? response.segments : [];
+        if (!segments.length) return;
+
+        setMeetings((prev: any[]) =>
+          prev.map((m: any) => {
+            if (m.id !== meetingId) return m;
+            return {
+              ...m,
+              recordings: (m.recordings || []).map((r: any) => {
+                if (r.id !== recordingId) return r;
+                return {
+                  ...r,
+                  transcript: segments,
+                  speakerNames: response?.speakerNames || r.speakerNames || {},
+                  speakerCount: response?.speakerCount || r.speakerCount || 0,
+                  diarizationConfidence: response?.confidence || r.diarizationConfidence || 0,
+                };
+              }),
+              updatedAt: new Date().toISOString(),
+            };
+          })
+        );
+      })
+      .catch((err: any) => {
+        console.warn(
+          '[hydrate] Failed to fetch transcript for recording',
+          recordingId,
+          err?.message
+        );
+      });
+  }, [
+    selectedMeeting?.id,
+    selectedRecording?.id,
+    selectedRecording?.pipelineStatus,
+    selectedRecording?.transcript?.length,
+    setMeetings,
+  ]);
 
   return {
     meetingDraft,

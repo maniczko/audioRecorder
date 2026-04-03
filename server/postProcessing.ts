@@ -175,9 +175,6 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-        // HTTP/2 + keep-alive for connection reuse (#320)
-        Connection: 'keep-alive',
-        'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -217,9 +214,6 @@ export async function embedTextChunks(texts: string[]) {
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-        // HTTP/2 + keep-alive for connection reuse (#320)
-        Connection: 'keep-alive',
-        'Keep-Alive': 'timeout=5, max=100',
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
