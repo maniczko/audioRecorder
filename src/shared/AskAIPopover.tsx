@@ -87,7 +87,12 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Szukaj kontekstu z każdego spotkania z twojej bazy danych..."
+          placeholder={
+            !currentWorkspace?.id
+              ? 'Brak wybranej przestrzeni roboczej'
+              : 'Szukaj kontekstu z każdego spotkania z twojej bazy danych...'
+          }
+          disabled={!currentWorkspace?.id}
           style={{
             fontSize: '0.95rem',
             padding: '16px 56px 16px 16px',
@@ -96,8 +101,10 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
             border: '2px solid rgba(255,255,255,0.1)',
             color: '#fff',
             width: '100%',
+            opacity: !currentWorkspace?.id ? 0.5 : 1,
+            cursor: !currentWorkspace?.id ? 'not-allowed' : 'text',
           }}
-          autoFocus
+          autoFocus={!!currentWorkspace?.id}
         />
         <button
           type="submit"

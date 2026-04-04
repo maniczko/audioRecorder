@@ -1217,3 +1217,23 @@ describe('Regression: #0 — TranscriptionService stale job cleanup', () => {
     expect(startTimes.size).toBe(1);
   });
 });
+
+// Issue #0 - audio download 404s when file_path is stale after redeploy
+// Date: 2026-04-04
+// Bug: GET /media/recordings/:id/audio only tried the stored file_path
+//      or its basename. If Supabase still had the canonical recordingId
+//      key, playback failed even though the asset existed remotely.
+// Fix: Build remote storage candidates from basename plus a sanitized
+//      recordingId + extension derived from the content type.
+describe('Regression: #0 - audio fallback reconstructs Supabase key', () => {
+  test('buildRemoteAudioStorageCandidates includes basename and canonical recording key', async () => {
+    const { buildRemoteAudioStorageCandidates } = await import('../../routes/media.ts');
+
+    expect(
+      buildRemoteAudioStorageCandidates('recording:abc-123', {
+        file_path: '/tmp/uploads/legacy-name.webm',
+        content_type: 'audio/webm',
+      })
+    ).toEqual(['legacy-name.webm', 'recording_abc-123.webm']);
+  });
+});

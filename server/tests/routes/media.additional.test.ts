@@ -1,5 +1,107 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Audio assets returning 404 for existing recordings
+// Date: 2026-04-04
+// Bug: Odtwarzanie niektórych nagrań zwraca 404, co sugeruje brak wpisu w media_assets,
+//      zły file_path, brak pliku po deployu albo niezgodny recordingId.
+// Fix: Dodano test regresji weryfikujący różne scenariusze 404 i lepsze logowanie.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Audio assets 404 diagnostics', () => {
+  let createApp: any;
+  let mockAuthService: any;
+  let mockWorkspaceService: any;
+  let mockTranscriptionService: any;
+
+  beforeEach(async () => {
+    vi.resetModules();
+
+    mockAuthService = {
+      getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
+    };
+    mockWorkspaceService = {
+      getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+    };
+    mockTranscriptionService = {
+      upsertMediaAsset: vi.fn().mockResolvedValue({ id: 'asset1' }),
+      analyzeMeetingWithOpenAI: vi.fn().mockResolvedValue({ summary: 'test' }),
+      _execute: vi.fn(),
+    };
+
+    const { createApp: createAppFn } = await import('../../app.ts');
+    createApp = createAppFn;
+  }, 15000);
+
+  test('returns 404 when media asset does not exist in database', async () => {
+    mockTranscriptionService.getMediaAsset = vi.fn().mockResolvedValue(null);
+
+    const app = createApp({
+      authService: mockAuthService,
+      workspaceService: mockWorkspaceService,
+      transcriptionService: mockTranscriptionService,
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+    });
+
+    const res = await app.request('/media/recordings/rec_missing/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.message).toBe('Nie znaleziono nagrania.');
+  });
+
+  test('returns 404 when local file missing and Supabase fallback also fails', async () => {
+    mockTranscriptionService.getMediaAsset = vi.fn().mockResolvedValue({
+      id: 'rec_local',
+      workspace_id: 'ws1',
+      file_path: '/tmp/uploads/missing.webm',
+      content_type: 'audio/webm',
+    });
+
+    const app = createApp({
+      authService: mockAuthService,
+      workspaceService: mockWorkspaceService,
+      transcriptionService: mockTranscriptionService,
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+    });
+
+    const res = await app.request('/media/recordings/rec_local/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    // In test environment, file won't exist, so should get 404 or 500
+    expect([404, 500]).toContain(res.status);
+  });
+
+  test('handles Supabase path correctly when storage not configured', async () => {
+    mockTranscriptionService.getMediaAsset = vi.fn().mockResolvedValue({
+      id: 'rec_supabase',
+      workspace_id: 'ws1',
+      file_path: 'recordings/audio.webm', // Short path = Supabase
+      content_type: 'audio/webm',
+    });
+
+    const app = createApp({
+      authService: mockAuthService,
+      workspaceService: mockWorkspaceService,
+      transcriptionService: mockTranscriptionService,
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+    });
+
+    const res = await app.request('/media/recordings/rec_supabase/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    // Should return 500 when Supabase fails, not silently return 200
+    // (In test env, Supabase won't be configured, so expect error)
+    expect([404, 500]).toContain(res.status);
+  });
+});
+
 describe('Media Routes - Additional Coverage', () => {
   let createApp: any;
   let mockAuthService: any;
