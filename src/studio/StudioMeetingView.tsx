@@ -42,6 +42,7 @@ function SpeakerDropdown({
   nextSpeakerId,
   displaySpeakerNames,
   onReassign,
+  onReassignAll,
   onRename,
   onClose,
 }) {
@@ -70,53 +71,61 @@ function SpeakerDropdown({
       {speakers.map((sp) => {
         const isCurrent = sp.id === currentSpeakerId;
         return (
-          <button
-            key={sp.id}
-            type="button"
-            role="menuitem"
-            className={`ff-speaker-dropdown-item${isCurrent ? ' current' : ''}`}
-            onClick={() => {
-              if (!isCurrent) onReassign(sp.id);
-            }}
-          >
-            <span className="ff-spk-dot" style={{ background: getSpeakerColor(sp.id) }} />
-            <span className="ff-spk-label">{sp.name}</span>
-            {isCurrent ? (
-              <svg
-                className="ff-spk-check"
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
+          <div key={sp.id} className="ff-speaker-dropdown-split">
+            <button
+              type="button"
+              role="menuitem"
+              className={`ff-speaker-dropdown-item${isCurrent ? ' current' : ''}`}
+              onClick={() => {
+                if (!isCurrent) onReassign(sp.id);
+              }}
+            >
+              <span className="ff-spk-dot" style={{ background: getSpeakerColor(sp.id) }} />
+              <span className="ff-spk-label">{sp.name}</span>
+              {isCurrent ? (
+                <svg
+                  className="ff-spk-check"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2 6l3 3 5-5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : null}
+            </button>
+            {!isCurrent && typeof onReassignAll === 'function' ? (
+              <button
+                type="button"
+                className="ff-speaker-dropdown-action-all"
+                onClick={() => onReassignAll(sp.id)}
+                title="Przypisz do wszystkich wystąpień"
+                aria-label="Przypisz do wszystkich wystąpień"
               >
-                <path
-                  d="M2 6l3 3 5-5"
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="ff-spk-arrow"
-                width="10"
-                height="10"
-                viewBox="0 0 10 10"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M3 5h4M5 3l2 2-2 2"
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </button>
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7M5 18l4 4L19 12"
+                  />
+                </svg>
+              </button>
+            ) : null}
+          </div>
         );
       })}
       <div className="ff-speaker-dropdown-divider" />
@@ -156,6 +165,7 @@ SpeakerDropdown.propTypes = {
   nextSpeakerId: PropTypes.string,
   displaySpeakerNames: PropTypes.object,
   onReassign: PropTypes.func,
+  onReassignAll: PropTypes.func,
   onRename: PropTypes.func,
   onClose: PropTypes.func,
 };
@@ -1292,6 +1302,21 @@ export default function StudioMeetingView({
       setSpeakerDropdownSegId(null);
     },
     [updateTranscriptSegment]
+  );
+
+  // Reassign all segments of a speaker to a different speaker
+  const reassignAllSegmentSpeaker = useCallback(
+    (oldSpeakerId, newSpeakerId) => {
+      if (typeof updateTranscriptSegment === 'function') {
+        transcript.forEach((s) => {
+          if (String(s.speakerId) === String(oldSpeakerId)) {
+            updateTranscriptSegment(s.id, { speakerId: newSpeakerId });
+          }
+        });
+      }
+      setSpeakerDropdownSegId(null);
+    },
+    [transcript, updateTranscriptSegment]
   );
 
   const showVoiceProfileToast = useCallback((speakerName) => {
@@ -3274,7 +3299,7 @@ export default function StudioMeetingView({
                           <div className="ff-speaker-picker-wrap ff-speaker-picker-inline">
                             {renamingSpeakerId === String(seg.speakerId) ? (
                               <input
-                                className={`ff-speaker-rename-input${renameDuplicate ? ' is-duplicate' : ''}`}
+                                className={`ff-speaker-rename-input ff-speaker-input-highlight${renameDuplicate ? ' is-duplicate' : ''}`}
                                 autoFocus
                                 value={renameValue}
                                 size={Math.max(8, renameValue.length + 2)}
@@ -3345,6 +3370,9 @@ export default function StudioMeetingView({
                                     nextSpeakerId={nextSpeakerId}
                                     displaySpeakerNames={displaySpeakerNames}
                                     onReassign={(newId) => reassignSegmentSpeaker(seg.id, newId)}
+                                    onReassignAll={(newId) =>
+                                      reassignAllSegmentSpeaker(seg.speakerId, newId)
+                                    }
                                     onRename={(sid) => {
                                       setSpeakerDropdownSegId(null);
                                       setRenamingSpeakerId(String(sid));
