@@ -119,3 +119,9 @@ server/data/
 
 # LangGraph API
 .langgraph_api
+
+# Service error logs
+github-errors/
+railway-errors/
+sentry-errors/
+vercel-errors/
