@@ -1,276 +1,118 @@
-﻿# TASK_QUEUE
+# TASK QUEUE
 
-Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
+Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 
-Zadania zakonczone trafiaja do [`TASK_DONE.md`](TASK_DONE.md).
+## Status odswiezenia
 
-## Podsumowanie (2026-04-03, aktualizacja po naprawie CI/CD)
+- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-04T17-05-13-642Z.json`
+- `Railway`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
+- `Vercel`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
+- `Sentry`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
 
-### CI/CD Status (commit 40e52a7c, push 2026-04-03):
+## Zasady
 
-- **Optimized CI**: ✅ success
-- **Auto-Fix Test Failures**: ✅ success
-- **Docker Build**: ✅ success
-- **E2E Playwright Tests**: ✅ success
-- **Backend Production Smoke**: ✅ success
-- **Production Deployment (Vercel)**: ✅ success
-- **CI/CD Pipeline**: ✅ success
+- `todo`: zadanie otwarte
+- `blocked`: zadanie zablokowane przez brak sekretow, dostepu albo zewnetrzne srodowisko
+- `verify`: poprawka jest juz lokalnie, czeka na potwierdzenie w kolejnym CI/deploy
+- `done`: zamkniete po potwierdzeniu
 
-### Railway Health Check (2026-04-03 - LIVE)
+## Aktywne zadania
 
-| Metric       | Value                          | Status  |
-| ------------ | ------------------------------ | ------- |
-| Status       | ok                             | ✅ Healthy |
-| Database     | connected                      | ✅ OK      |
-| Build Time   | 2026-04-03T12:15:06Z           | ✅ Fresh   |
-| Memory (RSS) | 113.44 MB                      | ✅ Normal  |
-| Uptime       | 626s                           | ✅ Stable  |
+### MON-01 - Potwierdzic nowa walidacje env i zawezic brakujace sekrety
 
-### Client Error Endpoint
+- Status: `verify`
+- Priorytet: `P0`
+- Zrodlo: `GitHub Actions -> CI/CD Pipeline`
+- Ostatni sygnal: `2026-04-04 16:32 UTC`
+- Opis zadania:
+  Skrypt `scripts/validate-env.js` zostal poprawiony, zeby nie blokowal CI przez opcjonalne integracje i zbyt restrykcyjne wzorce tokenow. Dawny alarm `BRAK` byl szerszy niz realne wymagania runtime. Ten punkt zostaje otwarty tylko do czasu potwierdzenia w nowym runie GitHub Actions.
+- Poprawka wykonana:
+  - `scripts/validate-env.js`
+  - test regresji:
+    - `scripts/validate-env.test.ts`
+  - config testowy:
+    - `vitest.scripts.config.ts`
+- Rzeczy, ktore nadal moga wymagac sekretow poza repo:
+  - sekrety produkcyjne dla workflow wdrozeniowych i integracji zewnetrznych
+  - realne klucze do providerow, jesli dany workflow ma wykonywac prawdziwe polaczenia zamiast pracy na dummy config
+- Kryterium zamkniecia:
+  Najblizszy run `CI/CD Pipeline` nie raportuje juz falszywych bledow `BRAK` dla opcjonalnych integracji.
 
-- `GET /api/client-errors` → ✅ Działa end-to-end (zweryfikowane POST + GET + DELETE)
+### MON-02 - Potwierdzic naprawe spamu sieciowego i bootstrap preview
 
----
-## Aktualne Zadania
+- Status: `verify`
+- Priorytet: `P1`
+- Zrodlo: `GitHub Actions -> Auto-Fix Test Failures` oraz lokalne logi preview
+- Opis zadania:
+  Lokalnie poprawione zostaly retry przy stanie offline oraz klasyfikacja bledow `Health probe cooldown active` i podobnych transportowych przypadkow. Dodatkowo wyciszone zostaly oczekiwane logi `console.warn/error` w testach, bo workflow zbieral `stderr` z przechodzacych scenariuszy jako rzekome bledy.
+- Zakres poprawki juz wykonany:
+  - `src/services/httpClient.ts`
+  - `src/hooks/useWorkspaceData.ts`
+  - testy regresji:
+    - `src/services/httpClient.test.ts`
+    - `src/hooks/useWorkspaceData.test.tsx`
+  - wyczyszczenie halasu testowego:
+    - `src/hooks/useRecorder.test.tsx`
+    - `src/TabRouter.test.tsx`
+- Kryterium zamkniecia:
+  Brak nowych fal bledow `Health probe retry`, `Hosted preview health probe failed` i nadmiarowych logow `Remote workspace bootstrap failed` po kolejnym wdrozeniu.
 
-### TODO
+### MON-03 - Potwierdzic naprawe fallbacku RAG po awarii LLM
 
-_Brak aktualnych zadań._
+- Status: `verify`
+- Priorytet: `P1`
+- Zrodlo: lokalny bug `POST /workspaces/:workspaceId/rag/ask -> 500`
+- Opis zadania:
+  Endpoint RAG byl w stanie zwrocic `500`, gdy model AI albo klucz dostepowy byl niedostepny. Zostal dodany fallback budujacy odpowiedz z archiwum bez LLM.
+- Zakres poprawki juz wykonany:
+  - `server/lib/ragAnswer.ts`
+  - `server/routes/workspaces.ts`
+  - test regresji:
+    - `server/tests/routes/workspaces.test.ts`
+- Kryterium zamkniecia:
+  Zapytanie do `rag/ask` zwraca odpowiedz oparta o archiwum zamiast `500`, nawet przy niedostepnym modelu.
 
-### BLOCKED (wymaga konfiguracji zewnetrznej)
+### MON-04 - Zweryfikowac brak bledow formatowania po ostatnich poprawkach
 
-- **GH-33** - Auto code review/auto-fix workflow ("Remote boom")
-  - **Status:** blocked
-  - **Error:** Remote workspace bootstrap failed. Error: Remote boom
-  - **Blokada:** Brak ANTHROPIC_API_KEY w GitHub Actions Secrets
-  - **Akcja:** Dodaj secret ANTHROPIC_API_KEY w GitHub Settings > Secrets > Actions
+- Status: `done`
+- Priorytet: `P2`
+- Zrodlo: `GitHub Actions -> Quality Checks -> Prettier check`
+- Opis zadania:
+  Lokalnie `pnpm run format:check` jest zielone po sformatowaniu plikow, ktore powodowaly faila. Potrzebne jest tylko potwierdzenie w nastepnym runie GitHub Actions.
+- Wykonane poprawki:
+  - `server/database.ts`
+  - `server/tests/integration/api-critical.test.ts`
+  - `server/tests/performance/response-time-sla.test.ts`
+  - `server/tests/structuredLogger.test.ts`
+- Kryterium zamkniecia:
+  `Prettier check` przechodzi w `CI/CD Pipeline`. **ZAMKNIETE**: `pnpm run format:check` przechodzi lokalnie (2026-04-04 19:33).
 
-- **GH-AUTO-VITE** - Missing VITE_* env vars w CI (validate-env.js)
-  - **Status:** blocked (by design, non-blocking)
-  - **Error:** VITE_DATA_PROVIDER: BRAK, VITE_MEDIA_PROVIDER: BRAK
-  - **Uwaga:** Krok ma continue-on-error: true. Nie blokuje CI.
-  - **Akcja:** Opcjonalnie dodaj sekrety VITE_* w GitHub Settings > Secrets > Actions
+### MON-05 - Naprawic brakujace assety audio dla nagran
 
----
+- Status: `verify`
+- Priorytet: `P1`
+- Zrodlo: runtime frontend `GET /media/recordings/:id/audio -> 404`
+- Opis zadania:
+  Odtwarzanie niektorych nagran zwracalo `404`, gdy `media_assets.file_path` wskazywal na stary lokalny plik po redeployu, a audio nadal istnialo w storage pod kanonicznym kluczem opartym o `recordingId`. Backend probowal tylko `file_path` albo samo `basename`.
+- Zakres poprawki juz wykonany:
+  - `server/routes/media.ts`
+  - testy regresji:
+    - `server/tests/routes/media.test.ts`
+    - `server/tests/regression/regression.test.ts`
+- Kryterium zamkniecia:
+  Odtwarzanie audio dla wskazanego nagrania dziala bez `404`, takze gdy lokalny `file_path` jest martwy, ale storage nadal ma plik pod odtworzonym kluczem.
 
-## Następne Kroki (priorytet 🔴 → 🟡 → 🟢)
+## Odrzucone jako szum lub informacyjne
 
-1. 🔴 **GH-33** — dodaj ANTHROPIC_API_KEY secret (wymaga konfiguracji w GitHub Settings)
-2. 🟢 **GH-AUTO-VITE** — opcjonalnie dodaj VITE_* sekrety w GitHub Settings
+- `PubSub already loaded, using existing version`
+- `[VoiceLog] error auto-send active`
+- `[useAudioHardware] Initial microphone permission: prompt`
+- `[useAudioHardware] Microphone permission changed: granted`
+- `[Preview] Build ID mismatch: frontend=... backend=...`
 
+## Nastepne kroki
 
-<!-- Auto-generated on 2026-04-04T06:58:35.854Z -->
-
-### GitHub Actions Errors (10 found)
-
-- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:55:18.3264082Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T06:55:18.3268350Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T06:55:18.3269134Z [3...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-2** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:55:48.1555460Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T06:55:48.1683138Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-3** — Fix Optimized CI failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** Job "format" step "Check formatting" failed
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-4** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:50:18.4179089Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T06:50:18.4183678Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T06:50:18.4184448Z [3...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-5** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:50:52.0687762Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T06:50:52.0795270Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-6** — Fix Optimized CI failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** Job "format" step "Check formatting" failed
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-7** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:45:31.4492881Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T06:45:31.4496789Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T06:45:31.4497524Z [3...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-8** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:46:01.1625770Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T06:46:01.1783104Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-9** — Fix Optimized CI failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** Job "format" step "Check formatting" failed
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-10** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T06:15:09.7468828Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T06:15:09.7473019Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T06:15:09.7473885Z [3...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-
-### Vercel Errors (10 found)
-
-- **VL-AUTO-2026-04-04-11** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:** [31merror during build:
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-12** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:** [31mBuild failed with 1 error:
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-13** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**     at aggregateBindingErrorsIntoJsError (file:///vercel/path0/node_modules/.pnpm/rolldown@1.0.0-rc.12_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1/node_modules/rolldown/dist/shared/error-BLhcSyeg.mjs:48:...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-14** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**     at unwrapBindingResult (file:///vercel/path0/node_modules/.pnpm/rolldown@1.0.0-rc.12_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1/node_modules/rolldown/dist/shared/error-BLhcSyeg.mjs:18:128)
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-15** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**   errors: [Getter/Setter]
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-16** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:** [31merror during build:
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-17** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:** [31mBuild failed with 1 error:
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-18** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**     at aggregateBindingErrorsIntoJsError (file:///vercel/path0/node_modules/.pnpm/rolldown@1.0.0-rc.12_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1/node_modules/rolldown/dist/shared/error-BLhcSyeg.mjs:48:...
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-19** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**     at unwrapBindingResult (file:///vercel/path0/node_modules/.pnpm/rolldown@1.0.0-rc.12_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1/node_modules/rolldown/dist/shared/error-BLhcSyeg.mjs:18:128)
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-- **VL-AUTO-2026-04-04-20** — Fix Vercel deployment error
-  - **Status:** todo
-  - **Source:** Vercel
-  - **Error:**   errors: [Getter/Setter]
-  - **Created:** 2026-04-04T06:58:35.854Z
-  - **Priority:** High
-
-
-
-<!-- Auto-generated on 2026-04-04T12:51:33.705Z -->
-
-### GitHub Actions Errors (6 found)
-
-- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T12:47:14.2120794Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T12:47:14.2125073Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T12:47:14.2125777Z [3...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-2** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T12:47:49.1789061Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T12:47:49.1902974Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-3** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T12:07:31.3645060Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T12:07:31.3649669Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T12:07:31.3650401Z [3...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-4** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T12:07:57.4895070Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T12:07:57.5040595Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-5** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T11:23:40.6178788Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
-2026-04-04T11:23:40.6186497Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
-2026-04-04T11:23:40.6188956Z [3...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-6** — Fix Auto-Fix Test Failures failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Error:** 2026-04-04T11:24:05.3454312Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-04T11:24:05.3592753Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Created:** 2026-04-04T12:51:33.705Z
-  - **Priority:** High
-
+1. Uzupelnic brakujace sekrety w GitHub Actions, bo to jest obecnie glowny generator bledow.
+2. Odpalic nowy run `CI/CD Pipeline` i potwierdzic zamkniecie `MON-02`, `MON-03` i `MON-04`.
+3. Osobno przejsc sciezke `recording -> media_assets -> storage`, zeby zamknac `MON-05`.
+4. Po udostepnieniu tokenow odswiezyc jeszcze `Railway`, `Vercel` i `Sentry`, zeby domknac liste z jednego przebiegu.

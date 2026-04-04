@@ -2,28 +2,24 @@
 /**
  * VoiceLog OS - API Configuration Validator
  *
- * Skrypt sprawdza poprawność konfiguracji API w pliku .env
- * Uruchomienie: node scripts/validate-env.js
+ * Run: node scripts/validate-env.js
  */
 
 import { config } from 'dotenv';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const rootDir = join(__dirname, '..');
+const __dirname = path.dirname(__filename);
+const rootDir = path.join(__dirname, '..');
 
-// Load .env file
 try {
-  config({ path: join(rootDir, '.env') });
+  config({ path: path.join(rootDir, '.env') });
 } catch (error) {
-  console.error('❌ Błąd ładowania pliku .env:', error.message);
+  console.error('Failed to load .env:', error.message);
   process.exit(1);
 }
 
-// Colors for console output
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
@@ -33,40 +29,216 @@ const colors = {
   cyan: '\x1b[36m',
 };
 
+const STATUS_OK = 'ok';
+const STATUS_MISSING = 'missing';
+const STATUS_INVALID = 'invalid';
+
+const OPENAI_KEY_PATTERN = /^sk-/;
+const GROQ_KEY_PATTERN = /^gsk_/;
+const ANTHROPIC_KEY_PATTERN = /^sk-ant-/;
+const GEMINI_KEY_PATTERN = /^AIza[0-9A-Za-z_-]+$/;
+const HF_KEY_PATTERN = /^hf_/;
+const LANGCHAIN_KEY_PATTERN = /^ls(v2)?_/;
+const GITHUB_TOKEN_PATTERN = /^(github_pat_|gh[pousr]_|ghs_)/;
+
 function log(color, message) {
   console.log(`${color}${message}${colors.reset}`);
 }
 
-function checkVariable(name, description, pattern = null) {
-  const value = process.env[name];
+function isPlaceholderValue(value) {
+  if (!value) return false;
+  return ['xxxx', 'TWOJ_', 'PLACEHOLDER'].some((token) => value.includes(token));
+}
 
+function evaluateVariable(name, description, value, pattern, severity = 'error') {
   if (!value) {
-    log(colors.red, `❌ ${name}: BRAK (${description})`);
-    return false;
+    return { name, description, severity, status: STATUS_MISSING };
+  }
+
+  if (isPlaceholderValue(value)) {
+    return { name, description, severity, status: STATUS_INVALID, preview: value };
   }
 
   if (pattern && !pattern.test(value)) {
-    log(colors.red, `❌ ${name}: NIEPRAWIDŁOWY FORMAT (${description})`);
-    log(colors.yellow, `   Wartość: ${value.substring(0, 20)}...`);
-    return false;
+    return {
+      name,
+      description,
+      severity,
+      status: STATUS_INVALID,
+      preview: `${value.slice(0, 20)}...`,
+    };
   }
 
-  // Check for placeholder patterns
-  if (value.includes('xxxx') || value.includes('TWOJ_') || value.includes('PLACEHOLDER')) {
-    log(colors.yellow, `⚠️  ${name}: PLACEHOLDER (${description})`);
-    log(colors.yellow, `   Wartość: ${value}`);
-    return false;
+  return { name, description, severity, status: STATUS_OK };
+}
+
+function canUseLocalWhisper(env) {
+  return env.USE_LOCAL_WHISPER === 'true' && Boolean(env.WHISPER_CPP_PATH);
+}
+
+export function validateEnvironmentSnapshot(env = process.env) {
+  const checks = [];
+
+  checks.push(
+    evaluateVariable(
+      'VITE_DATA_PROVIDER',
+      'Provider danych',
+      env.VITE_DATA_PROVIDER,
+      /^(local|remote)$/
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'VITE_MEDIA_PROVIDER',
+      'Provider mediow',
+      env.VITE_MEDIA_PROVIDER,
+      /^(local|remote)$/
+    )
+  );
+  checks.push(
+    evaluateVariable('VITE_API_BASE_URL', 'Backend API URL', env.VITE_API_BASE_URL, /^https?:\/\//)
+  );
+  checks.push(evaluateVariable('VOICELOG_API_PORT', 'Port API', env.VOICELOG_API_PORT, /^\d+$/));
+
+  checks.push(
+    evaluateVariable(
+      'VITE_GOOGLE_CLIENT_ID',
+      'Google OAuth Client ID',
+      env.VITE_GOOGLE_CLIENT_ID,
+      /(\.apps\.googleusercontent\.com$|^demo$)/,
+      'warning'
+    )
+  );
+
+  const openAiCheck = evaluateVariable(
+    'OPENAI_API_KEY',
+    'OpenAI API Key',
+    env.OPENAI_API_KEY,
+    OPENAI_KEY_PATTERN,
+    'warning'
+  );
+  const groqCheck = evaluateVariable(
+    'GROQ_API_KEY',
+    'Groq API Key',
+    env.GROQ_API_KEY,
+    GROQ_KEY_PATTERN,
+    'warning'
+  );
+
+  checks.push(openAiCheck, groqCheck);
+
+  if (
+    openAiCheck.status !== STATUS_OK &&
+    groqCheck.status !== STATUS_OK &&
+    !canUseLocalWhisper(env)
+  ) {
+    checks.push({
+      name: 'STT_PROVIDER',
+      description: 'At least one speech-to-text provider or local Whisper',
+      severity: 'error',
+      status: STATUS_MISSING,
+    });
   }
 
-  log(colors.green, `✅ ${name}: OK (${description})`);
-  return true;
+  checks.push(
+    evaluateVariable(
+      'DATABASE_URL',
+      'Postgres database URL',
+      env.DATABASE_URL || env.VOICELOG_DATABASE_URL,
+      /^postgres(ql)?:\/\//,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'SUPABASE_URL',
+      'Supabase URL',
+      env.SUPABASE_URL,
+      /^https:\/\/.*\.supabase\.co$/,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'Supabase service role key',
+      env.SUPABASE_SERVICE_ROLE_KEY,
+      /^eyJ/,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'ANTHROPIC_API_KEY',
+      'Anthropic API Key',
+      env.ANTHROPIC_API_KEY,
+      ANTHROPIC_KEY_PATTERN,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'GEMINI_API_KEY',
+      'Google Gemini API Key',
+      env.GEMINI_API_KEY,
+      GEMINI_KEY_PATTERN,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable('HF_TOKEN', 'HuggingFace token', env.HF_TOKEN, HF_KEY_PATTERN, 'warning')
+  );
+  checks.push(
+    evaluateVariable(
+      'LANGCHAIN_API_KEY',
+      'LangSmith API Key',
+      env.LANGCHAIN_API_KEY || env.LANGSMITH_API_KEY,
+      LANGCHAIN_KEY_PATTERN,
+      'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'GITHUB_TOKEN',
+      'GitHub token',
+      env.GITHUB_TOKEN,
+      GITHUB_TOKEN_PATTERN,
+      'warning'
+    )
+  );
+
+  const errors = checks.filter((check) => check.severity === 'error' && check.status !== STATUS_OK);
+  const warnings = checks.filter(
+    (check) => check.severity === 'warning' && check.status !== STATUS_OK
+  );
+
+  return {
+    checks,
+    errors,
+    warnings,
+    blocking: errors.length > 0,
+  };
+}
+
+function printCheck(check) {
+  if (check.status === STATUS_OK) {
+    log(colors.green, `OK ${check.name}: ${check.description}`);
+    return;
+  }
+
+  const color = check.severity === 'error' ? colors.red : colors.yellow;
+  const prefix = check.severity === 'error' ? 'ERROR' : 'WARN';
+  const label = check.status === STATUS_INVALID ? 'INVALID' : 'MISSING';
+  log(color, `${prefix} ${check.name}: ${label} (${check.description})`);
+  if (check.preview) {
+    log(colors.yellow, `   Value: ${check.preview}`);
+  }
 }
 
 async function testAPI(name, url, headers = {}) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-
     const response = await fetch(url, {
       method: 'GET',
       headers,
@@ -76,175 +248,81 @@ async function testAPI(name, url, headers = {}) {
     clearTimeout(timeout);
 
     if (response.ok || response.status === 401) {
-      log(colors.green, `✅ ${name}: POŁĄCZENIE UDANE`);
+      log(colors.green, `OK ${name}: connection works`);
       return true;
-    } else {
-      log(colors.yellow, `⚠️  ${name}: STATUS ${response.status}`);
-      return false;
     }
+
+    log(colors.yellow, `WARN ${name}: status ${response.status}`);
+    return false;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      log(colors.red, `❌ ${name}: TIMEOUT (5s)`);
-    } else {
-      log(colors.red, `❌ ${name}: BŁĄD POŁĄCZENIA`);
-      log(colors.yellow, `   ${error.message}`);
-    }
+    const message = error.name === 'AbortError' ? 'timeout (5s)' : error.message;
+    log(colors.yellow, `WARN ${name}: ${message}`);
     return false;
   }
 }
 
-async function validateOpenAI() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey.includes('xxxx') || apiKey.includes('TWOJ_')) return false;
-
-  return await testAPI('OpenAI API', 'https://api.openai.com/v1/models', {
-    Authorization: `Bearer ${apiKey}`,
-  });
+function canCallExternalApi(value) {
+  return Boolean(value) && !isPlaceholderValue(value) && !value.includes('dummy');
 }
 
-async function validateGroq() {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey || apiKey.includes('xxxx') || apiKey.includes('TWOJ_')) return false;
+async function runConnectionChecks(env = process.env) {
+  log(colors.blue, 'Connection checks');
 
-  return await testAPI('Groq API', 'https://api.groq.com/openai/v1/models', {
-    Authorization: `Bearer ${apiKey}`,
-  });
-}
+  if (canCallExternalApi(env.OPENAI_API_KEY)) {
+    await testAPI('OpenAI API', 'https://api.openai.com/v1/models', {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+    });
+  }
 
-async function validateSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (canCallExternalApi(env.GROQ_API_KEY)) {
+    await testAPI('Groq API', 'https://api.groq.com/openai/v1/models', {
+      Authorization: `Bearer ${env.GROQ_API_KEY}`,
+    });
+  }
 
-  if (!url || !key || url.includes('TWOJ_') || key.includes('TWOJ_')) return false;
+  if (canCallExternalApi(env.SUPABASE_URL) && canCallExternalApi(env.SUPABASE_SERVICE_ROLE_KEY)) {
+    await testAPI('Supabase API', `${env.SUPABASE_URL}/rest/v1/`, {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      Prefer: 'count=exact',
+    });
+  }
 
-  return await testAPI('Supabase API', `${url}/rest/v1/`, {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    Prefer: 'count=exact',
-  });
-}
-
-async function validateLangSmith() {
-  const apiKey = process.env.LANGCHAIN_API_KEY;
-  if (!apiKey || apiKey.includes('xxxx') || apiKey.includes('TWOJ_')) return false;
-
-  return await testAPI('LangSmith API', 'https://api.smith.langchain.com/api/v1/info', {
-    'x-api-key': apiKey,
-  });
+  if (canCallExternalApi(env.LANGCHAIN_API_KEY || env.LANGSMITH_API_KEY)) {
+    await testAPI('LangSmith API', 'https://api.smith.langchain.com/api/v1/info', {
+      'x-api-key': env.LANGCHAIN_API_KEY || env.LANGSMITH_API_KEY,
+    });
+  }
 }
 
 async function main() {
-  log(colors.cyan, '╔════════════════════════════════════════════════╗');
-  log(colors.cyan, '║   VoiceLog OS - API Configuration Validator    ║');
-  log(colors.cyan, '╚════════════════════════════════════════════════╝');
+  log(colors.cyan, 'VoiceLog OS - API Configuration Validator');
   log(colors.reset, '');
 
-  let allValid = true;
+  const report = validateEnvironmentSnapshot(process.env);
 
-  // ─────────────────────────────────────────────────────────────
-  // FRONTEND
-  // ─────────────────────────────────────────────────────────────
-  log(colors.blue, '┌────────────────────────────────────────────────┐');
-  log(colors.blue, '│ FRONTEND (Vite)                                │');
-  log(colors.blue, '└────────────────────────────────────────────────┘');
-
-  allValid &= checkVariable('VITE_DATA_PROVIDER', 'Provider danych', /^(local|remote)$/);
-  allValid &= checkVariable('VITE_MEDIA_PROVIDER', 'Provider mediów', /^(local|remote)$/);
-  allValid &= checkVariable('VITE_API_BASE_URL', 'Backend API URL', /^https?:\/\//);
-  allValid &= checkVariable(
-    'VITE_GOOGLE_CLIENT_ID',
-    'Google OAuth Client ID',
-    /\.apps\.googleusercontent\.com$/
-  );
+  report.checks.forEach(printCheck);
   log(colors.reset, '');
 
-  // ─────────────────────────────────────────────────────────────
-  // BACKEND
-  // ─────────────────────────────────────────────────────────────
-  log(colors.blue, '┌────────────────────────────────────────────────┐');
-  log(colors.blue, '│ BACKEND (Server)                               │');
-  log(colors.blue, '└────────────────────────────────────────────────┘');
-
-  allValid &= checkVariable('VOICELOG_API_PORT', 'Port API', /^\d+$/);
-  allValid &= checkVariable('DATABASE_URL', 'Database URL', /^postgresql:\/\/.*@.*\.supabase\.com/);
-  allValid &= checkVariable('SUPABASE_URL', 'Supabase URL', /^https:\/\/.*\.supabase\.co$/);
-  allValid &= checkVariable(
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'Supabase Service Role',
-    /^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/
-  );
+  await runConnectionChecks(process.env);
   log(colors.reset, '');
 
-  // ─────────────────────────────────────────────────────────────
-  // AI/ML API KEYS
-  // ─────────────────────────────────────────────────────────────
-  log(colors.blue, '┌────────────────────────────────────────────────┐');
-  log(colors.blue, '│ AI/ML API Keys                                 │');
-  log(colors.blue, '└────────────────────────────────────────────────┘');
-
-  allValid &= checkVariable('OPENAI_API_KEY', 'OpenAI API Key', /^sk-proj-/);
-  allValid &= checkVariable('GROQ_API_KEY', 'Groq API Key', /^gsk_/);
-  allValid &= checkVariable('ANTHROPIC_API_KEY', 'Anthropic API Key', /^sk-ant-api/);
-  allValid &= checkVariable('GEMINI_API_KEY', 'Google Gemini API Key', /^AIzaSy/);
-  allValid &= checkVariable('HF_TOKEN', 'HuggingFace Token', /^hf_/);
-  log(colors.reset, '');
-
-  // ─────────────────────────────────────────────────────────────
-  // INTEGRATIONS
-  // ─────────────────────────────────────────────────────────────
-  log(colors.blue, '┌────────────────────────────────────────────────┐');
-  log(colors.blue, '│ Integrations                                   │');
-  log(colors.blue, '└────────────────────────────────────────────────┘');
-
-  allValid &= checkVariable('LANGCHAIN_API_KEY', 'LangSmith API Key', /^lsv2_pt_/);
-  allValid &= checkVariable('GITHUB_TOKEN', 'GitHub Token', /^github_pat_/);
-  log(colors.reset, '');
-
-  // ─────────────────────────────────────────────────────────────
-  // API CONNECTION TESTS
-  // ─────────────────────────────────────────────────────────────
-  log(colors.blue, '┌────────────────────────────────────────────────┐');
-  log(colors.blue, '│ API Connection Tests                           │');
-  log(colors.blue, '└────────────────────────────────────────────────┘');
-  log(colors.yellow, '⏳ Testowanie połączeń z API (może potrwać kilka sekund)...');
-  log(colors.reset, '');
-
-  await validateOpenAI();
-  await validateGroq();
-  await validateSupabase();
-  await validateLangSmith();
-  log(colors.reset, '');
-
-  // ─────────────────────────────────────────────────────────────
-  // SUMMARY
-  // ─────────────────────────────────────────────────────────────
-  log(colors.cyan, '┌────────────────────────────────────────────────┐');
-  log(colors.cyan, '│ Podsumowanie                                   │');
-  log(colors.cyan, '└────────────────────────────────────────────────┘');
-
-  if (allValid) {
-    log(colors.green, '✅ Wszystkie zmienne środowiskowe są poprawnie skonfigurowane!');
-  } else {
-    log(colors.yellow, '⚠️  Niektóre zmienne wymagają uwagi.');
-    log(colors.reset, '');
-    log(colors.blue, '📖 Instrukcja konfiguracji:');
-    log(colors.reset, '   1. Skopiuj .env.example do .env');
-    log(colors.reset, '   2. Uzupełnij brakujące klucze API');
-    log(colors.reset, '   3. Uruchom ponownie walidator');
-    log(colors.reset, '');
-    log(colors.cyan, '🔗 Linki do uzyskania kluczy:');
-    log(colors.reset, '   • OpenAI: https://platform.openai.com/api-keys');
-    log(colors.reset, '   • Groq: https://console.groq.com/keys');
-    log(colors.reset, '   • Anthropic: https://console.anthropic.com/settings/keys');
-    log(colors.reset, '   • Google Gemini: https://makersuite.google.com/app/apikey');
-    log(colors.reset, '   • HuggingFace: https://huggingface.co/settings/tokens');
-    log(colors.reset, '   • Supabase: https://supabase.com/dashboard/project/TWOJ_ID/settings/api');
-    log(colors.reset, '   • LangSmith: https://smith.langchain.com/settings');
-    log(colors.reset, '   • GitHub: https://github.com/settings/tokens');
+  if (report.blocking) {
+    log(colors.red, 'Validation failed due to blocking configuration errors.');
+    process.exit(1);
   }
 
-  log(colors.reset, '');
-  process.exit(allValid ? 0 : 1);
+  if (report.warnings.length > 0) {
+    log(colors.yellow, 'Validation finished with warnings.');
+    process.exit(0);
+  }
+
+  log(colors.green, 'Validation succeeded.');
 }
 
-main().catch(console.error);
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

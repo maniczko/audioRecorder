@@ -1,0 +1,752 @@
+openapi: '3.0.3'
+info:
+  title: VoiceLog API
+  description: |
+    VoiceLog is an AI-powered meeting assistant that transcribes audio,
+    extracts action items, and provides meeting intelligence.
+
+    This API provides endpoints for:
+    - Audio upload and transcription
+    - Meeting management
+    - Voice profiles for speaker identification
+    - State synchronization
+    - AI-powered analysis
+  version: '1.0.0'
+  contact:
+    name: VoiceLog Team
+    url: https://github.com/voicelog
+
+servers:
+  - url: http://localhost:4000
+    description: Local development server
+  - url: https://voicelog.example.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Authentication
+    description: User authentication and session management
+  - name: Media
+    description: Audio upload and transcription
+  - name: Voice Profiles
+    description: Speaker voice profiles for identification
+  - name: State
+    description: Workspace state synchronization
+  - name: Client Errors
+    description: Frontend error reporting
+  - name: Digest
+    description: Email digest notifications
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Health
+  # ─────────────────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns server health status including database connectivity
+      security: []
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  db:
+                    type: string
+                  supabaseRemote:
+                    type: boolean
+                  uptime:
+                    type: integer
+                  memory:
+                    type: object
+                    properties:
+                      heapUsed:
+                        type: string
+                      rss:
+                        type: string
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Authentication
+  # ─────────────────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                workspaceId:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid request body
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                workspaceId:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '200':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+
+  /auth/session:
+    get:
+      tags: [Authentication]
+      summary: Get current session
+      parameters:
+        - in: query
+          name: workspaceId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session data
+        '401':
+          description: Missing or invalid token
+
+  /auth/google:
+    post:
+      tags: [Authentication]
+      summary: Login or register with Google
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [googleId, email, name]
+              properties:
+                googleId:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                picture:
+                  type: string
+      responses:
+        '200':
+          description: Google auth successful
+
+  /auth/password/reset/request:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset code sent
+
+  /auth/password/reset/confirm:
+    post:
+      tags: [Authentication]
+      summary: Confirm password reset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, newPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                newPassword:
+                  type: string
+                confirmPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password reset successful
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Media
+  # ─────────────────────────────────────────────────────────────────────────────
+  /media/recordings/{recordingId}/audio:
+    put:
+      tags: [Media]
+      summary: Upload audio chunk
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          audio/*:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Chunk uploaded
+        '400':
+          description: Missing workspace header
+        '413':
+          description: Chunk too large (>3MB)
+
+  /media/recordings/{recordingId}/audio/chunk:
+    put:
+      tags: [Media]
+      summary: Upload named audio chunk
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chunk saved
+        '400':
+          description: Invalid parameters
+        '413':
+          description: Chunk too large
+
+  /media/recordings/{recordingId}/audio/finalize:
+    post:
+      tags: [Media]
+      summary: Finalize audio recording
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recording finalized
+        '400':
+          description: Missing workspace ID
+
+  /media/recordings/{recordingId}/transcribe:
+    post:
+      tags: [Media]
+      summary: Queue transcription job
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Transcription queued
+
+  /media/recordings/{recordingId}/retry-transcribe:
+    post:
+      tags: [Media]
+      summary: Retry failed transcription
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Retry queued
+
+  /media/recordings/{recordingId}/transcribe:
+    get:
+      tags: [Media]
+      summary: Get transcription status/result
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transcription data
+
+  /media/recordings/{recordingId}/sketchnote:
+    post:
+      tags: [Media]
+      summary: Generate visual sketchnote
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sketchnote URL
+        '429':
+          description: Rate limited
+        '503':
+          description: AI service unavailable
+
+  /media/recordings/{recordingId}/normalize:
+    post:
+      tags: [Media]
+      summary: Normalize audio
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Normalized audio path
+
+  /media/recordings/{recordingId}/voice-coaching:
+    post:
+      tags: [Media]
+      summary: Generate voice coaching feedback
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Voice coaching text
+
+  /media/recordings/{recordingId}/acoustic-features:
+    post:
+      tags: [Media]
+      summary: Extract acoustic features
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Acoustic features data
+
+  /media/recordings/{recordingId}/voice-profiles/from-speaker:
+    post:
+      tags: [Media]
+      summary: Create voice profile from speaker audio
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Voice profile created
+
+  /media/recordings/{recordingId}/rediarize:
+    post:
+      tags: [Media]
+      summary: Re-run diarization
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rediarization complete
+        '422':
+          description: Diarization failed
+
+  /media/analyze:
+    post:
+      tags: [Media]
+      summary: Analyze meeting transcript
+      responses:
+        '200':
+          description: Analysis result
+
+  /media/recordings/{recordingId}:
+    delete:
+      tags: [Media]
+      summary: Delete recording
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+        '403':
+          description: No workspace access
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Transcription (Live)
+  # ─────────────────────────────────────────────────────────────────────────────
+  /transcribe/live:
+    post:
+      tags: [Media]
+      summary: Live transcription of audio chunk
+      requestBody:
+        required: true
+        content:
+          audio/*:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Transcription text
+        '401':
+          description: Unauthorized
+        '413':
+          description: Payload too large
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Voice Profiles
+  # ─────────────────────────────────────────────────────────────────────────────
+  /voice-profiles:
+    get:
+      tags: [Voice Profiles]
+      summary: List voice profiles for workspace
+      responses:
+        '200':
+          description: List of voice profiles
+        '401':
+          description: Unauthorized
+
+    post:
+      tags: [Voice Profiles]
+      summary: Create voice profile
+      parameters:
+        - in: header
+          name: X-Speaker-Name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Profile created
+        '400':
+          description: Missing X-Speaker-Name header
+
+  /voice-profiles/{id}/threshold:
+    patch:
+      tags: [Voice Profiles]
+      summary: Update voice profile threshold
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                threshold:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+      responses:
+        '200':
+          description: Threshold updated
+
+  /voice-profiles/{id}:
+    delete:
+      tags: [Voice Profiles]
+      summary: Delete voice profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # State
+  # ─────────────────────────────────────────────────────────────────────────────
+  /state/bootstrap:
+    get:
+      tags: [State]
+      summary: Get full workspace bootstrap state
+      responses:
+        '200':
+          description: Bootstrap data
+        '401':
+          description: Unauthorized
+
+  /state/workspaces/{workspaceId}:
+    put:
+      tags: [State]
+      summary: Update workspace state
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: State updated
+        '401':
+          description: Unauthorized
+
+    patch:
+      tags: [State]
+      summary: Delta update workspace state
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: State updated
+        '401':
+          description: Unauthorized
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Client Errors
+  # ─────────────────────────────────────────────────────────────────────────────
+  /api/client-errors:
+    post:
+      tags: [Client Errors]
+      summary: Report frontend errors
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ClientError'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/ClientError'
+      responses:
+        '200':
+          description: Errors received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  received:
+                    type: integer
+        '400':
+          description: Too many errors (>50 per request)
+
+    get:
+      tags: [Client Errors]
+      summary: Get stored client errors
+      security: []
+      responses:
+        '200':
+          description: Stored errors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClientError'
+
+    delete:
+      tags: [Client Errors]
+      summary: Clear all stored client errors
+      security: []
+      responses:
+        '200':
+          description: Errors cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  cleared:
+                    type: boolean
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Digest
+  # ─────────────────────────────────────────────────────────────────────────────
+  /digest/daily:
+    get:
+      tags: [Digest]
+      summary: Get daily digest preview
+      responses:
+        '200':
+          description: Digest data
+
+    post:
+      tags: [Digest]
+      summary: Send daily digest email
+      responses:
+        '200':
+          description: Digest sent
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Components
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        workspace_id:
+          type: string
+
+    ClientError:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        type:
+          type: string
+        message:
+          type: string
+        stack:
+          type: string
+        source:
+          type: string
+        context:
+          type: string
+        userAgent:
+          type: string
+        url:
+          type: string
