@@ -92,7 +92,7 @@ jobs:
 
       - name: Create GitHub issue for errors
         if: ${{ github.event.inputs.create_issue != 'false' && steps.check-errors.outputs.has_errors == 'true' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

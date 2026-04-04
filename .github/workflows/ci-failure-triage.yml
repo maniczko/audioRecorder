@@ -27,7 +27,7 @@ jobs:
 
       - name: Build issue body from CI failure details
         id: build_issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RUN_ID: ${{ github.event.workflow_run.id }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -119,7 +119,7 @@ jobs:
       - name: Check for duplicate issue
         id: check_dup
         if: steps.build_issue.outputs.skip != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           SHA_SHORT: ${{ steps.build_issue.outputs.sha_short }}
         with:
@@ -139,7 +139,7 @@ jobs:
 
       - name: Ensure labels exist
         if: steps.check_dup.outputs.result == 'create'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -154,7 +154,7 @@ jobs:
       - name: Create GitHub Issue
         id: create_issue
         if: steps.check_dup.outputs.result == 'create'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ISSUE_TITLE: ${{ steps.build_issue.outputs.title }}
           ISSUE_BODY: ${{ steps.build_issue.outputs.body }}
@@ -174,7 +174,7 @@ jobs:
 
       - name: Trigger GPT Auto-Fix workflow
         if: steps.check_dup.outputs.result == 'create' && steps.create_issue.outputs.issue_number != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ISSUE_TITLE: ${{ steps.build_issue.outputs.title }}
           ISSUE_BODY: ${{ steps.build_issue.outputs.body }}
@@ -197,7 +197,7 @@ jobs:
       # Also update TASK_QUEUE.md so the task is visible in the project board
       - name: Add entry to TASK_QUEUE.md
         if: steps.check_dup.outputs.result == 'create'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           SHA_SHORT: ${{ steps.build_issue.outputs.sha_short }}
           JOB_NAMES: ${{ steps.build_issue.outputs.job_names }}
