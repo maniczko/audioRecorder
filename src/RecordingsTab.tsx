@@ -10,7 +10,7 @@ import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
 import TagBadge from './shared/TagBadge';
-import { Search, Filter, Upload } from 'lucide-react';
+import { Search, Filter, Upload, Clock, Mic2, Users, Brain } from 'lucide-react';
 
 function formatPipelineDiagnostics(item) {
   const details = [];
@@ -69,6 +69,108 @@ function formatPipelineDiagnostics(item) {
   }
 
   return details.join(' · ');
+}
+
+function getMeetingAiStatus(m) {
+  if (m.analysis && (m.analysis.summary || (m.analysis.decisions && m.analysis.decisions.length > 0))) {
+    return 'ai';
+  }
+  if (m.latestRecordingId || (Array.isArray(m.recordings) && m.recordings.length > 0)) {
+    const latest = Array.isArray(m.recordings)
+      ? m.recordings.find((r) => r.id === m.latestRecordingId) || m.recordings[0]
+      : null;
+    if (latest?.transcriptOutcome === 'empty') return 'empty';
+    if (latest?.transcriptionStatus === 'done' || latest?.transcriptOutcome === 'normal') return 'transcript';
+    return 'processing';
+  }
+  return 'none';
+}
+
+const AI_STATUS_CONFIG = {
+  ai: { label: 'AI', title: 'Pełna analiza AI dostępna', color: '#75d6c4', bg: 'rgba(117,214,196,0.13)' },
+  transcript: { label: 'Transkrypcja', title: 'Transkrypcja dostępna', color: '#a3c4f3', bg: 'rgba(163,196,243,0.13)' },
+  processing: { label: 'W toku', title: 'Przetwarzanie w toku', color: '#f6c05e', bg: 'rgba(246,192,94,0.13)' },
+  empty: { label: 'Brak mowy', title: 'Nie wykryto mowy w nagraniu', color: '#f87171', bg: 'rgba(248,113,113,0.13)' },
+  none: { label: '—', title: 'Brak nagrania', color: 'var(--muted)', bg: 'transparent' },
+};
+
+function AiStatusBadge({ meeting }) {
+  const status = getMeetingAiStatus(meeting);
+  const cfg = AI_STATUS_CONFIG[status] || AI_STATUS_CONFIG.none;
+  return (
+    <span
+      title={cfg.title}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontSize: '0.72rem',
+        fontWeight: 600,
+        letterSpacing: '0.03em',
+        padding: '2px 8px',
+        borderRadius: 6,
+        color: cfg.color,
+        background: cfg.bg,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {cfg.label}
+    </span>
+  );
+}
+
+function RecordingsStatsBar({ meetings }) {
+  const stats = React.useMemo(() => {
+    const totalMeetings = meetings.length;
+    const totalMinutes = meetings.reduce((sum, m) => sum + (Number(m.durationMinutes) || 0), 0);
+    const totalHours = (totalMinutes / 60).toFixed(1);
+    const participantSet = new Set();
+    meetings.forEach((m) => {
+      if (m.owner) participantSet.add(m.owner.trim());
+      (m.attendees || m.guests || []).forEach((p) => { if (p && p.trim()) participantSet.add(p.trim()); });
+    });
+    const withAi = meetings.filter((m) => getMeetingAiStatus(m) === 'ai').length;
+    return { totalMeetings, totalHours, participants: participantSet.size, withAi };
+  }, [meetings]);
+
+  if (stats.totalMeetings === 0) return null;
+
+  const items = [
+    { icon: <Mic2 size={14} />, value: stats.totalMeetings, label: 'spotkań' },
+    { icon: <Clock size={14} />, value: `${stats.totalHours}h`, label: 'łącznie' },
+    { icon: <Users size={14} />, value: stats.participants, label: 'uczestników' },
+    { icon: <Brain size={14} />, value: stats.withAi, label: 'z analizą AI' },
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 8,
+        padding: '10px 24px 0',
+        flexWrap: 'wrap',
+      }}
+    >
+      {items.map((item, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 14px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 8,
+            fontSize: '0.8rem',
+          }}
+        >
+          <span style={{ color: 'var(--accent, #75d6c4)', display: 'flex' }}>{item.icon}</span>
+          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
+          <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function getLatestRecording(selectedMeeting) {
@@ -185,6 +287,10 @@ function UnifiedLibrary({
           case 'recordingsCount':
             aVal = (a.recordings || []).length;
             bVal = (b.recordings || []).length;
+            break;
+          case 'speakerCount':
+            aVal = Number(a.speakerCount) || 0;
+            bVal = Number(b.speakerCount) || 0;
             break;
           case 'startsAt':
           default:
@@ -536,6 +642,7 @@ function UnifiedLibrary({
           </div>
         </div>
       </div>
+      <RecordingsStatsBar meetings={userMeetings} />
       <div className="studio-recordings-table-wrap">
         {sortedAndFiltered.length ? (
           <table className="studio-recordings-table">
@@ -544,7 +651,7 @@ function UnifiedLibrary({
                 <th
                   onClick={() => handleSort('title')}
                   className="sortable-th"
-                  style={{ width: '35%' }}
+                  style={{ width: '30%' }}
                 >
                   Spotkanie{' '}
                   {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
@@ -552,7 +659,7 @@ function UnifiedLibrary({
                 <th
                   onClick={() => handleSort('startsAt')}
                   className="sortable-th"
-                  style={{ width: '20%' }}
+                  style={{ width: '18%' }}
                 >
                   Data i godzina{' '}
                   {sortConfig.key === 'startsAt'
@@ -564,16 +671,30 @@ function UnifiedLibrary({
                 <th
                   onClick={() => handleSort('durationMinutes')}
                   className="sortable-th"
-                  style={{ width: '15%' }}
+                  style={{ width: '10%' }}
                 >
-                  Czas trwania{' '}
+                  Czas{' '}
                   {sortConfig.key === 'durationMinutes'
                     ? sortConfig.direction === 'asc'
                       ? '↑'
                       : '↓'
                     : null}
                 </th>
-                <th style={{ width: '25%' }}>Tagi</th>
+                <th
+                  onClick={() => handleSort('speakerCount')}
+                  className="sortable-th"
+                  style={{ width: '8%' }}
+                  title="Liczba uczestników"
+                >
+                  Mówcy{' '}
+                  {sortConfig.key === 'speakerCount'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : null}
+                </th>
+                <th style={{ width: '10%' }}>Status</th>
+                <th style={{ width: '19%' }}>Tagi</th>
                 <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
               </tr>
             </thead>
@@ -612,7 +733,13 @@ function UnifiedLibrary({
                     </strong>
                   </td>
                   <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
-                  <td>{m.durationMinutes} min</td>
+                  <td>{m.durationMinutes ? `${m.durationMinutes} min` : '—'}</td>
+                  <td style={{ color: 'var(--muted)', textAlign: 'center' }}>
+                    {Number(m.speakerCount) > 0 ? m.speakerCount : '—'}
+                  </td>
+                  <td>
+                    <AiStatusBadge meeting={m} />
+                  </td>
                   <td>
                     <div
                       className="recordings-library-tags"
