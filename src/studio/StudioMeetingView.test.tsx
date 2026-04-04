@@ -536,4 +536,51 @@ describe('StudioMeetingView', () => {
       screen.getAllByRole('heading').some((item) => item.className.includes('icard-name'))
     ).toBe(true);
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — StudioMeetingView: analysisStatus derived from array .status (always undefined)
+  // Date: 2026-04-04
+  // Bug: selectedMeetingQueue is an array, but .status was accessed on it → always undefined.
+  //      Pipeline progress was never shown during import queue processing.
+  // Fix: derive analysisStatus from the first active queue item in the array.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — analysisStatus derived from queue array', () => {
+    test('shows pipeline progress when selectedMeetingQueue has active items', () => {
+      renderWithContext(
+        <StudioMeetingView
+          {...defaultProps}
+          selectedMeetingQueue={[{ recordingId: 'rec_1', meetingId: 'm1', status: 'processing' }]}
+          recordingMessage="Serwer przetwarza nagranie..."
+          pipelineProgressPercent={50}
+          pipelineStageLabel="Transkrypcja"
+        />
+      );
+
+      expect(screen.getByText(/Serwer przetwarza nagranie/i)).toBeInTheDocument();
+    });
+
+    test('shows queued state when selectedMeetingQueue has queued items', () => {
+      renderWithContext(
+        <StudioMeetingView
+          {...defaultProps}
+          selectedMeetingQueue={[{ recordingId: 'rec_2', meetingId: 'm1', status: 'queued' }]}
+          recordingMessage="Nagranie czeka na wolny slot przetwarzania..."
+          pipelineProgressPercent={10}
+          pipelineStageLabel="Oczekiwanie"
+        />
+      );
+
+      expect(screen.getByText(/Nagranie czeka na wolny slot przetwarzania/i)).toBeInTheDocument();
+    });
+
+    test('analysisStatus is undefined when selectedMeetingQueue is empty array', () => {
+      renderWithContext(
+        <StudioMeetingView {...defaultProps} selectedMeetingQueue={[]} recordingMessage="" />
+      );
+
+      expect(
+        screen.getByText(/Automatyczne podsumowanie AI pojawi sie po zakonczeniu analizy/i)
+      ).toBeInTheDocument();
+    });
+  });
 });

@@ -542,4 +542,113 @@ describe('recorderStore', () => {
       useRecorderStore.getState().recordingQueue.find((i) => i.recordingId === 'rec_empty')
     ).toBeUndefined();
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — processQueue removes queue item even when meeting not found
+  // Date: 2026-04-04
+  // Bug: attachCompletedRecording silently failed when meeting was missing from
+  //      state (e.g. after bootstrap overwrite). Queue item was removed anyway,
+  //      permanently losing the recording data.
+  // Fix: check return value; if false, mark queue item as failed instead of removing.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — processQueue preserves queue item when attachment fails', () => {
+    test('marks item as failed when attachCompletedRecording returns false (normal transcript)', async () => {
+      const { getAudioBlob } = await import('../lib/audioStore');
+      (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+
+      const { createMediaService } = await import('../services/mediaService');
+      const { analyzeMeeting } = await import('../lib/analysis');
+      (analyzeMeeting as any).mockResolvedValueOnce({
+        summary: 'test',
+        speakerLabels: {},
+        speakerCount: 1,
+      });
+      (createMediaService as any).mockReturnValue({
+        mode: 'remote',
+        persistRecordingAudio: vi.fn().mockResolvedValue({}),
+        startTranscriptionJob: vi.fn().mockResolvedValue({
+          pipelineStatus: 'done',
+          verifiedSegments: [{ text: 'Hello', speakerId: 0, timestamp: 0, endTimestamp: 2 }],
+          diarization: { speakerNames: {}, speakerCount: 1 },
+          providerId: 'test-provider',
+        }),
+        subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+      });
+
+      const { useRecorderStore } = await import('./recorderStore');
+      useRecorderStore.setState({
+        recordingQueue: [
+          {
+            recordingId: 'rec_orphan',
+            meetingId: 'meeting_missing',
+            status: 'queued',
+            uploaded: false,
+            createdAt: '2026-01-01T00:00:00Z',
+            duration: 10,
+          },
+        ],
+      });
+
+      const attachMock = vi.fn().mockReturnValue(false);
+
+      await useRecorderStore
+        .getState()
+        .processQueue(() => ({ id: 'meeting_missing', workspaceId: 'ws1' }), attachMock, vi.fn());
+
+      expect(attachMock).toHaveBeenCalledTimes(1);
+      const queueItem = useRecorderStore
+        .getState()
+        .recordingQueue.find((i) => i.recordingId === 'rec_orphan');
+      expect(queueItem).toBeDefined();
+      expect(queueItem!.status).toBe('failed');
+      expect(queueItem!.errorMessage).toContain('Nie znaleziono spotkania');
+    });
+
+    test('marks item as failed when attachCompletedRecording returns false (empty transcript)', async () => {
+      const { getAudioBlob } = await import('../lib/audioStore');
+      (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+
+      const { createMediaService } = await import('../services/mediaService');
+      (createMediaService as any).mockReturnValue({
+        mode: 'remote',
+        persistRecordingAudio: vi.fn().mockResolvedValue({}),
+        startTranscriptionJob: vi.fn().mockResolvedValue({
+          pipelineStatus: 'done',
+          verifiedSegments: [],
+          transcriptOutcome: 'empty',
+          diarization: { speakerNames: {}, speakerCount: 0 },
+          providerId: 'test-provider',
+        }),
+        subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+      });
+
+      const { useRecorderStore } = await import('./recorderStore');
+      useRecorderStore.setState({
+        recordingQueue: [
+          {
+            recordingId: 'rec_orphan_empty',
+            meetingId: 'meeting_gone',
+            status: 'queued',
+            uploaded: false,
+            createdAt: '2026-01-01T00:00:00Z',
+            duration: 10,
+          },
+        ],
+      });
+
+      const attachMock = vi.fn().mockReturnValue(false);
+
+      await useRecorderStore
+        .getState()
+        .processQueue(() => ({ id: 'meeting_gone', workspaceId: 'ws1' }), attachMock, vi.fn());
+
+      expect(attachMock).toHaveBeenCalledTimes(1);
+      const queueItem = useRecorderStore
+        .getState()
+        .recordingQueue.find((i) => i.recordingId === 'rec_orphan_empty');
+      expect(queueItem).toBeDefined();
+      expect(queueItem!.status).toBe('failed');
+      expect(queueItem!.errorMessage).toContain('Nie znaleziono spotkania');
+    });
+  });
 });

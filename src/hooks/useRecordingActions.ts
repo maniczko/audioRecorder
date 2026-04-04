@@ -339,9 +339,11 @@ export default function useRecordingActions({
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
+    let attached = false;
     setMeetings((prev) =>
       prev.map((m) => {
         if (m.id !== recordingMeetingId) return m;
+        attached = true;
         const base = attachRecording(m, recording);
         return {
           ...base,
@@ -360,8 +362,10 @@ export default function useRecordingActions({
         };
       })
     );
+    if (!attached) return false;
     setSelectedMeetingId(recordingMeetingId);
     setSelectedRecordingId(recording.id);
+    return true;
   }
 
   function rescheduleMeeting(meetingId, startsAt) {

@@ -635,7 +635,20 @@ export const useRecorderStore = create<any>()(
               analysis: emptyAnalysis,
             };
 
-            attachCompletedRecording(target.id, recording);
+            const emptyAttached = attachCompletedRecording(target.id, recording);
+            if (emptyAttached === false) {
+              console.warn(
+                '[queue] Meeting not found when attaching empty-transcript recording',
+                nextItem.recordingId,
+                target.id
+              );
+              get().updateQueueItem(nextItem.recordingId, {
+                status: 'failed',
+                errorMessage: 'Nie znaleziono spotkania do przypisania nagrania. Sprobuj ponownie.',
+              });
+              set({ isProcessingQueue: false });
+              return;
+            }
             get().removeQueueItem(nextItem.recordingId);
             const doneSnapshot = getPipelineSnapshot('done');
             set({
@@ -700,7 +713,20 @@ export const useRecorderStore = create<any>()(
             analysis,
           };
 
-          attachCompletedRecording(target.id, recording);
+          const attached = attachCompletedRecording(target.id, recording);
+          if (attached === false) {
+            console.warn(
+              '[queue] Meeting not found when attaching recording',
+              nextItem.recordingId,
+              target.id
+            );
+            get().updateQueueItem(nextItem.recordingId, {
+              status: 'failed',
+              errorMessage: 'Nie znaleziono spotkania do przypisania nagrania. Sprobuj ponownie.',
+            });
+            set({ isProcessingQueue: false });
+            return;
+          }
           get().removeQueueItem(nextItem.recordingId);
           const doneSnapshot = getPipelineSnapshot('done');
           set({

@@ -927,7 +927,10 @@ export default function StudioMeetingView({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
 
-  const analysisStatus = selectedMeetingQueue?.status;
+  const analysisStatus = (Array.isArray(selectedMeetingQueue) ? selectedMeetingQueue : []).find(
+    (item) =>
+      item && ['queued', 'uploading', 'processing', 'diarization', 'failed'].includes(item.status)
+  )?.status;
   const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
   const selectedTranscript = Array.isArray(selectedRecording?.transcript)
     ? selectedRecording.transcript

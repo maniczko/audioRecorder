@@ -303,4 +303,52 @@ describe('useRecordingActions', () => {
     expect(transcript[0].text).toBe('AB');
     expect(transcript[1].text).toBe('CD');
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — attachCompletedRecording silently loses recording when meeting missing
+  // Date: 2026-04-04
+  // Bug: attachCompletedRecording did not indicate success/failure. processQueue
+  //      unconditionally removed queue item even if meeting was not found.
+  // Fix: attachCompletedRecording returns false when meeting is missing.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: #0 — attachCompletedRecording returns success indicator', () => {
+    test('returns true when meeting is found', () => {
+      // Make setMeetings actually call the updater so `attached` flag is set
+      mockSetMeetings.mockImplementation((updater) => {
+        if (typeof updater === 'function') updater([baseMeeting]);
+      });
+      const { result } = setupHook();
+      let returnValue: any;
+      act(() => {
+        returnValue = result.current.attachCompletedRecording('m1', {
+          id: 'r_new',
+          transcript: [{ text: 'Hello' }],
+          analysis: {},
+        });
+      });
+      expect(returnValue).toBe(true);
+      expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m1');
+      expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_new');
+    });
+
+    test('returns false when meeting is not found', () => {
+      // Make setMeetings call the updater — no match for nonexistent_meeting
+      mockSetMeetings.mockImplementation((updater) => {
+        if (typeof updater === 'function') updater([baseMeeting]);
+      });
+      const { result } = setupHook();
+      let returnValue: any;
+      act(() => {
+        returnValue = result.current.attachCompletedRecording('nonexistent_meeting', {
+          id: 'r_lost',
+          transcript: [{ text: 'Lost' }],
+          analysis: {},
+        });
+      });
+      expect(returnValue).toBe(false);
+      // Selection should NOT be updated when meeting is missing
+      expect(mockSetSelectedMeetingId).not.toHaveBeenCalled();
+      expect(mockSetSelectedRecordingId).not.toHaveBeenCalled();
+    });
+  });
 });
