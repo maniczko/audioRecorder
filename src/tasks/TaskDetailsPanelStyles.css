@@ -253,8 +253,8 @@
 
 .todo-detail-row {
   width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
+  min-height: 48px;
+  padding: 6px 16px;
   border: none;
   background: transparent;
   display: flex;
@@ -301,8 +301,6 @@
 
 .todo-detail-row input,
 .todo-detail-row textarea {
-  margin-left: auto;
-  max-width: 280px;
   cursor: text;
 }
 
@@ -315,10 +313,9 @@
 .todo-detail-row.note-row {
   flex-direction: column;
   align-items: flex-start;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  min-height: 118px;
-  gap: 12px;
+  padding: 14px 16px;
+  min-height: 100px;
+  gap: 10px;
 }
 
 .todo-detail-row.note-row .todo-row-label-container {
@@ -735,7 +732,6 @@
 .todo-detail-row input,
 .todo-detail-row textarea {
   flex: 1;
-  margin-left: 16px;
   max-width: none;
   background: transparent;
   box-shadow: none;
@@ -789,11 +785,12 @@
 .todo-detail-group {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: visible;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 4px 0;
 }
 
 .todo-detail-group--content {
@@ -801,13 +798,6 @@
 }
 
 /* ── todo-detail-row alignment fixes ── */
-.todo-detail-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-}
-
 .todo-detail-row .todo-row-icon {
   display: flex;
   align-items: center;
@@ -878,10 +868,9 @@
 
 .ms-todo .todo-detail-card {
   padding: 24px 20px;
-  gap: 24px;
+  gap: 20px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   border-radius: 12px;
 }
 
@@ -902,9 +891,9 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 48px;
-  padding: 8px 12px;
-  border-radius: 12px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   color: #eef4fb; /* Fallback for var(--task-text) */
@@ -956,4 +945,113 @@ select.todo-detail-unified-field option {
   background: transparent;
   flex: 1 1 120px;
   min-width: 120px;
+}
+
+/* ── Modal task detail — layout stabilisation ──────────────── */
+.todo-detail-modal-scroll .todo-details {
+  min-width: 0;
+}
+
+.todo-detail-modal-scroll .todo-detail-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.todo-detail-modal-scroll .todo-detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-right: 40px; /* space for close button */
+}
+
+.todo-detail-modal-scroll .todo-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.todo-detail-modal-scroll .todo-detail-title-input {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.todo-detail-modal-scroll .todo-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.todo-detail-modal-scroll .todo-detail-group {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 4px 0;
+}
+
+.todo-detail-modal-scroll .todo-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  min-height: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.todo-detail-modal-scroll .todo-detail-row:last-child {
+  border-bottom: none;
+}
+
+.todo-detail-modal-scroll .todo-detail-row.note-row {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 16px;
+  min-height: auto;
+  gap: 10px;
+}
+
+.todo-detail-modal-scroll .todo-detail-row-fill {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-detail-modal-scroll .todo-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  color: var(--task-muted, #8c99ad);
+}
+
+.todo-detail-modal-scroll .todo-row-label {
+  min-width: 76px;
+  flex-shrink: 0;
+  color: var(--task-muted, #8c99ad);
+  font-size: 0.88rem;
+}
+
+.todo-detail-modal-scroll .todo-detail-unified-field,
+.todo-detail-modal-scroll .tag-input-container {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.todo-detail-modal-scroll .mention-textarea-wrapper,
+.todo-detail-modal-scroll .todo-detail-row.note-row textarea {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  min-height: 80px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--task-text, #eef4fb);
+  resize: vertical;
 }
