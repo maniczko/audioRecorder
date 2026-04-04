@@ -20,6 +20,10 @@ export default defineConfig({
         'server/test_scrypt.ts',
         'server/**/*.d.ts',
         'server/**/*.test.ts',
+        // Integration-heavy modules requiring external dependencies
+        'server/debug_env.ts',
+        'server/stt/localWhisper.ts',
+        'server/agents/dispatcher.ts',
       ],
       thresholds: {
         lines: 65,
