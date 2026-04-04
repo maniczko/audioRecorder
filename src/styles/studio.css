@@ -2028,7 +2028,10 @@
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
   position: relative;
   flex-shrink: 0;
 }
@@ -2089,7 +2092,9 @@
   border-radius: 6px;
   color: var(--muted, #9ca3af);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .fireflies-actions .icon-button:hover {

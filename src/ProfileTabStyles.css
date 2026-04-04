@@ -818,3 +818,57 @@
     margin-top: 6px;
   }
 }
+
+/* ── Team Section ─────────────────────────────────────────── */
+
+.member-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, #5bb3dc 100%);
+  color: #03222a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.member-role-select {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-size: 0.83rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  min-width: 110px;
+}
+
+.member-role-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.member-role-chip-owner {
+  background: rgba(116, 208, 191, 0.15);
+  color: var(--accent-strong);
+  border: 1px solid rgba(116, 208, 191, 0.3);
+}
+.member-role-chip-admin {
+  background: rgba(91, 179, 220, 0.15);
+  color: #7ed4f7;
+  border: 1px solid rgba(91, 179, 220, 0.3);
+}
+.member-role-chip-member {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.member-role-chip-viewer {
+  background: rgba(243, 202, 114, 0.12);
+  color: #f3ca72;
+  border: 1px solid rgba(243, 202, 114, 0.25);
+}

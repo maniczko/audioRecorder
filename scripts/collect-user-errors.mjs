@@ -44,13 +44,14 @@ function groupErrors(errors) {
 }
 
 function errorToTask(err, index) {
-  const typeLabel = {
-    runtime: 'Runtime Error',
-    'unhandled-rejection': 'Promise Rejection',
-    'react-boundary': 'React Boundary Error',
-    network: 'Network Error',
-    manual: 'User-Reported Issue',
-  }[err.type] || 'Unknown Error';
+  const typeLabel =
+    {
+      runtime: 'Runtime Error',
+      'unhandled-rejection': 'Promise Rejection',
+      'react-boundary': 'React Boundary Error',
+      network: 'Network Error',
+      manual: 'User-Reported Issue',
+    }[err.type] || 'Unknown Error';
 
   const date = err.timestamp ? err.timestamp.slice(0, 10) : new Date().toISOString().slice(0, 10);
   const countNote = err.count > 1 ? ` (x${err.count})` : '';

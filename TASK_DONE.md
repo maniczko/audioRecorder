@@ -36,7 +36,7 @@ Status: `done` ✅
 - **GH-CSP-CLARITY** — Dodano clarity.ms do CSP + guard
   - Commits: `f3f3dce7`
 
-- **GH-HUSKY-WIN** — Naprawiono core.hooksPath (.husky/_ → .husky)
+- **GH-HUSKY-WIN** — Naprawiono core.hooksPath (.husky/\_ → .husky)
   - Commits: `b6693393`
 
 - **GH-RAILWAY-STALE** — Railway wdrożony via `railway up` (buildTime 2026-04-03T12:15:06Z)
@@ -52,7 +52,7 @@ Status: `done` ✅
 
 - ✅ Docker Build: binaria weryfikowane przez `/bin/sh`
 - ✅ Auto-Fix: poprawna detekcja błędów
-- ✅ CI/CD Pipeline: wszystkie zmienne VITE_* dostępne
+- ✅ CI/CD Pipeline: wszystkie zmienne VITE\_\* dostępne
 - ✅ Optimized CI: CRITICAL_FAILED działa poprawnie
 - ✅ Wszystkie 9 zadań zamkniętych, TASK_QUEUE wyczyszczony
 
@@ -4342,7 +4342,7 @@ Status: `done`
 
 - **GH-AUTO-2026-04-02-3** — Fix Docker Build failure
   - **Status:** done
-  - **Source:** GitHub Actions  
+  - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-2. Docker Build ? passing.
   - **Priority:** High
 
@@ -4388,7 +4388,6 @@ Status: `done`
   - **Fix:** Removed `railway login --token` step (unsupported flag). Reporter now uses RAILWAY_TOKEN env var directly. Run 23915129717 ? success.
   - **Priority:** High
 
-
 ### Railway Errors (1 found)
 
 - **RW-AUTO-2026-04-02-11** — Fix Railway error
@@ -4396,8 +4395,6 @@ Status: `done`
   - **Source:** Railway
   - **Fix:** Part of Railway Error Reporter fix (GH-AUTO-10). Reporter run 23915129717 ? success.
   - **Priority:** High
-
-
 
 <!-- Auto-generated on 2026-04-02T18:54:56.503Z -->
 
@@ -4407,16 +4404,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:30:46.0786765Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:30:46.0788107Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:30:46.0788107Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-2** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.5025...
+  - **Error:** 2026-04-02T18:37:29.4971186Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.4997586Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.5025...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4424,16 +4421,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:26:46.4572437Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:26:46.4573781Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:26:46.4573781Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-4** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0713...
+  - **Error:** 2026-04-02T18:33:40.0678221Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0695447Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0713...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4441,25 +4438,25 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:10:11.8200597Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:10:11.8202343Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:10:11.8202343Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-6** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T18:17:59.8008001Z     Error: element(s) not found
-2026-04-02T18:17...
+  - **Error:** 2026-04-02T18:17:59.8005089Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T18:17:59.8008001Z Error: element(s) not found
+    2026-04-02T18:17...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-7** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T15:03:12.5220236Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T15:03:12.5223310Z     Error: element(s) not found
-2026-04-02T15:03...
+  - **Error:** 2026-04-02T15:03:12.5220236Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T15:03:12.5223310Z Error: element(s) not found
+    2026-04-02T15:03...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4467,7 +4464,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T14:55:57.6584424Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T14:55:57.6585744Z [36;1mdocker run --rm --ent...
+    2026-04-02T14:55:57.6585744Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4475,19 +4472,18 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T14:23:18.1463146Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T14:23:18.1465235Z [36;1mdocker run --rm --ent...
+    2026-04-02T14:23:18.1465235Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-10** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T14:33:53.7127890Z     TimeoutError: page.click: Timeout 15000ms exceeded.
-2026-04-02T14:33:53.7155264Z     TimeoutError: page.click: Timeout 15000ms exceeded.
-2026-04-02T14:33:53.7184623Z  ...
+  - **Error:** 2026-04-02T14:33:53.7127890Z TimeoutError: page.click: Timeout 15000ms exceeded.
+    2026-04-02T14:33:53.7155264Z TimeoutError: page.click: Timeout 15000ms exceeded.
+    2026-04-02T14:33:53.7184623Z ...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
-
 
 ### Railway Errors (1 found)
 
@@ -4498,8 +4494,6 @@ Status: `done`
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-
-
 <!-- Auto-generated on 2026-04-03T02:06:46.025Z -->
 
 ### GitHub Actions Errors (7 found)
@@ -4508,16 +4502,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T20:15:20.4907957Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T20:15:20.4909280Z [36;1mdocker run --rm --ent...
+    2026-04-02T20:15:20.4909280Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-2** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T20:20:33.4608506Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T20:20:33.4630440Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T20:20:33.4650...
+  - **Error:** 2026-04-02T20:20:33.4608506Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T20:20:33.4630440Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T20:20:33.4650...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
@@ -4525,46 +4519,45 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:56:15.4342195Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:56:15.4343511Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:56:15.4343511Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-4** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T19:03:03.1295832Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T19:03:03.1323463Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T19:03:03.1351...
+  - **Error:** 2026-04-02T19:03:03.1295832Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T19:03:03.1323463Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T19:03:03.1351...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-5** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.5025...
+  - **Error:** 2026-04-02T18:37:29.4971186Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.4997586Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.5025...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-6** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0713...
+  - **Error:** 2026-04-02T18:33:40.0678221Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0695447Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0713...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-7** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T18:17:59.8008001Z     Error: element(s) not found
-2026-04-02T18:17...
+  - **Error:** 2026-04-02T18:17:59.8005089Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T18:17:59.8008001Z Error: element(s) not found
+    2026-04-02T18:17...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
-
 
 ---
 
@@ -4589,7 +4582,7 @@ Status: `done`
 
 - **GH-AUTO-2026-04-02-3** ďż˝ Fix Docker Build failure
   - **Status:** done
-  - **Source:** GitHub Actions  
+  - **Source:** GitHub Actions
   - **Fix:** Same as GH-AUTO-2. Docker Build ? passing.
   - **Priority:** High
 
@@ -4635,7 +4628,6 @@ Status: `done`
   - **Fix:** Removed `railway login --token` step (unsupported flag). Reporter now uses RAILWAY_TOKEN env var directly. Run 23915129717 ? success.
   - **Priority:** High
 
-
 ### Railway Errors (1 found)
 
 - **RW-AUTO-2026-04-02-11** ďż˝ Fix Railway error
@@ -4643,8 +4635,6 @@ Status: `done`
   - **Source:** Railway
   - **Fix:** Part of Railway Error Reporter fix (GH-AUTO-10). Reporter run 23915129717 ? success.
   - **Priority:** High
-
-
 
 <!-- Auto-generated on 2026-04-02T18:54:56.503Z -->
 
@@ -4654,16 +4644,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:30:46.0786765Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:30:46.0788107Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:30:46.0788107Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-2** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.5025...
+  - **Error:** 2026-04-02T18:37:29.4971186Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.4997586Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.5025...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4671,16 +4661,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:26:46.4572437Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:26:46.4573781Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:26:46.4573781Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-4** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0713...
+  - **Error:** 2026-04-02T18:33:40.0678221Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0695447Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0713...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4688,25 +4678,25 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:10:11.8200597Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:10:11.8202343Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:10:11.8202343Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-6** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T18:17:59.8008001Z     Error: element(s) not found
-2026-04-02T18:17...
+  - **Error:** 2026-04-02T18:17:59.8005089Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T18:17:59.8008001Z Error: element(s) not found
+    2026-04-02T18:17...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-7** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T15:03:12.5220236Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T15:03:12.5223310Z     Error: element(s) not found
-2026-04-02T15:03...
+  - **Error:** 2026-04-02T15:03:12.5220236Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T15:03:12.5223310Z Error: element(s) not found
+    2026-04-02T15:03...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4714,7 +4704,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T14:55:57.6584424Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T14:55:57.6585744Z [36;1mdocker run --rm --ent...
+    2026-04-02T14:55:57.6585744Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
@@ -4722,19 +4712,18 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T14:23:18.1463146Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T14:23:18.1465235Z [36;1mdocker run --rm --ent...
+    2026-04-02T14:23:18.1465235Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-02-10** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T14:33:53.7127890Z     TimeoutError: page.click: Timeout 15000ms exceeded.
-2026-04-02T14:33:53.7155264Z     TimeoutError: page.click: Timeout 15000ms exceeded.
-2026-04-02T14:33:53.7184623Z  ...
+  - **Error:** 2026-04-02T14:33:53.7127890Z TimeoutError: page.click: Timeout 15000ms exceeded.
+    2026-04-02T14:33:53.7155264Z TimeoutError: page.click: Timeout 15000ms exceeded.
+    2026-04-02T14:33:53.7184623Z ...
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
-
 
 ### Railway Errors (1 found)
 
@@ -4745,8 +4734,6 @@ Status: `done`
   - **Created:** 2026-04-02T18:54:56.503Z
   - **Priority:** High
 
-
-
 <!-- Auto-generated on 2026-04-03T02:06:46.025Z -->
 
 ### GitHub Actions Errors (7 found)
@@ -4755,16 +4742,16 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T20:15:20.4907957Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T20:15:20.4909280Z [36;1mdocker run --rm --ent...
+    2026-04-02T20:15:20.4909280Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-2** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T20:20:33.4608506Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T20:20:33.4630440Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T20:20:33.4650...
+  - **Error:** 2026-04-02T20:20:33.4608506Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T20:20:33.4630440Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T20:20:33.4650...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
@@ -4772,49 +4759,45 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-02T18:56:15.4342195Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "? Node.js not found" && exit 1)[0m
-2026-04-02T18:56:15.4343511Z [36;1mdocker run --rm --ent...
+    2026-04-02T18:56:15.4343511Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-4** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T19:03:03.1295832Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T19:03:03.1323463Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T19:03:03.1351...
+  - **Error:** 2026-04-02T19:03:03.1295832Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T19:03:03.1323463Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T19:03:03.1351...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-5** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:37:29.4971186Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.4997586Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:37:29.5025...
+  - **Error:** 2026-04-02T18:37:29.4971186Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.4997586Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:37:29.5025...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-6** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:33:40.0678221Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0695447Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-02T18:33:40.0713...
+  - **Error:** 2026-04-02T18:33:40.0678221Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0695447Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-02T18:33:40.0713...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-7** ďż˝ Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-02T18:17:59.8005089Z     Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-2026-04-02T18:17:59.8008001Z     Error: element(s) not found
-2026-04-02T18:17...
+  - **Error:** 2026-04-02T18:17:59.8005089Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+    2026-04-02T18:17:59.8008001Z Error: element(s) not found
+    2026-04-02T18:17...
   - **Created:** 2026-04-03T02:06:46.025Z
   - **Priority:** High
-
-
-
-
 
 ---
 
@@ -4828,7 +4811,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T07:03:42.1307735Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T07:03:42.1309049Z [36;1mdocker run --rm --ent...
+    2026-04-03T07:03:42.1309049Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
@@ -4836,7 +4819,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T06:48:20.6584473Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T06:48:20.6585787Z [36;1mdocker run --rm --ent...
+    2026-04-03T06:48:20.6585787Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
@@ -4844,25 +4827,25 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T06:35:57.8851234Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T06:35:57.8852643Z [36;1mdocker run --rm --ent...
+    2026-04-03T06:35:57.8852643Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-4** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T06:40:19.2743821Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:40:19.2761593Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:40:19.2779...
+  - **Error:** 2026-04-03T06:40:19.2743821Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:40:19.2761593Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:40:19.2779...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-5** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T06:28:49.7375089Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:28:49.7398640Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:28:49.7419...
+  - **Error:** 2026-04-03T06:28:49.7375089Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:28:49.7398640Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:28:49.7419...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
@@ -4870,7 +4853,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T06:24:03.2023907Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T06:24:03.2025208Z [36;1mdocker run --rm --ent...
+    2026-04-03T06:24:03.2025208Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
@@ -4878,7 +4861,7 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T02:13:46.9375934Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
-2026-04-03T02:13:46.9509882Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+    2026-04-03T02:13:46.9509882Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
@@ -4886,20 +4869,18 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T02:08:14.4566843Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T02:08:14.4568162Z [36;1mdocker run --rm --ent...
+    2026-04-03T02:08:14.4568162Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-9** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T02:13:25.7202068Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T02:13:25.7223580Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T02:13:25.7240...
+  - **Error:** 2026-04-03T02:13:25.7202068Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T02:13:25.7223580Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T02:13:25.7240...
   - **Created:** 2026-04-03T07:05:51.611Z
   - **Priority:** High
-
-
 
 <!-- Auto-generated on 2026-04-03T07:07:29.383Z -->
 
@@ -4909,35 +4890,33 @@ Status: `done`
   - **Status:** done
   - **Source:** GitHub Actions
   - **Error:** 2026-04-03T07:06:47.6964035Z [36;1mdocker run --rm --entrypoint="" voicelog:test node --version || (echo "âťŚ Node.js not found" && exit 1)[0m
-2026-04-03T07:06:47.6965720Z [36;1mdocker run --rm --ent...
+    2026-04-03T07:06:47.6965720Z [36;1mdocker run --rm --ent...
   - **Created:** 2026-04-03T07:07:29.383Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-2** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T06:40:19.2743821Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:40:19.2761593Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:40:19.2779...
+  - **Error:** 2026-04-03T06:40:19.2743821Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:40:19.2761593Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:40:19.2779...
   - **Created:** 2026-04-03T07:07:29.383Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-3** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T06:28:49.7375089Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:28:49.7398640Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T06:28:49.7419...
+  - **Error:** 2026-04-03T06:28:49.7375089Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:28:49.7398640Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T06:28:49.7419...
   - **Created:** 2026-04-03T07:07:29.383Z
   - **Priority:** High
 
 - **GH-AUTO-2026-04-03-4** â€” Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
-  - **Error:** 2026-04-03T02:13:25.7202068Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T02:13:25.7223580Z     TimeoutError: locator.click: Timeout 15000ms exceeded.
-2026-04-03T02:13:25.7240...
+  - **Error:** 2026-04-03T02:13:25.7202068Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T02:13:25.7223580Z TimeoutError: locator.click: Timeout 15000ms exceeded.
+    2026-04-03T02:13:25.7240...
   - **Created:** 2026-04-03T07:07:29.383Z
   - **Priority:** High
-
-

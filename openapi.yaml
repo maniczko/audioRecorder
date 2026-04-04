@@ -145,7 +145,7 @@ paths:
                     type: string
                   user:
                     $ref: '#/components/schemas/User'
-        '200':
+        '401':
           description: Invalid credentials
           content:
             application/json:
@@ -320,6 +320,18 @@ paths:
       responses:
         '202':
           description: Transcription queued
+    get:
+      tags: [Media]
+      summary: Get transcription status/result
+      parameters:
+        - in: path
+          name: recordingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transcription data
 
   /media/recordings/{recordingId}/retry-transcribe:
     post:
@@ -334,20 +346,6 @@ paths:
       responses:
         '202':
           description: Retry queued
-
-  /media/recordings/{recordingId}/transcribe:
-    get:
-      tags: [Media]
-      summary: Get transcription status/result
-      parameters:
-        - in: path
-          name: recordingId
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Transcription data
 
   /media/recordings/{recordingId}/sketchnote:
     post:

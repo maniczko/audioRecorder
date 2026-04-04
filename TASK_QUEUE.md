@@ -42,6 +42,7 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 
 - Status: `todo`
 - Priorytet: `P1`
+- Wlasciciel: `Codex`
 - Zrodlo: lokalne testy `useWorkspaceData.test.tsx` - wszystkie 10 testow failuje
 - Opis zadania:
   Hook `useWorkspaceData` ma migration effect (linie 200-220), ktory wywoluje `setUsers`, `setWorkspaces` itp. gdy `migration.changed === true`. Te settery aktualizuja store, ktory jest w dependency array `[users, workspaces, meetings, manualTasks, taskBoards, session]`, co powoduje kolejny useEffect run = INFINITE LOOP. Testy failuja z "Maximum update depth exceeded".
@@ -120,6 +121,7 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
+  - **Owner:** Codex
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:19:19.7682471Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
   - **Error:** 2026-04-04T18:19:19.7682471Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779298
@@ -129,6 +131,7 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-2** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
+  - **Owner:** Codex
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:19:23.3571100Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
   - **Error:** 2026-04-04T18:19:23.3571100Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
@@ -138,8 +141,9 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-3** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36;1mif [ "failure" == "failure" ]; then CRITICAL_FAILED="true...
-  - **Error:** 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36...
+  - **Owner:** Codex
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:20:47.0636504Z 36;1mCRITICAL_FAILED="false"0m 2026-04-04T18:20:47.0638422Z 36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi0m 2026-04-04T18:20:47.0639305Z 36;1mif [ "failure" == "failure" ]; then CRITICAL_FAILED="true...
+  - **Error:** 2026-04-04T18:20:47.0636504Z 36;1mCRITICAL_FAILED="false"0m 2026-04-04T18:20:47.0638422Z 36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi0m 2026-04-04T18:20:47.0639305Z 36...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
@@ -147,26 +151,31 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-4** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "format" step "Check formatting" failed
+  - **Owner:** Qwen
+  - **Opis zadania:** GitHub Actions: Optimized CI. Job "format" step "Check formatting" failed - needs Prettier formatting fix
   - **Error:** Job "format" step "Check formatting" failed
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608821
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
+  - **Difficulty:** Easy (formatting only)
 
 - **GH-AUTO-2026-04-04-5** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [31m❌ HF_TOKEN: BRAK (HuggingFace Token)[0m 2026-04-04T17:10...
-  - **Error:** 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [...
+  - **Owner:** Qwen
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing optional API keys (ANTHROPIC_API_KEY, GEMINI_API_KEY, HF_TOKEN) - related to MON-01 env validation
+  - **Error:** Missing optional API keys in CI environment validation
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608819
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
+  - **Difficulty:** Easy (already addressed in MON-01)
 
 - **GH-AUTO-2026-04-04-6** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T17:11:25.3482337Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T17:11:27.714...
-  - **Error:** 2026-04-04T17:11:25.3482337Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Owner:** Codex
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T17:11:25.3482337Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T17:11:27.714...
+  - **Error:** 2026-04-04T17:11:25.3482337Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608826
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
@@ -174,17 +183,20 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-7** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T16:33:09.9953256Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m 2026-04-04T16:33:09.9959264Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m 2026-04-04T16:33:09.9959941Z [31m❌ DATABASE_URL: BRAK (Database URL)[0m 2026-04-04T16:33:0...
-  - **Error:** 2026-04-04T16:33:09.9953256Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m 2026-04-04T16:33:09.9959264Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m 2026-04-04T16:33:09.9959941Z [3...
+  - **Owner:** Qwen
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing env vars (VITE_GOOGLE_CLIENT_ID, VOICELOG_API_PORT, DATABASE_URL) - related to MON-01 env validation
+  - **Error:** Missing environment variables in CI pipeline configuration
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972157
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
+  - **Difficulty:** Easy (already addressed in MON-01)
 
 - **GH-AUTO-2026-04-04-8** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T16:33:48.1832346Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T16:33:50.502...
-  - **Error:** 2026-04-04T16:33:48.1832346Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Owner:** Codex
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T16:33:48.1832346Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T16:33:50.502...
+  - **Error:** 2026-04-04T16:33:48.1832346Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972150
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
@@ -192,19 +204,21 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - **GH-AUTO-2026-04-04-9** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "format" step "Check formatting" failed
+  - **Owner:** Qwen
+  - **Opis zadania:** GitHub Actions: Optimized CI. Job "format" step "Check formatting" failed - needs Prettier formatting fix
   - **Error:** Job "format" step "Check formatting" failed
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972151
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
+  - **Difficulty:** Easy (formatting only)
 
 - **GH-AUTO-2026-04-04-10** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T13:38:48.8810352Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m 2026-04-04T13:38:48.8814504Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m 2026-04-04T13:38:48.8815261Z [31m❌ DATABASE_URL: BRAK (Database URL)[0m 2026-04-04T13:38:4...
-  - **Error:** 2026-04-04T13:38:48.8810352Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m 2026-04-04T13:38:48.8814504Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m 2026-04-04T13:38:48.8815261Z [3...
+  - **Owner:** Qwen
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing env vars (VITE_GOOGLE_CLIENT_ID, VOICELOG_API_PORT, DATABASE_URL) - related to MON-01 env validation
+  - **Error:** Missing environment variables in CI pipeline configuration
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23980018546
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
-
-
+  - **Difficulty:** Easy (already addressed in MON-01)

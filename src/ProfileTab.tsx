@@ -758,6 +758,239 @@ function ChangelogSection() {
   );
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  member: 'Członek',
+  viewer: 'Obserwator',
+};
+
+function MemberAvatar({ name }: { name: string }) {
+  const initials = (name || '?')
+    .split(' ')
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() || '')
+    .join('');
+  return <div className="member-avatar">{initials}</div>;
+}
+
+function TeamSection({
+  currentUserId,
+  workspaceRole,
+  workspaceInviteCode,
+  workspaceMembers,
+  updateWorkspaceMemberRole,
+  removeWorkspaceMember,
+}: {
+  currentUserId: string;
+  workspaceRole: string;
+  workspaceInviteCode: string;
+  workspaceMembers: any[];
+  updateWorkspaceMemberRole?: (userId: string, role: string) => Promise<void>;
+  removeWorkspaceMember?: (userId: string) => Promise<void>;
+}) {
+  const isOwner = workspaceRole === 'owner';
+  const [roleLoading, setRoleLoading] = useState<string | null>(null);
+  const [removeLoading, setRemoveLoading] = useState<string | null>(null);
+  const [copyDone, setCopyDone] = useState(false);
+
+  async function handleCopyInviteCode() {
+    if (!workspaceInviteCode) return;
+    try {
+      await navigator.clipboard.writeText(workspaceInviteCode);
+      setCopyDone(true);
+      setTimeout(() => setCopyDone(false), 2000);
+    } catch {
+      // fallback — show code in alert
+      window.prompt('Skopiuj kod zaproszenia:', workspaceInviteCode);
+    }
+  }
+
+  async function handleRoleChange(userId: string, newRole: string) {
+    if (!updateWorkspaceMemberRole) return;
+    setRoleLoading(userId);
+    try {
+      await updateWorkspaceMemberRole(userId, newRole);
+    } finally {
+      setRoleLoading(null);
+    }
+  }
+
+  async function handleRemove(userId: string) {
+    if (!removeWorkspaceMember) return;
+    setRemoveLoading(userId);
+    try {
+      await removeWorkspaceMember(userId);
+    } finally {
+      setRemoveLoading(null);
+    }
+  }
+
+  return (
+    <div className="profile-category-view profile-category-view-spaced">
+      <div className="profile-grid">
+        <section className="panel">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Workspace</div>
+              <h2>Zespół</h2>
+            </div>
+            <span className="status-chip">
+              {workspaceMembers.length} {workspaceMembers.length === 1 ? 'osoba' : 'osób'}
+            </span>
+          </div>
+
+          <div className="integration-card">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
+              <div>
+                <div className="eyebrow" style={{ marginBottom: '4px' }}>
+                  Kod zaproszenia
+                </div>
+                <code
+                  style={{ fontSize: '1.1rem', letterSpacing: '0.1em', color: 'var(--accent)' }}
+                >
+                  {workspaceInviteCode || '—'}
+                </code>
+              </div>
+              <button
+                type="button"
+                className={`secondary-button small${copyDone ? ' copied' : ''}`}
+                onClick={handleCopyInviteCode}
+                disabled={!workspaceInviteCode}
+              >
+                {copyDone ? '✓ Skopiowano' : 'Kopiuj kod'}
+              </button>
+            </div>
+            <p className="profile-muted-copy" style={{ marginTop: '8px', fontSize: '0.82rem' }}>
+              Udostępnij ten kod nowej osobie — może go użyć podczas rejestracji, żeby dołączyć do
+              tego workspace.
+            </p>
+          </div>
+        </section>
+
+        <section className="panel profile-grid-span-two">
+          <div className="panel-header compact">
+            <div>
+              <div className="eyebrow">Zarządzanie</div>
+              <h2>Członkowie</h2>
+            </div>
+          </div>
+
+          {workspaceMembers.length === 0 ? (
+            <div className="empty-state">
+              <p>Brak członków w workspace.</p>
+            </div>
+          ) : (
+            <div className="workspace-member-list">
+              {workspaceMembers.map((member) => {
+                const memberRole = member.workspaceMemberRole || 'member';
+                const isSelf = member.id === currentUserId;
+                const isRoleLoading = roleLoading === member.id;
+                const isRemoveLoading = removeLoading === member.id;
+                const displayName = member.name || member.email || member.id;
+
+                return (
+                  <div key={member.id} className="workspace-member-card">
+                    <div className="workspace-member-role-row">
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        <MemberAvatar name={displayName} />
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              color: 'var(--text)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {displayName}
+                            {isSelf && (
+                              <span
+                                className="status-chip"
+                                style={{ marginLeft: '8px', fontSize: '0.72rem' }}
+                              >
+                                Ty
+                              </span>
+                            )}
+                          </div>
+                          {member.email && member.name && (
+                            <div
+                              style={{
+                                fontSize: '0.8rem',
+                                color: 'var(--muted)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {member.email}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
+                      >
+                        {isOwner && !isSelf ? (
+                          <select
+                            className="member-role-select"
+                            value={memberRole}
+                            disabled={isRoleLoading}
+                            onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="member">Członek</option>
+                            <option value="viewer">Obserwator</option>
+                          </select>
+                        ) : (
+                          <span className={`status-chip member-role-chip-${memberRole}`}>
+                            {ROLE_LABELS[memberRole] || memberRole}
+                          </span>
+                        )}
+
+                        {isOwner && !isSelf && (
+                          <button
+                            type="button"
+                            className="danger-button small"
+                            disabled={isRemoveLoading}
+                            onClick={() => handleRemove(member.id)}
+                            title={`Usuń ${displayName} z workspace`}
+                            style={{ padding: '6px 10px', minWidth: 'unset' }}
+                          >
+                            {isRemoveLoading ? '…' : '✕'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileTab({
   currentUser,
   profileDraft,
@@ -802,6 +1035,10 @@ export default function ProfileTab({
   connectMicrosoftTasks,
   disconnectMicrosoftTasks,
   workspaceRole,
+  workspaceInviteCode = '',
+  workspaceMembers = [],
+  updateWorkspaceMemberRole,
+  removeWorkspaceMember,
   onLogout,
   theme,
   onSetTheme,
@@ -834,6 +1071,7 @@ export default function ProfileTab({
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
+    { id: 'team', label: 'Zespół', icon: '👥' },
     { id: 'tools', label: 'Narzędzia AI', icon: '🛠️' },
     { id: 'review', label: 'Ustawienia wyciszone', icon: '📦' },
     { id: 'errorlog', label: 'Dziennik błędów', icon: '🐛' },
@@ -1349,6 +1587,17 @@ export default function ProfileTab({
               </section>
             </div>
           </div>
+        )}
+
+        {activeCategory === 'team' && (
+          <TeamSection
+            currentUserId={currentUser?.id || ''}
+            workspaceRole={workspaceRole}
+            workspaceInviteCode={workspaceInviteCode}
+            workspaceMembers={workspaceMembers}
+            updateWorkspaceMemberRole={updateWorkspaceMemberRole}
+            removeWorkspaceMember={removeWorkspaceMember}
+          />
         )}
 
         {activeCategory === 'errorlog' && (
