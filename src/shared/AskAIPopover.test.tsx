@@ -258,10 +258,10 @@ describe('AskAIPopover', () => {
       <AskAIPopover currentWorkspace={{ ...mockWorkspace, id: undefined }} onClose={mockOnClose} />
     );
 
-    const input = screen.getByPlaceholderText(/Szukaj kontekstu/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/Brak wybranej/i) as HTMLInputElement;
+    expect(input).toBeDisabled();
     const form = container.querySelector('form') as HTMLFormElement;
 
-    await userEvent.type(input, 'test query');
     fireEvent.submit(form);
 
     expect(mockMediaService.askRAG).not.toHaveBeenCalled();
