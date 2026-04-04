@@ -255,10 +255,7 @@ describe('AskAIPopover', () => {
 
   it('does nothing when workspace ID is missing', async () => {
     const { container } = render(
-      <AskAIPopover
-        currentWorkspace={{ ...mockWorkspace, id: undefined }}
-        onClose={mockOnClose}
-      />
+      <AskAIPopover currentWorkspace={{ ...mockWorkspace, id: undefined }} onClose={mockOnClose} />
     );
 
     const input = screen.getByPlaceholderText(/Szukaj kontekstu/i) as HTMLInputElement;

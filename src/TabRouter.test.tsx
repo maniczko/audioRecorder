@@ -1,11 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { createLazyComponent } from './TabRouter';
 
 describe('createLazyComponent', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('should successfully load component when import succeeds', async () => {
@@ -149,7 +156,6 @@ describe('createLazyComponent', () => {
   });
 
   it('should log error to console when import fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const importFn = vi.fn().mockRejectedValue(new Error('Test error'));
     const LazyComponent = createLazyComponent(importFn);
 
@@ -165,8 +171,6 @@ describe('createLazyComponent', () => {
         expect.any(Error)
       );
     });
-
-    consoleErrorSpy.mockRestore();
   });
 });
 

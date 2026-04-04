@@ -183,7 +183,11 @@ describe('StudioTab', () => {
 
     render(
       <ToastProvider>
-        <StudioTab {...defaultProps} defaultToNewStudio={true} startNewMeetingDraft={startNewMeetingDraftMock} />
+        <StudioTab
+          {...defaultProps}
+          defaultToNewStudio={true}
+          startNewMeetingDraft={startNewMeetingDraftMock}
+        />
       </ToastProvider>
     );
 
@@ -195,7 +199,11 @@ describe('StudioTab', () => {
 
     render(
       <ToastProvider>
-        <StudioTab {...defaultProps} defaultToNewStudio={false} startNewMeetingDraft={startNewMeetingDraftMock} />
+        <StudioTab
+          {...defaultProps}
+          defaultToNewStudio={false}
+          startNewMeetingDraft={startNewMeetingDraftMock}
+        />
       </ToastProvider>
     );
 

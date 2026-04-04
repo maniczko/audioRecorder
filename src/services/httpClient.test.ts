@@ -23,6 +23,10 @@ describe('httpClient retry logic', () => {
   beforeEach(() => {
     originalFetch = global.fetch;
     vi.useFakeTimers();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
   });
 
   afterEach(() => {
@@ -217,6 +221,21 @@ describe('httpClient retry logic', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1); // No retries
   });
 
+  it('fails fast without fetch retries when browser is offline', async () => {
+    const mockFetch = vi.fn();
+    global.fetch = mockFetch as any;
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+
+    const error = await apiRequest('/test', { retries: 3 }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Browser offline');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('passes custom headers and auth token', async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -252,6 +271,10 @@ describe('probeRemoteApiHealth retry logic', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetProbeDedup();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
   });
 
   afterEach(() => {
@@ -351,6 +374,20 @@ describe('probeRemoteApiHealth retry logic', () => {
     const result = await promise;
     expect(result).toEqual({ status: 'ok', gitSha: 'abc123' });
   });
+
+  it('fails fast without network requests when browser is offline', async () => {
+    const fetchMock = vi.fn();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+
+    const error = await probeRemoteApiHealth(fetchMock as any, 3).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Browser offline');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -365,6 +402,10 @@ describe('Regression: Issue #0 — probeRemoteApiHealth deduplication', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetProbeDedup();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
   });
 
   afterEach(() => {

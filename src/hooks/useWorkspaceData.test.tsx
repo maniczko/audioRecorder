@@ -61,11 +61,15 @@ vi.mock('../store/meetingsStore', () => ({
 }));
 
 describe('useWorkspaceData', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
   afterEach(() => {
+    warnSpy.mockRestore();
     vi.useRealTimers();
   });
 
   beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     workspaceState.currentWorkspaceId = 'ws1';
     workspaceState.users = [];
     workspaceState.workspaces = [];
@@ -285,6 +289,35 @@ describe('useWorkspaceData', () => {
     });
 
     expect(httpClientMock.probeRemoteApiHealth).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  test('does not log cooldown-active health probe failures as unexpected errors', async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
+    httpClientMock.probeRemoteApiHealth.mockRejectedValue(
+      new Error('Health probe cooldown active')
+    );
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'preview-deployment.vercel.app' },
+    });
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(warnSpy).not.toHaveBeenCalledWith(
+      'Hosted preview health probe failed.',
+      expect.anything()
+    );
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith(
+      'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.'
+    );
     unmount();
   });
 
