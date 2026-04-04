@@ -7,7 +7,7 @@
  * embedTextChunks is tested via regression tests and audio-pipeline.unit.test.ts.
  */
 
-import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterAll } from 'vitest';
 import { EventEmitter } from 'node:events';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -36,7 +36,8 @@ vi.mock('node:fs', () => ({
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('postProcessing.ts — analyzeAcousticFeatures', () => {
-  beforeAll(() => {
+  beforeEach(() => {
+    vi.resetModules();
     mockSpawn.mockReset();
     mockFs.existsSync.mockReset();
     mockFs.existsSync.mockReturnValue(true);
@@ -47,7 +48,7 @@ describe('postProcessing.ts — analyzeAcousticFeatures', () => {
   });
 
   test('throws when audio file does not exist', async () => {
-    mockFs.existsSync.mockImplementation((p: string) => !p.includes('.wav'));
+    mockFs.existsSync.mockImplementation((p: string) => !String(p).includes('.wav'));
 
     const { analyzeAcousticFeatures } = await import('../postProcessing.js');
 
@@ -57,7 +58,7 @@ describe('postProcessing.ts — analyzeAcousticFeatures', () => {
   });
 
   test('throws 501 when acoustic_features.py script is missing', async () => {
-    mockFs.existsSync.mockImplementation((p: string) => !p.includes('acoustic_features'));
+    mockFs.existsSync.mockImplementation((p: string) => !String(p).includes('acoustic_features'));
 
     const { analyzeAcousticFeatures } = await import('../postProcessing.js');
 
