@@ -2,7 +2,7 @@ name: Error Monitor & Task Creator
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: '0 */2 * * *'
   workflow_dispatch:
     inputs:
       check_github:
@@ -75,19 +75,19 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "$RAILWAY_TOKEN" ]; then
-            echo "RAILWAY_TOKEN is set — CLI will authenticate automatically"
+            echo "RAILWAY_TOKEN is set and Railway CLI can authenticate automatically"
           else
             echo "RAILWAY_TOKEN not set, skipping Railway operations"
           fi
 
-      - name: Link to Railway project (if needed)
+      - name: Link to Railway project
         if: ${{ github.event.inputs.check_railway != 'false' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: '6c73db42-8183-4e3b-b546-5edaa616cfe4'
         run: |
           if [ -n "$RAILWAY_TOKEN" ]; then
-            railway link --project $RAILWAY_PROJECT_ID || echo "Skipping link, using project ID directly"
+            railway link --project "$RAILWAY_PROJECT_ID" || echo "Skipping link, using project ID directly"
           else
             echo "RAILWAY_TOKEN not set, skipping Railway link"
           fi
@@ -118,7 +118,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: audiorecorder
-          VERCEL_HOURS_BACK: 6
+          VERCEL_HOURS_BACK: 2
           OUTPUT_DIR: ./vercel-errors
         run: node scripts/fetch-vercel-errors.js --verbose
         continue-on-error: true
@@ -128,7 +128,8 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG || 'vatlar' }}
-          SENTRY_HOURS_BACK: 6
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_HOURS_BACK: 2
           OUTPUT_DIR: ./sentry-errors
         run: node scripts/fetch-sentry-errors.js --verbose
         continue-on-error: true
@@ -141,118 +142,89 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
+            function readLatestJson(dirPath) {
+              if (!fs.existsSync(dirPath)) return null;
+              const files = fs
+                .readdirSync(dirPath)
+                .filter((file) => file.endsWith('.json'))
+                .sort()
+                .reverse();
+              if (files.length === 0) return null;
+              return JSON.parse(fs.readFileSync(path.join(dirPath, files[0]), 'utf8'));
+            }
+
             const errors = {
               github: [],
               railway: [],
               vercel: [],
               sentry: [],
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             };
 
-            // Parse GitHub errors
             try {
-              const githubErrorsDir = './github-errors';
-              if (fs.existsSync(githubErrorsDir)) {
-                const files = fs.readdirSync(githubErrorsDir)
-                  .filter(f => f.endsWith('.json'))
-                  .sort()
-                  .reverse();
-                
-                if (files.length > 0) {
-                  const latest = JSON.parse(fs.readFileSync(path.join(githubErrorsDir, files[0]), 'utf8'));
-                  if (Array.isArray(latest)) {
-                    errors.github = latest.slice(0, 10);
-                  } else if (latest && latest.failures) {
-                    // fetch-github-errors.js saves { failures: [...], summary: {} }
-                    errors.github = latest.failures.slice(0, 10).flatMap(f =>
-                      (f.errors || [{ jobName: 'unknown', stepName: 'unknown', errors: [] }]).map(e => ({
-                        workflow: f.runName || 'Unknown Workflow',
-                        message: (e.errors || []).map(err => err.line || err.message || '').filter(Boolean).join('\n')
-                          || `Job "${e.jobName}" step "${e.stepName}" failed`,
-                        url: f.htmlUrl,
-                      }))
-                    ).slice(0, 10);
-                  }
-                }
+              const latest = readLatestJson('./github-errors');
+              if (Array.isArray(latest)) {
+                errors.github = latest.slice(0, 10);
+              } else if (latest && latest.failures) {
+                errors.github = latest.failures
+                  .slice(0, 10)
+                  .flatMap((failure) =>
+                    (failure.errors || [{ jobName: 'unknown', stepName: 'unknown', errors: [] }]).map((entry) => ({
+                      workflow: failure.runName || 'Unknown Workflow',
+                      message:
+                        (entry.errors || [])
+                          .map((err) => err.line || err.message || '')
+                          .filter(Boolean)
+                          .join('\n') ||
+                        `Job "${entry.jobName}" step "${entry.stepName}" failed`,
+                      url: failure.htmlUrl,
+                    }))
+                  )
+                  .slice(0, 10);
               }
             } catch (error) {
               console.log('Could not parse GitHub errors:', error.message);
             }
 
-            // Parse Railway errors
             try {
-              const railwayErrorsDir = './railway-errors';
-              if (fs.existsSync(railwayErrorsDir)) {
-                const files = fs.readdirSync(railwayErrorsDir)
-                  .filter(f => f.endsWith('.json'))
-                  .sort()
-                  .reverse();
-
-                if (files.length > 0) {
-                  const latest = JSON.parse(fs.readFileSync(path.join(railwayErrorsDir, files[0]), 'utf8'));
-                  if (Array.isArray(latest)) {
-                    errors.railway = latest.slice(0, 10); // Last 10 errors
-                  }
-                }
+              const latest = readLatestJson('./railway-errors');
+              if (Array.isArray(latest)) {
+                errors.railway = latest.slice(0, 10);
               }
             } catch (error) {
               console.log('Could not parse Railway errors:', error.message);
             }
 
-            // Parse Vercel errors
             try {
-              const vercelErrorsDir = './vercel-errors';
-              if (fs.existsSync(vercelErrorsDir)) {
-                const files = fs.readdirSync(vercelErrorsDir)
-                  .filter(f => f.endsWith('.json'))
-                  .sort()
-                  .reverse();
-
-                if (files.length > 0) {
-                  const latest = JSON.parse(fs.readFileSync(path.join(vercelErrorsDir, files[0]), 'utf8'));
-                  if (Array.isArray(latest)) {
-                    errors.vercel = latest.slice(0, 10); // Last 10 errors
-                  }
-                }
+              const latest = readLatestJson('./vercel-errors');
+              if (Array.isArray(latest)) {
+                errors.vercel = latest.slice(0, 10);
               }
             } catch (error) {
               console.log('Could not parse Vercel errors:', error.message);
             }
 
-            // Parse Sentry errors
             try {
-              const sentryErrorsDir = './sentry-errors';
-              if (fs.existsSync(sentryErrorsDir)) {
-                const files = fs.readdirSync(sentryErrorsDir)
-                  .filter(f => f.endsWith('.json'))
-                  .sort()
-                  .reverse();
-
-                if (files.length > 0) {
-                  const latest = JSON.parse(fs.readFileSync(path.join(sentryErrorsDir, files[0]), 'utf8'));
-                  if (Array.isArray(latest)) {
-                    errors.sentry = latest.slice(0, 10); // Last 10 errors
-                  }
-                }
+              const latest = readLatestJson('./sentry-errors');
+              if (Array.isArray(latest)) {
+                errors.sentry = latest.slice(0, 10);
               }
             } catch (error) {
               console.log('Could not parse Sentry errors:', error.message);
             }
 
-            // Count unique errors
             const githubErrorCount = errors.github.length;
             const railwayErrorCount = errors.railway.length;
             const vercelErrorCount = errors.vercel.length;
             const sentryErrorCount = errors.sentry.length;
             const totalErrors = githubErrorCount + railwayErrorCount + vercelErrorCount + sentryErrorCount;
 
-            console.log(`Found ${githubErrorCount} GitHub, ${railwayErrorCount} Railway, ${vercelErrorCount} Vercel, ${sentryErrorCount} Sentry errors`);
-            console.log(`Total: ${totalErrors} errors`);
+            console.log(
+              `Found ${githubErrorCount} GitHub, ${railwayErrorCount} Railway, ${vercelErrorCount} Vercel, ${sentryErrorCount} Sentry errors`
+            );
 
-            // Save analysis results
             fs.writeFileSync('./error-analysis.json', JSON.stringify(errors, null, 2));
 
-            // Set outputs
             core.setOutput('github_errors', githubErrorCount);
             core.setOutput('railway_errors', railwayErrorCount);
             core.setOutput('vercel_errors', vercelErrorCount);
@@ -270,133 +242,148 @@ jobs:
             const timestamp = new Date().toISOString();
             const dateStr = timestamp.split('T')[0];
 
-            // Read current TASK_QUEUE.md
             let taskQueue = '';
             try {
               taskQueue = fs.readFileSync('./TASK_QUEUE.md', 'utf8');
-            } catch (error) {
-              taskQueue = '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### 🔴 Wysoki priorytet\n\n';
+            } catch (_) {
+              taskQueue =
+                '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### 🔴 Wysoki priorytet\n\n';
             }
 
-            // Read TASK_DONE.md to check resolved errors
             let taskDone = '';
             try {
               taskDone = fs.readFileSync('./TASK_DONE.md', 'utf8');
             } catch (_) {}
 
-            // Deduplication: skip errors whose fingerprint already appears in TASK_QUEUE or TASK_DONE
-            function isAlreadyTracked(errorMsg) {
-              const fingerprint = errorMsg.substring(0, 80).replace(/\s+/g, ' ').trim();
-              return taskQueue.includes(fingerprint) || taskDone.includes(fingerprint);
+            function fingerprint(value) {
+              return String(value || '').substring(0, 80).replace(/\s+/g, ' ').trim();
             }
 
-            // Generate task entries
+            function isAlreadyTracked(value) {
+              const key = fingerprint(value);
+              return !key ? false : taskQueue.includes(key) || taskDone.includes(key);
+            }
+
+            function cleanInline(text, max = 220) {
+              const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+              if (!normalized) return 'Brak szczegolow.';
+              return normalized.substring(0, max) + (normalized.length > max ? '...' : '');
+            }
+
+            function buildTaskDescription(source, title, details) {
+              const summary = cleanInline(title, 140);
+              const context = cleanInline(details, 260);
+              return `${source}: ${summary}. Szczegoly: ${context}`;
+            }
+
             let newTasks = `\n<!-- Auto-generated on ${timestamp} -->\n`;
             let taskNumber = 1;
             let addedCount = 0;
 
-            // GitHub Actions tasks
-            const newGhErrors = errors.github.filter(e => !isAlreadyTracked(e.message || e.line || ''));
+            const newGhErrors = errors.github.filter((e) => !isAlreadyTracked(e.message || e.line || ''));
             if (newGhErrors.length > 0) {
               newTasks += `\n### GitHub Actions Errors (${newGhErrors.length} found)\n\n`;
-              
-              newGhErrors.forEach((error, idx) => {
+              newGhErrors.forEach((error) => {
                 const taskNum = `GH-AUTO-${dateStr}-${taskNumber++}`;
                 const workflowName = error.workflow || 'Unknown Workflow';
                 const errorMsg = error.message || error.line || 'Unknown error';
-                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
-                addedCount++;
-                
                 newTasks += `- **${taskNum}** — Fix ${workflowName} failure\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** GitHub Actions\n`;
-                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Opis zadania:** ${buildTaskDescription('GitHub Actions', workflowName, errorMsg)}\n`;
+                newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
+                if (error.url) newTasks += `  - **Link:** ${error.url}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
+                addedCount += 1;
               });
             }
 
-            // Railway tasks
-            const newRwErrors = errors.railway.filter(e => !isAlreadyTracked(e.message || ''));
+            const newRwErrors = errors.railway.filter((e) => !isAlreadyTracked(e.message || ''));
             if (newRwErrors.length > 0) {
               newTasks += `\n### Railway Errors (${newRwErrors.length} found)\n\n`;
-
-              newRwErrors.forEach((error, idx) => {
+              newRwErrors.forEach((error) => {
                 const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || 'Unknown Railway error';
-                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
-                addedCount++;
-
                 newTasks += `- **${taskNum}** — Fix Railway error\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Railway\n`;
-                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Opis zadania:** ${buildTaskDescription('Railway', 'Blad runtime lub deployu', errorMsg)}\n`;
+                newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
+                addedCount += 1;
               });
             }
 
-            // Vercel tasks
-            const newVlErrors = errors.vercel.filter(e => !isAlreadyTracked(e.text || ''));
+            const newVlErrors = errors.vercel.filter((e) => !isAlreadyTracked(e.text || ''));
             if (newVlErrors.length > 0) {
               newTasks += `\n### Vercel Errors (${newVlErrors.length} found)\n\n`;
-
-              newVlErrors.forEach((error, idx) => {
+              newVlErrors.forEach((error) => {
                 const taskNum = `VL-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.text || 'Unknown Vercel error';
-                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
-                addedCount++;
-
                 newTasks += `- **${taskNum}** — Fix Vercel deployment error\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Vercel\n`;
-                newTasks += `  - **Error:** ${truncatedError}\n`;
+                newTasks += `  - **Opis zadania:** ${buildTaskDescription('Vercel', 'Blad buildu lub deploymentu', errorMsg)}\n`;
+                newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
+                if (error.deploymentId) newTasks += `  - **Deployment:** ${error.deploymentId}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
+                addedCount += 1;
               });
             }
 
-            // Sentry tasks
-            const newStErrors = errors.sentry.filter(e => !isAlreadyTracked(e.message || e.title || ''));
+            const newStErrors = errors.sentry.filter((e) => !isAlreadyTracked(e.message || e.title || ''));
             if (newStErrors.length > 0) {
               newTasks += `\n### Sentry Errors (${newStErrors.length} found)\n\n`;
-
-              newStErrors.forEach((error, idx) => {
+              newStErrors.forEach((error) => {
                 const taskNum = `ST-AUTO-${dateStr}-${taskNumber++}`;
-                const errorMsg = error.message || error.title || 'Unknown error';
-                const truncatedError = errorMsg.substring(0, 200) + (errorMsg.length > 200 ? '...' : '');
-                addedCount++;
-
-                newTasks += `- **${taskNum}** — Fix Sentry error: ${error.title}\n`;
+                const title = error.title || 'Unknown Sentry error';
+                const errorMsg = error.message || title;
+                newTasks += `- **${taskNum}** — Fix Sentry error: ${title}\n`;
                 newTasks += `  - **Status:** todo\n`;
-                newTasks += `  - **Source:** Sentry (${error.project})\n`;
+                newTasks += `  - **Source:** Sentry (${error.project || 'unknown'})\n`;
+                newTasks += `  - **Opis zadania:** ${buildTaskDescription(`Sentry/${error.project || 'unknown'}`, title, errorMsg)}\n`;
                 newTasks += `  - **Type:** ${error.type || 'unknown'}\n`;
-                newTasks += `  - **Message:** ${truncatedError}\n`;
+                newTasks += `  - **Message:** ${cleanInline(errorMsg, 200)}\n`;
                 newTasks += `  - **Count:** ${error.count || 1}\n`;
+                if (error.firstSeen) newTasks += `  - **First Seen:** ${error.firstSeen}\n`;
+                if (error.lastSeen) newTasks += `  - **Last Seen:** ${error.lastSeen}\n`;
+                if (error.url) newTasks += `  - **Link:** ${error.url}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
                 newTasks += `  - **Priority:** High\n\n`;
+                addedCount += 1;
               });
             }
 
-            // Only update file if there are new unique tasks to add
             if (addedCount === 0) {
-              console.log('All errors already tracked in TASK_QUEUE.md or TASK_DONE.md — no new tasks added.');
-            } else {
-              // Insert new tasks after "### 🔴 Wysoki priorytet"
-              const prioritySection = '### 🔴 Wysoki priorytet';
-              const insertIndex = taskQueue.indexOf(prioritySection);
-
-              if (insertIndex !== -1) {
-                const endOfLine = taskQueue.indexOf('\n', insertIndex + prioritySection.length);
-                const updatedQueue = taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
-                fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
-              } else {
-                // If section doesn't exist, append to end
-                fs.writeFileSync('./TASK_QUEUE.md', taskQueue + '\n' + newTasks);
-              }
-
-              console.log(`Created ${addedCount} new tasks in TASK_QUEUE.md (skipped duplicates)`);
+              console.log('All errors already tracked in TASK_QUEUE.md or TASK_DONE.md, no new tasks added.');
+              return;
             }
+
+            const preferredAnchors = ['### 🔴 Wysoki priorytet', '## Aktualne Zadania', '## Otwarta kolejka'];
+            let insertIndex = -1;
+            let anchorLength = 0;
+
+            for (const anchor of preferredAnchors) {
+              insertIndex = taskQueue.indexOf(anchor);
+              if (insertIndex !== -1) {
+                anchorLength = anchor.length;
+                break;
+              }
+            }
+
+            if (insertIndex !== -1) {
+              const endOfLine = taskQueue.indexOf('\n', insertIndex + anchorLength);
+              const updatedQueue =
+                taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
+              fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
+            } else {
+              fs.writeFileSync('./TASK_QUEUE.md', taskQueue.trimEnd() + '\n' + newTasks + '\n');
+            }
+
+            console.log(`Created ${addedCount} new tasks in TASK_QUEUE.md`);
 
       - name: Commit TASK_QUEUE.md changes
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
@@ -407,7 +394,7 @@ jobs:
           git commit --no-verify -m "chore: auto-create tasks for ${{ steps.analyze.outputs.total_errors }} errors" || echo "No changes to commit"
           GIT_TOKEN="${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}"
           git remote set-url origin https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }}.git
-          git push origin ${{ github.ref_name }} --no-verify 2>&1 || echo "Push failed - may have no changes"
+          git push origin ${{ github.ref_name }} --no-verify 2>&1 || echo "Push failed or no changes"
 
       - name: Create GitHub Issues for Errors
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_issues != 'false' }}
@@ -422,7 +409,6 @@ jobs:
             const timestamp = new Date().toISOString();
             const dateStr = timestamp.split('T')[0];
 
-            // Check for existing open issues from this run
             const { data: existingIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -430,76 +416,69 @@ jobs:
               labels: 'auto-generated-error',
             });
 
-            // Don't create duplicate issues on same day
-            const todayIssues = existingIssues.filter(issue => 
-              issue.created_at.startsWith(dateStr)
-            );
-
+            const todayIssues = existingIssues.filter((issue) => issue.created_at.startsWith(dateStr));
             if (todayIssues.length > 0) {
-              console.log(`Skipping issue creation - ${todayIssues.length} issues already created today`);
+              console.log(`Skipping issue creation, ${todayIssues.length} issues already created today`);
               return;
             }
 
-            // Create consolidated error report issue
-            let issueBody = `## 🔍 Automated Error Report\n\n`;
+            let issueBody = `## Automated Error Report\n\n`;
             issueBody += `**Generated:** ${timestamp}\n\n`;
 
             if (errors.github.length > 0) {
               issueBody += `### GitHub Actions Errors (${errors.github.length})\n\n`;
               errors.github.forEach((error, idx) => {
-                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `#### Error ${idx + 1}\n`;
                 issueBody += `\`\`\`\n${error.message || error.line || 'Unknown'}\n\`\`\`\n`;
-                issueBody += `\n**Workflow:** ${error.workflow || 'Unknown'}\n`;
-                issueBody += `\n**Run:** ${error.url || 'N/A'}\n`;
+                issueBody += `**Workflow:** ${error.workflow || 'Unknown'}\n\n`;
+                if (error.url) issueBody += `**Run:** ${error.url}\n\n`;
               });
             }
 
             if (errors.railway.length > 0) {
-              issueBody += `\n---\n\n### Railway Errors (${errors.railway.length})\n\n`;
+              issueBody += `### Railway Errors (${errors.railway.length})\n\n`;
               errors.railway.forEach((error, idx) => {
-                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `#### Error ${idx + 1}\n`;
                 issueBody += `\`\`\`\n${error.message || 'Unknown Railway error'}\n\`\`\`\n`;
               });
             }
 
             if (errors.vercel.length > 0) {
-              issueBody += `\n---\n\n### Vercel Errors (${errors.vercel.length})\n\n`;
+              issueBody += `### Vercel Errors (${errors.vercel.length})\n\n`;
               errors.vercel.forEach((error, idx) => {
-                issueBody += `\n#### Error ${idx + 1}\n`;
+                issueBody += `#### Error ${idx + 1}\n`;
                 issueBody += `\`\`\`\n${error.text || 'Unknown Vercel error'}\n\`\`\`\n`;
-                issueBody += `\n**Deployment:** ${error.deploymentId || 'N/A'}\n`;
-                issueBody += `\n**Time:** ${new Date(error.timestamp).toISOString()}\n`;
+                if (error.deploymentId) issueBody += `**Deployment:** ${error.deploymentId}\n\n`;
               });
             }
 
             if (errors.sentry.length > 0) {
-              issueBody += `\n---\n\n### Sentry Errors (${errors.sentry.length})\n\n`;
+              issueBody += `### Sentry Errors (${errors.sentry.length})\n\n`;
               errors.sentry.forEach((error, idx) => {
-                issueBody += `\n#### Error ${idx + 1}: ${error.title}\n`;
+                issueBody += `#### Error ${idx + 1}: ${error.title}\n`;
                 issueBody += `**Project:** \`${error.project}\`\n`;
                 issueBody += `**Type:** \`${error.type || 'unknown'}\`\n`;
                 issueBody += `**Count:** ${error.count || 1}\n`;
                 issueBody += `\`\`\`\n${error.message || 'No message'}\n\`\`\`\n`;
-                issueBody += `\n**Sentry Link:** ${error.url}\n`;
+                if (error.url) issueBody += `**Sentry Link:** ${error.url}\n\n`;
               });
             }
 
-            issueBody += `\n---\n\n`;
-            issueBody += `📋 **Tasks created in TASK_QUEUE.md**\n`;
-            issueBody += `\nCheck the latest commit for auto-generated tasks.\n`;
-            issueBody += `\n---\n\n`;
-            issueBody += `*This issue was automatically created by the Error Monitor workflow.*\n`;
-            issueBody += `\n**Labels:** auto-generated-error, monitoring, priority-high\n`;
+            issueBody += `---\n\n`;
+            issueBody += `Tasks were added to TASK_QUEUE.md when new unique errors were detected.\n`;
+
+            const total =
+              errors.github.length + errors.railway.length + errors.vercel.length + errors.sentry.length;
 
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🚨 Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway + ${errors.vercel.length} Vercel + ${errors.sentry.length} Sentry (${dateStr})`,
+              title: `Auto Error Report: ${errors.github.length} GitHub + ${errors.railway.length} Railway + ${errors.vercel.length} Vercel + ${errors.sentry.length} Sentry (${dateStr})`,
               body: issueBody,
               labels: ['auto-generated-error', 'monitoring', 'priority-high'],
             });
 
-            console.log(`Created issue #${issue.number} for ${errors.github.length + errors.railway.length} errors`);
+            console.log(`Created issue #${issue.number} for ${total} detected errors`);
 
       - name: Upload Error Analysis
         uses: actions/upload-artifact@v7
@@ -521,20 +500,19 @@ jobs:
       - name: Summary
         if: ${{ always() }}
         run: |
-          echo "## 📊 Error Monitor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Error Monitor Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Source | Errors Found |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|--------------|" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Actions | ${{ steps.analyze.outputs.github_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Railway | ${{ steps.analyze.outputs.railway_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Vercel | ${{ steps.analyze.outputs.vercel_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Sentry (User Errors) | ${{ steps.analyze.outputs.sentry_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sentry | ${{ steps.analyze.outputs.sentry_errors || 0 }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | **${{ steps.analyze.outputs.total_errors || 0 }}** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.analyze.outputs.has_errors }}" = "true" ]; then
-            echo "✅ Tasks created in TASK_QUEUE.md" >> $GITHUB_STEP_SUMMARY
-            echo "✅ GitHub issue created" >> $GITHUB_STEP_SUMMARY
+            echo "Tasks were added to TASK_QUEUE.md when new unique errors were found." >> $GITHUB_STEP_SUMMARY
           else
-            echo "✅ No errors found - all systems operational!" >> $GITHUB_STEP_SUMMARY
+            echo "No errors found in monitored systems." >> $GITHUB_STEP_SUMMARY
           fi

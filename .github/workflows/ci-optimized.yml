@@ -8,6 +8,18 @@ on:
 
 env:
   CI: true
+  VITE_DATA_PROVIDER: local
+  VITE_MEDIA_PROVIDER: local
+  VITE_API_BASE_URL: http://127.0.0.1:4000
+  VITE_GOOGLE_CLIENT_ID: dummy-ci.apps.googleusercontent.com
+  OPENAI_API_KEY: sk-proj-dummy-ci-key-for-validating-env-123456789
+  GROQ_API_KEY: gsk_dummy-ci-key-12345678901234567890
+  SUPABASE_URL: https://dummy.supabase.co
+  SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy.signature
+  VOICELOG_API_PORT: 4000
+  DATABASE_URL: postgresql://postgres:postgres@dummy.supabase.com:5432/postgres
+  LANGCHAIN_API_KEY: lsv2_pt_dummy_key_1234
+  GITHUB_TOKEN: github_pat_dummy_token_1234
 
 jobs:
   # Detect what files changed
