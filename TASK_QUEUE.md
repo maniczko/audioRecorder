@@ -226,3 +226,72 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
   - **Created:** 2026-04-04T18:30:36.262Z
   - **Priority:** High
   - **Notatka:** Lokalnie naprawione 2026-04-04 - przywrocone pelne API `WorkspaceContext` i usuniety blocker `typecheck` w `StudioMeetingView`; czeka na potwierdzenie w kolejnym runie CI.
+
+<!-- Auto-generated on 2026-04-04T20:20:32.761Z -->
+
+### GitHub Actions Errors (7 found)
+
+- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:12:16.9982676Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986667563
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T19:25:37.7348351Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T19:25:37.8699673Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T19:25:37.8802457Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T19:25:37.7348351Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T19:25:37.8699673Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985883483
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "Install dependencies" failed
+  - **Error:** Job "Quality Checks" step "Install dependencies" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985793671
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:48:27.1945226Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T18:48:27.2748123Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T18:48:27.2839091Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T18:48:27.1945226Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T18:48:27.2748123Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985265137
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:31:11.4755661Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
+  - **Error:** 2026-04-04T18:31:11.4755661Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984982870
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-6** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36;1mif [ "failure" == "failure" ]; then CRITICAL_FAILED="true...
+  - **Error:** 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-7** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [31m❌ HF_TOKEN: BRAK (HuggingFace Token)[0m 2026-04-04T17:10...
+  - **Error:** 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608819
+  - **Created:** 2026-04-04T20:20:32.761Z
+  - **Priority:** High
+
+
