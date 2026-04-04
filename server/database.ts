@@ -1473,6 +1473,13 @@ export class Database {
     return this.getMembership(workspaceId, targetUserId);
   }
 
+  async removeWorkspaceMember(workspaceId: string, targetUserId: string): Promise<void> {
+    await this._execute('DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?', [
+      workspaceId,
+      targetUserId,
+    ]);
+  }
+
   async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
     const timestamp = this.nowIso();
     await this._execute(

@@ -18,6 +18,10 @@ export default class WorkspaceService {
     return await this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
   }
 
+  async removeWorkspaceMember(workspaceId: string, targetUserId: string) {
+    return await this.db.removeWorkspaceMember(workspaceId, targetUserId);
+  }
+
   async getMembership(workspaceId: string, userId: string) {
     return await this.db.getMembership(workspaceId, userId);
   }

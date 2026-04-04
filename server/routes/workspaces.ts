@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
-import { generateRagAnswer } from '../lib/ragAnswer.ts';
+import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
@@ -90,6 +90,21 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     );
   });
 
+  router.delete('/workspaces/:workspaceId/members/:targetUserId', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const targetUserId = c.req.param('targetUserId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    const session = c.get('session') as any;
+    if (membership.member_role !== 'owner') {
+      return c.json({ message: 'Tylko owner moze usuwac czlonkow.' }, 403);
+    }
+    if (session.user_id === targetUserId) {
+      return c.json({ message: 'Nie mozesz usunac samego siebie.' }, 400);
+    }
+    await workspaceService.removeWorkspaceMember(workspaceId, targetUserId);
+    return new Response(null, { status: 204 });
+  });
+
   router.post('/workspaces/:workspaceId/rag/ask', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     await ensureWorkspaceAccess(c, workspaceId);
@@ -112,7 +127,18 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       });
       return c.json({ answer });
     } catch (err: any) {
-      return c.json({ answer: `Blad LLM: ${err.message}` }, 500);
+      console.warn('[RAG] Falling back to archive snippets:', err?.message || err);
+      return c.json(
+        {
+          answer: buildFallbackRagAnswer({
+            question,
+            chunks: topChunks,
+            errorMessage: err?.message || '',
+          }),
+          fallback: true,
+        },
+        200
+      );
     }
   });
 

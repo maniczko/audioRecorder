@@ -18,6 +18,89 @@ import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.
 import type { MediaAsset } from '../lib/types.ts';
 import { getMemoryPressure } from '../lib/serverUtils.ts';
 
+const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
+  'audio/webm': ['.webm'],
+  'audio/mpeg': ['.mp3'],
+  'audio/mp4': ['.mp4', '.m4a'],
+  'audio/wav': ['.wav'],
+  'audio/ogg': ['.ogg', '.oga'],
+  'audio/flac': ['.flac'],
+  'application/octet-stream': ['.webm'],
+};
+
+function extractLeafPathSegment(filePath: string): string {
+  return filePath.split(/[\\/]/).filter(Boolean).pop() ?? filePath;
+}
+
+function sanitizeRecordingId(recordingId: string): string {
+  return String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function deriveAudioExtensions(filePath: string, contentType?: string): string[] {
+  const candidates = new Set<string>();
+  const fileName = extractLeafPathSegment(filePath || '');
+  const explicitExt = path.extname(fileName);
+  if (explicitExt) {
+    candidates.add(explicitExt.toLowerCase());
+  }
+
+  const normalizedType = String(contentType || '').toLowerCase();
+  for (const extension of AUDIO_CONTENT_TYPE_EXTENSIONS[normalizedType] || []) {
+    candidates.add(extension);
+  }
+
+  if (candidates.size === 0) {
+    candidates.add('.webm');
+  }
+
+  return [...candidates];
+}
+
+export function buildRemoteAudioStorageCandidates(
+  recordingId: string,
+  asset: Pick<MediaAsset, 'file_path' | 'content_type'>
+): string[] {
+  const rawPath = String(asset.file_path || '').trim();
+  if (!rawPath) return [];
+
+  const candidates = new Set<string>();
+  const leafName = extractLeafPathSegment(rawPath);
+
+  if (rawPath && !rawPath.includes('\\') && !rawPath.includes('/')) {
+    candidates.add(rawPath);
+  }
+
+  if (leafName) {
+    candidates.add(leafName);
+  }
+
+  const safeRecordingId = sanitizeRecordingId(recordingId);
+  for (const extension of deriveAudioExtensions(rawPath, asset.content_type)) {
+    candidates.add(`${safeRecordingId}${extension}`);
+  }
+
+  return [...candidates];
+}
+
+async function downloadAudioFromStorageCandidates(
+  recordingId: string,
+  asset: Pick<MediaAsset, 'file_path' | 'content_type'>
+): Promise<{ arrayBuffer: ArrayBuffer; storagePath: string }> {
+  const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
+  let lastError: Error | null = null;
+
+  for (const storagePath of buildRemoteAudioStorageCandidates(recordingId, asset)) {
+    try {
+      const arrayBuffer = await downloadAudioFromStorage(storagePath);
+      return { arrayBuffer, storagePath };
+    } catch (error: any) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  throw lastError ?? new Error('Audio asset not found in remote storage.');
+}
+
 /**
  * Checks available disk space and returns true if there's enough space.
  * Returns false if disk space is critically low (<100MB free).
@@ -265,12 +348,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       // Supabase remote path — no OS path separator means it's a short Supabase key
       if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
         try {
-          const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-          const arrayBuffer = await downloadAudioFromStorage(asset.file_path);
+          const { arrayBuffer, storagePath } = await downloadAudioFromStorageCandidates(
+            recordingId,
+            asset
+          );
 
           c.header('Content-Type', safeType);
           c.header('Content-Length', String(arrayBuffer.byteLength));
           c.header('Content-Disposition', 'attachment');
+          if (storagePath !== asset.file_path) {
+            console.info('[media] Served audio from reconstructed Supabase key', {
+              recordingId,
+              requestedPath: asset.file_path,
+              resolvedPath: storagePath,
+            });
+          }
           return c.body(arrayBuffer as any, 200);
         } catch (err: any) {
           console.error('[media] Supabase download failed', {
@@ -295,13 +387,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
         // Local file missing (e.g. after redeploy) — try Supabase with just the filename
         try {
-          const basename = path.basename(asset.file_path);
-          const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-          const arrayBuffer = await downloadAudioFromStorage(basename);
+          const { arrayBuffer, storagePath } = await downloadAudioFromStorageCandidates(
+            recordingId,
+            asset
+          );
           console.info('[media] Local file missing, served from Supabase fallback', {
             recordingId,
             localPath: asset.file_path,
-            supabasePath: basename,
+            supabasePath: storagePath,
           });
 
           c.header('Content-Type', safeType);

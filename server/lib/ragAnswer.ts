@@ -55,6 +55,51 @@ export function buildRagContext(chunks: RagChunk[]) {
     .join('\n');
 }
 
+function normalizeChunkText(value: unknown) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function buildFallbackRagAnswer({
+  question,
+  chunks,
+  errorMessage = '',
+}: {
+  question: string;
+  chunks: RagChunk[];
+  errorMessage?: string;
+}) {
+  const normalizedQuestion = String(question || '').trim();
+  const normalizedChunks = (Array.isArray(chunks) ? chunks : [])
+    .map((chunk) => ({
+      recordingId: String(chunk?.recording_id || '').trim(),
+      speakerName: String(chunk?.speaker_name || 'Nieznany').trim() || 'Nieznany',
+      text: normalizeChunkText(chunk?.text),
+    }))
+    .filter((chunk) => chunk.text);
+
+  if (!normalizedChunks.length) {
+    return 'Nie znalazlem trafnych fragmentow w archiwalnych spotkaniach.';
+  }
+
+  const bulletList = normalizedChunks
+    .slice(0, 3)
+    .map((chunk) => {
+      const source = chunk.recordingId ? `Spotkanie ${chunk.recordingId}` : 'Archiwum';
+      return `- ${source}, ${chunk.speakerName}: ${chunk.text}`;
+    })
+    .join('\n');
+
+  const hintPrefix = errorMessage
+    ? 'Model AI jest chwilowo niedostepny, ale znalazlem pasujace fragmenty archiwum:\n'
+    : 'Na podstawie archiwalnych fragmentow znalazlem:\n';
+
+  return `${hintPrefix}${bulletList}${
+    normalizedQuestion ? `\n\nPytanie: ${normalizedQuestion}` : ''
+  }`;
+}
+
 export async function generateRagAnswer({
   question,
   chunks,
