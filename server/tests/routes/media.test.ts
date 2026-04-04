@@ -471,6 +471,107 @@ describe('Media Routes', () => {
     });
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Sketchnote Gemini 429 retry with exponential backoff
+  // Date: 2026-04-04
+  // Bug: Single 429 from Gemini immediately failed the request.
+  // Fix: Added retry loop (MAX_RETRIES=2, delays 5s/15s, 10ms in test).
+  //      After exhausting retries, the original error code is returned.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: Issue #0 — Sketchnote retries on Gemini 429/503', () => {
+    it('retries up to 2 times on 429 before returning error', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_sketchnote',
+        workspace_id: 'ws_1',
+        diarization_json: JSON.stringify({ summary: 'Test meeting.' }),
+      });
+      mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
+
+      const originalFetch = global.fetch;
+      const originalGeminiKey = process.env.GEMINI_API_KEY;
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.GEMINI_API_KEY = 'test-key';
+      process.env.NODE_ENV = 'test';
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ error: { code: 429, message: 'Quota exceeded.' } }), {
+            status: 429,
+            headers: { 'content-type': 'application/json' },
+          })
+        );
+      global.fetch = fetchMock as any;
+
+      const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(429);
+      // initial + 2 retries = 3 total fetch calls
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+
+      global.fetch = originalFetch;
+      process.env.GEMINI_API_KEY = originalGeminiKey;
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('succeeds on second attempt after initial 503', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_sketchnote',
+        workspace_id: 'ws_1',
+        diarization_json: JSON.stringify({ summary: 'Test meeting.' }),
+      });
+      mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
+
+      const originalFetch = global.fetch;
+      const originalGeminiKey = process.env.GEMINI_API_KEY;
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.GEMINI_API_KEY = 'test-key';
+      process.env.NODE_ENV = 'test';
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ error: { code: 503, message: 'Overloaded.' } }), {
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              candidates: [
+                {
+                  content: {
+                    parts: [{ inlineData: { mimeType: 'image/png', data: 'dGVzdA==' } }],
+                  },
+                },
+              ],
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          )
+        );
+      global.fetch = fetchMock as any;
+
+      const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      // Failed once (503), then succeeded — 2 total calls
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const payload = await res.json();
+      expect(payload.sketchnoteUrl).toContain('data:image/png;base64,');
+
+      global.fetch = originalFetch;
+      process.env.GEMINI_API_KEY = originalGeminiKey;
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+  });
+
   it('PUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload', async () => {
     const previewOrigin = 'https://preview-app.vercel.app';
     const missingWorkspace = await app.request('/media/recordings/rec_missing/audio', {

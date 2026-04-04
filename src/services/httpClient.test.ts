@@ -456,3 +456,65 @@ describe('Regression: Issue #0 — probeRemoteApiHealth deduplication', () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — 501 acoustic-features returns generic error message
+// Date: 2026-04-04
+// Bug: When server returned 501 (Not Implemented) for missing
+//      acoustic_features.py, frontend showed raw error text instead
+//      of a user-friendly message.
+// Fix: normalizeApiErrorMessage maps status 501 →
+//      "Funkcja niedostepna na serwerze."
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — httpClient normalizes 501 to user-friendly message', () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.useRealTimers();
+  });
+
+  it('throws error with "Funkcja niedostepna" message for HTTP 501', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 501,
+      json: () =>
+        Promise.resolve({
+          message: 'Analiza akustyczna niedostepna — brak skryptu acoustic_features.py.',
+        }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    }) as any;
+
+    const error = await apiRequest('/media/recordings/rec1/acoustic-features', {
+      method: 'POST',
+      retries: 0,
+    }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Funkcja niedostepna na serwerze.');
+    expect((error as Error & { status: number }).status).toBe(501);
+  });
+
+  it('does NOT retry on 501 — it is a permanent error', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 501,
+      json: () => Promise.resolve({ message: 'Not Implemented' }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+
+    global.fetch = mockFetch as any;
+
+    await apiRequest('/test', { retries: 3 }).catch(() => {});
+
+    // 501 should NOT trigger retries (only 502/503/504 do)
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});

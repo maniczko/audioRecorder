@@ -326,3 +326,34 @@ describe('Regression: Issue #0 — Audio path detection cross-platform', () => {
     expect(isWindowsLocal).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #0 — acoustic-features returns 500 instead of 501 when script missing
+// Date: 2026-04-04
+// Bug: analyzeAcousticFeatures threw a generic Error when acoustic_features.py
+//      was missing, causing the route to return 500. Frontend showed a generic
+//      error instead of "Funkcja niedostepna na serwerze."
+// Fix: Throw Error with statusCode=501 for missing script. Route maps to 501.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — analyzeAcousticFeatures returns 501 for missing script', () => {
+  test('error has statusCode 501 when acoustic_features.py is missing', async () => {
+    // Dynamic import to get the real function
+    const fs = await import('node:fs');
+    const existsSyncSpy = vi.spyOn(fs, 'existsSync');
+
+    // First call: audio file exists; second call: script does NOT exist
+    existsSyncSpy.mockReturnValueOnce(true).mockReturnValueOnce(false);
+
+    const { analyzeAcousticFeatures } = await import('../../postProcessing.ts');
+
+    try {
+      await analyzeAcousticFeatures('/tmp/test.webm');
+      expect.unreachable('Should have thrown');
+    } catch (err: any) {
+      expect(err.statusCode).toBe(501);
+      expect(err.message).toContain('acoustic_features.py');
+    }
+
+    existsSyncSpy.mockRestore();
+  });
+});
