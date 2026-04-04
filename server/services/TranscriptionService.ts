@@ -151,9 +151,23 @@ export default class TranscriptionService extends EventEmitter {
   }
 
   static MAX_CONCURRENT_JOBS = 2;
+  static RSS_LIMIT_BYTES = 1_000_000_000; // 1 GB — reject new jobs above this to prevent OOM kills
 
   async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
     if (!recordingId || this.transcriptionJobs.has(recordingId)) {
+      return;
+    }
+
+    // Reject new jobs when RSS exceeds threshold to prevent Railway OOM kills
+    const rss = process.memoryUsage().rss;
+    if (rss > TranscriptionService.RSS_LIMIT_BYTES) {
+      console.warn(
+        `[Pipeline] Rejecting job ${recordingId}: RSS ${(rss / 1024 / 1024).toFixed(0)}MB exceeds ${(TranscriptionService.RSS_LIMIT_BYTES / 1024 / 1024).toFixed(0)}MB limit`
+      );
+      await this.markTranscriptionFailure(
+        recordingId,
+        'Serwer chwilowo przeciążony pamięciowo — spróbuj ponownie za minutę.'
+      );
       return;
     }
 
@@ -298,6 +312,8 @@ export default class TranscriptionService extends EventEmitter {
       .finally(() => {
         this.transcriptionJobs.delete(recordingId);
         this._jobStartTimes.delete(recordingId);
+        // Trigger GC to release native memory held by ffmpeg/audio buffers
+        if (typeof global.gc === 'function') global.gc();
       });
 
     this.transcriptionJobs.set(recordingId, jobPromise);

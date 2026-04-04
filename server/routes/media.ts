@@ -489,25 +489,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: 'Brak ścieżki pliku do ponownego przetworzenia.' }, 409);
     }
 
-    // If the local file is gone (e.g. after Railway redeploy), try Supabase with basename
+    // If the local file is gone (e.g. after Railway redeploy), try the same
+    // reconstructed remote candidates as the audio download endpoint.
     if (
       (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
       !existsSync(asset.file_path)
     ) {
-      const basename = path.basename(asset.file_path);
       try {
-        // Just verify the file exists on Supabase — use a HEAD-like check via download
-        // but only need to confirm it doesn't throw, so we use downloadAudioFromStorage
-        // TODO: replace with a lighter existence check when Supabase SDK supports it
-        const { downloadAudioFromStorage } = await import('../lib/supabaseStorage.js');
-        await downloadAudioFromStorage(basename);
+        const { storagePath } = await downloadAudioFromStorageCandidates(recordingId, asset);
         console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
           recordingId,
           localPath: asset.file_path,
-          supabasePath: basename,
+          supabasePath: storagePath,
         });
-        // Update asset to use basename so pipeline downloads from Supabase
-        asset.file_path = basename;
+        // Update asset to use the resolved Supabase key so pipeline downloads it.
+        asset.file_path = storagePath;
       } catch {
         return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
       }

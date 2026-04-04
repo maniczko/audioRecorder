@@ -978,6 +978,8 @@ export async function transcribeRecording(asset: any, options: any = {}) {
         fs.unlinkSync(sourceTempPath);
       } catch (_) {}
     }
+    // Trigger GC to release native memory held by ffmpeg/audio buffers
+    if (typeof global.gc === 'function') global.gc();
   }
 }
 

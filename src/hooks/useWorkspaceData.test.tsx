@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import useWorkspaceData from './useWorkspaceData';
 
 const { workspaceState, meetingsState, stateServiceMock, httpClientMock } = vi.hoisted(() => ({
@@ -63,13 +63,16 @@ vi.mock('../store/meetingsStore', () => ({
 describe('useWorkspaceData', () => {
   let warnSpy: ReturnType<typeof vi.spyOn>;
 
-  afterEach(() => {
+  beforeAll(() => {
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
     warnSpy.mockRestore();
-    vi.useRealTimers();
   });
 
   beforeEach(() => {
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnSpy.mockClear();
     workspaceState.currentWorkspaceId = 'ws1';
     workspaceState.users = [];
     workspaceState.workspaces = [];
@@ -111,6 +114,13 @@ describe('useWorkspaceData', () => {
       configurable: true,
       value: { hostname: 'localhost' },
     });
+  });
+
+  afterEach(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   test('returns workspace-filtered meetings in local mode', () => {

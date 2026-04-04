@@ -308,6 +308,68 @@ describe('Media Routes', () => {
     );
   });
 
+  // ---------------------------------------------------------------
+  // Issue #0 - retry-transcribe should reconstruct canonical storage key
+  // Date: 2026-04-04
+  // Bug: when a local file disappeared after redeploy, retry-transcribe
+  //      only checked the basename from file_path. If Supabase still
+  //      stored audio under recordingId.ext, the retry returned 409.
+  // Fix: retry-transcribe now reuses the same remote storage candidate
+  //      reconstruction as GET /audio and swaps asset.file_path to the
+  //      resolved remote key before queueing the pipeline.
+  // ---------------------------------------------------------------
+  it('POST /media/recordings/:recordingId/retry-transcribe - falls back to reconstructed Supabase key', async () => {
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: 'rec_retry_remote',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/archive/legacy-name.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'failed',
+        diarization_json: '{}',
+        transcript_json: '[]',
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_retry_remote',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: 'rec_retry_remote.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
+        diarization_json: '{}',
+        transcript_json: '[]',
+      });
+
+    setFsState({ existsSync: false });
+
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const downloadSpy = vi
+      .spyOn(storageModule, 'downloadAudioFromStorage')
+      .mockRejectedValueOnce(new Error('legacy key missing'))
+      .mockResolvedValueOnce(new TextEncoder().encode('audio-data').buffer);
+
+    const res = await app.request('/media/recordings/rec_retry_remote/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(202);
+    expect(downloadSpy).toHaveBeenNthCalledWith(1, 'legacy-name.webm');
+    expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_retry_remote.webm');
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledWith(
+      'rec_retry_remote',
+      expect.objectContaining({
+        file_path: 'rec_retry_remote.webm',
+      }),
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        meetingId: 'm_1',
+        contentType: 'audio/webm',
+      })
+    );
+  });
+
   it('POST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_sketchnote',

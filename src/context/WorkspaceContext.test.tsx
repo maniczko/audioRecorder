@@ -19,6 +19,8 @@ const mockWorkspaceStore = vi.hoisted(() => ({
   setWorkspaces: vi.fn(),
   setSession: vi.fn(),
   switchWorkspace: vi.fn(),
+  updateWorkspaceMemberRole: vi.fn(),
+  removeWorkspaceMember: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -211,6 +213,19 @@ describe('WorkspaceContext', () => {
 
       expect(result.current.workspace.switchWorkspace).toBeDefined();
       expect(typeof result.current.workspace.switchWorkspace).toBe('function');
+    });
+
+    it('provides workspace member management methods', () => {
+      const { result } = renderHook(() => useWorkspaceCtx(), {
+        wrapper: WorkspaceProvider,
+      });
+
+      expect(result.current.workspace.updateWorkspaceMemberRole).toBe(
+        mockWorkspaceStore.updateWorkspaceMemberRole
+      );
+      expect(result.current.workspace.removeWorkspaceMember).toBe(
+        mockWorkspaceStore.removeWorkspaceMember
+      );
     });
 
     it('provides logout method', () => {

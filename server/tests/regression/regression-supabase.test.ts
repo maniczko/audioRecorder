@@ -31,11 +31,6 @@ describe.skip('Regression: Issue #341 - supabaseStorage null handling', () => {
     vi.resetModules();
   });
 
-  afterEach(() => {
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
-  });
-
   test('uploadAudioToStorage returns null (not throws) when supabase URL is empty', async () => {
     vi.resetModules();
 
@@ -180,8 +175,6 @@ describe.skip('Regression: Issue #456 - Recording ID sanitization', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
   });
 
   test('sanitizes Polish unicode characters to underscores', async () => {
@@ -290,11 +283,6 @@ describe.skip('Regression: Issue #456 - Recording ID sanitization', () => {
 describe.skip('Regression: Issue #703 - Bucket creation error handling', () => {
   beforeEach(() => {
     vi.resetModules();
-  });
-
-  afterEach(() => {
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
   });
 
   test('continues upload when bucket already exists', async () => {
@@ -425,11 +413,6 @@ describe.skip('Regression: Issue #703 - Bucket creation error handling', () => {
 describe.skip('Regression: Issue #804 - deleteAudioFromStorage error handling', () => {
   beforeEach(() => {
     vi.resetModules();
-  });
-
-  afterEach(() => {
-    vi.unmock('../config');
-    vi.unmock('@supabase/supabase-js');
   });
 
   test('does not throw when file not found (already deleted)', async () => {

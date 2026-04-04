@@ -210,6 +210,7 @@ export const useWorkspaceSelectors = () => {
   const isHydratingSession = useWorkspaceStore((state) => state.isHydratingSession);
   const logout = useWorkspaceStore((state) => state.logout);
   const updateWorkspaceMemberRole = useWorkspaceStore((state) => state.updateWorkspaceMemberRole);
+  const removeWorkspaceMember = useWorkspaceStore((state) => state.removeWorkspaceMember);
 
   const currentUser = users.find((user) => user.id === session?.userId) || null;
   const currentUserId = currentUser?.id || null;
@@ -241,5 +242,6 @@ export const useWorkspaceSelectors = () => {
     logout,
     session,
     updateWorkspaceMemberRole,
+    removeWorkspaceMember,
   };
 };

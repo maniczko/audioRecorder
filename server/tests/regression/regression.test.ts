@@ -1237,3 +1237,241 @@ describe('Regression: #0 - audio fallback reconstructs Supabase key', () => {
     ).toEqual(['legacy-name.webm', 'recording_abc-123.webm']);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Railway OOM: RSS grows unbounded during transcription
+// Date: 2026-04-04
+// Bug: Server RSS grew from 1.1GB to 4.3GB during audio processing,
+//      causing Railway OOM kills after 3 restarts → 502 on all endpoints.
+//      Root causes: (1) no RSS-based job rejection, (2) global.gc() never
+//      called despite --expose-gc, (3) undici keep-alive connection leak.
+// Fix: Added RSS threshold check, gc() after pipeline, Connection: close
+//      on OpenAI fetch calls, increased Railway restart retries.
+// ─────────────────────────────────────────────────────────────────
+
+describe('Regression: #0 — OOM: TranscriptionService rejects jobs when RSS exceeds threshold', () => {
+  let originalMemoryUsage: typeof process.memoryUsage;
+
+  beforeEach(() => {
+    originalMemoryUsage = process.memoryUsage;
+  });
+
+  afterEach(() => {
+    process.memoryUsage = originalMemoryUsage;
+  });
+
+  test('ensureTranscriptionJob rejects when RSS > RSS_LIMIT_BYTES', async () => {
+    vi.resetModules();
+
+    const { default: TranscriptionService } =
+      await import('../../services/TranscriptionService.ts');
+
+    const mockDb = {
+      markTranscriptionFailure: vi.fn().mockResolvedValue(undefined),
+      getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: [] }),
+      markTranscriptionProcessing: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const svc = new TranscriptionService(mockDb, {}, {}, {});
+
+    // Simulate RSS exceeding threshold (1.5GB > 1GB limit)
+    process.memoryUsage = Object.assign(
+      () => ({
+        rss: 1_500_000_000,
+        heapTotal: 100_000_000,
+        heapUsed: 50_000_000,
+        external: 10_000_000,
+        arrayBuffers: 5_000_000,
+      }),
+      { bigint: process.memoryUsage.bigint }
+    );
+
+    await svc.ensureTranscriptionJob('rec-oom-test', { workspace_id: 'ws1' }, {});
+
+    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
+      'rec-oom-test',
+      expect.stringContaining('przeciążony pamięciowo'),
+      null,
+      null
+    );
+    expect(svc.transcriptionJobs.has('rec-oom-test')).toBe(false);
+  });
+
+  test('ensureTranscriptionJob allows jobs when RSS is below threshold', async () => {
+    vi.resetModules();
+
+    const { default: TranscriptionService } =
+      await import('../../services/TranscriptionService.ts');
+
+    const mockDb = {
+      markTranscriptionFailure: vi.fn().mockResolvedValue(undefined),
+      getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: [] }),
+      getWorkspaceVoiceProfiles: vi.fn().mockResolvedValue([]),
+      markTranscriptionProcessing: vi.fn().mockResolvedValue(undefined),
+      saveTranscriptionResult: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const mockPipeline = {
+      transcribeRecording: vi.fn().mockResolvedValue({
+        segments: [],
+        transcriptOutcome: 'empty',
+        userMessage: 'No speech',
+      }),
+    };
+
+    const svc = new TranscriptionService(
+      mockDb,
+      { getWorkspaceMemberNames: vi.fn().mockResolvedValue([]) },
+      mockPipeline,
+      {}
+    );
+
+    // RSS well below threshold (200MB)
+    process.memoryUsage = Object.assign(
+      () => ({
+        rss: 200_000_000,
+        heapTotal: 100_000_000,
+        heapUsed: 50_000_000,
+        external: 10_000_000,
+        arrayBuffers: 5_000_000,
+      }),
+      { bigint: process.memoryUsage.bigint }
+    );
+
+    await svc.ensureTranscriptionJob('rec-ok-test', { workspace_id: 'ws1' }, {});
+
+    // Job was accepted (not rejected via markTranscriptionFailure for memory)
+    expect(mockDb.markTranscriptionFailure).not.toHaveBeenCalledWith(
+      'rec-ok-test',
+      expect.stringContaining('przeciążony pamięciowo')
+    );
+  });
+});
+
+describe('Regression: #0 — OOM: global.gc() called after pipeline job completes', () => {
+  let originalGc: typeof global.gc;
+
+  beforeEach(() => {
+    originalGc = global.gc;
+  });
+
+  afterEach(() => {
+    if (originalGc !== undefined) {
+      global.gc = originalGc;
+    } else {
+      delete (global as any).gc;
+    }
+  });
+
+  test('TranscriptionService finally block calls global.gc() when available', async () => {
+    vi.resetModules();
+
+    const gcSpy = vi.fn();
+    global.gc = gcSpy;
+
+    const { default: TranscriptionService } =
+      await import('../../services/TranscriptionService.ts');
+
+    const mockDb = {
+      markTranscriptionFailure: vi.fn().mockResolvedValue(undefined),
+      getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: [] }),
+      getWorkspaceVoiceProfiles: vi.fn().mockResolvedValue([]),
+      markTranscriptionProcessing: vi.fn().mockResolvedValue(undefined),
+      saveTranscriptionResult: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const mockPipeline = {
+      transcribeRecording: vi.fn().mockResolvedValue({
+        segments: [],
+        transcriptOutcome: 'empty',
+        userMessage: 'No speech',
+      }),
+    };
+
+    const svc = new TranscriptionService(
+      mockDb,
+      { getWorkspaceMemberNames: vi.fn().mockResolvedValue([]) },
+      mockPipeline,
+      {}
+    );
+
+    await svc.ensureTranscriptionJob('rec-gc-test', { workspace_id: 'ws1' }, {});
+
+    // Wait for the fire-and-forget job promise to settle
+    const jobPromise = svc.transcriptionJobs.get('rec-gc-test');
+    if (jobPromise) await jobPromise.catch(() => {});
+
+    // Allow microtask queue to flush (finally runs after .catch)
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(gcSpy).toHaveBeenCalled();
+  });
+});
+
+describe('Regression: #0 — Undici keep-alive leak: OpenAI fetch headers include Connection close', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  test('embedTextChunks sends Connection: close header', async () => {
+    vi.resetModules();
+
+    let capturedHeaders: Record<string, string> = {};
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+      capturedHeaders = opts?.headers || {};
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: [0.1, 0.2] }] }),
+      };
+    });
+
+    // Mock config to have API key
+    vi.doMock('../../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'test-key',
+        OPENAI_API_KEY: 'test-key',
+        VOICELOG_OPENAI_BASE_URL: 'https://api.openai.com/v1',
+      },
+    }));
+
+    const { embedTextChunks } = await import('../../postProcessing.ts');
+    await embedTextChunks(['hello world']);
+
+    expect(capturedHeaders).toHaveProperty('Connection', 'close');
+  });
+
+  test('analyzeMeetingWithOpenAI sends Connection: close header', async () => {
+    vi.resetModules();
+
+    let capturedHeaders: Record<string, string> = {};
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+      capturedHeaders = opts?.headers || {};
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: '{}' } }],
+        }),
+      };
+    });
+
+    vi.doMock('../../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'test-key',
+        OPENAI_API_KEY: 'test-key',
+        VOICELOG_OPENAI_BASE_URL: 'https://api.openai.com/v1',
+      },
+    }));
+
+    const { analyzeMeetingWithOpenAI } = await import('../../postProcessing.ts');
+    await analyzeMeetingWithOpenAI({
+      segments: [{ text: 'Hello', speakerId: 0, timestamp: 0 }],
+      meeting: { requestId: 'test-req' },
+      speakerNames: {},
+    });
+
+    expect(capturedHeaders).toHaveProperty('Connection', 'close');
+  });
+});

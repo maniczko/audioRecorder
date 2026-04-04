@@ -920,7 +920,11 @@ export default function StudioMeetingView({
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
-  const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<any>(null);
+  const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<{
+    recordingId: string;
+    speakerId: string;
+    speakerName: string;
+  } | null>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState(null);
@@ -1359,16 +1363,19 @@ export default function StudioMeetingView({
       }
 
       setPendingVoiceProfileEnrollment({
+        recordingId: String(selectedRecording?.id || displayRecording?.id || ''),
         speakerId,
         speakerName: nextName,
       });
     },
     [
+      displayRecording?.id,
       autoCreateVoiceProfile,
       autoLearnSpeakerProfiles,
       displaySpeakerNames,
       enrollSpeakerProfile,
       renameSpeaker,
+      selectedRecording?.id,
     ]
   );
 

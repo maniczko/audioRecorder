@@ -14,4 +14,4 @@ watchPatterns = ["server/*.ts", "server/routes/**", "server/services/**", "serve
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+restartPolicyMaxRetries = 10

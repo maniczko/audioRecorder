@@ -1,4 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+
+const serverCoverageDir = path.resolve(__dirname, '../coverage/server');
+const serverCoverageTempDir = path.join(serverCoverageDir, '.tmp');
+
+fs.mkdirSync(serverCoverageTempDir, { recursive: true });
 
 export default defineConfig({
   test: {

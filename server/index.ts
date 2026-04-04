@@ -244,6 +244,12 @@ if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
           if (cleaned > 0) {
             logger.info(`[Cleanup] Periodic: removed ${cleaned} stale temp files.`);
           }
+
+          // Trigger garbage collection to release native memory held by ffmpeg buffers
+          if (typeof global.gc === 'function') {
+            global.gc();
+            logger.info('[Cleanup] Periodic: triggered garbage collection.');
+          }
         } catch (err) {
           logger.warn('[Cleanup] Periodic cleanup error:', err);
         }

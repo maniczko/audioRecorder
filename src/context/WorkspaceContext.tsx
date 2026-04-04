@@ -25,6 +25,8 @@ export function WorkspaceProvider({ children }) {
       isHydratingSession: selectors.isHydratingSession,
       availableWorkspaces: selectors.availableWorkspaces,
       switchWorkspace: workspaceStore.switchWorkspace,
+      updateWorkspaceMemberRole: workspaceStore.updateWorkspaceMemberRole,
+      removeWorkspaceMember: workspaceStore.removeWorkspaceMember,
       logout: workspaceStore.logout,
     },
   };

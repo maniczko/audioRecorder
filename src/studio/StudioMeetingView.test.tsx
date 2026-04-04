@@ -334,7 +334,59 @@ describe('StudioMeetingView', () => {
     alertSpy.mockRestore();
   });
 
-  test('renders playback scrubber and lets user seek audio', () => {
+  test('opens voice profile enrollment modal after renaming a speaker', async () => {
+    const renameSpeaker = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        renameSpeaker={renameSpeaker}
+        autoCreateVoiceProfile={vi.fn()}
+        displaySpeakerNames={{ speaker_1: 'Speaker 1' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Test segment',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Test segment',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /zmień mówcę: speaker 1/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /zmień nazwę/i }));
+
+    const renameInput = screen.getByLabelText(/nowa nazwa mówcy/i);
+    fireEvent.change(renameInput, { target: { value: 'Anna' } });
+    fireEvent.blur(renameInput);
+
+    expect(renameSpeaker).toHaveBeenCalledWith('speaker_1', 'Anna');
+    await waitFor(() => {
+      expect(screen.getByText(/zmieniono nazwe mowcy na/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Anna/i)).toBeInTheDocument();
+  });
+
+  test('renders playback scrubber and lets user seek audio', async () => {
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}

@@ -329,6 +329,10 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             connectMicrosoftTasks={microsoft.connectMicrosoftTasks}
             disconnectMicrosoftTasks={microsoft.disconnectMicrosoftTasks}
             workspaceRole={workspace.currentWorkspaceRole}
+            workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ''}
+            workspaceMembers={workspace.currentWorkspaceMembers}
+            updateWorkspaceMemberRole={workspace.updateWorkspaceMemberRole}
+            removeWorkspaceMember={workspace.removeWorkspaceMember}
             theme={ui.theme}
             onSetTheme={ui.setTheme}
             layoutPreset={ui.layoutPreset}

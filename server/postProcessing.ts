@@ -215,6 +215,7 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        Connection: 'close',
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -223,8 +224,6 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),
-      // Agent for connection pooling (HTTP/2 support)
-      dispatcher: undefined, // Node.js fetch uses global agent by default
     } as any);
 
     if (!resp.ok) throw new Error(`OpenAI analyze HTTP ${resp.status}`);
@@ -254,6 +253,7 @@ export async function embedTextChunks(texts: string[]) {
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        Connection: 'close',
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
@@ -328,6 +328,7 @@ export async function generateVoiceCoaching(
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        Connection: 'close',
       },
       body: JSON.stringify({
         model: 'gpt-4o-audio-preview',
