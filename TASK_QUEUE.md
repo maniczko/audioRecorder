@@ -217,3 +217,60 @@ _Brak aktualnych zadań._
   - **Created:** 2026-04-04T06:58:35.854Z
   - **Priority:** High
 
+
+
+<!-- Auto-generated on 2026-04-04T12:51:33.705Z -->
+
+### GitHub Actions Errors (6 found)
+
+- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T12:47:14.2120794Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
+2026-04-04T12:47:14.2125073Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
+2026-04-04T12:47:14.2125777Z [3...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-2** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T12:47:49.1789061Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-04T12:47:49.1902974Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T12:07:31.3645060Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
+2026-04-04T12:07:31.3649669Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
+2026-04-04T12:07:31.3650401Z [3...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-4** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T12:07:57.4895070Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-04T12:07:57.5040595Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T11:23:40.6178788Z [31m❌ VITE_GOOGLE_CLIENT_ID: BRAK (Google OAuth Client ID)[0m
+2026-04-04T11:23:40.6186497Z [31m❌ VOICELOG_API_PORT: BRAK (Port API)[0m
+2026-04-04T11:23:40.6188956Z [3...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-04-6** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Error:** 2026-04-04T11:24:05.3454312Z [22m[39mRemote workspace bootstrap failed. Error: Remote boom
+2026-04-04T11:24:05.3592753Z [22m[39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
+  - **Created:** 2026-04-04T12:51:33.705Z
+  - **Priority:** High
+
