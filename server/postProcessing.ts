@@ -53,7 +53,7 @@ export async function correctTranscriptWithLLM(segments: any[], options: any = {
         messages: [
           {
             role: 'user',
-            content: `Popraw interpunkcję i pisownię w poniższych segmentach transkrypcji. Zachowaj dokładne słowa i znaczenie. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
+            content: `Popraw poniższe segmenty transkrypcji audio:\n1. Popraw interpunkcję i pisownię.\n2. Popraw słowa błędnie rozpoznane przez STT — jeśli wyraz nie pasuje logicznie do kontekstu zdania, zamień go na najbardziej prawdopodobne poprawne słowo (np. \"muszę iść do sklepów\" zamiast \"muszę iść do skłepów\").\n3. Zachowaj styl i ton wypowiedzi — nie parafrazuj, tylko napraw błędy.\n4. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
           },
         ],
       },
@@ -399,7 +399,7 @@ export async function normalizeRecording(filePath: string, options: any = {}) {
   const tmpPath = `${filePath}.norm.tmp`;
   try {
     await execPromise(
-      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "highpass=f=80,afftdn,loudnorm=I=-16:TP=-1.5:LRA=11" "${tmpPath}"`,
+      `"${FFMPEG_BINARY}" -y -i "${filePath}" -af "highpass=f=80,adeclick=w=55:o=75,afftdn,loudnorm=I=-16:TP=-1.5:LRA=11" "${tmpPath}"`,
       { timeout: 120000, signal: options.signal }
     );
     fs.renameSync(tmpPath, filePath);
