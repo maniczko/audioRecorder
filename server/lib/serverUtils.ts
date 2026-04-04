@@ -1,9 +1,13 @@
+import v8 from 'node:v8';
+
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuta
 const rateLimitMap = new Map();
 
 /**
  * Returns current memory pressure level.
  * Used to reject heavy operations (upload, transcribe) before OOM on Railway.
+ * Uses v8 heap_size_limit (respects --max-old-space-size) instead of heapTotal
+ * which is just V8's current allocation and fluctuates with GC.
  */
 export function getMemoryPressure(): {
   ok: boolean;
@@ -13,14 +17,15 @@ export function getMemoryPressure(): {
   ratio: number;
 } {
   const mem = process.memoryUsage();
+  const heapStats = v8.getHeapStatistics();
   const heapUsedMB = Math.round(mem.heapUsed / (1024 * 1024));
-  const heapTotalMB = Math.round(mem.heapTotal / (1024 * 1024));
+  const heapLimitMB = Math.round(heapStats.heap_size_limit / (1024 * 1024));
   const rssMB = Math.round(mem.rss / (1024 * 1024));
-  const ratio = heapTotalMB > 0 ? mem.heapUsed / mem.heapTotal : 0;
+  const ratio = heapStats.heap_size_limit > 0 ? mem.heapUsed / heapStats.heap_size_limit : 0;
   return {
     ok: ratio < 0.85,
     heapUsedMB,
-    heapTotalMB,
+    heapTotalMB: heapLimitMB,
     rssMB,
     ratio,
   };

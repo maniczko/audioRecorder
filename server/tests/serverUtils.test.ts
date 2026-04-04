@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import v8 from 'node:v8';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkRateLimit,
@@ -137,12 +138,17 @@ describe('serverUtils', () => {
 
     it('reports ok=false when heap usage ratio exceeds 85%', () => {
       const originalMemoryUsage = process.memoryUsage;
+      const originalGetHeapStatistics = v8.getHeapStatistics;
       process.memoryUsage = (() => ({
         heapUsed: 900 * 1024 * 1024,
         heapTotal: 1000 * 1024 * 1024,
         rss: 1100 * 1024 * 1024,
         external: 0,
         arrayBuffers: 0,
+      })) as any;
+      v8.getHeapStatistics = (() => ({
+        ...originalGetHeapStatistics(),
+        heap_size_limit: 1000 * 1024 * 1024,
       })) as any;
 
       try {
@@ -151,7 +157,48 @@ describe('serverUtils', () => {
         expect(result.ratio).toBeCloseTo(0.9, 1);
       } finally {
         process.memoryUsage = originalMemoryUsage;
+        v8.getHeapStatistics = originalGetHeapStatistics;
       }
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Issue #0 — False memory pressure with low heapTotal
+    // Date: 2026-03-30
+    // Bug: getMemoryPressure used heapUsed/heapTotal ratio which gave 93%
+    //      when heapTotal was only 44 MB (V8 current allocation), causing
+    //      false 503 rejections on uploads with only 41 MB heap used
+    // Fix: Use v8.getHeapStatistics().heap_size_limit (respects --max-old-space-size)
+    //      as denominator instead of heapTotal
+    // ─────────────────────────────────────────────────────────────────
+    describe('Regression: #0 — false memory pressure with low heapTotal', () => {
+      it('reports ok=true when heapUsed is low even if heapTotal is close to heapUsed', () => {
+        const originalMemoryUsage = process.memoryUsage;
+        const originalGetHeapStatistics = v8.getHeapStatistics;
+        // Simulate the exact production scenario: 41MB used, 44MB heapTotal, 768MB limit
+        process.memoryUsage = (() => ({
+          heapUsed: 41 * 1024 * 1024,
+          heapTotal: 44 * 1024 * 1024,
+          rss: 4876 * 1024 * 1024,
+          external: 0,
+          arrayBuffers: 0,
+        })) as any;
+        v8.getHeapStatistics = (() => ({
+          ...originalGetHeapStatistics(),
+          heap_size_limit: 768 * 1024 * 1024,
+        })) as any;
+
+        try {
+          const result = getMemoryPressure();
+          expect(result.ok).toBe(true);
+          // 41/768 ≈ 5.3%, well below 85% threshold
+          expect(result.ratio).toBeLessThan(0.1);
+          expect(result.heapUsedMB).toBe(41);
+          expect(result.heapTotalMB).toBe(768);
+        } finally {
+          process.memoryUsage = originalMemoryUsage;
+          v8.getHeapStatistics = originalGetHeapStatistics;
+        }
+      });
     });
   });
 });
