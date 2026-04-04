@@ -264,3 +264,149 @@ describe('transcription module constants', () => {
     }
   });
 });
+
+describe('getUploadDir', () => {
+  it('returns a string path', () => {
+    const dir = getUploadDir();
+    expect(typeof dir).toBe('string');
+    expect(dir.length).toBeGreaterThan(0);
+  });
+
+  it('returns the same directory on subsequent calls (cached)', () => {
+    const dir1 = getUploadDir();
+    const dir2 = getUploadDir();
+    expect(dir1).toBe(dir2);
+  });
+});
+
+describe('mergeChunkedPayloads — additional edge cases', () => {
+  it('handles payloads where all are discarded', () => {
+    const payloads = [
+      {
+        payload: null,
+        offsetSeconds: 0,
+        diagnostics: {
+          extracted: false,
+          discardedAsTooSmall: true,
+          vadFlaggedSilent: true,
+          sentToStt: false,
+          sttFailed: false,
+          sttErrorMessage: 'Too small',
+          hasSegments: false,
+          hasWords: false,
+          hasText: false,
+        },
+      },
+    ];
+
+    const result = mergeChunkedPayloads(payloads, 0);
+
+    expect(result.segments).toEqual([]);
+    expect(result.words).toEqual([]);
+    expect(result.text).toBe('');
+    expect(result.transcriptionDiagnostics.chunksDiscardedAsTooSmall).toBe(1);
+    expect(result.transcriptionDiagnostics.chunksFlaggedSilentByVad).toBe(1);
+  });
+
+  it('handles multiple valid payloads with segment deduplication', () => {
+    const payloads = [
+      {
+        payload: {
+          segments: [{ start: 0, end: 5, text: 'Hello' }],
+          words: [],
+          text: 'Hello',
+        },
+        offsetSeconds: 0,
+        diagnostics: {
+          extracted: true,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: true,
+          sttFailed: false,
+          sttErrorMessage: '',
+          hasSegments: true,
+          hasWords: false,
+          hasText: true,
+        },
+      },
+      {
+        payload: {
+          segments: [{ start: 4.9, end: 10, text: 'world' }], // overlaps with previous
+          words: [],
+          text: 'world',
+        },
+        offsetSeconds: 5,
+        diagnostics: {
+          extracted: true,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: true,
+          sttFailed: false,
+          sttErrorMessage: '',
+          hasSegments: true,
+          hasWords: false,
+          hasText: true,
+        },
+      },
+    ];
+
+    const result = mergeChunkedPayloads(payloads, 0);
+
+    // Second segment starts at 9.9 (4.9 + 5) which is > 5 - 0.1 = 4.9, so it passes dedup
+    expect(result.segments).toHaveLength(2);
+    expect(result.text).toBe('Hello world');
+  });
+
+  it('extracts words using getRawWords from payload', () => {
+    const payloads = [
+      {
+        payload: {
+          segments: [],
+          words: [{ word: 'hello', start: 0, end: 1 }],
+          text: 'hello',
+        },
+        offsetSeconds: 0,
+        diagnostics: {
+          extracted: true,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: true,
+          sttFailed: false,
+          sttErrorMessage: '',
+          hasSegments: false,
+          hasWords: true,
+          hasText: true,
+        },
+      },
+    ];
+
+    const result = mergeChunkedPayloads(payloads, 0);
+
+    expect(result.words).toHaveLength(1);
+    expect(result.words[0].word).toBe('hello');
+  });
+
+  it('handles chunksReturnedEmptyPayload diagnostic', () => {
+    const payloads = [
+      {
+        payload: { segments: [], words: [], text: '' },
+        offsetSeconds: 0,
+        diagnostics: {
+          extracted: true,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: true,
+          sttFailed: false,
+          sttErrorMessage: '',
+          hasSegments: false,
+          hasWords: false,
+          hasText: false,
+        },
+      },
+    ];
+
+    const result = mergeChunkedPayloads(payloads, 0);
+
+    expect(result.transcriptionDiagnostics.chunksReturnedEmptyPayload).toBe(1);
+  });
+});

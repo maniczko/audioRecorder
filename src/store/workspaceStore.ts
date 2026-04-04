@@ -23,6 +23,7 @@ interface WorkspaceState {
   ) => void;
   switchWorkspace: (workspaceId: string) => void;
   updateWorkspaceMemberRole: (targetUserId: string, memberRole: string) => Promise<void>;
+  removeWorkspaceMember: (targetUserId: string) => Promise<void>;
   bootstrapSession: () => Promise<void>;
   logout: () => void;
 }
