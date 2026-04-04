@@ -42,8 +42,8 @@ if (isProduction || process.env.DD_APM_ENABLED === 'true') {
     ],
 
     // Health endpoint - don't trace
-    // @ts-ignore
-    blocklist: ['/health', '/ready', '/metrics'],
+    // Note: blocklist is not in dd-trace types but is supported at runtime
+    blocklist: ['/health', '/ready', '/metrics'] as any,
 
     // Enable debug in development
     debug: isDevelopment,
@@ -62,8 +62,8 @@ if (isProduction || process.env.DD_APM_ENABLED === 'true') {
   // Instrument PostgreSQL (if used)
   tracer.use('pg', {
     service: 'voicelog-db',
-    // @ts-ignore
-    queryTextEnabled: false, // Don't log full queries for security
+    // Note: queryTextEnabled is not in types but is supported at runtime
+    queryTextEnabled: false as any, // Don't log full queries for security
   });
 
   // Instrument Hono framework
