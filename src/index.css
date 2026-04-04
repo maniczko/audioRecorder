@@ -414,10 +414,12 @@ html {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 @layer base {

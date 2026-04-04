@@ -1,0 +1,500 @@
+﻿  requestId: '962885d9-7c03-4940-993b-5679f3859a17',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.25'
+}
+[INFO] [REQ] GET /health - 200 [178.2ms] {
+  requestId: 'e0b74fd6-6d96-4d90-949b-eba675dd12ad',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.22'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [889.1ms] {
+  requestId: '8bc1f445-a246-4a8c-8d3b-7f656f2549ca',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '889.10'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [883.4ms] {
+  requestId: '108e5d2a-1112-4781-9e28-8a5aa5efe15b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '883.40'
+}
+[INFO] [REQ] GET /health - 200 [175.5ms] {
+  requestId: '2213e4e3-7678-4bcb-8994-b489d161b7bd',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.53'
+}
+[transcription:memory] batch=5 rss=4326.0MB heap=38.1/41.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [932.1ms] {
+  requestId: '992fb304-3965-4f51-ab8a-f2ae98a76def',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '932.08'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [883.4ms] {
+  requestId: '8aff1210-ec7f-4594-b9b8-b03b24fddd9c',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '883.40'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [885.9ms] {
+  requestId: '09c2493b-f463-45f3-80f4-f935295b2494',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '885.86'
+}
+[transcription:memory] batch=6 rss=4326.0MB heap=37.7/41.8MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [883.5ms] {
+  requestId: '4f79056c-0014-4174-9a2c-aa81fea4d7ac',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '883.53'
+[INFO] [REQ] GET /state/bootstrap - 200 [885.9ms] {
+  requestId: '0233ff8b-2afc-443f-b4d1-29a08dd7c764',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '885.92'
+}
+[INFO] [REQ] GET /health - 200 [178.1ms] {
+  requestId: '3ebb6f97-e997-447e-8e97-c1d6eb263002',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.11'
+}
+[INFO] [REQ] GET /health - 200 [179.6ms] {
+  requestId: 'b6d2f188-1256-4d51-b229-ef1516196f40',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.56'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [885.8ms] {
+  requestId: '12505a2b-0910-4b2e-bbae-d7f3f089dcd6',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '885.77'
+}
+  requestId: '433903ea-ffb4-4aa9-a971-dc961f66ded0',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.77'
+}
+[transcription:memory] batch=7 rss=4326.8MB heap=38.1/41.3MB
+[INFO] [REQ] GET /state/bootstrap - 200 [884.5ms] {
+  requestId: '13c9f1af-a67b-4e5e-8967-d8f0b79928e3',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '884.53'
+}
+[INFO] [REQ] GET /health - 200 [175.8ms] {
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [921.0ms] {
+  requestId: '5fda1131-3df0-4ff7-b57b-e24c958ec48c',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '921.04'
+[INFO] [REQ] GET /health - 200 [179.1ms] {
+  requestId: 'afca37bc-9b7f-401e-b420-7e5e8cc975b8',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.06'
+}
+[INFO] [REQ] GET /health - 200 [884.5ms] {
+  requestId: '9881b400-4c7f-4f36-987d-3cd825f39876',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '884.45'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [887.1ms] {
+  requestId: '745bc7f5-71eb-4351-b7cc-243be82f003d',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '887.06'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [878.2ms] {
+  requestId: 'cd8c9a4d-b15b-45e6-a587-a40faedb4c5e',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '878.23'
+}
+[transcription:memory] batch=8 rss=4326.8MB heap=38.3/42.8MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [946.8ms] {
+  requestId: '15219ba7-c904-48d5-824c-a552b4e2e720',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '946.84'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [879.7ms] {
+  requestId: 'ed0bde8e-ca20-464c-b810-89bb5b5e8662',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '879.67'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [880.1ms] {
+  requestId: '8e059228-5ad9-49b7-84d7-a7a5c913d903',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '880.11'
+}
+[transcription:memory] batch=9 rss=4326.8MB heap=38.0/42.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [881.0ms] {
+  requestId: 'e823ec5f-03ef-420a-a7de-d4a50ef7b75b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.03'
+}
+  requestId: '302203de-22d9-4fbd-b2e2-24f9010ccf60',
+  method: 'PATCH',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+[INFO] [REQ] GET /health - 200 [903.6ms] {
+  status: 200,
+  requestId: '95fc0c2b-519b-49a8-89b9-283631d29d08',
+  durationMs: '1420.05'
+  method: 'GET',
+}
+  route: '/health',
+  status: 200,
+  durationMs: '903.56'
+}
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1420.0ms] {
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1585.4ms] {
+  requestId: 'cab79f0b-af3f-4ac2-9dcd-8ee41969c937',
+  method: 'PATCH',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  status: 200,
+  durationMs: '1585.40'
+}
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1601.5ms] {
+  requestId: 'a72b8ad2-2a40-4e91-b900-8573cda7982e',
+  method: 'PATCH',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  status: 200,
+  durationMs: '1601.51'
+}
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1614.7ms] {
+  requestId: 'ad412350-747b-445f-96ed-a810416f553c',
+  method: 'PATCH',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  status: 200,
+  durationMs: '1614.69'
+}
+[INFO] [REQ] GET /health - 200 [176.0ms] {
+  requestId: '29a688d9-620b-4fb7-a958-4d36d8c62571',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.03'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [1623.8ms] {
+  requestId: '3330e8e6-af62-4c2b-b6b6-0b83cb2462d9',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '1623.80'
+}
+[transcription:memory] batch=10 rss=4327.0MB heap=39.1/44.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [897.0ms] {
+  requestId: 'b21483f7-3ab3-4858-b9fa-aff603112c1c',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '896.99'
+}
+[INFO] [REQ] GET /health - 200 [178.8ms] {
+  requestId: '1a0fc444-55ef-4598-80a4-7ad674203f78',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.80'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [891.3ms] {
+  requestId: 'b3004640-df6b-4fdf-8f86-ba4e21db47c1',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '891.28'
+}
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  status: 200,
+  durationMs: '1626.12'
+}
+[INFO] [REQ] GET /health - 200 [178.4ms] {
+  requestId: 'c99f677d-8121-4ea7-9a65-3f1bb4ee5ba5',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.36'
+}
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1626.1ms] {
+  requestId: '5004771e-e2f0-4f38-924a-17cf3af122e4',
+  method: 'PATCH',
+[transcription:memory] batch=11 rss=4327.0MB heap=38.8/45.1MB
+  method: 'GET',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  route: '/state/bootstrap',
+  status: 200,
+  status: 200,
+  durationMs: '1587.48'
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+  durationMs: '945.70'
+}
+}
+[INFO] [REQ] GET /health - 200 [180.6ms] {
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1587.5ms] {
+  requestId: '27ccbe78-8923-409f-bf5d-4ba7ca26b719',
+  requestId: '0bd58c36-c6f9-489a-bd2f-8082446b1f04',
+  method: 'PATCH',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.59'
+}
+[transcription] vad.py not found, skipping Silero VAD.
+[INFO] [REQ] GET /state/bootstrap - 200 [945.7ms] {
+  requestId: 'f5bcd875-f225-45d0-8f3c-64d70700b408',
+[INFO] [REQ] GET /health - 200 [179.5ms] {
+  requestId: '5f92cef2-dbde-4664-9129-114fa6411b88',
+  method: 'GET',
+[INFO] [REQ] GET /state/bootstrap - 200 [887.3ms] {
+  route: '/health',
+  requestId: '7f5c63f7-5f6d-4586-92eb-9c238d506ce8',
+  status: 200,
+  method: 'GET',
+  durationMs: '179.51'
+  route: '/state/bootstrap',
+}
+  status: 200,
+[INFO] [REQ] PATCH /state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96 - 200 [1582.2ms] {
+  durationMs: '887.31'
+  requestId: '9b0a69cd-06b5-40ec-833a-71da7b4308a7',
+}
+  method: 'PATCH',
+  route: '/state/workspaces/workspace_daa9213f2ff04b08acea33ade338fd96',
+  status: 200,
+  durationMs: '1582.23'
+}
+}
+  status: 200,
+  requestId: '6825c4a5-b80e-4913-ab34-fa8020439b1f',
+  durationMs: '179.26'
+  method: 'GET',
+  route: '/health',
+[INFO] [REQ] GET /health - 200 [179.3ms] {
+[INFO] [REQ] GET /state/bootstrap - 200 [887.1ms] {
+  requestId: 'ad7f1d8e-731d-4ad1-b6a9-19a55f4c5044',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '887.15'
+}
+[transcription:memory] batch=12 rss=4327.3MB heap=39.2/45.6MB
+[INFO] [REQ] GET /health - 200 [183.0ms] {
+  requestId: '8725e671-b634-4474-b98c-dbf3fecc87a0',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '183.01'
+}
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [892.3ms] {
+  requestId: '184c2682-73fb-46d0-99ea-69e8c3bab783',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '892.30'
+}
+[INFO] [REQ] GET /health - 200 [180.0ms] {
+  requestId: '0d7c37b9-047d-4730-a032-d9102d37220d',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.01'
+}
+  requestId: '3d50f4eb-a322-4266-8198-2626f495b4fe',
+  method: 'GET',
+  route: '/state/bootstrap',
+[INFO] [REQ] GET /health - 200 [175.9ms] {
+  status: 200,
+  requestId: '06ab9982-e731-46d5-a9e5-05e5a09d43aa',
+  method: 'GET',
+  durationMs: '891.24'
+  route: '/health',
+}
+  status: 200,
+  durationMs: '175.89'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [891.2ms] {
+[INFO] [REQ] GET /state/bootstrap - 200 [888.9ms] {
+  requestId: '2b4aeb2b-f9c1-4632-8008-bbb59ff98d9b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '888.92'
+}
+[INFO] [REQ] GET /health - 200 [175.7ms] {
+  requestId: '2dc6a458-a429-44c9-b5d1-4bfedd60aae6',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.68'
+}
+[INFO] [REQ] GET /health - 200 [178.2ms] {
+  requestId: 'a4c58f10-d4e9-4e37-ac01-76775c49adcf',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.22'
+}
+[transcription:memory] batch=13 rss=4327.8MB heap=39.8/49.3MB
+[INFO] [REQ] GET /state/bootstrap - 200 [1043.9ms] {
+  requestId: '11dcaf90-c309-4c4f-9697-74af58c47ab0',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '1043.93'
+}
+[transcription:memory] batch=14 rss=4327.8MB heap=38.5/42.6MB
+[pipeline:memory] stage=after-chunked-transcription rss=4327.8MB heap=37.5/43.8MB external=6.5MB arrayBuffers=0.1MB
+[INFO] [Metrics] Pipeline Stage Complete {
+  requestId: 'c8464ea7-afb6-4ccf-a1bf-2905dfbae8ad',
+  stage: 'transcription',
+  durationMs: 53793.19
+}
+[INFO] [REQ] GET /health - 200 [179.5ms] {
+  requestId: '4a9693a5-cb7a-42c2-aee6-1a95fd1a8158',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.52'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [886.6ms] {
+  requestId: 'dfbdde95-a543-4bf0-a5ca-643dbe992dfe',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '886.62'
+}
+[INFO] [REQ] GET /health - 200 [178.1ms] {
+  requestId: 'ae65c33d-e324-4e07-b5a2-0e4d8c323afb',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.12'
+}
+[INFO] [REQ] GET /health - 200 [179.1ms] {
+  requestId: 'ea787a87-a578-4ece-b9a1-11ed83300e1d',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.08'
+}
+  status: 200,
+  durationMs: '885.93'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [885.9ms] {
+  requestId: '560f2307-6a4a-4801-9c34-85196b7c27d8',
+  method: 'GET',
+  route: '/state/bootstrap',
+[INFO] [REQ] GET /health - 200 [176.0ms] {
+  requestId: 'a343190b-bb98-4bf0-ab02-df16f7c9a877',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.97'
+}
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '883.24'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [883.2ms] {
+  requestId: '8ee783d8-3abb-45eb-98d4-db8f7b9d35be',
+[INFO] [REQ] GET /health - 200 [352.8ms] {
+  requestId: '659470ef-a4f7-461d-9f5d-4eb7b3fae5d1',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '352.85'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [880.9ms] {
+  requestId: '28527f91-987a-418d-aa05-210b12a7cc3b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '880.87'
+}
+[INFO] [REQ] GET /health - 200 [175.9ms] {
+  requestId: 'e3e5a639-8526-4551-a43d-2637946091d4',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.94'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [884.0ms] {
+  requestId: 'b350a2be-e884-40e0-8519-9a5251abb4d8',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '884.04'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [885.8ms] {
+  requestId: '3501636c-72d2-4085-b84e-9635df8c0db6',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '885.81'
+}
+}
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '883.30'
+[INFO] [REQ] GET /state/bootstrap - 200 [883.3ms] {
+  requestId: 'e599b1cf-3bbd-4063-ba5b-67a23dfec2c8',
+  method: 'GET',
+[INFO] [REQ] GET /state/bootstrap - 200 [886.2ms] {
+  requestId: '3e752f34-4f77-4acd-af23-27e9a87d37b8',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '886.24'
+}

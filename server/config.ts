@@ -57,14 +57,14 @@ const envSchema = z.object({
   STT_CONCURRENCY_LIMIT: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().optional())
     .default(2),
-  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('fast'),
-  VOICELOG_STT_MODEL_FAST: z.string().default('whisper-tiny'), // Fast mode: whisper-tiny for 3x speedup
-  VOICELOG_STT_MODEL_FULL: z.string().default('whisper-1'), // Full mode: whisper-1 for accuracy
+  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('full'),
+  VOICELOG_STT_MODEL_FAST: z.string().default('whisper-1'), // Fast mode: whisper-1 for balance
+  VOICELOG_STT_MODEL_FULL: z.string().default('gpt-4o-transcribe'), // Full mode: gpt-4o-transcribe for premium accuracy
   VOICELOG_CHUNK_OVERLAP_SECONDS: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().int().min(0).optional())
     .default(5),
   VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === 'true', z.boolean()).default(true), // Enable adaptive overlap based on speech density
-  VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
   VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
 
   ANTHROPIC_API_KEY: z.string().optional(),

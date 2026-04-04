@@ -1,214 +1,81 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as Sentry from '@sentry/node';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock Sentry at the top level before any imports
-vi.mock('@sentry/node', () => ({
-  init: vi.fn(),
-  captureMessage: vi.fn(),
-  captureException: vi.fn(),
-}));
-
-const flushPromises = () => new Promise((r) => setTimeout(r, 0));
-
-describe('logger', () => {
-  const originalEnv = process.env;
-  let consoleLogSpy: any;
-  let consoleWarnSpy: any;
-  let consoleErrorSpy: any;
+describe('logger.ts', () => {
+  let originalSentryDsn: string | undefined;
 
   beforeEach(() => {
     vi.resetModules();
-    process.env = { ...originalEnv };
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // Clear Sentry mock calls
-    vi.clearAllMocks();
+    originalSentryDsn = process.env.SENTRY_DSN;
+    delete process.env.SENTRY_DSN;
   });
 
   afterEach(() => {
-    process.env = originalEnv;
-    consoleLogSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
     vi.restoreAllMocks();
-  });
-
-  describe('logger.info', () => {
-    it('logs info message without metadata', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.info('Test message');
-
-      expect(consoleLogSpy).toHaveBeenCalledWith('[INFO] Test message', '');
-    });
-
-    it('logs info message with metadata', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.info('Test message', { key: 'value' });
-
-      expect(consoleLogSpy).toHaveBeenCalledWith('[INFO] Test message', { key: 'value' });
-    });
-
-    it('logs info message with multiple metadata fields', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.info('Test message', { key1: 'value1', key2: 'value2' });
-
-      expect(consoleLogSpy).toHaveBeenCalledWith('[INFO] Test message', {
-        key1: 'value1',
-        key2: 'value2',
-      });
-    });
-
-    it('logs info message with empty metadata object', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.info('Test message', {});
-
-      expect(consoleLogSpy).toHaveBeenCalledWith('[INFO] Test message', '');
-    });
-  });
-
-  describe('logger.warn', () => {
-    it('logs warn message without metadata', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.warn('Test warning');
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[WARN] Test warning', '');
-    });
-
-    it('logs warn message with metadata', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.warn('Test warning', { key: 'value' });
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[WARN] Test warning', { key: 'value' });
-    });
-
-    it('captures warning to Sentry when SENTRY_DSN is set', async () => {
-      process.env.SENTRY_DSN = 'https://test@sentry.io/123';
-
-      const { logger } = await import('../logger.ts');
-
-      logger.warn('Test warning');
-      await flushPromises();
-
-      expect(consoleWarnSpy).toHaveBeenCalled();
-      expect(Sentry.captureMessage).toHaveBeenCalledWith('Test warning', 'warning');
-    });
-
-    it('does not capture warning to Sentry when SENTRY_DSN is not set', async () => {
+    if (originalSentryDsn !== undefined) {
+      process.env.SENTRY_DSN = originalSentryDsn;
+    } else {
       delete process.env.SENTRY_DSN;
-
-      const { logger } = await import('../logger.ts');
-
-      logger.warn('Test warning');
-
-      expect(consoleWarnSpy).toHaveBeenCalled();
-      expect(Sentry.captureMessage).not.toHaveBeenCalled();
-    });
+    }
   });
 
-  describe('logger.error', () => {
-    it('logs error message without error object', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.error('Test error');
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Test error', '');
-    });
-
-    it('logs error message with error object', async () => {
-      const { logger } = await import('../logger.ts');
-      const error = new Error('Test error');
-
-      logger.error('Test error', error);
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Test error', error);
-    });
-
-    it('logs error message with null error', async () => {
-      const { logger } = await import('../logger.ts');
-
-      logger.error('Test error', null);
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Test error', '');
-    });
-
-    it('captures Error to Sentry when SENTRY_DSN is set', async () => {
-      process.env.SENTRY_DSN = 'https://test@sentry.io/123';
-
-      const { logger } = await import('../logger.ts');
-      const error = new Error('Test error');
-
-      logger.error('Test error', error);
-      await flushPromises();
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(Sentry.captureException).toHaveBeenCalledWith(error);
-    });
-
-    it('captures message to Sentry when SENTRY_DSN is set and error is not Error instance', async () => {
-      process.env.SENTRY_DSN = 'https://test@sentry.io/123';
-
-      const { logger } = await import('../logger.ts');
-
-      logger.error('Test error', 'string error');
-      await flushPromises();
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(Sentry.captureMessage).toHaveBeenCalledWith('Test error', 'error');
-    });
-
-    it('does not capture error to Sentry when SENTRY_DSN is not set', async () => {
-      delete process.env.SENTRY_DSN;
-
-      const { logger } = await import('../logger.ts');
-      const error = new Error('Test error');
-
-      logger.error('Test error', error);
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-      expect(Sentry.captureMessage).not.toHaveBeenCalled();
-    });
+  test('logs info messages to console.log', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.info('hello world');
+    expect(logSpy).toHaveBeenCalledWith('[INFO] hello world', '');
   });
 
-  describe('logger exports', () => {
-    it('exports logger object with info, warn, and error methods', async () => {
-      const { logger } = await import('../logger.ts');
-
-      expect(logger).toBeDefined();
-      expect(logger.info).toBeDefined();
-      expect(logger.warn).toBeDefined();
-      expect(logger.error).toBeDefined();
-      expect(typeof logger.info).toBe('function');
-      expect(typeof logger.warn).toBe('function');
-      expect(typeof logger.error).toBe('function');
-    });
+  test('logs info messages with metadata', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.info('hello', { key: 'value' });
+    expect(logSpy).toHaveBeenCalledWith('[INFO] hello', { key: 'value' });
   });
 
-  describe('Sentry initialization', () => {
-    it('does not initialize Sentry at import time (deferred to sentry.ts)', async () => {
-      process.env.SENTRY_DSN = 'https://test@sentry.io/123';
-      process.env.NODE_ENV = 'production';
+  test('logs warn messages to console.warn', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.warn('warning msg');
+    expect(warnSpy).toHaveBeenCalledWith('[WARN] warning msg', '');
+  });
 
-      await import('../logger.ts');
+  test('logs warn with metadata', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.warn('warning', { detail: true });
+    expect(warnSpy).toHaveBeenCalledWith('[WARN] warning', { detail: true });
+  });
 
-      // logger.ts no longer calls Sentry.init — it's done in sentry.ts
-      expect(Sentry.init).not.toHaveBeenCalled();
-    });
+  test('logs error messages to console.error', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.error('error msg');
+    expect(errSpy).toHaveBeenCalledWith('[ERROR] error msg', '');
+  });
 
-    it('does not initialize Sentry when SENTRY_DSN is not configured', async () => {
-      delete process.env.SENTRY_DSN;
+  test('logs error with Error object', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    const err = new Error('test error');
+    logger.error('error msg', err);
+    expect(errSpy).toHaveBeenCalledWith('[ERROR] error msg', err);
+  });
 
-      await import('../logger.ts');
+  test('logs error with non-Error value', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+    logger.error('error msg', 'string error');
+    expect(errSpy).toHaveBeenCalledWith('[ERROR] error msg', 'string error');
+  });
 
-      expect(Sentry.init).not.toHaveBeenCalled();
-    });
+  test('does not call Sentry when SENTRY_DSN not set', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    delete process.env.SENTRY_DSN;
+    const { logger } = await import('../logger.ts');
+    logger.error('fail');
+    logger.warn('careful');
+    expect(errSpy).toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
   });
 });

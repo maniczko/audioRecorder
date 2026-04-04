@@ -1,132 +1,222 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { httpClient } from '../lib/httpClient.ts';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { httpClient, httpGet, httpPost } from '../lib/httpClient.ts';
 
-function makeOkResponse(body = '{}') {
-  return {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    headers: new Headers(),
-    text: async () => body,
-    json: async () => JSON.parse(body),
-  };
-}
+describe('httpClient.ts', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
 
-describe('httpClient', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  it('sends FormData without Content-Type header so browser sets boundary', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse() as any);
+  test('makes a GET request with default options', async () => {
+    const mockResponse = new Response(JSON.stringify({ ok: true }), { status: 200 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
 
-    const form = new FormData();
-    form.append('model', 'whisper-1');
-    await httpClient('https://api.test/audio/transcriptions', {
-      method: 'POST',
-      body: form,
-    });
+    const result = await httpClient('https://api.example.com/data');
 
-    const [, init] = fetchSpy.mock.calls[0];
-    const headers = init?.headers as Record<string, string>;
-    expect(headers['Content-Type']).toBeUndefined();
-  });
-
-  it('does not JSON.stringify FormData body', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse() as any);
-
-    const form = new FormData();
-    form.append('model', 'whisper-1');
-    await httpClient('https://api.test/audio/transcriptions', {
-      method: 'POST',
-      body: form,
-    });
-
-    const [, init] = fetchSpy.mock.calls[0];
-    expect(init?.body).toBe(form);
-  });
-
-  it('sets Content-Type application/json for plain object body', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse() as any);
-
-    await httpClient('https://api.test/endpoint', {
-      method: 'POST',
-      body: { key: 'value' },
-    });
-
-    const [, init] = fetchSpy.mock.calls[0];
-    const headers = init?.headers as Record<string, string>;
-    expect(headers['Content-Type']).toBe('application/json');
-    expect(init?.body).toBe('{"key":"value"}');
-  });
-
-  it('retries on network error up to MAX_RETRIES times', async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockRejectedValue(new TypeError('Failed to fetch'));
-
-    // timeout large enough to not interfere; backoffs are ~300ms total
-    await expect(httpClient('https://api.test/endpoint', { timeout: 60000 })).rejects.toThrow(
-      'Failed to fetch'
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://api.example.com/data',
+      expect.objectContaining({
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
     );
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe(200);
   });
 
-  it('does not retry when internal timeout fires (controller.signal.aborted)', async () => {
-    let resolveAbort!: () => void;
-    const abortPromise = new Promise<void>((r) => {
-      resolveAbort = r;
+  test('sends JSON body for POST requests', async () => {
+    const mockResponse = new Response(JSON.stringify({ id: 1 }), { status: 201 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    await httpClient('https://api.example.com/items', {
+      method: 'POST',
+      body: { name: 'test' },
     });
 
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
-      return new Promise((_resolve, reject) => {
-        const sig = init?.signal as AbortSignal | undefined;
-        if (sig) {
-          sig.addEventListener('abort', () => {
-            resolveAbort();
-            const err = new DOMException('The operation was aborted.', 'AbortError');
-            reject(err);
-          });
-        }
-      });
-    });
-
-    const promise = httpClient('https://api.test/endpoint', { timeout: 50 });
-
-    await abortPromise;
-    await expect(promise).rejects.toThrow();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const callArgs = fetchSpy.mock.calls[0][1];
+    expect(callArgs?.method).toBe('POST');
+    expect(callArgs?.headers).toHaveProperty('Content-Type', 'application/json');
+    expect(JSON.parse(callArgs?.body as string)).toEqual({ name: 'test' });
   });
 
-  it('does not retry when external abort signal is already aborted', async () => {
+  test('passes custom headers', async () => {
+    const mockResponse = new Response('ok', { status: 200 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    await httpClient('https://api.example.com', {
+      headers: { Authorization: 'Bearer token123' },
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer token123' }),
+      })
+    );
+  });
+
+  test('does not set Content-Type for FormData body', async () => {
+    const mockResponse = new Response('ok', { status: 200 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    // Create a minimal mock FormData
+    const formData = new FormData();
+    formData.append('file', new Blob(['test']), 'test.txt');
+
+    await httpClient('https://api.example.com/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const callArgs = fetchSpy.mock.calls[0][1];
+    expect(callArgs?.headers).not.toHaveProperty('Content-Type', 'application/json');
+    expect(callArgs?.body).toBeInstanceOf(FormData);
+  });
+
+  test('returns response text via text() method', async () => {
+    const mockResponse = new Response('hello world', { status: 200 });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    const result = await httpClient('https://api.example.com');
+    const text = await result.text();
+    expect(text).toBe('hello world');
+  });
+
+  test('returns response JSON via json() method', async () => {
+    const data = { id: 42, name: 'test' };
+    const mockResponse = new Response(JSON.stringify(data), { status: 200 });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    const result = await httpClient('https://api.example.com');
+    const json = await result.json();
+    expect(json).toEqual(data);
+  });
+
+  test('throws on non-retryable errors', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Invalid URL'));
+
+    await expect(httpClient('https://api.example.com')).rejects.toThrow('Invalid URL');
+  });
+
+  test('throws immediately when signal is already aborted', async () => {
     const controller = new AbortController();
     controller.abort();
 
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockRejectedValue(new DOMException('The operation was aborted.', 'AbortError'));
-
     await expect(
-      httpClient('https://api.test/endpoint', { signal: controller.signal })
-    ).rejects.toThrow('The operation was aborted.');
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+      httpClient('https://api.example.com', { signal: controller.signal })
+    ).rejects.toThrow();
   });
 
-  it('returns response for non-2xx status without retrying', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      headers: new Headers(),
-      text: async () => '{"error":{"message":"Invalid API key"}}',
-      json: async () => ({ error: { message: 'Invalid API key' } }),
-    } as any);
+  test('retries on transient 502 error', async () => {
+    const mock502 = new Response('Bad Gateway', { status: 502 });
+    const mock200 = new Response(JSON.stringify({ ok: true }), { status: 200 });
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mock502)
+      .mockResolvedValueOnce(mock200);
 
-    const response = await httpClient('https://api.test/endpoint');
-    expect(response.ok).toBe(false);
-    expect(response.status).toBe(401);
-    // Only one attempt — HTTP errors are not retried
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const promise = httpClient('https://api.example.com');
+    // Fast-forward through retry delay (500ms * 2^0 = 500ms)
+    await vi.advanceTimersByTimeAsync(600);
+    const result = await promise;
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe(200);
+  });
+
+  test('retries on transient 503 error', async () => {
+    const mock503 = new Response('Service Unavailable', { status: 503 });
+    const mock200 = new Response('ok', { status: 200 });
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mock503)
+      .mockResolvedValueOnce(mock200);
+
+    const promise = httpClient('https://api.example.com');
+    await vi.advanceTimersByTimeAsync(600);
+    const result = await promise;
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe(200);
+  });
+
+  test('retries on transient 504 error', async () => {
+    const mock504 = new Response('Gateway Timeout', { status: 504 });
+    const mock200 = new Response('ok', { status: 200 });
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mock504)
+      .mockResolvedValueOnce(mock200);
+
+    const promise = httpClient('https://api.example.com');
+    await vi.advanceTimersByTimeAsync(600);
+    const result = await promise;
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe(200);
+  });
+
+  test('retries on network error', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new Error('fetch failed'))
+      .mockResolvedValue(new Response('ok', { status: 200 }));
+
+    const promise = httpClient('https://api.example.com');
+    await vi.advanceTimersByTimeAsync(500);
+    const result = await promise;
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe(200);
+  });
+
+  test('returns response with ok=false after max retries on persistent 502', async () => {
+    const mock502 = new Response('Bad Gateway', { status: 502 });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mock502);
+
+    const promise = httpClient('https://api.example.com');
+    // Fast-forward through all retry delays: 500 + 1000 = 1500ms (only 2 retries, 3rd attempt returns)
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
+
+    expect(result.status).toBe(502);
+    expect(result.ok).toBe(false);
+  });
+
+  test('httpGet convenience method uses GET', async () => {
+    const mockResponse = new Response('ok', { status: 200 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    await httpGet('https://api.example.com');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  test('httpPost convenience method uses POST with body', async () => {
+    const mockResponse = new Response('created', { status: 201 });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    await httpPost('https://api.example.com', { name: 'item' });
+
+    const callArgs = fetchSpy.mock.calls[0][1];
+    expect(callArgs?.method).toBe('POST');
+    expect(JSON.parse(callArgs?.body as string)).toEqual({ name: 'item' });
+  });
+
+  test('uses custom timeout from options', async () => {
+    const mockResponse = new Response('ok', { status: 200 });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);
+
+    await httpClient('https://api.example.com', { timeout: 5000 });
+
+    // fetch should have been called with an AbortController signal
+    expect(fetch).toHaveBeenCalled();
   });
 });

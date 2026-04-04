@@ -97,6 +97,15 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
     speakerCount: 2,
     speakerLabels: { 0: 'Adam', 1: 'Marcin' },
     summary: '...',
+    chapters: [
+      {
+        title: '...',
+        startTime: '0:00',
+        endTime: '2:30',
+        summary: '...',
+        speakers: ['Adam'],
+      },
+    ],
     decisions: ['...'],
     actionItems: ['...'],
     tasks: [
@@ -115,6 +124,21 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
     energyLevel: 'medium',
     risks: [{ risk: '...', severity: 'high' }],
     blockers: ['...'],
+    speakerAnalytics: [
+      {
+        speaker: 'Adam',
+        talkTimeSeconds: 180,
+        talkTimePercent: 60,
+        wordCount: 450,
+        wordsPerMinute: 150,
+        longestMonologue: '2:15',
+        questionsAsked: 3,
+        interruptions: 1,
+        fillerWords: { count: 5, examples: ['no', 'yyy', 'znaczy'] },
+        sentiment: 'positive',
+        engagementLevel: 'high',
+      },
+    ],
     participantInsights: [
       {
         speaker: 'Adam',
@@ -147,8 +171,11 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
   });
 
   const prompt = [
-    'Jesteś analitykiem spotkań biznesowych. Analizuj transkrypt i zwróć JSON.',
+    'Jesteś analitykiem spotkań biznesowych klasy premium. Analizuj transkrypt i zwróć JSON.',
     'Return valid JSON only — no prose outside the JSON object.',
+    '',
+    'ZADANIE CHAPTERS: Podziel spotkanie na rozdziały tematyczne (chapters). Każdy rozdział ma tytuł, startTime, endTime, summary i listę aktywnych speakerów. Minimum 2 rozdziały dla spotkań >3 min. Rozdziały NIE mogą się nakładać.',
+    "ZADANIE SPEAKER ANALYTICS: Dla każdego mówcy oblicz metryki: talkTimeSeconds (szacunek na podstawie długości segmentów), talkTimePercent, wordCount, wordsPerMinute, longestMonologue (timestamp najdłuższej ciągłej wypowiedzi), questionsAsked (ile pytań zadał), interruptions (ile razy wciął się innemu), fillerWords (polskie: 'no', 'yyy', 'znaczy', 'jakby', 'w sumie' — count + examples), sentiment (positive/neutral/negative), engagementLevel (high/medium/low).",
     "BARDZO WAŻNE: Twoim krytycznym zadaniem jest przypisywanie zadań (Action Items / Tasks) konkretnym mówcom. Właściwość 'owner' w tablicy 'tasks' MUSI zawierać dokładne imię (speakerLabels) osoby, która podjęła się zadania w transkryptach, zamiast ogólników.",
     "ZADANIE A: Zidentyfikuj i uzupełnij prawdziwe imiona we właściwości 'speakerLabels' (np. gdy ktoś mówi 'Cześć Adam', zamień 'Speaker 1' na 'Adam') i używaj tylko tych konkretnych imion wokół całego pliku (szczególnie klucza 'owner' przy zadaniach).",
     "ZADANIE B: Dla każdej rozpoznanej osoby w sekcji 'participantInsights' wypełnij obiekt 'personality' oszacowując od 0 do 100 psychologię DISC.",
@@ -179,7 +206,7 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 4000,
+        max_tokens: 8000,
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),

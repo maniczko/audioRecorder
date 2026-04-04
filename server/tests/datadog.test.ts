@@ -1,20 +1,21 @@
-/**
- * datadog.test.ts
- *
- * Tests for DataDog APM configuration module.
- * Coverage target: 100% (currently 0%)
- */
-
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
-describe('datadog — APM configuration', () => {
-  const originalEnv = { ...process.env };
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+const mockTracerInit = vi.fn();
+const mockTracerUse = vi.fn();
 
+vi.mock('dd-trace', () => {
+  const tracer = {
+    init: mockTracerInit,
+    use: mockTracerUse,
+  };
+  return { default: tracer, __esModule: true };
+});
+
+describe('datadog.ts', () => {
   beforeEach(() => {
     vi.resetModules();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    // Reset env vars
+    mockTracerInit.mockClear();
+    mockTracerUse.mockClear();
     process.env.NODE_ENV = '';
     process.env.DD_APM_ENABLED = '';
     process.env.DD_SERVICE = '';
@@ -25,66 +26,89 @@ describe('datadog — APM configuration', () => {
   });
 
   afterEach(() => {
-    // Restore original env
-    Object.keys(process.env).forEach((key) => {
-      if (key.startsWith('DD_') || key === 'NODE_ENV') {
-        process.env[key] = (originalEnv as Record<string, string | undefined>)[key] || '';
-      }
-    });
-    consoleLogSpy.mockRestore();
     vi.restoreAllMocks();
   });
 
-  test('logs "APM disabled" when not in production and DD_APM_ENABLED is not set', async () => {
+  test('logs "APM disabled" when not production and DD_APM_ENABLED not set', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.NODE_ENV = 'test';
-    process.env.DD_APM_ENABLED = '';
-
-    await import('../datadog.ts');
-
-    expect(consoleLogSpy).toHaveBeenCalledWith(
+    await import('../datadog.js');
+    expect(logSpy).toHaveBeenCalledWith(
       '[DataDog] APM disabled (set DD_APM_ENABLED=true or NODE_ENV=production)'
     );
   });
 
   test('logs "APM disabled" in development mode', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.NODE_ENV = 'development';
-    process.env.DD_APM_ENABLED = '';
-
-    await import('../datadog.ts');
-
-    // In development, it should NOT initialize (only production or explicit enable)
-    expect(consoleLogSpy).toHaveBeenCalledWith(
+    await import('../datadog.js');
+    expect(logSpy).toHaveBeenCalledWith(
       '[DataDog] APM disabled (set DD_APM_ENABLED=true or NODE_ENV=production)'
     );
   });
 
-  test('initializes APM when DD_APM_ENABLED is explicitly set to true', async () => {
+  test('initializes APM when DD_APM_ENABLED=true', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.NODE_ENV = 'test';
     process.env.DD_APM_ENABLED = 'true';
-    process.env.DD_SERVICE = 'test-service';
-
-    await import('../datadog.ts');
-
-    expect(consoleLogSpy).toHaveBeenCalledWith('[DataDog] APM initialized successfully');
+    process.env.DD_SERVICE = 'my-service';
+    await import('../datadog.js');
+    expect(mockTracerInit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        service: 'my-service',
+        env: 'test',
+      })
+    );
+    expect(logSpy).toHaveBeenCalledWith('[DataDog] APM initialized successfully');
   });
 
-  test('initializes APM when NODE_ENV is production', async () => {
+  test('initializes APM when NODE_ENV=production', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.NODE_ENV = 'production';
-    process.env.DD_SERVICE = 'prod-service';
+    await import('../datadog.js');
+    expect(mockTracerInit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        service: 'voicelog-server',
+        env: 'production',
+        profiling: true,
+      })
+    );
+    expect(logSpy).toHaveBeenCalledWith('[DataDog] APM initialized successfully');
+  });
 
-    await import('../datadog.ts');
-
-    expect(consoleLogSpy).toHaveBeenCalledWith('[DataDog] APM initialized successfully');
+  test('instruments HTTP, pg, and hono in production mode', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    await import('../datadog.js');
+    expect(mockTracerUse).toHaveBeenCalledWith('http', expect.any(Object));
+    expect(mockTracerUse).toHaveBeenCalledWith('pg', expect.any(Object));
+    expect(mockTracerUse).toHaveBeenCalledWith('hono', expect.any(Object));
   });
 
   test('exports tracer as default', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.NODE_ENV = 'test';
-    process.env.DD_APM_ENABLED = '';
+    const mod = await import('../datadog.js');
+    expect(mod.default).toHaveProperty('init');
+    expect(mod.default).toHaveProperty('use');
+  });
 
-    const datadog = await import('../datadog.ts');
+  test('uses default service name when DD_SERVICE not set', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'test';
+    process.env.DD_APM_ENABLED = 'true';
+    delete process.env.DD_SERVICE;
+    await import('../datadog.js');
+    expect(mockTracerInit).toHaveBeenCalledWith(
+      expect.objectContaining({ service: 'voicelog-server' })
+    );
+  });
 
-    expect(datadog.default).toBeDefined();
-    expect(typeof datadog.default.init).toBe('function');
-    expect(typeof datadog.default.use).toBe('function');
+  test('disables profiling in non-production', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'staging';
+    process.env.DD_APM_ENABLED = 'true';
+    await import('../datadog.js');
+    expect(mockTracerInit).toHaveBeenCalledWith(expect.objectContaining({ profiling: false }));
   });
 });

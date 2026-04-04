@@ -580,7 +580,7 @@ export default function PeopleTab({
                   <div>
                     <strong>{profile.name}</strong>
                     <span>
-                      {profile.meetings.length} spotkan • {profile.tasks.length} zadan
+                      {profile.meetings.length} spotkań • {profile.tasks.length} zadań
                     </span>
                   </div>
                   <span className="task-filter-count">{profile.openTasks}</span>
@@ -616,7 +616,7 @@ export default function PeopleTab({
                         meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
                       }
                     >
-                      {selectedPerson.meetings.length} spotkan
+                      {selectedPerson.meetings.length} spotkań
                     </button>
                     <button
                       type="button"
@@ -625,10 +625,10 @@ export default function PeopleTab({
                         tasksSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
                       }
                     >
-                      {selectedPerson.openTasks} otwartych zadan
+                      {selectedPerson.openTasks} otwartych zadań
                     </button>
                     <span className="status-chip">
-                      {selectedPerson.completedTasks} zakonczonych
+                      {selectedPerson.completedTasks} zakończonych
                     </span>
                   </div>
                 </div>
@@ -641,12 +641,12 @@ export default function PeopleTab({
                     className="profile-stat-card profile-stat-link"
                     onClick={() => onOpenMeeting(selectedPerson.nextMeeting.id)}
                   >
-                    <span>Nastepne spotkanie</span>
+                    <span>Następne spotkanie</span>
                     <strong>{formatDateTime(selectedPerson.nextMeeting.startsAt)}</strong>
                   </button>
                 ) : (
                   <div className="profile-stat-card">
-                    <span>Nastepne spotkanie</span>
+                    <span>Następne spotkanie</span>
                     <strong>Brak</strong>
                   </div>
                 )}

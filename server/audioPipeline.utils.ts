@@ -39,7 +39,8 @@ export const HALLUCINATION_PATTERNS = [
  */
 // Intentionally a comma-separated keyword list, NOT a full sentence.
 // Full sentences get echoed by Whisper on silence ("prompt bleeding").
-export const DEFAULT_WHISPER_PROMPT = 'język polski, spotkanie, dyskusja, pytania, odpowiedzi,';
+export const DEFAULT_WHISPER_PROMPT =
+  'język polski, spotkanie biznesowe, dyskusja, pytania, odpowiedzi, prezentacja, raport, projekt, termin, budżet, zespół, klient,';
 
 /**
  * Verification thresholds — tuned for Polish (lower than English defaults).

@@ -1,0 +1,418 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.2 [39m[90mC:/Users/user/new/audioRecorder[39m
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [Metrics] Uploaded audio chunk {
+  requestId: [32m'29a403c9-bb3a-4710-936e-d80bb4b69fa2'[39m,
+  recordingId: [32m'rec_new'[39m,
+  sizeBytes: [33m512[39m,
+  durationMs: [32m'3.07'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - upload success
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_new/audio - 200 [10.7ms] {
+  requestId: [32m'29a403c9-bb3a-4710-936e-d80bb4b69fa2'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_new/audio'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'10.70'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/transcribe - queues job
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_1/transcribe - 202 [2.8ms] {
+  requestId: [32m'92317abd-f4d3-460c-b6e9-44fa0acd7594'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_1/transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'2.81'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mGET /media/recordings/:recordingId/transcribe - returns payload
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_2/transcribe - 200 [1.7ms] {
+  requestId: [32m'5a2bbad0-e3a5-419d-951f-af24e370f98f'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_2/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.67'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_retry/retry-transcribe - 202 [2.1ms] {
+  requestId: [32m'36a33a93-7d8e-42a8-9799-b963c8e01e8f'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'2.13'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_empty_retry/retry-transcribe - 202 [0.9ms] {
+  requestId: [32m'e8b78823-f153-4efc-a3d1-575584188e91'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_empty_retry/retry-transcribe'[39m,
+  status: [33m202[39m,
+  durationMs: [32m'0.87'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPUT /media/recordings/:recordingId/audio - upload success[32m 123[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mOPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins[32m 15[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/transcribe - queues job[32m 28[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/transcribe - returns payload[32m 16[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - requeues failed recording without reupload[32m 21[2mms[22m[39m
+ [2m[90mÔćô[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 200 [3.1ms] {
+  requestId: [32m'3cf16245-5769-4179-8ffc-eef90c07f59d'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'3.08'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 429 when Gemini responds with 429 quota exceeded
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+node.exe : [90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mM
+edia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini
+ error status codes[2m > [22m[2mreturns 429 when Gemini responds with 429 qu
+ota exceeded
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m... quota exceeded 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[WARN] Gemini 429 for recording rec_sketchnote, retry 1/2 in 5s 
+
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/retry-transcribe - allows retry for completed empty transcript[32m 19[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview[32m 22[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[WARN] Gemini 503 for recording rec_sketchnote, retry 1/2 in 5s 
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mreturns 503 when Gemini responds with 503 overloaded
+[22m[39m[WARN] Gemini 503 for recording rec_sketchnote, retry 2/2 in 15s 
+
+ [31m├Ś[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22mreturns 429 when Gemini responds with 429 quota exceeded[33m 5032[2mms[22m[39m
+[31m   Ôćĺ Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad request)
+[22m[39m[INFO] Generating Gemini 3 Pro Image sketchnote for recording rec_sketchnote... 
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad
+ request)
+[22m[39m[ERROR] Gemini image gen error: {"error":{"code":400,"message":"Inval
+id request."}}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22m[2mstill returns 500 for other Gemini errors (e.g. 400 bad request)
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_sketchnote/sketchnote - 500 [2.9ms] {
+  requestId: [32m'073bf2a4-3fea-49d0-ac6f-54ce15dd0d8e'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_sketchnote/sketchnote'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'2.88'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_missing/audio - 400 [0.5ms] {
+  requestId: [32m'c2a8002b-897c-4157-a8a4-5b49494a29a0'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_missing/audio'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'0.50'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload
+[22m[39m[INFO] [REQ] PUT /media/recordings/rec_large/audio - 413 [80.5ms] {
+  requestId: [32m'f7e0a98e-a73d-47da-bd1a-91f36f7515d7'[39m,
+  method: [32m'PUT'[39m,
+  route: [32m'/media/recordings/rec_large/audio'[39m,
+  status: [33m413[39m,
+  durationMs: [32m'80.53'[39m
+}
+
+ [31m├Ś[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22mreturns 503 when Gemini responds with 503 overloaded[33m 5020[2mms[22m[39m
+[31m   Ôćĺ Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error status codes[2m > [22mstill returns 500 for other Gemini errors (e.g. 400 bad request)[32m 32[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/normalize - 200 [1.4ms] {
+  requestId: [32m'28f14012-d7b2-41c6-b731-4669e1248b8c'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/normalize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.36'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/voice-coaching - 200 [1.1ms] {
+  requestId: [32m'2b1829c9-62e0-4d76-b9ba-2d66627ebbd4'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/voice-coaching'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.08'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_norm/acoustic-features - 200 [0.7ms] {
+  requestId: [32m'e0ec3351-824a-4ef1-9508-806ebc5718b4'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_norm/acoustic-features'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.70'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_voice/voice-profiles/from-speaker - 201 [0.8ms] {
+  requestId: [32m'68129f79-2e0e-41f4-a8fd-7ae503533a73'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_voice/voice-profiles/from-speaker'[39m,
+  status: [33m201[39m,
+  durationMs: [32m'0.85'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_missing/rediarize - 400 [1.0ms] {
+  requestId: [32m'ea5a77d5-320a-41c3-9640-c582dd719447'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_missing/rediarize'[39m,
+  status: [33m400[39m,
+  durationMs: [32m'1.00'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_ok/rediarize - 200 [0.9ms] {
+  requestId: [32m'4419e3e9-4aee-4d9c-800e-7f321a7b47b8'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_ok/rediarize'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.92'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/recordings/:recordingId/rediarize returns 422 when diarization fails
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_rediarize_fail/rediarize - 422 [0.6ms] {
+  requestId: [32m'cdc7af64-d547-4f5f-a4fd-eaee425249bc'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_rediarize_fail/rediarize'[39m,
+  status: [33m422[39m,
+  durationMs: [32m'0.60'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mPOST /media/analyze returns fallback when analysis service returns null
+[22m[39m[INFO] [REQ] POST /media/analyze - 200 [1.9ms] {
+  requestId: [32m'05c1b10b-572a-4d15-bd44-f42821162046'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/analyze'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'1.91'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPUT /media/recordings/:recordingId/audio - requires workspace header and rejects oversize upload[32m 209[2mms[22m[39m
+ [2m[90mÔćô[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/audio - returns 404 for missing assets and files
+ [2m[90mÔćô[39m[22m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mGET /media/recordings/:recordingId/audio - streams existing file with safe headers
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path[32m 36[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/voice-profiles/from-speaker and /rediarize handle success and validation[32m 23[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/recordings/:recordingId/rediarize returns 422 when diarization fails[32m 18[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mPOST /media/analyze returns fallback when analysis service returns null[32m 17[2mms[22m[39m
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /transcribe returns error JSON when pipelin
+e throws
+[22m[39m[transcribe] Pipeline error for rec_err: STT provider unreachable
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /transcribe returns error JSON when pipeline throws
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_err/transcribe - 500 [1.5ms] {
+  requestId: [32m'8a6e0435-9197-4899-967a-395cf2c8ffd0'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_err/transcribe'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.48'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /retry-transcribe returns error JSON when p
+ipeline throws
+[22m[39m[retry-transcribe] Pipeline error for rec_retry_err: Database connect
+ion lost
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /retry-transcribe returns error JSON when pipeline throws
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_retry_err/retry-transcribe - 500 [1.1ms] {
+  requestId: [32m'7e45bf60-98b4-4268-8dbf-4b182c3ad939'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_retry_err/retry-transcribe'[39m,
+  status: [33m500[39m,
+  durationMs: [32m'1.13'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured
+ error, not 502[2m > [22m[2mPOST /transcribe returns custom status code from
+ error
+[22m[39m[transcribe] Pipeline error for rec_429: Rate limit exceeded
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22m[2mPOST /transcribe returns custom status code from error
+[22m[39m[INFO] [REQ] POST /media/recordings/rec_429/transcribe - 429 [1.2ms] {
+  requestId: [32m'50d0ab3f-9981-4653-bc2b-ee47f54d1640'[39m,
+  method: [32m'POST'[39m,
+  route: [32m'/media/recordings/rec_429/transcribe'[39m,
+  status: [33m429[39m,
+  durationMs: [32m'1.18'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcrib
+e[2m > [22m[2mmarks asset as failed when stuck in processing for >5 min with
+ empty segments
+[22m[39m[transcribe-status] Recording rec_stuck stuck in 'processing' since 2
+026-04-03T16:57:02.861Z. Marking as failed.
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mmarks asset as failed when stuck in processing for >5 min with empty segments
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_stuck/transcribe - 200 [0.9ms] {
+  requestId: [32m'e9de8b38-1475-4fd0-bf7c-2b5638a8efb4'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_stuck/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.93'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mdoes not mark as failed when processing for <5 min
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_recent/transcribe - 200 [0.5ms] {
+  requestId: [32m'9cacc425-fd7d-45b5-b5c0-e0d040b3175b'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_recent/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.48'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22m[2mdoes not mark as failed when processing has segments
+[22m[39m[INFO] [REQ] GET /media/recordings/rec_with_data/transcribe - 200 [0.6ms] {
+  requestId: [32m'17dcbc5a-3a35-45e5-8e30-243f6804386a'[39m,
+  method: [32m'GET'[39m,
+  route: [32m'/media/recordings/rec_with_data/transcribe'[39m,
+  status: [33m200[39m,
+  durationMs: [32m'0.59'[39m
+}
+
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22mPOST /transcribe returns error JSON when pipeline throws[32m 18[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22mPOST /retry-transcribe returns error JSON when pipeline throws[32m 18[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö transcribe pipeline error returns structured error, not 502[2m > [22mPOST /transcribe returns custom status code from error[32m 16[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22mmarks asset as failed when stuck in processing for >5 min with empty segments[32m 19[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22mdoes not mark as failed when processing for <5 min[32m 16[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mRegression: #0 ÔÇö stuck processing detection in GET /transcribe[2m > [22mdoes not mark as failed when processing has segments[32m 18[2mms[22m[39m
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 404, gdy nagranie nie istnieje w bazie
+[22m[39m[INFO] [REQ] DELETE /media/recordings/recording_nonexistent - 404 [0.6ms] {
+  requestId: [32m'057bcd9e-bdd8-4675-8309-5947a0535a15'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/recording_nonexistent'[39m,
+  status: [33m404[39m,
+  durationMs: [32m'0.60'[39m
+}
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 204, gdy nagranie istnieje i zostanie usuni─Öte
+[22m[39m[INFO] [REQ] DELETE /media/recordings/rec_existing - 204 [0.4ms] {
+  requestId: [32m'5aca4566-fd0c-4250-9ca0-9e055ebe2f1a'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/rec_existing'[39m,
+  status: [33m204[39m,
+  durationMs: [32m'0.39'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes
+[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce 
+nagranie[2m > [22m[2mzwraca 403, gdy u┼╝ytkownik nie ma dost─Öpu do workspac
+e
+[22m[39mAPP ERROR STACK Error: Nie masz dostepu do tego workspace.
+    at ensureWorkspaceAccess (C:/Users/user/new/audioRecorder/server/routes/mid
+dleware.ts:57:19)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:567:9)
+    at processTimers (node:internal/timers:541:7)
+    at C:/Users/user/new/audioRecorder/server/routes/media.ts:340:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at authMiddleware (C:/Users/user/new/audioRecorder/server/routes/middleware
+.ts:50:5)
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+    at C:/Users/user/new/audioRecorder/server/http/app-security.ts:133:5
+    at dispatch (file:///C:/Users/user/new/audioRecorder/node_modules/.pnpm/hon
+o@4.12.9/node_modules/hono/dist/compose.js:22:17)
+
+[90mstdout[2m | server/tests/routes/media.test.ts[2m > [22m[2mMedia Routes[2m > [22m[2mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22m[2mzwraca 403, gdy u┼╝ytkownik nie ma dost─Öpu do workspace
+[22m[39m[INFO] [REQ] DELETE /media/recordings/rec_forbidden - 403 [13.2ms] {
+  requestId: [32m'57a8fe1b-d702-4e6f-b082-50cda28657ac'[39m,
+  method: [32m'DELETE'[39m,
+  route: [32m'/media/recordings/rec_forbidden'[39m,
+  status: [33m403[39m,
+  durationMs: [32m'13.19'[39m
+}
+
+[90mstderr[2m | server/tests/routes/media.test.ts
+[22m[39m[WARN] Gemini 503 for recording rec_sketchnote, retry 2/2 in 15s 
+
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22mzwraca 404, gdy nagranie nie istnieje w bazie[32m 13[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22mzwraca 204, gdy nagranie istnieje i zostanie usuni─Öte[32m 16[2mms[22m[39m
+ [32mÔťô[39m server/tests/routes/media.test.ts[2m > [22mMedia Routes[2m > [22mDELETE /recordings/:recordingId ÔÇö Regression: nieistniej─ůce nagranie[2m > [22mzwraca 403, gdy u┼╝ytkownik nie ma dost─Öpu do workspace[32m 25[2mms[22m[39m
+
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Tests 2 [49m[22m[31mÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m server/tests/routes/media.test.ts[2m > [22mMedia Ro
+utes[2m > [22mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22mreturns 429 when Gemini responds with 429 quota exceeded
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or co
+nfigure it globally with "testTimeout".[39m
+[36m [2mÔŁ»[22m server/tests/routes/media.test.ts:[2m400:5[22m[39m
+    [90m398|[39m     }[33m;[39m
+    [90m399|[39m
+    [90m400|[39m     it('returns 429 when Gemini responds with 429 quota exce
+eded', asyÔÇŽ
+    [90m   |[39m     [31m^[39m
+    [90m401|[39m       [35mconst[39m ctx [33m=[39m [34msetupSketchnoteTe
+st[39m()[33m;[39m
+    [90m402|[39m       global[33m.[39mfetch [33m=[39m vi[33m.[39m[34mf
+n[39m()[33m.[39m[34mmockResolvedValue[39m(
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»[1/2]ÔÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m server/tests/routes/media.test.ts[2m > [22mMedia Ro
+utes[2m > [22mRegression: Issue #0 ÔÇö Sketchnote preserves Gemini error stat
+us codes[2m > [22mreturns 503 when Gemini responds with 503 overloaded
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or co
+nfigure it globally with "testTimeout".[39m
+[36m [2mÔŁ»[22m server/tests/routes/media.test.ts:[2m427:5[22m[39m
+    [90m425|[39m     })[33m;[39m
+    [90m426|[39m
+    [90m427|[39m     it('returns 503 when Gemini responds with 503 overloaded
+', async (ÔÇŽ
+    [90m   |[39m     [31m^[39m
+    [90m428|[39m       [35mconst[39m ctx [33m=[39m [34msetupSketchnoteTe
+st[39m()[33m;[39m
+    [90m429|[39m       global[33m.[39mfetch [33m=[39m vi[33m.[39m[34mf
+n[39m()[33m.[39m[34mmockResolvedValue[39m(
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»[2/2]ÔÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m22 passed[39m[22m[2m | [22m[33m3 skipped[39m[90m (27)[39m
+[2m   Start at [22m 19:16:50
+[2m   Duration [22m 12.72s[2m (transform 659ms, setup 172ms, import 1.15s, tests 10.80s, environment 0ms)[22m
+

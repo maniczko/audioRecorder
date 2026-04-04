@@ -1408,11 +1408,6 @@ select:focus {
     grid-template-columns: repeat(7, minmax(70px, 1fr));
     overflow-x: auto;
   }
-
-  .swimlane-header-row,
-  .swimlane-row {
-    min-width: max-content;
-  }
 }
 
 /* ==========================================

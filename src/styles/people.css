@@ -116,6 +116,13 @@
   color: var(--muted);
 }
 
+.person-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
 .person-row span,
 .people-search-field span,
 .person-task-card p {

@@ -22,6 +22,8 @@ import {
   Play,
   Square,
   Brain,
+  Menu,
+  X,
 } from 'lucide-react';
 
 export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
@@ -31,6 +33,9 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   const ui = useUI();
   const google = useGoogleCtx();
   const [showAskAI, setShowAskAI] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setSidebarOpen(false);
 
   useHotkeys([
     { key: '1', ctrlKey: true, handler: () => ui.setActiveTab('studio') },
@@ -97,7 +102,12 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
   }
 
   return (
-    <div className="app-shell-modern">
+    <div className={`app-shell-modern${sidebarOpen ? ' sidebar-open' : ''}`}>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="modern-sidebar-overlay" onClick={closeSidebar} aria-hidden="true" />
+      )}
+
       {/* Sidebar */}
       <aside className="modern-sidebar">
         <div
@@ -166,7 +176,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${ui.activeTab === 'studio' ? 'active' : ''}`}
-            onClick={ui.openStudio}
+            onClick={() => {
+              ui.openStudio();
+              closeSidebar();
+            }}
           >
             <AudioLines size={18} />
             Studio
@@ -175,7 +188,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${ui.activeTab === 'recordings' ? 'active' : ''}`}
-            onClick={() => ui.setActiveTab('recordings')}
+            onClick={() => {
+              ui.setActiveTab('recordings');
+              closeSidebar();
+            }}
           >
             <Layers size={18} />
             Nagrania
@@ -184,7 +200,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${ui.activeTab === 'calendar' ? 'active' : ''}`}
-            onClick={() => ui.setActiveTab('calendar')}
+            onClick={() => {
+              ui.setActiveTab('calendar');
+              closeSidebar();
+            }}
           >
             <CalendarDays size={18} />
             Kalendarz
@@ -193,7 +212,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${ui.activeTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => ui.setActiveTab('tasks')}
+            onClick={() => {
+              ui.setActiveTab('tasks');
+              closeSidebar();
+            }}
           >
             <ListTodo size={18} />
             Zadania
@@ -202,7 +224,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${ui.activeTab === 'people' ? 'active' : ''}`}
-            onClick={() => ui.setActiveTab('people')}
+            onClick={() => {
+              ui.setActiveTab('people');
+              closeSidebar();
+            }}
           >
             <UsersRound size={18} />
             Osoby
@@ -211,7 +236,10 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
           <button
             type="button"
             className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
-            onClick={() => setShowAskAI(!showAskAI)}
+            onClick={() => {
+              setShowAskAI(!showAskAI);
+              closeSidebar();
+            }}
             style={{ marginTop: 'auto', position: 'relative' }}
           >
             <Brain size={18} />
@@ -248,13 +276,22 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
       {/* Main Content Area */}
       <main className="modern-main">
         <header className="modern-header">
-          <div className="modern-header-left"></div>
+          <div className="modern-header-left">
+            <button
+              type="button"
+              className="modern-hamburger-btn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label={sidebarOpen ? 'Zamknij menu' : 'Otwórz menu'}
+            >
+              {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
 
           <div className="modern-header-right">
             <button className="modern-search-btn" onClick={() => ui.setCommandPaletteOpen(true)}>
               <span className="modern-search-btn-left">
                 <Search size={16} />
-                Szukaj wszędzie...
+                <span className="modern-search-text">Szukaj wszędzie...</span>
               </span>
               <span className="modern-search-shortcut">
                 <kbd>Ctrl</kbd> + <kbd>K</kbd>
@@ -294,12 +331,12 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
                 {recorder.isRecording ? (
                   <>
                     <Square size={16} className="fill-current text-red-500" />
-                    Zatrzymaj nagrywanie
+                    <span className="modern-record-label">Zatrzymaj nagrywanie</span>
                   </>
                 ) : (
                   <>
                     <Play size={16} className="fill-current text-slate-900" />
-                    Rozpocznij nagrywanie
+                    <span className="modern-record-label">Rozpocznij nagrywanie</span>
                   </>
                 )}
               </div>

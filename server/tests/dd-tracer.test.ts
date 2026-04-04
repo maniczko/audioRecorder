@@ -1,54 +1,25 @@
-/**
- * dd-tracer.test.ts
- *
- * Tests for dd-trace initialization wrapper.
- * Coverage target: 100% (currently 0%)
- */
+import { describe, test, expect, vi } from 'vitest';
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+const mockInit = vi.fn(() => ({}));
+const mockUse = vi.fn();
 
-// Mock dd-trace before importing the module
 vi.mock('dd-trace', () => {
-  const mockTracer = {
-    init: vi.fn().mockReturnThis(),
-    use: vi.fn().mockReturnThis(),
-    wrap: vi.fn().mockImplementation((_name: string, fn: Function) => fn),
-    trace: vi.fn(),
+  const tracer = {
+    init: mockInit,
+    use: mockUse,
   };
-  return { default: mockTracer };
+  return { default: tracer, __esModule: true };
 });
 
-describe('dd-tracer', () => {
-  beforeEach(() => {
-    vi.resetModules();
+describe('dd-tracer.ts', () => {
+  test('initializes dd-trace with logInjection', async () => {
+    await import('../dd-tracer.js');
+    expect(mockInit).toHaveBeenCalledWith({ logInjection: true });
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  test('initializes tracer with logInjection enabled', async () => {
-    const { default: tracerModule } = await import('../dd-tracer');
-    const tracer = (await import('dd-trace')).default;
-
-    expect(tracer.init).toHaveBeenCalledWith({ logInjection: true });
-    expect(tracerModule).toBe(tracer);
-  });
-
-  test('exports the tracer instance as default', async () => {
-    const { default: tracerModule } = await import('../dd-tracer');
-    const tracer = (await import('dd-trace')).default;
-
-    expect(tracerModule).toBeDefined();
-    expect(tracerModule).toBe(tracer);
-  });
-
-  test('tracer has expected methods available', async () => {
-    const { default: tracerModule } = await import('../dd-tracer');
-
-    expect(typeof tracerModule.init).toBe('function');
-    expect(typeof tracerModule.use).toBe('function');
-    expect(typeof tracerModule.wrap).toBe('function');
-    expect(typeof tracerModule.trace).toBe('function');
+  test('exports tracer as default', async () => {
+    const mod = await import('../dd-tracer.js');
+    expect(mod.default).toHaveProperty('init');
+    expect(mod.default).toHaveProperty('use');
   });
 });

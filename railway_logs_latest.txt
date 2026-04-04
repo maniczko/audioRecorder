@@ -1,0 +1,500 @@
+﻿[INFO] [REQ] GET /state/bootstrap - 200 [993.7ms] {
+  requestId: 'e1a4ff8c-db2f-4895-9220-9bbb3a919872',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '993.67'
+}
+  requestId: 'ae1afd44-770d-4fc1-ab88-5b9d4a767e92',
+  method: 'GET',
+  route: '/health',
+[INFO] [REQ] GET /health - 200 [660.7ms] {
+  status: 200,
+  durationMs: '660.68'
+}
+[INFO] [REQ] GET /health - 200 [175.7ms] {
+  requestId: 'e223cb4c-f1ac-4c44-99f7-d3b91f17cb15',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.73'
+}
+[INFO] [REQ] GET /media/recordings/recording_6p98mzwc_mnj00obf/transcribe - 200 [2825.5ms] {
+  requestId: '67ac7b0c-dfc8-4ef3-95f6-424feaaacaba',
+  method: 'GET',
+  route: '/media/recordings/recording_6p98mzwc_mnj00obf/transcribe',
+  status: 200,
+  durationMs: '2825.49'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [4211.5ms] {
+  requestId: '57c4edac-1817-42c2-b5d4-bd1acfda6ad7',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '4211.53'
+}
+[INFO] [REQ] GET /health - 200 [180.8ms] {
+  requestId: '2a9d6f86-df97-4a6b-b7a3-e25dd440ef63',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.78'
+}
+[INFO] [Metrics] Pipeline Stage Complete {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  stage: 'post-processing',
+  durationMs: 18.24
+}
+[INFO] [Metrics] Pipeline Total Duration {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  recordingId: 'recording_6p98mzwc_mnj00obf',
+  totalDurationMs: 92906.69,
+  stages: {
+    transcription: 27095.69,
+    diarization: 65792.76,
+    'post-processing': 18.24
+  },
+  p50: 27095.69,
+  p95: 65792.76,
+  p99: 65792.76
+}
+[INFO] [REQ] GET /health - 200 [179.3ms] {
+  requestId: '571a9a78-77e0-4adb-967e-8a1c625a7b67',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '179.29'
+}
+[INFO] [REQ] GET /media/recordings/recording_6p98mzwc_mnj00obf/transcribe - 200 [579.2ms] {
+  requestId: '70af9d70-a290-49da-a109-50db421f77c2',
+  method: 'GET',
+  route: '/media/recordings/recording_6p98mzwc_mnj00obf/transcribe',
+  status: 200,
+  durationMs: '579.24'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [884.5ms] {
+  requestId: '29bea3ab-b68a-4cd4-8a47-77934d28fe8b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '884.45'
+}
+[INFO] [REQ] GET /health - 200 [178.2ms] {
+  requestId: '86a48b16-0f4a-4ca9-8544-e3fd2ab532f4',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '178.22'
+}
+[INFO] [Metrics] Pipeline completed successfully. {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  recordingId: 'recording_6p98mzwc_mnj00obf',
+  durationMs: '114579.81',
+  confidence: 0.8650057595451519
+}
+  }
+}
+embedTextChunks failed: TypeError: fetch failed
+[RAG] Pomyslnie zindeksowano 71 wektorow na archiwum spotkania.
+    at node:internal/deps/undici/undici:13502:13
+    at async Object.embedTextChunks (file:///app/server/index.js:6994:17)
+    at async RagVectorStore.addDocuments (file:///app/server/index.js:560:25)
+    at async _TranscriptionService.vectorizeTranscriptionResultToRAG (file:///app/server/index.js:4936:5) {
+  [cause]: InvalidArgumentError: invalid keep-alive header
+      at processHeader (node:internal/deps/undici/undici:2164:15)
+      at new Request (node:internal/deps/undici/undici:1998:15)
+      at [dispatch] (node:internal/deps/undici/undici:7802:25)
+      at Client.Intercept (node:internal/deps/undici/undici:7535:20)
+      at Client.dispatch (node:internal/deps/undici/undici:588:44)
+      at [dispatch] (node:internal/deps/undici/undici:819:32)
+      at Pool.dispatch (node:internal/deps/undici/undici:588:44)
+      at [dispatch] (node:internal/deps/undici/undici:8222:27)
+      at Agent.Intercept (node:internal/deps/undici/undici:7535:20)
+      at Agent.dispatch (node:internal/deps/undici/undici:588:44) {
+    code: 'UND_ERR_INVALID_ARG'
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: '7f2354e0-34ae-4541-a3a2-920bec718416',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.07'
+}
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '886.49'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [886.5ms] {
+  requestId: '162378ae-f9f0-4e91-a564-2754140105bc',
+  method: 'GET',
+[pipeline:memory] stage=pipeline-start rss=1180.6MB heap=40.7/78.9MB external=6.1MB arrayBuffers=2.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[pipeline] File size 44.9 MB > limit ÔÇö will process in chunks.
+[pipeline:memory] stage=before-transcription rss=1180.6MB heap=40.8/78.9MB external=6.1MB arrayBuffers=2.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /health - 200 [184.7ms] {
+  requestId: '911d8f83-3f71-4aa5-9adc-b64ca6a758e2',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '184.66'
+}
+[INFO] [REQ] GET /media/recordings/recording_6p98mzwc_mnj00obf/transcribe - 200 [571.9ms] {
+  requestId: '11c1c066-6869-4b8e-8354-48c6769695ed',
+  method: 'GET',
+  route: '/media/recordings/recording_6p98mzwc_mnj00obf/transcribe',
+  status: 200,
+  durationMs: '571.88'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [881.7ms] {
+  requestId: 'b3d13ab8-6234-4f74-8162-d9ee163b3e35',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.75'
+}
+[INFO] [REQ] GET /health - 200 [181.2ms] {
+  requestId: '25de8dba-3cd6-4266-9818-66f8767d8101',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '181.22'
+}
+[postProcessing] analyzeMeetingWithOpenAI failed: fetch failed
+[INFO] [REQ] POST /media/analyze - 200 [675.9ms] {
+  requestId: 'fe156c01-a64a-47cc-8a75-b3d534d7ec50',
+  method: 'POST',
+  route: '/media/analyze',
+  status: 200,
+  durationMs: '675.89'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [895.1ms] {
+  requestId: '45f4d12c-4ba6-4d71-acdd-21d8b5c89185',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '895.10'
+}
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: '7b77cc47-515b-4e4c-b852-f4211ed2258c',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.06'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [881.2ms] {
+  requestId: '3cee9c47-33b4-45f6-a7a5-d94b2c0719dd',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.22'
+}
+[INFO] [REQ] GET /health - 200 [180.6ms] {
+  requestId: '2114ee47-ae39-4aea-a318-07d5297b930c',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.61'
+}
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: '20c03898-3607-465c-92c4-41a9c6cd1607',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.06'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [894.8ms] {
+  requestId: '6a483e35-8ace-4d2e-a459-c8f47fdf75a9',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '894.82'
+}
+}
+[INFO] [REQ] GET /health - 200 [176.5ms] {
+  requestId: 'd0392569-eacd-4535-933c-6f4e5f0cf610',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.47'
+[transcription:memory] batch=1 rss=1180.5MB heap=42.9/75.3MB
+[INFO] [REQ] GET /state/bootstrap - 200 [953.7ms] {
+  requestId: '85759b9f-5e57-48ea-a26c-8beded49b26a',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '953.67'
+}
+[INFO] [REQ] GET /health - 200 [215.1ms] {
+  requestId: 'cf2de77f-974b-4fbc-a777-af9036428110',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '215.13'
+}
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [886.2ms] {
+  requestId: '4b5722c4-ef3d-4cb7-879e-e061b0ff8cd8',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '886.18'
+}
+[INFO] [REQ] GET /health - 200 [180.8ms] {
+  requestId: '3dd1ebd7-e84a-4881-ae3f-3d3eb3a6555a',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.76'
+}
+  route: '/health',
+  status: 200,
+  durationMs: '176.09'
+}
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: '0509269a-6ed1-42ba-a1e3-9f8b682fdabd',
+  method: 'GET',
+[INFO] [REQ] GET /state/bootstrap - 200 [896.0ms] {
+  requestId: '68fdcce7-0a86-4c10-9b57-121183928df3',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '896.04'
+}
+[INFO] [REQ] GET /health - 200 [176.5ms] {
+  requestId: '608453cb-937c-45d8-862a-23f863de1ea0',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.46'
+}
+[transcription:memory] batch=2 rss=1180.1MB heap=38.5/75.1MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /health - 200 [181.3ms] {
+  requestId: '3c037037-984e-424b-9d4c-e49da8f26de6',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '181.28'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [882.2ms] {
+  requestId: '59ea02a2-79d8-403a-a32e-2887989f2197',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '882.23'
+}
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: '2f6f3299-88ee-435b-81f7-0976e99cac3c',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.06'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [881.4ms] {
+  requestId: 'cce4fcb8-e423-41de-b4dd-98cc157a1b1e',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.39'
+}
+[INFO] [REQ] GET /health - 200 [176.1ms] {
+  requestId: 'c35fd95a-2526-4c54-afb5-ab897547aefc',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.07'
+}
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [881.6ms] {
+  requestId: 'e789ab7c-a255-4cee-8c67-9d06dfe0783d',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.64'
+}
+[INFO] [REQ] GET /health - 200 [176.4ms] {
+  requestId: '3ba99518-72ec-45d3-84f1-5a313060d760',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.39'
+[transcription:memory] batch=3 rss=1180.1MB heap=39.8/74.8MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [882.4ms] {
+  requestId: 'a041b5a4-560c-4dab-b0d4-3094273d3ac1',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '882.44'
+}
+[INFO] [REQ] GET /health - 200 [176.4ms] {
+  requestId: '2d7b8a69-cdb1-4d5b-ab39-2012b12a9097',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.39'
+}
+[INFO] [REQ] GET /health - 200 [180.9ms] {
+  requestId: '760a4da7-d872-4bf5-b52d-d711666e7770',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.93'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [881.6ms] {
+  requestId: 'e29aed90-182b-4b9b-81b8-d6d75cf49878',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '881.62'
+}
+[INFO] [REQ] GET /health - 200 [176.0ms] {
+  requestId: 'f25e123f-bb8a-4e35-b102-d8c4081b8379',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '175.98'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [889.4ms] {
+  requestId: '7da7cc69-3fe3-4233-8ae4-04371a0ff0ec',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '889.37'
+}
+[INFO] [REQ] GET /health - 200 [180.7ms] {
+  requestId: 'a2b608da-b658-4c25-9d75-686667979ad8',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '180.66'
+}
+[transcription:memory] batch=4 rss=1180.1MB heap=39.2/75.3MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [896.1ms] {
+  requestId: 'd05f1604-2e9b-4324-9217-02c56bb1b16b',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '896.06'
+}
+[INFO] [REQ] GET /health - 200 [176.7ms] {
+  requestId: '9ed6baab-f16f-4f94-b4a1-6332790d9164',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+  durationMs: '176.66'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [889.3ms] {
+  requestId: '3e373700-dcfa-4fe4-a90c-06b0c0001e1d',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '889.31'
+}
+  durationMs: '180.64'
+}
+[INFO] [REQ] GET /health - 200 [180.6ms] {
+  requestId: '339bc60a-c84c-4de5-9047-49ba6202ff6a',
+  method: 'GET',
+  route: '/health',
+  status: 200,
+[transcription:memory] batch=5 rss=1180.1MB heap=39.2/74.8MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [895.5ms] {
+  requestId: '8f016138-37af-414e-a7d2-548c5f402988',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '895.50'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [889.6ms] {
+  requestId: 'bb7bf585-6d3a-4b88-a05f-1a89b3bee88e',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '889.59'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [894.6ms] {
+  requestId: '0cafb8a2-c66f-43fa-9438-7be8cb391e25',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '894.57'
+}
+[transcription:memory] batch=6 rss=1180.1MB heap=38.1/75.3MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[INFO] [REQ] GET /state/bootstrap - 200 [889.1ms] {
+  requestId: 'fe5e6853-21a9-45ac-a4fd-2ddc9819c76d',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '889.14'
+}
+[INFO] [REQ] GET /state/bootstrap - 200 [894.9ms] {
+  requestId: '946dde5e-683a-45a0-bebb-2b07ec232b34',
+  method: 'GET',
+  route: '/state/bootstrap',
+  status: 200,
+  durationMs: '894.89'
+}
+[transcription:memory] batch=7 rss=1180.1MB heap=37.9/75.3MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=8 rss=1180.1MB heap=37.3/44.3MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=9 rss=1180.1MB heap=37.1/44.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=10 rss=1180.1MB heap=37.4/44.3MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=11 rss=1180.1MB heap=37.4/44.8MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=12 rss=1180.1MB heap=37.5/44.6MB
+[transcription] vad.py not found, skipping Silero VAD.
+[stt] groq model=whisper-large-v3 Ôćĺ POST https://api.groq.com/openai/v1/audio/transcriptions
+[transcription:memory] batch=13 rss=1180.1MB heap=37.2/44.8MB
+[transcription:memory] batch=14 rss=1180.1MB heap=37.0/45.1MB
+[pipeline:memory] stage=after-chunked-transcription rss=1180.1MB heap=36.8/44.6MB external=6.4MB arrayBuffers=0.1MB
+[INFO] [Metrics] Pipeline Stage Complete {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  stage: 'transcription',
+  durationMs: 45837.67
+}
+[INFO] [Metrics] Pipeline Stage Complete {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  stage: 'diarization',
+  durationMs: 49728.41
+}
+[INFO] [Metrics] Pipeline Stage Complete {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  },
+  stage: 'post-processing',
+  durationMs: 41.18
+  p50: 45837.67,
+}
+[INFO] [Metrics] Pipeline Total Duration {
+  p95: 49728.41,
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  p99: 49728.41
+  recordingId: 'recording_6p98mzwc_mnj00obf',
+  totalDurationMs: 95607.27,
+}
+  stages: {
+    transcription: 45837.67,
+    diarization: 49728.41,
+    'post-processing': 41.18
+[INFO] [Pipeline] Background post-process completed. {
+  requestId: 'dd0a82a0-22ac-4bb9-9301-680d730a5326',
+  recordingId: 'recording_6p98mzwc_mnj00obf'
+}

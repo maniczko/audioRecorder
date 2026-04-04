@@ -643,6 +643,8 @@
 
 .calendar-board {
   align-content: start;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .calendar-week-view {

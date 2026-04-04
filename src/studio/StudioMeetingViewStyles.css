@@ -3415,6 +3415,22 @@
 .ff-tabs-group {
   display: flex;
   gap: 20px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding-bottom: 4px; /* Space for hidden scrollbar */
+  scroll-snap-type: x mandatory;
+}
+
+.ff-tabs-group::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.ff-tabs-group > button,
+.ff-tabs-group > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
 }
 
 .ff-sidebar-action-btn-centered {

@@ -285,10 +285,11 @@ async function runTranscriptionAttempt(
         vocabulary: options.vocabulary,
       });
 
-      const whisperTemperature = attemptAudioQuality?.qualityLabel === 'poor' ? 0 : 0.1;
-
-      // Select model based on processing mode
-      const selectedModel = getSttModelForProcessingMode(options.processingMode || 'fast');
+      // gpt-4o-transcribe works best with temperature=0; older whisper models use 0.1
+      const selectedModel = getSttModelForProcessingMode(options.processingMode || 'full');
+      const isGpt4oTranscribe = selectedModel.includes('gpt-4o');
+      const whisperTemperature =
+        isGpt4oTranscribe || attemptAudioQuality?.qualityLabel === 'poor' ? 0 : 0.1;
 
       const whisperFields = {
         model: selectedModel,
