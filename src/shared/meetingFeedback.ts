@@ -529,7 +529,7 @@ export function buildMeetingFeedbackFallback(context: MeetingFeedbackContext): M
   const categoryScores = makeCategoryScores(context);
   const overallScore = clampScore(
     Math.round(avg(categoryScores.map((item) => item.score)) + (signals.hasEnoughData ? 0 : -1)),
-    7
+    5
   );
   const sparseContext = !signals.hasEnoughData || signals.transcriptLength < 4;
 
@@ -544,18 +544,16 @@ export function buildMeetingFeedbackFallback(context: MeetingFeedbackContext): M
   const bestCategory = [...categoryScores].sort((a, b) => b.score - a.score)[0];
   const worstCategory = [...categoryScores].sort((a, b) => a.score - b.score)[0];
   const summary = sparseContext
-    ? 'Za mało danych, żeby ocenić dokładniej. Na podstawie dostępnych sygnałów widać jednak obszary do poprawy i kilka praktycznych wskazówek.'
-    : `${bestCategory?.label || 'Spotkanie'} wypadło najlepiej, a największy potencjał poprawy widać w obszarze ${worstCategory?.label?.toLowerCase() || 'prowadzenia rozmowy'}.`;
+    ? 'Za mało danych, żeby ocenić dokładniej — ale widać wyraźne braki w strukturze i domykaniu ustaleń.'
+    : `Najlepiej wypadło: ${bestCategory?.label || 'prowadzenie'}. Największy problem: ${worstCategory?.label?.toLowerCase() || 'domykanie ustaleń'} — to powinien być priorytet na następne spotkanie.`;
 
   return {
     overallScore,
     summary,
-    strengths: strengths.length
-      ? strengths
-      : ['Spotkanie dostarczyło wystarczająco sygnałów, żeby wyciągnąć praktyczne wnioski.'],
+    strengths: strengths.length ? strengths : [],
     improvementAreas: improvementAreas.length
       ? improvementAreas
-      : ['Warto jeszcze mocniej dopracować prowadzenie i domykanie rozmowy.'],
+      : ['Brak wyraźnych ustaleń — spotkanie nie przyniosło mierzalnego efektu.'],
     perceptionNotes,
     communicationTips,
     nextSteps,
@@ -614,25 +612,46 @@ export function normalizeMeetingFeedback(
 
 export function buildMeetingFeedbackSchemaExample(): MeetingFeedback {
   return {
-    overallScore: 8,
-    summary: 'Krótki, rozwojowy komentarz o całym spotkaniu.',
-    strengths: ['Mocna strona 1', 'Mocna strona 2', 'Mocna strona 3'],
-    improvementAreas: ['Obszar do poprawy 1', 'Obszar do poprawy 2', 'Obszar do poprawy 3'],
-    perceptionNotes: [
-      'Jak możesz być odbierany 1',
-      'Jak możesz być odbierany 2',
-      'Jak możesz być odbierany 3',
+    overallScore: 6,
+    summary:
+      'Spotkanie nie miało jasnego celu ani agendy. Rozmowa toczyła się chaotycznie — tematy przeplatały się bez domknięcia. Brakuje decyzji i właścicieli zadań.',
+    strengths: [
+      'Adam trafnie zidentyfikował główne ryzyko projektu [2:15] i zaproponował konkretne rozwiązanie.',
     ],
-    communicationTips: ['Wskazówka 1', 'Wskazówka 2', 'Wskazówka 3'],
-    nextSteps: ['Krok 1', 'Krok 2', 'Krok 3'],
-    whatWentWell: ['Co poszło dobrze 1', 'Co poszło dobrze 2', 'Co poszło dobrze 3'],
-    whatCouldBeBetter: ['Co można poprawić 1', 'Co można poprawić 2', 'Co można poprawić 3'],
+    improvementAreas: [
+      'Przez 8 minut nikt nie powiedział jaki jest cel spotkania — to strata czasu wszystkich uczestników.',
+      'Marcin 4 razy przerwał Adamowi w kluczowych momentach [3:20, 5:10, 7:45, 11:30], co zablokowało dojście do decyzji.',
+      'Spotkanie zakończyło się bez podsumowania: zero decyzji, zero właścicieli, zero terminów.',
+    ],
+    perceptionNotes: [
+      'Adam jest odbierany jako ekspert, ale przez brak asertywności pozwala się zagłuszać.',
+      'Marcin sprawia wrażenie osoby, która chce dominować rozmowę kosztem efektywności.',
+    ],
+    communicationTips: [
+      'Na początku spotkania powiedz jedno zdanie: „Cel tego spotkania to X, potrzebuję decyzji w Y".',
+      'Gdy ktoś przerywa, użyj: „Pozwól mi dokończyć myśl, potem Twoja kolej".',
+      'Ostatnie 2 minuty spotkania to obowiązkowe podsumowanie: decyzja, owner, termin.',
+    ],
+    nextSteps: [
+      'Przed następnym spotkaniem przygotuj jednozdaniowy cel i wyślij go uczestnikom.',
+      'Na koniec każdego tematu zatrzymaj się i powiedz: „Co ustaliliśmy i kto to prowadzi?".',
+      'Zmierz czas swojego mówienia — jeśli przekraczasz 60%, oddawaj głos pytaniem.',
+    ],
+    whatWentWell: [
+      'Trafna identyfikacja ryzyka projektowego przez Adama z konkretnym rozwiązaniem.',
+    ],
+    whatCouldBeBetter: [
+      'Brak agendy i celu spotkania — 8 minut straconego czasu na wstępie.',
+      'Przerywanie wypowiedzi zablokowało dojście do decyzji w kluczowych momentach.',
+      'Zero podsumowania na koniec: nie wiadomo co ustalono i kto co robi dalej.',
+    ],
     categoryScores: MEETING_FEEDBACK_CATEGORIES.map((category) => ({
       key: category.key,
       label: category.label,
-      score: 8,
-      observation: 'Krótka obserwacja dla tej kategorii.',
-      improvementTip: 'Jedna praktyczna wskazówka na następne spotkanie.',
+      score: 6,
+      observation:
+        'Konkretna obserwacja Z DOWODEM z transkryptu (timestamp, cytat) — co dokładnie się wydarzyło.',
+      improvementTip: 'Jednozdaniowa, natychmiast wdrażalna instrukcja na następne spotkanie.',
     })),
   };
 }
