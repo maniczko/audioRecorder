@@ -204,6 +204,19 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             startNewMeetingDraft={meetings.startNewMeetingDraft}
             onNavigateToStudio={() => ui.setActiveTab('studio')}
             onCreateMeeting={meetings.createMeetingDirect}
+            meetingDraft={meetings.meetingDraft}
+            setMeetingDraft={meetings.setMeetingDraft}
+            activeStoredMeetingDraft={meetings.activeStoredMeetingDraft}
+            clearMeetingDraft={meetings.clearMeetingDraft}
+            saveMeeting={meetings.saveMeeting}
+            isDetachedMeetingDraft={meetings.isDetachedMeetingDraft}
+            currentWorkspacePermissions={workspace.currentWorkspacePermissions}
+            workspaceMessage={meetings.workspaceMessage}
+            selectedMeeting={meetings.selectedMeeting}
+            selectMeeting={meetings.selectMeeting}
+            selectedRecordingId={meetings.selectedRecordingId}
+            setSelectedRecordingId={meetings.setSelectedRecordingId}
+            tagOptions={meetings.taskTags}
           />
         );
       case 'tasks':

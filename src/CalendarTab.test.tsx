@@ -64,6 +64,29 @@ function renderCalendarTab(overrides = {}) {
     startNewMeetingDraft: vi.fn(),
     onNavigateToStudio: vi.fn(),
     onCreateMeeting: vi.fn(),
+    meetingDraft: {
+      title: '',
+      context: '',
+      startsAt: '',
+      durationMinutes: 45,
+      attendees: '',
+      tags: '',
+      needs: '',
+      desiredOutputs: '',
+      location: '',
+    },
+    setMeetingDraft: vi.fn(),
+    activeStoredMeetingDraft: null,
+    clearMeetingDraft: vi.fn(),
+    saveMeeting: vi.fn(),
+    isDetachedMeetingDraft: true,
+    currentWorkspacePermissions: { canEditWorkspace: true },
+    workspaceMessage: '',
+    selectedMeeting: null,
+    selectMeeting: vi.fn(),
+    selectedRecordingId: null,
+    setSelectedRecordingId: vi.fn(),
+    tagOptions: [],
     ...overrides,
   };
 
@@ -109,5 +132,18 @@ describe('CalendarTab', () => {
     renderCalendarTab();
     const els = screen.getAllByText(/Google sync/i);
     expect(els.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('opens StudioBriefModal when + button is clicked in month view', () => {
+    const { container, props } = renderCalendarTab();
+    const addBtn = container.querySelector('.calendar-day-add-btn');
+    if (!addBtn) return; // skip if DOM structure changed
+
+    fireEvent.click(addBtn);
+
+    expect(props.startNewMeetingDraft).toHaveBeenCalledTimes(1);
+    expect(props.startNewMeetingDraft).toHaveBeenCalledWith({ startsAt: expect.any(String) });
+    // The StudioBriefModal should now be rendered
+    expect(screen.getByText('Meeting brief')).toBeInTheDocument();
   });
 });

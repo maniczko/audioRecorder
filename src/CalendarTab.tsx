@@ -25,6 +25,7 @@ import {
 } from './lib/calendarView';
 import { formatDateTime } from './lib/storage';
 import { EmptyState as EmptyBox } from './components/Skeleton';
+import StudioBriefModal from './studio/StudioBriefModal';
 import './CalendarTabStyles.css';
 
 const CALENDAR_WEEKDAYS = weekdayLabels();
@@ -173,6 +174,19 @@ export default function CalendarTab({
   startNewMeetingDraft,
   onNavigateToStudio,
   onCreateMeeting,
+  meetingDraft,
+  setMeetingDraft,
+  activeStoredMeetingDraft,
+  clearMeetingDraft,
+  saveMeeting,
+  isDetachedMeetingDraft,
+  currentWorkspacePermissions,
+  workspaceMessage,
+  selectedMeeting,
+  selectMeeting,
+  selectedRecordingId,
+  setSelectedRecordingId,
+  tagOptions = [],
 }) {
   const [viewMode, setViewMode] = useState('month');
   const [filters, setFilters] = useState({ meeting: true, task: true, google: true });
@@ -181,7 +195,7 @@ export default function CalendarTab({
   const [calendarMessage, setCalendarMessage] = useState('');
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
   const [tagFilter, setTagFilter] = useState('');
-  const [calendarCreateForm, setCalendarCreateForm] = useState(null);
+  const [briefOpen, setBriefOpen] = useState(false);
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
@@ -466,15 +480,15 @@ export default function CalendarTab({
   function createMeetingFromSlot(date, hour) {
     const startsAt = new Date(date);
     startsAt.setHours(hour, 0, 0, 0);
-    const pad = (n) => String(n).padStart(2, '0');
-    const localStr = `${startsAt.getFullYear()}-${pad(startsAt.getMonth() + 1)}-${pad(startsAt.getDate())}T${pad(startsAt.getHours())}:00`;
-    setCalendarCreateForm({ startsAt: localStr, title: '', durationMinutes: 30 });
+    startNewMeetingDraft({ startsAt: startsAt.toISOString() });
+    setBriefOpen(true);
   }
 
   function createMeetingFromDay(date) {
-    const pad = (n) => String(n).padStart(2, '0');
-    const localStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T09:00`;
-    setCalendarCreateForm({ startsAt: localStr, title: '', durationMinutes: 30 });
+    const startsAt = new Date(date);
+    startsAt.setHours(9, 0, 0, 0);
+    startNewMeetingDraft({ startsAt: startsAt.toISOString() });
+    setBriefOpen(true);
   }
 
   const isToday_ = selectedDate.toDateString() === new Date().toDateString();
@@ -858,100 +872,29 @@ export default function CalendarTab({
           </div>
         )}
 
-        {calendarCreateForm && (
-          <div className="calendar-create-form-overlay">
-            <div className="calendar-create-form">
-              <div className="calendar-create-form-head">
-                <strong>Nowe spotkanie</strong>
-                <button
-                  type="button"
-                  className="calendar-create-close"
-                  onClick={() => setCalendarCreateForm(null)}
-                >
-                  ×
-                </button>
-              </div>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!calendarCreateForm.title.trim() || typeof onCreateMeeting !== 'function')
-                    return;
-                  const startsAt = new Date(calendarCreateForm.startsAt).toISOString();
-                  onCreateMeeting({
-                    title: calendarCreateForm.title.trim(),
-                    startsAt,
-                    durationMinutes: calendarCreateForm.durationMinutes,
-                    context: '',
-                    attendees: '',
-                    needs: '',
-                    desiredOutputs: '',
-                    tags: '',
-                    location: '',
-                  });
-                  setCalendarCreateForm(null);
-                  setCalendarMessage(`Utworzono spotkanie: ${calendarCreateForm.title.trim()}`);
-                }}
-              >
-                <label className="calendar-create-field">
-                  <span>
-                    Tytuł <span style={{ color: 'var(--accent)' }}>*</span>
-                  </span>
-                  <input
-                    autoFocus
-                    value={calendarCreateForm.title}
-                    onChange={(e) =>
-                      setCalendarCreateForm((f) => ({ ...f, title: e.target.value }))
-                    }
-                    placeholder="np. Spotkanie z klientem"
-                    required
-                  />
-                </label>
-                <label className="calendar-create-field">
-                  <span>Kiedy</span>
-                  <input
-                    type="datetime-local"
-                    value={calendarCreateForm.startsAt}
-                    onChange={(e) =>
-                      setCalendarCreateForm((f) => ({ ...f, startsAt: e.target.value }))
-                    }
-                  />
-                </label>
-                <label className="calendar-create-field">
-                  <span>Czas trwania</span>
-                  <select
-                    value={calendarCreateForm.durationMinutes}
-                    onChange={(e) =>
-                      setCalendarCreateForm((f) => ({
-                        ...f,
-                        durationMinutes: Number(e.target.value),
-                      }))
-                    }
-                  >
-                    <option value={15}>15 min</option>
-                    <option value={30}>30 min</option>
-                    <option value={45}>45 min</option>
-                    <option value={60}>1 godz</option>
-                  </select>
-                </label>
-                <div className="calendar-create-actions">
-                  <button
-                    type="submit"
-                    className="primary-button"
-                    disabled={!calendarCreateForm.title.trim()}
-                  >
-                    Utwórz spotkanie
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => setCalendarCreateForm(null)}
-                  >
-                    Anuluj
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+        {briefOpen && (
+          <StudioBriefModal
+            currentWorkspacePermissions={currentWorkspacePermissions}
+            isDetachedMeetingDraft={isDetachedMeetingDraft}
+            meetingDraft={meetingDraft}
+            setMeetingDraft={setMeetingDraft}
+            activeStoredMeetingDraft={activeStoredMeetingDraft}
+            clearMeetingDraft={clearMeetingDraft}
+            saveMeeting={() => {
+              saveMeeting();
+              setCalendarMessage(`Utworzono spotkanie: ${meetingDraft?.title?.trim() || ''}`);
+            }}
+            startNewMeetingDraft={startNewMeetingDraft}
+            workspaceMessage={workspaceMessage}
+            selectedMeeting={selectedMeeting}
+            peopleOptions={[...new Set(peopleProfiles.map((p) => p.name).filter(Boolean))]}
+            tagOptions={tagOptions}
+            userMeetings={userMeetings}
+            selectMeeting={selectMeeting}
+            selectedRecordingId={selectedRecordingId}
+            setSelectedRecordingId={setSelectedRecordingId}
+            onClose={() => setBriefOpen(false)}
+          />
         )}
 
         <div className="calendar-lower-grid">
