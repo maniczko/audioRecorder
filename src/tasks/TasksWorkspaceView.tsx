@@ -105,6 +105,7 @@ function TasksWorkspaceView({
   setOwnerFilter,
   tagFilter,
   setTagFilter,
+  currentUserName,
   tagOptions,
   quickAddInputRef,
   searchInputRef,
@@ -183,6 +184,37 @@ function TasksWorkspaceView({
             </div>
 
             <div className="todo-commandbar-right flex-wrap">
+              {currentUserName && typeof setOwnerFilter === 'function' && (
+                <button
+                  type="button"
+                  title={ownerFilter === currentUserName ? 'Pokaż wszystkie zadania' : 'Pokaż tylko moje zadania'}
+                  onClick={() =>
+                    setOwnerFilter(ownerFilter === currentUserName ? 'all' : currentUserName)
+                  }
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '5px 12px',
+                    borderRadius: 20,
+                    border: ownerFilter === currentUserName
+                      ? '1px solid var(--accent, #75d6c4)'
+                      : '1px solid rgba(255,255,255,0.12)',
+                    background: ownerFilter === currentUserName
+                      ? 'rgba(117,214,196,0.15)'
+                      : 'rgba(255,255,255,0.04)',
+                    color: ownerFilter === currentUserName ? 'var(--accent, #75d6c4)' : 'var(--muted)',
+                    fontSize: '0.78rem',
+                    fontWeight: ownerFilter === currentUserName ? 600 : 400,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <span>👤</span>
+                  Moje zadania
+                </button>
+              )}
               {!isCharts && !isSchedule && !isSummary ? (
                 <div className="relative flex-1 min-w-[200px] max-w-[320px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />

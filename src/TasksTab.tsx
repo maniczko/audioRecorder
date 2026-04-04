@@ -54,6 +54,7 @@ export default function TasksTab({
   externalSelectedTaskId,
   onTaskSelectionHandled,
   currentUserName,
+  workspaceMembers = [],
   taskNotifications = [],
   workspaceActivity = [],
 }) {
@@ -703,6 +704,12 @@ export default function TasksTab({
             selectedTaskCount={selectedTaskIds.length}
             clearTaskSelection={clearTaskSelection}
             taskNotifications={taskNotifications}
+            workspaceMembers={workspaceMembers}
+            workspaceActivity={workspaceActivity}
+            currentUserName={currentUserName}
+            ownerFilter={ownerFilter}
+            setOwnerFilter={setOwnerFilter}
+            allTasks={tasks}
             onFocusConflictTask={(taskId) => {
               setSelectedTaskId(taskId);
               setSelectedTaskIds([taskId]);
@@ -761,6 +768,7 @@ export default function TasksTab({
             taskNotifications={taskNotifications}
             showColumnManager={showColumnManager}
             setShowColumnManager={setShowColumnManager}
+            currentUserName={currentUserName}
           />
         }
         aside={null}

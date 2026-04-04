@@ -242,6 +242,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             externalSelectedTaskId={ui.pendingTaskId}
             onTaskSelectionHandled={() => ui.setPendingTaskId('')}
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
+            workspaceMembers={workspace.currentWorkspaceMembers}
             taskNotifications={meetings.taskNotifications}
             workspaceActivity={meetings.workspaceActivity}
           />
