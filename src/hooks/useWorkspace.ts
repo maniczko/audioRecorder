@@ -191,6 +191,34 @@ export default function useWorkspace() {
     );
   }
 
+  async function removeWorkspaceMember(targetUserId: string) {
+    if (!currentWorkspaceId || !targetUserId) {
+      return;
+    }
+
+    await workspaceService.removeMember({
+      workspaceId: currentWorkspaceId,
+      targetUserId,
+    });
+
+    setWorkspaces((previous) =>
+      previous.map((workspace) =>
+        workspace.id !== currentWorkspaceId
+          ? workspace
+          : {
+              ...workspace,
+              memberIds: (workspace.memberIds || []).filter((id) => id !== targetUserId),
+              memberRoles: Object.fromEntries(
+                Object.entries(workspace.memberRoles || {}).filter(([id]) => id !== targetUserId)
+              ),
+              updatedAt: new Date().toISOString(),
+            }
+      )
+    );
+
+    setUsers((previous) => previous.filter((user) => user.id !== targetUserId));
+  }
+
   return {
     users,
     setUsers,
@@ -208,6 +236,7 @@ export default function useWorkspace() {
     availableWorkspaces,
     switchWorkspace,
     updateWorkspaceMemberRole,
+    removeWorkspaceMember,
     isHydratingSession,
     sessionError,
   };

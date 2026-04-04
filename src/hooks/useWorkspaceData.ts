@@ -33,7 +33,11 @@ function isBackendUnavailableMessage(message = '') {
     normalized.includes('failed to fetch') ||
     normalized.includes('networkerror') ||
     normalized.includes('load failed') ||
-    normalized.includes('http 502')
+    normalized.includes('http 502') ||
+    normalized.includes('browser offline') ||
+    normalized.includes('name not resolved') ||
+    normalized.includes('internet disconnected') ||
+    normalized.includes('health probe cooldown active')
   );
 }
 

@@ -187,7 +187,11 @@ function TasksWorkspaceView({
               {currentUserName && typeof setOwnerFilter === 'function' && (
                 <button
                   type="button"
-                  title={ownerFilter === currentUserName ? 'Pokaż wszystkie zadania' : 'Pokaż tylko moje zadania'}
+                  title={
+                    ownerFilter === currentUserName
+                      ? 'Pokaż wszystkie zadania'
+                      : 'Pokaż tylko moje zadania'
+                  }
                   onClick={() =>
                     setOwnerFilter(ownerFilter === currentUserName ? 'all' : currentUserName)
                   }
@@ -197,13 +201,16 @@ function TasksWorkspaceView({
                     gap: 5,
                     padding: '5px 12px',
                     borderRadius: 20,
-                    border: ownerFilter === currentUserName
-                      ? '1px solid var(--accent, #75d6c4)'
-                      : '1px solid rgba(255,255,255,0.12)',
-                    background: ownerFilter === currentUserName
-                      ? 'rgba(117,214,196,0.15)'
-                      : 'rgba(255,255,255,0.04)',
-                    color: ownerFilter === currentUserName ? 'var(--accent, #75d6c4)' : 'var(--muted)',
+                    border:
+                      ownerFilter === currentUserName
+                        ? '1px solid var(--accent, #75d6c4)'
+                        : '1px solid rgba(255,255,255,0.12)',
+                    background:
+                      ownerFilter === currentUserName
+                        ? 'rgba(117,214,196,0.15)'
+                        : 'rgba(255,255,255,0.04)',
+                    color:
+                      ownerFilter === currentUserName ? 'var(--accent, #75d6c4)' : 'var(--muted)',
                     fontSize: '0.78rem',
                     fontWeight: ownerFilter === currentUserName ? 600 : 400,
                     cursor: 'pointer',

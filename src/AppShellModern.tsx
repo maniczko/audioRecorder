@@ -233,24 +233,26 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }) {
             Osoby
           </button>
 
-          <button
-            type="button"
-            className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
-            onClick={() => {
-              setShowAskAI(!showAskAI);
-              closeSidebar();
-            }}
-            style={{ marginTop: 'auto', position: 'relative' }}
-          >
-            <Brain size={18} />
-            Zapytaj AI
+          <div style={{ marginTop: 'auto', position: 'relative' }}>
+            <button
+              type="button"
+              className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
+              onClick={() => {
+                setShowAskAI(!showAskAI);
+                closeSidebar();
+              }}
+              style={{ width: '100%' }}
+            >
+              <Brain size={18} />
+              Zapytaj AI
+            </button>
             {showAskAI && (
               <AskAIPopover
                 currentWorkspace={workspace.currentWorkspace}
                 onClose={() => setShowAskAI(false)}
               />
             )}
-          </button>
+          </div>
         </nav>
 
         <div className="modern-workspace-selector">

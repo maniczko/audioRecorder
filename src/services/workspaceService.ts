@@ -31,6 +31,21 @@ function createLocalWorkspaceService() {
         },
       });
     },
+    removeMember({ workspaces, workspaceId, targetUserId }) {
+      return Promise.resolve({
+        workspaces: (Array.isArray(workspaces) ? workspaces : []).map((ws) =>
+          ws.id !== workspaceId
+            ? ws
+            : {
+                ...ws,
+                memberIds: (ws.memberIds || []).filter((id) => id !== targetUserId),
+                memberRoles: Object.fromEntries(
+                  Object.entries(ws.memberRoles || {}).filter(([id]) => id !== targetUserId)
+                ),
+              }
+        ),
+      });
+    },
   };
 }
 
@@ -49,6 +64,12 @@ function createRemoteWorkspaceService() {
       );
 
       return { membership };
+    },
+    async removeMember({ workspaceId, targetUserId }) {
+      await apiRequest(`/workspaces/${workspaceId}/members/${targetUserId}`, {
+        method: 'DELETE',
+      });
+      return {};
     },
   };
 }

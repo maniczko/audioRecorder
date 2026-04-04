@@ -21,8 +21,16 @@ function initials(name: string): string {
 }
 
 const AVATAR_COLORS = [
-  '#75d6c4', '#a3c4f3', '#f3ca72', '#f17d72', '#a78bfa',
-  '#34d399', '#fb923c', '#60a5fa', '#e879f9', '#4ade80',
+  '#75d6c4',
+  '#a3c4f3',
+  '#f3ca72',
+  '#f17d72',
+  '#a78bfa',
+  '#34d399',
+  '#fb923c',
+  '#60a5fa',
+  '#e879f9',
+  '#4ade80',
 ];
 
 function avatarColor(name: string): string {
@@ -129,8 +137,7 @@ function TeamPanel({
         (t) =>
           !t._softDeleted &&
           !t.completed &&
-          (t.owner === name ||
-            (Array.isArray(t.assignedTo) && t.assignedTo.includes(name)))
+          (t.owner === name || (Array.isArray(t.assignedTo) && t.assignedTo.includes(name)))
       ).length;
       return { ...member, displayName: name, openTasks };
     });
