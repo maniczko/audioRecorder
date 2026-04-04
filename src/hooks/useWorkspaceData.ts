@@ -71,6 +71,7 @@ export default function useWorkspaceData() {
   const lastLoggedRemoteErrorRef = useRef('');
   const isProbingRef = useRef(false);
   const isBootstrappingRef = useRef(false);
+  const migrationAppliedRef = useRef<string | null>(null);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === 'remote' && Boolean(session?.token)
@@ -197,6 +198,14 @@ export default function useWorkspaceData() {
 
   // Migration effect - run when source data changes
   useEffect(() => {
+    // Create a unique key for this migration state to avoid re-applying
+    const migrationKey = `${users.length}-${workspaces.length}-${meetings.length}-${manualTasks.length}-${Object.keys(taskBoards).length}-${session?.token || ''}`;
+
+    // Skip if we already applied this exact migration
+    if (migrationAppliedRef.current === migrationKey) {
+      return;
+    }
+
     const migration = migrateWorkspaceData({
       users,
       workspaces,
@@ -206,9 +215,15 @@ export default function useWorkspaceData() {
       session,
     });
 
+    // Only apply migration if something actually changed
     if (!migration?.changed) {
+      // Mark as checked to avoid re-checking same state
+      migrationAppliedRef.current = migrationKey;
       return;
     }
+
+    // Mark as applied before setting to avoid race conditions
+    migrationAppliedRef.current = migrationKey;
 
     setUsers(migration.users);
     setWorkspaces(migration.workspaces);

@@ -38,24 +38,20 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - Kryterium zamkniecia:
   Najblizszy run `CI/CD Pipeline` nie raportuje juz falszywych bledow `BRAK` dla opcjonalnych integracji.
 
-### MON-02 - Potwierdzic naprawe spamu sieciowego i bootstrap preview
+### MON-02 - Naprawic infinite loop w useWorkspaceData migration effect
 
-- Status: `verify`
+- Status: `todo`
 - Priorytet: `P1`
-- Zrodlo: `GitHub Actions -> Auto-Fix Test Failures` oraz lokalne logi preview
+- Zrodlo: lokalne testy `useWorkspaceData.test.tsx` - wszystkie 10 testow failuje
 - Opis zadania:
-  Lokalnie poprawione zostaly retry przy stanie offline oraz klasyfikacja bledow `Health probe cooldown active` i podobnych transportowych przypadkow. Dodatkowo wyciszone zostaly oczekiwane logi `console.warn/error` w testach, bo workflow zbieral `stderr` z przechodzacych scenariuszy jako rzekome bledy.
-- Zakres poprawki juz wykonany:
-  - `src/services/httpClient.ts`
-  - `src/hooks/useWorkspaceData.ts`
-  - testy regresji:
-    - `src/services/httpClient.test.ts`
-    - `src/hooks/useWorkspaceData.test.tsx`
-  - wyczyszczenie halasu testowego:
-    - `src/hooks/useRecorder.test.tsx`
-    - `src/TabRouter.test.tsx`
+  Hook `useWorkspaceData` ma migration effect (linie 200-220), ktory wywoluje `setUsers`, `setWorkspaces` itp. gdy `migration.changed === true`. Te settery aktualizuja store, ktory jest w dependency array `[users, workspaces, meetings, manualTasks, taskBoards, session]`, co powoduje kolejny useEffect run = INFINITE LOOP. Testy failuja z "Maximum update depth exceeded".
+- Problem:
+  - Migration effect wywoluje settery bez guardow
+  - Dependency array zawiera wszystkie wartosci ze store
+  - Po wywolaniu setterow, useEffect uruchamia sie ponownie
+  - Brak mechanizmu zapobiegajacego nieskonczonej petli
 - Kryterium zamkniecia:
-  Brak nowych fal bledow `Health probe retry`, `Hosted preview health probe failed` i nadmiarowych logow `Remote workspace bootstrap failed` po kolejnym wdrozeniu.
+  Wszystkie 10 testow `useWorkspaceData.test.tsx` przechodzi bez bledow "Maximum update depth exceeded".
 
 ### MON-03 - Potwierdzic naprawe fallbacku RAG po awarii LLM
 
