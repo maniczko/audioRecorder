@@ -79,9 +79,16 @@ function isTransportFailureMessage(message = '') {
     normalized.includes('target connection error') ||
     normalized.includes('application failed to respond') ||
     normalized.includes('router_external_target_connection_error') ||
+    normalized.includes('name not resolved') ||
+    normalized.includes('internet disconnected') ||
+    normalized.includes('health probe cooldown active') ||
     normalized.includes('aborted') ||
     normalized.includes('the operation was aborted')
   );
+}
+
+function browserIsOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
 function normalizeApiErrorMessage(message = '', status?: number) {
@@ -129,6 +136,13 @@ export function resetProbeDedup() {
 }
 
 export async function probeRemoteApiHealth(fetchImpl = fetch, maxRetries = 3) {
+  if (browserIsOffline()) {
+    setPreviewRuntimeStatus('backend_unreachable');
+    previewBuildMismatch = false;
+    const error = new Error('Browser offline');
+    probeCooldownUntil = Date.now() + PROBE_COOLDOWN_MS;
+    throw error;
+  }
   if (Date.now() < probeCooldownUntil) {
     throw new Error('Health probe cooldown active');
   }
@@ -149,8 +163,14 @@ async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (browserIsOffline()) {
+      const offlineError = new Error('Browser offline');
+      lastError = offlineError;
+      break;
+    }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    // 10 s: accounts for Vercel edge-proxy overhead + Railway cold-start
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
     try {
       const response = await fetchImpl(buildUrl('/health'), {
         method: 'GET',
@@ -248,6 +268,10 @@ async function fetchWithRetry(
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (browserIsOffline()) {
+      lastError = new Error('Browser offline');
+      break;
+    }
     try {
       const response = await fetch(url, options);
 
