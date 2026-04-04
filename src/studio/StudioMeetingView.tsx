@@ -2081,6 +2081,83 @@ export default function StudioMeetingView({
                             {debriefCopyMessage}
                           </div>
                         ) : null}
+
+                        {/* Smart Chapters */}
+                        {aiDebrief.chapters?.length ? (
+                          <section
+                            className="summary-card summary-card-flush"
+                            style={{ marginTop: 12 }}
+                          >
+                            <div className="summary-card-head">
+                              <h3>Rozdziały spotkania</h3>
+                              <span>{aiDebrief.chapters.length}</span>
+                            </div>
+                            <ul className="analysis-list summary-list-tight">
+                              {aiDebrief.chapters.map((ch: any, i: number) => (
+                                <li key={`chapter-${i}`}>
+                                  <strong>
+                                    {ch.startTime}–{ch.endTime}
+                                  </strong>{' '}
+                                  <span className="chapter-title">{ch.title}</span>
+                                  {ch.summary ? (
+                                    <p
+                                      className="soft-copy"
+                                      style={{ margin: '2px 0 0', fontSize: '0.85em' }}
+                                    >
+                                      {ch.summary}
+                                    </p>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          </section>
+                        ) : null}
+
+                        {/* Speaker Analytics */}
+                        {aiDebrief.speakerAnalytics?.length ? (
+                          <section
+                            className="summary-card summary-card-flush"
+                            style={{ marginTop: 12 }}
+                          >
+                            <div className="summary-card-head">
+                              <h3>Statystyki mówców</h3>
+                              <span>{aiDebrief.speakerAnalytics.length}</span>
+                            </div>
+                            <div className="speaker-analytics-grid">
+                              {aiDebrief.speakerAnalytics.map((sa: any, i: number) => (
+                                <div key={`sa-${i}`} className="speaker-analytics-card">
+                                  <div className="speaker-analytics-name">{sa.speaker}</div>
+                                  <div className="speaker-analytics-stats">
+                                    <span title="Czas mówienia">{sa.talkTimePercent ?? '—'}%</span>
+                                    <span title="Słów/min">{sa.wordsPerMinute ?? '—'} s/min</span>
+                                    <span title="Pytania">{sa.questionsAsked ?? 0} pytań</span>
+                                  </div>
+                                  {sa.fillerWords?.count > 0 ? (
+                                    <div className="soft-copy" style={{ fontSize: '0.82em' }}>
+                                      Wypełniacze: {sa.fillerWords.count}× (
+                                      {sa.fillerWords.examples?.join(', ')})
+                                    </div>
+                                  ) : null}
+                                  <div className="speaker-analytics-badges">
+                                    <span
+                                      className={`badge badge-sentiment badge-${sa.sentiment || 'neutral'}`}
+                                    >
+                                      {sa.sentiment === 'positive'
+                                        ? '😊'
+                                        : sa.sentiment === 'negative'
+                                          ? '😐'
+                                          : '😶'}{' '}
+                                      {sa.sentiment || 'neutral'}
+                                    </span>
+                                    <span className="badge badge-engagement">
+                                      {sa.engagementLevel || 'medium'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </section>
+                        ) : null}
                       </section>
                     ) : null}
 
