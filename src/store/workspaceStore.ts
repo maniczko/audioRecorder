@@ -115,6 +115,38 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }));
       },
 
+      removeWorkspaceMember: async (targetUserId) => {
+        const { workspaces, session, users } = get();
+
+        const currentUser = users.find((u) => u.id === session?.userId) || null;
+        const currentWorkspaceId = currentUser
+          ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId)
+          : null;
+
+        if (!currentWorkspaceId || !targetUserId) return;
+
+        await workspaceService.removeMember({
+          workspaceId: currentWorkspaceId,
+          targetUserId,
+        });
+
+        set({
+          workspaces: workspaces.map((w: any) =>
+            w.id !== currentWorkspaceId
+              ? w
+              : {
+                  ...w,
+                  memberIds: (w.memberIds || []).filter((id: string) => id !== targetUserId),
+                  memberRoles: Object.fromEntries(
+                    Object.entries(w.memberRoles || {}).filter(([id]) => id !== targetUserId)
+                  ),
+                  updatedAt: new Date().toISOString(),
+                }
+          ),
+          users: users.filter((u: any) => u.id !== targetUserId),
+        });
+      },
+
       bootstrapSession: async () => {
         if (stateService.mode !== 'remote') return;
         const { session } = get();

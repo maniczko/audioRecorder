@@ -435,6 +435,8 @@ export default function useMeetingLifecycle({
         );
       });
   }, [
+    selectedMeeting,
+    selectedRecording,
     selectedMeeting?.id,
     selectedRecording?.id,
     selectedRecording?.pipelineStatus,
