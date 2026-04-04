@@ -5976,8 +5976,7 @@
 /* Sprint 1 UX Fix #7: Touch Targets min 36x36px                */
 /* ============================================================ */
 .tasks-layout.ms-todo .todo-task-circle {
-  min-width: 36px;
-  min-height: 36px;
+  /* Minimal width removed from here so they don't stretch */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6055,10 +6054,10 @@
 :root[data-theme='dark'] .tasks-layout.ms-todo .todo-task-circle {
   background: transparent;
   border-color: rgba(117, 214, 196, 0.4);
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  min-height: 20px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
 }
 
 :root[data-theme='dark'] .tasks-layout.ms-todo .todo-task-circle:hover {
