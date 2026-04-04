@@ -52,7 +52,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(180deg, rgba(12, 23, 37, 0.98), rgba(8, 16, 27, 0.98));
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
-  z-index: 40;
+  z-index: var(--z-index-popover, 600);
 }
 
 .notification-panel-header,
@@ -139,7 +139,7 @@
 
 .notification-anchor {
   position: relative;
-  z-index: 1000;
+  z-index: var(--z-index-popover, 600);
 }
 
 .notification-panel {
@@ -149,7 +149,7 @@
   width: 360px;
   max-height: 80vh;
   overflow-y: auto;
-  z-index: 9999;
+  z-index: var(--z-index-popover, 600);
   background: rgba(7, 17, 27, 0.97);
   backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.1);

@@ -1,0 +1,127 @@
+/* ── Shared Modal ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-index-modal, 500);
+  padding: 20px;
+  animation: modalOverlayIn 0.2s ease-out;
+}
+
+.card {
+  background: var(--bg-panel, #1e293b);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: modalCardIn 0.2s ease-out;
+  overflow: hidden;
+}
+
+.card.sm {
+  max-width: 440px;
+}
+
+.card.md {
+  max-width: 600px;
+}
+
+.card.lg {
+  max-width: 780px;
+}
+
+.card.danger {
+  border-color: rgba(255, 77, 79, 0.3);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 24px 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, var(--text-1, #e2e8f0));
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text-muted, var(--text-2, #94a3b8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, var(--text-1, #e2e8f0));
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes modalOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .header {
+    padding: 16px 16px 14px;
+  }
+
+  .body {
+    padding: 16px;
+  }
+
+  .card.sm,
+  .card.md,
+  .card.lg {
+    max-width: 100%;
+  }
+}

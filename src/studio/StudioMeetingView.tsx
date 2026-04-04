@@ -11,6 +11,7 @@ import { Virtuoso } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
 import TaskCreateModal from '../tasks/TaskCreateModal';
+import Modal from '../shared/Modal';
 import { ChevronDown, PenTool } from 'lucide-react';
 
 import PropTypes from 'prop-types';
@@ -3845,142 +3846,128 @@ export default function StudioMeetingView({
         </div>
       )}
       {pendingVoiceProfileEnrollment ? (
-        <div className="ff-modal-overlay" onClick={() => setPendingVoiceProfileEnrollment(null)}>
-          <div className="ff-modal-card ff-enrollment-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="ff-modal-header">
-              <h2 className="ff-modal-title">Zapisac probke glosu?</h2>
-              <button
-                className="ff-modal-close"
-                onClick={() => setPendingVoiceProfileEnrollment(null)}
-              >
-                x
-              </button>
-            </div>
-            <div className="ff-modal-body">
-              <p className="ff-enrollment-copy">
-                Zmieniono nazwe mowcy na{' '}
-                <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>. Mozemy zapisac te
-                probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly lepiej
-                rozpoznawane.
-              </p>
-              <p className="ff-enrollment-copy muted">
-                Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.
-              </p>
-            </div>
-            <div className="ff-modal-footer">
-              <button
-                className="ghost-button"
-                onClick={() => setPendingVoiceProfileEnrollment(null)}
-              >
-                Pomin
-              </button>
-              <button
-                className="ff-modal-download-btn"
-                onClick={async () => {
-                  const pending = pendingVoiceProfileEnrollment;
-                  setPendingVoiceProfileEnrollment(null);
-                  await enrollSpeakerProfile(pending.speakerId, pending.speakerName);
-                }}
-              >
-                Zapisz do profilu glosu
-              </button>
-            </div>
+        <Modal
+          isOpen={true}
+          onClose={() => setPendingVoiceProfileEnrollment(null)}
+          title="Zapisac probke glosu?"
+          size="sm"
+        >
+          <div className="ff-modal-body">
+            <p className="ff-enrollment-copy">
+              Zmieniono nazwe mowcy na <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>.
+              Mozemy zapisac te probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly
+              lepiej rozpoznawane.
+            </p>
+            <p className="ff-enrollment-copy muted">
+              Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.
+            </p>
           </div>
-        </div>
+          <div className="ff-modal-footer">
+            <button className="ghost-button" onClick={() => setPendingVoiceProfileEnrollment(null)}>
+              Pomin
+            </button>
+            <button
+              className="ff-modal-download-btn"
+              onClick={async () => {
+                const pending = pendingVoiceProfileEnrollment;
+                setPendingVoiceProfileEnrollment(null);
+                await enrollSpeakerProfile(pending.speakerId, pending.speakerName);
+              }}
+            >
+              Zapisz do profilu glosu
+            </button>
+          </div>
+        </Modal>
       ) : null}
 
       {isDownloadModalOpen && (
-        <div className="ff-modal-overlay" onClick={() => setIsDownloadModalOpen(false)}>
-          <div className="ff-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="ff-modal-header">
-              <h2 className="ff-modal-title">Download Meeting</h2>
-              <button className="ff-modal-close" onClick={() => setIsDownloadModalOpen(false)}>
-                ×
-              </button>
-            </div>
+        <Modal
+          isOpen={true}
+          onClose={() => setIsDownloadModalOpen(false)}
+          title="Download Meeting"
+          size="md"
+        >
+          <div className="ff-modal-tabs">
+            <button
+              className={`ff-modal-tab-btn ${downloadTab === 'transcript' ? 'active' : ''}`}
+              onClick={() => setDownloadTab('transcript')}
+            >
+              Transcript
+            </button>
+            <button
+              className={`ff-modal-tab-btn ${downloadTab === 'summary' ? 'active' : ''}`}
+              onClick={() => setDownloadTab('summary')}
+            >
+              Summary
+            </button>
+            <button
+              className={`ff-modal-tab-btn ${downloadTab === 'audio' ? 'active' : ''}`}
+              onClick={() => setDownloadTab('audio')}
+            >
+              Audio
+            </button>
+          </div>
 
-            <div className="ff-modal-tabs">
-              <button
-                className={`ff-modal-tab-btn ${downloadTab === 'transcript' ? 'active' : ''}`}
-                onClick={() => setDownloadTab('transcript')}
-              >
-                Transcript
-              </button>
-              <button
-                className={`ff-modal-tab-btn ${downloadTab === 'summary' ? 'active' : ''}`}
-                onClick={() => setDownloadTab('summary')}
-              >
-                Summary
-              </button>
-              <button
-                className={`ff-modal-tab-btn ${downloadTab === 'audio' ? 'active' : ''}`}
-                onClick={() => setDownloadTab('audio')}
-              >
-                Audio
-              </button>
-            </div>
-
-            <div className="ff-modal-body">
-              {downloadTab !== 'audio' && (
-                <div className="ff-modal-format-grid">
-                  {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map((f) => (
-                    <button
-                      key={f}
-                      className={`ff-modal-format-btn ${downloadFormat === f ? 'active' : ''}`}
-                      onClick={() => setDownloadFormat(f)}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="ff-modal-options">
-                {downloadTab === 'transcript' && (
-                  <>
-                    <label className="ff-modal-label">
-                      <input
-                        type="checkbox"
-                        className="ff-modal-checkbox"
-                        checked={includeTimestamp}
-                        onChange={(e) => setIncludeTimestamp(e.target.checked)}
-                      />
-                      Include timestamp
-                    </label>
-                    <label className="ff-modal-label">
-                      <input
-                        type="checkbox"
-                        className="ff-modal-checkbox"
-                        checked={showSpeakerName}
-                        onChange={(e) => setShowSpeakerName(e.target.checked)}
-                      />
-                      Show speaker name
-                    </label>
-                  </>
-                )}
-                <label className="ff-modal-label">
-                  <input
-                    type="checkbox"
-                    className="ff-modal-checkbox"
-                    checked={removeBranding}
-                    onChange={(e) => setRemoveBranding(e.target.checked)}
-                  />
-                  Remove Antigravity Branding
-                </label>
+          <div className="ff-modal-body">
+            {downloadTab !== 'audio' && (
+              <div className="ff-modal-format-grid">
+                {['PDF', 'DOCX', 'SRT', 'CSV', 'JSON', 'MD'].map((f) => (
+                  <button
+                    key={f}
+                    className={`ff-modal-format-btn ${downloadFormat === f ? 'active' : ''}`}
+                    onClick={() => setDownloadFormat(f)}
+                  >
+                    {f}
+                  </button>
+                ))}
               </div>
-            </div>
+            )}
 
-            <div className="ff-modal-footer">
-              <button
-                className="ff-modal-download-btn"
-                onClick={handleDownload}
-                disabled={downloadTab === 'audio' && !selectedRecordingAudioUrl}
-              >
-                Download
-              </button>
+            <div className="ff-modal-options">
+              {downloadTab === 'transcript' && (
+                <>
+                  <label className="ff-modal-label">
+                    <input
+                      type="checkbox"
+                      className="ff-modal-checkbox"
+                      checked={includeTimestamp}
+                      onChange={(e) => setIncludeTimestamp(e.target.checked)}
+                    />
+                    Include timestamp
+                  </label>
+                  <label className="ff-modal-label">
+                    <input
+                      type="checkbox"
+                      className="ff-modal-checkbox"
+                      checked={showSpeakerName}
+                      onChange={(e) => setShowSpeakerName(e.target.checked)}
+                    />
+                    Show speaker name
+                  </label>
+                </>
+              )}
+              <label className="ff-modal-label">
+                <input
+                  type="checkbox"
+                  className="ff-modal-checkbox"
+                  checked={removeBranding}
+                  onChange={(e) => setRemoveBranding(e.target.checked)}
+                />
+                Remove Antigravity Branding
+              </label>
             </div>
           </div>
-        </div>
+
+          <div className="ff-modal-footer">
+            <button
+              className="ff-modal-download-btn"
+              onClick={handleDownload}
+              disabled={downloadTab === 'audio' && !selectedRecordingAudioUrl}
+            >
+              Download
+            </button>
+          </div>
+        </Modal>
       )}
 
       {briefOpen && (

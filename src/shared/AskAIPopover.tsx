@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createMediaService } from '../services/mediaService';
 import { Input } from '../ui/Input';
 import { X, Brain, ArrowRight, Loader2 } from 'lucide-react';
@@ -7,6 +7,28 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
   const [query, setQuery] = useState('');
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Close on ESC
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  // Close on click outside
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [onClose]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +47,7 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
   };
 
   return (
-    <div className="ask-ai-comic-bubble" onClick={(e) => e.stopPropagation()}>
+    <div ref={popoverRef} className="ask-ai-comic-bubble" onClick={(e) => e.stopPropagation()}>
       <div className="comic-bubble-header">
         <div
           style={{

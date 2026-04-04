@@ -1,6 +1,7 @@
 import './styles/recordings.css';
 import React from 'react';
 import { useToast } from './shared/Toast';
+import Modal from './shared/Modal';
 import { formatDateTime } from './lib/storage';
 import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
@@ -72,7 +73,10 @@ function formatPipelineDiagnostics(item) {
 }
 
 function getMeetingAiStatus(m) {
-  if (m.analysis && (m.analysis.summary || (m.analysis.decisions && m.analysis.decisions.length > 0))) {
+  if (
+    m.analysis &&
+    (m.analysis.summary || (m.analysis.decisions && m.analysis.decisions.length > 0))
+  ) {
     return 'ai';
   }
   if (m.latestRecordingId || (Array.isArray(m.recordings) && m.recordings.length > 0)) {
@@ -80,17 +84,38 @@ function getMeetingAiStatus(m) {
       ? m.recordings.find((r) => r.id === m.latestRecordingId) || m.recordings[0]
       : null;
     if (latest?.transcriptOutcome === 'empty') return 'empty';
-    if (latest?.transcriptionStatus === 'done' || latest?.transcriptOutcome === 'normal') return 'transcript';
+    if (latest?.transcriptionStatus === 'done' || latest?.transcriptOutcome === 'normal')
+      return 'transcript';
     return 'processing';
   }
   return 'none';
 }
 
 const AI_STATUS_CONFIG = {
-  ai: { label: 'AI', title: 'Pełna analiza AI dostępna', color: '#75d6c4', bg: 'rgba(117,214,196,0.13)' },
-  transcript: { label: 'Transkrypcja', title: 'Transkrypcja dostępna', color: '#a3c4f3', bg: 'rgba(163,196,243,0.13)' },
-  processing: { label: 'W toku', title: 'Przetwarzanie w toku', color: '#f6c05e', bg: 'rgba(246,192,94,0.13)' },
-  empty: { label: 'Brak mowy', title: 'Nie wykryto mowy w nagraniu', color: '#f87171', bg: 'rgba(248,113,113,0.13)' },
+  ai: {
+    label: 'AI',
+    title: 'Pełna analiza AI dostępna',
+    color: '#75d6c4',
+    bg: 'rgba(117,214,196,0.13)',
+  },
+  transcript: {
+    label: 'Transkrypcja',
+    title: 'Transkrypcja dostępna',
+    color: '#a3c4f3',
+    bg: 'rgba(163,196,243,0.13)',
+  },
+  processing: {
+    label: 'W toku',
+    title: 'Przetwarzanie w toku',
+    color: '#f6c05e',
+    bg: 'rgba(246,192,94,0.13)',
+  },
+  empty: {
+    label: 'Brak mowy',
+    title: 'Nie wykryto mowy w nagraniu',
+    color: '#f87171',
+    bg: 'rgba(248,113,113,0.13)',
+  },
   none: { label: '—', title: 'Brak nagrania', color: 'var(--muted)', bg: 'transparent' },
 };
 
@@ -126,7 +151,9 @@ function RecordingsStatsBar({ meetings }) {
     const participantSet = new Set();
     meetings.forEach((m) => {
       if (m.owner) participantSet.add(m.owner.trim());
-      (m.attendees || m.guests || []).forEach((p) => { if (p && p.trim()) participantSet.add(p.trim()); });
+      (m.attendees || m.guests || []).forEach((p) => {
+        if (p && p.trim()) participantSet.add(p.trim());
+      });
     });
     const withAi = meetings.filter((m) => getMeetingAiStatus(m) === 'ai').length;
     return { totalMeetings, totalHours, participants: participantSet.size, withAi };
@@ -792,38 +819,36 @@ function UnifiedLibrary({
       </div>
 
       {meetingToDelete && (
-        <div className="recordings-modal-overlay">
-          <div className="recordings-delete-modal">
-            <h3>Usuwanie spotkania</h3>
-            <p>
-              Czy na pewno chcesz usunąć spotkanie <strong>"{meetingToDelete.title}"</strong> oraz
-              wszystkie powiązane nagrania z archiwalnej bazy wektorowej? Zmian tych nie można
-              cofnąć.
-            </p>
-            <div className="recordings-delete-modal-actions">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => setMeetingToDelete(null)}
-              >
-                Anuluj
-              </button>
-              <button
-                type="button"
-                className="danger-button"
-                onClick={() => {
-                  if (onDeleteMeeting) {
-                    onDeleteMeeting(meetingToDelete.id);
-                    toast.success('Pomyślnie usunięto spotkanie i powiązane nagrania.');
-                  }
-                  setMeetingToDelete(null);
-                }}
-              >
-                Usuń powiązane nagrania do spotkania
-              </button>
-            </div>
+        <Modal
+          isOpen={true}
+          onClose={() => setMeetingToDelete(null)}
+          title="Usuwanie spotkania"
+          size="sm"
+          danger
+        >
+          <p>
+            Czy na pewno chcesz usunąć spotkanie <strong>"{meetingToDelete.title}"</strong> oraz
+            wszystkie powiązane nagrania z archiwalnej bazy wektorowej? Zmian tych nie można cofnąć.
+          </p>
+          <div className="recordings-delete-modal-actions">
+            <button type="button" className="ghost-button" onClick={() => setMeetingToDelete(null)}>
+              Anuluj
+            </button>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => {
+                if (onDeleteMeeting) {
+                  onDeleteMeeting(meetingToDelete.id);
+                  toast.success('Pomyślnie usunięto spotkanie i powiązane nagrania.');
+                }
+                setMeetingToDelete(null);
+              }}
+            >
+              Usuń powiązane nagrania do spotkania
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </section>
   );

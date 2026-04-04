@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TagInput from '../shared/TagInput';
+import Modal from '../shared/Modal';
 import { addCustomTaskPerson, addCustomTaskTag } from '../lib/tasks';
 import {
   X,
@@ -41,8 +42,13 @@ export default function StudioBriefModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="studio-brief-modal-overlay" onClick={onClose}>
-      <div className="studio-brief-modal" onClick={(e) => e.stopPropagation()}>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      ariaLabel={selectedMeeting ? 'Edytuj spotkanie' : 'Nowe spotkanie'}
+      hideHeader
+    >
+      <div className="studio-brief-modal">
         <div className="studio-brief-modal-header">
           <div>
             <div className="eyebrow">Meeting brief</div>
@@ -345,6 +351,6 @@ export default function StudioBriefModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

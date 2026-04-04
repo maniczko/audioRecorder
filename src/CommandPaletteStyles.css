@@ -1,7 +1,7 @@
 .command-palette-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-index-modal, 500);
   display: grid;
   place-items: start center;
   padding: 84px 20px 20px;

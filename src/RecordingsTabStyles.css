@@ -330,7 +330,7 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   background: rgba(116, 208, 191, 0.08);
 }
 
-/* Modal styles */
+/* Modal styles — overlay handled by shared Modal */
 .recordings-modal-overlay {
   position: fixed;
   inset: 0;
@@ -339,7 +339,7 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-index-modal, 500);
   animation: recFadeIn 0.15s ease-out;
 }
 
