@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import path from 'node:path';
 import {
   buildAudioPreprocessCacheKey,
@@ -10,6 +10,11 @@ import {
   isPreprocessCacheFile,
   mergeChunkedPayloads,
   resolveStoredAudioQuality,
+  getMemoryAwareConcurrency,
+  VAD_ENABLED,
+  _sttUseGroq,
+  VERIFICATION_MODEL,
+  STT_PROVIDER_CHAIN,
 } from '../transcription';
 
 describe('transcription helpers', () => {
@@ -133,5 +138,129 @@ describe('transcription helpers', () => {
       chunksWithText: 1,
     });
     expect(result.transcriptionDiagnostics?.sttAttempts?.length).toBe(1);
+  });
+
+  it('mergeChunkedPayloads handles empty payloads array', () => {
+    const result = mergeChunkedPayloads([], 0);
+
+    expect(result.segments).toEqual([]);
+    expect(result.words).toEqual([]);
+    expect(result.text).toBe('');
+    expect(result.transcriptionDiagnostics.chunksAttempted).toBe(0);
+  });
+
+  it('mergeChunkedPayloads handles payloads with no segments or words', () => {
+    const payloads = [
+      {
+        payload: { text: 'Just text, no segments' },
+        offsetSeconds: 0,
+        diagnostics: {
+          extracted: true,
+          discardedAsTooSmall: false,
+          vadFlaggedSilent: false,
+          sentToStt: true,
+          sttFailed: false,
+          sttErrorMessage: '',
+          hasSegments: false,
+          hasWords: false,
+          hasText: true,
+        },
+      },
+    ];
+
+    const result = mergeChunkedPayloads(payloads, 50);
+
+    expect(result.segments).toEqual([]);
+    expect(result.words).toEqual([]);
+    expect(result.text).toBe('Just text, no segments');
+    expect(result.transcriptionDiagnostics.chunksWithText).toBe(1);
+  });
+});
+
+describe('getMemoryAwareConcurrency', () => {
+  const originalMemoryUsage = process.memoryUsage;
+
+  afterEach(() => {
+    process.memoryUsage = originalMemoryUsage;
+  });
+
+  it('returns 1 when RSS > 500MB', () => {
+    process.memoryUsage = vi.fn().mockReturnValue({
+      rss: 550 * 1024 * 1024,
+      heapUsed: 200 * 1024 * 1024,
+      heapTotal: 300 * 1024 * 1024,
+    });
+
+    expect(getMemoryAwareConcurrency(4)).toBe(1);
+  });
+
+  it('returns 1 when heapUsageRatio > 0.75', () => {
+    process.memoryUsage = vi.fn().mockReturnValue({
+      rss: 300 * 1024 * 1024,
+      heapUsed: 230 * 1024 * 1024,
+      heapTotal: 300 * 1024 * 1024, // 0.767 ratio
+    });
+
+    expect(getMemoryAwareConcurrency(4)).toBe(1);
+  });
+
+  it('returns max(1, min(configLimit, 2)) when RSS > 350MB', () => {
+    process.memoryUsage = vi.fn().mockReturnValue({
+      rss: 400 * 1024 * 1024,
+      heapUsed: 150 * 1024 * 1024,
+      heapTotal: 300 * 1024 * 1024, // 0.5 ratio
+    });
+
+    expect(getMemoryAwareConcurrency(4)).toBe(2);
+    expect(getMemoryAwareConcurrency(1)).toBe(1);
+  });
+
+  it('returns max(1, min(configLimit, 2)) when heapUsageRatio > 0.6', () => {
+    process.memoryUsage = vi.fn().mockReturnValue({
+      rss: 300 * 1024 * 1024,
+      heapUsed: 185 * 1024 * 1024,
+      heapTotal: 300 * 1024 * 1024, // 0.617 ratio
+    });
+
+    expect(getMemoryAwareConcurrency(4)).toBe(2);
+  });
+
+  it('returns configLimit when memory usage is low', () => {
+    process.memoryUsage = vi.fn().mockReturnValue({
+      rss: 200 * 1024 * 1024,
+      heapUsed: 100 * 1024 * 1024,
+      heapTotal: 300 * 1024 * 1024, // 0.33 ratio
+    });
+
+    expect(getMemoryAwareConcurrency(4)).toBe(2); // capped at 2
+    expect(getMemoryAwareConcurrency(1)).toBe(1);
+  });
+});
+
+describe('transcription module constants', () => {
+  it('VAD_ENABLED is a boolean', () => {
+    expect(typeof VAD_ENABLED).toBe('boolean');
+  });
+
+  it('_sttUseGroq is a boolean', () => {
+    expect(typeof _sttUseGroq).toBe('boolean');
+  });
+
+  it('VERIFICATION_MODEL is a non-empty string', () => {
+    expect(typeof VERIFICATION_MODEL).toBe('string');
+    expect(VERIFICATION_MODEL.length).toBeGreaterThan(0);
+  });
+
+  it('STT_PROVIDER_CHAIN is an array', () => {
+    expect(Array.isArray(STT_PROVIDER_CHAIN)).toBe(true);
+  });
+
+  it('STT_PROVIDER_CHAIN contains provider objects with id and defaultModel', () => {
+    for (const provider of STT_PROVIDER_CHAIN) {
+      expect(provider).toHaveProperty('id');
+      expect(provider).toHaveProperty('defaultModel');
+      expect(typeof provider.id).toBe('string');
+      expect(typeof provider.defaultModel).toBe('string');
+    }
   });
 });

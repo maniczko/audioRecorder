@@ -493,14 +493,12 @@ describe('Media Routes', () => {
       process.env.GEMINI_API_KEY = 'test-key';
       process.env.NODE_ENV = 'test';
 
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ error: { code: 429, message: 'Quota exceeded.' } }), {
-            status: 429,
-            headers: { 'content-type': 'application/json' },
-          })
-        );
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: 429, message: 'Quota exceeded.' } }), {
+          status: 429,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
       global.fetch = fetchMock as any;
 
       const res = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
@@ -604,14 +602,18 @@ describe('Media Routes', () => {
     expect(oversize.headers.get('Vary')).toContain('Origin');
   });
 
-  it.skip('GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files', async () => {
-    // SKIP: fs mock caching - createReadStream throws with mocked fs
+  it('GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce(null);
     const missingAsset = await app.request('/media/recordings/rec_missing/audio', {
       method: 'GET',
       headers: { Authorization: 'Bearer fake_token' },
     });
     expect(missingAsset.status).toBe(404);
+
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    vi.spyOn(storageModule, 'downloadAudioFromStorage').mockRejectedValue(
+      new Error('missing in storage')
+    );
 
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce({
       id: 'rec_file',
@@ -631,17 +633,21 @@ describe('Media Routes', () => {
     expect(missingFile.status).toBe(404);
   });
 
-  it.skip('GET /media/recordings/:recordingId/audio - streams existing file with safe headers', async () => {
-    // SKIP: fs mock caching - createReadStream throws with mocked fs
+  it('GET /media/recordings/:recordingId/audio - falls back to reconstructed Supabase key', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_stream',
       workspace_id: 'ws_1',
-      file_path: '/tmp/audio.webm',
-      content_type: 'text/html',
+      file_path: '/tmp/archive/legacy-name.webm',
+      content_type: 'audio/webm',
     });
 
-    // Set fs.exists to return true and statSync to return size
-    setFsState({ existsSync: true, statSyncSize: 1234 });
+    setFsState({ existsSync: false });
+
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const downloadSpy = vi
+      .spyOn(storageModule, 'downloadAudioFromStorage')
+      .mockRejectedValueOnce(new Error('legacy key missing'))
+      .mockResolvedValueOnce(new TextEncoder().encode('audio-data').buffer);
 
     const res = await app.request('/media/recordings/rec_stream/audio', {
       method: 'GET',
@@ -649,8 +655,10 @@ describe('Media Routes', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
-    expect(res.headers.get('Content-Length')).toBe('1234');
+    expect(res.headers.get('Content-Type')).toBe('audio/webm');
+    expect(res.headers.get('Content-Length')).toBe(String('audio-data'.length));
+    expect(downloadSpy).toHaveBeenNthCalledWith(1, 'legacy-name.webm');
+    expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_stream.webm');
   });
 
   it('POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path', async () => {

@@ -5,9 +5,13 @@ import { createApp } from '../../app.ts';
 const { mockGenerateRagAnswer } = vi.hoisted(() => ({
   mockGenerateRagAnswer: vi.fn(),
 }));
-vi.mock('../../lib/ragAnswer.ts', () => ({
-  generateRagAnswer: mockGenerateRagAnswer,
-}));
+vi.mock('../../lib/ragAnswer.ts', async () => {
+  const actual = await vi.importActual('../../lib/ragAnswer.ts');
+  return {
+    ...actual,
+    generateRagAnswer: mockGenerateRagAnswer,
+  };
+});
 
 describe('Workspace Routes', () => {
   let app: ReturnType<typeof createApp>;
@@ -200,12 +204,14 @@ describe('Workspace Routes', () => {
       headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: 'Co ustalono?' }),
     });
-    expect(errorRes.status).toBe(500);
-    expect((await errorRes.json()).answer).toMatch(/Blad LLM/);
+    expect(errorRes.status).toBe(200);
+    const errorPayload = await errorRes.json();
+    expect(errorPayload.fallback).toBe(true);
+    expect(errorPayload.answer).toMatch(/Model AI jest chwilowo niedostepny/i);
+    expect(errorPayload.answer).toMatch(/Ustalono plan\./i);
   });
 
-  it.skip('returns LLM answer when OpenAI key is configured', async () => {
-    // Skip: LangChain ChatOpenAI mocking is complex and requires full E2E test
+  it('returns LLM answer when RAG generation succeeds', async () => {
     mockTranscriptionService.queryRAG.mockResolvedValue([
       { recording_id: 'rec1', speaker_name: 'Anna', text: 'Ustalono plan.' },
     ]);
@@ -234,10 +240,11 @@ describe('Workspace Routes', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ answer: 'Odpowiedz z RAG.' });
-    expect(generateRagAnswer).toHaveBeenCalledWith(
+    expect(mockGenerateRagAnswer).toHaveBeenCalledWith(
       expect.objectContaining({
         question: 'Co ustalono?',
         chunks: [{ recording_id: 'rec1', speaker_name: 'Anna', text: 'Ustalono plan.' }],
+        workspaceId: 'ws1',
       })
     );
   });

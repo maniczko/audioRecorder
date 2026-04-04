@@ -84,6 +84,9 @@ describe('Performance Regression — Response Time SLAs', () => {
 
     mockAuthService = {
       getSession: vi.fn().mockResolvedValue({ userId: 'u1', workspaceId: 'ws1' }),
+      buildSessionPayload: vi
+        .fn()
+        .mockResolvedValue({ user: { id: 'u1' }, workspace: { id: 'ws1' } }),
     };
     mockWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
