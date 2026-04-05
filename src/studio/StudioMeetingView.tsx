@@ -2922,7 +2922,7 @@ export default function StudioMeetingView({
               <section className="panel studio-tasks-panel">
                 <div className="panel-header compact">
                   <div>
-                    <h2>Zadania po spotkaniu</h2>
+                    <h2>Zadania</h2>
                   </div>
                 </div>
 
@@ -2970,82 +2970,18 @@ export default function StudioMeetingView({
                     }}
                   />
 
-                  <section className="summary-card summary-card-wide studio-meeting-task-card">
-                    <div className="summary-card-head">
-                      <h3>Zadania utworzone z tego spotkania</h3>
-                      <span>{meetingTaskEntries.length}</span>
-                    </div>
-                    {meetingTaskEntries.length ? (
-                      <ul className="meeting-task-list">
-                        {meetingTaskEntries.map((task) => (
-                          <li key={task.id} className="meeting-task-item">
-                            <div className="meeting-task-open">
-                              <div className="meeting-task-title-row">
-                                <strong>{task.title}</strong>
-                                <span className="task-flag neutral">
-                                  {task.priority === 'high'
-                                    ? 'Wysoki'
-                                    : task.priority === 'low'
-                                      ? 'Niski'
-                                      : 'Sredni'}
-                                </span>
-                              </div>
-                              {task.description ? <p>{task.description}</p> : null}
-                              <div className="meeting-task-meta">
-                                {task.owner ? <span>@{task.owner}</span> : null}
-                                {task.dueDate ? <span>{task.dueDate}</span> : null}
-                                {task.tags?.length ? (
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      gap: '4px',
-                                      flexWrap: 'wrap',
-                                      marginTop: '4px',
-                                    }}
-                                  >
-                                    {task.tags.map((tag) => (
-                                      <TagBadge key={tag} tag={tag} />
-                                    ))}
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="meeting-task-actions">
-                                <button
-                                  type="button"
-                                  className="meeting-task-link"
-                                  onClick={() => goToTasksTab(task.id)}
-                                >
-                                  Przejdź do zadań
-                                </button>
-                                <button
-                                  type="button"
-                                  className="meeting-task-link secondary"
-                                  onClick={() => openMeetingTaskDetails(task.id)}
-                                >
-                                  Otwórz szczegóły
-                                </button>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="soft-copy">Brak zapisanych zadan z tego spotkania.</p>
-                    )}
-                  </section>
+                  <Suspense
+                    fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}
+                  >
+                    <AiTaskSuggestionsPanel
+                      selectedRecording={selectedRecording}
+                      displaySpeakerNames={displaySpeakerNames}
+                      peopleProfiles={peopleProfiles}
+                      onCreateTask={onCreateTask}
+                      canEdit={currentWorkspacePermissions?.canEditWorkspace}
+                    />
+                  </Suspense>
                 </div>
-
-                <Suspense
-                  fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}
-                >
-                  <AiTaskSuggestionsPanel
-                    selectedRecording={selectedRecording}
-                    displaySpeakerNames={displaySpeakerNames}
-                    peopleProfiles={peopleProfiles}
-                    onCreateTask={onCreateTask}
-                    canEdit={currentWorkspacePermissions?.canEditWorkspace}
-                  />
-                </Suspense>
               </section>
             )}
           </div>
