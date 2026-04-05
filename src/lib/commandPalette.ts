@@ -49,7 +49,11 @@ function tabItem(id, title, subtitle) {
   };
 }
 
-export function buildCommandPaletteItems({ meetings = [], tasks = [], people = [] }) {
+export function buildCommandPaletteItems({
+  meetings = [] as any[],
+  tasks = [] as any[],
+  people = [] as any[],
+}) {
   const tabs = [
     tabItem('studio', 'Studio', 'Spotkania, nagrania i analiza'),
     tabItem('calendar', 'Kalendarz', 'Planer spotkan i terminow'),
