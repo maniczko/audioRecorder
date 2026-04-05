@@ -211,7 +211,7 @@ pnpm run tdd supabaseStorage
 4. **GREEN** — Implement minimum code to pass
 5. **REFACTOR** — Clean up with green tests
 6. **Regression** — Add test in `server/tests/regression/` if bug fix
-7. **Verify** — `pnpm run test` + `pnpm run test:coverage`
+7. **Verify** — `pnpm run test` + `pnpm run test:coverage:all`
 
 ### 8.3 Files
 
