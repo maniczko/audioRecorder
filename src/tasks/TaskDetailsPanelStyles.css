@@ -208,8 +208,8 @@
 }
 
 .todo-task-checkbox {
-  width: 26px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.4);
@@ -221,6 +221,9 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  padding: 0;
+  line-height: 1;
 }
 
 .todo-task-checkbox:hover {
