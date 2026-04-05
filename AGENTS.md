@@ -122,7 +122,7 @@ pnpm run test:coverage:all                        # runs backend + frontend cove
 
 - TailwindCSS utility classes first
 - CSS modules (`.module.css`) for complex component-specific styles
-- No inline `style={{}}` — use Tailwind or CSS modules
+- Inline `style={{}}` is acceptable for dynamic values (colors, positions, animations)
 - Theme via CSS variables: `var(--color-xxx)`
 
 ### 3.4 Error handling
