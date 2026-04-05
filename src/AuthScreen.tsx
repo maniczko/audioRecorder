@@ -107,7 +107,7 @@ export default function AuthScreen({
             </svg>
             VoiceBóbr
           </div>
-          <h1>Więcej niż tylko transkrypcja.</h1>
+          <h1>Więcej niż bóbr.</h1>
           <p className="auth-hero-copy">
             Pracuj szybciej i inteligentniej. VoiceBóbr automatycznie grupuje wypowiedzi i dostarcza
             potrzebnych Ci kontekstów ze spotkań w czasie rzeczywistym.
