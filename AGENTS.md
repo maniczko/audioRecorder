@@ -143,14 +143,14 @@ pnpm run test:coverage:all                        # runs backend + frontend cove
 
 ## 4. File Naming
 
-| Type         | Pattern                                | Example                          |
-| ------------ | -------------------------------------- | -------------------------------- |
-| Component    | `PascalCase.tsx` + `.module.css`       | `MeetingCard.tsx`                |
-| Hook         | `useXxx.ts` + `useXxx.test.ts`         | `useRecorder.ts`                 |
-| Service      | `xxxService.ts` + `xxxService.test.ts` | `mediaService.ts`                |
-| Store        | `xxxStore.ts`                          | `meetingStore.ts`                |
-| Server route    | `server/tests/routes/xxx.test.ts`      | `server/tests/routes/ai.test.ts`    |
-| Server lib      | `server/tests/lib/xxx.test.ts`         | `server/tests/lib/ragAnswer.test.ts` |
+| Type              | Pattern                                | Example                              |
+| ----------------- | -------------------------------------- | ------------------------------------ |
+| Component         | `PascalCase.tsx` + `.module.css`       | `MeetingCard.tsx`                    |
+| Hook              | `useXxx.ts` + `useXxx.test.ts`         | `useRecorder.ts`                     |
+| Service           | `xxxService.ts` + `xxxService.test.ts` | `mediaService.ts`                    |
+| Store             | `xxxStore.ts`                          | `meetingStore.ts`                    |
+| Server route test | `server/tests/routes/xxx.test.ts`      | `server/tests/routes/ai.test.ts`     |
+| Server lib test   | `server/tests/lib/xxx.test.ts`         | `server/tests/lib/ragAnswer.test.ts` |
 
 Tests are **always colocated** next to source (frontend) or in `server/tests/` mirroring structure (backend).
 

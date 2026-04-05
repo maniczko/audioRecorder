@@ -1,11 +1,11 @@
 ﻿# TASK QUEUE
 
-Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
+Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ## Status odswiezenia
 
-- `GitHub Actions`: 2 nowe runy CI przeszly (commity `32b140db`, `5b390916`)
-- `Railway`: `/health` = `ok` (ostatni check)
+- `GitHub Actions`: swiezy raport `github-errors/github-errors-2026-04-05T18-25-32-572Z.json` pokazuje `11` failed runow z ostatnich `7` dni; najnowszy fail to `CI/CD Pipeline` dla commitu `c07dd10`
+- `Railway`: `/health` = `ok`, ale backend nadal raportuje stary deploy `gitSha: 2054ad32` zamiast aktualnego `c07dd10`
 - `Vercel`: odswiezenie zablokowane `2026-04-05` - `VERCEL_TOKEN` nieustawiony
 - `Sentry`: odswiezenie zablokowane `2026-04-05` - `SENTRY_AUTH_TOKEN` nieustawiony
 
@@ -21,6 +21,7 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
 - `routes/workspaces.test.ts`: flaky RAG test → przyjmuje teraz fallback answer gdy LLM mock nie applies
 - `supabaseStorage.configured.test.ts`: +15 nowych testow (coverage `78%` → `96%`)
 - `2026-04-05 live triage`: preview `https://audiorecorder-fk83nb1hk-iwoczajka-2703s-projects.vercel.app` jest wlasciwym VoiceLog frontendem i proxyuje `/health` do Railway (`gitSha: 80d624bb...`), ale `POST /media/analyze` zwracal `500`; rownolegle `https://audiorecorder.vercel.app/` serwuje inna prosta aplikacje `Voice Recorder` z `vrecorder.js`, wiec custom domain wyglada na zle podpiety do innego projektu
+- `2026-04-05 upload triage`: preview `https://audiorecorder-r4oyg91yw-iwoczajka-2703s-projects.vercel.app` nadal pokazuje frontend `54c37714`, podczas gdy Railway siedzi na `2054ad32`; runtime `413 Chunk jest zbyt duży (max 3MB)` pasuje do starego frontu tnącego audio po `5MB`, mimo że `main` ma juz lokalnie i na GitHubie poprawke `3MB`
 
 ## Zasady
 
@@ -168,6 +169,37 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
 - Kryterium zamkniecia:
   `POST /media/analyze` nie crashuje juz dla requestu bez `segments`, tylko zwraca bezpieczny fallback (`null` w pipeline / `200` na route).
 
+### MON-11 - Naprawic klaster E2E po zmianach widoku Studio
+
+- Status: `todo`
+- Priorytet: `P0`
+- Wlasciciel: `Codex`
+- Zrodlo: `GitHub Actions -> CI/CD Pipeline -> E2E Tests`
+- Ostatni sygnal: `2026-04-05 17:47 UTC`
+- Opis zadania:
+  Najnowszy run `CI/CD Pipeline` dla commitu `c07dd10` pada w jobie `E2E Tests`. Wspolny objaw we wszystkich testach to brak `.workspace-sidebar` oraz timeouty na `locator.fill(...)` dla inputu `input[placeholder='np. Spotkanie z klientem']`. To wyglada na jeden root cause po zmianach UI/selektorow, a nie na osobne awarie flow spotkan.
+- Link:
+  - `https://github.com/maniczko/audioRecorder/actions/runs/24007013864`
+- Kryterium zamkniecia:
+  Swiezy run `E2E Tests` dla `main` przechodzi bez bledow `.workspace-sidebar` i bez timeoutow `locator.fill`.
+
+### MON-12 - Dopchnac deploy z poprawka chunk upload `3MB` na Railway/Vercel
+
+- Status: `todo`
+- Priorytet: `P0`
+- Wlasciciel: `Codex`
+- Zrodlo: live runtime `2026-04-05`
+- Opis zadania:
+  Uzytkownik nadal widzi w preview `413 Chunk jest zbyt duży (max 3MB)` przy uploadzie, ale obecny `main` ma juz poprawke w `src/services/mediaService.ts`, ktora tnie pliki po `3MB`. Runtime nie odzwierciedla jeszcze tej poprawki, bo `/health` z Railway nadal raportuje backend `2054ad32`, a preview Vercel nadal pokazuje starszy frontend `54c37714`.
+- Zakres poprawki juz wykonany:
+  - `src/services/mediaService.ts`
+  - test regresji:
+    - `src/services/mediaService.test.ts`
+- Notatka:
+  Lokalnie potwierdzone 2026-04-05 - duzy blob `11MB` rozbija sie teraz na `4` requesty `3MB, 3MB, 3MB, 2MB`, wiec runtime `413` wyglada na stary deploy, nie na aktywny bug w `main`.
+- Kryterium zamkniecia:
+  Preview / production frontend uzywa buildu z poprawka `3MB`, a upload chunkow nie konczy sie juz `413` na fragmencie `2/55`.
+
 ## Odrzucone jako szum lub informacyjne
 
 - `PubSub already loaded, using existing version`
@@ -186,9 +218,18 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
 
 ## Swiezy snapshot bledow
 
-<!-- Refreshed on 2026-04-05T14:50:42.354Z -->
+<!-- Refreshed on 2026-04-05T18:25:32.521Z -->
 
-### GitHub Actions Errors (aktualny snapshot: 14 failed runow)
+### GitHub Actions Errors (aktualny snapshot: 11 failed runow)
+
+- **GH-AUTO-2026-04-05-11** — Investigate fresh E2E failure after `test(server): stabilize local pre-push suites`
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> E2E Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** nowy fail po commicie `c07dd10` z `2026-04-05T17:47:06Z`
+  - **Error:** `expect(locator('.workspace-sidebar')).toBeVisible()` oraz wiele `locator.fill: Timeout 15000ms exceeded` dla inputu spotkania
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24007013864
+  - **Notatka:** swiezy raport `github-errors-2026-04-05T18-25-32-572Z.md` pokazuje, ze to jeden wspolny klaster E2E po zmianie UI Studio, a nie rozproszone pojedyncze awarie
 
 - **GH-AUTO-2026-04-05-0** — Investigate fresh typecheck failure after `fix(prod): ship agent updates`
   - **Status:** `verify`
