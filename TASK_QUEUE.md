@@ -247,7 +247,7 @@ Ostatnie odswiezenie: `2026-04-05 16:50 Europe/Warsaw`
   - **Owner:** `Qwen`
   - **Error:** `[VoiceLog] auto-send error: Error: Network down`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
-  - **Notatka:** To nie byl blad sieciowy - `console.warn` z testu `errorLogStore.test.ts` wyciekalo do logow CI. Test celowo mockowal `fetch` z bledem `Network down` zeby zweryfikowac graceful degradation. Fix: dodano `vi.spyOn(console, 'warn').mockImplementation(() => {})` w teście, zeby wyciszyc oczekiwany warning. **ZAMKNIETE 2026-04-05**.
+  - **Notatka:** To nie byl prawdziwy blad sieciowy. `gh run view` pokazal, ze workflow wywalal sie przy `Create Pull Request` na `.husky/pre-commit: 2: : not found`, bo hook mial CRLF i rozsypywal sie na Linux runnerze. Hook zostal przepisany na czyste LF/ASCII, a regresja `scripts/validate-husky-hooks.test.ts` pilnuje, ze `.husky/pre-commit` nie zawiera `\\r`. **ZAMKNIETE 2026-04-05**.
 
 - **GH-AUTO-2026-04-05-8** — Historical backend failure cluster still visible in 7-day window
   - **Status:** `verify`
@@ -262,31 +262,34 @@ Ostatnie odswiezenie: `2026-04-05 16:50 Europe/Warsaw`
   - **Notatka:** potwierdza, ze to nie jednorazowy fail po ostatnim deployu, tylko utrwalony regres testowy
 
 - **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
-  - **Status:** todo
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T22:22:57.3717206Z [22m[39m[ERROR]...
   - **Error:** 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23988814696
   - **Created:** 2026-04-05T10:24:57.855Z
   - **Priority:** High
+  - **Notatka:** duplikat historycznego klastra z `GH-AUTO-2026-04-05-6` i `GH-AUTO-2026-04-05-8` (historical backend failure cluster). Parser zaciagnal pojedyncze linie stderr jako osobne taski, ale lokalne retesty 2026-04-05 sa zielone, a ten wpis nie reprezentuje osobnego root cause. **ZAMKNIETE 2026-04-05**.
 
 - **GH-AUTO-2026-04-05-9** — Fix CI/CD Pipeline failure
-  - **Status:** todo
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:22:05.3833441Z [22m[39m[ERROR]...
   - **Error:** 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986838289
   - **Created:** 2026-04-05T10:24:57.855Z
   - **Priority:** High
+  - **Notatka:** duplikat tego samego historycznego stderr co wyzej; nie wnosi nowego zadania ponad `GH-AUTO-2026-04-05-6`. **ZAMKNIETE 2026-04-05**.
 
 - **GH-AUTO-2026-04-05-10** — Fix CI/CD Pipeline failure
-  - **Status:** todo
+  - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:12:16.9982676Z [22m[39m[ERROR]...
   - **Error:** 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986667563
   - **Created:** 2026-04-05T10:24:57.855Z
   - **Priority:** High
+  - **Notatka:** trzeci duplikat tego samego historycznego logu; zostawiony tylko informacyjnie, ale nie jest juz aktywnym taskiem. **ZAMKNIETE 2026-04-05**.
 
 <!-- Auto-generated on 2026-04-05T12:37:25.908Z -->
 
