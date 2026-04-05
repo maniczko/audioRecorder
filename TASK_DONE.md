@@ -2,6 +2,40 @@
 
 ## Zrealizowane Zadania
 
+## [2026-04-05] #MON: Usunięte ostrzeżenia Vite i naprawa formularzy
+
+Status: `done` ✅
+
+### Naprawione zadania:
+
+- **MON-04** — Zweryfikowac brak bledow formatowania po ostatnich poprawkach
+  - Fix: `npx prettier --write .` — formatowanie plików
+  - Fix: naprawa składni openapi.yaml (zduplikowane klucze response i endpointy)
+  - Commits: `08988e15`
+
+- **MON-08** — Naprawic usuwanie tekstu w formularzach po spacji
+  - Fix: usunięte `quickDraft.group` i `quickDraft.status` z dependency array useEffect w `TasksTab.tsx`
+  - Fix: zmniejszona wysokość tagów i pól osób (28px zamiast 32-42px)
+  - Fix: zmniejszone checkboxy (18px zamiast 26px)
+  - Regression test: `src/TasksTab.inputs-regression.test.tsx`
+  - Commits: `5a1acc4a`, `a23ac3b2`, `3fb457b0`, `f2fafdb5`
+
+- **RW-SNAPSHOT-2026-04-05-1** — Railway currently healthy
+  - Result: brak linii `error/failure` w ostatnich 100 logach
+  - Health: `/health` zwraca `{"ok":true,"status":"ok","db":"connected","supabaseRemote":true}`
+  - Notatka: Railway działa poprawnie
+
+### Rezultat:
+
+- ✅ Prettier check przechodzi
+- ✅ Formularze nie usuwają tekstu przy wpisywaniu
+- ✅ Tagi i pola osób mają proporcjonalną wysokość
+- ✅ Checkboxy są mniejsze i lepiej dopasowane
+- ✅ Railway healthy
+- ✅ Wszystkie 3 zadania zamknięte, TASK_QUEUE zaktualizowany
+
+---
+
 ## [2026-04-03] #GH-AUTO: Fix 9 GitHub Actions CI/CD errors
 
 Status: `done` ✅
