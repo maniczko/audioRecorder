@@ -4,6 +4,7 @@ import { useGoogleCtx } from './context/GoogleContext';
 import { useRecorderCtx } from './context/RecorderContext';
 import useUI from './hooks/useUI';
 import { Cluster } from './ui/LayoutPrimitives';
+import { formatDuration } from './lib/storage';
 import './TopbarStyles.css';
 
 export default function Topbar() {
@@ -223,7 +224,14 @@ export default function Topbar() {
           aria-label={recorder.isRecording ? 'Przejdz do aktywnego nagrania' : 'Nagraj ad hoc'}
         >
           <span className="topbar-record-dot" />
-          {recorder.isRecording ? 'Nagrywam...' : 'Nagraj'}
+          {recorder.isRecording ? (
+            <>
+              <span className="topbar-record-timer">{formatDuration(recorder.elapsed)}</span>
+              <span className="topbar-record-label">Nagrywam</span>
+            </>
+          ) : (
+            'Nagraj'
+          )}
         </button>
         {workspace.availableWorkspaces.length > 1 ? (
           <label className="workspace-switch">

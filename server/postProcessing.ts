@@ -76,7 +76,11 @@ export async function correctTranscriptWithLLM(segments: any[], options: any = {
 /**
  * Analyze a meeting transcript using GPT-4o-mini and return structured JSON.
  */
-export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames }: any) {
+export async function analyzeMeetingWithOpenAI({
+  meeting = {},
+  segments = [],
+  speakerNames = {},
+}: any = {}) {
   if (!OPENAI_API_KEY || !segments.length) return null;
 
   const fmt = (s: number) => {

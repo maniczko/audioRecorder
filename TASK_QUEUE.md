@@ -20,6 +20,7 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
 - `pipeline-coverage.test.ts`: 3 testy zepsute przez broken vi.mock chain → `test.skip` z TODO comment
 - `routes/workspaces.test.ts`: flaky RAG test → przyjmuje teraz fallback answer gdy LLM mock nie applies
 - `supabaseStorage.configured.test.ts`: +15 nowych testow (coverage `78%` → `96%`)
+- `2026-04-05 live triage`: preview `https://audiorecorder-fk83nb1hk-iwoczajka-2703s-projects.vercel.app` jest wlasciwym VoiceLog frontendem i proxyuje `/health` do Railway (`gitSha: 80d624bb...`), ale `POST /media/analyze` zwracal `500`; rownolegle `https://audiorecorder.vercel.app/` serwuje inna prosta aplikacje `Voice Recorder` z `vrecorder.js`, wiec custom domain wyglada na zle podpiety do innego projektu
 
 ## Zasady
 
@@ -149,6 +150,23 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
   Defensive programming - zamiast crashowac aplikacje, hook zwraca puste funkcje. Komponenty graceful handlinguja brakujacy provider bez crashu. ToastProvider nadal jest na poziomie App.tsx, ale ta zmiana zapobiega hard crashes w edge cases.
 - Kryterium zamkniecia:
   **ZAMKNIETE 2026-04-05**: Zakladka "Nagrania" dziala na localhost bez crashu, testy regresji przechodza.
+
+### MON-10 - Naprawic backendowy `500` na `POST /media/analyze` dla niepelnego payloadu
+
+- Status: `verify`
+- Priorytet: `P0`
+- Wlasciciel: `Codex`
+- Zrodlo: live runtime `2026-04-05`
+- Opis zadania:
+  Wlasciwy preview VoiceLog (`fk83nb1hk...vercel.app`) zwraca `500` na `POST /media/analyze`, a ten sam endpoint na Railway tez konczy sie `500`. Kod `server/routes/media.ts` powinien oddawac `200` z fallbackiem `no-key`, ale `server/postProcessing.ts` destrukturyzowal payload bez domyslnych wartosci i wykonywal `segments.length` nawet wtedy, gdy request nie zawieral pola `segments`.
+- Planowana / wykonana poprawka:
+  - `server/postProcessing.ts`
+  - test regresji:
+    - `server/tests/audio-pipeline.unit.test.ts`
+- Notatka:
+  Lokalnie potwierdzone 2026-04-05 - `analyzeMeetingWithOpenAI(...)` normalizuje teraz brakujace `meeting`, `segments` i `speakerNames` do bezpiecznych domyslnych wartosci. Regresja przechodzi dla payloadu bez `segments`, a `pnpm run typecheck` pozostaje zielone.
+- Kryterium zamkniecia:
+  `POST /media/analyze` nie crashuje juz dla requestu bez `segments`, tylko zwraca bezpieczny fallback (`null` w pipeline / `200` na route).
 
 ## Odrzucone jako szum lub informacyjne
 
@@ -410,5 +428,3 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140694
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
-
-

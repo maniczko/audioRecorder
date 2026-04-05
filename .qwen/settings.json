@@ -6,7 +6,11 @@
       "Bash(select-string *)",
       "Bash(select-object *)",
       "Bash(findstr *)",
-      "Bash(del *)"
+      "Bash(del *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)"
     ]
   },
   "$version": 3

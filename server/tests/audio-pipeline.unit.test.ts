@@ -280,6 +280,25 @@ describe('audioPipeline exports', () => {
     expect(errorSpy).toHaveBeenCalledWith('embedTextChunks failed:', expect.any(Error));
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — /media/analyze crashes when request body omits segments
+  // Date: 2026-04-05
+  // Bug: analyzeMeetingWithOpenAI accessed segments.length even when the
+  //      request payload did not include segments, causing runtime 500.
+  // Fix: normalize missing meeting/segments/speakerNames to safe defaults.
+  // ─────────────────────────────────────────────────────────────────
+  it('Regression: #0 — returns null when analysis payload omits segments', async () => {
+    const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });
+
+    await expect(
+      pipeline.analyzeMeetingWithOpenAI({
+        meeting: { title: 'Weekly' },
+      })
+    ).resolves.toBeNull();
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('transcribes live chunks when API key is configured and returns empty string on upstream failure', async () => {
     const readFileSync = vi.fn().mockReturnValue(Buffer.from('audio'));
     const existsSync = vi.fn().mockReturnValue(true);
