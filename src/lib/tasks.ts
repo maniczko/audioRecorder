@@ -13,7 +13,7 @@ export const DEFAULT_TASK_COLUMNS = [
 
 export const TASK_PRIORITIES = [
   { id: 'low', label: 'Niski', color: '#8db4ff' },
-  { id: 'medium', label: 'Sredni', color: '#75d6c4' },
+  { id: 'medium', label: 'Średni', color: '#75d6c4' },
   { id: 'high', label: 'Wysoki', color: '#f3ca72' },
   { id: 'urgent', label: 'Krytyczny', color: '#f17d72' },
 ];

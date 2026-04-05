@@ -5,7 +5,7 @@ import './AiTaskSuggestionsPanelStyles.css';
 import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
 
-const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Sredni', low: 'Niski' };
+const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Średni', low: 'Niski' };
 const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
 
 interface EditDraft {
@@ -78,7 +78,7 @@ function AiTaskSuggestionsPanel({
     onCreateTask({
       title: suggestion.title || 'Zadanie AI',
       description: suggestion.description || '',
-      assignedTo: suggestion.owner || '',
+      assignedTo: suggestion.owner ? [suggestion.owner] : [],
       dueDate: suggestion.dueDate || null,
       priority: suggestion.priority || 'medium',
       tags: Array.isArray(suggestion.tags) ? suggestion.tags : [],
@@ -167,7 +167,7 @@ function AiTaskSuggestionsPanel({
                   </div>
                   <input
                     className="ai-suggestion-input"
-                    type="date"
+                    type="datetime-local"
                     value={editDraft.dueDate || ''}
                     onChange={(e) => setEditDraft((d) => ({ ...d, dueDate: e.target.value }))}
                   />
@@ -176,7 +176,7 @@ function AiTaskSuggestionsPanel({
                     onChange={(e) => setEditDraft((d) => ({ ...d, priority: e.target.value }))}
                   >
                     <option value="high">Wysoki</option>
-                    <option value="medium">Sredni</option>
+                    <option value="medium">Średni</option>
                     <option value="low">Niski</option>
                   </select>
                 </div>

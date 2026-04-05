@@ -4,7 +4,8 @@ import { useWorkspaceSelectors } from '../store/workspaceStore';
 import { useAuthStore } from '../store/authStore';
 import useMeetings from '../hooks/useMeetings';
 
-const MicrosoftContext = createContext(null);
+type MicrosoftContextValue = ReturnType<typeof useMicrosoftIntegrations>;
+const MicrosoftContext = createContext<MicrosoftContextValue | null>(null);
 
 export function MicrosoftProvider({ calendarMonth, children }) {
   const workspace = useWorkspaceSelectors();

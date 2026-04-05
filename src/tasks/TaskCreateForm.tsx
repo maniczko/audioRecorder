@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, User, Flag, Tag, Layers, Bell, Star, FolderOpen } from 'lucide-react';
 import TagInput from '../shared/TagInput';
 import { TASK_PRIORITIES } from '../lib/tasks';
+import { Input } from '../ui/Input';
+import './TaskDetailsPanelStyles.css';
 
 export interface TaskDraft {
   title: string;
@@ -24,6 +26,7 @@ interface TaskCreateFormProps {
   onSubmit: (draft: TaskDraft) => void;
   onCancel?: () => void;
   showCancel?: boolean;
+  showQuickAdd?: boolean;
   autoFocus?: boolean;
 }
 
@@ -35,6 +38,7 @@ export default function TaskCreateForm({
   onSubmit,
   onCancel,
   showCancel = false,
+  showQuickAdd = true,
   autoFocus = true,
 }: TaskCreateFormProps) {
   const [draft, setDraft] = useState<TaskDraft>({
@@ -76,108 +80,163 @@ export default function TaskCreateForm({
   return (
     <div className="task-create-form-container">
       {/* Quick Add Row */}
-      <div className="relative w-full flex mb-4">
-        <input
-          ref={titleInputRef}
-          value={draft.title}
-          onChange={(event) => setDraft((previous) => ({ ...previous, title: event.target.value }))}
-          placeholder="Dodaj zadanie (N)..."
-          className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSubmit(e);
+      {showQuickAdd && (
+        <div className="relative w-full flex mb-4">
+          <input
+            ref={titleInputRef}
+            value={draft.title}
+            onChange={(event) =>
+              setDraft((previous) => ({ ...previous, title: event.target.value }))
             }
-          }}
-        />
-        <button
-          type="button"
-          className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
-          onClick={handleSubmit}
-          disabled={!draft.title.trim()}
-          title="Dodaj zadanie (Enter)"
-        >
-          <Plus className="w-[18px] h-[18px]" />
-        </button>
-      </div>
+            placeholder="Dodaj zadanie (N)..."
+            className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
+            onClick={handleSubmit}
+            disabled={!draft.title.trim()}
+            title="Dodaj zadanie (Enter)"
+          >
+            <Plus className="w-[18px] h-[18px]" />
+          </button>
+        </div>
+      )}
 
-      {/* Advanced Options */}
-      <section className="todo-create-card todo-create-advanced" style={{ marginTop: 0 }}>
-        <div className="todo-add-advanced">
-          <label style={{ overflow: 'visible' }}>
-            <span>Osoba</span>
-            <TagInput
-              tags={draft.owner ? [draft.owner] : []}
-              suggestions={peopleOptions}
-              onChange={(arr) => setDraft((previous) => ({ ...previous, owner: arr[0] || '' }))}
-              placeholder="Wpisz lub wybierz osobę..."
-              type="person"
-            />
-          </label>
-          <label>
-            <span>Grupa</span>
-            <input
-              list="task-groups-list"
-              value={draft.group}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, group: event.target.value }))
-              }
-              placeholder="np. Sprint 14"
-            />
-          </label>
-          <label>
-            <span>Termin</span>
-            <input
-              type="datetime-local"
-              value={draft.dueDate}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, dueDate: event.target.value }))
-              }
-            />
-          </label>
-          <label>
-            <span>Przypomnienie</span>
-            <input
-              type="datetime-local"
-              value={draft.reminderAt}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, reminderAt: event.target.value }))
-              }
-            />
-          </label>
-          <label>
-            <span>Priorytet</span>
-            <select
-              value={draft.priority}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, priority: event.target.value }))
-              }
-            >
-              {TASK_PRIORITIES.map((priority) => (
-                <option key={priority.id} value={priority.id}>
-                  {priority.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Status</span>
-            <select
-              value={draft.status}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, status: event.target.value }))
-              }
-            >
-              {boardColumns.map((column) => (
-                <option key={column.id} value={column.id}>
-                  {column.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Tagi</span>
-            <div style={{ flex: 1 }}>
+      {/* Form fields — same layout as TaskDetailsPanel */}
+      <div className="todo-detail-form">
+        <div className="todo-detail-group">
+          {/* Termin */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Termin">
+              <Calendar size={18} />
+            </span>
+            <span className="todo-row-label">Termin</span>
+            <div className="todo-detail-row-fill">
+              <Input
+                className="todo-detail-unified-field"
+                type="datetime-local"
+                value={draft.dueDate}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, dueDate: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Przypomnienie */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Przypomnienie">
+              <Bell size={18} />
+            </span>
+            <span className="todo-row-label">Przypomnienie</span>
+            <div className="todo-detail-row-fill">
+              <Input
+                className="todo-detail-unified-field"
+                type="datetime-local"
+                value={draft.reminderAt}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, reminderAt: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Osoba */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Przypisz osobę">
+              <User size={18} />
+            </span>
+            <span className="todo-row-label">Osoba</span>
+            <div className="todo-detail-row-fill">
+              <TagInput
+                tags={draft.owner ? [draft.owner] : []}
+                suggestions={peopleOptions}
+                onChange={(arr) => setDraft((previous) => ({ ...previous, owner: arr[0] || '' }))}
+                placeholder="Przypisz..."
+                type="person"
+              />
+            </div>
+          </div>
+
+          {/* Priorytet */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Priorytet">
+              <Flag size={18} />
+            </span>
+            <span className="todo-row-label">Priorytet</span>
+            <div className="todo-detail-row-fill">
+              <select
+                className="todo-detail-unified-field"
+                value={draft.priority}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, priority: event.target.value }))
+                }
+              >
+                {TASK_PRIORITIES.map((priority) => (
+                  <option key={priority.id} value={priority.id}>
+                    {priority.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Status">
+              <Layers size={18} />
+            </span>
+            <span className="todo-row-label">Status</span>
+            <div className="todo-detail-row-fill">
+              <select
+                className="todo-detail-unified-field"
+                value={draft.status}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, status: event.target.value }))
+                }
+              >
+                {boardColumns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Grupa */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Grupa">
+              <FolderOpen size={18} />
+            </span>
+            <span className="todo-row-label">Grupa</span>
+            <div className="todo-detail-row-fill">
+              <Input
+                className="todo-detail-unified-field"
+                list="task-groups-list"
+                value={draft.group}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, group: event.target.value }))
+                }
+                placeholder="np. Sprint 14"
+              />
+            </div>
+          </div>
+
+          {/* Tagi */}
+          <div className="todo-detail-row field-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Tagi">
+              <Tag size={18} />
+            </span>
+            <span className="todo-row-label">Tagi</span>
+            <div className="todo-detail-row-fill">
               <TagInput
                 tags={(draft.tags || '')
                   .split(',')
@@ -190,31 +249,42 @@ export default function TaskCreateForm({
                 placeholder="Dodaj tag..."
               />
             </div>
-          </label>
-          <label className="todo-inline-check">
-            <input
-              type="checkbox"
-              checked={draft.important}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, important: event.target.checked }))
-              }
-            />
-            <span>Ważne</span>
-          </label>
-        </div>
-        {showCancel && onCancel && (
-          <div className="flex justify-end mt-4">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={onCancel}
-              style={{ fontSize: '13px', padding: '6px 16px' }}
-            >
-              Zamknij
-            </button>
           </div>
-        )}
-      </section>
+
+          {/* Ważne */}
+          <div className="todo-detail-row">
+            <span className="todo-row-icon" aria-hidden="true" title="Ważne">
+              <Star size={18} />
+            </span>
+            <span className="todo-row-label">Ważne</span>
+            <div className="todo-detail-row-fill">
+              <label className="todo-inline-check" style={{ margin: 0, minHeight: 'auto' }}>
+                <input
+                  type="checkbox"
+                  checked={draft.important}
+                  onChange={(event) =>
+                    setDraft((previous) => ({ ...previous, important: event.target.checked }))
+                  }
+                />
+                <span>{draft.important ? 'Tak' : 'Nie'}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showCancel && onCancel && (
+        <div className="flex justify-end mt-4">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={onCancel}
+            style={{ fontSize: '13px', padding: '6px 16px' }}
+          >
+            Zamknij
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -83,7 +83,18 @@ describe('Security & Payload Limits', () => {
   });
 
   // 4. Rate Limiting test
+  // ----------------------------------------------------------------
+  // Issue #0 — rate limit regression test polluted stderr in CI
+  // Date: 2026-04-05
+  // Bug: this test intentionally triggered 429 responses, but the
+  //      expected console.warn + global app error logging were emitted
+  //      to stderr and surfaced in GitHub as false-positive backend errors.
+  // Fix: capture those logs in the test and assert them explicitly.
+  // ----------------------------------------------------------------
   it('POST /auth/login - 429 Too Many Requests after exceeding limit', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     // applyRateLimit("auth-login", 20) means 20 requests allowed per minute
     let any429 = false;
     for (let i = 0; i < 25; i++) {
@@ -98,5 +109,12 @@ describe('Security & Payload Limits', () => {
       }
     }
     expect(any429).toBe(true);
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[RATE LIMIT] unknown exceeded 20 req/min on /auth-login')
+    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'APP ERROR STACK',
+      expect.stringContaining('Zbyt wiele prob. Limit: 20')
+    );
   });
 });

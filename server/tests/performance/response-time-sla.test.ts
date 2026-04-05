@@ -83,17 +83,28 @@ describe('Performance Regression — Response Time SLAs', () => {
     vi.resetModules();
 
     mockAuthService = {
-      getSession: vi.fn().mockResolvedValue({ userId: 'u1', workspaceId: 'ws1' }),
+      getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
       buildSessionPayload: vi
         .fn()
         .mockResolvedValue({ user: { id: 'u1' }, workspace: { id: 'ws1' } }),
     };
     mockWorkspaceService = {
-      getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+      getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }),
       getWorkspaceState: vi.fn().mockResolvedValue({ meetings: [], tasks: [] }),
+      saveWorkspaceState: vi.fn().mockResolvedValue({ meetings: [], tasks: [] }),
+      getWorkspaceVoiceProfiles: vi.fn().mockResolvedValue([]),
+      upsertVoiceProfile: vi.fn().mockResolvedValue({
+        id: 'vp1',
+        speaker_name: 'Test Speaker',
+        created_at: '2026-04-05T00:00:00.000Z',
+        sample_count: 1,
+        threshold: 0.82,
+        isUpdate: false,
+      }),
     };
     mockTranscriptionService = {
-      transcribeLiveChunk: vi.fn().mockResolvedValue({ text: '' }),
+      transcribeLiveChunk: vi.fn().mockResolvedValue('live transcript'),
+      computeEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
     };
 
     const { createApp } = await import('../../app.ts');
@@ -199,10 +210,16 @@ describe('Performance Regression — Response Time SLAs', () => {
   // ───────────────────────────────────────────────────────────────────────────
 
   describe('P2 — Write Operations', () => {
+    // ----------------------------------------------------------------
+    // Issue #0 — performance SLA tests passed despite hidden 500 errors
+    // Date: 2026-04-05
+    // Bug: stale mocks used old service method names (setWorkspaceState,
+    //      createVoiceProfile) and wrong payload shapes, so routes could
+    //      return 500 while the test still passed because it only timed them.
+    // Fix: align mocks with current route contracts and assert success status.
+    // ----------------------------------------------------------------
     test(`PUT /state/workspaces/:id responds within ${SLA.UPDATE_WORKSPACE_STATE}ms (SLA: P2)`, async () => {
-      mockWorkspaceService.setWorkspaceState = vi.fn().mockResolvedValue(undefined);
-
-      const { durationMs } = await measurePerformance(async () => {
+      const { result: status, durationMs } = await measurePerformance(async () => {
         const res = await app.request('/state/workspaces/ws1', {
           method: 'PUT',
           headers: {
@@ -214,6 +231,8 @@ describe('Performance Regression — Response Time SLAs', () => {
         return res.status;
       });
 
+      expect(status).toBe(200);
+      expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledWith('ws1', { meetings: [] });
       assertSla({
         durationMs,
         slaMs: SLA.UPDATE_WORKSPACE_STATE,
@@ -223,21 +242,29 @@ describe('Performance Regression — Response Time SLAs', () => {
     });
 
     test(`POST /voice-profiles responds within ${SLA.CREATE_RECORDING}ms (SLA: P2)`, async () => {
-      mockWorkspaceService.createVoiceProfile = vi.fn().mockResolvedValue({ id: 'vp1' });
-
-      const { durationMs } = await measurePerformance(async () => {
+      const { result: status, durationMs } = await measurePerformance(async () => {
         const res = await app.request('/voice-profiles', {
           method: 'POST',
           headers: {
             Authorization: 'Bearer valid-token',
-            'Content-Type': 'application/json',
+            'Content-Type': 'audio/webm',
             'X-Speaker-Name': 'Test Speaker',
           },
-          body: JSON.stringify({ embedding: [0.1, 0.2, 0.3] }),
+          body: Buffer.alloc(1500, 1),
         });
         return res.status;
       });
 
+      expect(status).toBe(201);
+      expect(mockTranscriptionService.computeEmbedding).toHaveBeenCalledTimes(1);
+      expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Test Speaker',
+          embedding: [0.1, 0.2, 0.3],
+        })
+      );
       assertSla({
         durationMs,
         slaMs: SLA.CREATE_RECORDING,
@@ -253,23 +280,21 @@ describe('Performance Regression — Response Time SLAs', () => {
 
   describe('P3 — AI/ML Operations', () => {
     test(`POST /transcribe/live responds within ${SLA.TRANSCRIBE_LIVE}ms (SLA: P3)`, async () => {
-      const { durationMs } = await measurePerformance(async () => {
+      const { result: payload, durationMs } = await measurePerformance(async () => {
         const res = await app.request('/transcribe/live', {
           method: 'POST',
           headers: {
             Authorization: 'Bearer valid-token',
-            'Content-Type': 'application/json',
+            'Content-Type': 'audio/webm',
           },
-          body: JSON.stringify({
-            recordingId: 'rec1',
-            chunk: 'base64data',
-            index: 1,
-            total: 10,
-          }),
+          body: Buffer.alloc(2048, 1),
         });
-        return res.status;
+        return { status: res.status, body: await res.json() };
       });
 
+      expect(payload.status).toBe(200);
+      expect(payload.body).toEqual({ text: 'live transcript' });
+      expect(mockTranscriptionService.transcribeLiveChunk).toHaveBeenCalledTimes(1);
       assertSla({
         durationMs,
         slaMs: SLA.TRANSCRIBE_LIVE,

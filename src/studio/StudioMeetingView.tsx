@@ -7,7 +7,7 @@ import {
   getCustomTaskPeople,
   getCustomTaskTags,
 } from '../lib/tasks';
-import { Virtuoso } from 'react-virtuoso';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
 import TaskCreateModal from '../tasks/TaskCreateModal';
@@ -46,7 +46,7 @@ function SpeakerDropdown({
   onRename,
   onClose,
 }) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -351,7 +351,7 @@ function formatEmptyTranscriptDiagnostics(recording) {
     recording?.transcriptOutcome === 'empty' ||
     (recording?.pipelineStatus === 'done' && transcript.length === 0);
   if (!recording || !treatedAsEmpty) return '';
-  const details = [];
+  const details: string[] = [];
   const diagnostics = recording.transcriptionDiagnostics || {};
   const audioQuality = recording.audioQuality || null;
 
@@ -401,7 +401,7 @@ function formatEmptyTranscriptDiagnostics(recording) {
 
 function formatAudioQualityPanel(audioQuality) {
   if (!audioQuality || typeof audioQuality !== 'object') return '';
-  const parts = [];
+  const parts: string[] = [];
 
   if (audioQuality.qualityLabel) {
     parts.push(`Jakosc audio: ${audioQuality.qualityLabel}`);
@@ -622,13 +622,23 @@ export default function StudioMeetingView({
   setActiveTab,
   silenceCountdown,
   resetSilenceTimer,
+  boardColumns: boardColumnsProp,
 }) {
+  const FALLBACK_BOARD_COLUMNS = [
+    { id: 'todo', label: 'Do zrobienia' },
+    { id: 'in_progress', label: 'W toku' },
+    { id: 'waiting', label: 'Oczekuje' },
+    { id: 'done', label: 'Zakończone' },
+  ];
+  const boardColumns =
+    Array.isArray(boardColumnsProp) && boardColumnsProp.length > 0
+      ? boardColumnsProp
+      : FALLBACK_BOARD_COLUMNS;
+
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState('');
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState('');
-  const [debriefCopyMessage, setDebriefCopyMessage] = useState('');
-
   const [, setLocalStoreTick] = useState(0);
 
   const [localGuests, setLocalGuests] = useState<string[]>([]);
@@ -656,7 +666,7 @@ export default function StudioMeetingView({
     normalizedWorkspaceMessage.includes('hostowany preview jest nieaktualny wzgledem backendu');
 
   const allParticipants = useMemo(() => {
-    const pSet = new Set();
+    const pSet = new Set<string>();
 
     // Dodaj uczestników z istniejących spotkań (guests)
     (userMeetings || []).forEach((m) => {
@@ -696,7 +706,7 @@ export default function StudioMeetingView({
   }, [userMeetings, peopleProfiles, currentWorkspaceMembers]);
 
   const allMeetingTags = useMemo(() => {
-    const tSet = new Set();
+    const tSet = new Set<string>();
 
     // Dodaj tagi z istniejących spotkań
     (userMeetings || []).forEach((m) => {
@@ -914,9 +924,9 @@ export default function StudioMeetingView({
 
   const [transcriptSearch, setTranscriptSearch] = useState('');
   // Speaker picker dropdown — tracks which segment's dropdown is open
-  const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState(null);
+  const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState<string | null>(null);
   // Rename flow (triggered from within the dropdown)
-  const [renamingSpeakerId, setRenamingSpeakerId] = useState(null);
+  const [renamingSpeakerId, setRenamingSpeakerId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
@@ -927,12 +937,12 @@ export default function StudioMeetingView({
   } | null>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
-  const [rediarizeMsg, setRediarizeMsg] = useState(null);
+  const [rediarizeMsg, setRediarizeMsg] = useState<string | null>(null);
 
   const autoTaskSyncKeyRef = useRef('');
 
-  const audioRef = useRef(null);
-  const virtuosoRef = useRef(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const autoLearnSpeakerProfiles = Boolean(currentUser?.autoLearnSpeakerProfiles);
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -964,14 +974,14 @@ export default function StudioMeetingView({
   const autoTaskDrafts = useMemo(() => {
     const analysisTasks = safeArray(studioAnalysis?.tasks)
       .map(normalizeAnalysisTask)
-      .filter(Boolean);
+      .filter((x): x is NonNullable<typeof x> => x !== null);
     if (analysisTasks.length) {
       return analysisTasks;
     }
 
     return safeArray(studioAnalysis?.actionItems)
       .map((item) => normalizeAnalysisTask({ title: item, sourceQuote: item }))
-      .filter(Boolean);
+      .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
 
   const followUps = useMemo(
@@ -990,7 +1000,6 @@ export default function StudioMeetingView({
     () => safeArray(studioAnalysis?.tensions).slice(0, 3),
     [studioAnalysis?.tensions]
   );
-  const aiDebrief = selectedMeeting?.aiDebrief || displayRecording?.aiDebrief || null;
   const feedbackTranscript = useMemo(() => {
     if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
       return displayRecording.transcript;
@@ -1042,33 +1051,6 @@ export default function StudioMeetingView({
     (!safeArray(studioAnalysis?.decisions).length &&
       !safeArray(studioAnalysis?.tasks).length &&
       !safeArray(studioAnalysis?.participantInsights).length);
-  const copyAIDebrief = useCallback(async () => {
-    if (!aiDebrief) {
-      return;
-    }
-
-    const lines = [
-      `Debrief AI: ${selectedMeeting?.title || 'Spotkanie'}`,
-      '',
-      aiDebrief.summary,
-      '',
-      `Decyzje: ${(aiDebrief.decisions || []).join(' | ') || 'Brak'}`,
-      `Ryzyka: ${(aiDebrief.risks || []).join(' | ') || 'Brak'}`,
-      `Następne kroki: ${(aiDebrief.followUps || []).join(' | ') || 'Brak'}`,
-    ];
-
-    const text = lines.join('\n');
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        setDebriefCopyMessage('Skopiowano debrief do schowka.');
-      } else {
-        setDebriefCopyMessage('Schowek nie jest dostępny w tej przeglądarce.');
-      }
-    } catch (error) {
-      setDebriefCopyMessage(String(error?.message || 'Nie udało się skopiować debriefu.'));
-    }
-  }, [aiDebrief, selectedMeeting?.title]);
   const meetingTaskEntries = useMemo(() => {
     const meetingId = String(selectedMeeting?.id || '').trim();
     const recordingId = String(selectedRecording?.id || '').trim();
@@ -1115,7 +1097,7 @@ export default function StudioMeetingView({
     }
   }
   const summaryBullets = useMemo(() => {
-    const bullets = [];
+    const bullets: { icon: string; label: string; value: string }[] = [];
 
     // Note: Summary was moved to a static <li> to allow editing inside its native bullet block.
 
@@ -1399,7 +1381,7 @@ export default function StudioMeetingView({
         setRediarizeMsg(`Wykryto ${result.speakerCount} mówcę/mówców.`);
       }
     } catch (err) {
-      setRediarizeMsg(`Błąd: ${err.message}`);
+      setRediarizeMsg(`Błąd: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setRediarizing(false);
     }
@@ -1446,29 +1428,30 @@ export default function StudioMeetingView({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
+    const el: HTMLAudioElement = audio;
     function onTimeUpdate() {
-      setCurrentTime(audio.currentTime || 0);
+      setCurrentTime(el.currentTime || 0);
     }
     function onDuration() {
-      setAudioDuration(isFinite(audio.duration) ? audio.duration : 0);
+      setAudioDuration(isFinite(el.duration) ? el.duration : 0);
     }
     function onPlayPause() {
-      setIsPlaying(!audio.paused);
+      setIsPlaying(!el.paused);
     }
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('durationchange', onDuration);
-    audio.addEventListener('loadedmetadata', onDuration);
-    audio.addEventListener('play', onPlayPause);
-    audio.addEventListener('pause', onPlayPause);
-    audio.addEventListener('ended', onPlayPause);
-    if (isFinite(audio.duration) && audio.duration > 0) setAudioDuration(audio.duration);
+    el.addEventListener('timeupdate', onTimeUpdate);
+    el.addEventListener('durationchange', onDuration);
+    el.addEventListener('loadedmetadata', onDuration);
+    el.addEventListener('play', onPlayPause);
+    el.addEventListener('pause', onPlayPause);
+    el.addEventListener('ended', onPlayPause);
+    if (isFinite(el.duration) && el.duration > 0) setAudioDuration(el.duration);
     return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('durationchange', onDuration);
-      audio.removeEventListener('loadedmetadata', onDuration);
-      audio.removeEventListener('play', onPlayPause);
-      audio.removeEventListener('pause', onPlayPause);
-      audio.removeEventListener('ended', onPlayPause);
+      el.removeEventListener('timeupdate', onTimeUpdate);
+      el.removeEventListener('durationchange', onDuration);
+      el.removeEventListener('loadedmetadata', onDuration);
+      el.removeEventListener('play', onPlayPause);
+      el.removeEventListener('pause', onPlayPause);
+      el.removeEventListener('ended', onPlayPause);
     };
   }, [selectedRecordingAudioUrl]);
 
@@ -1506,78 +1489,103 @@ export default function StudioMeetingView({
   const scrubberProgress =
     scrubberMax > 0 ? Math.min(100, Math.max(0, (scrubberValue / scrubberMax) * 100)) : 0;
 
+  const briefModal = briefOpen ? (
+    <StudioBriefModal
+      currentWorkspacePermissions={currentWorkspacePermissions}
+      isDetachedMeetingDraft={isDetachedMeetingDraft}
+      meetingDraft={meetingDraft}
+      setMeetingDraft={setMeetingDraft}
+      activeStoredMeetingDraft={activeStoredMeetingDraft}
+      clearMeetingDraft={clearMeetingDraft}
+      saveMeeting={saveMeeting}
+      startNewMeetingDraft={startNewMeetingDraft}
+      workspaceMessage={workspaceMessage}
+      selectedMeeting={selectedMeeting}
+      peopleOptions={allParticipants}
+      tagOptions={allMeetingTags}
+      userMeetings={userMeetings}
+      selectMeeting={selectMeeting}
+      selectedRecordingId={selectedRecordingId}
+      setSelectedRecordingId={setSelectedRecordingId}
+      onClose={() => setBriefOpen(false)}
+    />
+  ) : null;
+
   if (!selectedMeeting && !isRecording && !isQueued && !displayRecording && !selectedRecording) {
     return (
-      <section className="hero-panel empty-workspace">
-        <div className="empty-workspace-inner">
-          <div className="eyebrow">Studio</div>
-          <h2>Brak aktywnego spotkania</h2>
-          <p>
-            Przejdź do zakładki <strong>Nagrania</strong>, aby wybrać nagranie do analizy lub
-            uruchom nagranie ad hoc.
-          </p>
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => startRecording({ adHoc: true })}
-              disabled={!currentWorkspacePermissions?.canRecordAudio}
-            >
-              ⬤ Nagraj ad hoc
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => {
-                startNewMeetingDraft();
-                setBriefOpen(true);
-              }}
-              disabled={!currentWorkspacePermissions?.canEditWorkspace}
-            >
-              Przygotuj brief
-            </button>
-          </div>
-          {recordingMessage && (
-            <div
-              className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
-            >
-              <div style={{ flex: 1 }}>
-                <span>{recordingMessage}</span>
-                {pipelineProgressPercent > 0 &&
-                  pipelineProgressPercent < 100 &&
-                  analysisStatus !== 'error' && (
-                    <div
-                      style={{
-                        height: 4,
-                        background: 'rgba(255,255,255,0.1)',
-                        marginTop: 8,
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${pipelineProgressPercent}%`,
-                          background: 'var(--accent, #3b82f6)',
-                          transition: 'width 0.3s ease',
-                        }}
-                      />
-                    </div>
-                  )}
-              </div>
+      <>
+        <section className="hero-panel empty-workspace">
+          <div className="empty-workspace-inner">
+            <div className="eyebrow">Studio</div>
+            <h2>Brak aktywnego spotkania</h2>
+            <p>
+              Przejdź do zakładki <strong>Nagrania</strong>, aby wybrać nagranie do analizy lub
+              uruchom nagranie ad hoc.
+            </p>
+            <div className="button-row">
               <button
                 type="button"
-                className="ff-status-dismiss-btn"
-                onClick={() => setRecordingMessage('')}
-                aria-label="Zamknij powiadomienie"
+                className="primary-button"
+                onClick={() => startRecording({ adHoc: true })}
+                disabled={!currentWorkspacePermissions?.canRecordAudio}
               >
-                ×
+                ⬤ Nagraj ad hoc
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => {
+                  startNewMeetingDraft();
+                  setBriefOpen(true);
+                }}
+                disabled={!currentWorkspacePermissions?.canEditWorkspace}
+              >
+                Przygotuj brief
               </button>
             </div>
-          )}
-        </div>
-      </section>
+            {recordingMessage && (
+              <div
+                className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+              >
+                <div style={{ flex: 1 }}>
+                  <span>{recordingMessage}</span>
+                  {pipelineProgressPercent > 0 &&
+                    pipelineProgressPercent < 100 &&
+                    analysisStatus !== 'error' && (
+                      <div
+                        style={{
+                          height: 4,
+                          background: 'rgba(255,255,255,0.1)',
+                          marginTop: 8,
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${pipelineProgressPercent}%`,
+                            background: 'var(--accent, #3b82f6)',
+                            transition: 'width 0.3s ease',
+                          }}
+                        />
+                      </div>
+                    )}
+                </div>
+                <button
+                  type="button"
+                  className="ff-status-dismiss-btn"
+                  onClick={() => setRecordingMessage('')}
+                  aria-label="Zamknij powiadomienie"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+        {briefModal}
+      </>
     );
   }
 
@@ -2038,161 +2046,6 @@ export default function StudioMeetingView({
                         </ul>
                       ) : null}
                     </div>
-
-                    {aiDebrief ? (
-                      <section className="summary-card summary-card-spaced">
-                        <div className="summary-card-head">
-                          <h3>Debrief AI</h3>
-                          <div className="summary-card-actions">
-                            <span>{aiDebrief.followUps?.length || 0}</span>
-                            <button type="button" className="ghost-button" onClick={copyAIDebrief}>
-                              Kopiuj
-                            </button>
-                            {exportMeetingPdfFile ? (
-                              <button
-                                type="button"
-                                className="ghost-button"
-                                onClick={exportMeetingPdfFile}
-                              >
-                                PDF
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className="analysis-summary-text summary-copy-spaced">
-                          {aiDebrief.summary}
-                        </div>
-                        <div className="summary-grid summary-grid-tight">
-                          <section className="summary-card summary-card-flush">
-                            <div className="summary-card-head">
-                              <h3>Decyzje</h3>
-                              <span>{aiDebrief.decisions?.length || 0}</span>
-                            </div>
-                            {aiDebrief.decisions?.length ? (
-                              <ul className="analysis-list summary-list-tight">
-                                {aiDebrief.decisions.map((item, index) => (
-                                  <li key={`debrief-decision-${index}`}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="soft-copy">Brak jednoznacznych decyzji.</p>
-                            )}
-                          </section>
-                          <section className="summary-card summary-card-flush">
-                            <div className="summary-card-head">
-                              <h3>Ryzyka</h3>
-                              <span>{aiDebrief.risks?.length || 0}</span>
-                            </div>
-                            {aiDebrief.risks?.length ? (
-                              <ul className="analysis-list summary-list-tight">
-                                {aiDebrief.risks.map((item, index) => (
-                                  <li key={`debrief-risk-${index}`}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="soft-copy">Brak ryzyk do odnotowania.</p>
-                            )}
-                          </section>
-                          <section className="summary-card summary-card-flush">
-                            <div className="summary-card-head">
-                              <h3>Następne kroki</h3>
-                              <span>{aiDebrief.followUps?.length || 0}</span>
-                            </div>
-                            {aiDebrief.followUps?.length ? (
-                              <ul className="analysis-list summary-list-tight">
-                                {aiDebrief.followUps.map((item, index) => (
-                                  <li key={`debrief-followup-${index}`}>{item}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="soft-copy">Brak dodatkowych follow-upów.</p>
-                            )}
-                          </section>
-                        </div>
-                        {debriefCopyMessage ? (
-                          <div className="inline-alert info summary-alert-spaced">
-                            {debriefCopyMessage}
-                          </div>
-                        ) : null}
-
-                        {/* Smart Chapters */}
-                        {aiDebrief.chapters?.length ? (
-                          <section
-                            className="summary-card summary-card-flush"
-                            style={{ marginTop: 12 }}
-                          >
-                            <div className="summary-card-head">
-                              <h3>Rozdziały spotkania</h3>
-                              <span>{aiDebrief.chapters.length}</span>
-                            </div>
-                            <ul className="analysis-list summary-list-tight">
-                              {aiDebrief.chapters.map((ch: any, i: number) => (
-                                <li key={`chapter-${i}`}>
-                                  <strong>
-                                    {ch.startTime}–{ch.endTime}
-                                  </strong>{' '}
-                                  <span className="chapter-title">{ch.title}</span>
-                                  {ch.summary ? (
-                                    <p
-                                      className="soft-copy"
-                                      style={{ margin: '2px 0 0', fontSize: '0.85em' }}
-                                    >
-                                      {ch.summary}
-                                    </p>
-                                  ) : null}
-                                </li>
-                              ))}
-                            </ul>
-                          </section>
-                        ) : null}
-
-                        {/* Speaker Analytics */}
-                        {aiDebrief.speakerAnalytics?.length ? (
-                          <section
-                            className="summary-card summary-card-flush"
-                            style={{ marginTop: 12 }}
-                          >
-                            <div className="summary-card-head">
-                              <h3>Statystyki mówców</h3>
-                              <span>{aiDebrief.speakerAnalytics.length}</span>
-                            </div>
-                            <div className="speaker-analytics-grid">
-                              {aiDebrief.speakerAnalytics.map((sa: any, i: number) => (
-                                <div key={`sa-${i}`} className="speaker-analytics-card">
-                                  <div className="speaker-analytics-name">{sa.speaker}</div>
-                                  <div className="speaker-analytics-stats">
-                                    <span title="Czas mówienia">{sa.talkTimePercent ?? '—'}%</span>
-                                    <span title="Słów/min">{sa.wordsPerMinute ?? '—'} s/min</span>
-                                    <span title="Pytania">{sa.questionsAsked ?? 0} pytań</span>
-                                  </div>
-                                  {sa.fillerWords?.count > 0 ? (
-                                    <div className="soft-copy" style={{ fontSize: '0.82em' }}>
-                                      Wypełniacze: {sa.fillerWords.count}× (
-                                      {sa.fillerWords.examples?.join(', ')})
-                                    </div>
-                                  ) : null}
-                                  <div className="speaker-analytics-badges">
-                                    <span
-                                      className={`badge badge-sentiment badge-${sa.sentiment || 'neutral'}`}
-                                    >
-                                      {sa.sentiment === 'positive'
-                                        ? '😊'
-                                        : sa.sentiment === 'negative'
-                                          ? '😐'
-                                          : '😶'}{' '}
-                                      {sa.sentiment || 'neutral'}
-                                    </span>
-                                    <span className="badge badge-engagement">
-                                      {sa.engagementLevel || 'medium'}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        ) : null}
-                      </section>
-                    ) : null}
 
                     <div className="summary-grid">
                       <section className="summary-card summary-card-overflow-visible">
@@ -3063,12 +2916,7 @@ export default function StudioMeetingView({
                   <TaskCreateModal
                     isOpen={isAddingTask}
                     onClose={() => setIsAddingTask(false)}
-                    boardColumns={[
-                      { id: 'todo', label: 'Do zrobienia' },
-                      { id: 'in_progress', label: 'W toku' },
-                      { id: 'waiting', label: 'Oczekuje' },
-                      { id: 'done', label: 'Zakończone' },
-                    ]} // Minimalist fallback for status options
+                    boardColumns={boardColumns}
                     peopleOptions={allParticipants as string[]}
                     tagOptions={allMeetingTags as string[]}
                     initialDraft={taskDraft}
@@ -4005,27 +3853,7 @@ export default function StudioMeetingView({
         </Modal>
       )}
 
-      {briefOpen && (
-        <StudioBriefModal
-          currentWorkspacePermissions={currentWorkspacePermissions}
-          isDetachedMeetingDraft={isDetachedMeetingDraft}
-          meetingDraft={meetingDraft}
-          setMeetingDraft={setMeetingDraft}
-          activeStoredMeetingDraft={activeStoredMeetingDraft}
-          clearMeetingDraft={clearMeetingDraft}
-          saveMeeting={saveMeeting}
-          startNewMeetingDraft={startNewMeetingDraft}
-          workspaceMessage={workspaceMessage}
-          selectedMeeting={selectedMeeting}
-          peopleOptions={allParticipants}
-          tagOptions={allMeetingTags}
-          userMeetings={userMeetings}
-          selectMeeting={selectMeeting}
-          selectedRecordingId={selectedRecordingId}
-          setSelectedRecordingId={setSelectedRecordingId}
-          onClose={() => setBriefOpen(false)}
-        />
-      )}
+      {briefModal}
     </>
   );
 }
@@ -4089,4 +3917,5 @@ StudioMeetingView.propTypes = {
   updateTranscriptSegment: PropTypes.func,
   retryStoredRecording: PropTypes.func,
   setActiveTab: PropTypes.func,
+  boardColumns: PropTypes.array,
 };

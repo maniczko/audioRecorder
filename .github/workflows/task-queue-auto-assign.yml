@@ -1,0 +1,37 @@
+name: Task Queue Auto Assign
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  assign-task-owners:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Assign owners to new TASK_QUEUE items
+        run: node scripts/assign-task-agents.mjs
+
+      - name: Commit TASK_QUEUE.md update
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git diff --quiet TASK_QUEUE.md && echo "No changes" && exit 0
+          git add TASK_QUEUE.md
+          git commit --no-verify -m "chore: auto-assign task queue owners"
+          GIT_TOKEN="${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}"
+          git remote set-url origin https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }}.git
+          git push origin ${{ github.ref_name || 'main' }} --no-verify

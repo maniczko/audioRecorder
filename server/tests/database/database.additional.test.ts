@@ -26,9 +26,9 @@ describe('Database - Additional Coverage Tests', () => {
     await db.init();
   });
 
-  afterAll(() => {
-    if (db && db.worker) {
-      db.worker.terminate();
+  afterAll(async () => {
+    if (db) {
+      await db.shutdown();
     }
     if (fs.existsSync(testUploadDir)) {
       try {

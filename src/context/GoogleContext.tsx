@@ -4,7 +4,8 @@ import { useWorkspaceSelectors } from '../store/workspaceStore';
 import { useAuthStore } from '../store/authStore';
 import useMeetings from '../hooks/useMeetings';
 
-const GoogleContext = createContext(null);
+type GoogleContextValue = ReturnType<typeof useGoogleIntegrations>;
+const GoogleContext = createContext<GoogleContextValue | null>(null);
 
 export function GoogleProvider({ calendarMonth, children }) {
   const workspace = useWorkspaceSelectors();

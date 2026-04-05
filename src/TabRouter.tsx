@@ -457,6 +457,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
             defaultToNewStudio={ui.tabHistory.length === 1}
             tagOptions={meetings.taskTags}
+            boardColumns={meetings.taskColumns}
           />
         );
     }

@@ -2,7 +2,8 @@ import { createContext, useContext } from 'react';
 import useRecorder from '../hooks/useRecorder';
 import useMeetings from '../hooks/useMeetings';
 
-const RecorderContext = createContext(null);
+type RecorderContextValue = ReturnType<typeof useRecorder>;
+const RecorderContext = createContext<RecorderContextValue | null>(null);
 
 export function RecorderProvider({ children }) {
   const meetings = useMeetings();

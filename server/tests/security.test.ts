@@ -1,14 +1,27 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import bootstrap from '../index.ts';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import http from 'node:http';
 
 describe('API Security Regression Tests', () => {
   let server: any, authService: any;
   let port: number;
   let testUserToken: string;
+  const originalEnv = {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    HF_TOKEN: process.env.HF_TOKEN,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
 
   beforeAll(async () => {
+    process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY || 'test-openai-key';
+    process.env.HF_TOKEN = originalEnv.HF_TOKEN || 'test-hf-token';
+    process.env.SUPABASE_URL = originalEnv.SUPABASE_URL || 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY =
+      originalEnv.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key';
+    vi.resetModules();
+
     // Bootstrap services and server
+    const { default: bootstrap } = await import('../index.ts');
     const resources: any = await bootstrap();
     server = resources.server;
     authService = resources.authService;
@@ -29,13 +42,17 @@ describe('API Security Regression Tests', () => {
       workspaceName: 'Sec Space',
     });
     testUserToken = result.token;
-  });
+  }, 30000);
 
   afterAll(async () => {
     // Clean up
     if (server) {
       await new Promise((resolve) => server.close(resolve));
     }
+    process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY;
+    process.env.HF_TOKEN = originalEnv.HF_TOKEN;
+    process.env.SUPABASE_URL = originalEnv.SUPABASE_URL;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = originalEnv.SUPABASE_SERVICE_ROLE_KEY;
   });
 
   // Helper to make native HTTP requests

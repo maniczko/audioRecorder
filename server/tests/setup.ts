@@ -6,6 +6,7 @@ import { EventEmitter } from 'events';
 // Mock Supabase credentials for tests
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_KEY = 'test-key';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 
 // Global state for controlling fs mocks
 global.__TEST_FS_STATE__ = {
@@ -41,6 +42,7 @@ const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
     (filePath.endsWith('.sql') ||
       filePath.endsWith('.sqlite') ||
       filePath.endsWith('.db') ||
+      filePath.endsWith('.py') ||
       filePath.endsWith('Dockerfile') ||
       filePath.endsWith('railway.toml') ||
       filePath.endsWith('nixpacks.toml'))

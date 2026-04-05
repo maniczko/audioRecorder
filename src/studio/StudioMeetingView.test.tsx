@@ -8,7 +8,6 @@ const apiRequestMock = vi.hoisted(() => vi.fn());
 
 // Mock dependencies that we don't need to test for basic rendering
 vi.mock('./RecorderPanel', () => ({ default: () => <div data-testid="recorder-panel" /> }));
-vi.mock('./StudioSidebar', () => ({ default: () => <div data-testid="studio-sidebar" /> }));
 vi.mock('./AiTaskSuggestionsPanel', () => ({
   default: () => <div data-testid="ai-task-suggestions" />,
 }));

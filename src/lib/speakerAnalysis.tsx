@@ -36,18 +36,33 @@ const FILLER_WORDS_PL = new Set([
  * @param {Object} displaySpeakerNames  map speakerId → human name
  * @returns {Array<SpeakerStats>}
  */
-export function analyzeSpeakingStyle(transcript, displaySpeakerNames = {}) {
+interface SpeakerStat {
+  speakerId: string;
+  speakerName: string;
+  totalWords: number;
+  speakingSeconds: number;
+  wpm: number;
+  turnCount: number;
+  fillerCount: number;
+  fillerRate: number;
+  avgTurnSeconds: number;
+}
+
+export function analyzeSpeakingStyle(
+  transcript: any,
+  displaySpeakerNames: Record<string, string> = {}
+): SpeakerStat[] {
   if (!Array.isArray(transcript) || !transcript.length) return [];
 
   // Group segments by speaker
-  const bySpeaker = new Map();
+  const bySpeaker = new Map<string, any[]>();
   for (const seg of transcript) {
     const sid = String(seg.speakerId ?? 'unknown');
     if (!bySpeaker.has(sid)) bySpeaker.set(sid, []);
-    bySpeaker.get(sid).push(seg);
+    bySpeaker.get(sid)!.push(seg);
   }
 
-  const results = [];
+  const results: SpeakerStat[] = [];
 
   for (const [speakerId, segs] of bySpeaker) {
     // Total word count

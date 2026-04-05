@@ -5,11 +5,17 @@ import TagBadge, { getTagColor } from './TagBadge';
 import { addCustomTaskTag, addCustomTaskPerson } from '../lib/tasks';
 
 export default function TagInput({
-  tags = [],
-  suggestions = [],
+  tags = [] as string[],
+  suggestions = [] as string[],
   onChange,
   placeholder = 'Dodaj tag...',
   type = 'tag', // 'tag' | 'person'
+}: {
+  tags?: string[];
+  suggestions?: string[];
+  onChange?: (tags: string[]) => void;
+  placeholder?: string;
+  type?: string;
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);

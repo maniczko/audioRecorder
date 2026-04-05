@@ -18,17 +18,6 @@ vi.mock('./studio/StudioMeetingView', () => ({
   ),
 }));
 
-vi.mock('./studio/StudioSidebar', () => ({
-  default: ({ onClose, meetingDraft }) => (
-    <div data-testid="studio-sidebar">
-      <button onClick={onClose} data-testid="close-sidebar">
-        Close Sidebar
-      </button>
-      <div data-testid="sidebar-content">Sidebar Content</div>
-    </div>
-  ),
-}));
-
 vi.mock('./ui/LayoutPrimitives', () => ({
   PageShell: ({ children, className }) => (
     <div data-testid="page-shell" className={className}>
@@ -134,7 +123,6 @@ describe('StudioTab', () => {
       </ToastProvider>
     );
 
-    expect(screen.queryByTestId('studio-sidebar')).not.toBeInTheDocument();
     expect(screen.getByTestId('brief-open-status')).toHaveTextContent('brief-closed');
   });
 
@@ -149,12 +137,11 @@ describe('StudioTab', () => {
     fireEvent.click(toggleButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
       expect(screen.getByTestId('brief-open-status')).toHaveTextContent('brief-open');
     });
   });
 
-  it('closes brief panel when sidebar close is clicked', async () => {
+  it('closes brief panel when toggle is clicked again', async () => {
     render(
       <ToastProvider>
         <StudioTab {...defaultProps} />
@@ -166,15 +153,14 @@ describe('StudioTab', () => {
     fireEvent.click(toggleButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
+      expect(screen.getByTestId('brief-open-status')).toHaveTextContent('brief-open');
     });
 
     // Close brief
-    const closeSidebarButton = screen.getByTestId('close-sidebar');
-    fireEvent.click(closeSidebarButton);
+    fireEvent.click(toggleButton);
 
     await waitFor(() => {
-      expect(screen.queryByTestId('studio-sidebar')).not.toBeInTheDocument();
+      expect(screen.getByTestId('brief-open-status')).toHaveTextContent('brief-closed');
     });
   });
 
@@ -240,22 +226,14 @@ describe('StudioTab', () => {
     expect(startNewMeetingDraftMock).toHaveBeenCalledTimes(1);
   });
 
-  it('passes people profiles to sidebar', async () => {
+  it('passes briefOpen state to meeting view', () => {
     render(
       <ToastProvider>
         <StudioTab {...defaultProps} />
       </ToastProvider>
     );
 
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
-
-    // Sidebar should receive peopleProfiles as options
-    expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('brief-open-status')).toHaveTextContent('brief-closed');
   });
 
   it('extracts unique tags from user meetings', () => {
@@ -290,28 +268,7 @@ describe('StudioTab', () => {
     expect(screen.getByTestId('studio-meeting-view')).toBeInTheDocument();
   });
 
-  it('applies workspace-layout class when brief is open', async () => {
-    const { container } = render(
-      <ToastProvider>
-        <StudioTab {...defaultProps} />
-      </ToastProvider>
-    );
-
-    // Initially should have studio-layout
-    let splitPane = screen.getByTestId('split-pane');
-    expect(splitPane).toHaveClass('studio-layout');
-
-    // Toggle brief open
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      splitPane = screen.getByTestId('split-pane');
-      expect(splitPane).toHaveClass('workspace-layout');
-    });
-  });
-
-  it('applies studio-layout class when brief is closed', () => {
+  it('always uses studio-layout class', async () => {
     render(
       <ToastProvider>
         <StudioTab {...defaultProps} />
@@ -320,10 +277,28 @@ describe('StudioTab', () => {
 
     const splitPane = screen.getByTestId('split-pane');
     expect(splitPane).toHaveClass('studio-layout');
-    expect(splitPane).not.toHaveClass('workspace-layout');
+
+    // Toggle brief open — class should stay studio-layout
+    const toggleButton = screen.getByTestId('toggle-brief');
+    fireEvent.click(toggleButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('split-pane')).toHaveClass('studio-layout');
+    });
   });
 
-  it('passes all meeting draft props to sidebar', async () => {
+  it('always applies studio-layout class', () => {
+    render(
+      <ToastProvider>
+        <StudioTab {...defaultProps} />
+      </ToastProvider>
+    );
+
+    const splitPane = screen.getByTestId('split-pane');
+    expect(splitPane).toHaveClass('studio-layout');
+  });
+
+  it('passes props to StudioMeetingView', () => {
     const customMeetingDraft = {
       id: 'custom_1',
       title: 'Custom Draft',
@@ -336,63 +311,9 @@ describe('StudioTab', () => {
       </ToastProvider>
     );
 
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
-  });
-
-  it('passes setMeetingDraft to sidebar', async () => {
-    const setMeetingDraftMock = vi.fn();
-
-    render(
-      <ToastProvider>
-        <StudioTab {...defaultProps} setMeetingDraft={setMeetingDraftMock} />
-      </ToastProvider>
+    expect(screen.getByTestId('studio-meeting-view-props')).toHaveTextContent(
+      '{"hasMeetingDraft":true}'
     );
-
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
-  });
-
-  it('passes clearMeetingDraft to sidebar', async () => {
-    const clearMeetingDraftMock = vi.fn();
-
-    render(
-      <ToastProvider>
-        <StudioTab {...defaultProps} clearMeetingDraft={clearMeetingDraftMock} />
-      </ToastProvider>
-    );
-
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
-  });
-
-  it('passes saveMeeting to sidebar', async () => {
-    const saveMeetingMock = vi.fn();
-
-    render(
-      <ToastProvider>
-        <StudioTab {...defaultProps} saveMeeting={saveMeetingMock} />
-      </ToastProvider>
-    );
-
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
   });
 
   it('handles permission restrictions', () => {
@@ -412,7 +333,7 @@ describe('StudioTab', () => {
     expect(screen.getByTestId('studio-meeting-view')).toBeInTheDocument();
   });
 
-  it('passes workspaceMessage to sidebar', async () => {
+  it('passes workspaceMessage to meeting view', () => {
     const workspaceMessage = 'Workspace is in read-only mode';
 
     render(
@@ -421,12 +342,7 @@ describe('StudioTab', () => {
       </ToastProvider>
     );
 
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('studio-sidebar')).toBeInTheDocument();
-    });
+    expect(screen.getByTestId('studio-meeting-view')).toBeInTheDocument();
   });
 
   it('handles null meeting when selected meeting is not available', () => {
@@ -493,27 +409,16 @@ describe('StudioTab', () => {
     expect(screen.getByTestId('studio-meeting-view')).toBeInTheDocument();
   });
 
-  it('applies correct CSS classes to main element', async () => {
+  it('applies correct CSS class to main element', () => {
     const { container } = render(
       <ToastProvider>
         <StudioTab {...defaultProps} />
       </ToastProvider>
     );
 
-    // Find main element with data-testid or class
-    let mainElement = container.querySelector('main.studio-tab-main');
+    const mainElement = container.querySelector('main.studio-tab-main');
     expect(mainElement).toBeInTheDocument();
     expect(mainElement).toHaveClass('studio-tab-main');
-    expect(mainElement).not.toHaveClass('workspace-main');
-
-    // Open brief and check class update
-    const toggleButton = screen.getByTestId('toggle-brief');
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      mainElement = container.querySelector('main.studio-tab-main.workspace-main');
-      expect(mainElement).toHaveClass('workspace-main');
-    });
   });
 
   it('handles missing peopleProfiles prop with default empty array', () => {

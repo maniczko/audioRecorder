@@ -16,9 +16,9 @@ describe('Database (Async Worker SQLite)', () => {
     await db.init();
   });
 
-  afterAll(() => {
-    if (db && db.worker) {
-      db.worker.terminate();
+  afterAll(async () => {
+    if (db) {
+      await db.shutdown();
     }
     if (fs.existsSync(testUploadDir)) {
       try {
@@ -53,7 +53,7 @@ describe('Database (Async Worker SQLite)', () => {
     await oldDb._query('INSERT INTO test_deploy (msg) VALUES (?)', ['Persisted Data!']);
 
     // 2. Symulujemy DEPLOY (zamknięcie i ubicie bazy)
-    oldDb.worker.terminate();
+    await oldDb.shutdown();
 
     // 3. Wstajemy po deployu podpinając się pod ten sam dysk
     const newDb = initDatabase({ dbPath, uploadDir: testUploadDir });
@@ -63,7 +63,7 @@ describe('Database (Async Worker SQLite)', () => {
     const result = await newDb._get('SELECT * FROM test_deploy LIMIT 1');
     expect(result.msg).toBe('Persisted Data!');
 
-    newDb.worker.terminate();
+    await newDb.shutdown();
   });
 
   test('should persist pipeline metadata on successful transcription results', async () => {

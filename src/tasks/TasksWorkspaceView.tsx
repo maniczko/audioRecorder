@@ -1,8 +1,7 @@
 import { Suspense, lazy, memo, useState } from 'react';
 import { Search, Plus, Settings } from 'lucide-react';
-import { TASK_PRIORITIES } from '../lib/tasks';
+import TaskCreateForm from './TaskCreateForm';
 import TaskScheduleView from './TaskScheduleView';
-import TagInput from '../shared/TagInput';
 import { EmptyState } from '../components/Skeleton';
 import './TasksWorkspaceViewStyles.css';
 
@@ -274,109 +273,19 @@ function TasksWorkspaceView({
 
         {/* Advanced create options - shown below toolbar when expanded */}
         {showAdvancedCreate && !isCharts && !isSchedule && !isSummary ? (
-          <section className="todo-create-card todo-create-advanced">
-            <div className="todo-add-advanced">
-              <label style={{ overflow: 'visible' }}>
-                <span>Osoba</span>
-                <TagInput
-                  tags={quickDraft.owner ? [quickDraft.owner] : []}
-                  suggestions={peopleOptions}
-                  onChange={(arr) =>
-                    setQuickDraft((previous) => ({ ...previous, owner: arr[0] || '' }))
-                  }
-                  placeholder="Wpisz lub wybierz osobę..."
-                  type="person"
-                />
-              </label>
-              <label>
-                <span>Grupa</span>
-                <input
-                  list="task-groups"
-                  value={quickDraft.group}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, group: event.target.value }))
-                  }
-                  placeholder="np. Sprint 14"
-                />
-              </label>
-              <label>
-                <span>Termin</span>
-                <input
-                  type="datetime-local"
-                  value={quickDraft.dueDate}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, dueDate: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Przypomnienie</span>
-                <input
-                  type="datetime-local"
-                  value={quickDraft.reminderAt}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, reminderAt: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Priorytet</span>
-                <select
-                  value={quickDraft.priority}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, priority: event.target.value }))
-                  }
-                >
-                  {TASK_PRIORITIES.map((priority) => (
-                    <option key={priority.id} value={priority.id}>
-                      {priority.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Status</span>
-                <select
-                  value={quickDraft.status}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, status: event.target.value }))
-                  }
-                >
-                  {boardColumns.map((column) => (
-                    <option key={column.id} value={column.id}>
-                      {column.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Tagi</span>
-                <div style={{ flex: 1 }}>
-                  <TagInput
-                    tags={(quickDraft.tags || '')
-                      .split(',')
-                      .map((t: string) => t.trim())
-                      .filter(Boolean)}
-                    suggestions={tagOptions}
-                    onChange={(newTags: string[]) =>
-                      setQuickDraft((p: any) => ({ ...p, tags: newTags.join(', ') }))
-                    }
-                    placeholder="Dodaj tag..."
-                  />
-                </div>
-              </label>
-              <label className="todo-inline-check">
-                <input
-                  type="checkbox"
-                  checked={quickDraft.important}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, important: event.target.checked }))
-                  }
-                />
-                <span>Wazne</span>
-              </label>
-            </div>
-          </section>
+          <TaskCreateForm
+            initialDraft={quickDraft}
+            boardColumns={boardColumns}
+            peopleOptions={peopleOptions}
+            tagOptions={tagOptions}
+            onSubmit={(draft) => {
+              submitQuickTask(null, draft);
+            }}
+            onCancel={() => setShowAdvancedCreate(false)}
+            showCancel
+            showQuickAdd={false}
+            autoFocus={false}
+          />
         ) : null}
 
         <datalist id="task-groups">

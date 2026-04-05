@@ -199,17 +199,9 @@
   align-items: center;
 }
 
-.stack-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* .stack-form — base styles in reset.css */
 
-.stack-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+/* .stack-form label — base styles in reset.css */
 
 .stack-form label span {
   font-size: 0.85rem;
@@ -238,9 +230,13 @@
 }
 
 .toggle-card input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex-shrink: 0;
   accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .toggle-card strong {
@@ -261,10 +257,7 @@
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.button-row {
-  display: flex;
-  gap: 10px;
-}
+/* .button-row — base styles in reset.css (gap: 12px) */
 
 .primary-button {
   background: var(--accent);

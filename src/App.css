@@ -1150,14 +1150,7 @@ select:focus {
   margin: 0 0 10px;
 }
 
-.stack-form.roomy {
-  gap: 14px;
-}
-
-.stack-form.roomy label span {
-  display: block;
-  margin-bottom: 4px;
-}
+/* .stack-form.roomy — removed, using reset.css var(--space-4) as default */
 
 @media (max-width: 720px) {
   .speaker-editor-row {
@@ -1429,13 +1422,7 @@ select:focus {
    026 — UX/Ergonomics global fixes
    ========================================== */
 
-/* 1. button-row: centering and wrapping */
-
-.button-row {
-  align-items: center;
-  flex-wrap: wrap;
-  row-gap: 8px;
-}
+/* 1. button-row: centering and wrapping — base styles in reset.css */
 
 /* 2. topbar-actions: vertical centering */
 

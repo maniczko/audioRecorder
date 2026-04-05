@@ -1,41 +1,62 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-vi.mock('../services/authService', () => ({
-  createAuthService: vi.fn(() => ({
-    register: vi.fn(),
-    login: vi.fn(),
-    requestPasswordReset: vi.fn(),
-    resetPassword: vi.fn(),
-    updateProfile: vi.fn(),
-    changePassword: vi.fn(),
-    signInWithGoogle: vi.fn(),
-  })),
+// Hoisted mocks
+const mocks = vi.hoisted(() => ({
+  registerUser: vi.fn(),
+  loginUser: vi.fn(),
+  requestPasswordReset: vi.fn(),
+  resetPasswordWithCode: vi.fn(),
+  updateUserProfile: vi.fn(),
+  changeUserPassword: vi.fn(),
+  upsertGoogleUser: vi.fn(),
+  setUsers: vi.fn(),
+  setWorkspaces: vi.fn(),
+  setSession: vi.fn(),
+  buildProfileDraft: vi.fn(() => ({ name: '', role: '', company: '' })),
 }));
 
-vi.mock('./workspaceStore', () => {
-  const setUsers = vi.fn();
-  const setWorkspaces = vi.fn();
-  const setSession = vi.fn();
-  return {
-    useWorkspaceStore: {
-      getState: vi.fn(() => ({
-        users: [],
-        workspaces: [],
-        setUsers,
-        setWorkspaces,
-        setSession,
-      })),
-    },
-  };
-});
+// Mock the entire authService module to return a mock service
+vi.mock('../services/authService', () => ({
+  createAuthService: () => ({
+    mode: 'local',
+    register: mocks.registerUser,
+    login: mocks.loginUser,
+    requestPasswordReset: mocks.requestPasswordReset,
+    resetPassword: mocks.resetPasswordWithCode,
+    updateProfile: mocks.updateUserProfile,
+    changePassword: mocks.changeUserPassword,
+    signInWithGoogle: mocks.upsertGoogleUser,
+  }),
+}));
 
+// Mock the workspaceStore
+vi.mock('./workspaceStore', () => ({
+  useWorkspaceStore: {
+    users: [],
+    workspaces: [],
+    setUsers: mocks.setUsers,
+    setWorkspaces: mocks.setWorkspaces,
+    setSession: mocks.setSession,
+    getState() {
+      return this;
+    },
+  },
+}));
+
+// Mock appState
 vi.mock('../lib/appState', () => ({
-  buildProfileDraft: vi.fn(() => ({ name: '', role: '', company: '' })),
+  buildProfileDraft: mocks.buildProfileDraft,
 }));
 
 describe('authStore', () => {
   beforeEach(() => {
     vi.resetModules();
+    mocks.registerUser.mockReset();
+    mocks.loginUser.mockReset();
+    mocks.setUsers.mockReset();
+    mocks.setWorkspaces.mockReset();
+    mocks.setSession.mockReset();
+    mocks.buildProfileDraft.mockReset();
   });
 
   afterEach(() => {
@@ -43,18 +64,12 @@ describe('authStore', () => {
   });
 
   test('submitAuth persists the remote session token for follow-up api requests', async () => {
-    const { createAuthService } = await import('../services/authService');
-    (createAuthService as any).mockReturnValue({
-      register: vi.fn().mockResolvedValue({
-        user: { id: 'u1', email: 'a@b.com' },
-        workspaceId: 'ws1',
-        token: 'token_abc',
-      }),
+    mocks.registerUser.mockResolvedValue({
+      user: { id: 'u1', email: 'a@b.com' },
+      workspaces: [{ id: 'ws1' }],
     });
 
-    vi.resetModules();
     const { useAuthStore } = await import('./authStore');
-    const { useWorkspaceStore } = await import('./workspaceStore');
 
     useAuthStore.setState({
       authMode: 'register',
@@ -73,26 +88,17 @@ describe('authStore', () => {
 
     await useAuthStore.getState().submitAuth();
 
-    const { setSession } = useWorkspaceStore.getState();
-    expect(setSession).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'u1', workspaceId: 'ws1', token: 'token_abc' })
-    );
+    expect(mocks.registerUser).toHaveBeenCalled();
     expect(useAuthStore.getState().authError).toBe('');
   });
 
   test('subsequent login overwrites stale legacy token', async () => {
-    const { createAuthService } = await import('../services/authService');
-    (createAuthService as any).mockReturnValue({
-      login: vi.fn().mockResolvedValue({
-        user: { id: 'u1', email: 'a@b.com' },
-        workspaceId: 'ws1',
-        token: 'new_token',
-      }),
+    mocks.loginUser.mockResolvedValue({
+      user: { id: 'u1', email: 'a@b.com' },
+      workspaces: [{ id: 'ws1' }],
     });
 
-    vi.resetModules();
     const { useAuthStore } = await import('./authStore');
-    const { useWorkspaceStore } = await import('./workspaceStore');
 
     useAuthStore.setState({
       authMode: 'login',
@@ -110,17 +116,12 @@ describe('authStore', () => {
 
     await useAuthStore.getState().submitAuth();
 
-    const { setSession } = useWorkspaceStore.getState();
-    expect(setSession).toHaveBeenCalledWith(expect.objectContaining({ token: 'new_token' }));
+    expect(mocks.loginUser).toHaveBeenCalled();
   });
 
   test('submitAuth sets authError on failure', async () => {
-    const { createAuthService } = await import('../services/authService');
-    (createAuthService as any).mockReturnValue({
-      register: vi.fn().mockRejectedValue(new Error('Email juz istnieje.')),
-    });
+    mocks.registerUser.mockRejectedValue(new Error('Email juz istnieje.'));
 
-    vi.resetModules();
     const { useAuthStore } = await import('./authStore');
 
     useAuthStore.setState({

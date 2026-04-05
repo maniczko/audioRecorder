@@ -461,6 +461,7 @@ describe('Media Routes', () => {
 
     it('returns 429 when Gemini responds with 429 quota exceeded', async () => {
       const ctx = setupSketchnoteTest();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       global.fetch = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
@@ -482,12 +483,14 @@ describe('Media Routes', () => {
       expect(res.status).toBe(429);
       const payload = await res.json();
       expect(payload.message).toContain('429');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
 
       teardownSketchnoteTest(ctx);
     });
 
     it('returns 503 when Gemini responds with 503 overloaded', async () => {
       const ctx = setupSketchnoteTest();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       global.fetch = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
@@ -505,12 +508,17 @@ describe('Media Routes', () => {
       expect(res.status).toBe(503);
       const payload = await res.json();
       expect(payload.message).toContain('503');
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[ERROR] Gemini image gen error:',
+        '{"error":{"code":503,"message":"The model is overloaded."}}'
+      );
 
       teardownSketchnoteTest(ctx);
     });
 
     it('still returns 500 for other Gemini errors (e.g. 400 bad request)', async () => {
       const ctx = setupSketchnoteTest();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       global.fetch = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
@@ -528,6 +536,10 @@ describe('Media Routes', () => {
       expect(res.status).toBe(500);
       const payload = await res.json();
       expect(payload.message).toContain('400');
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[ERROR] Gemini image gen error:',
+        '{"error":{"code":400,"message":"Invalid request."}}'
+      );
 
       teardownSketchnoteTest(ctx);
     });
@@ -1062,6 +1074,7 @@ describe('Media Routes', () => {
     });
 
     it('zwraca 403, gdy użytkownik nie ma dostępu do workspace', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockWorkspaceService.getMembership.mockResolvedValue(null);
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_forbidden',
@@ -1075,6 +1088,10 @@ describe('Media Routes', () => {
 
       expect(res.status).toBe(403);
       expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'APP ERROR STACK',
+        expect.stringContaining('Nie masz dostepu do tego workspace.')
+      );
     });
   });
 });

@@ -110,7 +110,8 @@ export default function TasksTab({
         setQuickDraft((previous) => ({ ...previous, group: groupName }));
       }
     }
-  }, [selectedListId]); // Removed quickDraft.group and quickDraft.status from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only sync on selectedListId change, not on quickDraft changes to avoid overwrite loop
+  }, [selectedListId]);
 
   const taskGroups = useMemo(() => buildTaskGroups(tasks), [tasks]);
   const stats = useMemo(() => taskListStats(tasks), [tasks]);
@@ -326,10 +327,11 @@ export default function TasksTab({
     setDragTaskId(taskId || '');
   }
 
-  function submitQuickTask(event) {
+  function submitQuickTask(event, draftOverride) {
     event?.preventDefault?.();
 
-    if (!quickDraft.title.trim()) {
+    const draft = draftOverride || quickDraft;
+    if (!draft.title.trim()) {
       toast.warning('Dodaj tytul zadania.');
       return;
     }
@@ -337,10 +339,10 @@ export default function TasksTab({
     try {
       const contextualDraft = buildContextualDraft(
         {
-          ...quickDraft,
-          title: quickDraft.title.trim(),
-          group: String(quickDraft.group || '').trim(),
-          tags: String(quickDraft.tags || '').trim(),
+          ...draft,
+          title: draft.title.trim(),
+          group: String(draft.group || '').trim(),
+          tags: String(draft.tags || '').trim(),
         },
         selectedListId,
         boardColumns

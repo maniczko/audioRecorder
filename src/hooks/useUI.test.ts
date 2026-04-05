@@ -73,11 +73,13 @@ const mockMeetings = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('../store/uiStore', () => ({
-  useUIStore: () => mockUIStore,
+  useUIStore: (selector?: (state: typeof mockUIStore) => unknown) =>
+    selector ? selector(mockUIStore) : mockUIStore,
 }));
 
 vi.mock('../store/workspaceStore', () => ({
-  useWorkspaceStore: () => mockWorkspaceStore,
+  useWorkspaceStore: (selector?: (state: typeof mockWorkspaceStore) => unknown) =>
+    selector ? selector(mockWorkspaceStore) : mockWorkspaceStore,
   useWorkspaceSelectors: () => mockWorkspaceStore,
 }));
 

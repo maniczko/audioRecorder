@@ -119,6 +119,7 @@ export class Database {
   worker: Worker | any;
   sqliteInitPromise: Promise<any>;
   private _dbPath: string;
+  private _isShuttingDown: boolean;
 
   constructor(dbConfig: any = {}) {
     const {
@@ -133,6 +134,7 @@ export class Database {
     this.sessionTtlHours = sessionTtlHours;
 
     this._dbPath = dbPath;
+    this._isShuttingDown = false;
 
     if (this.type === 'postgres') {
       this.pool = new Pool({
@@ -163,6 +165,7 @@ export class Database {
   }
 
   private _spawnWorker(dbPath: string) {
+    this._isShuttingDown = false;
     const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
     this.worker = new Worker(path.join(__dirname, `sqliteWorker${ext}`));
 
@@ -182,6 +185,10 @@ export class Database {
     });
 
     this.worker.on('exit', (code: number) => {
+      if (this._isShuttingDown) {
+        this.worker = null;
+        return;
+      }
       if (code !== 0) {
         console.error(`[DB] SQLite Worker exited with code ${code}, restarting...`);
         this._rejectAllPending('Worker exited unexpectedly');
@@ -192,6 +199,25 @@ export class Database {
 
     this.sqliteInitPromise = this._sendToWorker('init', null, null, dbPath);
     console.log('[DB] Using local async SQLite Worker at:', dbPath);
+  }
+
+  async shutdown(): Promise<void> {
+    if (this.type === 'postgres') {
+      if (this.pool?.end) {
+        await this.pool.end();
+      }
+      return;
+    }
+
+    if (!this.worker) {
+      return;
+    }
+
+    this._isShuttingDown = true;
+    const worker = this.worker;
+    this.worker = null;
+    this._rejectAllPending('Worker shut down intentionally');
+    await worker.terminate();
   }
 
   private _rejectAllPending(reason: string) {

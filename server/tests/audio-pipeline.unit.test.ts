@@ -255,6 +255,8 @@ describe('audioPipeline exports', () => {
 
   it('returns null or empty arrays when analysis and embeddings upstream calls fail', async () => {
     const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (global.fetch as any)
       .mockResolvedValueOnce({
         ok: false,
@@ -271,6 +273,11 @@ describe('audioPipeline exports', () => {
       })
     ).resolves.toBeNull();
     await expect(pipeline.embedTextChunks(['pierwszy'])).resolves.toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[postProcessing] analyzeMeetingWithOpenAI failed:',
+      'OpenAI analyze HTTP 500'
+    );
+    expect(errorSpy).toHaveBeenCalledWith('embedTextChunks failed:', expect.any(Error));
   });
 
   it('transcribes live chunks when API key is configured and returns empty string on upstream failure', async () => {

@@ -31,8 +31,8 @@ describe('Regression: Issue #0 — TaskCreateModal layout relies on tasks.css', 
     const wrapper = document.querySelector('.tasks-layout.ms-todo');
     expect(wrapper).toBeInTheDocument();
 
-    // The form itself has `.todo-add-advanced` which expects the above context
-    const formGrid = document.querySelector('.todo-add-advanced');
-    expect(formGrid).toBeInTheDocument();
+    // The form uses `.todo-detail-form` layout (unified with TaskDetailsPanel)
+    const formLayout = document.querySelector('.todo-detail-form');
+    expect(formLayout).toBeInTheDocument();
   });
 });

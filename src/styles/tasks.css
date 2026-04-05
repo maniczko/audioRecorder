@@ -1834,6 +1834,21 @@
   gap: 6px;
 }
 
+.tasks-layout.ms-todo .todo-add-advanced label input,
+.tasks-layout.ms-todo .todo-add-advanced label select {
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.tasks-layout.ms-todo .todo-add-advanced .tag-input-container {
+  min-height: 40px;
+}
+
+.tasks-layout.ms-todo .todo-add-advanced .todo-inline-check {
+  align-self: end;
+  min-height: 40px;
+}
+
 @media (max-width: 1220px) {
   .tasks-layout.ms-todo .todo-toolbar-panel,
   .tasks-layout.ms-todo .todo-create-card,
@@ -2398,10 +2413,10 @@
 }
 
 .tasks-layout.ms-todo .todo-detail-form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: visible;
 }
 
 .tasks-layout.ms-todo .todo-detail-form label {
