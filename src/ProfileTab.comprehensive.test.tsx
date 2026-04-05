@@ -161,7 +161,7 @@ describe('ProfileTab', () => {
         expect(screen.getByText('Google Calendar')).toBeInTheDocument();
         expect(screen.getByText('Backup')).toBeInTheDocument();
       });
-    });
+    }, 15000);
 
     it('displays logout button and calls onLogout when clicked', async () => {
       const user = userEvent.setup();

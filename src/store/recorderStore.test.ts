@@ -1,27 +1,36 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+// Hoisted mocks - these survive vi.resetModules()
+const mocks = vi.hoisted(() => ({
+  getAudioBlob: vi.fn(),
+  analyzeMeeting: vi.fn(),
+  createMediaService: vi.fn(),
+  getPreviewRuntimeStatus: vi.fn().mockReturnValue('unknown'),
+  filterSilence: vi.fn((blob: Blob) =>
+    Promise.resolve({ blob, originalDurationS: 10, filteredDurationS: 10, removedS: 0 })
+  ),
+}));
+
 // Mock modules - these are hoisted
 vi.mock('../lib/audioStore', () => ({
-  getAudioBlob: vi.fn(),
+  getAudioBlob: mocks.getAudioBlob,
 }));
 
 vi.mock('../lib/analysis', () => ({
-  analyzeMeeting: vi.fn(),
+  analyzeMeeting: mocks.analyzeMeeting,
 }));
 
 vi.mock('../services/mediaService', () => ({
-  createMediaService: vi.fn(),
+  createMediaService: mocks.createMediaService,
 }));
 
 vi.mock('../services/httpClient', () => ({
-  getPreviewRuntimeStatus: vi.fn().mockReturnValue('unknown'),
+  getPreviewRuntimeStatus: mocks.getPreviewRuntimeStatus,
 }));
 
 // VAD filter: return original blob (no silence removed) in tests
 vi.mock('../audio/vadFilter', () => ({
-  filterSilence: vi.fn((blob: Blob) =>
-    Promise.resolve({ blob, originalDurationS: 10, filteredDurationS: 10, removedS: 0 })
-  ),
+  filterSilence: mocks.filterSilence,
 }));
 
 describe('recorderStore', () => {
@@ -178,10 +187,10 @@ describe('recorderStore', () => {
 
       // processQueue should find the item now (canProcess returns true)
       // It will proceed to processing — we just verify it doesn't fail
-      const { getAudioBlob } = await import('../lib/audioStore');
-      (getAudioBlob as any).mockResolvedValueOnce(null);
-      const { createMediaService } = await import('../services/mediaService');
-      (createMediaService as any).mockReturnValue({ mode: 'local' });
+
+      mocks.getAudioBlob.mockResolvedValueOnce(null);
+
+      mocks.createMediaService.mockReturnValue({ mode: 'local' });
 
       await useRecorderStore.getState().processQueue(resolver, vi.fn(), vi.fn());
 
@@ -192,11 +201,9 @@ describe('recorderStore', () => {
   });
 
   test('fails queue item when local audio blob is missing', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(null);
+    mocks.getAudioBlob.mockResolvedValueOnce(null);
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({ mode: 'local' });
+    mocks.createMediaService.mockReturnValue({ mode: 'local' });
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -214,11 +221,9 @@ describe('recorderStore', () => {
   });
 
   test('processes successful queue item and builds fallback analysis on AI error', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio'], { type: 'audio/webm' }));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio'], { type: 'audio/webm' }));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockResolvedValue({}),
       startTranscriptionJob: vi.fn().mockResolvedValue({
@@ -230,8 +235,7 @@ describe('recorderStore', () => {
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { analyzeMeeting } = await import('../lib/analysis');
-    (analyzeMeeting as any).mockRejectedValueOnce(new Error('AI failed'));
+    mocks.analyzeMeeting.mockRejectedValueOnce(new Error('AI failed'));
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -259,11 +263,9 @@ describe('recorderStore', () => {
   });
 
   test('marks item as failed when remote transcription throws', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio'], { type: 'audio/webm' }));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio'], { type: 'audio/webm' }));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockResolvedValue({}),
       startTranscriptionJob: vi.fn().mockRejectedValue(new Error('Server error')),
@@ -289,11 +291,9 @@ describe('recorderStore', () => {
   });
 
   test('maps missing-token failures to a re-login message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockRejectedValue(new Error('Brak tokenu autoryzacyjnego')),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
@@ -314,18 +314,15 @@ describe('recorderStore', () => {
   });
 
   test('maps failed fetch errors to a backend availability message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { getPreviewRuntimeStatus } = await import('../services/httpClient');
-    (getPreviewRuntimeStatus as any).mockReturnValue('unknown');
+    mocks.getPreviewRuntimeStatus.mockReturnValue('unknown');
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -344,18 +341,15 @@ describe('recorderStore', () => {
   });
 
   test('maps failed fetch errors to a hosted preview message when preview health was healthy', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { getPreviewRuntimeStatus } = await import('../services/httpClient');
-    (getPreviewRuntimeStatus as any).mockReturnValue('healthy');
+    mocks.getPreviewRuntimeStatus.mockReturnValue('healthy');
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -374,18 +368,15 @@ describe('recorderStore', () => {
   });
 
   test('maps 502 application-failed responses to a backend availability message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockRejectedValue(new Error('Application failed to respond')),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { getPreviewRuntimeStatus } = await import('../services/httpClient');
-    (getPreviewRuntimeStatus as any).mockReturnValue('unknown');
+    mocks.getPreviewRuntimeStatus.mockReturnValue('unknown');
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -404,11 +395,9 @@ describe('recorderStore', () => {
   });
 
   test('maps Vercel router target errors to a backend availability message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi
         .fn()
@@ -416,8 +405,7 @@ describe('recorderStore', () => {
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { getPreviewRuntimeStatus } = await import('../services/httpClient');
-    (getPreviewRuntimeStatus as any).mockReturnValue('unknown');
+    mocks.getPreviewRuntimeStatus.mockReturnValue('unknown');
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -436,18 +424,15 @@ describe('recorderStore', () => {
   });
 
   test('maps explicit HTTP 502 errors to a backend availability message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockRejectedValue(new Error('HTTP 502')),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
 
-    const { getPreviewRuntimeStatus } = await import('../services/httpClient');
-    (getPreviewRuntimeStatus as any).mockReturnValue('unknown');
+    mocks.getPreviewRuntimeStatus.mockReturnValue('unknown');
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
@@ -466,11 +451,9 @@ describe('recorderStore', () => {
   });
 
   test('maps empty-stt-output failures to a recording quality message', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockResolvedValue({}),
       startTranscriptionJob: vi
@@ -494,11 +477,9 @@ describe('recorderStore', () => {
   });
 
   test('treats empty transcript as a completed import without console error', async () => {
-    const { getAudioBlob } = await import('../lib/audioStore');
-    (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-    const { createMediaService } = await import('../services/mediaService');
-    (createMediaService as any).mockReturnValue({
+    mocks.createMediaService.mockReturnValue({
       mode: 'remote',
       persistRecordingAudio: vi.fn().mockResolvedValue({}),
       startTranscriptionJob: vi.fn().mockResolvedValue({
@@ -553,17 +534,14 @@ describe('recorderStore', () => {
   // ─────────────────────────────────────────────────────────────────
   describe('Regression: #0 — processQueue preserves queue item when attachment fails', () => {
     test('marks item as failed when attachCompletedRecording returns false (normal transcript)', async () => {
-      const { getAudioBlob } = await import('../lib/audioStore');
-      (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+      mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-      const { createMediaService } = await import('../services/mediaService');
-      const { analyzeMeeting } = await import('../lib/analysis');
-      (analyzeMeeting as any).mockResolvedValueOnce({
+      mocks.analyzeMeeting.mockResolvedValueOnce({
         summary: 'test',
         speakerLabels: {},
         speakerCount: 1,
       });
-      (createMediaService as any).mockReturnValue({
+      mocks.createMediaService.mockReturnValue({
         mode: 'remote',
         persistRecordingAudio: vi.fn().mockResolvedValue({}),
         startTranscriptionJob: vi.fn().mockResolvedValue({
@@ -605,11 +583,9 @@ describe('recorderStore', () => {
     });
 
     test('marks item as failed when attachCompletedRecording returns false (empty transcript)', async () => {
-      const { getAudioBlob } = await import('../lib/audioStore');
-      (getAudioBlob as any).mockResolvedValueOnce(new Blob(['audio']));
+      mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
-      const { createMediaService } = await import('../services/mediaService');
-      (createMediaService as any).mockReturnValue({
+      mocks.createMediaService.mockReturnValue({
         mode: 'remote',
         persistRecordingAudio: vi.fn().mockResolvedValue({}),
         startTranscriptionJob: vi.fn().mockResolvedValue({

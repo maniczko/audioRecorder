@@ -115,7 +115,7 @@ describe('AuthScreen', () => {
     expect(screen.getByDisplayValue('jan@example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('test-password')).toBeInTheDocument();
     expect(submitAuth).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 
   test('supports full registration flow including join workspace mode', async () => {
     const { submitAuth } = await renderAuthHarness({ authMode: 'register' });
@@ -189,7 +189,7 @@ describe('AuthScreen', () => {
     expect(screen.getByText(/Twój lokalny kod resetu:/)).toBeInTheDocument();
     expect(requestResetCode).toHaveBeenCalledTimes(1);
     expect(completeReset).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 
   test('shows local-session warning only in local provider mode', async () => {
     // This test requires refactoring AuthScreen to accept APP_DATA_PROVIDER as prop

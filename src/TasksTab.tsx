@@ -84,6 +84,7 @@ export default function TasksTab({
   }, [defaultView]);
 
   useEffect(() => {
+    // Only sync status field when boardColumns change, preserve all other fields
     if (!boardColumns.some((column) => column.id === quickDraft.status)) {
       setQuickDraft((previous) => ({
         ...previous,
@@ -95,6 +96,7 @@ export default function TasksTab({
   useEffect(() => {
     if (selectedListId.startsWith('column:')) {
       const columnId = selectedListId.slice('column:'.length);
+      // Only update status if it differs, preserve title and other fields
       if (columnId !== quickDraft.status && boardColumns.some((column) => column.id === columnId)) {
         setQuickDraft((previous) => ({ ...previous, status: columnId }));
       }
@@ -103,11 +105,12 @@ export default function TasksTab({
 
     if (selectedListId.startsWith('group:')) {
       const groupName = selectedListId.slice('group:'.length);
+      // Only update group if it differs, preserve title and other fields
       if (groupName !== quickDraft.group) {
         setQuickDraft((previous) => ({ ...previous, group: groupName }));
       }
     }
-  }, [boardColumns, quickDraft.group, quickDraft.status, selectedListId]);
+  }, [selectedListId]); // Removed quickDraft.group and quickDraft.status from deps
 
   const taskGroups = useMemo(() => buildTaskGroups(tasks), [tasks]);
   const stats = useMemo(() => taskListStats(tasks), [tasks]);

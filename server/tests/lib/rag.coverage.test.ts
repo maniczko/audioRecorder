@@ -7,7 +7,12 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RagChunkRetriever } from '../../lib/ragRetriever';
 import { buildRagContext, generateRagAnswer } from '../../lib/ragAnswer';
 
-// Mock ChatOpenAI at module level
+const { mockOpenAiInvoke, mockGroqInvoke } = vi.hoisted(() => ({
+  mockOpenAiInvoke: vi.fn(),
+  mockGroqInvoke: vi.fn(),
+}));
+
+// Mock providers at module level
 vi.mock('@langchain/openai', async () => {
   const actual = await vi.importActual('@langchain/openai');
   return {
@@ -15,7 +20,20 @@ vi.mock('@langchain/openai', async () => {
     ChatOpenAI: class MockChatOpenAI {
       constructor() {}
       async invoke() {
-        return { content: 'Test answer' };
+        return mockOpenAiInvoke();
+      }
+    },
+  };
+});
+
+vi.mock('@langchain/groq', async () => {
+  const actual = await vi.importActual('@langchain/groq');
+  return {
+    ...actual,
+    ChatGroq: class MockChatGroq {
+      constructor() {}
+      async invoke() {
+        return mockGroqInvoke();
       }
     },
   };
@@ -245,6 +263,8 @@ describe('generateRagAnswer', () => {
   afterEach(() => {
     process.env.OPENAI_API_KEY = originalEnv.OPENAI_API_KEY;
     process.env.OPENAI_BASE_URL = originalEnv.OPENAI_BASE_URL;
+    mockOpenAiInvoke.mockReset();
+    mockGroqInvoke.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -271,6 +291,8 @@ describe('generateRagAnswer', () => {
   });
 
   test('uses VOICELOG_OPENAI_API_KEY if available', async () => {
+    mockOpenAiInvoke.mockResolvedValueOnce({ content: 'Test answer' });
+
     await expect(
       generateRagAnswer({
         question: 'Test question',
@@ -280,6 +302,34 @@ describe('generateRagAnswer', () => {
       })
     ).resolves.toBe('Test answer');
   }, 15000);
+
+  // ---------------------------------------------------------------
+  // Issue #0 - RAG stops after the first provider failure
+  // Date: 2026-04-04
+  // Bug: when the preferred provider failed, the route fell back to
+  //      archive snippets even though another configured LLM could answer.
+  // Fix: generateRagAnswer now tries the next configured provider before
+  //      giving up and returning archive-only fallback text.
+  // ---------------------------------------------------------------
+  test('tries the next configured provider when the first one fails', async () => {
+    mockGroqInvoke.mockRejectedValueOnce(new Error('Groq temporary outage'));
+    mockOpenAiInvoke.mockResolvedValueOnce({ content: 'Odpowiedz z OpenAI po fallbacku.' });
+
+    await expect(
+      generateRagAnswer({
+        question: 'Co ustalono?',
+        chunks: [{ recording_id: 'rec1', speaker_name: 'Anna', text: 'Ustalono plan.' }],
+        config: {
+          GROQ_API_KEY: 'groq-test-key',
+          OPENAI_API_KEY: 'openai-test-key',
+        },
+        workspaceId: 'ws1',
+      })
+    ).resolves.toBe('Odpowiedz z OpenAI po fallbacku.');
+
+    expect(mockGroqInvoke).toHaveBeenCalledTimes(1);
+    expect(mockOpenAiInvoke).toHaveBeenCalledTimes(1);
+  });
 
   test('builds context with chunks', async () => {
     const chunks = [{ recording_id: 'rec1', speaker_name: 'Anna', text: 'Important info' }];

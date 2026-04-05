@@ -21,6 +21,12 @@ type RagChunk = {
   text?: string;
 };
 
+type RagProviderCandidate = {
+  id: 'groq' | 'anthropic' | 'gemini' | 'openai';
+  label: string;
+  createModel: () => Promise<any>;
+};
+
 function getOpenAiKey(config: any) {
   return String(config?.VOICELOG_OPENAI_API_KEY || config?.OPENAI_API_KEY || '').trim();
 }
@@ -136,63 +142,95 @@ export async function generateRagAnswer({
   const systemPrompt =
     'Jestes asystentem wiedzy bazy RAG. Udziel krotkiej, konkretnej odpowiedzi bazujac WYLACZNIE na ponizszym archiwalnym kontekscie ze spotkan klienta. Jezeli pytanie wykracza poza kontekst, powiedz, ze nie wiesz, ale nie przepraszaj.';
   const userPrompt = `Kontekst ze spotkan:\n${contextStr}\n\nPytanie uzytkownika: ${question}`;
-
-  let model: any = null;
-
-  try {
-    // Attempt to instantiate the best available model
-    if (groqKey) {
-      const { ChatGroq } = await import('@langchain/groq');
-      model = new ChatGroq({
-        apiKey: groqKey,
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.2,
-      });
-    } else if (anthropicKey) {
-      const { ChatAnthropic } = await import('@langchain/anthropic');
-      model = new ChatAnthropic({
-        apiKey: anthropicKey,
-        model: config.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest',
-        temperature: 0.2,
-      });
-    } else if (geminiKey) {
-      const { ChatGoogleGenAI } = await import('@langchain/google-genai');
-      model = new ChatGoogleGenAI({
-        apiKey: geminiKey,
-        modelName: 'gemini-2.0-flash-exp',
-        temperature: 0.2,
-      });
-    } else if (openAiKey) {
-      const { ChatOpenAI } = await import('@langchain/openai');
-      model = new ChatOpenAI({
-        model: 'gpt-4o-mini',
-        temperature: 0.2,
-        apiKey: openAiKey,
-        configuration: {
-          baseURL: getOpenAiBaseUrl(config),
-        },
-      });
-    }
-
-    if (!model) throw new Error('No model instantiated');
-
-    const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
-
-    // Set a timeout to prevent infinite hangs
-    const response = (await Promise.race([
-      model.invoke([new SystemMessage(systemPrompt), new HumanMessage(userPrompt)], {
-        tags: ['rag', 'answer'],
-        metadata: { workspaceId, chunkCount: uniqueChunks.length },
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), 15000)),
-    ])) as any;
-
-    return toMessageText(response.content).trim() || 'Brak odpowiedzi.';
-  } catch (err: any) {
-    if (err.message === 'Timeout LLM' || err?.status === 429) {
-      console.warn('[RAG] LLM timeout/quota limit, falling back...');
-      throw err;
-    }
-    throw err;
+  const candidates: RagProviderCandidate[] = [];
+  if (groqKey) {
+    candidates.push({
+      id: 'groq',
+      label: 'Groq llama-3.3-70b-versatile',
+      createModel: async () => {
+        const { ChatGroq } = await import('@langchain/groq');
+        return new ChatGroq({
+          apiKey: groqKey,
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.2,
+        });
+      },
+    });
   }
+  if (anthropicKey) {
+    candidates.push({
+      id: 'anthropic',
+      label: `Anthropic ${config.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest'}`,
+      createModel: async () => {
+        const { ChatAnthropic } = await import('@langchain/anthropic');
+        return new ChatAnthropic({
+          apiKey: anthropicKey,
+          model: config.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest',
+          temperature: 0.2,
+        });
+      },
+    });
+  }
+  if (geminiKey) {
+    candidates.push({
+      id: 'gemini',
+      label: 'Gemini gemini-2.0-flash-exp',
+      createModel: async () => {
+        const { ChatGoogleGenAI } = await import('@langchain/google-genai');
+        return new ChatGoogleGenAI({
+          apiKey: geminiKey,
+          modelName: 'gemini-2.0-flash-exp',
+          temperature: 0.2,
+        });
+      },
+    });
+  }
+  if (openAiKey) {
+    candidates.push({
+      id: 'openai',
+      label: 'OpenAI gpt-4o-mini',
+      createModel: async () => {
+        const { ChatOpenAI } = await import('@langchain/openai');
+        return new ChatOpenAI({
+          model: 'gpt-4o-mini',
+          temperature: 0.2,
+          apiKey: openAiKey,
+          configuration: {
+            baseURL: getOpenAiBaseUrl(config),
+          },
+        });
+      },
+    });
+  }
+
+  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
+  let lastError: Error | null = null;
+
+  for (const candidate of candidates) {
+    try {
+      const model = await candidate.createModel();
+      const response = (await Promise.race([
+        model.invoke([new SystemMessage(systemPrompt), new HumanMessage(userPrompt)], {
+          tags: ['rag', 'answer'],
+          metadata: { workspaceId, chunkCount: uniqueChunks.length, providerId: candidate.id },
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), 15000)),
+      ])) as any;
+
+      return toMessageText(response.content).trim() || 'Brak odpowiedzi.';
+    } catch (err: any) {
+      lastError =
+        err instanceof Error ? err : new Error(String(err || 'Unknown RAG provider error'));
+      console.warn(
+        `[RAG] Provider ${candidate.label} failed, trying next candidate if available:`,
+        err?.message || err
+      );
+    }
+  }
+
+  if (lastError?.message === 'Timeout LLM' || (lastError as any)?.status === 429) {
+    console.warn('[RAG] All configured LLM providers timed out or hit quota, falling back...');
+  }
+
+  throw lastError || new Error('No model instantiated');
 }

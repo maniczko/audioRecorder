@@ -24,6 +24,9 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: './coverage/frontend',
+      // Vitest v8 coverage can reinitialize the provider during a run on Windows,
+      // so we preserve shard files in `.tmp` until the report is assembled.
+      clean: false,
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.test.{ts,tsx}',

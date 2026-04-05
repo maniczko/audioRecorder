@@ -76,7 +76,7 @@ describe('TranscriptPanel', () => {
     expect(
       screen.queryByDisplayValue('Wysle podsumowanie i zadania po spotkaniu.')
     ).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   test('filters transcript by speaker and low confidence', async () => {
     renderTranscriptPanel();

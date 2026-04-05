@@ -130,7 +130,7 @@
     "test:server": "vitest run -c server/vitest.config.ts",
     "test:server:retry": "vitest run -c server/vitest.config.ts --retry=3",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
-    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-vitest-coverage-dirs.test.ts && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
+    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:server": "tsc --project server/tsconfig.server.json --noEmit",

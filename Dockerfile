@@ -73,6 +73,7 @@ ENV NODE_ENV=production
 ENV TZ=Etc/UTC
 ENV VOICELOG_API_HOST=0.0.0.0
 ENV FFMPEG_BINARY=ffmpeg
+ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
 ENV NODE_OPTIONS="--max-old-space-size=768 --expose-gc"
@@ -80,7 +81,9 @@ ENV NODE_OPTIONS="--max-old-space-size=768 --expose-gc"
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
-      tini && \
+      tini \
+      python3-minimal \
+      python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid "${APP_GID}" app && \
@@ -94,6 +97,10 @@ COPY --link --chown=10001:10001 --from=prod-deps /prod/server/node_modules ./ser
 COPY --link --chown=10001:10001 --from=prod-deps /prod/server/package.json ./server/package.json
 COPY --link --chown=10001:10001 --from=build /app/dist-server ./server
 COPY --link --chown=10001:10001 server/migrations/ ./server/migrations/
+COPY --link --chown=10001:10001 server/acoustic_features.py ./server/acoustic_features.py
+COPY --link --chown=10001:10001 server/requirements.txt ./server/requirements.txt
+
+RUN pip3 install --no-cache-dir --break-system-packages -r server/requirements.txt
 
 RUN mkdir -p /data/uploads /app/server/data && \
     chown -R app:app /data /app/server/data

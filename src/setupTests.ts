@@ -2,6 +2,10 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { vi, afterEach, type Mock } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
+
+fs.mkdirSync(path.resolve(process.cwd(), 'coverage/frontend/.tmp'), { recursive: true });
 
 // Global cleanup after each test to prevent memory leaks and test interference
 afterEach(() => {

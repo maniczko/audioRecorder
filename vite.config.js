@@ -38,11 +38,6 @@ export default defineConfig(async () => {
         '@': path.resolve(__dirname, './src'),
       },
     },
-    esbuild: {
-      loader: 'tsx',
-      include: /src\/.*\.[tj]sx?$/,
-      exclude: [],
-    },
     server: {
       host: '127.0.0.1',
       port: 3000,

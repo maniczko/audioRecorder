@@ -1,13 +1,13 @@
 ﻿# TASK QUEUE
 
-Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
+Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
 
 ## Status odswiezenia
 
-- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-04T17-05-13-642Z.json`
-- `Railway`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
-- `Vercel`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
-- `Sentry`: brak lokalnego odswiezenia w tej sesji, token niedostepny w biezacym srodowisku
+- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-05T06-20-22-219Z.json` (`100` runow, `10` failed w oknie 7 dni)
+- `Railway`: odswiezone lokalnie na podstawie `railway-errors/railway-errors-2026-04-05T06-20-03-347Z.md` (`0` error linii w ostatnich `100` logach, `/health` = `ok`)
+- `Vercel`: odswiezenie zablokowane `2026-04-05` - `VERCEL_TOKEN` nieustawiony, a plugin Vercel zwraca `Auth required`
+- `Sentry`: odswiezenie zablokowane `2026-04-05` - `SENTRY_AUTH_TOKEN` nieustawiony
 
 ## Zasady
 
@@ -96,6 +96,66 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 - Kryterium zamkniecia:
   Odtwarzanie audio dla wskazanego nagrania dziala bez `404`, takze gdy lokalny `file_path` jest martwy, ale storage nadal ma plik pod odtworzonym kluczem.
 
+### MON-06 - Usunac ostrzezenia Vite z produkcyjnego buildu
+
+- Status: `verify`
+- Priorytet: `P2`
+- Wlasciciel: `Codex`
+- Zrodlo: lokalny `pnpm run build`
+- Opis zadania:
+  Produkcyjny build przechodzil, ale wypisywal dwa mylace warningi: o mieszaniu ustawien `oxc` i `esbuild` w `vite.config.js` oraz o nierozwiazanych plikach fontu Geist importowanych przez `@import` w CSS. To nie blokowalo bundla, ale zaszumialo logi i utrudnialo odroznienie realnych problemow od ostrzezen konfiguracyjnych.
+- Zakres poprawki juz wykonany:
+  - `vite.config.js`
+  - `src/index.tsx`
+  - `src/index.css`
+  - test regresji:
+    - `scripts/validate-vite-build-config.test.ts`
+  - walidacja skryptowa:
+    - `package.json` (`test:workflows`)
+- Notatka:
+  Lokalnie potwierdzone 2026-04-04 - `pnpm run build` pakuje juz fonty Geist jako assety bez warningow o `./files/*.woff2`, a komunikat `Both esbuild and oxc options were set` nie wystepuje po usunieciu zbednego override `esbuild`.
+- Kryterium zamkniecia:
+  Kolejny build lokalny albo CI przechodzi bez warningow o `esbuild/oxc` i bez nierozwiazanych fontow Geist.
+
+### MON-07 - RAG nie powinien padac po bledzie pierwszego providera LLM
+
+- Status: `verify`
+- Priorytet: `P1`
+- Wlasciciel: `Codex`
+- Zrodlo: runtime `POST /workspaces/:workspaceId/rag/ask` z fallbackiem `Model AI jest chwilowo niedostepny...`
+- Opis zadania:
+  Backend RAG mial poprawne klucze do wielu providerow, ale `generateRagAnswer` wybieral pierwszy dostepny model (`Groq -> Anthropic -> Gemini -> OpenAI`) i po jego bledzie od razu schodzil do fallbacku archiwum. W praktyce jedno chwilowe potkniecie pierwszego providera wygladalo jak globalna niedostepnosc modelu, mimo ze kolejny LLM byl skonfigurowany i mogl odpowiedziec.
+- Zakres poprawki juz wykonany:
+  - `server/lib/ragAnswer.ts`
+  - test regresji:
+    - `server/tests/lib/rag.coverage.test.ts`
+- Notatka:
+  Lokalnie potwierdzone 2026-04-05 - RAG probuje teraz kolejnych skonfigurowanych providerow, zamiast od razu oddawac sam fallback z archiwum. Dodatkowo sprawdzenie konfiguracji pokazalo, ze lokalne `.env` ma klucze `Groq`, `Anthropic`, `Gemini` i `OpenAI`, a frontend z deployu Vercel i tak proxyuje `/workspaces/*` do `https://audiorecorder-production.up.railway.app`, wiec problem nie wynikal z lokalnego `VITE_API_BASE_URL`.
+- Kryterium zamkniecia:
+  Zapytanie RAG zwraca odpowiedz z kolejnego dostepnego providera, gdy pierwszy provider chwilowo zawiedzie, zamiast od razu komunikatu `Model AI jest chwilowo niedostepny`.
+
+### MON-08 - Naprawic usuwanie tekstu w formularzach po spacji
+
+- Status: `done`
+- Priorytet: `P1`
+- Wlasciciel: `Qwen`
+- Zrodlo: raport uzytkownika - po wpisaniu tekstu i spacji tekst sie usuwal
+- Opis zadania:
+  We wszystkich formularzach (szczegolnie quickDraft w TasksTab) tekst wpisywany przez uzytkownika znikal po nacisnieciu spacji lub innego klawisza. Przyczyna: useEffect w `TasksTab.tsx` mial `quickDraft.group` i `quickDraft.status` w dependency array, co powodowalo ze KAŻDA zmiana w quickDraft (np. wpisanie tekstu) wywolywala useEffect ktory nadpisywal CALY obiekt state, usuwajac pole `title` ktore uzytkownik wlasnie wpisał.
+- Problem:
+  - `useEffect` na linii ~100 mial `quickDraft.group` i `quickDraft.status` w deps
+  - Gdy uzytkownik wpisal tekst w `quickDraft.title`, React wywolal re-render
+  - useEffect widzial zmiane w deps i wywolal `setQuickDraft` nadpisujac caly obiekt
+  - Title byl resetowany do pustego stringa z initial state
+- Zakres poprawki juz wykonany:
+  - `src/TasksTab.tsx` - usuniete `quickDraft.group` i `quickDraft.status` z dependency array
+  - test regresji:
+    - `src/TasksTab.inputs-regression.test.tsx`
+- Notatka:
+  Klasyczny bug "state overwrite" w React - gdy useEffect aktualizuje state ktory jest w jego own dependency array, tworzy to nieskonczona petle lub utrate danych. Fix: funkcjonalne aktualizacje `setState((prev) => ({ ...prev }))` zachowuja wszystkie pola, a minimalne dependency array zapobiega niepotrzebnym rerenderom.
+- Kryterium zamkniecia:
+  **ZAMKNIETE 2026-04-05**: Uzytkownik moze wpisywac tekst w formularzach bez utraty danych, test regresji przechodzi.
+
 ## Odrzucone jako szum lub informacyjne
 
 - `PubSub already loaded, using existing version`
@@ -106,266 +166,99 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
 
 ## Nastepne kroki
 
-1. Uzupelnic brakujace sekrety w GitHub Actions, bo to jest obecnie glowny generator bledow.
-2. Odpalic nowy run `CI/CD Pipeline` i potwierdzic zamkniecie `MON-02`, `MON-03` i `MON-04`.
-3. Osobno przejsc sciezke `recording -> media_assets -> storage`, zeby zamknac `MON-05`.
-4. Po udostepnieniu tokenow odswiezyc jeszcze `Railway`, `Vercel` i `Sentry`, zeby domknac liste z jednego przebiegu.
+1. Zbic najwiekszy aktualny klaster z GitHub Actions: backendowe testy storage/Supabase z ostatnich `CI/CD Pipeline`.
+2. Domknac testowe mocki `workspaceService.saveWorkspaceState`, bo to wraca w wielu runach jako osobny czerwony sygnal.
+3. Zweryfikowac, czy `Configuration errors` oraz `Zbyt wiele prob` w backend testach sa realnym bugiem izolacji testow czy tylko hałasem z setupu.
+4. Potwierdzic po deployu backendu, ze `MON-07` zwraca odpowiedz z kolejnego providera zamiast fallbacku archiwum.
+5. Uzyskac dostep do `VERCEL_TOKEN` albo aktywnej sesji pluginu Vercel, a dla Sentry do `SENTRY_AUTH_TOKEN`, zeby odswiezyc brakujace monitory.
 
-<!-- Auto-generated on 2026-04-04T18:30:36.262Z -->
+## Swiezy snapshot bledow
 
-### GitHub Actions Errors (10 found)
+<!-- Refreshed on 2026-04-05T06:20:22.182Z -->
 
-- **GH-AUTO-2026-04-04-1** â€” Fix CI/CD Pipeline failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Codex
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:19:19.7682471Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
-  - **Error:** 2026-04-04T18:19:19.7682471Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779298
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - przywrocone pelne API `WorkspaceContext` i usuniety blocker `typecheck` w `StudioMeetingView`; czeka na potwierdzenie w kolejnym runie CI.
+### GitHub Actions Errors (aktualny snapshot: 10 failed runow)
 
-- **GH-AUTO-2026-04-04-2** â€” Fix Optimized CI failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Codex
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:19:23.3571100Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
-  - **Error:** 2026-04-04T18:19:23.3571100Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - przywrocone pelne API `WorkspaceContext` i usuniety blocker `typecheck` w `StudioMeetingView`; czeka na potwierdzenie w kolejnym runie CI.
-
-- **GH-AUTO-2026-04-04-3** â€” Fix Optimized CI failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Codex
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:20:47.0636504Z 36;1mCRITICAL_FAILED="false"0m 2026-04-04T18:20:47.0638422Z 36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi0m 2026-04-04T18:20:47.0639305Z 36;1mif [ "failure" == "failure" ]; then CRITICAL_FAILED="true...
-  - **Error:** 2026-04-04T18:20:47.0636504Z 36;1mCRITICAL_FAILED="false"0m 2026-04-04T18:20:47.0638422Z 36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi0m 2026-04-04T18:20:47.0639305Z 36...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - summary job w `.github/workflows/ci-optimized.yml` nie robi juz `exit 1`; raportuje upstream failure jako warning, z regresja w `scripts/validate-ci-workflow-summary.test.ts`.
-
-- **GH-AUTO-2026-04-04-4** â€” Fix Optimized CI failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Qwen
-  - **Opis zadania:** GitHub Actions: Optimized CI. Job "format" step "Check formatting" failed - needs Prettier formatting fix
-  - **Error:** Job "format" step "Check formatting" failed
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608821
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie potwierdzone 2026-04-04 - `pnpm run format:check` przechodzi; wpis czeka juz tylko na potwierdzenie w kolejnym runie CI.
-  - **Difficulty:** Easy (formatting only)
-
-- **GH-AUTO-2026-04-04-5** â€” Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Owner:** Qwen
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing optional API keys (ANTHROPIC_API_KEY, GEMINI_API_KEY, HF_TOKEN) - related to MON-01 env validation
-  - **Error:** Missing optional API keys in CI environment validation
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608819
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Difficulty:** Easy (already addressed in MON-01)
-
-- **GH-AUTO-2026-04-04-6** â€” Fix Auto-Fix Test Failures failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Codex
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T17:11:25.3482337Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T17:11:27.714...
-  - **Error:** 2026-04-04T17:11:25.3482337Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T17:11:25.3583092Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608826
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - `src/hooks/useWorkspaceData.test.tsx` nie wypisuje juz oczekiwanych bledow bootstrap do `stderr`; czeka na potwierdzenie w kolejnym runie CI.
-
-- **GH-AUTO-2026-04-04-7** â€” Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Owner:** Qwen
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing env vars (VITE_GOOGLE_CLIENT_ID, VOICELOG_API_PORT, DATABASE_URL) - related to MON-01 env validation
-  - **Error:** Missing environment variables in CI pipeline configuration
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972157
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Difficulty:** Easy (already addressed in MON-01)
-
-- **GH-AUTO-2026-04-04-8** â€” Fix Auto-Fix Test Failures failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Codex
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-04T16:33:48.1832346Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile. 2026-04-04T16:33:50.502...
-  - **Error:** 2026-04-04T16:33:48.1832346Z 22m39mRemote workspace bootstrap failed. Error: Remote boom 2026-04-04T16:33:48.1957381Z 22m39mRemote workspace bootstrap failed. Error: Backend jest chwilowo nied...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972150
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - `src/hooks/useWorkspaceData.test.tsx` nie wypisuje juz oczekiwanych bledow bootstrap do `stderr`; czeka na potwierdzenie w kolejnym runie CI.
-
-- **GH-AUTO-2026-04-04-9** â€” Fix Optimized CI failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Qwen
-  - **Opis zadania:** GitHub Actions: Optimized CI. Job "format" step "Check formatting" failed - needs Prettier formatting fix
-  - **Error:** Job "format" step "Check formatting" failed
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23982972151
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie potwierdzone 2026-04-04 - `pnpm run format:check` przechodzi; wpis czeka juz tylko na potwierdzenie w kolejnym runie CI.
-  - **Difficulty:** Easy (formatting only)
-
-- **GH-AUTO-2026-04-04-10** â€” Fix CI/CD Pipeline failure
-  - **Status:** verify
-  - **Source:** GitHub Actions
-  - **Owner:** Qwen
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Missing env vars (VITE_GOOGLE_CLIENT_ID, VOICELOG_API_PORT, DATABASE_URL) - related to MON-01 env validation
-  - **Error:** Missing environment variables in CI pipeline configuration
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23980018546
-  - **Created:** 2026-04-04T18:30:36.262Z
-  - **Priority:** High
-  - **Notatka:** Lokalnie naprawione 2026-04-04 - przywrocone pelne API `WorkspaceContext` i usuniety blocker `typecheck` w `StudioMeetingView`; czeka na potwierdzenie w kolejnym runie CI.
-
-<!-- Auto-generated on 2026-04-04T20:20:32.761Z -->
-
-### GitHub Actions Errors (7 found)
-
-- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:12:16.9982676Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986667563
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-2** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T19:25:37.7348351Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T19:25:37.8699673Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T19:25:37.8802457Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-04T19:25:37.7348351Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T19:25:37.8699673Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985883483
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-3** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "Install dependencies" failed
-  - **Error:** Job "Quality Checks" step "Install dependencies" failed
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985793671
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-4** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:48:27.1945226Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T18:48:27.2748123Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T18:48:27.2839091Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-04T18:48:27.1945226Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T18:48:27.2748123Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985265137
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-5** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T18:31:11.4755661Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratingSession: false; sessionError: string; setUsers: (updater: a...
-  - **Error:** 2026-04-04T18:31:11.4755661Z ##[error]src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing in type '{ users: any[]; workspaces: any[]; session: any; isHydratin...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984982870
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-6** — Fix Optimized CI failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36;1mif [ "failure" == "failure" ]; then CRITICAL_FAILED="true...
-  - **Error:** 2026-04-04T18:20:47.0636504Z [36;1mCRITICAL_FAILED="false"[0m 2026-04-04T18:20:47.0638422Z [36;1mif [ "success" == "failure" ]; then CRITICAL_FAILED="true"; fi[0m 2026-04-04T18:20:47.0639305Z [36...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984779289
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-04-7** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [31m❌ HF_TOKEN: BRAK (HuggingFace Token)[0m 2026-04-04T17:10...
-  - **Error:** 2026-04-04T17:10:55.1391187Z [31m❌ ANTHROPIC_API_KEY: BRAK (Anthropic API Key)[0m 2026-04-04T17:10:55.1392095Z [31m❌ GEMINI_API_KEY: BRAK (Google Gemini API Key)[0m 2026-04-04T17:10:55.1393079Z [...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23983608819
-  - **Created:** 2026-04-04T20:20:32.761Z
-  - **Priority:** High
-
-<!-- Auto-generated on 2026-04-04T22:21:33.827Z -->
-
-### GitHub Actions Errors (1 found)
-
-- **GH-AUTO-2026-04-04-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:22:05.3833441Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986838289
-  - **Created:** 2026-04-04T22:21:33.827Z
-  - **Priority:** High
-
-<!-- Auto-generated on 2026-04-05T01:29:57.311Z -->
-
-### GitHub Actions Errors (1 found)
-
-- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T22:22:57.3717206Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23988814696
-  - **Created:** 2026-04-05T01:29:57.311Z
-  - **Priority:** High
-
-<!-- Auto-generated on 2026-04-05T04:31:05.794Z -->
-
-### GitHub Actions Errors (2 found)
-
-- **GH-AUTO-2026-04-05-1** — Fix Auto Security Patches failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
-  - **Error:** 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
-  - **Created:** 2026-04-05T04:31:05.794Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T01:31:16.2633460Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23991650900
-  - **Created:** 2026-04-05T04:31:05.794Z
-  - **Priority:** High
-
-<!-- Auto-generated on 2026-04-05T06:56:29.706Z -->
-
-### GitHub Actions Errors (1 found)
-
-- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T04:32:29.1134740Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+- **GH-AUTO-2026-04-05-1** — Fix repeated backend Supabase storage regression failures
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie w co najmniej `7` runach `CI/CD Pipeline` od `2026-04-04T18:47:17Z` do `2026-04-05T04:31:08Z`
+  - **Error:** `AssertionError: promise rejected "Error: Supabase Storage not available (client or storage module missing)."` oraz seria niespelnionych asercji o oczekiwanych kluczach storage (`rec_test.webm`, `recordings/rec1.webm`, liczba wywolan `vi.fn()`)
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
-  - **Created:** 2026-04-05T06:56:29.706Z
-  - **Priority:** High
+  - **Notatka:** to jest obecnie najczestszy klaster z najnowszego raportu (`Supabase Storage not available` pojawia sie `28x` w oknie raportu)
 
-<!-- Auto-generated on 2026-04-05T08:34:19.261Z -->
+- **GH-AUTO-2026-04-05-2** — Fix missing `workspaceService.saveWorkspaceState` in backend tests
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie w co najmniej `7` runach `CI/CD Pipeline`
+  - **Error:** `APP ERROR STACK TypeError: workspaceService.saveWorkspaceState is not a function`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
+  - **Notatka:** wyglada jak niespojny mock/stub w testach tras workspace, nie jak blad produkcyjnej implementacji
 
-### GitHub Actions Errors (1 found)
+- **GH-AUTO-2026-04-05-3** — Triage backend test isolation for config and rate-limit failures
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie w co najmniej `7` runach `CI/CD Pipeline`
+  - **Error:** `Configuration errors:` oraz `Error: Zbyt wiele prob. Limit: 20 zadan/min. Sprobuj ponownie za 60s.`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
+  - **Notatka:** trzeba rozdzielic, czy to prawdziwy fail konfiguracji CI, czy wyciek stanu/rate-limitera pomiedzy testami backendu
 
-- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T06:57:53.4251083Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23996372344
-  - **Created:** 2026-04-05T08:34:19.261Z
-  - **Priority:** High
+- **GH-AUTO-2026-04-05-4** — Ograniczyc halas expected stderr w backend testach
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie w co najmniej `7` runach `CI/CD Pipeline`
+  - **Error:** `embedTextChunks failed: Error: embed failed`, `Gemini image gen error: 503 overloaded`, `Gemini image gen error: 400 Invalid request`, `Nie masz dostepu do tego workspace.`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
+  - **Notatka:** te linie wygladaja na oczekiwane scenariusze negatywne w testach, ale zasmiecaja raport i utrudniaja izolacje prawdziwej przyczyny faila
 
+- **GH-AUTO-2026-04-05-5** — Investigate `Auto Security Patches` network failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> Auto Security Patches -> security-patch`
+  - **Owner:** `Qwen`
+  - **Error:** `[VoiceLog] auto-send error: Error: Network down`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
+  - **Notatka:** osobny, jednostkowy blad automatu PR/security; nie wyglada na ten sam klaster co backend tests
 
+- **GH-AUTO-2026-04-05-6** — Triage failed `Install dependencies` run without parsed error detail
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
+  - **Owner:** `Qwen`
+  - **Error:** run `23985793671` zakonczyl sie fail na `Install dependencies`, ale najnowszy parser nie wydobyl z logu konkretnej linii bledu
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23985793671
+  - **Notatka:** warto sprawdzic bezposrednio log joba, bo to moze byc chwilowy problem sieci/NPM, a nie blad repo
+
+- **GH-AUTO-2026-04-05-7** — Historical typecheck failure for `removeWorkspaceMember` is still in the 7-day window
+  - **Status:** `verify`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
+  - **Owner:** `Codex`
+  - **Error:** `src/store/workspaceStore.ts(40,19): error TS2741: Property 'removeWorkspaceMember' is missing...`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23984982870
+  - **Notatka:** to jest starszy fail nadal widoczny w oknie raportu; lokalnie byl juz naprawiony i jest pokryty poprzednimi wpisami `verify`
+
+### Railway Snapshot
+
+- **RW-SNAPSHOT-2026-04-05-1** — Railway currently healthy
+  - **Status:** `done`
+  - **Source:** `railway-errors/railway-errors-2026-04-05T06-20-03-347Z.md`
+  - **Result:** brak linii `error/failure` w ostatnich `100` logach
+  - **Health:** `https://audiorecorder-production.up.railway.app/health` zwraca `{"ok":true,"status":"ok","db":"connected","supabaseRemote":true}`
+  - **Notatka:** Railway CLI jest zalogowane lokalnie; problemem nie jest obecnie runtime backendu na Railway
+
+### Vercel Snapshot
+
+- **VC-SNAPSHOT-2026-04-05-1** — Vercel refresh blocked by missing auth
+  - **Status:** `blocked`
+  - **Source:** `scripts/fetch-vercel-errors.js --verbose` oraz plugin Vercel
+  - **Error:** `VERCEL_TOKEN environment variable not set`; plugin `vercel/list_teams` zwraca `Auth required`
+  - **Notatka:** bez tokenu albo aktywnej sesji MCP nie da sie rzetelnie pobrac aktualnych bledow Vercel do kolejki
+
+### Sentry Snapshot
+
+- **SENTRY-SNAPSHOT-2026-04-05-1** — Sentry refresh blocked by missing auth token
+  - **Status:** `blocked`
+  - **Source:** `scripts/fetch-sentry-errors.js --verbose`
+  - **Error:** `SENTRY_AUTH_TOKEN not set — skipping Sentry error fetch`
+  - **Notatka:** brak aktualnych issue z Sentry w kolejce nie oznacza `0` bledow; oznacza brak dostepu do API w tym srodowisku

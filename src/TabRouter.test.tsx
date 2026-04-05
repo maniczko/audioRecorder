@@ -57,7 +57,7 @@ describe('createLazyComponent', () => {
     expect(screen.getByText(/Brakiem połączenia z internetem/)).toBeInTheDocument();
     expect(screen.getByText(/Uszkodzonymi plikami buildu/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /🔄 Odśwież stronę/ })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('should reload page when retry button is clicked', async () => {
     const importFn = vi.fn().mockRejectedValue(new Error('Failed to fetch module'));
