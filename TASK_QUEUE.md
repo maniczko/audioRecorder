@@ -140,3 +140,99 @@ Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
 <!-- Refreshed on 2026-04-05T06:20:22.182Z -->
 
 ### GitHub Actions Errors (aktualny snapshot: 10 failed runow)
+
+<!-- Auto-generated on 2026-04-05T10:24:57.855Z -->
+
+### GitHub Actions Errors (10 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219132
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-2** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
+  - **Error:** Job "typecheck" step "Run TypeScript" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219137
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T08:35:33.5768743Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T08:35:33.7422086Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T08:35:33.7512216Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-05T08:35:33.5768743Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T08:35:33.7422086Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T06:57:53.4251083Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23996372344
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T04:32:29.1134740Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-6** — Fix Auto Security Patches failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
+  - **Error:** 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-7** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T01:31:16.2633460Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23991650900
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T22:22:57.3717206Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23988814696
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-9** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:22:05.3833441Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986838289
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-10** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:12:16.9982676Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23986667563
+  - **Created:** 2026-04-05T10:24:57.855Z
+  - **Priority:** High
+
+
