@@ -301,3 +301,99 @@ Ostatnie odswiezenie: `2026-04-05 16:50 Europe/Warsaw`
   - **Created:** 2026-04-05T12:37:25.908Z
   - **Priority:** High
   - **Notatka:** lokalnie domkniete 2026-04-05 - pelny frontendowy `pnpm vitest run --coverage=false` przechodzi `105 passed | 4 skipped` po odswiezeniu asercji dla auth screenu i zakladki zadan w studio
+
+<!-- Auto-generated on 2026-04-05T16:27:27.866Z -->
+
+### GitHub Actions Errors (10 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:56:20.7419559Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:56:20.7421748Z Error: element(s) not found 2026-04-05T15:56:20.7440606Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T15:56:20.7419559Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:56:20.7421748Z Error: element(s) not found 2026-04-05T15:56:20.7440...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24004973536
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:44:31.7905553Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:44:31.7913991Z Error: element(s) not found 2026-04-05T15:44:31.7933232Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T15:44:31.7905553Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:44:31.7913991Z Error: element(s) not found 2026-04-05T15:44:31.7933...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24004766500
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:26:28.6593459Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:26:28.6596440Z Error: element(s) not found 2026-04-05T15:26:28.6624393Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T15:26:28.6593459Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:26:28.6596440Z Error: element(s) not found 2026-04-05T15:26:28.6624...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24004431494
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857809
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-5** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
+  - **Error:** Job "typecheck" step "Run TypeScript" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857831
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-6** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T14:30:26.7751289Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Error:** 2026-04-05T14:30:26.7751289Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003548856
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-7** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
+  - **Error:** Job "Unit Tests" step "Run unit tests" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003548856
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Error:** 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-9** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
+  - **Error:** Job "Unit Tests" step "Run unit tests" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-10** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
+  - **Error:** 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /trans...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140694
+  - **Created:** 2026-04-05T16:27:27.866Z
+  - **Priority:** High
+
+
