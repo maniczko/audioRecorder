@@ -259,6 +259,51 @@ describe('mediaService', () => {
       );
     });
 
+    it('Regression: #0 — persistRecordingAudio chunks large blobs into max 3MB requests', async () => {
+      const blob = new Blob([new Uint8Array(11 * 1024 * 1024)], { type: 'audio/webm' });
+      const chunkSizes: number[] = [];
+
+      mockApiRequest.mockImplementation(async (path: string, options: any) => {
+        if (String(path).includes('/audio/chunk-status')) {
+          const error: any = new Error('Not found');
+          error.status = 404;
+          throw error;
+        }
+
+        if (String(path).includes('/audio/chunk?')) {
+          chunkSizes.push(options?.body?.size ?? 0);
+          return {};
+        }
+
+        if (String(path).includes('/audio/finalize')) {
+          return { audioQuality: null };
+        }
+
+        return {};
+      });
+
+      const result = await createMediaService().persistRecordingAudio('rec-1', blob, {
+        workspaceId: 'ws-5',
+        meetingId: 'mt-3',
+      });
+
+      expect(result.storageMode).toBe('remote');
+      expect(chunkSizes.length).toBe(4);
+      expect(chunkSizes.every((size) => size <= 3 * 1024 * 1024)).toBe(true);
+      expect(chunkSizes).toEqual([3, 3, 3, 2].map((mb) => mb * 1024 * 1024));
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        '/media/recordings/rec-1/audio/finalize',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.objectContaining({
+            workspaceId: 'ws-5',
+            meetingId: 'mt-3',
+            total: 4,
+          }),
+        })
+      );
+    });
+
     it('getRecordingAudioBlob fetches blob via GET', async () => {
       const fakeBlob = new Blob(['audio']);
       mockApiRequest.mockResolvedValue({ blob: () => Promise.resolve(fakeBlob) });
