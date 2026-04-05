@@ -171,7 +171,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### MON-11 - Naprawic klaster E2E po zmianach widoku Studio
 
-- Status: `todo`
+- Status: `verify`
 - Priorytet: `P0`
 - Wlasciciel: `Codex`
 - Zrodlo: `GitHub Actions -> CI/CD Pipeline -> E2E Tests`
@@ -180,6 +180,11 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   Najnowszy run `CI/CD Pipeline` dla commitu `c07dd10` pada w jobie `E2E Tests`. Wspolny objaw we wszystkich testach to brak `.workspace-sidebar` oraz timeouty na `locator.fill(...)` dla inputu `input[placeholder='np. Spotkanie z klientem']`. To wyglada na jeden root cause po zmianach UI/selektorow, a nie na osobne awarie flow spotkan.
 - Link:
   - `https://github.com/maniczko/audioRecorder/actions/runs/24007013864`
+- Lokalna naprawa `2026-04-05`:
+  Testy Playwright w `tests/e2e/meeting.spec.js`, `tests/e2e/smoke.spec.js` i `tests/e2e/studio.spec.js` zostaly przepiete ze starego `.workspace-sidebar` na aktualny `StudioBriefModal` (`role="dialog"` + placeholder `np. Spotkanie z klientem` + `.brief-actions .primary-button`).
+- Lokalna weryfikacja:
+  `pnpm exec playwright test tests/e2e/meeting.spec.js tests/e2e/smoke.spec.js tests/e2e/studio.spec.js`
+  Wynik: `11 passed, 1 skipped`
 - Kryterium zamkniecia:
   Swiezy run `E2E Tests` dla `main` przechodzi bez bledow `.workspace-sidebar` i bez timeoutow `locator.fill`.
 
@@ -223,13 +228,13 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 ### GitHub Actions Errors (aktualny snapshot: 11 failed runow)
 
 - **GH-AUTO-2026-04-05-11** — Investigate fresh E2E failure after `test(server): stabilize local pre-push suites`
-  - **Status:** `todo`
+  - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> E2E Tests`
   - **Owner:** `Codex`
   - **Zakres:** nowy fail po commicie `c07dd10` z `2026-04-05T17:47:06Z`
   - **Error:** `expect(locator('.workspace-sidebar')).toBeVisible()` oraz wiele `locator.fill: Timeout 15000ms exceeded` dla inputu spotkania
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24007013864
-  - **Notatka:** swiezy raport `github-errors-2026-04-05T18-25-32-572Z.md` pokazuje, ze to jeden wspolny klaster E2E po zmianie UI Studio, a nie rozproszone pojedyncze awarie
+  - **Notatka:** swiezy raport `github-errors-2026-04-05T18-25-32-572Z.md` pokazuje, ze to jeden wspolny klaster E2E po zmianie UI Studio, a nie rozproszone pojedyncze awarie; lokalnie poprawione przez przestawienie selektorow Playwright z `.workspace-sidebar` na aktualny modal briefu
 
 - **GH-AUTO-2026-04-05-0** — Investigate fresh typecheck failure after `fix(prod): ship agent updates`
   - **Status:** `verify`
@@ -518,5 +523,4 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24005623836
   - **Created:** 2026-04-05T18:30:54.925Z
   - **Priority:** High
-
 

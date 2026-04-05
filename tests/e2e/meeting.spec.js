@@ -2,6 +2,18 @@
 import { test, expect } from '@playwright/test';
 import { seedLoggedInUser } from './helpers/seed.js';
 
+function briefModal(page) {
+  return page.getByRole('dialog', { name: /Nowe spotkanie|Edytuj spotkanie/i });
+}
+
+function briefTitleInput(page) {
+  return briefModal(page).getByPlaceholder('np. Spotkanie z klientem');
+}
+
+function briefSaveButton(page) {
+  return briefModal(page).locator('.brief-actions .primary-button');
+}
+
 test.describe('Studio — tworzenie i edycja spotkania', () => {
   test.beforeEach(async ({ page }) => {
     await seedLoggedInUser(page);
@@ -17,15 +29,13 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
 
     // The sidebar meeting form should be visible
-    await expect(page.locator('.workspace-sidebar')).toBeVisible();
+    await expect(briefModal(page)).toBeVisible();
 
     // Fill in the title
-    await page
-      .locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']")
-      .fill(meetingTitle);
+    await briefTitleInput(page).fill(meetingTitle);
 
     // Save
-    await page.locator('.brief-actions .primary-button').click();
+    await briefSaveButton(page).click();
 
     // The meeting title should now appear in the header
     await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle);
@@ -36,13 +46,11 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
 
     // Clear the title field (should be empty by default for a new draft)
-    const titleInput = page.locator(
-      ".workspace-sidebar input[placeholder='np. Spotkanie z klientem']"
-    );
+    const titleInput = briefTitleInput(page);
     await titleInput.fill('');
 
     // The save button should be disabled
-    await expect(page.locator('.brief-actions .primary-button')).toBeDisabled();
+    await expect(briefSaveButton(page)).toBeDisabled();
   });
 
   // ── Create meeting — fill datetime ────────────────────────────────────────
@@ -50,15 +58,13 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
 
     const meetingTitle = `Spotkanie z datą ${Date.now()}`;
-    await page
-      .locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']")
-      .fill(meetingTitle);
+    await briefTitleInput(page).fill(meetingTitle);
 
     // Set a start time using datetime-local input
-    const dateInput = page.locator(".workspace-sidebar input[type='datetime-local']");
+    const dateInput = briefModal(page).locator("input[type='datetime-local']");
     await dateInput.fill('2026-06-15T10:00');
 
-    await page.locator('.brief-actions .primary-button').click();
+    await briefSaveButton(page).click();
 
     await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle);
   });
@@ -82,13 +88,13 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
 
     // The sidebar meeting form should be visible
-    await expect(page.locator('.workspace-sidebar')).toBeVisible();
+    await expect(briefModal(page)).toBeVisible();
 
     // Click cancel
-    await page.getByRole('button', { name: 'Anuluj' }).click();
+    await briefModal(page).getByRole('button', { name: 'Anuluj' }).click();
 
     // The sidebar meeting form should be hidden
-    await expect(page.locator('.workspace-sidebar')).toBeHidden();
+    await expect(briefModal(page)).toBeHidden();
   });
 
   // ── Create meeting — verify form closes on save ─────────────────────────
@@ -96,17 +102,15 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
     const meetingTitle = `E2E Pomyślne Zamknięcie ${Date.now()}`;
 
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
-    await expect(page.locator('.workspace-sidebar')).toBeVisible();
+    await expect(briefModal(page)).toBeVisible();
 
-    await page
-      .locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']")
-      .fill(meetingTitle);
+    await briefTitleInput(page).fill(meetingTitle);
 
     // Save
-    await page.locator('.brief-actions .primary-button').click();
+    await briefSaveButton(page).click();
 
     // Form should hide and header text should appear
-    await expect(page.locator('.workspace-sidebar')).toBeHidden();
+    await expect(briefModal(page)).toBeHidden();
     await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle);
   });
 });

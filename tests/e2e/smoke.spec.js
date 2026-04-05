@@ -2,6 +2,10 @@
 import { test, expect } from '@playwright/test';
 import { seedLoggedInUser, seedMeeting } from './helpers/seed.js';
 
+function briefDialog(page) {
+  return page.getByRole('dialog', { name: /Nowe spotkanie|Edytuj spotkanie/i });
+}
+
 // Increase timeout for smoke tests
 test.describe.configure({ timeout: 90_000 });
 
@@ -29,10 +33,8 @@ test.describe('Smoke product flows', () => {
     const meetingTitle = `Smoke meeting ${Date.now()}`;
 
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
-    await page
-      .locator(".workspace-sidebar input[placeholder='np. Spotkanie z klientem']")
-      .fill(meetingTitle);
-    await page.locator('.brief-actions .primary-button').click();
+    await briefDialog(page).getByPlaceholder('np. Spotkanie z klientem').fill(meetingTitle);
+    await briefDialog(page).locator('.brief-actions .primary-button').click();
 
     // Wait for meeting title with retry
     await expect(page.locator('.ff-header-title')).toHaveText(meetingTitle, { timeout: 15_000 });
