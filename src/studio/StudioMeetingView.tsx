@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
-import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
 import {
   addCustomTaskPerson,
@@ -1054,51 +1053,7 @@ export default function StudioMeetingView({
     (!safeArray(studioAnalysis?.decisions).length &&
       !safeArray(studioAnalysis?.tasks).length &&
       !safeArray(studioAnalysis?.participantInsights).length);
-  const meetingTaskEntries = useMemo(() => {
-    const meetingId = String(selectedMeeting?.id || '').trim();
-    const recordingId = String(selectedRecording?.id || '').trim();
 
-    if (!meetingId && !recordingId) {
-      return [];
-    }
-
-    return safeArray(meetingTasks)
-      .filter((task) => {
-        const taskMeetingId = String(task?.sourceMeetingId || '').trim();
-        const taskRecordingId = String(task?.sourceRecordingId || '').trim();
-        const taskSourceType = String(task?.sourceType || '').trim();
-
-        return Boolean(
-          (meetingId && taskMeetingId === meetingId) ||
-          (recordingId && taskRecordingId === recordingId) ||
-          (meetingId && taskSourceType === 'meeting' && !taskMeetingId)
-        );
-      })
-      .sort((a, b) => {
-        const left = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
-        const right = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
-        return right - left;
-      });
-  }, [meetingTasks, selectedMeeting?.id, selectedRecording?.id]);
-
-  function openMeetingTaskDetails(taskId) {
-    if (!taskId || typeof onOpenTask !== 'function') {
-      return;
-    }
-
-    onOpenTask({ taskId, mode: 'detail' });
-  }
-
-  function goToTasksTab(taskId) {
-    if (typeof onOpenTask === 'function') {
-      onOpenTask({ taskId, mode: 'tab' });
-      return;
-    }
-
-    if (typeof setActiveTab === 'function') {
-      setActiveTab('tasks');
-    }
-  }
   const summaryBullets = useMemo(() => {
     const bullets: { icon: string; label: string; value: string }[] = [];
 
