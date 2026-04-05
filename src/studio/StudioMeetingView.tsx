@@ -766,8 +766,10 @@ export default function StudioMeetingView({
   const [analysisDraft, setAnalysisDraft] = useState({
     summary: '',
     decisions: '',
+    actionItems: '',
     followUps: '',
     risks: '',
+    blockers: '',
   });
 
   function handleEditAnalysis() {
@@ -775,11 +777,13 @@ export default function StudioMeetingView({
     setAnalysisDraft({
       summary: studioAnalysis?.summary || '',
       decisions: (safeArray(studioAnalysis?.decisions) || []).join('\n'),
+      actionItems: (safeArray(studioAnalysis?.actionItems) || []).join('\n'),
       followUps: (safeArray(studioAnalysis?.followUps) || []).join('\n'),
       risks: (safeArray(studioAnalysis?.risks) || [])
         .map((r: any) => (typeof r === 'string' ? r : r?.risk || ''))
         .filter(Boolean)
         .join('\n'),
+      blockers: (safeArray(studioAnalysis?.blockers) || []).join('\n'),
     });
   }
 
@@ -799,6 +803,10 @@ export default function StudioMeetingView({
         .split('\n')
         .map((s: string) => s.trim())
         .filter(Boolean),
+      actionItems: analysisDraft.actionItems
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
       followUps: analysisDraft.followUps
         .split('\n')
         .map((s: string) => s.trim())
@@ -808,6 +816,10 @@ export default function StudioMeetingView({
         .map((s: string) => s.trim())
         .filter(Boolean)
         .map((r: string) => ({ risk: r, impact: 'Medium', mitigation: '' })),
+      blockers: analysisDraft.blockers
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter(Boolean),
     };
 
     updateMeeting?.(targetId, { analysis: newAnalysis });
@@ -929,6 +941,19 @@ export default function StudioMeetingView({
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
+  const [verifiedSpeakerNames, setVerifiedSpeakerNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!remoteApiEnabled()) return;
+    apiRequest('/voice-profiles')
+      .then((data: any) => {
+        const names = (data?.profiles || [])
+          .filter((p: any) => p.hasEmbedding)
+          .map((p: any) => p.speakerName as string);
+        setVerifiedSpeakerNames([...new Set(names)]);
+      })
+      .catch(() => {});
+  }, []);
   const [pendingVoiceProfileEnrollment, setPendingVoiceProfileEnrollment] = useState<{
     recordingId: string;
     speakerId: string;
@@ -1064,7 +1089,7 @@ export default function StudioMeetingView({
       bullets.push({
         icon: '✅',
         label: 'Decyzje',
-        value: decisionsText.length === 1 ? decisionsText[0] : decisionsText.join('; '),
+        value: decisionsText.map((item) => `• ${item}`).join('\n'),
       });
     }
 
@@ -1073,7 +1098,7 @@ export default function StudioMeetingView({
       bullets.push({
         icon: '📌',
         label: 'Action items',
-        value: actionText.length === 1 ? actionText[0] : actionText.join('; '),
+        value: actionText.map((item) => `• ${item}`).join('\n'),
       });
     }
 
@@ -1082,7 +1107,7 @@ export default function StudioMeetingView({
       bullets.push({
         icon: '➡️',
         label: 'Następne kroki',
-        value: followUpText.length === 1 ? followUpText[0] : followUpText.join('; '),
+        value: followUpText.map((item) => `• ${item}`).join('\n'),
       });
     }
 
@@ -1091,12 +1116,32 @@ export default function StudioMeetingView({
       bullets.push({
         icon: '⚠️',
         label: 'Ryzyka / blokery',
-        value: riskItems.slice(0, 3).join('; '),
+        value: riskItems
+          .slice(0, 3)
+          .map((item) => `• ${item}`)
+          .join('\n'),
       });
     }
 
     return bullets.slice(0, 5);
   }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions]);
+  const actionItems = useMemo(
+    () => autoTaskDrafts.map((task) => task.title).slice(0, 4),
+    [autoTaskDrafts]
+  );
+  const riskAndBlockerItems = useMemo(() => {
+    const riskItems = risks.map((item) => item.risk).filter(Boolean);
+    const tensionItems = tensions
+      .map((item) => {
+        const sides =
+          Array.isArray(item?.between) && item.between.length ? item.between.join(' vs ') : '';
+        if (item?.topic && sides) return `${item.topic} - ${sides}`;
+        return item?.topic || sides;
+      })
+      .filter(Boolean);
+
+    return [...riskItems, ...blockers, ...tensionItems].filter(Boolean);
+  }, [blockers, risks, tensions]);
 
   const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
   const [sketchnoteExpanded, setSketchnoteExpanded] = useState(false);
@@ -2024,7 +2069,9 @@ export default function StudioMeetingView({
                       ) : null}
                     </div>
 
-                    <div className="summary-grid">
+                    <div
+                      className={`summary-grid${!isEditingAnalysis ? ' summary-grid-meta-only' : ''}`}
+                    >
                       <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
                           <h3>Uczestnicy</h3>
@@ -2111,15 +2158,30 @@ export default function StudioMeetingView({
                           )}
                         </div>
                         {isEditingAnalysis ? (
-                          <textarea
-                            className="editable-analysis-textarea"
-                            value={analysisDraft.decisions}
-                            onChange={(e) =>
-                              setAnalysisDraft((prev) => ({ ...prev, decisions: e.target.value }))
-                            }
-                            placeholder="Wpisz decyzje, każda w nowej linii..."
-                            rows={5}
-                          />
+                          <>
+                            <textarea
+                              className="editable-analysis-textarea"
+                              value={analysisDraft.decisions}
+                              onChange={(e) =>
+                                setAnalysisDraft((prev) => ({ ...prev, decisions: e.target.value }))
+                              }
+                              placeholder="Wpisz decyzje, każda w nowej linii..."
+                              rows={5}
+                            />
+                            <textarea
+                              className="editable-analysis-textarea"
+                              value={analysisDraft.blockers}
+                              onChange={(e) =>
+                                setAnalysisDraft((prev) => ({
+                                  ...prev,
+                                  blockers: e.target.value,
+                                }))
+                              }
+                              placeholder="Wpisz blokery, każdy w nowej linii..."
+                              rows={4}
+                              style={{ marginTop: 12 }}
+                            />
+                          </>
                         ) : safeArray(studioAnalysis.decisions).length ? (
                           <ul className="analysis-list summary-list-tight">
                             {studioAnalysis.decisions.map((item, i) => (
@@ -2128,6 +2190,34 @@ export default function StudioMeetingView({
                           </ul>
                         ) : (
                           <p className="soft-copy">Brak wykrytych decyzji.</p>
+                        )}
+                      </section>
+                      <section className="summary-card">
+                        <div className="summary-card-head">
+                          <h3>Action items</h3>
+                          {actionItems.length > 0 && <span>{actionItems.length}</span>}
+                        </div>
+                        {isEditingAnalysis ? (
+                          <textarea
+                            className="editable-analysis-textarea"
+                            value={analysisDraft.actionItems}
+                            onChange={(e) =>
+                              setAnalysisDraft((prev) => ({
+                                ...prev,
+                                actionItems: e.target.value,
+                              }))
+                            }
+                            placeholder="Wpisz action items, każdy w nowej linii..."
+                            rows={5}
+                          />
+                        ) : actionItems.length ? (
+                          <ul className="analysis-list summary-list-tight summary-list-pretty">
+                            {actionItems.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="soft-copy">Brak action items.</p>
                         )}
                       </section>
                       <section className="summary-card">
@@ -2159,8 +2249,8 @@ export default function StudioMeetingView({
                       <section className="summary-card">
                         <div className="summary-card-head">
                           <h3>Ryzyka i blokery</h3>
-                          {risks.length + blockers.length + tensions.length > 0 && (
-                            <span>{risks.length + blockers.length + tensions.length}</span>
+                          {riskAndBlockerItems.length > 0 && (
+                            <span>{riskAndBlockerItems.length}</span>
                           )}
                         </div>
                         {isEditingAnalysis ? (
@@ -3060,6 +3150,20 @@ export default function StudioMeetingView({
                     >
                       <div className="fireflies-avatar" style={{ background: color }}>
                         {letter}
+                        {verifiedSpeakerNames.includes(name) && (
+                          <span
+                            className="fireflies-avatar-verified"
+                            title="Zatwierdzony profil głosowy"
+                          >
+                            <svg viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                              <path
+                                d="M1.5 4l2 2 3-3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
+                        )}
                       </div>
 
                       <div className="fireflies-content">

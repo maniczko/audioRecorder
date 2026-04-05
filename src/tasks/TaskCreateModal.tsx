@@ -37,6 +37,9 @@ export default function TaskCreateModal({
             onClose();
           }}
           onCancel={onClose}
+          showCancel
+          showQuickAdd={false}
+          autoFocus={false}
         />
       </div>
     </Modal>

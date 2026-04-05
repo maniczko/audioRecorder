@@ -119,6 +119,14 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
     ],
     followUps: ['...'],
     answersToNeeds: [{ need: '...', answer: '...' }],
+    briefGoalsMet: {
+      overallScore: 7,
+      verdict: 'Spotkanie częściowo osiągnęło cele z briefu.',
+      goals: [
+        { goal: '...', met: true, evidence: '...' },
+        { goal: '...', met: false, evidence: 'Nie omówiono.' },
+      ],
+    },
     suggestedTags: ['tag1'],
     meetingType: 'planning',
     energyLevel: 'medium',
@@ -195,9 +203,24 @@ export async function analyzeMeetingWithOpenAI({ meeting, segments, speakerNames
     '9. perceptionNotes: napisz JAK uczestnik jest FAKTYCZNIE odbierany na podstawie transkryptu (nie jak "mógłby" być odbierany).',
     '10. nextSteps: 3 konkretne, mierzalne działania do wdrożenia natychmiast.',
     '',
-    `Tytuł spotkania: ${meeting?.title || 'Nieznany'}`,
-    `Kontekst: ${meeting?.context || 'Brak'}`,
-    `Potrzeby: ${Array.isArray(meeting?.needs) ? meeting.needs.join(' | ') : meeting?.needs || 'Brak'}`,
+    ...(() => {
+      const hasGoals = meeting?.context || meeting?.needs || meeting?.desiredOutputs;
+      if (!hasGoals) return [];
+      return [
+        '── BRIEF SPOTKANIA (cele do weryfikacji) ──',
+        `Tytuł: ${meeting?.title || 'Nieznany'}`,
+        meeting?.context ? `Kontekst: ${meeting.context}` : null,
+        meeting?.needs
+          ? `Potrzeby: ${Array.isArray(meeting.needs) ? meeting.needs.join(' | ') : meeting.needs}`
+          : null,
+        meeting?.desiredOutputs
+          ? `Oczekiwane rezultaty: ${Array.isArray(meeting.desiredOutputs) ? meeting.desiredOutputs.join(' | ') : meeting.desiredOutputs}`
+          : null,
+        '',
+        'ZADANIE BRIEF: Sekcja "briefGoalsMet" musi ocenić każdy cel z briefu (potrzeby + oczekiwane rezultaty) i sprawdzić czy był omówiony na spotkaniu. Dla każdego celu: met=true/false + evidence (cytat lub timestamp z transkryptu). overallScore 1-10.',
+        '──────────────────────────────────────────',
+      ].filter(Boolean);
+    })(),
     '',
     'Zwróć JSON w tym formacie (wszystkie pola w języku polskim):',
     schema,

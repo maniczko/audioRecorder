@@ -212,12 +212,290 @@ export function splitSegmentsByWordSpeaker(whisperRawSegments: any[], pyannoteSe
 /**
  * GPT-4o-mini based speaker diarization derived from transcript text.
  */
+// ── Polish name/nickname normalization ────────────────────────────────────────
+
+/**
+ * Infers gender from a Polish first name.
+ * Returns 'male', 'female', or null if unknown.
+ */
+export function inferGenderFromPolishName(name: string): 'male' | 'female' | null {
+  const n = name.trim().toLowerCase();
+
+  const maleNames = new Set([
+    'adam',
+    'adamek',
+    'adaś',
+    'aleksander',
+    'alex',
+    'andrzej',
+    'antek',
+    'antoni',
+    'bartek',
+    'bartosz',
+    'bartłomiej',
+    'benedykt',
+    'bogdan',
+    'bohdan',
+    'borys',
+    'cezary',
+    'cyprian',
+    'czesław',
+    'damian',
+    'daniel',
+    'darek',
+    'dariusz',
+    'dawid',
+    'dominik',
+    'eryk',
+    'filip',
+    'frank',
+    'grzegorz',
+    'hubert',
+    'igor',
+    'jacek',
+    'jakub',
+    'jan',
+    'janek',
+    'janusz',
+    'jarek',
+    'jarosław',
+    'jerzy',
+    'jurek',
+    'kamil',
+    'karol',
+    'konrad',
+    'krystian',
+    'krzysztof',
+    'krzysiek',
+    'krzysiu',
+    'kuba',
+    'lech',
+    'leon',
+    'lorek',
+    'łukasz',
+    'łukaszek',
+    'maciej',
+    'marek',
+    'marcin',
+    'mariusz',
+    'mateusz',
+    'maks',
+    'maksymilian',
+    'michał',
+    'michal',
+    'michałek',
+    'mirek',
+    'mirosław',
+    'norbert',
+    'olek',
+    'oleksy',
+    'oskar',
+    'patryk',
+    'paweł',
+    'pawełek',
+    'piotr',
+    'piotrek',
+    'przemek',
+    'przemysław',
+    'radek',
+    'radosław',
+    'rafał',
+    'rafałek',
+    'robert',
+    'robertek',
+    'seba',
+    'sebastian',
+    'sławek',
+    'sławomir',
+    'stanisław',
+    'stefan',
+    'stef',
+    'szymon',
+    'szymek',
+    'tomasz',
+    'tomek',
+    'tomciu',
+    'tadeusz',
+    'tadzio',
+    'tymon',
+    'viktor',
+    'wiktor',
+    'wojciech',
+    'wojtek',
+    'zbyszek',
+    'zbigniew',
+    'zygmunt',
+  ]);
+
+  const femaleNames = new Set([
+    'ada',
+    'agata',
+    'agnieszka',
+    'agniesia',
+    'aleksandra',
+    'ola',
+    'olka',
+    'alicja',
+    'alicia',
+    'alina',
+    'amelia',
+    'amelka',
+    'ania',
+    'anna',
+    'anita',
+    'antek',
+    'barbara',
+    'basia',
+    'basieńka',
+    'beatrycze',
+    'beata',
+    'celina',
+    'daria',
+    'diana',
+    'dominika',
+    'dorota',
+    'edyta',
+    'ela',
+    'elżbieta',
+    'emilia',
+    'emma',
+    'ewa',
+    'ewelina',
+    'ewka',
+    'gabrysia',
+    'gabriela',
+    'gosia',
+    'grażyna',
+    'hania',
+    'hanna',
+    'helena',
+    'ilona',
+    'irena',
+    'iza',
+    'izabela',
+    'izabella',
+    'jagoda',
+    'joanna',
+    'asia',
+    'jola',
+    'jolanta',
+    'julia',
+    'julka',
+    'justyna',
+    'kasia',
+    'karo',
+    'karolina',
+    'katarzyna',
+    'klaudia',
+    'kinga',
+    'kornelia',
+    'kristina',
+    'krystyna',
+    'laura',
+    'laura',
+    'lena',
+    'lidia',
+    'lucyna',
+    'magda',
+    'magdalena',
+    'maja',
+    'malwina',
+    'małgosia',
+    'małgorzata',
+    'maria',
+    'marta',
+    'marysia',
+    'martyna',
+    'matylda',
+    'monika',
+    'monka',
+    'natalia',
+    'natasza',
+    'natka',
+    'nicole',
+    'nikola',
+    'nina',
+    'noemi',
+    'oliwia',
+    'patrycja',
+    'paula',
+    'paulina',
+    'renata',
+    'roma',
+    'róża',
+    'sabina',
+    'sara',
+    'sylwia',
+    'teresa',
+    'urszula',
+    'ula',
+    'wanda',
+    'weronika',
+    'werka',
+    'wiktoria',
+    'zofia',
+    'zuzanna',
+    'zuzia',
+  ]);
+
+  if (maleNames.has(n)) return 'male';
+  if (femaleNames.has(n)) return 'female';
+
+  // Polish name endings heuristic
+  if (
+    n.endsWith('ek') ||
+    n.endsWith('ek') ||
+    n.endsWith('ław') ||
+    n.endsWith('mir') ||
+    n.endsWith('sław') ||
+    n.endsWith('gniew') ||
+    n.endsWith('omił')
+  )
+    return 'male';
+  if (n.endsWith('a') && !n.endsWith('za')) return 'female'; // most Polish female names end in -a
+
+  return null;
+}
+
+/**
+ * Normalizes a Polish name/nickname to the canonical form from the participants list.
+ * E.g. "Adamku" → "Adam", "Bartku" → "Bartek"
+ */
+export function normalizeToParticipant(mention: string, participants: string[]): string | null {
+  const m = mention.trim().toLowerCase();
+
+  for (const p of participants) {
+    const base = p.trim().toLowerCase();
+    if (base === m) return p;
+
+    // Direct prefix match (Adamek → Adam, Tomku → Tomek)
+    if (m.startsWith(base)) return p;
+
+    // Vocative/diminutive endings: strip common Polish suffixes and compare
+    const stripped = m
+      .replace(/ku$/, '') // Adamku → adam
+      .replace(/iu$/, '') // Tomciu → tomci → handled below
+      .replace(/ek$/, '') // Adamek → adam
+      .replace(/ciu$/, 'ek') // Tomciu → tomek
+      .replace(/ś$/, '') // Adaś → ada
+      .replace(/ka$/, '') // Basika → basi
+      .replace(/ia$/, '') // Basia → bas
+      .replace(/usia$/, '') // Hanusia → han
+      .replace(/uś$/, ''); // Hanusia → han
+
+    if (stripped === base || base.startsWith(stripped) || stripped.startsWith(base)) return p;
+  }
+
+  return null;
+}
+
 export async function diarizeFromTranscript(
   segments: any[],
   options: { participants?: string[] } = {}
 ): Promise<{
   segments: any[];
   speakerNames: Record<string, string>;
+  speakerGenders: Record<string, 'male' | 'female' | null>;
   speakerCount: number;
   text: string;
 } | null> {
@@ -246,22 +524,33 @@ export async function diarizeFromTranscript(
     })
     .join('\n');
 
+  const knownParticipants = (options.participants || []).filter(Boolean).slice(0, 8);
+  const hasParticipants = knownParticipants.length >= 1;
+
   const systemPrompt =
-    'You are a speaker diarization engine. Your ONLY job is to assign a speaker label (A, B, C…) ' +
-    'to each segment of a transcript from a multi-speaker recording. ' +
+    'You are a speaker diarization engine for Polish/multilingual recordings. ' +
+    'Your job is to assign a speaker label (A, B, C…) to each segment AND, ' +
+    'when participants are known, identify which label belongs to which person. ' +
     'You MUST produce output for every segment — no skipping. ' +
     'Return ONLY valid JSON, no explanation.';
 
-  const knownParticipants = (options.participants || []).filter(Boolean);
-  const participantHint =
-    knownParticipants.length >= 2
-      ? `\nZnani uczestnicy spotkania: ${knownParticipants.slice(0, 8).join(', ')}.\nLitery A, B, C… odpowiadają kolejnym mówcom w kolejności ich pierwszego wystąpienia. Spróbuj przypisać tyle różnych liter ile jest znanych uczestników.\n`
-      : '';
+  const participantBlock = hasParticipants
+    ? [
+        `Znani uczestnicy spotkania: ${knownParticipants.join(', ')}.`,
+        'Przypisz litery A, B, C… do tych konkretnych osób, nie do anonimowych mówców.',
+        'Litery odpowiadają kolejności PIERWSZEGO WYSTĄPIENIA mówcy.',
+        'KLUCZOWE: Szukaj w tekście adresowań po imieniu lub zdrobnieniu (np. "Hej Adam", "Bartek, co sądzisz?", "Dzięki Adamku"). Osoba NASTĘPUJĄCA po takim adresowaniu to prawdopodobnie ta osoba.',
+        'Polskie zdrobnienia: -ek, -ku, -iu, -ś, -ka, -sia, -uś (np. Adamek=Adam, Bartku=Bartek, Tomciu=Tomek, Kasia=Katarzyna).',
+        'Jeśli identyfikujesz, kto jest który mówca, uwzględnij to w "names": {"A": "Adam", "B": "Bartek"}.',
+        'Jeśli nie jesteś pewny przypisania imienia do litery, NIE zgaduj — pomiń w "names".',
+      ].join('\n')
+    : '';
 
   const userPrompt = [
     'Nagranie rozmowy między WIELOMA osobami (co najmniej 2). To NIE jest monolog.',
     'Każda zmiana osoby mówiącej musi być oznaczona inną literą (A, B, C…).',
-    participantHint,
+    participantBlock,
+    '',
     'SILNE SYGNAŁY ZMIANY MÓWCY:',
     '• [cisza ≥ 0.5s] przed segmentem → prawie zawsze zmiana mówcy',
     '• [cisza ≥ 2s] → na pewno zmiana mówcy — ZAWSZE przypisz inną literę',
@@ -276,7 +565,9 @@ export async function diarizeFromTranscript(
     lines,
     '',
     `Przypisz mówców dla ${chunk.length} segmentów.`,
-    'Format: {"segments": [{"i": 0, "s": "A"}, {"i": 1, "s": "B"}, ...]}',
+    hasParticipants
+      ? 'Format: {"segments": [{"i": 0, "s": "A"}, ...], "names": {"A": "Adam", "B": "Bartek"}}'
+      : 'Format: {"segments": [{"i": 0, "s": "A"}, {"i": 1, "s": "B"}, ...]}',
     'Każdy indeks od 0 do ' + (chunk.length - 1) + ' musi być obecny.',
   ].join('\n');
 
@@ -293,7 +584,7 @@ export async function diarizeFromTranscript(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        max_tokens: Math.min(4096, chunk.length * 14 + 60),
+        max_tokens: Math.min(4096, chunk.length * 14 + 200),
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),
@@ -312,6 +603,16 @@ export async function diarizeFromTranscript(
       return null;
     }
 
+    // GPT-returned letter→name mappings (e.g. {"A": "Adam", "B": "Bartek"})
+    const gptNameMap: Record<string, string> = {};
+    if (parsed?.names && typeof parsed.names === 'object') {
+      for (const [letter, rawName] of Object.entries(parsed.names)) {
+        if (typeof rawName !== 'string') continue;
+        const canonical = normalizeToParticipant(rawName, knownParticipants) || rawName.trim();
+        if (canonical) gptNameMap[letter.toUpperCase()] = canonical;
+      }
+    }
+
     const indexToSpeaker = new Map(
       assignments.map((a) => [
         Number(a.i),
@@ -324,6 +625,17 @@ export async function diarizeFromTranscript(
 
     const speakerOrder = new Map<string, number>();
     const speakerNames: Record<string, string> = {};
+    const speakerGenders: Record<string, 'male' | 'female' | null> = {};
+
+    // Assign participant names in order of first appearance if GPT didn't return names
+    // but we have exactly as many participants as detected speakers
+    const letterOrder: string[] = [];
+    for (const a of assignments) {
+      const letter = String(a.s || 'A')
+        .toUpperCase()
+        .slice(0, 1);
+      if (!letterOrder.includes(letter)) letterOrder.push(letter);
+    }
 
     const resultSegments = segments
       .map((wseg, i) => {
@@ -335,7 +647,20 @@ export async function diarizeFromTranscript(
         if (!speakerOrder.has(rawLabel)) {
           const nextId = speakerOrder.size;
           speakerOrder.set(rawLabel, nextId);
-          speakerNames[String(nextId)] = `Speaker ${nextId + 1}`;
+
+          // Resolve name: GPT mapping → participant by order → fallback label
+          let resolvedName: string;
+          if (gptNameMap[rawLabel]) {
+            resolvedName = gptNameMap[rawLabel];
+          } else if (knownParticipants.length > 0 && nextId < knownParticipants.length) {
+            // Assign participants in order of first appearance as fallback
+            resolvedName = knownParticipants[nextId];
+          } else {
+            resolvedName = `Speaker ${nextId + 1}`;
+          }
+
+          speakerNames[String(nextId)] = resolvedName;
+          speakerGenders[String(nextId)] = inferGenderFromPolishName(resolvedName);
         }
 
         const speakerId = speakerOrder.get(rawLabel)!;
@@ -357,7 +682,7 @@ export async function diarizeFromTranscript(
 
     if (DEBUG) {
       const dist = resultSegments.reduce((acc: any, s: any) => {
-        const k = `${s.speakerId}(${s.rawSpeakerLabel})`;
+        const k = `${s.speakerId}(${s.rawSpeakerLabel})→${speakerNames[String(s.speakerId)]}`;
         acc[k] = (acc[k] || 0) + 1;
         return acc;
       }, {});
@@ -369,6 +694,7 @@ export async function diarizeFromTranscript(
     return {
       segments: resultSegments,
       speakerNames,
+      speakerGenders,
       speakerCount: Object.keys(speakerNames).length,
       text: resultSegments.map((s: any) => s!.text).join(' '),
     };

@@ -372,6 +372,7 @@ export default function TranscriptPanel({
   displayRecording,
   selectedRecording,
   displaySpeakerNames,
+  verifiedSpeakerNames = [] as string[],
   selectedRecordingAudioUrl,
   selectedRecordingAudioError,
   audioRef, // ← new prop
@@ -1116,7 +1117,7 @@ export default function TranscriptPanel({
                   <div
                     className={`fireflies-segment ${isActive ? 'active' : ''} ${segment.verificationStatus === 'review' ? 'needs-review' : ''} ${Number(segment.verificationScore || 1) < 0.6 ? 'low-confidence' : ''}`}
                     onClick={() => !isActive && activateSegment(segment)}
-                    style={{ marginBottom: '24px' }} // Maintain gap from CSS
+                    style={{ marginBottom: '10px' }}
                   >
                     <div
                       className="fireflies-avatar"
@@ -1125,6 +1126,18 @@ export default function TranscriptPanel({
                       {labelSpeaker(displaySpeakerNames, segment.speakerId)
                         .substring(0, 1)
                         .toUpperCase()}
+                      {verifiedSpeakerNames.includes(
+                        labelSpeaker(displaySpeakerNames, segment.speakerId)
+                      ) && (
+                        <span
+                          className="fireflies-avatar-verified"
+                          title="Zatwierdzony profil głosowy"
+                        >
+                          <svg viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                            <path d="M1.5 4l2 2 3-3" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
 
                     <div className="fireflies-content">

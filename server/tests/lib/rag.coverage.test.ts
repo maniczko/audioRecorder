@@ -7,9 +7,10 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RagChunkRetriever } from '../../lib/ragRetriever';
 import { buildRagContext, generateRagAnswer } from '../../lib/ragAnswer';
 
-const { mockOpenAiInvoke, mockGroqInvoke } = vi.hoisted(() => ({
+const { mockOpenAiInvoke, mockGroqInvoke, mockFetch } = vi.hoisted(() => ({
   mockOpenAiInvoke: vi.fn(),
   mockGroqInvoke: vi.fn(),
+  mockFetch: vi.fn(),
 }));
 
 // Mock providers at module level
@@ -258,6 +259,8 @@ describe('generateRagAnswer', () => {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
     };
+    vi.stubGlobal('fetch', mockFetch);
+    mockFetch.mockReset();
   });
 
   afterEach(() => {
@@ -265,6 +268,7 @@ describe('generateRagAnswer', () => {
     process.env.OPENAI_BASE_URL = originalEnv.OPENAI_BASE_URL;
     mockOpenAiInvoke.mockReset();
     mockGroqInvoke.mockReset();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -291,7 +295,14 @@ describe('generateRagAnswer', () => {
   });
 
   test('uses VOICELOG_OPENAI_API_KEY if available', async () => {
-    mockOpenAiInvoke.mockResolvedValueOnce({ content: 'Test answer' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { content: 'Test answer' } }],
+      }),
+      text: async () => '',
+    });
 
     await expect(
       generateRagAnswer({
@@ -301,6 +312,16 @@ describe('generateRagAnswer', () => {
         workspaceId: 'ws1',
       })
     ).resolves.toBe('Test answer');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.openai.com/v1/chat/completions',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-key',
+        }),
+      })
+    );
   }, 15000);
 
   // ---------------------------------------------------------------
@@ -312,8 +333,21 @@ describe('generateRagAnswer', () => {
   //      giving up and returning archive-only fallback text.
   // ---------------------------------------------------------------
   test('tries the next configured provider when the first one fails', async () => {
-    mockGroqInvoke.mockRejectedValueOnce(new Error('Groq temporary outage'));
-    mockOpenAiInvoke.mockResolvedValueOnce({ content: 'Odpowiedz z OpenAI po fallbacku.' });
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+        text: async () => 'Groq temporary outage',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [{ message: { content: 'Odpowiedz z OpenAI po fallbacku.' } }],
+        }),
+        text: async () => '',
+      });
 
     await expect(
       generateRagAnswer({
@@ -327,8 +361,25 @@ describe('generateRagAnswer', () => {
       })
     ).resolves.toBe('Odpowiedz z OpenAI po fallbacku.');
 
-    expect(mockGroqInvoke).toHaveBeenCalledTimes(1);
-    expect(mockOpenAiInvoke).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      1,
+      'https://api.groq.com/openai/v1/chat/completions',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer groq-test-key',
+        }),
+      })
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      'https://api.openai.com/v1/chat/completions',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer openai-test-key',
+        }),
+      })
+    );
   });
 
   test('builds context with chunks', async () => {

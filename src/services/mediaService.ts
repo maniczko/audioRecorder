@@ -210,7 +210,7 @@ function createRemoteMediaService() {
     async persistRecordingAudio(recordingId, blob, options: any = {}) {
       const { workspaceId = '', meetingId = '', onProgress } = options;
       const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
-      const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB
+      const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB — fewer round-trips
       const MAX_UPLOAD_SIZE = 500 * 1024 * 1024; // 500 MB — matches server finalize limit
 
       if (blob && blob.size > MAX_UPLOAD_SIZE) {
@@ -253,24 +253,39 @@ function createRemoteMediaService() {
           onProgress?.((startIndex / total) * 90);
         }
 
-        for (let i = startIndex; i < total; i++) {
-          const chunk = blob.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-          try {
-            await uploadChunkWithRetry({
-              recordingId,
-              index: i,
-              total,
-              chunk,
-              contentType: blob.type || 'application/octet-stream',
-              workspaceId,
-              meetingId,
-            });
-          } catch (error: any) {
-            throw new Error(
-              `Upload audio przerwany na fragmencie ${i + 1}/${total}. ${error?.message || 'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'}`
-            );
-          }
-          onProgress?.(((i + 1) / total) * 90);
+        const PARALLEL_UPLOADS = 3;
+        const pendingIndices: number[] = [];
+        for (let i = startIndex; i < total; i++) pendingIndices.push(i);
+
+        let uploaded = startIndex;
+        for (
+          let batchStart = 0;
+          batchStart < pendingIndices.length;
+          batchStart += PARALLEL_UPLOADS
+        ) {
+          const batch = pendingIndices.slice(batchStart, batchStart + PARALLEL_UPLOADS);
+          await Promise.all(
+            batch.map(async (i) => {
+              const chunk = blob.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+              try {
+                await uploadChunkWithRetry({
+                  recordingId,
+                  index: i,
+                  total,
+                  chunk,
+                  contentType: blob.type || 'application/octet-stream',
+                  workspaceId,
+                  meetingId,
+                });
+              } catch (error: any) {
+                throw new Error(
+                  `Upload audio przerwany na fragmencie ${i + 1}/${total}. ${error?.message || 'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'}`
+                );
+              }
+            })
+          );
+          uploaded += batch.length;
+          onProgress?.((uploaded / total) * 90);
         }
         const response = await apiRequest(`/media/recordings/${recordingId}/audio/finalize`, {
           method: 'POST',

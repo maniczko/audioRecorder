@@ -4,6 +4,11 @@ import {
   getMemoryAwareConcurrency,
   transcribeLiveChunk,
   calculateAdaptiveOverlap,
+  getUploadDir,
+  buildAudioPreprocessCacheKey,
+  getPreprocessCachePath,
+  isPreprocessCacheFile,
+  resolveStoredAudioQuality,
 } from '../transcription.ts';
 
 // ── Typed mock helpers ────────────────────────────────────────────────────────
@@ -185,6 +190,48 @@ describe('transcription.ts — Additional Coverage Tests', () => {
       expect(result.transcriptionDiagnostics.chunksWithWords).toBe(1);
     });
 
+    it('merges word-level payloads without segments', () => {
+      const payloads = [
+        {
+          payload: {
+            segments: [],
+            words: [
+              { word: 'Pierwszy', start: 0, end: 0.8 },
+              { word: 'drugi', start: 0.8, end: 1.5 },
+            ],
+            text: 'Pierwszy drugi',
+          },
+          offsetSeconds: 0,
+          diagnostics: { extracted: true, sentToStt: true, hasWords: true, hasSegments: false },
+        },
+        {
+          payload: {
+            segments: [],
+            words: [
+              { word: 'Trzeci', start: 0, end: 0.6 },
+              { word: 'czwarty', start: 0.6, end: 1.2 },
+            ],
+            text: 'Trzeci czwarty',
+          },
+          offsetSeconds: 15,
+          diagnostics: { extracted: true, sentToStt: true, hasWords: true, hasSegments: false },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, 4096);
+
+      // Both word lists merged with offsets applied
+      expect(result.words).toHaveLength(4);
+      expect(result.words[0].word).toBe('Pierwszy');
+      expect(result.words[0].start).toBe(0);
+      expect(result.words[2].word).toBe('Trzeci');
+      expect(result.words[2].start).toBe(15); // offset applied
+      expect(result.text).toBe('Pierwszy drugi Trzeci czwarty');
+      expect(result.segments).toHaveLength(0);
+      expect(result.transcriptionDiagnostics.chunksWithWords).toBe(2);
+      expect(result.transcriptionDiagnostics.fileSizeBytes).toBe(4096);
+    });
+
     it.each`
       label             | payloadEntry                                                                                                 | expectSentToStt | expectFailed | expectDiscarded | expectLastErr
       ${'success+fail'} | ${{ segs: [{ text: 'OK', start: 0, end: 1 }], diags: [DIAG_SUCCESS, DIAG_FAILED, DIAG_DISCARDED] }}          | ${2}            | ${1}         | ${1}            | ${'API error'}
@@ -228,8 +275,26 @@ describe('transcription.ts — Additional Coverage Tests', () => {
 
       const result = mergeChunkedPayloads(payloads, 0);
 
-      expect(result.transcriptionDiagnostics.sttAttempts).toHaveLength(1);
-      expect(result.sttProviderInfo).toBeDefined();
+      expect(result.transcriptionDiagnostics.sttAttempts).toEqual([
+        { model: 'gpt-4o', status: 'success' },
+      ]);
+      expect(result.sttProviderInfo).toEqual(expect.objectContaining({ providerId: 'openai' }));
+    });
+
+    it('handles fileSizeBytes > 2GB without overflow', () => {
+      const hugeSize = 3 * 1024 * 1024 * 1024; // 3 GB
+      const payloads = [
+        {
+          payload: { segments: [{ text: 'Big', start: 0, end: 1 }], text: 'Big' },
+          offsetSeconds: 0,
+          diagnostics: { extracted: true, sentToStt: true, hasSegments: true },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, hugeSize);
+
+      expect(result.transcriptionDiagnostics.fileSizeBytes).toBe(hugeSize);
+      expect(result.transcriptionDiagnostics.fileSizeBytes).toBeGreaterThan(2147483647);
     });
   });
 
@@ -244,6 +309,7 @@ describe('transcription.ts — Additional Coverage Tests', () => {
       ${'heap ratio > 0.6'}    | ${300} | ${125}     | ${200}      | ${4}        | ${2}
       ${'low memory, limit 4'} | ${100} | ${50}      | ${200}      | ${4}        | ${2}
       ${'low memory, limit 1'} | ${100} | ${50}      | ${200}      | ${1}        | ${1}
+      ${'limit 0 → returns 0'} | ${100} | ${50}      | ${200}      | ${0}        | ${0}
     `(
       'returns $expected when $label',
       ({ rssMB, heapUsedMB, heapTotalMB, configLimit, expected }) => {
@@ -306,6 +372,150 @@ describe('transcription.ts — Additional Coverage Tests', () => {
       // properly exported and has the correct type.
       expect(typeof transcribeLiveChunk).toBe('function');
       expect(transcribeLiveChunk.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  // ── getUploadDir ──────────────────────────────────────────────────────────
+
+  describe('getUploadDir', () => {
+    it('returns a string path', () => {
+      const dir = getUploadDir();
+      expect(typeof dir).toBe('string');
+      expect(dir.length).toBeGreaterThan(0);
+    });
+
+    it('returns the same path on subsequent calls (memoization)', () => {
+      const dir1 = getUploadDir();
+      const dir2 = getUploadDir();
+      expect(dir1).toBe(dir2); // Same reference due to module-level cache
+    });
+  });
+
+  // ── buildAudioPreprocessCacheKey ──────────────────────────────────────────
+
+  describe('buildAudioPreprocessCacheKey', () => {
+    it('produces a consistent hash for the same asset', () => {
+      const asset = {
+        id: 'rec_123',
+        file_path: '/tmp/audio.webm',
+        updated_at: '2026-01-01T00:00:00Z',
+        size_bytes: 1024,
+        content_type: 'audio/webm',
+      };
+
+      const key1 = buildAudioPreprocessCacheKey(asset, 'standard');
+      const key2 = buildAudioPreprocessCacheKey(asset, 'standard');
+
+      expect(key1).toBe(key2);
+      expect(key1).toMatch(/^[a-f0-9]{64}$/); // SHA-256 hex
+    });
+
+    it('produces different hashes for different profiles', () => {
+      const asset = {
+        id: 'rec_123',
+        file_path: '/tmp/audio.webm',
+        updated_at: '2026-01-01T00:00:00Z',
+        size_bytes: 1024,
+        content_type: 'audio/webm',
+      };
+
+      const keyStd = buildAudioPreprocessCacheKey(asset, 'standard');
+      const keyEnh = buildAudioPreprocessCacheKey(asset, 'enhanced');
+
+      expect(keyStd).not.toBe(keyEnh);
+    });
+
+    it('produces different hashes when asset changes', () => {
+      const asset1 = {
+        id: 'rec_123',
+        file_path: '/tmp/audio.webm',
+        updated_at: '2026-01-01T00:00:00Z',
+        size_bytes: 1024,
+        content_type: 'audio/webm',
+      };
+      const asset2 = { ...asset1, updated_at: '2026-01-02T00:00:00Z' };
+
+      const key1 = buildAudioPreprocessCacheKey(asset1, 'standard');
+      const key2 = buildAudioPreprocessCacheKey(asset2, 'standard');
+
+      expect(key1).not.toBe(key2);
+    });
+
+    it('handles null/empty asset gracefully', () => {
+      const key1 = buildAudioPreprocessCacheKey(null as any, 'standard');
+      const key2 = buildAudioPreprocessCacheKey(undefined as any, 'standard');
+
+      expect(typeof key1).toBe('string');
+      expect(typeof key2).toBe('string');
+      expect(key1).toMatch(/^[a-f0-9]{64}$/);
+      expect(key2).toMatch(/^[a-f0-9]{64}$/);
+    });
+  });
+
+  // ── getPreprocessCachePath ────────────────────────────────────────────────
+
+  describe('getPreprocessCachePath', () => {
+    it('returns path with correct profile extension', () => {
+      const cachePath = getPreprocessCachePath('abc123', 'standard');
+      expect(cachePath).toMatch(/\.standard\.wav$/);
+      expect(cachePath).toContain('abc123');
+    });
+
+    it('returns path with enhanced profile extension', () => {
+      const cachePath = getPreprocessCachePath('abc123', 'enhanced');
+      expect(cachePath).toMatch(/\.enhanced\.wav$/);
+    });
+  });
+
+  // ── isPreprocessCacheFile ─────────────────────────────────────────────────
+
+  describe('isPreprocessCacheFile', () => {
+    it('returns true for files inside cache directory', () => {
+      const uploadDir = getUploadDir();
+      const cacheFile = `${uploadDir}/.cache/preprocessed/abc123.standard.wav`;
+      expect(isPreprocessCacheFile(cacheFile)).toBe(true);
+    });
+
+    it('returns false for files outside cache directory', () => {
+      expect(isPreprocessCacheFile('/tmp/some-other-file.wav')).toBe(false);
+      expect(isPreprocessCacheFile('')).toBe(false);
+    });
+  });
+
+  // ── resolveStoredAudioQuality ─────────────────────────────────────────────
+
+  describe('resolveStoredAudioQuality', () => {
+    it('returns audioQuality when present in diarization_json', () => {
+      const asset = {
+        diarization_json: JSON.stringify({
+          audioQuality: { qualityScore: 85, qualityLabel: 'good' },
+        }),
+      };
+
+      const result = resolveStoredAudioQuality(asset);
+      expect(result).toEqual({ qualityScore: 85, qualityLabel: 'good' });
+    });
+
+    it('returns null when diarization_json is empty', () => {
+      const asset = { diarization_json: '{}' };
+      expect(resolveStoredAudioQuality(asset)).toBeNull();
+    });
+
+    it('returns null when diarization_json is null', () => {
+      const asset = { diarization_json: null };
+      expect(resolveStoredAudioQuality(asset)).toBeNull();
+    });
+
+    it('returns null when diarization_json is invalid JSON', () => {
+      const asset = { diarization_json: 'not-json' };
+      expect(resolveStoredAudioQuality(asset)).toBeNull();
+    });
+
+    it('returns null when audioQuality is not an object', () => {
+      const asset = {
+        diarization_json: JSON.stringify({ audioQuality: 'good' }),
+      };
+      expect(resolveStoredAudioQuality(asset)).toBeNull();
     });
   });
 });

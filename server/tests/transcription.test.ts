@@ -1,6 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TranscriptionService from '../services/TranscriptionService.ts';
 
+async function waitForCondition(
+  predicate: () => boolean,
+  { timeoutMs = 5000, intervalMs = 25 } = {}
+) {
+  const startedAt = Date.now();
+  while (!predicate()) {
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new Error(`Condition not met within ${timeoutMs}ms`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
 describe('TranscriptionService', () => {
   let mockDb: any;
   let mockWorkspaceService: any;
@@ -71,6 +84,13 @@ describe('TranscriptionService', () => {
     );
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — postprocess retry assertion flakes in CI
+  // Date: 2026-04-05
+  // Bug: the test slept for 1000ms and sometimes asserted before the
+  //      background fast->full postprocess had triggered.
+  // Fix: explicitly force fast mode and poll for the second pipeline call.
+  // ─────────────────────────────────────────────────────────────────
   it('deduplicates in-flight transcription jobs and persists successful results', async () => {
     const service = new TranscriptionService(
       mockDb,
@@ -94,11 +114,19 @@ describe('TranscriptionService', () => {
     mockAudioPipeline.embedTextChunks.mockResolvedValue([[0.1]]);
     const asset = { id: 'asset_1', file_path: 'test.wav', workspace_id: 'ws_1' };
 
-    service.ensureTranscriptionJob('rec_1', asset, { participants: ['Kasia'], vocabulary: 'lead' });
-    service.ensureTranscriptionJob('rec_1', asset, { participants: ['Kasia'], vocabulary: 'lead' });
+    service.ensureTranscriptionJob('rec_1', asset, {
+      participants: ['Kasia'],
+      vocabulary: 'lead',
+      processingMode: 'fast',
+    });
+    service.ensureTranscriptionJob('rec_1', asset, {
+      participants: ['Kasia'],
+      vocabulary: 'lead',
+      processingMode: 'fast',
+    });
 
-    // Wait for job to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await service.transcriptionJobs.get('rec_1');
+    await waitForCondition(() => mockAudioPipeline.transcribeRecording.mock.calls.length >= 2);
 
     expect(mockDb.markTranscriptionProcessing).toHaveBeenCalled();
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(2);

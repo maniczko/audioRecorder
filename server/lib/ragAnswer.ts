@@ -1,30 +1,104 @@
-// LangChain modules loaded lazily to reduce startup memory (Railway 512MB container)
-let _langchain: { HumanMessage: any; SystemMessage: any; ChatOpenAI: any } | null = null;
-async function getLangChain() {
-  if (!_langchain) {
-    const [messages, openai] = await Promise.all([
-      import('@langchain/core/messages'),
-      import('@langchain/openai'),
-    ]);
-    _langchain = {
-      HumanMessage: messages.HumanMessage,
-      SystemMessage: messages.SystemMessage,
-      ChatOpenAI: openai.ChatOpenAI,
-    };
+async function callWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), ms)),
+  ]);
+}
+
+async function callAnthropic(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 512,
+      temperature: 0.2,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`Anthropic ${res.status}: ${errBody.slice(0, 200)}`);
   }
-  return _langchain;
+  const data = (await res.json()) as any;
+  return String(data?.content?.[0]?.text || '').trim();
+}
+
+async function callGroq(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 512,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`Groq ${res.status}: ${errBody.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as any;
+  return String(data?.choices?.[0]?.message?.content || '').trim();
+}
+
+async function callOpenAI(
+  apiKey: string,
+  model: string,
+  baseUrl: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 512,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`OpenAI ${res.status}: ${errBody.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as any;
+  return String(data?.choices?.[0]?.message?.content || '').trim();
 }
 
 type RagChunk = {
   recording_id?: string;
   speaker_name?: string;
   text?: string;
-};
-
-type RagProviderCandidate = {
-  id: 'groq' | 'anthropic' | 'gemini' | 'openai';
-  label: string;
-  createModel: () => Promise<any>;
 };
 
 function getOpenAiKey(config: any) {
@@ -35,21 +109,6 @@ function getOpenAiBaseUrl(config: any) {
   return String(
     config?.VOICELOG_OPENAI_BASE_URL || config?.OPENAI_BASE_URL || 'https://api.openai.com/v1'
   ).replace(/\/$/, '');
-}
-
-function toMessageText(content: unknown) {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === 'string') return part;
-        if (part && typeof part === 'object' && 'text' in part)
-          return String((part as any).text || '');
-        return '';
-      })
-      .join('');
-  }
-  return String(content || '');
 }
 
 export function buildRagContext(chunks: RagChunk[]) {
@@ -118,6 +177,12 @@ export function buildFallbackRagAnswer({
   }`;
 }
 
+type RagCandidate = {
+  id: string;
+  label: string;
+  call: () => Promise<string>;
+};
+
 export async function generateRagAnswer({
   question,
   chunks,
@@ -132,12 +197,11 @@ export async function generateRagAnswer({
   const openAiKey = getOpenAiKey(config);
   const groqKey = String(config?.GROQ_API_KEY || '').trim();
   const anthropicKey = String(config?.ANTHROPIC_API_KEY || '').trim();
-  const geminiKey = String(
-    config?.GEMINI_API_KEY || config?.GOOGLE_API_KEY || config?.GOOGLE_GENAI_API_KEY || ''
-  ).trim();
 
-  if (!openAiKey && !groqKey && !anthropicKey && !geminiKey) {
-    throw new Error('Brak klucza API do RAG LLMa.');
+  if (!openAiKey && !groqKey && !anthropicKey) {
+    throw new Error(
+      'Brak klucza API do RAG LLMa. Skonfiguruj ANTHROPIC_API_KEY, GROQ_API_KEY lub OPENAI_API_KEY.'
+    );
   }
 
   // Deduplicate chunks to prevent repetitive context
@@ -149,95 +213,60 @@ export async function generateRagAnswer({
   const systemPrompt =
     'Jestes asystentem wiedzy bazy RAG. Udziel krotkiej, konkretnej odpowiedzi bazujac WYLACZNIE na ponizszym archiwalnym kontekscie ze spotkan klienta. Jezeli pytanie wykracza poza kontekst, powiedz, ze nie wiesz, ale nie przepraszaj.';
   const userPrompt = `Kontekst ze spotkan:\n${contextStr}\n\nPytanie uzytkownika: ${question}`;
-  const candidates: RagProviderCandidate[] = [];
+  const TIMEOUT_MS = 20000;
+
+  const candidates: RagCandidate[] = [];
+
+  if (anthropicKey) {
+    const model = config?.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+    candidates.push({
+      id: 'anthropic',
+      label: `Anthropic ${model}`,
+      call: () =>
+        callWithTimeout(callAnthropic(anthropicKey, model, systemPrompt, userPrompt), TIMEOUT_MS),
+    });
+  }
+
   if (groqKey) {
     candidates.push({
       id: 'groq',
       label: 'Groq llama-3.3-70b-versatile',
-      createModel: async () => {
-        const { ChatGroq } = await import('@langchain/groq');
-        return new ChatGroq({
-          apiKey: groqKey,
-          model: 'llama-3.3-70b-versatile',
-          temperature: 0.2,
-        });
-      },
-    });
-  }
-  if (anthropicKey) {
-    candidates.push({
-      id: 'anthropic',
-      label: `Anthropic ${config.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest'}`,
-      createModel: async () => {
-        const { ChatAnthropic } = await import('@langchain/anthropic');
-        return new ChatAnthropic({
-          apiKey: anthropicKey,
-          model: config.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest',
-          temperature: 0.2,
-        });
-      },
-    });
-  }
-  if (geminiKey) {
-    candidates.push({
-      id: 'gemini',
-      label: 'Gemini gemini-2.0-flash-exp',
-      createModel: async () => {
-        const { ChatGoogleGenAI } = await import('@langchain/google-genai');
-        return new ChatGoogleGenAI({
-          apiKey: geminiKey,
-          modelName: 'gemini-2.0-flash-exp',
-          temperature: 0.2,
-        });
-      },
-    });
-  }
-  if (openAiKey) {
-    candidates.push({
-      id: 'openai',
-      label: 'OpenAI gpt-4o-mini',
-      createModel: async () => {
-        const { ChatOpenAI } = await import('@langchain/openai');
-        return new ChatOpenAI({
-          model: 'gpt-4o-mini',
-          temperature: 0.2,
-          apiKey: openAiKey,
-          configuration: {
-            baseURL: getOpenAiBaseUrl(config),
-          },
-        });
-      },
+      call: () =>
+        callWithTimeout(
+          callGroq(groqKey, 'llama-3.3-70b-versatile', systemPrompt, userPrompt),
+          TIMEOUT_MS
+        ),
     });
   }
 
-  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
+  if (openAiKey) {
+    const baseUrl = getOpenAiBaseUrl(config);
+    candidates.push({
+      id: 'openai',
+      label: 'OpenAI gpt-4o-mini',
+      call: () =>
+        callWithTimeout(
+          callOpenAI(openAiKey, 'gpt-4o-mini', baseUrl, systemPrompt, userPrompt),
+          TIMEOUT_MS
+        ),
+    });
+  }
+
   let lastError: Error | null = null;
 
   for (const candidate of candidates) {
     try {
-      const model = await candidate.createModel();
-      const response = (await Promise.race([
-        model.invoke([new SystemMessage(systemPrompt), new HumanMessage(userPrompt)], {
-          tags: ['rag', 'answer'],
-          metadata: { workspaceId, chunkCount: uniqueChunks.length, providerId: candidate.id },
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), 15000)),
-      ])) as any;
-
-      return toMessageText(response.content).trim() || 'Brak odpowiedzi.';
+      const text = await candidate.call();
+      console.log(
+        `[RAG] Provider ${candidate.label} answered successfully (workspace=${workspaceId}, chunks=${uniqueChunks.length})`
+      );
+      return text || 'Brak odpowiedzi.';
     } catch (err: any) {
       lastError =
         err instanceof Error ? err : new Error(String(err || 'Unknown RAG provider error'));
-      console.warn(
-        `[RAG] Provider ${candidate.label} failed, trying next candidate if available:`,
-        err?.message || err
-      );
+      console.warn(`[RAG] Provider ${candidate.label} failed:`, lastError.message);
     }
   }
 
-  if (lastError?.message === 'Timeout LLM' || (lastError as any)?.status === 429) {
-    console.warn('[RAG] All configured LLM providers timed out or hit quota, falling back...');
-  }
-
-  throw lastError || new Error('No model instantiated');
+  throw lastError || new Error('All RAG providers failed');
 }

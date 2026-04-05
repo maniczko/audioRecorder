@@ -322,7 +322,7 @@ export default function useAudioHardware({
           : '';
       const recorder = new MediaRecorder(recordStream, {
         ...(bestMime ? { mimeType: bestMime } : {}),
-        audioBitsPerSecond: 128000,
+        audioBitsPerSecond: 64000, // 64kbps — half the size, no STT quality loss
       });
       mimeTypeRef.current = recorder.mimeType || bestMime || 'audio/webm';
       mediaRecorderRef.current = recorder;

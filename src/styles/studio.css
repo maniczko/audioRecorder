@@ -1887,6 +1887,7 @@
 
 .fireflies-avatar {
   flex-shrink: 0;
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 6px;
@@ -1898,6 +1899,27 @@
   color: #fff;
   margin-top: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.fireflies-avatar-verified {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 1.5px solid var(--bg, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fireflies-avatar-verified svg {
+  width: 6px;
+  height: 6px;
+  stroke: #fff;
+  stroke-width: 2.5;
 }
 
 .fireflies-content {
@@ -1913,7 +1935,6 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  height: 24px;
   min-height: 24px;
 }
 
@@ -2022,10 +2043,10 @@
 .fireflies-select input[type='checkbox'] {
   appearance: none;
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   border: 1.5px solid var(--muted, #9ca3af);
-  border-radius: 4px;
+  border-radius: 3px;
   background: transparent;
   cursor: pointer;
   transition:
@@ -2048,10 +2069,10 @@
 .fireflies-select input[type='checkbox']:checked::after {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 5px;
-  height: 9px;
+  left: 3px;
+  top: 0;
+  width: 4px;
+  height: 8px;
   border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);

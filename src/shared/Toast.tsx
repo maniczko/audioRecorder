@@ -123,10 +123,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const NOOP_TOAST: ToastContextType = {
+  show: () => 0,
+  success: () => {},
+  error: () => {},
+  info: () => {},
+  warning: () => {},
+  dismiss: () => {},
+};
+
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    throw new Error('useToast must be used within ToastProvider');
+    // Return no-op implementation instead of throwing to prevent crashes
+    // when components are rendered outside ToastProvider (e.g., during HMR,
+    // in isolation, or in edge cases). The app should still have ToastProvider
+    // at the root (App.tsx), but this defensive approach prevents hard crashes.
+    return NOOP_TOAST;
   }
   return ctx;
 }

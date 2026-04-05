@@ -1857,6 +1857,31 @@
 
 .summary-highlight-body span {
   color: var(--text-muted, #7c7c8c);
+  white-space: pre-line;
+  display: block;
+}
+
+.summary-story-copy {
+  margin: 0;
+  color: var(--text-muted, #7c7c8c);
+  line-height: 1.7;
+}
+
+.summary-grid-meta-only .summary-card:nth-child(n + 3) {
+  display: none;
+}
+
+.summary-list-pretty {
+  padding-left: 1.1rem;
+}
+
+.summary-list-pretty li::marker {
+  color: #86e5d4;
+}
+
+.summary-edit-stack {
+  display: grid;
+  gap: 12px;
 }
 
 .summary-agenda {
@@ -3528,7 +3553,7 @@
 }
 
 .fireflies-segment-spaced {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .ff-speaker-picker-inline {

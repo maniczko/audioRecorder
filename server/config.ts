@@ -48,7 +48,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   VOICELOG_STT_PROVIDER: z.preprocess(
     optionalEnumValue,
-    z.enum(['openai', 'groq']).default('openai')
+    z.enum(['openai', 'groq']).default('groq')
   ),
   VOICELOG_STT_FALLBACK_PROVIDER: z.preprocess(
     optionalEnumValue,

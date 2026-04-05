@@ -617,6 +617,9 @@ async function runTranscriptionAttempt(
 
       // ── Speaker identification ────────────────────────────────────────────
       const identifiedNames = { ...diarization.speakerNames };
+      const identifiedGenders: Record<string, 'male' | 'female' | null> = {
+        ...(diarization as any).speakerGenders,
+      };
       const voiceProfiles = options.voiceProfiles || [];
       if (voiceProfiles.length && diarization.speakerCount > 0) {
         const speakerSegmentMap = new Map<string, any[]>();
@@ -658,6 +661,8 @@ async function runTranscriptionAttempt(
             const matchResult = await matchSpeakerToProfile(clipPath, voiceProfiles);
             if (matchResult) {
               identifiedNames[speakerId] = matchResult.name;
+              const { inferGenderFromPolishName } = await import('./diarization.ts');
+              identifiedGenders[speakerId] = inferGenderFromPolishName(matchResult.name);
             }
           } catch (err: any) {
             console.warn(
@@ -751,6 +756,7 @@ async function runTranscriptionAttempt(
         qualityMetrics,
         diarization: {
           speakerNames: identifiedNames,
+          speakerGenders: identifiedGenders,
           speakerCount: diarization.speakerCount,
           confidence: verificationResult.confidence,
           text: diarization.text,
@@ -763,6 +769,7 @@ async function runTranscriptionAttempt(
         },
         segments: processedSegments,
         speakerNames: identifiedNames,
+        speakerGenders: identifiedGenders,
         speakerCount: diarization.speakerCount,
         confidence: verificationResult.confidence,
         reviewSummary: {
