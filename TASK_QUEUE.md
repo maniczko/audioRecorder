@@ -428,3 +428,54 @@ Ostatnie odswiezenie: `2026-04-05 18:00 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140694
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
+
+<!-- Auto-generated on 2026-04-05T18:30:54.925Z -->
+
+### GitHub Actions Errors (5 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:53:38.0566225Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:53:38.0569358Z Error: element(s) not found 2026-04-05T17:53:38.0596830Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T17:53:38.0566225Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:53:38.0569358Z Error: element(s) not found 2026-04-05T17:53:38.0596...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24007013864
+  - **Created:** 2026-04-05T18:30:54.925Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:19:27.4446460Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:19:27.4449476Z Error: element(s) not found 2026-04-05T17:19:27.4471983Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T17:19:27.4446460Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:19:27.4449476Z Error: element(s) not found 2026-04-05T17:19:27.4471...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24006421779
+  - **Created:** 2026-04-05T18:30:54.925Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:56:19.3229874Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:56:19.3231758Z Error: element(s) not found 2026-04-05T16:56:19.3249001Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T16:56:19.3229874Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:56:19.3231758Z Error: element(s) not found 2026-04-05T16:56:19.3249...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24006012616
+  - **Created:** 2026-04-05T18:30:54.925Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:42:56.9851655Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:42:56.9854741Z Error: element(s) not found 2026-04-05T16:42:56.9877626Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T16:42:56.9851655Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:42:56.9854741Z Error: element(s) not found 2026-04-05T16:42:56.9877...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24005785908
+  - **Created:** 2026-04-05T18:30:54.925Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:33:36.3241135Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:33:36.3243130Z Error: element(s) not found 2026-04-05T16:33:36.3261260Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
+  - **Error:** 2026-04-05T16:33:36.3241135Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:33:36.3243130Z Error: element(s) not found 2026-04-05T16:33:36.3261...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24005623836
+  - **Created:** 2026-04-05T18:30:54.925Z
+  - **Priority:** High
+
+
