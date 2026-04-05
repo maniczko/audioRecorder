@@ -235,4 +235,17 @@ Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
   - **Created:** 2026-04-05T10:24:57.855Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-05T12:37:25.908Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T12:00:54.7635041Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T12:01:31.9329264Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
+  - **Error:** 2026-04-05T12:00:54.7635041Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T12:01:31.9329264Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /trans...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055763
+  - **Created:** 2026-04-05T12:37:25.908Z
+  - **Priority:** High
+
 
