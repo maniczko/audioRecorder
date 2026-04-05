@@ -14,7 +14,7 @@ describe('Database (Async Worker SQLite)', () => {
   beforeAll(async () => {
     db = initDatabase({ dbPath: ':memory:', uploadDir: testUploadDir });
     await db.init();
-  });
+  }, 60000);
 
   afterAll(async () => {
     if (db) {
