@@ -113,7 +113,7 @@ pnpm run test:coverage:all                        # runs backend + frontend cove
 ### 3.2 React
 
 - Functional components only
-- Zustand stores in `src/stores/`
+- Zustand stores in `src/store/`
 - Hooks in `src/hooks/`, services in `src/services/`, shared components in `src/shared/`
 - No premature `useCallback`/`useMemo` — only when profiled
 - Prefer composition over prop drilling
@@ -241,7 +241,8 @@ Following TDD workflow:
 
 ### 8.5 Enforcement
 
-- Pre-commit hook: `pnpm run tdd [changed-file]`
+- Pre-commit hook: ESLint + Prettier on staged files (see `.husky/pre-commit`)
+- Pre-push hook: server test suite via `test:server:retry` (see `.husky/pre-push`)
 - CI check: Coverage thresholds are defined in `vitest.config.ts` (currently **55% lines** for frontend, **65%** for backend).
 - Code review: Reject PRs without tests.
 - **Known Issues**: There are currently ~286 failing frontend tests due to missing mocks in `setupTests.ts` (fetch, mediaDevices, etc.). Backend tests (`pnpm run test:server:retry`) are green.
