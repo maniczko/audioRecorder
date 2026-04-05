@@ -1,3 +1,4 @@
+
 # Project Coding Standards — audioRecorder (VoiceLog)
 
 > **Canonical source of truth.** All AI agents (Copilot, Qwen, Cursor, etc.)
@@ -88,14 +89,14 @@ import userEvent from '@testing-library/user-event';
 # Frontend
 npx vitest run                                    # all frontend tests
 npx vitest run src/path/to/file.test.ts           # single file
-npx vitest run --coverage                         # with coverage
+npx vitest run --coverage                         # with coverage (requires >55% lines)
 
 # Server
 npx vitest run -c server/vitest.config.ts         # all server tests
 npx vitest run -c server/vitest.config.ts --retry=3  # with retries (pre-push hook)
 
-# E2E
-npx playwright test
+# Coverage Check (All)
+pnpm run test:coverage:all                        # runs backend + frontend coverage
 ```
 
 ---
@@ -148,8 +149,8 @@ npx playwright test
 | Hook         | `useXxx.ts` + `useXxx.test.ts`         | `useRecorder.ts`                 |
 | Service      | `xxxService.ts` + `xxxService.test.ts` | `mediaService.ts`                |
 | Store        | `xxxStore.ts`                          | `meetingStore.ts`                |
-| Server route | `server/routes/xxx.ts`                 | `server/routes/ai.ts`            |
-| Server test  | `server/tests/routes/xxx.test.ts`      | `server/tests/routes/ai.test.ts` |
+| Server route    | `server/tests/routes/xxx.test.ts`      | `server/tests/routes/ai.test.ts`    |
+| Server lib      | `server/tests/lib/xxx.test.ts`         | `server/tests/lib/ragAnswer.test.ts` |
 
 Tests are **always colocated** next to source (frontend) or in `server/tests/` mirroring structure (backend).
 
@@ -241,8 +242,9 @@ Following TDD workflow:
 ### 8.5 Enforcement
 
 - Pre-commit hook: `pnpm run tdd [changed-file]`
-- CI check: Coverage must not drop below 90%
-- Code review: Reject PRs without tests
+- CI check: Coverage thresholds are defined in `vitest.config.ts` (currently **55% lines** for frontend, **65%** for backend).
+- Code review: Reject PRs without tests.
+- **Known Issues**: There are currently ~286 failing frontend tests due to missing mocks in `setupTests.ts` (fetch, mediaDevices, etc.). Backend tests (`pnpm run test:server:retry`) are green.
 
 ---
 
