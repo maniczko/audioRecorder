@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StudioMeetingView from './StudioMeetingView';
+import { getVerifiedSpeakerNames } from './StudioMeetingView';
 import React from 'react';
 import { vi } from 'vitest';
 import AppProviders from '../AppProviders';
@@ -167,6 +168,19 @@ describe('StudioMeetingView', () => {
   test('renders without crashing', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Test Meeting/i)).toBeInTheDocument();
+  });
+
+  test('Regression: normalizes verified speaker names from remote profiles', () => {
+    expect(
+      getVerifiedSpeakerNames([
+        { hasEmbedding: true, speakerName: ' Adam ' },
+        { hasEmbedding: false, speakerName: 'Ignored' },
+        { hasEmbedding: true, speakerName: 'Adam' },
+        { hasEmbedding: true, speakerName: '' },
+        { hasEmbedding: true, speakerName: 'Ewa' },
+        null,
+      ])
+    ).toEqual(['Adam', 'Ewa']);
   });
 
   test('renders the player bar when there is a message or recording', () => {

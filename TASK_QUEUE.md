@@ -1,10 +1,10 @@
 ﻿# TASK QUEUE
 
-Ostatnie odswiezenie: `2026-04-05 15:53 Europe/Warsaw`
+Ostatnie odswiezenie: `2026-04-05 16:50 Europe/Warsaw`
 
 ## Status odswiezenia
 
-- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-05T13-52-42-791Z.json` (`100` runow, `13` failed w oknie 7 dni)
+- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-05T14-50-42-385Z.json` (`100` runow, `14` failed w oknie 7 dni)
 - `Railway`: odswiezone lokalnie na podstawie `railway-errors/railway-errors-2026-04-05T06-20-03-347Z.md` (`0` error linii w ostatnich `100` logach, `/health` = `ok`)
 - `Vercel`: odswiezenie zablokowane `2026-04-05` - `VERCEL_TOKEN` nieustawiony, a plugin Vercel zwraca `Auth required`
 - `Sentry`: odswiezenie zablokowane `2026-04-05` - `SENTRY_AUTH_TOKEN` nieustawiony
@@ -148,19 +148,37 @@ Ostatnie odswiezenie: `2026-04-05 15:53 Europe/Warsaw`
 
 ## Nastepne kroki
 
-1. Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawiony backendowy test `server/tests/transcription.test.ts` nie flakuje juz na asercji `toHaveBeenCalledTimes(2)`.
-2. Zweryfikowac, czy kolejny `Optimized CI` po commicie z poprawkami testow frontu nadal pokazuje stare oczekiwania `/transkrypcja/i` i `Przygotuj follow-up`, czy to juz tylko przeterminowany run.
+1. Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawka typowania w `src/studio/StudioMeetingView.tsx` domyka oba nowe fail-e `typecheck` dla commitu `80d624b`.
+2. Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawiony backendowy test `server/tests/transcription.test.ts` nie flakuje juz na asercji `toHaveBeenCalledTimes(2)`.
 3. Potwierdzic w swiezym backendowym runie, czy klaster storage/Supabase nadal istnieje, bo lokalne retesty `media/state/workspaces/supabase regression` sa zielone.
-4. Jesli backend nadal padnie w CI, porownac ten sam test lokalnie na Node `22.x`, bo lokalnie odpalamy teraz na `v24.14.0`.
+4. Jesli backend albo typecheck nadal padnie w CI, porownac to samo lokalnie na Node `22.x`, bo lokalnie odpalamy teraz na `v24.14.0`.
 5. Uzyskac dostep do `VERCEL_TOKEN` albo aktywnej sesji pluginu Vercel, a dla Sentry do `SENTRY_AUTH_TOKEN`, zeby odswiezyc brakujace monitory.
 
 ## Swiezy snapshot bledow
 
-<!-- Refreshed on 2026-04-05T13:52:42.735Z -->
+<!-- Refreshed on 2026-04-05T14:50:42.354Z -->
 
-### GitHub Actions Errors (aktualny snapshot: 13 failed runow)
+### GitHub Actions Errors (aktualny snapshot: 14 failed runow)
 
-- **GH-AUTO-2026-04-05-0** — Investigate fresh backend assertion failure on `main`
+- **GH-AUTO-2026-04-05-0** — Investigate fresh typecheck failure after `fix(prod): ship agent updates`
+  - **Status:** `verify`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
+  - **Owner:** `Codex`
+  - **Zakres:** nowy fail po commicie `80d624b` z `2026-04-05T14:46:51Z`
+  - **Error:** job `Quality Checks`, step `TypeScript type check` zakonczyl sie fail bez sparsowanej linii bledu
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857809
+  - **Notatka:** lokalnie domkniete 2026-04-05 - pelny log wskazal konkretny blad `src/studio/StudioMeetingView.tsx(953,33): TS2345`, gdzie `setVerifiedSpeakerNames(...)` dostawal `unknown[]`; widok dostal helper normalizujacy `getVerifiedSpeakerNames(...)`, regresje w `src/studio/StudioMeetingView.test.tsx`, a lokalne `pnpm run typecheck` jest znowu zielone
+
+- **GH-AUTO-2026-04-05-0A** — Investigate mirrored `Optimized CI` typecheck failure for commit `80d624b`
+  - **Status:** `verify`
+  - **Source:** `GitHub Actions -> Optimized CI -> typecheck`
+  - **Owner:** `Codex`
+  - **Zakres:** ten sam commit `80d624b`, `2026-04-05T14:46:51Z`
+  - **Error:** job `typecheck`, step `Run TypeScript` zakonczyl sie fail bez sparsowanej linii bledu
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857831
+  - **Notatka:** potwierdzone 2026-04-05 - `Optimized CI` padal na tej samej linii `src/studio/StudioMeetingView.tsx(953,33): TS2345`, wiec to nie byl drugi niezalezny bug; czeka juz tylko na potwierdzenie w kolejnym runie po poprawce
+
+- **GH-AUTO-2026-04-05-1** — Investigate fresh backend assertion failure on `main`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
@@ -169,7 +187,7 @@ Ostatnie odswiezenie: `2026-04-05 15:53 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
   - **Notatka:** lokalnie domkniete 2026-04-05 - fail wskazal na `server/tests/transcription.test.ts:104`, gdzie test spal arbitralne `1000 ms` i czasem sprawdzal asercje przed odpaleniem background postprocessu `fast -> full`; test wymusza teraz `processingMode: fast` i czeka na realny drugi call zamiast na sztywny timeout. Przy okazji retest backendu ujawnil stale mocki w `server/tests/lib/rag.coverage.test.ts`, wiec ten plik tez zostal przestawiony na mock `fetch` zgodny z obecna implementacja `server/lib/ragAnswer.ts`. Lokalny `pnpm run test:server:retry` jest po tych poprawkach zielony.
 
-- **GH-AUTO-2026-04-05-1** — Investigate fresh TypeScript typecheck failure on `main`
+- **GH-AUTO-2026-04-05-2** — Investigate fresh TypeScript typecheck failure on `main`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
   - **Owner:** `Codex`
@@ -178,7 +196,7 @@ Ostatnie odswiezenie: `2026-04-05 15:53 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055758
   - **Notatka:** lokalnie domkniete 2026-04-05 - `pnpm vitest run --coverage=false` jest zielone po aktualizacji [src/App.test.tsx](/c:/Users/user/new/audioRecorder/src/App.test.tsx) i [src/studio/StudioMeetingView.test.tsx](/c:/Users/user/new/audioRecorder/src/studio/StudioMeetingView.test.tsx); CI powinno potwierdzic, czy to byl jedyny root cause z parsera
 
-- **GH-AUTO-2026-04-05-2** — Investigate mirrored typecheck failure in `Optimized CI`
+- **GH-AUTO-2026-04-05-3** — Investigate mirrored typecheck failure in `Optimized CI`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> Optimized CI -> typecheck`
   - **Owner:** `Codex`
@@ -215,13 +233,13 @@ Ostatnie odswiezenie: `2026-04-05 15:53 Europe/Warsaw`
   - **Notatka:** lokalne retesty 2026-04-05 sa zielone dla `server/tests/serverUtils.test.ts`, `server/tests/security/payload.test.ts` i `server/tests/regression/regression-server-utils.test.ts`; wyglada bardziej na historyczny szum lub problem izolacji konkretnego runu CI
 
 - **GH-AUTO-2026-04-05-6** — Reduce noisy expected stderr in backend tests
-  - **Status:** `todo`
+  - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
   - **Zakres:** linie powtarzaja sie w wielu backend runach i zaszumiaja raport
   - **Error:** `embedTextChunks failed: Error: embed failed`, `Gemini image gen error: 503 overloaded`, `Gemini image gen error: 400 Invalid request`, `Nie masz dostepu do tego workspace.`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
-  - **Notatka:** same logi wygladaja jak oczekiwane scenariusze negatywne, ale utrudniaja parserowi znalezienie prawdziwej przyczyny faila
+  - **Notatka:** lokalny retest 2026-04-05 zielony dla `server/tests/audio-pipeline.unit.test.ts`, `server/tests/routes/media.test.ts` i `server/tests/routes/workspaces.test.ts`; scenariusze z tym stderr maja juz mocki `console.error`/`console.warn`, wiec obecnie wyglada to bardziej na historyczny szum starszych runow niz aktywny bug
 
 - **GH-AUTO-2026-04-05-7** — Investigate `Auto Security Patches` network failure
   - **Status:** `todo`

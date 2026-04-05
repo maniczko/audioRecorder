@@ -419,6 +419,20 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+export function getVerifiedSpeakerNames(profiles) {
+  return safeArray(profiles)
+    .filter(
+      (profile) =>
+        profile &&
+        typeof profile === 'object' &&
+        profile.hasEmbedding &&
+        typeof profile.speakerName === 'string'
+    )
+    .map((profile) => profile.speakerName.trim())
+    .filter(Boolean)
+    .filter((name, index, allNames) => allNames.indexOf(name) === index);
+}
+
 function normalizeAnalysisTask(task) {
   if (!task) return null;
   const title = String(task.title || task.text || task.sourceQuote || '').trim();
@@ -947,10 +961,7 @@ export default function StudioMeetingView({
     if (!remoteApiEnabled()) return;
     apiRequest('/voice-profiles')
       .then((data: any) => {
-        const names = (data?.profiles || [])
-          .filter((p: any) => p.hasEmbedding)
-          .map((p: any) => p.speakerName as string);
-        setVerifiedSpeakerNames([...new Set(names)]);
+        setVerifiedSpeakerNames(getVerifiedSpeakerNames(data?.profiles));
       })
       .catch(() => {});
   }, []);
