@@ -154,6 +154,8 @@ describe('errorLogStore', () => {
     });
 
     test('does not crash when fetch fails', async () => {
+      // Suppress console.warn to prevent CI log noise that triggers false task creation
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       fetchSpy.mockRejectedValueOnce(new Error('Network down'));
 
       useErrorLogStore.getState().addError({ type: 'runtime', message: 'Err during failure' });
@@ -161,6 +163,8 @@ describe('errorLogStore', () => {
 
       // Should not throw — error still in local store
       expect(useErrorLogStore.getState().errors).toHaveLength(1);
+
+      warnSpy.mockRestore();
     });
   });
 });

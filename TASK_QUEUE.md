@@ -242,12 +242,12 @@ Ostatnie odswiezenie: `2026-04-05 16:50 Europe/Warsaw`
   - **Notatka:** lokalny retest 2026-04-05 zielony dla `server/tests/audio-pipeline.unit.test.ts`, `server/tests/routes/media.test.ts` i `server/tests/routes/workspaces.test.ts`; scenariusze z tym stderr maja juz mocki `console.error`/`console.warn`, wiec obecnie wyglada to bardziej na historyczny szum starszych runow niz aktywny bug
 
 - **GH-AUTO-2026-04-05-7** — Investigate `Auto Security Patches` network failure
-  - **Status:** `todo`
+  - **Status:** `done`
   - **Source:** `GitHub Actions -> Auto Security Patches -> security-patch`
   - **Owner:** `Qwen`
   - **Error:** `[VoiceLog] auto-send error: Error: Network down`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
-  - **Notatka:** osobny blad automatu PR/security; nie wyglada na ten sam klaster co backend tests
+  - **Notatka:** To nie byl blad sieciowy - `console.warn` z testu `errorLogStore.test.ts` wyciekalo do logow CI. Test celowo mockowal `fetch` z bledem `Network down` zeby zweryfikowac graceful degradation. Fix: dodano `vi.spyOn(console, 'warn').mockImplementation(() => {})` w teście, zeby wyciszyc oczekiwany warning. **ZAMKNIETE 2026-04-05**.
 
 - **GH-AUTO-2026-04-05-8** — Historical backend failure cluster still visible in 7-day window
   - **Status:** `verify`
