@@ -54,8 +54,10 @@ describe('ragAnswer.ts — buildFallbackRagAnswer', () => {
         { recording_id: 'r2', speaker_name: 'Bob', text: 'Agreed' },
       ],
     });
-    expect(result).toContain('Spotkanie r1, Alice: We should ship by Friday');
-    expect(result).toContain('Spotkanie r2, Bob: Agreed');
+    expect(result).toContain('Fragment 1 (Alice)');
+    expect(result).toContain('We should ship by Friday');
+    expect(result).toContain('Fragment 2 (Bob)');
+    expect(result).toContain('Agreed');
     expect(result).toContain('Pytanie: What did Alice say?');
   });
 
@@ -105,10 +107,11 @@ describe('ragAnswer.ts — buildFallbackRagAnswer', () => {
         { recording_id: 'r4', speaker_name: 'D', text: 'four' },
       ],
     });
-    expect(result).toContain('Spotkanie r1');
-    expect(result).toContain('Spotkanie r2');
-    expect(result).toContain('Spotkanie r3');
-    expect(result).not.toContain('Spotkanie r4');
+    expect(result).toContain('Fragment 1 (A)');
+    expect(result).toContain('Fragment 2 (B)');
+    expect(result).toContain('Fragment 3 (C)');
+    expect(result).not.toContain('Fragment 4 (D)');
+    expect(result).not.toContain('four');
   });
 
   test('normalizes chunk text (whitespace)', () => {
