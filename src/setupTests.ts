@@ -254,3 +254,134 @@ vi.mock('idb-keyval', () => ({
   keys: vi.fn().mockResolvedValue([]),
   update: vi.fn().mockResolvedValue(undefined),
 }));
+
+// ── React Context mocks ──────────────────────────────────────────────
+// Global mocks for context hooks so tests don't crash when providers
+// are absent. Uses the @ alias which matches how modules are imported
+// throughout the codebase. Individual test files can override with
+// their own vi.mock calls if they need specific behavior.
+
+// RecorderContext mock
+const mockRecorderCtx = {
+  isRecording: false,
+  recordingMeetingId: null,
+  currentSegments: [],
+  audioUrls: {},
+  audioHydrationErrors: {},
+  audioHydrationStatusByRecordingId: {},
+  hydrateRecordingAudio: vi.fn(),
+  clearAudioHydrationError: vi.fn(),
+  startRecording: vi.fn(),
+  stopRecording: vi.fn(),
+  pauseRecording: vi.fn(),
+  resumeRecording: vi.fn(),
+  retryRecording: vi.fn(),
+  liveText: '',
+  liveTranscriptEnabled: false,
+  setLiveTranscriptEnabled: vi.fn(),
+  recordPermission: 'prompt',
+  speechRecognitionSupported: true,
+  elapsed: 0,
+  visualBars: new Array(20).fill(4),
+  voiceActivityStatus: 'idle',
+  silenceCountdown: null,
+  resetSilenceTimer: vi.fn(),
+  isPaused: false,
+  analysisStatus: 'idle',
+  activeQueueItem: null,
+  selectedMeetingQueue: [],
+  recordingMessage: '',
+  pipelineProgressPercent: 0,
+  pipelineStageLabel: '',
+  setRecordingMessage: vi.fn(),
+  retryRecordingQueueItem: vi.fn(),
+  retryStoredRecording: vi.fn(),
+  normalizeRecording: vi.fn(),
+};
+
+vi.mock('@/context/RecorderContext', () => ({
+  RecorderProvider: ({ children }: any) => children,
+  useRecorderCtx: () => mockRecorderCtx,
+}));
+
+// GoogleContext mock
+const mockGoogleCtx = {
+  googleEnabled: false,
+  calendarEvents: [],
+  upcomingReminders: [],
+  googleCalendarEvents: [],
+  resetGoogleSession: vi.fn(),
+};
+
+vi.mock('@/context/GoogleContext', () => ({
+  GoogleProvider: ({ children }: any) => children,
+  useGoogleCtx: () => mockGoogleCtx,
+}));
+
+// WorkspaceContext mock
+const mockWorkspaceCtx = {
+  currentUser: { id: 'test-user', name: 'Test User', email: 'test@test.com' },
+  currentWorkspaceId: 'test-workspace',
+  currentWorkspaceMembers: [],
+  currentWorkspaceRole: 'admin',
+  currentWorkspacePermissions: { canEditWorkspace: true, canRecordAudio: true },
+  availableWorkspaces: [],
+  switchWorkspace: vi.fn(),
+  logout: vi.fn(),
+  updateWorkspaceMemberRole: vi.fn(),
+};
+
+vi.mock('@/context/WorkspaceContext', () => ({
+  WorkspaceProvider: ({ children }: any) => children,
+  useWorkspaceCtx: () => mockWorkspaceCtx,
+}));
+
+// MeetingsContext mock
+const mockMeetingsCtx = {
+  userMeetings: [],
+  meetingTasks: [],
+  peopleProfiles: [],
+  selectedMeeting: null,
+  selectedRecording: null,
+  selectedRecordingId: '',
+  setSelectedRecordingId: vi.fn(),
+  taskNotifications: [],
+  calendarMeta: {},
+  selectMeeting: vi.fn(),
+  startNewMeetingDraft: vi.fn(),
+  syncLinkedGoogleCalendarEvents: vi.fn(),
+  createTaskFromComposer: vi.fn(),
+  resetSelectionState: vi.fn(),
+  taskColumns: [],
+  taskTags: [],
+};
+
+vi.mock('@/context/MeetingsContext', () => ({
+  MeetingsProvider: ({ children }: any) => children,
+  useMeetingsCtx: () => mockMeetingsCtx,
+}));
+
+// Store mocks
+vi.mock('@/store/uiStore', () => ({
+  useUIStore: vi.fn(() => ({
+    activeTab: 'studio',
+    setActiveTab: vi.fn(),
+    commandPaletteOpen: false,
+    setCommandPaletteOpen: vi.fn(),
+    notificationState: { items: [], unreadCount: 0, dismissedIds: [] },
+    notificationPermission: 'default',
+    setNotificationCenterOpen: vi.fn(),
+    dismissNotification: vi.fn(),
+    deliverBrowserNotifications: vi.fn(),
+    studioHomeSignal: false,
+    triggerStudioHome: vi.fn(),
+    setPendingTaskId: vi.fn(),
+    setPendingPersonId: vi.fn(),
+    tabHistory: [],
+  })),
+}));
+
+vi.mock('@/store/workspaceStore', () => ({
+  useWorkspaceStore: vi.fn(() => mockWorkspaceCtx),
+  useWorkspaceSelectors: vi.fn(() => mockWorkspaceCtx),
+}));
