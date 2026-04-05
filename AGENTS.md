@@ -12,7 +12,7 @@
 | Layer           | Tech                                                                 |
 | --------------- | -------------------------------------------------------------------- |
 | Frontend        | React 19, TypeScript 5.9, Vite, Zustand 5, TailwindCSS, shadcn/ui    |
-| Backend         | Hono (Node.js 22), LangChain/LangGraph, Supabase, PostgreSQL         |
+| Backend         | Hono (Node.js 22), LangChain/LangGraph, Supabase, SQLite (local) / PostgreSQL (prod) |
 | Testing         | Vitest 4 + @testing-library/react 16, Playwright (e2e)               |
 | Package manager | pnpm 9 (monorepo: root = frontend, `server/` = backend)              |
 | Formatting      | Prettier + ESLint (react-app), Stylelint for CSS                     |
