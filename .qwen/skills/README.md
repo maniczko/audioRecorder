@@ -63,9 +63,9 @@ TDD workflow enforcement. Wraps AGENTS.md §2 (Testing) with Qwen-compatible
 
 | Metric            | Target    | How to measure               |
 | ----------------- | --------- | ---------------------------- |
-| Test coverage     | 90%+      | `pnpm run test:coverage`     |
+| Test coverage     | 55%+ FE, 65%+ BE | `pnpm run test:coverage:all` |
 | Tests before code | 100%      | Code review checklist        |
-| Regression tests  | 1 per bug | Count in `tests/regression/` |
+| Regression tests  | 1 per bug | Count in `server/tests/regression/` |
 | CI pass rate      | 95%+      | GitHub Actions analytics     |
 | Bug recurrence    | 0%        | Regression test failures     |
 
@@ -150,7 +150,7 @@ describe('Regression: Issue #123', () => {
 |---------|-----------------|
 | ❌ Writing code before tests | ✅ Write tests FIRST (TDD) |
 | ❌ Skipping regression tests | ✅ Add regression test for every bug |
-| ❌ Accepting coverage drop | ✅ Keep coverage at 90%+ |
+| ❌ Accepting coverage drop | ✅ Keep coverage at target thresholds (55% FE, 65% BE) |
 | ❌ Merging without all tests green | ✅ All tests must pass |
 | ❌ Testing implementation details | ✅ Test behavior, not implementation |
 

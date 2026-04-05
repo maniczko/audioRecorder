@@ -12,3 +12,4 @@
 5. **Communicate in Polish** with the user, but write code and commits in English.
 6. **Implement directly** — don't just suggest changes, make them.
 7. **Verify changes** — run relevant tests after every code change.
+8. **Coverage thresholds** — 55% lines for frontend, 65% for backend (defined in `vitest.config.ts`).
