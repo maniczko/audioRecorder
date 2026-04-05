@@ -153,6 +153,40 @@ describe('useAudioHydration', () => {
     expect(result.current.audioHydrationStatusByRecordingId['rec-1']).toBe('error');
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - missing audio retried on every render after 404
+  // Date: 2026-04-05
+  // Bug: remote audio 404s were treated as generic errors in the UI flow,
+  //      so consumers could keep retrying hydration on re-render.
+  // Fix: hydration stores the error state and subsequent non-forced calls
+  //      short-circuit until the user explicitly retries.
+  // -----------------------------------------------------------------
+  it('Regression: #0 - does not refetch after a 404 until forced', async () => {
+    const notFoundError = Object.assign(new Error('Nie znaleziono nagrania.'), { status: 404 });
+    const service = makeService({
+      getRecordingAudioBlob: vi.fn().mockRejectedValue(notFoundError),
+    });
+    const { result } = renderHook(() =>
+      useAudioHydration({ mediaService: service, userMeetings: STABLE_MEETINGS })
+    );
+
+    await act(async () => {
+      await result.current.hydrateRecordingAudio('rec-404');
+    });
+
+    await act(async () => {
+      await result.current.hydrateRecordingAudio('rec-404');
+    });
+
+    expect(service.getRecordingAudioBlob).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.hydrateRecordingAudio('rec-404', { force: true });
+    });
+
+    expect(service.getRecordingAudioBlob).toHaveBeenCalledTimes(2);
+  });
+
   it('returns null for empty recordingId', async () => {
     const { result } = renderHook(() =>
       useAudioHydration({ mediaService: makeService(), userMeetings: STABLE_MEETINGS })

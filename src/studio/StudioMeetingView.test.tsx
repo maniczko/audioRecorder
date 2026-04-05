@@ -175,6 +175,24 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Test Message/i)).toBeInTheDocument();
   });
 
+  test('shows retry action for failed selected meeting queue item', () => {
+    const retryRecordingQueueItem = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        recordingMessage="Blad w kolejce: Serwer chwilowo przeciążony pamięciowo."
+        analysisStatus="error"
+        retryRecordingQueueItem={retryRecordingQueueItem}
+        selectedMeetingQueue={[{ recordingId: 'rec-failed', meetingId: 'm1', status: 'failed' }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Ponow przetwarzanie/i }));
+
+    expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec-failed');
+  });
+
   test('renders workspace backend warning banner when workspaceMessage is set', () => {
     renderWithContext(
       <StudioMeetingView
@@ -199,6 +217,41 @@ describe('StudioMeetingView', () => {
 
     expect(screen.getByTestId('player-loading-audio')).toBeInTheDocument();
     expect(screen.getByText(/Ladowanie audio/i)).toBeInTheDocument();
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - StudioMeetingView retried missing audio on every rerender
+  // Date: 2026-04-05
+  // Bug: the view re-triggered hydrateRecordingAudio even after the selected
+  //      recording had already failed with status "error", causing repeated 404s.
+  // Fix: automatic hydration now skips "error" state and leaves retry to the user.
+  // -----------------------------------------------------------------
+  test('Regression: does not auto-retry hydration when selected recording audio is in error state', () => {
+    const hydrateRecordingAudio = vi.fn(() => Promise.resolve(null));
+
+    const { rerender } = renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{ id: 'rec404', transcript: [], duration: 60 }}
+        selectedRecordingAudioStatus="error"
+        selectedRecordingAudioError="Nie znaleziono nagrania."
+        hydrateRecordingAudio={hydrateRecordingAudio}
+      />
+    );
+
+    rerender(
+      <AppProviders>
+        <StudioMeetingView
+          {...defaultProps}
+          selectedRecording={{ id: 'rec404', transcript: [], duration: 60 }}
+          selectedRecordingAudioStatus="error"
+          selectedRecordingAudioError="Nie znaleziono nagrania."
+          hydrateRecordingAudio={hydrateRecordingAudio}
+        />
+      </AppProviders>
+    );
+
+    expect(hydrateRecordingAudio).not.toHaveBeenCalled();
   });
 
   test('shows empty transcript banner and retry action', () => {

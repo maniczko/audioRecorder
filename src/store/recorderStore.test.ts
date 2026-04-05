@@ -450,6 +450,50 @@ describe('recorderStore', () => {
     );
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - transient backend memory pressure killed import queue flow
+  // Date: 2026-04-05
+  // Bug: when the backend returned a temporary "server memory overloaded"
+  //      error during transcription start, processQueue marked the item as
+  //      failed immediately, so the uploaded recording never got retried.
+  // Fix: classify temporary overload as transient and requeue with backoff.
+  // -----------------------------------------------------------------
+  test('Regression: retries queue item when backend is temporarily memory overloaded', async () => {
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
+
+    mocks.createMediaService.mockReturnValue({
+      mode: 'remote',
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi
+        .fn()
+        .mockRejectedValue(
+          new Error('Serwer chwilowo przeciążony pamięciowo — spróbuj ponownie za minutę.')
+        ),
+      subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+    });
+
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        { recordingId: 'rec_mem', status: 'queued', uploaded: false, retryCount: 0 },
+      ],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
+
+    const queueItem = useRecorderStore.getState().recordingQueue[0];
+    expect(queueItem.status).toBe('queued');
+    expect(queueItem.retryCount).toBe(1);
+    expect(queueItem.backoffUntil).toBeGreaterThan(Date.now());
+    expect(queueItem.lastErrorMessage).toBe(
+      'Serwer chwilowo przeciazony pamieciowo - sprobuj ponownie za minute.'
+    );
+    expect(queueItem.errorMessage).toBe('');
+    expect(useRecorderStore.getState().analysisStatus).toBe('queued');
+  });
+
   test('maps empty-stt-output failures to a recording quality message', async () => {
     mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 

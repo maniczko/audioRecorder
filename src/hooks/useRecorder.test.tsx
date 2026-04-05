@@ -32,6 +32,8 @@ const {
   hydrationState: {
     audioUrls: {},
     audioHydrationErrors: {},
+    audioHydrationStatusByRecordingId: {},
+    hydrateRecordingAudio: vi.fn().mockResolvedValue(null),
     registerAudioUrl: vi.fn(),
     removeAudioUrl: vi.fn(),
   },
@@ -98,6 +100,10 @@ describe('useRecorder', () => {
     pipelineState.setPipelineProgress.mockReset();
     pipelineState.setRecordingMessage.mockReset();
     pipelineState.setRecordingQueue.mockReset();
+    hydrationState.audioUrls = {};
+    hydrationState.audioHydrationErrors = {};
+    hydrationState.audioHydrationStatusByRecordingId = {};
+    hydrationState.hydrateRecordingAudio = vi.fn().mockResolvedValue(null);
     hydrationState.registerAudioUrl.mockReset();
     hydrationState.removeAudioUrl.mockReset();
     saveAudioBlobMock.mockReset();
@@ -303,6 +309,43 @@ describe('useRecorder', () => {
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
     // startRecording on hardware should not be called when no meeting was created
     expect(hardwareState.startRecording).not.toHaveBeenCalled();
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - selected meeting retried missing audio on every render
+  // Date: 2026-04-05
+  // Bug: the auto-hydration effect only skipped "loading", so recordings
+  //      already marked as "error" were fetched again after every rerender.
+  // Fix: skip automatic hydration while the selected recording is in error
+  //      state and wait for an explicit manual retry.
+  // -----------------------------------------------------------------
+  test('Regression: skips auto-hydration when selected recording audio already failed', () => {
+    hydrationState.audioUrls = {};
+    hydrationState.audioHydrationErrors = { rec404: 'Nie znaleziono nagrania.' };
+    hydrationState.audioHydrationStatusByRecordingId = { rec404: 'error' };
+    hydrationState.hydrateRecordingAudio = vi.fn().mockResolvedValue(null);
+
+    const meeting = {
+      id: 'm1',
+      latestRecordingId: 'rec404',
+      recordings: [{ id: 'rec404' }],
+    };
+
+    const { rerender } = renderHook(
+      ({ selectedMeeting }) =>
+        useRecorder({
+          selectedMeeting,
+          userMeetings: [meeting],
+          createAdHocMeeting: vi.fn(),
+          attachCompletedRecording: vi.fn(),
+          isHydratingRemoteState: false,
+        }),
+      { initialProps: { selectedMeeting: meeting } }
+    );
+
+    rerender({ selectedMeeting: { ...meeting } });
+
+    expect(hydrationState.hydrateRecordingAudio).not.toHaveBeenCalled();
   });
 
   // ─────────────────────────────────────────────────────────────────

@@ -956,6 +956,9 @@ export default function StudioMeetingView({
     (item) =>
       item && ['queued', 'uploading', 'processing', 'diarization', 'failed'].includes(item.status)
   )?.status;
+  const retryableSelectedQueueItem = (
+    Array.isArray(selectedMeetingQueue) ? selectedMeetingQueue : []
+  ).find((item) => item && ['failed', 'failed_permanent'].includes(item.status));
   const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
   const selectedTranscript = Array.isArray(selectedRecording?.transcript)
     ? selectedRecording.transcript
@@ -1459,6 +1462,7 @@ export default function StudioMeetingView({
     if (!selectedRecording?.id || !hydrateRecordingAudio) return;
     if (selectedRecordingAudioUrl) return;
     if (selectedRecordingAudioStatus === 'loading') return;
+    if (selectedRecordingAudioStatus === 'error') return;
     hydrateRecordingAudio(selectedRecording.id, { priority: true }).catch(() => {});
   }, [
     hydrateRecordingAudio,
@@ -1572,6 +1576,15 @@ export default function StudioMeetingView({
                       </div>
                     )}
                 </div>
+                {retryableSelectedQueueItem && retryRecordingQueueItem ? (
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => retryRecordingQueueItem(retryableSelectedQueueItem.recordingId)}
+                  >
+                    Ponow przetwarzanie
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="ff-status-dismiss-btn"
@@ -1872,6 +1885,15 @@ export default function StudioMeetingView({
                     </div>
                   )}
               </div>
+              {retryableSelectedQueueItem && retryRecordingQueueItem ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => retryRecordingQueueItem(retryableSelectedQueueItem.recordingId)}
+                >
+                  Ponow przetwarzanie
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="ff-status-dismiss-btn"

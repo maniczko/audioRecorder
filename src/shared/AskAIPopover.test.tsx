@@ -375,6 +375,29 @@ describe('AskAIPopover', () => {
     });
   });
 
+  it('preserves line breaks in multi-line answers', async () => {
+    mockMediaService.askRAG.mockResolvedValue({
+      answer: 'Fragment 1 (Anna)\nUstalono budzet.\n\nPytanie: Co ustalono?',
+    });
+
+    const { container } = render(
+      <AskAIPopover currentWorkspace={mockWorkspace} onClose={mockOnClose} />
+    );
+
+    const input = screen.getByPlaceholderText(/Szukaj kontekstu/i) as HTMLInputElement;
+    const form = container.querySelector('form') as HTMLFormElement;
+
+    await userEvent.type(input, 'test query');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      const answerBox = container.querySelector('.comic-answer-box') as HTMLDivElement;
+      expect(answerBox).toHaveStyle({ whiteSpace: 'pre-wrap' });
+      expect(answerBox.textContent).toContain('Fragment 1 (Anna)');
+      expect(answerBox.textContent).toContain('Pytanie: Co ustalono?');
+    });
+  });
+
   it('does not show answer box before search', () => {
     const { container } = render(
       <AskAIPopover currentWorkspace={mockWorkspace} onClose={mockOnClose} />

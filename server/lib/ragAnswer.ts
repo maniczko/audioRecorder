@@ -67,6 +67,10 @@ function normalizeChunkText(value: unknown) {
     .trim();
 }
 
+function formatFallbackFragment(chunk: { speakerName: string; text: string; index: number }) {
+  return `Fragment ${chunk.index} (${chunk.speakerName})\n${chunk.text}`;
+}
+
 export function buildFallbackRagAnswer({
   question,
   chunks,
@@ -94,19 +98,22 @@ export function buildFallbackRagAnswer({
     return 'Nie znalazlem trafnych fragmentow w archiwalnych spotkaniach.';
   }
 
-  const bulletList = uniqueChunks
+  const fragmentList = uniqueChunks
     .slice(0, 3)
-    .map((chunk) => {
-      const source = chunk.recordingId ? `Spotkanie ${chunk.recordingId}` : 'Archiwum';
-      return `- ${source}, ${chunk.speakerName}: ${chunk.text}`;
+    .map((chunk, index) => {
+      return formatFallbackFragment({
+        index: index + 1,
+        speakerName: chunk.speakerName,
+        text: chunk.text,
+      });
     })
-    .join('\n');
+    .join('\n\n');
 
   const hintPrefix = errorMessage
-    ? 'Model AI jest chwilowo niedostepny, ale znalazlem pasujace fragmenty archiwum:\n'
-    : 'Na podstawie archiwalnych fragmentow znalazlem:\n';
+    ? `Model AI jest chwilowo niedostepny, ale znalazlem ${Math.min(uniqueChunks.length, 3)} pasujace fragmenty archiwum:\n\n`
+    : 'Na podstawie archiwalnych fragmentow znalazlem:\n\n';
 
-  return `${hintPrefix}${bulletList}${
+  return `${hintPrefix}${fragmentList}${
     normalizedQuestion ? `\n\nPytanie: ${normalizedQuestion}` : ''
   }`;
 }

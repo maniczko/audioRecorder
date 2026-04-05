@@ -100,8 +100,16 @@ function buildFallbackAnalysis(message, diarization) {
 const EMPTY_TRANSCRIPT_MESSAGE =
   'Nie wykryto wypowiedzi w nagraniu. Sprawdz jakosc pliku, glosnosc albo sprobuj ponownie innym formatem.';
 
+function normalizeErrorForMatching(value: unknown) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 function toUserFacingQueueError(error: any) {
   const errorMessage = String(error?.message || 'Blad przetwarzania.');
+  const normalizedMessage = normalizeErrorForMatching(errorMessage);
 
   if (
     errorMessage.includes('Brak tokenu autoryzacyjnego') ||
@@ -134,6 +142,13 @@ function toUserFacingQueueError(error: any) {
   }
 
   if (
+    normalizedMessage.includes('serwer chwilowo przeciazony pamieciowo') ||
+    normalizedMessage.includes('serwer jest przeciazony')
+  ) {
+    return 'Serwer chwilowo przeciazony pamieciowo - sprobuj ponownie za minute.';
+  }
+
+  if (
     error?.status === 507 ||
     errorMessage.includes('Brak miejsca na dysku') ||
     errorMessage.includes('ENOSPC')
@@ -154,14 +169,16 @@ function isExpectedDomainFailure(error: any) {
 }
 
 function isTransientNetworkError(error: any) {
-  const msg = String(error?.message || '').toLowerCase();
+  const msg = normalizeErrorForMatching(error?.message);
   return (
     msg.includes('failed to fetch') ||
     msg.includes('networkerror') ||
     msg.includes('load failed') ||
     msg.includes('bad gateway') ||
     msg.includes('http 502') ||
-    msg.includes('hostowany preview nie moze')
+    msg.includes('hostowany preview nie moze') ||
+    msg.includes('serwer chwilowo przeciazony pamieciowo') ||
+    msg.includes('serwer jest przeciazony')
   );
 }
 

@@ -135,7 +135,11 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
         </button>
       </form>
 
-      {answer && <div className="comic-answer-box">{answer}</div>}
+      {answer && (
+        <div className="comic-answer-box" style={{ whiteSpace: 'pre-wrap' }}>
+          {answer}
+        </div>
+      )}
     </div>
   );
 }

@@ -33,8 +33,37 @@ describe('ragAnswer helpers', () => {
     });
 
     expect(answer).toContain('Model AI jest chwilowo niedostepny');
-    expect(answer).toContain('- Spotkanie rec-1, Anna: Ustalono budzet.');
-    expect(answer).toContain('- Spotkanie rec-2, Nieznany: Termin to przyszly tydzien.');
+    expect(answer).toContain('Fragment 1 (Anna)');
+    expect(answer).toContain('Ustalono budzet.');
+    expect(answer).toContain('Fragment 2 (Nieznany)');
+    expect(answer).toContain('Termin to przyszly tydzien.');
     expect(answer).toContain('Pytanie: Co ustalono?');
+    expect(answer).not.toContain('rec-1');
+    expect(answer).not.toContain('rec-2');
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - RAG fallback leaked raw recording IDs into user copy
+  // Date: 2026-04-05
+  // Bug: when the LLM fallback was used, users saw technical IDs such as
+  //      recording_xxx instead of readable fragment labels.
+  // Fix: fallback now returns numbered archive fragments with speakers,
+  //      without exposing storage-oriented recording identifiers.
+  // -----------------------------------------------------------------
+  it('Regression: #0 - hides raw recording ids in fallback answer copy', () => {
+    const answer = buildFallbackRagAnswer({
+      question: 'ile jatem spotkan',
+      chunks: [
+        {
+          recording_id: 'recording_85dtyogr_mnk4bjal',
+          speaker_name: 'Iwo',
+          text: 'Robilam questa np. spotkanie po setce minutami.',
+        },
+      ],
+      errorMessage: 'Timeout LLM',
+    });
+
+    expect(answer).toContain('Fragment 1 (Iwo)');
+    expect(answer).not.toContain('recording_85dtyogr_mnk4bjal');
   });
 });
