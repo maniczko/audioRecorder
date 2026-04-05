@@ -254,3 +254,90 @@ Ostatnie odswiezenie: `2026-04-05 14:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055763
   - **Created:** 2026-04-05T12:37:25.908Z
   - **Priority:** High
+
+<!-- Auto-generated on 2026-04-05T14:28:47.896Z -->
+
+### GitHub Actions Errors (9 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Error:** 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
+  - **Error:** Job "Unit Tests" step "Run unit tests" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-3** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
+  - **Error:** 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /trans...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140694
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001666480
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055758
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-6** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
+  - **Error:** Job "typecheck" step "Run TypeScript" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055763
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-7** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999588419
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
+  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219132
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-05-9** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
+  - **Error:** Job "typecheck" step "Run TypeScript" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219137
+  - **Created:** 2026-04-05T14:28:47.896Z
+  - **Priority:** High
+
+
