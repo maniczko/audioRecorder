@@ -307,4 +307,17 @@ Ostatnie odswiezenie: `2026-04-04 19:05 Europe/Warsaw`
   - **Created:** 2026-04-04T22:21:33.827Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-05T01:29:57.311Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T22:22:57.3717206Z [22m[39m[ERROR]...
+  - **Error:** 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23988814696
+  - **Created:** 2026-04-05T01:29:57.311Z
+  - **Priority:** High
+
 
