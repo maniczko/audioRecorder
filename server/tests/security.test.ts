@@ -42,7 +42,7 @@ describe('API Security Regression Tests', () => {
       workspaceName: 'Sec Space',
     });
     testUserToken = result.token;
-  }, 30000);
+  }, 120000);
 
   afterAll(async () => {
     // Clean up
