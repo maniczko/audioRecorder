@@ -257,7 +257,6 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
             workspaceMembers={workspace.currentWorkspaceMembers}
             taskNotifications={meetings.taskNotifications}
-            workspaceActivity={meetings.workspaceActivity}
           />
         );
       case 'notes':
@@ -391,7 +390,6 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             clearMeetingDraft={meetings.clearMeetingDraft}
             saveMeeting={meetings.saveMeeting}
             startNewMeetingDraft={meetings.startNewMeetingDraft}
-            workspaceActivity={meetings.workspaceActivity}
             workspaceMessage={meetings.workspaceMessage}
             userMeetings={meetings.userMeetings}
             selectedMeetingId={meetings.selectedMeetingId}

@@ -56,7 +56,6 @@ export default function TasksTab({
   currentUserName,
   workspaceMembers = [],
   taskNotifications = [],
-  workspaceActivity = [],
 }) {
   const [viewMode, setViewMode] = useState(defaultView === 'kanban' ? 'kanban' : 'list');
   const [selectedListId, setSelectedListId] = useState('smart:all');
@@ -710,7 +709,6 @@ export default function TasksTab({
             clearTaskSelection={clearTaskSelection}
             taskNotifications={taskNotifications}
             workspaceMembers={workspaceMembers}
-            workspaceActivity={workspaceActivity}
             currentUserName={currentUserName}
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}

@@ -52,71 +52,6 @@ function timeAgo(dateString: string): string {
   return formatDateTime(dateString);
 }
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  created: '✦',
-  updated: '✎',
-  recording: '🎙',
-  status: '⊙',
-  comment: '💬',
-  assigned: '→',
-};
-
-function ActivityFeed({ items }: { items: any[] }) {
-  if (!items.length) {
-    return (
-      <p style={{ fontSize: '0.75rem', color: 'var(--muted)', padding: '8px 0', margin: 0 }}>
-        Brak ostatniej aktywności.
-      </p>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {items.slice(0, 8).map((item) => (
-        <div
-          key={item.id}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1,
-            padding: '5px 8px',
-            borderRadius: 6,
-            background: 'rgba(255,255,255,0.02)',
-            borderLeft: '2px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>
-              {ACTIVITY_ICONS[item.type] || '•'}
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                flex: 1,
-              }}
-              title={item.title}
-            >
-              {item.title}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
-              {item.actor || 'System'}
-            </span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-3, #6b7280)' }}>
-              {timeAgo(item.createdAt)}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function TeamPanel({
   workspaceMembers,
   allTasks,
@@ -246,7 +181,6 @@ function TasksSidebar({
   conflictTasks = [],
   onFocusConflictTask,
   workspaceMembers = [],
-  workspaceActivity = [],
   currentUserName = '',
   ownerFilter = 'all',
   setOwnerFilter,
@@ -265,7 +199,6 @@ function TasksSidebar({
   }
 
   const hasTeam = workspaceMembers.length > 1;
-  const hasActivity = workspaceActivity.length > 0;
 
   return (
     <aside className="todo-sidebar">
@@ -387,31 +320,6 @@ function TasksSidebar({
                       ownerFilter={ownerFilter}
                       setOwnerFilter={setOwnerFilter || (() => {})}
                     />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {hasActivity && (
-              <div className="todo-sidebar-group">
-                <button
-                  type="button"
-                  className="todo-workspace-title todo-workspace-toggle"
-                  onClick={() => toggle('activity')}
-                  aria-expanded={!collapsed.activity}
-                  aria-controls="todo-activity-section"
-                >
-                  <span
-                    className={`todo-workspace-toggle-arrow${collapsed.activity ? ' collapsed' : ''}`}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                  <strong>Ostatnia aktywność</strong>
-                </button>
-                {!collapsed.activity && (
-                  <div id="todo-activity-section">
-                    <ActivityFeed items={workspaceActivity} />
                   </div>
                 )}
               </div>
