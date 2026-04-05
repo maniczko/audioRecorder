@@ -39,19 +39,6 @@ function avatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function timeAgo(dateString: string): string {
-  const diff = Date.now() - new Date(dateString).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 2) return 'przed chwilą';
-  if (mins < 60) return `${mins} min temu`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} godz. temu`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'wczoraj';
-  if (days < 7) return `${days} dni temu`;
-  return formatDateTime(dateString);
-}
-
 function TeamPanel({
   workspaceMembers,
   allTasks,
