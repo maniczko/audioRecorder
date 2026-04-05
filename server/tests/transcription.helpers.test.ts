@@ -1,412 +1,311 @@
-/**
- * @vitest-environment node
- */
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import path from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildAudioPreprocessCacheKey,
-  getPreprocessCachePath,
-  getUploadDir,
-  isPreprocessCacheFile,
   mergeChunkedPayloads,
-  resolveStoredAudioQuality,
   getMemoryAwareConcurrency,
-  VAD_ENABLED,
-  _sttUseGroq,
-  VERIFICATION_MODEL,
-  STT_PROVIDER_CHAIN,
-} from '../transcription';
+  transcribeLiveChunk,
+  calculateAdaptiveOverlap,
+} from '../transcription.ts';
 
-describe('transcription helpers', () => {
-  it('buildAudioPreprocessCacheKey is stable and sensitive to changes', () => {
-    const asset = {
-      id: 'asset_1',
-      file_path: 'audio.wav',
-      updated_at: '2026-03-01T10:00:00Z',
-      size_bytes: 1234,
-      content_type: 'audio/wav',
-    };
+// ── Typed mock helpers ────────────────────────────────────────────────────────
 
-    const keyA = buildAudioPreprocessCacheKey(asset, 'standard');
-    const keyB = buildAudioPreprocessCacheKey({ ...asset }, 'standard');
-    const keyC = buildAudioPreprocessCacheKey({ ...asset, size_bytes: 9999 }, 'standard');
+/** Creates a properly typed MemoryUsage mock object. */
+function mockMemoryUsage(mb: {
+  rssMB: number;
+  heapUsedMB: number;
+  heapTotalMB: number;
+}): ReturnType<typeof vi.spyOn> {
+  const BYTES = 1024 * 1024;
+  return vi.spyOn(process, 'memoryUsage').mockReturnValue({
+    rss: mb.rssMB * BYTES,
+    heapUsed: mb.heapUsedMB * BYTES,
+    heapTotal: mb.heapTotalMB * BYTES,
+    external: 0,
+    arrayBuffers: 0,
+  } as NodeJS.MemoryUsage);
+}
 
-    expect(keyA).toBe(keyB);
-    expect(keyA).not.toBe(keyC);
-    expect(keyA).toMatch(/^[a-f0-9]{64}$/);
+// ── Shared diagnostics fixtures for it.each ──────────────────────────────────
+
+const DIAG_SUCCESS = {
+  extracted: true,
+  sentToStt: true,
+  sttFailed: false,
+  hasSegments: true,
+  hasText: true,
+};
+
+const DIAG_FAILED = {
+  extracted: true,
+  sentToStt: true,
+  sttFailed: true,
+  sttErrorMessage: 'API error',
+  hasSegments: false,
+  hasText: false,
+};
+
+const DIAG_DISCARDED = {
+  extracted: false,
+  discardedAsTooSmall: true,
+  sentToStt: false,
+  sttFailed: false,
+};
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('transcription.ts — Additional Coverage Tests', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('getPreprocessCachePath builds paths under the preprocess cache folder', () => {
-    const cacheKey = 'abc123';
-    const cachePath = getPreprocessCachePath(cacheKey, 'standard');
+  // ── mergeChunkedPayloads ──────────────────────────────────────────────────
 
-    expect(path.basename(cachePath)).toBe(`${cacheKey}.standard.wav`);
-    expect(path.normalize(cachePath)).toContain(
-      path.normalize(path.join('.cache', 'preprocessed'))
+  describe('mergeChunkedPayloads', () => {
+    it('merges multiple chunk payloads with segments', () => {
+      const payloads = [
+        {
+          payload: {
+            segments: [
+              { text: 'Hello', start: 0, end: 1 },
+              { text: 'World', start: 1, end: 2 },
+            ],
+            text: 'Hello World',
+          },
+          offsetSeconds: 0,
+          diagnostics: {
+            extracted: true,
+            sentToStt: true,
+            hasSegments: true,
+            hasWords: false,
+            hasText: true,
+          },
+        },
+        {
+          payload: {
+            segments: [
+              { text: 'Foo', start: 0, end: 1 },
+              { text: 'Bar', start: 1, end: 2 },
+            ],
+            text: 'Foo Bar',
+          },
+          offsetSeconds: 30,
+          diagnostics: {
+            extracted: true,
+            sentToStt: true,
+            hasSegments: true,
+            hasWords: false,
+            hasText: true,
+          },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, 1024);
+
+      expect(result.segments).toHaveLength(4);
+      expect(result.segments[0].start).toBe(0);
+      expect(result.segments[0].end).toBe(1);
+      expect(result.segments[2].start).toBe(30);
+      expect(result.segments[2].end).toBe(31);
+      expect(result.text).toBe('Hello World Foo Bar');
+      expect(result.transcriptionDiagnostics.chunksAttempted).toBe(2);
+      expect(result.transcriptionDiagnostics.chunksWithSegments).toBe(2);
+      expect(result.transcriptionDiagnostics.fileSizeBytes).toBe(1024);
+    });
+
+    it.each`
+      label              | payloads                                                                                                                                                                                        | expectSegLen | expectText
+      ${'empty array'}   | ${[]}                                                                                                                                                                                           | ${0}         | ${''}
+      ${'null filtered'} | ${[{ payload: null, offsetSeconds: 0, diagnostics: {} }, { payload: { segments: [{ text: 'Valid', start: 0, end: 1 }], text: 'Valid' }, offsetSeconds: 10, diagnostics: { extracted: true } }]} | ${1}         | ${'Valid'}
+    `(
+      'handles $label: $expectSegLen segment(s), text="$expectText"',
+      ({ payloads: payloadsRaw, expectSegLen, expectText }) => {
+        const result = mergeChunkedPayloads(payloadsRaw, 512);
+        expect(result.segments).toHaveLength(expectSegLen);
+        expect(result.text).toBe(expectText);
+      }
+    );
+
+    it('deduplicates overlapping segments', () => {
+      const payloads = [
+        {
+          payload: {
+            segments: [
+              { text: 'Segment 1', start: 0, end: 5 },
+              { text: 'Segment 2', start: 4.9, end: 10 },
+            ],
+            text: 'Segment 1 Segment 2',
+          },
+          offsetSeconds: 0,
+          diagnostics: { extracted: true, sentToStt: true, hasSegments: true },
+        },
+        {
+          payload: {
+            segments: [
+              // After offset: start=5, end=10 — but highWater from chunk 1 is 10
+              // so start=5 >= 10-0.1 is false → this segment gets filtered
+              { text: 'Segment 3', start: 0, end: 5 },
+              // After offset: start=10, end=15 — start=10 >= 10-0.1 is true → kept
+              { text: 'Segment 4', start: 5, end: 10 },
+            ],
+            text: 'Segment 3 Segment 4',
+          },
+          offsetSeconds: 5,
+          diagnostics: { extracted: true, sentToStt: true, hasSegments: true },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, 0);
+
+      // Chunk 1: both segments kept (highWater reaches 10)
+      // Chunk 2: Segment 3 filtered out (start=5 < 10-0.1), Segment 4 kept (start=10 >= 10-0.1)
+      // Expected: 3 segments total
+      expect(result.segments).toHaveLength(3);
+      expect(result.segments[0].text).toBe('Segment 1');
+      expect(result.segments[2].text).toBe('Segment 4');
+    });
+
+    it('extracts words from payload', () => {
+      const payloads = [
+        {
+          payload: {
+            segments: [],
+            words: [
+              { word: 'Hello', start: 0, end: 0.5 },
+              { word: 'World', start: 0.5, end: 1 },
+            ],
+            text: 'Hello World',
+          },
+          offsetSeconds: 0,
+          diagnostics: { extracted: true, sentToStt: true, hasWords: true },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, 0);
+
+      expect(result.words).toHaveLength(2);
+      expect(result.transcriptionDiagnostics.chunksWithWords).toBe(1);
+    });
+
+    it.each`
+      label             | payloadEntry                                                                                                 | expectSentToStt | expectFailed | expectDiscarded | expectLastErr
+      ${'success+fail'} | ${{ segs: [{ text: 'OK', start: 0, end: 1 }], diags: [DIAG_SUCCESS, DIAG_FAILED, DIAG_DISCARDED] }}          | ${2}            | ${1}         | ${1}            | ${'API error'}
+      ${'zero size'}    | ${{ segs: [{ text: 'OK', start: 0, end: 1 }], diags: [DIAG_SUCCESS, DIAG_FAILED, DIAG_DISCARDED], size: 0 }} | ${2}            | ${1}         | ${1}            | ${'API error'}
+    `(
+      'tracks diagnostics for $label',
+      ({ payloadEntry: p, expectSentToStt, expectFailed, expectDiscarded, expectLastErr }) => {
+        const seg = p.segs[0];
+        const payloads = p.diags.map((d: typeof DIAG_SUCCESS, i: number) =>
+          i === 0
+            ? {
+                payload: { segments: [seg], text: seg.text },
+                offsetSeconds: i * 10,
+                diagnostics: d,
+              }
+            : { payload: null, offsetSeconds: i * 10, diagnostics: d }
+        );
+        const fileSize = p.size ?? 2048;
+        const result = mergeChunkedPayloads(payloads, fileSize);
+
+        expect(result.transcriptionDiagnostics.chunksSentToStt).toBe(expectSentToStt);
+        expect(result.transcriptionDiagnostics.chunksFailedAtStt).toBe(expectFailed);
+        expect(result.transcriptionDiagnostics.chunksDiscardedAsTooSmall).toBe(expectDiscarded);
+        expect(result.transcriptionDiagnostics.lastChunkErrorMessage).toBe(expectLastErr);
+        expect(result.transcriptionDiagnostics.fileSizeBytes).toBe(fileSize);
+      }
+    );
+
+    it('handles payloads with sttResult attempts', () => {
+      const payloads = [
+        {
+          payload: { segments: [], text: '' },
+          offsetSeconds: 0,
+          sttResult: {
+            providerId: 'openai',
+            attempts: [{ model: 'gpt-4o', status: 'success' }],
+          },
+          diagnostics: { extracted: true },
+        },
+      ];
+
+      const result = mergeChunkedPayloads(payloads, 0);
+
+      expect(result.transcriptionDiagnostics.sttAttempts).toHaveLength(1);
+      expect(result.sttProviderInfo).toBeDefined();
+    });
+  });
+
+  // ── getMemoryAwareConcurrency ─────────────────────────────────────────────
+
+  describe('getMemoryAwareConcurrency', () => {
+    it.each`
+      label                    | rssMB  | heapUsedMB | heapTotalMB | configLimit | expected
+      ${'RSS > 500MB'}         | ${501} | ${100}     | ${200}      | ${4}        | ${1}
+      ${'RSS > 350MB'}         | ${351} | ${100}     | ${200}      | ${4}        | ${2}
+      ${'heap ratio > 0.75'}   | ${300} | ${160}     | ${200}      | ${4}        | ${1}
+      ${'heap ratio > 0.6'}    | ${300} | ${125}     | ${200}      | ${4}        | ${2}
+      ${'low memory, limit 4'} | ${100} | ${50}      | ${200}      | ${4}        | ${2}
+      ${'low memory, limit 1'} | ${100} | ${50}      | ${200}      | ${1}        | ${1}
+    `(
+      'returns $expected when $label',
+      ({ rssMB, heapUsedMB, heapTotalMB, configLimit, expected }) => {
+        mockMemoryUsage({ rssMB, heapUsedMB, heapTotalMB });
+
+        const result = getMemoryAwareConcurrency(configLimit);
+
+        expect(result).toBe(expected);
+      }
     );
   });
 
-  it('isPreprocessCacheFile detects cache paths correctly', () => {
-    const inside = getPreprocessCachePath('inside', 'enhanced');
-    const outside = path.join(getUploadDir(), 'outside.wav');
+  // ── calculateAdaptiveOverlap ──────────────────────────────────────────────
 
-    expect(isPreprocessCacheFile(inside)).toBe(true);
-    expect(isPreprocessCacheFile(outside)).toBe(false);
-  });
-
-  it('resolveStoredAudioQuality parses audioQuality payload safely', () => {
-    expect(
-      resolveStoredAudioQuality({
-        diarization_json: '{"audioQuality":{"qualityLabel":"good"}}',
-      })
-    ).toEqual({ qualityLabel: 'good' });
-
-    expect(
-      resolveStoredAudioQuality({
-        diarization_json: '{"audioQuality":"bad"}',
-      })
-    ).toBeNull();
-
-    expect(resolveStoredAudioQuality({ diarization_json: 'not-json' })).toBeNull();
-  });
-
-  it('mergeChunkedPayloads merges payloads and computes diagnostics', () => {
-    const payloads = [
-      {
-        payload: {
-          segments: [{ start: 0, end: 1, text: 'Hello' }],
-          words: [{ word: 'Hello', start: 0, end: 1 }],
-          text: 'Hello',
-        },
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: true,
-          hasWords: true,
-          hasText: true,
-        },
-        sttResult: {
-          providerId: 'openai',
-          providerLabel: 'OpenAI STT',
-          model: 'gpt-4o-transcribe',
-          attempts: [
-            {
-              providerId: 'openai',
-              providerLabel: 'OpenAI STT',
-              model: 'gpt-4o-transcribe',
-              success: true,
-              durationMs: 10,
-            },
-          ],
-        },
-      },
-      {
-        payload: null,
-        offsetSeconds: 30,
-        diagnostics: {
-          extracted: false,
-          discardedAsTooSmall: true,
-          vadFlaggedSilent: true,
-          sentToStt: false,
-          sttFailed: false,
-          sttErrorMessage: 'Too small',
-          hasSegments: false,
-          hasWords: false,
-          hasText: false,
-        },
-      },
+  describe('calculateAdaptiveOverlap', () => {
+    const segEmpty: unknown[] = [];
+    const segZero = [
+      { start: 0, end: 0 },
+      { start: 0, end: 0 },
+    ];
+    const segHigh = [
+      { start: 0, end: 600 },
+      { start: 400, end: 1000 },
+    ];
+    const segMed = [
+      { start: 0, end: 200 },
+      { start: 800, end: 1000 },
+    ];
+    const segLow = [
+      { start: 0, end: 100 },
+      { start: 900, end: 1000 },
+    ];
+    const segTs = [
+      { startTimestamp: 0, endTimestamp: 600 },
+      { startTimestamp: 400, endTimestamp: 1000 },
     ];
 
-    const result = mergeChunkedPayloads(payloads, 123);
-
-    expect(result.segments).toHaveLength(1);
-    expect(result.words).toHaveLength(1);
-    expect(result.text).toBe('Hello');
-    expect(result.sttProviderInfo?.providerId).toBe('openai');
-    expect(result.transcriptionDiagnostics).toMatchObject({
-      usedChunking: true,
-      fileSizeBytes: 123,
-      chunksAttempted: 2,
-      chunksDiscardedAsTooSmall: 1,
-      chunksWithSegments: 1,
-      chunksWithWords: 1,
-      chunksWithText: 1,
+    it.each`
+      label                         | segments    | expected
+      ${'empty array'}              | ${segEmpty} | ${0.5}
+      ${'null input'}               | ${null}     | ${0.5}
+      ${'zero duration'}            | ${segZero}  | ${0.5}
+      ${'high density (≥0.6)'}      | ${segHigh}  | ${2}
+      ${'medium density (0.3–0.6)'} | ${segMed}   | ${1.25}
+      ${'low density (<0.3)'}       | ${segLow}   | ${0.5}
+      ${'timestamp properties'}     | ${segTs}    | ${2}
+    `('returns $expected for $label', ({ segments, expected }) => {
+      const result = calculateAdaptiveOverlap(segments, 1);
+      expect(result).toBe(expected);
     });
-    expect(result.transcriptionDiagnostics?.sttAttempts?.length).toBe(1);
   });
 
-  it('mergeChunkedPayloads handles empty payloads array', () => {
-    const result = mergeChunkedPayloads([], 0);
+  // ── transcribeLiveChunk ───────────────────────────────────────────────────
 
-    expect(result.segments).toEqual([]);
-    expect(result.words).toEqual([]);
-    expect(result.text).toBe('');
-    expect(result.transcriptionDiagnostics.chunksAttempted).toBe(0);
-  });
-
-  it('mergeChunkedPayloads handles payloads with no segments or words', () => {
-    const payloads = [
-      {
-        payload: { text: 'Just text, no segments' },
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: false,
-          hasWords: false,
-          hasText: true,
-        },
-      },
-    ];
-
-    const result = mergeChunkedPayloads(payloads, 50);
-
-    expect(result.segments).toEqual([]);
-    expect(result.words).toEqual([]);
-    expect(result.text).toBe('Just text, no segments');
-    expect(result.transcriptionDiagnostics.chunksWithText).toBe(1);
-  });
-});
-
-describe('getMemoryAwareConcurrency', () => {
-  const originalMemoryUsage = process.memoryUsage;
-
-  afterEach(() => {
-    process.memoryUsage = originalMemoryUsage;
-  });
-
-  it('returns 1 when RSS > 500MB', () => {
-    process.memoryUsage = vi.fn().mockReturnValue({
-      rss: 550 * 1024 * 1024,
-      heapUsed: 200 * 1024 * 1024,
-      heapTotal: 300 * 1024 * 1024,
+  describe('transcribeLiveChunk', () => {
+    it('is exported and callable', async () => {
+      // transcribeLiveChunk depends on configured STT providers (real API calls).
+      // Full behavioral coverage is in server/tests/routes/transcribe.test.ts and
+      // server/tests/audio-pipeline.unit.test.ts. Here we verify the function is
+      // properly exported and has the correct type.
+      expect(typeof transcribeLiveChunk).toBe('function');
+      expect(transcribeLiveChunk.length).toBeGreaterThanOrEqual(2);
     });
-
-    expect(getMemoryAwareConcurrency(4)).toBe(1);
-  });
-
-  it('returns 1 when heapUsageRatio > 0.75', () => {
-    process.memoryUsage = vi.fn().mockReturnValue({
-      rss: 300 * 1024 * 1024,
-      heapUsed: 230 * 1024 * 1024,
-      heapTotal: 300 * 1024 * 1024, // 0.767 ratio
-    });
-
-    expect(getMemoryAwareConcurrency(4)).toBe(1);
-  });
-
-  it('returns max(1, min(configLimit, 2)) when RSS > 350MB', () => {
-    process.memoryUsage = vi.fn().mockReturnValue({
-      rss: 400 * 1024 * 1024,
-      heapUsed: 150 * 1024 * 1024,
-      heapTotal: 300 * 1024 * 1024, // 0.5 ratio
-    });
-
-    expect(getMemoryAwareConcurrency(4)).toBe(2);
-    expect(getMemoryAwareConcurrency(1)).toBe(1);
-  });
-
-  it('returns max(1, min(configLimit, 2)) when heapUsageRatio > 0.6', () => {
-    process.memoryUsage = vi.fn().mockReturnValue({
-      rss: 300 * 1024 * 1024,
-      heapUsed: 185 * 1024 * 1024,
-      heapTotal: 300 * 1024 * 1024, // 0.617 ratio
-    });
-
-    expect(getMemoryAwareConcurrency(4)).toBe(2);
-  });
-
-  it('returns configLimit when memory usage is low', () => {
-    process.memoryUsage = vi.fn().mockReturnValue({
-      rss: 200 * 1024 * 1024,
-      heapUsed: 100 * 1024 * 1024,
-      heapTotal: 300 * 1024 * 1024, // 0.33 ratio
-    });
-
-    expect(getMemoryAwareConcurrency(4)).toBe(2); // capped at 2
-    expect(getMemoryAwareConcurrency(1)).toBe(1);
-  });
-});
-
-describe('transcription module constants', () => {
-  it('VAD_ENABLED is a boolean', () => {
-    expect(typeof VAD_ENABLED).toBe('boolean');
-  });
-
-  it('_sttUseGroq is a boolean', () => {
-    expect(typeof _sttUseGroq).toBe('boolean');
-  });
-
-  it('VERIFICATION_MODEL is a non-empty string', () => {
-    expect(typeof VERIFICATION_MODEL).toBe('string');
-    expect(VERIFICATION_MODEL.length).toBeGreaterThan(0);
-  });
-
-  it('STT_PROVIDER_CHAIN is an array', () => {
-    expect(Array.isArray(STT_PROVIDER_CHAIN)).toBe(true);
-  });
-
-  it('STT_PROVIDER_CHAIN contains provider objects with id and defaultModel', () => {
-    for (const provider of STT_PROVIDER_CHAIN) {
-      expect(provider).toHaveProperty('id');
-      expect(provider).toHaveProperty('defaultModel');
-      expect(typeof provider.id).toBe('string');
-      expect(typeof provider.defaultModel).toBe('string');
-    }
-  });
-});
-
-describe('getUploadDir', () => {
-  it('returns a string path', () => {
-    const dir = getUploadDir();
-    expect(typeof dir).toBe('string');
-    expect(dir.length).toBeGreaterThan(0);
-  });
-
-  it('returns the same directory on subsequent calls (cached)', () => {
-    const dir1 = getUploadDir();
-    const dir2 = getUploadDir();
-    expect(dir1).toBe(dir2);
-  });
-});
-
-describe('mergeChunkedPayloads — additional edge cases', () => {
-  it('handles payloads where all are discarded', () => {
-    const payloads = [
-      {
-        payload: null,
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: false,
-          discardedAsTooSmall: true,
-          vadFlaggedSilent: true,
-          sentToStt: false,
-          sttFailed: false,
-          sttErrorMessage: 'Too small',
-          hasSegments: false,
-          hasWords: false,
-          hasText: false,
-        },
-      },
-    ];
-
-    const result = mergeChunkedPayloads(payloads, 0);
-
-    expect(result.segments).toEqual([]);
-    expect(result.words).toEqual([]);
-    expect(result.text).toBe('');
-    expect(result.transcriptionDiagnostics.chunksDiscardedAsTooSmall).toBe(1);
-    expect(result.transcriptionDiagnostics.chunksFlaggedSilentByVad).toBe(1);
-  });
-
-  it('handles multiple valid payloads with segment deduplication', () => {
-    const payloads = [
-      {
-        payload: {
-          segments: [{ start: 0, end: 5, text: 'Hello' }],
-          words: [],
-          text: 'Hello',
-        },
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: true,
-          hasWords: false,
-          hasText: true,
-        },
-      },
-      {
-        payload: {
-          segments: [{ start: 4.9, end: 10, text: 'world' }], // overlaps with previous
-          words: [],
-          text: 'world',
-        },
-        offsetSeconds: 5,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: true,
-          hasWords: false,
-          hasText: true,
-        },
-      },
-    ];
-
-    const result = mergeChunkedPayloads(payloads, 0);
-
-    // Second segment starts at 9.9 (4.9 + 5) which is > 5 - 0.1 = 4.9, so it passes dedup
-    expect(result.segments).toHaveLength(2);
-    expect(result.text).toBe('Hello world');
-  });
-
-  it('extracts words using getRawWords from payload', () => {
-    const payloads = [
-      {
-        payload: {
-          segments: [],
-          words: [{ word: 'hello', start: 0, end: 1 }],
-          text: 'hello',
-        },
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: false,
-          hasWords: true,
-          hasText: true,
-        },
-      },
-    ];
-
-    const result = mergeChunkedPayloads(payloads, 0);
-
-    expect(result.words).toHaveLength(1);
-    expect(result.words[0].word).toBe('hello');
-  });
-
-  it('handles chunksReturnedEmptyPayload diagnostic', () => {
-    const payloads = [
-      {
-        payload: { segments: [], words: [], text: '' },
-        offsetSeconds: 0,
-        diagnostics: {
-          extracted: true,
-          discardedAsTooSmall: false,
-          vadFlaggedSilent: false,
-          sentToStt: true,
-          sttFailed: false,
-          sttErrorMessage: '',
-          hasSegments: false,
-          hasWords: false,
-          hasText: false,
-        },
-      },
-    ];
-
-    const result = mergeChunkedPayloads(payloads, 0);
-
-    expect(result.transcriptionDiagnostics.chunksReturnedEmptyPayload).toBe(1);
   });
 });

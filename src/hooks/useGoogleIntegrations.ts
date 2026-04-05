@@ -36,23 +36,35 @@ export default function useGoogleIntegrations({
   onGoogleProfile,
   onGoogleError,
 }) {
+  interface GoogleCalendarEventLike {
+    id: string;
+    start?: { dateTime?: string; date?: string };
+    end?: { dateTime?: string; date?: string };
+    summary?: string;
+  }
+
+  interface GoogleTaskListLike {
+    id: string;
+    title?: string;
+  }
+
   const { meetings, calendarMeta, setCalendarMeta } = useMeetingsStore();
   const [googleCalendarStatus, setGoogleCalendarStatus] = useState('idle');
-  const [googleCalendarEvents, setGoogleCalendarEvents] = useState([]);
+  const [googleCalendarEvents, setGoogleCalendarEvents] = useState<GoogleCalendarEventLike[]>([]);
   const [googleCalendarMessage, setGoogleCalendarMessage] = useState('');
   const [googleTasksStatus, setGoogleTasksStatus] = useState('idle');
-  const [googleTaskLists, setGoogleTaskLists] = useState([]);
+  const [googleTaskLists, setGoogleTaskLists] = useState<GoogleTaskListLike[]>([]);
   const [selectedGoogleTaskListId, setSelectedGoogleTaskListId] = useState('');
   const [googleTasksMessage, setGoogleTasksMessage] = useState('');
   const [googleCalendarLastSyncedAt, setGoogleCalendarLastSyncedAt] = useState('');
   const [googleTasksLastSyncedAt, setGoogleTasksLastSyncedAt] = useState('');
 
-  const googleButtonRef = useRef(null);
+  const googleButtonRef = useRef<HTMLElement | null>(null);
   const googleCalendarTokenRef = useRef('');
   const googleTasksTokenRef = useRef('');
   const manualTasksRef = useRef(manualTasks);
-  const inFlightTaskSyncRef = useRef(new Set());
-  const inFlightCalendarSyncRef = useRef(new Set());
+  const inFlightTaskSyncRef = useRef<Set<string>>(new Set());
+  const inFlightCalendarSyncRef = useRef<Set<string>>(new Set());
   const hasGoogleTasksToken = Boolean(googleTasksTokenRef.current);
   const hasGoogleCalendarToken = Boolean(googleCalendarTokenRef.current);
 
@@ -116,11 +128,13 @@ export default function useGoogleIntegrations({
 
     return () => {
       active = false;
-      googleButtonNode.innerHTML = '';
+      if (googleButtonNode) {
+        googleButtonNode.innerHTML = '';
+      }
     };
   }, [currentUser, googleEnabled, onGoogleError, onGoogleProfile]);
 
-  const loadGoogleMonthEvents = useCallback(async (accessToken, monthDate) => {
+  const loadGoogleMonthEvents = useCallback(async (accessToken: string, monthDate: Date) => {
     const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
     const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
     const payload = await fetchPrimaryCalendarEvents(accessToken, {
@@ -205,8 +219,8 @@ export default function useGoogleIntegrations({
       const response = await requestGoogleCalendarAccess({
         loginHint: currentUser.googleEmail || currentUser.email,
       });
-      googleCalendarTokenRef.current = (response as any).access_token;
-      await loadGoogleMonthEvents((response as any).access_token, calendarMonth);
+      googleCalendarTokenRef.current = response.access_token;
+      await loadGoogleMonthEvents(response.access_token, calendarMonth);
     } catch (error) {
       console.error('Google Calendar connect failed.', error);
       setGoogleCalendarStatus('error');
@@ -237,31 +251,34 @@ export default function useGoogleIntegrations({
     });
   }
 
-  const syncCalendarEntryToGoogle = useCallback(async (entry, options = {}) => {
-    if (!googleCalendarTokenRef.current) {
-      throw new Error('Najpierw polacz Google Calendar.');
-    }
+  const syncCalendarEntryToGoogle = useCallback(
+    async (entry: any, options: Record<string, any> = {}) => {
+      if (!googleCalendarTokenRef.current) {
+        throw new Error('Najpierw polacz Google Calendar.');
+      }
 
-    const payload = buildGoogleCalendarEventPayload(entry, options);
-    const response = (options as any).googleEventId
-      ? await updateGoogleCalendarEvent(
-          googleCalendarTokenRef.current,
-          (options as any).googleEventId,
-          payload
-        )
-      : await createGoogleCalendarEvent(googleCalendarTokenRef.current, payload);
+      const payload = buildGoogleCalendarEventPayload(entry, options);
+      const response = options.googleEventId
+        ? await updateGoogleCalendarEvent(
+            googleCalendarTokenRef.current,
+            options.googleEventId,
+            payload
+          )
+        : await createGoogleCalendarEvent(googleCalendarTokenRef.current, payload);
 
-    upsertLocalGoogleEvent(response);
-    setGoogleCalendarLastSyncedAt(new Date().toISOString());
-    setGoogleCalendarStatus('connected');
-    setGoogleCalendarMessage(
-      (options as any).googleEventId
-        ? `Zsynchronizowano wydarzenie "${entry.title}" z Google Calendar.`
-        : `Utworzono wydarzenie Google dla "${entry.title}".`
-    );
+      upsertLocalGoogleEvent(response);
+      setGoogleCalendarLastSyncedAt(new Date().toISOString());
+      setGoogleCalendarStatus('connected');
+      setGoogleCalendarMessage(
+        options.googleEventId
+          ? `Zsynchronizowano wydarzenie "${entry.title}" z Google Calendar.`
+          : `Utworzono wydarzenie Google dla "${entry.title}".`
+      );
 
-    return response;
-  }, []);
+      return response;
+    },
+    []
+  );
 
   async function rescheduleGoogleCalendarEntry(eventId, startsAt, endsAt) {
     if (!googleCalendarTokenRef.current) {
@@ -298,9 +315,9 @@ export default function useGoogleIntegrations({
       const response = await requestGoogleTasksAccess({
         loginHint: currentUser.googleEmail || currentUser.email,
       });
-      googleTasksTokenRef.current = (response as any).access_token;
-      const payload = await fetchGoogleTaskLists((response as any).access_token);
-      const lists = payload.items || [];
+      googleTasksTokenRef.current = response.access_token;
+      const payload = await fetchGoogleTaskLists(response.access_token);
+      const lists = (payload.items || []) as GoogleTaskListLike[];
       setGoogleTaskLists(lists);
       setSelectedGoogleTaskListId((previous) => previous || lists[0]?.id || '');
       setGoogleTasksLastSyncedAt(new Date().toISOString());
@@ -587,17 +604,17 @@ export default function useGoogleIntegrations({
         return;
       }
 
-      const nextSnapshot =
+      const nextSnapshot: Record<string, any> =
         mode === 'google'
-          ? conflict.remoteSnapshot
+          ? conflict.remoteSnapshot || {}
           : mode === 'merge' && finalSnapshot
             ? {
-                ...conflict.finalSnapshot,
-                ...finalSnapshot,
+                ...(conflict.finalSnapshot || {}),
+                ...((finalSnapshot as Record<string, any>) || {}),
               }
-            : conflict.localSnapshot;
+            : conflict.localSnapshot || {};
       const now = new Date().toISOString();
-      let remoteResponse = null;
+      let remoteResponse: { updated?: string } | null = null;
 
       if (mode !== 'google') {
         if (!googleTasksTokenRef.current || !task.googleTaskId || !task.googleTaskListId) {

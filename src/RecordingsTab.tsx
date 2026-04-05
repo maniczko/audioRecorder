@@ -14,7 +14,7 @@ import TagBadge from './shared/TagBadge';
 import { Search, Filter, Upload, Clock, Mic2, Users, Brain } from 'lucide-react';
 
 function formatPipelineDiagnostics(item) {
-  const details = [];
+  const details: string[] = [];
   const transcriptOutcome = String(item?.transcriptOutcome || '').trim();
   const gitSha = String(item?.pipelineGitSha || '').trim();
   const version = String(item?.pipelineVersion || '').trim();
@@ -226,10 +226,10 @@ function UnifiedLibrary({
   const toast = useToast();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [dateFilter, setDateFilter] = React.useState('');
-  const [tagFilter, setTagFilter] = React.useState([]);
-  const [participantFilter, setParticipantFilter] = React.useState([]);
+  const [tagFilter, setTagFilter] = React.useState<string[]>([]);
+  const [participantFilter, setParticipantFilter] = React.useState<string[]>([]);
   const [showFilters, setShowFilters] = React.useState(false);
-  const filterDropdownRef = React.useRef(null);
+  const filterDropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!showFilters) return;
@@ -242,7 +242,7 @@ function UnifiedLibrary({
   }, [showFilters]);
 
   const allTags = React.useMemo(() => {
-    const tags = new Set();
+    const tags = new Set<string>();
     userMeetings.forEach((m) => {
       if (Array.isArray(m.tags)) {
         m.tags.forEach((t) => {
@@ -254,7 +254,7 @@ function UnifiedLibrary({
   }, [userMeetings]);
 
   const allParticipants = React.useMemo(() => {
-    const parts = new Set();
+    const parts = new Set<string>();
     userMeetings.forEach((m) => {
       if (m.owner) parts.add(m.owner.trim());
       if (Array.isArray(m.guests)) {
@@ -266,11 +266,19 @@ function UnifiedLibrary({
     return Array.from(parts).sort();
   }, [userMeetings]);
 
-  const [sortConfig, setSortConfig] = React.useState({ key: 'startsAt', direction: 'desc' });
-  const [meetingToDelete, setMeetingToDelete] = React.useState(null);
+  const [sortConfig, setSortConfig] = React.useState<{
+    key: 'startsAt' | 'title' | 'durationMinutes' | 'recordingsCount' | 'speakerCount';
+    direction: 'asc' | 'desc';
+  }>({ key: 'startsAt', direction: 'desc' });
+  const [meetingToDelete, setMeetingToDelete] = React.useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
-  const handleSort = (key) => {
-    let direction = 'asc';
+  const handleSort = (
+    key: 'startsAt' | 'title' | 'durationMinutes' | 'recordingsCount' | 'speakerCount'
+  ) => {
+    let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
@@ -877,7 +885,7 @@ export default function RecordingsTab(props) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadingFileName, setUploadingFileName] = React.useState('');
   const [uploadProgress, setUploadProgress] = React.useState(0);
-  const mainFileInputRef = React.useRef(null);
+  const mainFileInputRef = React.useRef<HTMLInputElement>(null);
   const showPipelineStatus =
     Boolean(recordingMessage) ||
     ['queued', 'uploading', 'processing', 'diarization', 'review', 'failed', 'done'].includes(
@@ -903,7 +911,7 @@ export default function RecordingsTab(props) {
   const selectedMeetingEmptyDiagnostics = React.useMemo(() => {
     if (!selectedMeetingHasEmptyTranscript) return '';
     const diagnostics = latestSelectedRecording?.transcriptionDiagnostics || {};
-    const parts = [];
+    const parts: string[] = [];
     if (latestSelectedRecording?.emptyReason) {
       parts.push(`Powod: ${latestSelectedRecording.emptyReason}`);
     }

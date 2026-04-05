@@ -1,16 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
+import type { VirtuosoHandle } from 'react-virtuoso';
 
 import PropTypes from 'prop-types';
 import { labelSpeaker } from '../lib/recording';
 import { formatDuration } from '../lib/storage';
 import { getSpeakerColor } from '../lib/speakerColors';
 import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
+import type { TranscriptSegment } from '../shared/types';
 import './TranscriptPanelStyles.css';
 
 const WAVEFORM_SVG_W = 1000;
 const WAVEFORM_SVG_H = 80;
 const WAVEFORM_NUM_BARS = 200;
+
+type ReviewableTranscriptSegment = TranscriptSegment & {
+  id: string;
+  verificationStatus?: 'review' | 'verified';
+  verificationScore?: number;
+  verificationReasons?: string[];
+  verificationEvidence?: {
+    comparisonText?: string;
+  };
+};
 
 function WaveformPanel({
   selectedRecording,
@@ -23,11 +35,11 @@ function WaveformPanel({
   transcript,
   displaySpeakerNames,
 }) {
-  const [waveformBars, setWaveformBars] = useState([]);
+  const [waveformBars, setWaveformBars] = useState<number[]>([]);
   const [isDecoding, setIsDecoding] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   const [addMarkerMode, setAddMarkerMode] = useState(false);
-  const waveformRef = useRef(null);
+  const waveformRef = useRef<HTMLDivElement | null>(null);
 
   const markers = useMemo(() => {
     const raw = Array.isArray(selectedRecording?.markers) ? selectedRecording.markers : [];
@@ -61,7 +73,7 @@ function WaveformPanel({
         if (cancelled) return;
         const channelData = audioBuffer.getChannelData(0);
         const step = Math.max(1, Math.floor(channelData.length / WAVEFORM_NUM_BARS));
-        const bars = [];
+        const bars: number[] = [];
         for (let i = 0; i < WAVEFORM_NUM_BARS; i++) {
           let sum = 0;
           const base = i * step;
@@ -78,7 +90,7 @@ function WaveformPanel({
       })
       .finally(() => {
         if (!cancelled) setIsDecoding(false);
-        audioContext.close().catch(() => {});
+        void audioContext.close().catch(() => {});
       });
 
     return () => {
@@ -372,20 +384,20 @@ export default function TranscriptPanel({
   canEditTranscript = true,
   onNormalize,
 }) {
-  const virtuosoRef = useRef(null);
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
   const [filterMode, setFilterMode] = useState('all');
   const [speakerFilter, setSpeakerFilter] = useState('all');
   const [lowConfidenceOnly, setLowConfidenceOnly] = useState(false);
   const [activeSegmentId, setActiveSegmentId] = useState('');
-  const [selectedSegmentIds, setSelectedSegmentIds] = useState([]);
+  const [selectedSegmentIds, setSelectedSegmentIds] = useState<string[]>([]);
   const [bulkSpeakerId, setBulkSpeakerId] = useState('');
   const [splitCursor, setSplitCursor] = useState({ segmentId: '', start: 0 });
 
   const [isNormalizing, setIsNormalizing] = useState(false);
   const [normalizeError, setNormalizeError] = useState('');
 
-  const transcript = useMemo(
+  const transcript = useMemo<ReviewableTranscriptSegment[]>(
     () => (Array.isArray(displayRecording?.transcript) ? displayRecording.transcript : []),
     [displayRecording?.transcript]
   );
@@ -1098,6 +1110,7 @@ export default function TranscriptPanel({
               itemContent={(index, segment) => {
                 const isSelected = selectedSegmentIds.includes(segment.id);
                 const isActive = segment.id === activeSegmentId;
+                const verificationReasons = segment.verificationReasons || [];
 
                 return (
                   <div
@@ -1219,10 +1232,8 @@ export default function TranscriptPanel({
                         />
                       </div>
 
-                      {segment.verificationReasons?.length > 0 && (
-                        <div className="microcopy">
-                          Powód: {segment.verificationReasons.join(', ')}
-                        </div>
+                      {verificationReasons.length > 0 && (
+                        <div className="microcopy">Powód: {verificationReasons.join(', ')}</div>
                       )}
                       {segment.verificationEvidence?.comparisonText && (
                         <div className="microcopy">
@@ -1252,8 +1263,8 @@ export default function TranscriptPanel({
                             e.stopPropagation();
                             updateTranscriptSegment(segment.id, {
                               verificationStatus: 'review',
-                              verificationReasons: segment.verificationReasons?.length
-                                ? segment.verificationReasons
+                              verificationReasons: verificationReasons.length
+                                ? verificationReasons
                                 : ['oznaczone ręcznie do ponownego sprawdzenia'],
                             });
                           }}

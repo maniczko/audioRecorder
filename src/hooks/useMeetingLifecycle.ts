@@ -50,13 +50,36 @@ export default function useMeetingLifecycle({
   setMeetings,
   setWorkspaceMessage,
 }) {
+  interface MeetingLike {
+    id: string;
+    title?: string;
+    context?: string;
+    startsAt?: string;
+    attendees?: string;
+    latestRecordingId?: string | null;
+    workspaceId?: string;
+    recordings?: Array<{
+      id: string;
+      transcript?: unknown[];
+      pipelineStatus?: string;
+    }>;
+    [key: string]: any;
+  }
+
+  interface MeetingPrefill {
+    title?: string;
+    context?: string;
+    attendees?: string;
+    startsAt?: string;
+  }
+
   const [storedMeetingDrafts, setStoredMeetingDrafts] = useStoredState(
     STORAGE_KEYS.meetingDrafts,
     {}
   );
   const [meetingDraft, setMeetingDraftState] = useState(createEmptyMeetingDraft());
-  const [selectedMeetingId, setSelectedMeetingId] = useState(null);
-  const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const [selectedRecordingId, setSelectedRecordingId] = useState<string | null>(null);
   const [isDetachedMeetingDraft, setIsDetachedMeetingDraft] = useState(false);
   const [hasMeetingDraftChanges, setHasMeetingDraftChanges] = useState(false);
 
@@ -69,10 +92,13 @@ export default function useMeetingLifecycle({
     setMeetingDraftState((previous) => (typeof value === 'function' ? value(previous) : value));
   }, []);
 
-  const selectedMeeting = userMeetings.find((meeting) => meeting.id === selectedMeetingId) || null;
+  const selectedMeeting =
+    (userMeetings.find((meeting: MeetingLike) => meeting.id === selectedMeetingId) as
+      | MeetingLike
+      | undefined) || null;
   const selectedRecording =
-    selectedMeeting?.recordings.find((recording) => recording.id === selectedRecordingId) ||
-    selectedMeeting?.recordings[0] ||
+    selectedMeeting?.recordings?.find((recording) => recording.id === selectedRecordingId) ||
+    selectedMeeting?.recordings?.[0] ||
     null;
   const activeStoredMeetingDraft = currentWorkspaceId
     ? storedMeetingDrafts[currentWorkspaceId] || null
@@ -228,7 +254,7 @@ export default function useMeetingLifecycle({
     setWorkspaceMessage('');
   }
 
-  function startNewMeetingDraft(prefill = null) {
+  function startNewMeetingDraft(prefill: MeetingPrefill | null = null) {
     const freshDraft = createEmptyMeetingDraft();
     let nextDraft = freshDraft;
     if (prefill) {

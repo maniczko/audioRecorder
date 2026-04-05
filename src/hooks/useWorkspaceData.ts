@@ -1,7 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createStateService } from '../services/stateService';
-import { probeRemoteApiHealth, setPreviewRuntimeStatus } from '../services/httpClient';
+import {
+  probeRemoteApiHealth,
+  setPreviewRuntimeStatus,
+  isCircuitBreakerOpen,
+} from '../services/httpClient';
 import { migrateWorkspaceData } from '../lib/workspace';
 import { useWorkspaceStore, useWorkspaceSelectors } from '../store/workspaceStore';
 import { useMeetingsStore } from '../store/meetingsStore';
@@ -15,6 +19,8 @@ import {
 const REMOTE_PULL_COOLDOWN_MS = 25000;
 const BOOTSTRAP_RECOVERY_DELAY_MS = 10000;
 const BOOTSTRAP_RECOVERY_MAX_ATTEMPTS = 3;
+const REMOTE_POLL_BASE_MS = 5000;
+const REMOTE_POLL_MAX_MS = 60000;
 const HOSTED_PREVIEW_RUNTIME_MESSAGE =
   'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.';
 const HOSTED_PREVIEW_STALE_MESSAGE =
@@ -393,59 +399,97 @@ export default function useWorkspaceData() {
       return undefined;
     }
 
+    let cancelled = false;
+    let consecutivePollFailures = 0;
+
+    const scheduleNextPoll = () => {
+      if (cancelled) return;
+      // Adaptive interval: 5s on success, exponential backoff on consecutive failures (max 60s)
+      const intervalMs =
+        consecutivePollFailures === 0
+          ? REMOTE_POLL_BASE_MS
+          : Math.min(
+              REMOTE_POLL_BASE_MS * Math.pow(2, consecutivePollFailures),
+              REMOTE_POLL_MAX_MS
+            );
+      remotePollTimerRef.current = window.setTimeout(pullRemoteWorkspaceState, intervalMs);
+    };
+
     const pullRemoteWorkspaceState = () => {
+      if (cancelled) return;
+
+      // Skip when hidden, offline, or circuit breaker is open
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        scheduleNextPoll();
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        consecutivePollFailures += 1;
+        scheduleNextPoll();
+        return;
+      }
+      if (isCircuitBreakerOpen()) {
+        consecutivePollFailures += 1;
+        scheduleNextPoll();
+        return;
+      }
       if (Date.now() < remotePullCooldownUntilRef.current) {
+        scheduleNextPoll();
+        return;
+      }
+      if (isBootstrappingRef.current) {
+        scheduleNextPoll();
         return;
       }
 
+      isBootstrappingRef.current = true;
+
       void (async () => {
-        const canConnect = await ensureHostedPreviewConnectivity();
-        if (!canConnect) {
-          return;
-        }
+        try {
+          const canConnect = await ensureHostedPreviewConnectivity();
+          if (cancelled || !canConnect) {
+            consecutivePollFailures += 1;
+            return;
+          }
 
-        if (isBootstrappingRef.current) {
-          return;
-        }
+          const result = await stateService.bootstrap(currentWorkspaceId);
+          if (cancelled || !result?.state) {
+            consecutivePollFailures = 0;
+            return;
+          }
 
-        isBootstrappingRef.current = true;
-        stateService
-          .bootstrap(currentWorkspaceId)
-          .then((result) => {
-            if (!result?.state) {
-              return;
-            }
-
-            const normalizedState = normalizeWorkspaceState(result.state || {});
-            const incomingSnapshot = serializeWorkspaceState(normalizedState);
-            if (incomingSnapshot === remoteSnapshotRef.current) {
-              return;
-            }
-
+          const normalizedState = normalizeWorkspaceState(result.state || {});
+          const incomingSnapshot = serializeWorkspaceState(normalizedState);
+          if (incomingSnapshot !== remoteSnapshotRef.current) {
             applyRemoteWorkspaceState(result);
-          })
-          .catch((error) => {
-            applyRemoteTransportCooldown(error);
-            logRemoteErrorOnce('Remote workspace pull failed.', error);
-            pushWorkspaceMessage(
-              error?.message || 'Nie udalo sie pobrac danych workspace z backendu.'
-            );
-          })
-          .finally(() => {
-            isBootstrappingRef.current = false;
-          });
+          }
+
+          consecutivePollFailures = 0;
+        } catch (error) {
+          consecutivePollFailures += 1;
+          applyRemoteTransportCooldown(error);
+          logRemoteErrorOnce('Remote workspace pull failed.', error);
+          pushWorkspaceMessage(
+            (error as any)?.message || 'Nie udalo sie pobrac danych workspace z backendu.'
+          );
+        } finally {
+          isBootstrappingRef.current = false;
+          if (!cancelled) {
+            scheduleNextPoll();
+          }
+        }
       })();
     };
 
-    remotePollTimerRef.current = window.setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
-      pullRemoteWorkspaceState();
-    }, 5000);
+    // Kick off the first poll
+    scheduleNextPoll();
 
     return () => {
-      window.clearInterval(remotePollTimerRef.current);
+      cancelled = true;
+      if (remotePollTimerRef.current !== null) {
+        window.clearTimeout(remotePollTimerRef.current);
+        remotePollTimerRef.current = null;
+      }
     };
   }, [
     applyRemoteTransportCooldown,

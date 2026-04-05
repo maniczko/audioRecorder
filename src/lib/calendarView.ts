@@ -116,8 +116,13 @@ function entryParticipants(entry) {
     .filter(Boolean);
 }
 
-export function buildCalendarEntries(meetings, googleEvents = [], tasks = [], calendarMeta = {}) {
-  const entries = [];
+export function buildCalendarEntries(
+  meetings: any[],
+  googleEvents: any[] = [],
+  tasks: any[] = [],
+  calendarMeta: Record<string, any> = {}
+) {
+  const entries: any[] = [];
 
   meetings.forEach((meeting) => {
     if (!meeting?.startsAt) {
@@ -341,7 +346,7 @@ export function buildConflictMap(entries) {
   sorted.forEach((entry, index) => {
     const start = new Date(entry.startsAt || 0).getTime();
     const end = new Date(entry.endsAt || entry.startsAt || 0).getTime();
-    const conflicts = [];
+    const conflicts: any[] = [];
 
     for (let candidateIndex = index + 1; candidateIndex < sorted.length; candidateIndex += 1) {
       const candidate = sorted[candidateIndex];

@@ -476,8 +476,8 @@ export default function PeopleTab({
   const [addingConcern, setAddingConcern] = useState(false);
   const [addingOutput, setAddingOutput] = useState(false);
   const [analyzingPsych, setAnalyzingPsych] = useState(false);
-  const meetingsSectionRef = useRef(null);
-  const tasksSectionRef = useRef(null);
+  const meetingsSectionRef = useRef<HTMLDivElement | null>(null);
+  const tasksSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setAnalyzingPsych(false);

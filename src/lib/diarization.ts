@@ -165,7 +165,7 @@ function verifySegment(segment, previousSegment) {
     typeof segment.rawConfidence === 'number' && segment.rawConfidence > 0
       ? segment.rawConfidence
       : 0.76;
-  const reasons = [];
+  const reasons: string[] = [];
   const cleanText = String(segment.text || '').trim();
 
   if (!cleanText) {
@@ -217,7 +217,7 @@ export function diarizeSegments(segments) {
     return { segments: [], speakerCount: 0, speakerNames: {}, confidence: 0 };
   }
 
-  const clusters = [];
+  const clusters: { id: number; centroid: any; sampleCount: number }[] = [];
   const annotated = segments.map((segment, index) => {
     const previous = segments[index - 1];
     const signature = segment.signature || null;
@@ -251,14 +251,16 @@ export function diarizeSegments(segments) {
       } else {
         clusterId = best?.cluster.id ?? 0;
         const cluster = clusters.find((item) => item.id === clusterId);
-        const safeCount = Math.max(1, cluster.sampleCount);
-        cluster.centroid =
-          averageSignature(
-            [cluster.centroid, signature]
-              .filter(Boolean)
-              .flatMap((item) => Array(safeCount).fill(item).slice(0, 1))
-          ) || signature;
-        cluster.sampleCount += 1;
+        if (cluster) {
+          const safeCount = Math.max(1, cluster.sampleCount);
+          cluster.centroid =
+            averageSignature(
+              [cluster.centroid, signature]
+                .filter(Boolean)
+                .flatMap((item) => Array(safeCount).fill(item).slice(0, 1))
+            ) || signature;
+          cluster.sampleCount += 1;
+        }
       }
     }
 
@@ -269,7 +271,7 @@ export function diarizeSegments(segments) {
   });
 
   const smoothed = smoothAssignments(annotated);
-  const speakerOrder = [];
+  const speakerOrder: number[] = [];
   const relabelled = smoothed.map((segment) => {
     if (!speakerOrder.includes(segment.speakerId)) {
       speakerOrder.push(segment.speakerId);

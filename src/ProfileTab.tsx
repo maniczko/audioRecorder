@@ -13,7 +13,11 @@ import './styles/JapaneseFlatDesign.css';
 import TagInput from './shared/TagInput';
 import { ErrorLogSection } from './components/ErrorLogSection';
 
-function VoiceProfilesSection({ peopleProfiles = [] }) {
+function VoiceProfilesSection({
+  peopleProfiles = [],
+}: {
+  peopleProfiles?: Array<{ name: string }>;
+}) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -664,7 +668,7 @@ function integrationStatusLabel(status, connectedCount) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ChangelogSection() {
-  const [expandedVersion, setExpandedVersion] = useState('v1.6.0');
+  const [expandedVersion, setExpandedVersion] = useState<string | null>('v1.6.0');
 
   const changelogData = [
     {

@@ -1,32 +1,45 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { filterCommandPaletteItems } from './lib/commandPalette';
 import { semanticSearch } from './lib/aiSearch';
+import type { AiSearchItem } from './shared/contracts';
 import './CommandPaletteStyles.css';
 
-function groupedItems(items) {
-  return items.reduce((groups, item) => {
+type CommandPaletteItem = AiSearchItem & { matchSource?: 'ai' | 'local' };
+
+function groupedItems(items: CommandPaletteItem[]) {
+  return items.reduce<Map<string, AiSearchItem[]>>((groups, item) => {
     const key = item.group || 'Wyniki';
     const bucket = groups.get(key) || [];
     bucket.push(item);
     groups.set(key, bucket);
     return groups;
-  }, new Map());
+  }, new Map<string, CommandPaletteItem[]>());
 }
 
-export default function CommandPalette({ open, items, onClose, onSelect }) {
+export default function CommandPalette({
+  open,
+  items,
+  onClose,
+  onSelect,
+}: {
+  open: boolean;
+  items: CommandPaletteItem[];
+  onClose: () => void;
+  onSelect: (item: CommandPaletteItem) => void;
+}) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [aiResults, setAiResults] = useState<any[]>([]);
+  const [aiResults, setAiResults] = useState<CommandPaletteItem[]>([]);
   const [aiSearchUnavailable, setAiSearchUnavailable] = useState(false);
   const deferredQuery = useDeferredValue(query);
-  const inputRef = useRef(null);
-  const resultButtonsRef = useRef([]);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const resultButtonsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   const filteredItems = useMemo(
     () => filterCommandPaletteItems(items, deferredQuery),
     [items, deferredQuery]
   );
-  const displayItems = useMemo(() => {
+  const displayItems = useMemo<CommandPaletteItem[]>(() => {
     if (!aiResults.length) {
       return filteredItems;
     }
@@ -106,7 +119,7 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
       return undefined;
     }
 
-    function handleKeyDown(event) {
+    function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
@@ -188,36 +201,38 @@ export default function CommandPalette({ open, items, onClose, onSelect }) {
 
         <div className="command-palette-results">
           {filteredItems.length ? (
-            Array.from(grouped.entries()).map(([group, groupItems]) => (
-              <div key={group} className="command-palette-group">
-                <div className="command-palette-group-label">{group}</div>
-                <div className="command-palette-group-items">
-                  {groupItems.map((item) => {
-                    const itemIndex = displayItems.indexOf(item);
-                    return (
-                      <button
-                        key={item.id}
-                        ref={(node) => {
-                          resultButtonsRef.current[itemIndex] = node;
-                        }}
-                        type="button"
-                        className={
-                          itemIndex === activeIndex ? 'command-result active' : 'command-result'
-                        }
-                        onMouseEnter={() => setActiveIndex(itemIndex)}
-                        onClick={() => onSelect(item)}
-                      >
-                        <div>
-                          <strong>{item.title}</strong>
-                          <span>{item.subtitle}</span>
-                        </div>
-                        <small>{item.matchSource === 'ai' ? 'AI Match' : item.type}</small>
-                      </button>
-                    );
-                  })}
+            (Array.from(grouped.entries()) as Array<[string, CommandPaletteItem[]]>).map(
+              ([group, groupItems]) => (
+                <div key={group} className="command-palette-group">
+                  <div className="command-palette-group-label">{group}</div>
+                  <div className="command-palette-group-items">
+                    {groupItems.map((item) => {
+                      const itemIndex = displayItems.indexOf(item);
+                      return (
+                        <button
+                          key={item.id}
+                          ref={(node) => {
+                            resultButtonsRef.current[itemIndex] = node;
+                          }}
+                          type="button"
+                          className={
+                            itemIndex === activeIndex ? 'command-result active' : 'command-result'
+                          }
+                          onMouseEnter={() => setActiveIndex(itemIndex)}
+                          onClick={() => onSelect(item)}
+                        >
+                          <div>
+                            <strong>{item.title}</strong>
+                            <span>{item.subtitle}</span>
+                          </div>
+                          <small>{item.matchSource === 'ai' ? 'AI Match' : item.type}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            )
           ) : (
             <div className="empty-panel">
               <strong>Brak wynikow</strong>

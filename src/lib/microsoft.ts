@@ -9,8 +9,8 @@ export const MICROSOFT_REDIRECT_URI = import.meta.env.VITE_MICROSOFT_REDIRECT_UR
 
 const MICROSOFT_AUTHORITY = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}`;
 // Scopes for Calendar and Tasks
-const CALENDAR_SCOPES = ['Calendars.ReadWrite', 'Calendars.Read'];
-const TASKS_SCOPES = ['Tasks.ReadWrite', 'Tasks.Read'];
+export const CALENDAR_SCOPES = ['Calendars.ReadWrite', 'Calendars.Read'];
+export const TASKS_SCOPES = ['Tasks.ReadWrite', 'Tasks.Read'];
 
 export interface MicrosoftProfile {
   id: string;

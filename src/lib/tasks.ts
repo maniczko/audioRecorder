@@ -945,7 +945,12 @@ export function updateTaskColumns(taskBoards, workspaceId, nextColumns) {
   };
 }
 
-export function buildTaskPeople(meetings, currentUser, workspaceMembers = [], tasks = []) {
+export function buildTaskPeople(
+  meetings,
+  currentUser,
+  workspaceMembers: any[] = [],
+  tasks: any[] = []
+) {
   const customPeople = getCustomTaskPeople();
   return uniqueStrings([
     currentUser?.name,

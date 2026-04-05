@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { formatDateTime } from './lib/storage';
+import type { WorkspaceNotificationItem } from './lib/notifications';
 import './NotificationCenterStyles.css';
 
-function NotificationToneBadge({ tone }) {
+function NotificationToneBadge({ tone }: { tone?: string }) {
   const label =
     tone === 'danger' ? 'Pilne' : tone === 'warning' ? 'Uwaga' : tone === 'success' ? 'OK' : 'Info';
 
@@ -20,21 +21,33 @@ export default function NotificationCenter({
   onRequestPermission,
   onDismiss,
   onActivate,
+}: {
+  open: boolean;
+  unreadCount: number;
+  items?: WorkspaceNotificationItem[];
+  permissionState?: NotificationPermission;
+  browserNotificationsSupported?: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onRequestPermission: () => void;
+  onDismiss: (id: string) => void;
+  onActivate: (item: WorkspaceNotificationItem) => void;
 }) {
-  const panelRef = useRef(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) {
       return undefined;
     }
 
-    function handlePointer(event) {
-      if (!panelRef.current?.contains(event.target)) {
+    function handlePointer(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Node) || !panelRef.current?.contains(target)) {
         onClose();
       }
     }
 
-    function handleEscape(event) {
+    function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         onClose();
       }

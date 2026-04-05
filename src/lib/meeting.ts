@@ -4,9 +4,9 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function uniqueList(values, fallback = [], limit = 5) {
-  const seen = new Set();
-  const result = [];
+function uniqueList(values, fallback: string[] = [], limit = 5) {
+  const seen = new Set<string>();
+  const result: string[] = [];
   [...safeArray(values), ...safeArray(fallback)].forEach((item) => {
     const text = String(item || '').trim();
     if (!text) {

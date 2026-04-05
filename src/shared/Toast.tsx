@@ -32,11 +32,14 @@ let toastIdCounter = 0;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const timers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const timers = useRef<Record<number, ReturnType<typeof setTimeout> | undefined>>({});
 
   const dismiss = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-    clearTimeout(timers.current[id]);
+    const timer = timers.current[id];
+    if (timer) {
+      clearTimeout(timer);
+    }
     delete timers.current[id];
   }, []);
 
@@ -63,10 +66,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [dismiss]
   );
 
-  const success = useCallback((msg, opts) => show(msg, { ...opts, type: 'success' }), [show]);
-  const error = useCallback((msg, opts) => show(msg, { ...opts, type: 'error' }), [show]);
-  const info = useCallback((msg, opts) => show(msg, { ...opts, type: 'info' }), [show]);
-  const warning = useCallback((msg, opts) => show(msg, { ...opts, type: 'warning' }), [show]);
+  const success = useCallback(
+    (msg: string, opts?: ToastOptions) => show(msg, { ...opts, type: 'success' }),
+    [show]
+  );
+  const error = useCallback(
+    (msg: string, opts?: ToastOptions) => show(msg, { ...opts, type: 'error' }),
+    [show]
+  );
+  const info = useCallback(
+    (msg: string, opts?: ToastOptions) => show(msg, { ...opts, type: 'info' }),
+    [show]
+  );
+  const warning = useCallback(
+    (msg: string, opts?: ToastOptions) => show(msg, { ...opts, type: 'warning' }),
+    [show]
+  );
 
   return (
     <ToastContext.Provider value={{ show, success, error, info, warning, dismiss }}>
@@ -86,7 +101,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 className="toast-action"
                 onClick={() => {
-                  t.action();
+                  t.action?.();
                   dismiss(t.id);
                 }}
               >

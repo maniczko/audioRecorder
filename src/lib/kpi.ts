@@ -83,9 +83,10 @@ export function buildWorkspaceKpiDashboard(
   const kpis = {
     decisions: filteredMeetings.reduce((sum, meeting) => sum + meetingDecisionCount(meeting), 0),
     openTasks: filteredTasks.filter((task) => !task.completed).length,
-    overdue: filteredTasks.filter(
-      (task) => !task.completed && normalizeDate(task.dueDate)?.getTime() < Date.now()
-    ).length,
+    overdue: filteredTasks.filter((task) => {
+      const dueDate = normalizeDate(task.dueDate);
+      return !task.completed && Boolean(dueDate && dueDate.getTime() < Date.now());
+    }).length,
     tasksAfterMeetings: filteredTasks.filter((task) => taskAfterMeeting(task)).length,
   };
 

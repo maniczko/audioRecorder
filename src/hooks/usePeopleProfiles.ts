@@ -42,7 +42,7 @@ export default function usePeopleProfiles({
     const profile = peopleProfiles.find((p) => p.id === personId);
     if (!profile) return;
 
-    const allSegments = [];
+    const allSegments: Array<Record<string, unknown> & { meetingTitle?: string }> = [];
     for (const meeting of profile.meetings) {
       for (const recording of meeting.recordings || []) {
         const names = {

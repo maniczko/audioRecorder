@@ -306,10 +306,10 @@ function KanbanCard({
 }
 
 function buildSwimlanes(tasks, kanbanColumns, swimlaneGroupBy) {
-  const laneMap = new Map();
+  const laneMap = new Map<string, { id: string; label: string; tasks: any[] }>();
 
   tasks.forEach((task) => {
-    let keys = [];
+    let keys: string[] = [];
 
     if (swimlaneGroupBy === 'person') {
       const people = task.assignedTo?.length
@@ -346,7 +346,7 @@ function buildSwimlanes(tasks, kanbanColumns, swimlaneGroupBy) {
       if (!laneMap.has(key)) {
         laneMap.set(key, { id: key, label: key, tasks: [] });
       }
-      laneMap.get(key).tasks.push(task);
+      laneMap.get(key)!.tasks.push(task);
     });
   });
 

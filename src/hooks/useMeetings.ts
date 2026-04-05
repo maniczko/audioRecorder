@@ -110,7 +110,7 @@ export default function useMeetings() {
     userMeetings,
     meetingTasks,
     currentUser,
-    currentWorkspaceMembers,
+    currentWorkspaceMembers: currentWorkspaceMembers as any[],
   });
 
   const recordingActions = useRecordingActions({

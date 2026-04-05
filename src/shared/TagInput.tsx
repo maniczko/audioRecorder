@@ -15,7 +15,7 @@ export default function TagInput({
   suggestions?: string[];
   onChange?: (tags: string[]) => void;
   placeholder?: string;
-  type?: string;
+  type?: 'tag' | 'person';
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -100,7 +100,7 @@ export default function TagInput({
       .replace(/,$/, '');
     if (!normalized) return;
     if (!normalizedTags.some((t) => t.toLowerCase() === normalized.toLowerCase())) {
-      onChange([...normalizedTags, normalized]);
+      onChange?.([...normalizedTags, normalized]);
       // Persist custom tags/people to localStorage
       if (type === 'person') {
         addCustomTaskPerson(normalized);
@@ -113,7 +113,7 @@ export default function TagInput({
   }
 
   function removeTag(tagToRemove) {
-    onChange(normalizedTags.filter((t) => t !== tagToRemove));
+    onChange?.(normalizedTags.filter((t) => t !== tagToRemove));
   }
 
   function handleKeyDown(e) {

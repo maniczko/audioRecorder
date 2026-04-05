@@ -221,7 +221,7 @@ function bufferToWave(abuffer: AudioBuffer, offset: number, len: number): Blob {
   const length = len * numOfChan * 2 + 44;
   const buffer = new ArrayBuffer(length);
   const view = new DataView(buffer);
-  const channels = [];
+  const channels: Float32Array[] = [];
   let sample;
   let pos = 0;
 

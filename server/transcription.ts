@@ -94,7 +94,7 @@ const SPEECH_DENSITY_THRESHOLD = 0.6; // 60% speech = high density
  * Calculate adaptive overlap based on speech density in the chunk.
  * More overlap for dense speech, less for silence.
  */
-function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): number {
+export function calculateAdaptiveOverlap(speechSegments: any[], baseOverlap: number): number {
   if (!speechSegments || speechSegments.length === 0) {
     return MIN_OVERLAP_SECONDS; // Silence = minimum overlap
   }

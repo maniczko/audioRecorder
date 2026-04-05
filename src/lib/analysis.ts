@@ -556,12 +556,12 @@ function buildAnthropicAnalysis(
     followUps: dedupeList(parsed.followUps || []).slice(0, 5),
     answersToNeeds: safeArray(parsed.answersToNeeds).length
       ? parsed.answersToNeeds
-      : fallback.answersToNeeds,
+      : (fallback.answersToNeeds ?? []),
     risks: normalizedRisks,
     blockers: dedupeList(parsed.blockers || []).slice(0, 3),
     participantInsights: safeArray(parsed.participantInsights).length
       ? parsed.participantInsights
-      : richFallback.participantInsights,
+      : (richFallback.participantInsights ?? []),
     tensions: safeArray(parsed.tensions).slice(0, 3),
     keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
     speakerStats,
@@ -579,8 +579,8 @@ function buildAnthropicAnalysis(
     tasks,
     followUps: dedupeList(parsed.followUps || []).slice(0, 5),
     answersToNeeds: safeArray(parsed.answersToNeeds).length
-      ? parsed.answersToNeeds
-      : fallback.answersToNeeds,
+      ? safeArray(parsed.answersToNeeds)
+      : (fallback.answersToNeeds ?? []),
     suggestedTags: dedupeList(parsed.suggestedTags || [])
       .slice(0, 6)
       .map((t) => String(t).toLowerCase().trim()),
@@ -589,7 +589,7 @@ function buildAnthropicAnalysis(
     risks: normalizedRisks,
     blockers: dedupeList(parsed.blockers || []).slice(0, 3),
     participantInsights: safeArray(parsed.participantInsights).length
-      ? parsed.participantInsights
+      ? safeArray(parsed.participantInsights)
       : richFallback.participantInsights,
     tensions: safeArray(parsed.tensions).slice(0, 3),
     keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),

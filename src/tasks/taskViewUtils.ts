@@ -95,7 +95,7 @@ export function buildSidebarLists(tasks, boardColumns) {
   }));
 
   const customGroups = Array.from(
-    new Set(tasks.map((task) => String(task.group || '').trim()).filter(Boolean))
+    new Set<string>(tasks.map((task) => String(task.group || '').trim()).filter(Boolean))
   )
     .sort((left: string, right: string) => left.localeCompare(right))
     .map((group) => ({

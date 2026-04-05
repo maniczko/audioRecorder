@@ -50,10 +50,10 @@ function hasIndexedDb() {
 
 function openDatabase() {
   if (!hasIndexedDb()) {
-    return Promise.resolve(null);
+    return Promise.resolve<IDBDatabase | null>(null);
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<IDBDatabase | null>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => reject(request.error);
@@ -67,18 +67,25 @@ function openDatabase() {
   });
 }
 
-async function withStore(mode, callback) {
+async function withStore<T>(
+  mode: IDBTransactionMode,
+  callback: (
+    store: IDBObjectStore,
+    resolve: (value: T | PromiseLike<T>) => void,
+    reject: (reason?: unknown) => void
+  ) => void
+) {
   const db = await openDatabase();
   if (!db) {
     return null;
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, mode);
     const store = transaction.objectStore(STORE_NAME);
 
     transaction.onerror = () => reject(transaction.error);
-    transaction.oncomplete = () => resolve(true);
+    transaction.oncomplete = () => resolve(true as T);
 
     callback(store, resolve, reject);
   });
@@ -106,7 +113,7 @@ export async function getAudioBlob(recordingId) {
     return null;
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Blob | null>((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(recordingId);
@@ -132,29 +139,31 @@ export async function listStoredAudioSizes() {
     return [];
   }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const items = [];
-    const request = store.openCursor();
+  return new Promise<Array<{ recordingId: string; sizeBytes: number; mimeType: string }>>(
+    (resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const items: Array<{ recordingId: string; sizeBytes: number; mimeType: string }> = [];
+      const request = store.openCursor();
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const cursor = request.result;
-      if (!cursor) {
-        resolve(items);
-        return;
-      }
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) {
+          resolve(items);
+          return;
+        }
 
-      const value = cursor.value;
-      items.push({
-        recordingId: String(cursor.key || ''),
-        sizeBytes: Number(value?.size || 0),
-        mimeType: String(value?.type || ''),
-      });
-      cursor.continue();
-    };
-  });
+        const value = cursor.value;
+        items.push({
+          recordingId: String(cursor.key || ''),
+          sizeBytes: Number(value?.size || 0),
+          mimeType: String(value?.type || ''),
+        });
+        cursor.continue();
+      };
+    }
+  );
 }
 
 export async function deleteRecordingBlob(recordingId) {

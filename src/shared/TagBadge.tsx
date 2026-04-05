@@ -24,7 +24,15 @@ export function getTagColor(tagName) {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
 }
 
-export default function TagBadge({ tag, onRemove = undefined, className = '' }) {
+export default function TagBadge({
+  tag,
+  onRemove,
+  className = '',
+}: {
+  tag: string;
+  onRemove?: (() => void) | undefined;
+  className?: string;
+}) {
   const color = getTagColor(tag);
 
   return (

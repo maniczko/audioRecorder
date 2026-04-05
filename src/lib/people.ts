@@ -46,7 +46,7 @@ function personOwnsTask(task, name) {
 function inferTraits(meetings, tasks, needs, outputs) {
   const signals =
     `${needs.join(' ')} ${outputs.join(' ')} ${meetings.map((meeting) => meeting.context || '').join(' ')}`.toLowerCase();
-  const traits = [];
+  const traits: string[] = [];
 
   if (tasks.length >= 4) {
     traits.push('czesto przejmuje ownership i follow-upy');

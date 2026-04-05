@@ -2,7 +2,46 @@ const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 const TASKS_SCOPE = 'https://www.googleapis.com/auth/tasks';
 
-let googleScriptPromise = null;
+type GoogleIdConfiguration = {
+  client_id: string;
+  callback: (response: { credential: string }) => void;
+  auto_select?: boolean;
+  cancel_on_tap_outside?: boolean;
+};
+
+type GoogleTokenResponse = {
+  access_token: string;
+  expires_in?: number;
+  scope?: string;
+  token_type?: string;
+  error?: string;
+};
+
+type GoogleTokenClient = {
+  requestAccessToken: () => void;
+};
+
+type GoogleApi = {
+  accounts?: {
+    id?: {
+      initialize: (config: GoogleIdConfiguration) => void;
+      prompt: (callback?: (notification: unknown) => void) => void;
+      disableAutoSelect: () => void;
+      renderButton: (container: HTMLElement, options: Record<string, unknown>) => void;
+    };
+    oauth2?: {
+      initTokenClient: (config: {
+        client_id: string;
+        scope: string;
+        prompt: string;
+        login_hint?: string;
+        callback: (response: GoogleTokenResponse) => void;
+      }) => GoogleTokenClient;
+    };
+  };
+};
+
+let googleScriptPromise: Promise<GoogleApi> | null = null;
 
 // Vite replaces import.meta.env.* statically at build time — dynamic access
 // (import.meta.env[key]) is NOT replaced in production bundles, so we read
@@ -13,13 +52,13 @@ export const GOOGLE_CLIENT_ID: string =
   '';
 export const IS_GOOGLE_DEMO_MODE = GOOGLE_CLIENT_ID === 'demo';
 
-function loadGoogleScript() {
+function loadGoogleScript(): Promise<GoogleApi> {
   if (typeof window === 'undefined') {
     return Promise.reject(new Error('Google Identity Services are not available on the server.'));
   }
 
-  if (window.google?.accounts) {
-    return Promise.resolve(window.google);
+  if ((window as typeof window & { google?: GoogleApi }).google?.accounts) {
+    return Promise.resolve((window as typeof window & { google?: GoogleApi }).google as GoogleApi);
   }
 
   if (googleScriptPromise) {
@@ -29,7 +68,9 @@ function loadGoogleScript() {
   googleScriptPromise = new Promise((resolve, reject) => {
     const existing = window.document.querySelector(`script[src="${GOOGLE_SCRIPT_SRC}"]`);
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.google));
+      existing.addEventListener('load', () =>
+        resolve((window as typeof window & { google?: GoogleApi }).google as GoogleApi)
+      );
       existing.addEventListener('error', () => reject(new Error('Failed to load Google script.')));
       return;
     }
@@ -38,7 +79,8 @@ function loadGoogleScript() {
     script.src = GOOGLE_SCRIPT_SRC;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve(window.google);
+    script.onload = () =>
+      resolve((window as typeof window & { google?: GoogleApi }).google as GoogleApi);
     script.onerror = () => reject(new Error('Failed to load Google script.'));
     window.document.head.appendChild(script);
   });
@@ -54,7 +96,10 @@ function decodeJwtPayload(token) {
   return JSON.parse(decoded);
 }
 
-export async function renderGoogleSignInButton(container, callback) {
+export async function renderGoogleSignInButton(
+  container: HTMLElement,
+  callback: (profile: Record<string, unknown>, response: { credential?: string }) => void
+) {
   if (!GOOGLE_CLIENT_ID) {
     throw new Error(
       'Missing Google Client ID (VITE_GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID).'
@@ -72,25 +117,27 @@ export async function renderGoogleSignInButton(container, callback) {
         <span>Continue with Demo Google</span>
       </button>
     `;
-    const btn = container.querySelector('.google-demo-button');
-    btn.onclick = () => {
-      callback(
-        {
-          email: 'demo.user@example.com',
-          name: 'Demo User',
-          picture: 'https://ui-avatars.com/api/?name=Demo+User&background=random',
-          sub: 'demo-123',
-        },
-        { credential: 'mock-credential' }
-      );
-    };
+    const btn = container.querySelector('.google-demo-button') as HTMLButtonElement | null;
+    if (btn) {
+      btn.onclick = () => {
+        callback(
+          {
+            email: 'demo.user@example.com',
+            name: 'Demo User',
+            picture: 'https://ui-avatars.com/api/?name=Demo+User&background=random',
+            sub: 'demo-123',
+          },
+          { credential: 'mock-credential' }
+        );
+      };
+    }
     return;
   }
 
   const google = await loadGoogleScript();
   container.innerHTML = '';
 
-  google.accounts.id.initialize({
+  google.accounts?.id?.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: (response) => {
       callback(decodeJwtPayload(response.credential), response);
@@ -99,7 +146,7 @@ export async function renderGoogleSignInButton(container, callback) {
     cancel_on_tap_outside: true,
   });
 
-  google.accounts.id.renderButton(container, {
+  google.accounts?.id?.renderButton(container, {
     type: 'standard',
     theme: 'outline',
     text: 'continue_with',
@@ -135,13 +182,13 @@ async function requestGoogleAccess({ loginHint, scope }: { loginHint?: string; s
 
   const google = await loadGoogleScript();
 
-  return new Promise((resolve, reject) => {
-    const tokenClient = google.accounts.oauth2.initTokenClient({
+  return new Promise<GoogleTokenResponse>((resolve, reject) => {
+    const tokenClient = google.accounts?.oauth2?.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
       scope,
       prompt: 'consent',
       login_hint: loginHint || undefined,
-      callback: (response: any) => {
+      callback: (response: GoogleTokenResponse) => {
         if (response.error) {
           reject(new Error(response.error));
           return;
@@ -149,6 +196,11 @@ async function requestGoogleAccess({ loginHint, scope }: { loginHint?: string; s
         resolve(response);
       },
     });
+
+    if (!tokenClient) {
+      reject(new Error('Google OAuth client is unavailable.'));
+      return;
+    }
 
     tokenClient.requestAccessToken();
   });
@@ -360,8 +412,9 @@ export function signOutGoogleSession() {
   }
 
   try {
-    if (window.google?.accounts) {
-      window.google.accounts.id.disableAutoSelect();
+    const google = (window as typeof window & { google?: GoogleApi }).google;
+    if (google?.accounts?.id) {
+      google.accounts.id.disableAutoSelect();
     }
   } catch (error) {
     console.error('Unable to disable Google auto-select.', error);

@@ -1,6 +1,12 @@
 {
   "permissions": {
-    "allow": ["Bash(pnpm run *)"]
+    "allow": [
+      "Bash(pnpm run *)",
+      "Bash(npx *)",
+      "Bash(select-string *)",
+      "Bash(select-object *)",
+      "Bash(findstr *)"
+    ]
   },
   "$version": 3
 }

@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { apiRequest, probeRemoteApiHealth, resetProbeDedup } from './httpClient';
+import {
+  apiRequest,
+  probeRemoteApiHealth,
+  resetProbeDedup,
+  resetCircuitBreaker,
+} from './httpClient';
 
 // Mock dependencies
 vi.mock('../lib/sessionStorage', () => ({
@@ -23,6 +28,8 @@ describe('httpClient retry logic', () => {
   beforeEach(() => {
     originalFetch = global.fetch;
     vi.useFakeTimers();
+    resetCircuitBreaker();
+    resetProbeDedup();
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
       value: true,
@@ -32,6 +39,7 @@ describe('httpClient retry logic', () => {
   afterEach(() => {
     global.fetch = originalFetch;
     vi.useRealTimers();
+    resetCircuitBreaker();
   });
 
   it('retries on 502 Bad Gateway error', async () => {
@@ -271,6 +279,7 @@ describe('probeRemoteApiHealth retry logic', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetProbeDedup();
+    resetCircuitBreaker();
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
       value: true,
@@ -279,6 +288,7 @@ describe('probeRemoteApiHealth retry logic', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    resetCircuitBreaker();
   });
 
   function mockHealthResponse(
@@ -402,6 +412,7 @@ describe('Regression: Issue #0 — probeRemoteApiHealth deduplication', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetProbeDedup();
+    resetCircuitBreaker();
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
       value: true,
@@ -410,6 +421,7 @@ describe('Regression: Issue #0 — probeRemoteApiHealth deduplication', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    resetCircuitBreaker();
   });
 
   function mockHealthResponse(
@@ -557,5 +569,116 @@ describe('Regression: Issue #0 — httpClient normalizes 501 to user-friendly me
 
     // 501 should NOT trigger retries (only 502/503/504 do)
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — Network retry storm when backend is unreachable
+// Date: 2026-04-12
+// Bug: When backend goes down, httpClient keeps retrying every request
+//      independently, stacking retry chains and flooding the console.
+// Fix: Added circuit breaker — after 3 consecutive transport failures,
+//      new requests are rejected immediately for an increasing cooldown.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — circuit breaker prevents retry storms', () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    vi.useFakeTimers();
+    resetCircuitBreaker();
+    resetProbeDedup();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.useRealTimers();
+    resetCircuitBreaker();
+  });
+
+  it('blocks new requests after 3 consecutive transport failures', async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error('Failed to fetch'));
+    global.fetch = mockFetch as any;
+
+    // Exhaust 3 requests with retries:0 to trigger circuit breaker
+    for (let i = 0; i < 3; i++) {
+      await apiRequest('/test', { retries: 0 }).catch(() => {});
+    }
+
+    // 4th request should be blocked immediately without fetch call
+    mockFetch.mockClear();
+    await expect(apiRequest('/test', { retries: 0 })).rejects.toThrow(
+      'Backend jest chwilowo niedostepny'
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('allows requests again after cooldown expires', async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error('Failed to fetch'));
+    global.fetch = mockFetch as any;
+
+    // Trip the circuit breaker
+    for (let i = 0; i < 3; i++) {
+      await apiRequest('/test', { retries: 0 }).catch(() => {});
+    }
+
+    // Fast-forward past cooldown (15s base)
+    await vi.advanceTimersByTimeAsync(16_000);
+
+    // Now requests should go through again
+    mockFetch.mockClear();
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+
+    const result = await apiRequest('/test', { retries: 0 });
+    expect(result).toEqual({ success: true });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not interrupt in-flight retry chain', async () => {
+    // Mock: 3 failures then success within a single request
+    const mockFetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+        text: () => Promise.resolve(''),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      });
+    global.fetch = mockFetch as any;
+
+    const promise = apiRequest('/test', { retries: 3 });
+    await vi.advanceTimersByTimeAsync(15000);
+
+    // Should complete successfully — circuit breaker doesn't break in-flight retries
+    const result = await promise;
+    expect(result).toEqual({ success: true });
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+  });
+
+  it('blocks health probe when circuit breaker is open', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('Failed to fetch'));
+    global.fetch = fetchMock as any;
+
+    // Trip circuit breaker via regular requests
+    for (let i = 0; i < 3; i++) {
+      await apiRequest('/test', { retries: 0 }).catch(() => {});
+    }
+
+    // Health probe should also be blocked
+    fetchMock.mockClear();
+    await expect(probeRemoteApiHealth(fetchMock as any, 0)).rejects.toThrow('cooldown');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

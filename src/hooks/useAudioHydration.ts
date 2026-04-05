@@ -60,11 +60,12 @@ export default function useAudioHydration({ mediaService, userMeetings }: UseAud
       });
 
       try {
-        let blob = null;
+        let blob: Blob | null = null;
 
         // Prefer local IndexedDB audio first (ad-hoc/local recordings may not exist on backend yet).
         try {
-          blob = await getAudioBlob(recordingId);
+          const localBlob = await getAudioBlob(recordingId);
+          blob = localBlob instanceof Blob ? localBlob : null;
         } catch {
           blob = null;
         }
@@ -95,7 +96,10 @@ export default function useAudioHydration({ mediaService, userMeetings }: UseAud
       } catch (error) {
         const is404 = (error as any)?.status === 404;
         if (!is404) {
-          console.warn(`Audio hydration failed for ${recordingId}:`, error?.message || error);
+          console.warn(
+            `Audio hydration failed for ${recordingId}:`,
+            error instanceof Error ? error.message : error
+          );
         }
         audioHydrationStatusRef.current = {
           ...audioHydrationStatusRef.current,
@@ -103,7 +107,7 @@ export default function useAudioHydration({ mediaService, userMeetings }: UseAud
         };
         setAudioHydrationErrors((prev) => ({
           ...prev,
-          [recordingId]: error.message || 'Blad ladowania audio',
+          [recordingId]: error instanceof Error ? error.message : 'Blad ladowania audio',
         }));
         setAudioHydrationStatusByRecordingId((prev) => ({ ...prev, [recordingId]: 'error' }));
         return null;

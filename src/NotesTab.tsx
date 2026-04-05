@@ -6,6 +6,36 @@ import TagInput from './shared/TagInput';
 import TagBadge, { getTagColor } from './shared/TagBadge';
 import './NotesTabStyles.css';
 
+type NoteAnswer = {
+  need?: string;
+  answer?: string;
+};
+
+type NoteMarker = {
+  id: string;
+  timestamp?: number;
+  label?: string;
+  note?: string;
+};
+
+type BuiltNote = {
+  id: string;
+  title: string;
+  date: string;
+  tags: string[];
+  attendees: string[];
+  context: string;
+  summary: string;
+  decisions: string[];
+  actionItems: string[];
+  followUps: string[];
+  answersToNeeds: NoteAnswer[];
+  hasAnalysis: boolean;
+  recordingCount: number;
+  markers: NoteMarker[];
+  createdAt: string;
+};
+
 const ALLOWED_HTML = {
   ALLOWED_TAGS: ['b', 'i', 'u', 'em', 'strong', 'ul', 'ol', 'li', 'p', 'br'],
   ALLOWED_ATTR: [],
@@ -92,12 +122,18 @@ function groupNotes(notes, by) {
 
 /* ── WysiwygEditor ────────────────────────────────────── */
 
-function WysiwygEditor({ onChange, placeholder }) {
-  const ref = useRef(null);
+function WysiwygEditor({
+  onChange,
+  placeholder,
+}: {
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
 
   function exec(command) {
     ref.current?.focus();
-    document.execCommand(command, false, null);
+    document.execCommand(command, false, undefined);
     onChange(ref.current?.innerHTML || '');
   }
 
@@ -258,7 +294,13 @@ const MemoNoteCard = memo(NoteCard);
 
 /* ── NoteDetail ───────────────────────────────────────── */
 
-function NoteDetail({ note, onOpenMeeting }) {
+function NoteDetail({
+  note,
+  onOpenMeeting,
+}: {
+  note: BuiltNote | null;
+  onOpenMeeting: (meetingId: string) => void;
+}) {
   if (!note) {
     return (
       <aside className="notes-detail-panel">
@@ -441,10 +483,18 @@ function NoteDetail({ note, onOpenMeeting }) {
 
 /* ── NewNotePanel ─────────────────────────────────────── */
 
-function NewNotePanel({ onSave, onCancel, allTags }) {
+function NewNotePanel({
+  onSave,
+  onCancel,
+  allTags,
+}: {
+  onSave: (payload: { title: string; context: string; tags: string[] }) => void;
+  onCancel: () => void;
+  allTags: string[];
+}) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState<string[]>([]);
 
   function handleSave() {
     if (!title.trim()) return;
@@ -500,9 +550,9 @@ function NewNotePanel({ onSave, onCancel, allTags }) {
 
 export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNote }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [groupBy, setGroupBy] = useState('date');
-  const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [groupBy, setGroupBy] = useState<'date' | 'tag' | 'attendee' | 'none'>('date');
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [showNewNote, setShowNewNote] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -518,7 +568,7 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
   );
 
   const allTags = useMemo(() => {
-    const s = new Set();
+    const s = new Set<string>();
     allNotes.forEach((n) => n.tags.forEach((t) => s.add(t)));
     return [...s].sort();
   }, [allNotes]);
@@ -553,13 +603,21 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
     [allNotes, selectedNoteId]
   );
 
-  function toggleTag(tag) {
+  function toggleTag(tag: string) {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   }
 
-  function saveNewNote({ title, context, tags }) {
+  function saveNewNote({
+    title,
+    context,
+    tags,
+  }: {
+    title: string;
+    context: string;
+    tags: string[];
+  }) {
     if (typeof onCreateNote === 'function') {
       onCreateNote({ title, context, tags });
     }
@@ -617,12 +675,14 @@ export default function NotesTab({ userMeetings = [], onOpenMeeting, onCreateNot
         <div className="notes-sidebar-section">
           <div className="notes-sidebar-label">Grupuj według</div>
           <div className="notes-group-pills">
-            {[
-              { key: 'date', label: 'Daty' },
-              { key: 'tag', label: 'Tagu' },
-              { key: 'attendee', label: 'Osoby' },
-              { key: 'none', label: 'Brak' },
-            ].map((opt) => (
+            {(
+              [
+                { key: 'date', label: 'Daty' },
+                { key: 'tag', label: 'Tagu' },
+                { key: 'attendee', label: 'Osoby' },
+                { key: 'none', label: 'Brak' },
+              ] as { key: 'date' | 'tag' | 'attendee' | 'none'; label: string }[]
+            ).map((opt) => (
               <button
                 key={opt.key}
                 type="button"

@@ -6,6 +6,7 @@ import {
   isRnnoiseNode,
   requestNoiseReducerStatus,
 } from '../audio/noiseReducerNode';
+import type { TranscriptSegment } from '../shared/types';
 
 // Amplitude below this (0–255 scale) is considered silence (~4%)
 const SILENCE_AMPLITUDE_THRESHOLD = 10;
@@ -27,30 +28,43 @@ export default function useAudioHardware({
   onMessageChange: (msg: string) => void;
   silenceAutoStopMinutes?: number | 'off';
 }) {
+  interface LiveController {
+    start: () => void;
+    stop?: () => void;
+    clearHandlers?: () => void;
+    setOnEnd?: (handler: () => void) => void;
+  }
+
+  type SpectrumSignature = ReturnType<typeof summarizeSpectrum>;
+  type SignaturePoint = { timestamp: number; signature: SpectrumSignature | null };
+  type NoiseReducerNode = AudioWorkletNode & {
+    onstatus?: ((event: MessageEvent<{ vadProb?: number }>) => void) | null;
+  };
+
   const [recordPermission, setRecordPermission] = useState('idle');
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [visualBars, setVisualBars] = useState(DEFAULT_BARS);
+  const [visualBars, setVisualBars] = useState<number[]>(DEFAULT_BARS);
   // null = no warning; number = seconds until auto-stop
   const [silenceCountdown, setSilenceCountdown] = useState<number | null>(null);
   const [voiceActivityStatus, setVoiceActivityStatus] = useState<'active' | 'idle' | 'unsupported'>(
     'unsupported'
   );
 
-  const mediaRecorderRef = useRef(null);
-  const recognitionRef = useRef(null);
-  const streamRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const noiseReducerRef = useRef<any>(null);
-  const vadIntervalRef = useRef<any>(null);
-  const frameRef = useRef(null);
-  const timerRef = useRef(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recognitionRef = useRef<LiveController | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const noiseReducerRef = useRef<NoiseReducerNode | null>(null);
+  const vadIntervalRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
   const startTimeRef = useRef(0);
-  const chunksRef = useRef([]);
-  const transcriptRef = useRef([]);
-  const signatureTimelineRef = useRef([]);
+  const chunksRef = useRef<Blob[]>([]);
+  const transcriptRef = useRef<TranscriptSegment[]>([]);
+  const signatureTimelineRef = useRef<SignaturePoint[]>([]);
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const pauseTimeRef = useRef(0);
@@ -77,23 +91,24 @@ export default function useAudioHardware({
     }
 
     let mounted = true;
-    let permissionStatus;
+    let permissionStatus: PermissionStatus | null = null;
 
     async function syncPermission() {
       try {
-        permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+        const queriedStatus = await navigator.permissions.query({ name: 'microphone' });
+        permissionStatus = queriedStatus;
         if (!mounted) return;
 
-        console.log('[useAudioHardware] Initial microphone permission:', permissionStatus.state);
-        setRecordPermission(permissionStatus.state);
+        console.log('[useAudioHardware] Initial microphone permission:', queriedStatus.state);
+        setRecordPermission(queriedStatus.state);
 
         // Listen for permission changes
-        permissionStatus.onchange = () => {
-          console.log('[useAudioHardware] Microphone permission changed:', permissionStatus.state);
+        queriedStatus.onchange = () => {
+          console.log('[useAudioHardware] Microphone permission changed:', queriedStatus.state);
           if (mounted) {
-            setRecordPermission(permissionStatus.state);
+            setRecordPermission(queriedStatus.state);
             // Clear error message if permission was granted
-            if (permissionStatus.state === 'granted') {
+            if (queriedStatus.state === 'granted') {
               onMessageChange('');
             }
           }
@@ -113,9 +128,9 @@ export default function useAudioHardware({
 
   function cleanupRecorder() {
     if (typeof window !== 'undefined') {
-      window.cancelAnimationFrame(frameRef.current);
-      window.clearInterval(timerRef.current);
-      window.clearInterval(vadIntervalRef.current);
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+      if (vadIntervalRef.current !== null) window.clearInterval(vadIntervalRef.current);
     }
     frameRef.current = null;
     timerRef.current = null;
@@ -124,7 +139,7 @@ export default function useAudioHardware({
     if (recognitionRef.current) {
       recognitionRef.current.clearHandlers?.();
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.stop?.();
       } catch (e) {}
       recognitionRef.current = null;
     }
@@ -135,7 +150,7 @@ export default function useAudioHardware({
     }
 
     if (audioContextRef.current?.close) {
-      audioContextRef.current.close().catch(() => undefined);
+      void audioContextRef.current.close().catch(() => undefined);
       audioContextRef.current = null;
     }
     analyserRef.current = null;
@@ -154,7 +169,7 @@ export default function useAudioHardware({
     setVisualBars(
       Array.from({ length: 24 }, (_, i) => {
         const srcIdx = Math.floor((i / 24) * data.length);
-        return Math.max(6, (data[srcIdx] / 255) * 58) as any;
+        return Math.max(6, (data[srcIdx] / 255) * 58);
       })
     );
 
@@ -202,7 +217,7 @@ export default function useAudioHardware({
     setSilenceCountdown(null);
   }
 
-  async function startRecording(meetingId) {
+  async function startRecording(meetingId: string) {
     // Check if browser supports getUserMedia
     if (!navigator.mediaDevices?.getUserMedia) {
       onMessageChange('Ta przeglądarka nie obsługuje dostępu do mikrofonu.');
@@ -238,7 +253,10 @@ export default function useAudioHardware({
           sampleRate: { ideal: 16000 },
         },
       });
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const browserWindow = window as typeof globalThis & {
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const AudioContextClass = globalThis.AudioContext || browserWindow.webkitAudioContext;
       if (!AudioContextClass) throw new Error('AudioContext unavailable');
 
       const audioContext = new AudioContextClass();
@@ -264,12 +282,13 @@ export default function useAudioHardware({
 
           if (isRnnoiseNode(noiseReducer)) {
             setVoiceActivityStatus('idle');
-            noiseReducer.onstatus = (event) => {
+            noiseReducerRef.current = noiseReducer as NoiseReducerNode;
+            noiseReducerRef.current.onstatus = (event) => {
               const vadProbability = Number(event?.data?.vadProb ?? 0);
               setVoiceActivityStatus(vadProbability >= 0.55 ? 'active' : 'idle');
             };
             requestNoiseReducerStatus(noiseReducer);
-            vadIntervalRef.current = window.setInterval(() => {
+            vadIntervalRef.current = globalThis.setInterval(() => {
               requestNoiseReducerStatus(noiseReducer);
             }, 350);
           }
@@ -342,7 +361,7 @@ export default function useAudioHardware({
       });
 
       if (controller) {
-        controller.setOnEnd(() => {
+        controller.setOnEnd?.(() => {
           if (isRecordingRef.current) {
             try {
               controller.start();
@@ -361,7 +380,7 @@ export default function useAudioHardware({
       setIsRecording(true);
       setIsPaused(false);
       setRecordPermission('granted');
-      timerRef.current = window.setInterval(() => {
+      timerRef.current = globalThis.setInterval(() => {
         if (isRecordingRef.current && !isPausedRef.current) {
           setElapsed(
             Math.floor((Date.now() - startTimeRef.current - totalPausedTimeRef.current) / 1000)
@@ -374,7 +393,9 @@ export default function useAudioHardware({
       cleanupRecorder();
       setIsRecording(false);
       // Only mark as 'denied' for actual permission errors
-      if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+      const errorName =
+        error && typeof error === 'object' && 'name' in error ? String(error.name) : '';
+      if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
         setRecordPermission('denied');
       }
       onMessageChange(recordingErrorMessage(error));
@@ -386,12 +407,13 @@ export default function useAudioHardware({
     setIsRecording(false);
     setIsPaused(false);
     onInterimChange('');
-    if (typeof window !== 'undefined') window.clearInterval(timerRef.current);
+    if (typeof window !== 'undefined' && timerRef.current !== null)
+      window.clearInterval(timerRef.current);
     try {
-      if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current.stop();
+      if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop();
     } catch (e) {}
     try {
-      recognitionRef.current?.stop();
+      recognitionRef.current?.stop?.();
     } catch (e) {}
     streamRef.current?.getTracks().forEach((t) => t.stop());
   }
@@ -402,7 +424,7 @@ export default function useAudioHardware({
       setIsPaused(true);
       pauseTimeRef.current = Date.now();
       try {
-        recognitionRef.current?.stop();
+        recognitionRef.current?.stop?.();
       } catch (error) {
         console.warn('Pause recognition failed:', error);
       }
@@ -417,7 +439,7 @@ export default function useAudioHardware({
       lastActiveTimeRef.current = Date.now();
       setSilenceCountdown(null);
       try {
-        recognitionRef.current?.start();
+        recognitionRef.current?.start?.();
       } catch (error) {
         console.warn('Resume recognition failed:', error);
       }

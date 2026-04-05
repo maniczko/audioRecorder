@@ -1,6 +1,50 @@
 import { reminderLabel } from './calendarView';
 
-function taskToneLabel(tone) {
+export type NotificationTone = 'danger' | 'warning' | 'success' | 'neutral' | 'info' | string;
+
+interface ReminderNotificationInput {
+  id: string;
+  entryType: 'meeting' | 'task' | 'google' | string;
+  title: string;
+  minutes: number;
+  remindAt: string;
+  entryId: string;
+}
+
+export interface TaskNotificationInput {
+  task: {
+    id: string;
+    title: string;
+    dueDate?: string;
+    updatedAt?: string;
+    createdAt?: string;
+  };
+  sla: {
+    id: string;
+    tone?: NotificationTone;
+    label: string;
+  };
+  dependencies: {
+    blocking: boolean;
+    unresolved: Array<{ title?: string }>;
+  };
+}
+
+export interface WorkspaceNotificationItem {
+  id: string;
+  kind: 'reminder' | 'task';
+  tone: NotificationTone;
+  title: string;
+  body: string;
+  sortAt: string;
+  deliverAt: string;
+  action:
+    | { type: 'meeting'; id: string }
+    | { type: 'task'; id: string }
+    | { type: 'calendar'; id: string };
+}
+
+function taskToneLabel(tone?: NotificationTone) {
   if (tone === 'danger') {
     return 'Pilne';
   }
@@ -13,10 +57,18 @@ function taskToneLabel(tone) {
   return 'Info';
 }
 
-export function buildWorkspaceNotifications({ reminders = [], taskNotifications = [] } = {}) {
-  const reminderItems = (Array.isArray(reminders) ? reminders : []).map((reminder) => ({
+export function buildWorkspaceNotifications({
+  reminders = [],
+  taskNotifications = [],
+}: {
+  reminders?: ReminderNotificationInput[];
+  taskNotifications?: TaskNotificationInput[];
+} = {}): WorkspaceNotificationItem[] {
+  const reminderItems: WorkspaceNotificationItem[] = (
+    Array.isArray(reminders) ? reminders : []
+  ).map((reminder) => ({
     id: `reminder:${reminder.id}`,
-    kind: 'reminder',
+    kind: 'reminder' as const,
     tone:
       reminder.entryType === 'task'
         ? 'warning'
@@ -34,33 +86,37 @@ export function buildWorkspaceNotifications({ reminders = [], taskNotifications 
     deliverAt: reminder.remindAt,
     action:
       reminder.entryType === 'meeting'
-        ? { type: 'meeting', id: reminder.entryId }
+        ? { type: 'meeting' as const, id: reminder.entryId }
         : reminder.entryType === 'task'
-          ? { type: 'task', id: reminder.entryId }
-          : { type: 'calendar', id: reminder.entryId },
+          ? { type: 'task' as const, id: reminder.entryId }
+          : { type: 'calendar' as const, id: reminder.entryId },
   }));
 
-  const taskItems = (Array.isArray(taskNotifications) ? taskNotifications : []).map(
-    ({ task, sla, dependencies }) => ({
-      id: `task:${task.id}:${sla.id}:${dependencies.blocking ? 'blocked' : 'open'}`,
-      kind: 'task',
-      tone: sla.tone || 'warning',
-      title: task.title,
-      body: dependencies.blocking
-        ? `Zablokowane przez: ${dependencies.unresolved[0]?.title || 'inne zadanie'}.`
-        : `${taskToneLabel(sla.tone)}: ${sla.label}.`,
-      sortAt: task.dueDate || task.updatedAt || task.createdAt,
-      deliverAt: task.dueDate || task.updatedAt || task.createdAt,
-      action: { type: 'task', id: task.id },
-    })
-  );
+  const taskItems: WorkspaceNotificationItem[] = (
+    Array.isArray(taskNotifications) ? taskNotifications : []
+  ).map(({ task, sla, dependencies }) => ({
+    id: `task:${task.id}:${sla.id}:${dependencies.blocking ? 'blocked' : 'open'}`,
+    kind: 'task' as const,
+    tone: sla.tone || 'warning',
+    title: task.title,
+    body: dependencies.blocking
+      ? `Zablokowane przez: ${dependencies.unresolved[0]?.title || 'inne zadanie'}.`
+      : `${taskToneLabel(sla.tone)}: ${sla.label}.`,
+    sortAt: task.dueDate || task.updatedAt || task.createdAt || '',
+    deliverAt: task.dueDate || task.updatedAt || task.createdAt || '',
+    action: { type: 'task' as const, id: task.id },
+  }));
 
   return [...reminderItems, ...taskItems].sort(
     (left, right) => new Date(left.sortAt || 0).getTime() - new Date(right.sortAt || 0).getTime()
   );
 }
 
-export function getBrowserNotificationCandidates(items, deliveredIds = [], now = new Date()) {
+export function getBrowserNotificationCandidates(
+  items: WorkspaceNotificationItem[] = [],
+  deliveredIds: string[] = [],
+  now = new Date()
+): WorkspaceNotificationItem[] {
   const deliveredSet = new Set(Array.isArray(deliveredIds) ? deliveredIds : []);
   const nowTime = now.getTime();
 

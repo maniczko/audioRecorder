@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../services/config';
+import type { AiSuggestedTask } from '../shared/contracts';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 // Import lazily to avoid circular deps
@@ -11,7 +12,10 @@ async function getApiRequest() {
   return _apiRequest;
 }
 
-export async function suggestTasksFromTranscript(transcript, people = []) {
+export async function suggestTasksFromTranscript(
+  transcript: Array<{ speakerName?: string; speakerId?: number | string; text?: string }>,
+  people: Array<{ name?: string; email?: string }> = []
+): Promise<AiSuggestedTask[]> {
   // Prefer server-side proxy (keeps API key out of browser bundle)
   if (API_BASE_URL) {
     try {

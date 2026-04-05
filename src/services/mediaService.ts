@@ -26,6 +26,11 @@ function sleep(ms: number) {
 }
 
 function isRetryableChunkUploadError(error: any) {
+  // Never retry when browser is clearly offline
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return false;
+  }
+
   const status = Number(error?.status || 0);
   if ([429, 502, 503, 504].includes(status)) {
     return true;

@@ -3,7 +3,7 @@ function toTimestamp(value) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
-function resolveActorName(actorName, actorId, workspaceMembers = [], users = []) {
+function resolveActorName(actorName, actorId, workspaceMembers: any[] = [], users: any[] = []) {
   if (String(actorName || '').trim()) {
     return String(actorName).trim();
   }
@@ -15,7 +15,7 @@ function resolveActorName(actorName, actorId, workspaceMembers = [], users = [])
   return match?.name || match?.email || 'System';
 }
 
-function latestEntry(entries = []) {
+function latestEntry(entries: any[] = []) {
   return (
     [...(Array.isArray(entries) ? entries : [])].sort(
       (left, right) =>
@@ -25,7 +25,11 @@ function latestEntry(entries = []) {
   );
 }
 
-export function getMeetingActivityEntries(meeting, workspaceMembers = [], users = []) {
+export function getMeetingActivityEntries(
+  meeting,
+  workspaceMembers: any[] = [],
+  users: any[] = []
+) {
   if (!meeting) {
     return [];
   }
@@ -80,7 +84,7 @@ export function getMeetingActivityEntries(meeting, workspaceMembers = [], users 
   return entries;
 }
 
-export function getMeetingLastActivity(meeting, workspaceMembers = [], users = []) {
+export function getMeetingLastActivity(meeting, workspaceMembers: any[] = [], users: any[] = []) {
   return latestEntry(getMeetingActivityEntries(meeting, workspaceMembers, users));
 }
 
@@ -127,10 +131,10 @@ export function getTaskLastActivity(task) {
 }
 
 export function buildWorkspaceActivityFeed(
-  meetings = [],
-  tasks = [],
-  workspaceMembers = [],
-  users = [],
+  meetings: any[] = [],
+  tasks: any[] = [],
+  workspaceMembers: any[] = [],
+  users: any[] = [],
   limit = 18
 ) {
   return [

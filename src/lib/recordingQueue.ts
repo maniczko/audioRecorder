@@ -1,3 +1,57 @@
+import type { TranscriptSegment } from '../shared/types';
+
+export type RecordingPipelineStatus =
+  | 'uploading'
+  | 'queued'
+  | 'processing'
+  | 'diarization'
+  | 'review'
+  | 'failed'
+  | 'failed_permanent'
+  | 'done';
+
+export interface RecordingQueueMeetingLike {
+  id?: string;
+  workspaceId?: string;
+  title?: string;
+}
+
+export interface RecordingQueueItem {
+  id: string;
+  recordingId: string;
+  meetingId: string;
+  workspaceId: string;
+  meetingTitle: string;
+  meetingSnapshot: RecordingQueueMeetingLike | null;
+  mimeType: string;
+  rawSegments: TranscriptSegment[];
+  duration: number;
+  status: RecordingPipelineStatus;
+  uploaded: boolean;
+  attempts: number;
+  retryCount: number;
+  backoffUntil: number;
+  lastErrorMessage: string;
+  errorMessage: string;
+  createdAt: string;
+  updatedAt: string;
+  pipelineGitSha?: string;
+  pipelineVersion?: string;
+  pipelineBuildTime?: string;
+  audioQuality?: unknown;
+  transcriptionDiagnostics?: unknown;
+}
+
+interface CreateRecordingQueueItemInput {
+  recordingId: string;
+  meeting?: RecordingQueueMeetingLike;
+  meetingId?: string;
+  mimeType?: string;
+  rawSegments?: TranscriptSegment[];
+  duration?: number;
+  createdAt?: string;
+}
+
 export function normalizeRecordingPipelineStatus(value) {
   if (value === 'completed') {
     return 'done';
@@ -14,7 +68,7 @@ export function normalizeRecordingPipelineStatus(value) {
       'done',
     ].includes(String(value || ''))
   ) {
-    return value;
+    return value as RecordingPipelineStatus;
   }
   return 'queued';
 }
@@ -27,7 +81,7 @@ export function createRecordingQueueItem({
   rawSegments = [],
   duration = 0,
   createdAt = new Date().toISOString(),
-}) {
+}: CreateRecordingQueueItemInput): RecordingQueueItem {
   return {
     id: recordingId,
     recordingId,
@@ -50,35 +104,50 @@ export function createRecordingQueueItem({
   };
 }
 
-export function normalizeRecordingQueue(queue = []) {
+export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueItem[] {
   return (Array.isArray(queue) ? queue : [])
-    .map((item) => {
-      if (!item?.recordingId) {
+    .map((item): RecordingQueueItem | null => {
+      const current = item as Partial<RecordingQueueItem> | null | undefined;
+      if (!current?.recordingId) {
         return null;
       }
 
       return {
-        ...item,
-        status: normalizeRecordingPipelineStatus(item.status),
-        uploaded: Boolean(item.uploaded),
-        attempts: Math.max(0, Number(item.attempts) || 0),
-        retryCount: Math.max(0, Number(item.retryCount) || 0),
-        backoffUntil: Math.max(0, Number(item.backoffUntil) || 0),
-        lastErrorMessage: String(item.lastErrorMessage || ''),
-        errorMessage: String(item.errorMessage || ''),
-        rawSegments: Array.isArray(item.rawSegments) ? item.rawSegments : [],
-        duration: Math.max(0, Number(item.duration) || 0),
-        createdAt: item.createdAt || new Date().toISOString(),
-        updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+        id: current.id || current.recordingId,
+        recordingId: current.recordingId,
+        meetingId: current.meetingId || '',
+        workspaceId: current.workspaceId || '',
+        meetingTitle: current.meetingTitle || 'Spotkanie',
+        meetingSnapshot: current.meetingSnapshot || null,
+        mimeType: current.mimeType || 'audio/webm',
+        status: normalizeRecordingPipelineStatus(current.status) as RecordingPipelineStatus,
+        uploaded: Boolean(current.uploaded),
+        attempts: Math.max(0, Number(current.attempts) || 0),
+        retryCount: Math.max(0, Number(current.retryCount) || 0),
+        backoffUntil: Math.max(0, Number(current.backoffUntil) || 0),
+        lastErrorMessage: String(current.lastErrorMessage || ''),
+        errorMessage: String(current.errorMessage || ''),
+        rawSegments: Array.isArray(current.rawSegments) ? current.rawSegments : [],
+        duration: Math.max(0, Number(current.duration) || 0),
+        createdAt: current.createdAt || new Date().toISOString(),
+        updatedAt: current.updatedAt || current.createdAt || new Date().toISOString(),
+        pipelineGitSha: current.pipelineGitSha || '',
+        pipelineVersion: current.pipelineVersion || '',
+        pipelineBuildTime: current.pipelineBuildTime || '',
+        audioQuality: current.audioQuality || null,
+        transcriptionDiagnostics: current.transcriptionDiagnostics || null,
       };
     })
-    .filter(Boolean)
+    .filter((item): item is RecordingQueueItem => Boolean(item))
     .sort(
       (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
     );
 }
 
-export function upsertRecordingQueueItem(queue, nextItem) {
+export function upsertRecordingQueueItem(
+  queue: unknown[],
+  nextItem: Partial<RecordingQueueItem> | null
+): RecordingQueueItem[] {
   const normalizedQueue = normalizeRecordingQueue(queue);
   const next = nextItem ? { ...nextItem, updatedAt: new Date().toISOString() } : null;
   if (!next?.recordingId) {
@@ -98,11 +167,18 @@ export function upsertRecordingQueueItem(queue, nextItem) {
   return normalizeRecordingQueue(updated);
 }
 
-export function removeRecordingQueueItem(queue, recordingId) {
+export function removeRecordingQueueItem(
+  queue: unknown[],
+  recordingId: string
+): RecordingQueueItem[] {
   return normalizeRecordingQueue(queue).filter((item) => item.recordingId !== recordingId);
 }
 
-export function updateRecordingQueueItem(queue, recordingId, updates) {
+export function updateRecordingQueueItem(
+  queue: unknown[],
+  recordingId: string,
+  updates: Partial<RecordingQueueItem>
+): RecordingQueueItem[] {
   const existing = normalizeRecordingQueue(queue).find((item) => item.recordingId === recordingId);
   if (!existing) {
     return normalizeRecordingQueue(queue);
@@ -114,17 +190,23 @@ export function updateRecordingQueueItem(queue, recordingId, updates) {
   });
 }
 
-export function getRecordingQueueForMeeting(queue, meetingId) {
+export function getRecordingQueueForMeeting(
+  queue: unknown[],
+  meetingId: string
+): RecordingQueueItem[] {
   return normalizeRecordingQueue(queue).filter((item) => item.meetingId === meetingId);
 }
 
-export function getNextPendingRecordingQueueItem(queue) {
+export function getNextPendingRecordingQueueItem(queue: unknown[]): RecordingQueueItem | undefined {
   return normalizeRecordingQueue(queue).find((item) =>
     ['queued', 'uploading', 'processing'].includes(item.status)
   );
 }
 
-export function getNextProcessableRecordingQueueItem(queue, canProcess = (item) => true) {
+export function getNextProcessableRecordingQueueItem(
+  queue: unknown[],
+  canProcess: (item: RecordingQueueItem) => boolean = () => true
+): RecordingQueueItem | undefined {
   const now = Date.now();
   return normalizeRecordingQueue(queue).find(
     (item) =>
@@ -134,7 +216,7 @@ export function getNextProcessableRecordingQueueItem(queue, canProcess = (item) 
   );
 }
 
-export function buildRecordingQueueSummary(queue) {
+export function buildRecordingQueueSummary(queue: unknown[]) {
   return normalizeRecordingQueue(queue).reduce(
     (summary, item) => {
       summary.total += 1;

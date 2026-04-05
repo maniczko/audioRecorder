@@ -20,6 +20,7 @@ export interface TranscriptSegment {
   speakerId?: string | number;
   rawSpeakerLabel?: string;
   speakerName?: string;
+  verificationStatus?: 'review' | 'verified' | 'pending';
 }
 
 export interface DiarizationResult {
@@ -116,6 +117,8 @@ export interface TranscriptionStatusPayload {
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
   qualityMetrics?: TranscriptionQualityMetrics | null;
+  providerId?: string;
+  providerLabel?: string;
   segments: TranscriptSegment[];
   diarization: Partial<DiarizationResult>;
   speakerNames: Record<string, string>;

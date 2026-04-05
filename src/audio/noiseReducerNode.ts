@@ -1,10 +1,28 @@
 import rnnoiseWasmUrl from 'simple-rnnoise-wasm/rnnoise.wasm?url';
 import rnnoiseWorkletUrl from 'simple-rnnoise-wasm/rnnoise.worklet.js?url';
 
-const workletLoadPromises = new WeakMap();
-const fallbackLoadPromises = new WeakMap();
-const rnnoiseNodes = new WeakSet();
-let rnnoiseModulePromise = null;
+type AudioContextLike = AudioContext & {
+  audioWorklet?: {
+    addModule: (url: string) => Promise<void>;
+  };
+};
+
+interface RnnoiseModule {
+  RNNoiseNode: {
+    register: (audioContext: AudioContextLike, assets: unknown) => Promise<void>;
+    new (audioContext: AudioContextLike): RnnoiseNode;
+  };
+  rnnoise_loadAssets: (input: { scriptSrc: string; moduleSrc: string }) => unknown;
+}
+
+interface RnnoiseNode extends AudioWorkletNode {
+  update: (keepalive?: boolean) => void;
+}
+
+const workletLoadPromises = new WeakMap<AudioContextLike, Promise<void>>();
+const fallbackLoadPromises = new WeakMap<AudioContextLike, Promise<void>>();
+const rnnoiseNodes = new WeakSet<object>();
+let rnnoiseModulePromise: Promise<RnnoiseModule> | null = null;
 let patchedWorkletUrlCache: string | null = null;
 
 /** @internal — reset cached patched URL (testing only) */
@@ -52,14 +70,14 @@ export function toBlobUrl(url: string): string {
   return URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: mime }));
 }
 
-async function loadRnnoiseModule() {
+async function loadRnnoiseModule(): Promise<RnnoiseModule> {
   if (!rnnoiseModulePromise) {
-    rnnoiseModulePromise = import('simple-rnnoise-wasm');
+    rnnoiseModulePromise = import('simple-rnnoise-wasm') as Promise<RnnoiseModule>;
   }
   return rnnoiseModulePromise;
 }
 
-export async function ensureNoiseReducerWorklet(audioContext) {
+export async function ensureNoiseReducerWorklet(audioContext: AudioContextLike) {
   if (workletLoadPromises.has(audioContext)) return workletLoadPromises.get(audioContext);
 
   const loadPromise = Promise.all([loadRnnoiseModule(), patchedRnnoiseWorkletUrl()])
@@ -81,7 +99,7 @@ export async function ensureNoiseReducerWorklet(audioContext) {
   return loadPromise;
 }
 
-async function ensureFallbackNoiseReducerWorklet(audioContext) {
+async function ensureFallbackNoiseReducerWorklet(audioContext: AudioContextLike) {
   if (fallbackLoadPromises.has(audioContext)) return fallbackLoadPromises.get(audioContext);
 
   const loadPromise = audioContext.audioWorklet
@@ -95,7 +113,7 @@ async function ensureFallbackNoiseReducerWorklet(audioContext) {
   return loadPromise;
 }
 
-export async function createNoiseReducerNode(audioContext) {
+export async function createNoiseReducerNode(audioContext: AudioContextLike) {
   if (typeof AudioWorkletNode === 'undefined' || !audioContext.audioWorklet) {
     console.warn('[NoiseReducer] AudioWorklet not supported, bypassing.');
     return null;
@@ -126,17 +144,17 @@ export async function createNoiseReducerNode(audioContext) {
   }
 }
 
-export function setNoiseReducerBypassed(node, bypassed) {
+export function setNoiseReducerBypassed(node: { port?: MessagePort } | null, bypassed: boolean) {
   if (node?.port) {
     node.port.postMessage({ type: 'bypass', value: bypassed });
   }
 }
 
-export function isRnnoiseNode(node) {
+export function isRnnoiseNode(node: unknown): node is RnnoiseNode {
   return Boolean(node && rnnoiseNodes.has(node));
 }
 
-export function requestNoiseReducerStatus(node, keepalive = true) {
+export function requestNoiseReducerStatus(node: unknown, keepalive = true) {
   if (!isRnnoiseNode(node) || typeof node.update !== 'function') return;
   node.update(keepalive);
 }

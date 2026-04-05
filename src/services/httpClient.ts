@@ -123,6 +123,47 @@ function normalizeApiErrorMessage(message = '', status?: number) {
   return String(message || '');
 }
 
+// ── Circuit breaker ──────────────────────────────────────────────
+// After several consecutive transport failures, stop hammering the
+// network and back off exponentially.
+let consecutiveTransportFailures = 0;
+let circuitBreakerCooldownUntil = 0;
+const CIRCUIT_BREAKER_THRESHOLD = 3;
+const CIRCUIT_BREAKER_BASE_MS = 15_000;
+const CIRCUIT_BREAKER_MAX_MS = 120_000;
+
+export function resetCircuitBreaker() {
+  consecutiveTransportFailures = 0;
+  circuitBreakerCooldownUntil = 0;
+}
+
+function recordTransportSuccess() {
+  consecutiveTransportFailures = 0;
+  circuitBreakerCooldownUntil = 0;
+}
+
+function recordTransportFailure() {
+  consecutiveTransportFailures += 1;
+  if (consecutiveTransportFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+    const backoff = Math.min(
+      CIRCUIT_BREAKER_BASE_MS *
+        Math.pow(2, consecutiveTransportFailures - CIRCUIT_BREAKER_THRESHOLD),
+      CIRCUIT_BREAKER_MAX_MS
+    );
+    circuitBreakerCooldownUntil = Date.now() + backoff;
+    console.warn(
+      `[httpClient] Circuit breaker open: ${consecutiveTransportFailures} consecutive failures, cooling down ${Math.round(backoff / 1000)}s`
+    );
+  }
+}
+
+export function isCircuitBreakerOpen() {
+  return (
+    consecutiveTransportFailures >= CIRCUIT_BREAKER_THRESHOLD &&
+    Date.now() < circuitBreakerCooldownUntil
+  );
+}
+
 // ── Module-level health probe deduplication ──────────────────────
 // Multiple useWorkspaceData instances fire probes concurrently.
 // Singleton promise ensures only ONE network probe runs at a time.
@@ -146,11 +187,19 @@ export async function probeRemoteApiHealth(fetchImpl = fetch, maxRetries = 3) {
   if (Date.now() < probeCooldownUntil) {
     throw new Error('Health probe cooldown active');
   }
+  if (isCircuitBreakerOpen()) {
+    throw new Error('Health probe cooldown active');
+  }
   if (pendingProbe) return pendingProbe;
 
   pendingProbe = _probeRemoteApiHealthImpl(fetchImpl, maxRetries)
+    .then((result) => {
+      recordTransportSuccess();
+      return result;
+    })
     .catch((err) => {
       probeCooldownUntil = Date.now() + PROBE_COOLDOWN_MS;
+      recordTransportFailure();
       throw err;
     })
     .finally(() => {
@@ -170,7 +219,7 @@ async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
     }
     const controller = new AbortController();
     // 10 s: accounts for Vercel edge-proxy overhead + Railway cold-start
-    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+    const timeoutId = setTimeout(() => controller.abort('Health probe timeout (10s)'), 10_000);
     try {
       const response = await fetchImpl(buildUrl('/health'), {
         method: 'GET',
@@ -265,6 +314,15 @@ async function fetchWithRetry(
   options: RequestInit,
   maxRetries: number = 4
 ): Promise<Response> {
+  // Short-circuit when circuit breaker is open or browser offline
+  if (browserIsOffline()) {
+    recordTransportFailure();
+    throw new Error('Browser offline');
+  }
+  if (isCircuitBreakerOpen()) {
+    throw new Error('Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.');
+  }
+
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -277,8 +335,9 @@ async function fetchWithRetry(
 
       // Retry on 502, 503, 504 (server errors)
       if (!response.ok && [502, 503, 504].includes(response.status)) {
+        recordTransportFailure();
         if (attempt < maxRetries) {
-          const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000); // exponential backoff, max 15s
+          const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000);
           console.warn(
             `[httpClient] Retry ${attempt + 1}/${maxRetries} after HTTP ${response.status}`
           );
@@ -287,9 +346,11 @@ async function fetchWithRetry(
         }
       }
 
+      recordTransportSuccess();
       return response;
     } catch (error: any) {
       lastError = error;
+      recordTransportFailure();
 
       // Check if it's a network error that should be retried
       const errorMessage = String(error?.message || '').toLowerCase();
@@ -302,7 +363,7 @@ async function fetchWithRetry(
         errorMessage.includes('bad gateway');
 
       if (isRetryable && attempt < maxRetries) {
-        const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000); // exponential backoff, max 15s
+        const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000);
         console.warn(
           `[httpClient] Retry ${attempt + 1}/${maxRetries} after network error: ${error?.message}`
         );

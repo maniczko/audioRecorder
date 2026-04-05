@@ -13,18 +13,28 @@ import { analyzeMeeting } from '../lib/analysis';
 import { createMediaService } from '../services/mediaService';
 import { getPreviewRuntimeStatus } from '../services/httpClient';
 import { filterSilence } from '../audio/vadFilter';
+import {
+  normalizeMediaTranscriptionResponse,
+  type MediaTranscriptionResponse,
+} from '../shared/contracts';
+import type { TranscriptionStatusPayload } from '../shared/types';
+import type { RecordingPipelineStatus } from '../lib/recordingQueue';
 
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function clampProgress(value) {
+function clampProgress(value: number | null | undefined) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
-function getPipelineSnapshot(status, upstreamProgress = null, upstreamMessage = '') {
+function getPipelineSnapshot(
+  status: RecordingPipelineStatus | string | null | undefined,
+  upstreamProgress: number | null = null,
+  upstreamMessage = ''
+) {
   const message = String(upstreamMessage || '').trim();
   const normalizedStatus = String(status || 'queued');
 
@@ -94,6 +104,32 @@ function buildFallbackAnalysis(message, diarization) {
     needsCoverage: [],
     speakerLabels: diarization.speakerNames,
     speakerCount: diarization.speakerCount,
+  };
+}
+
+type ExtendedMediaTranscriptionResponse = MediaTranscriptionResponse & {
+  verifiedSegments?: TranscriptionStatusPayload['segments'];
+  providerId?: string;
+  providerLabel?: string;
+  reviewSummary?: unknown;
+};
+
+function normalizeTranscriptionResponse(
+  response: ExtendedMediaTranscriptionResponse | null | undefined
+): TranscriptionStatusPayload & {
+  providerId?: string;
+  providerLabel?: string;
+  reviewSummary?: unknown;
+} {
+  const normalized = normalizeMediaTranscriptionResponse(response);
+  return {
+    ...normalized,
+    segments: Array.isArray(response?.verifiedSegments)
+      ? response.verifiedSegments
+      : normalized.segments,
+    providerId: response?.providerId,
+    providerLabel: response?.providerLabel,
+    reviewSummary: response?.reviewSummary ?? normalized.reviewSummary,
   };
 }
 
@@ -226,7 +262,7 @@ export const useRecorderStore = create<any>()(
         );
         const reuseRemoteUpload = Boolean(existing?.uploaded);
         get().updateQueueItem(recordingId, {
-          status: 'queued',
+          status: 'queued' as RecordingPipelineStatus,
           uploaded: reuseRemoteUpload,
           errorMessage: '',
           retryCount: 0,
@@ -260,9 +296,9 @@ export const useRecorderStore = create<any>()(
           meetingTitle: meeting.title || 'Spotkanie',
           meetingSnapshot: meeting,
           mimeType: recording.contentType || recording.mimeType || 'audio/mpeg',
-          rawSegments: [],
+          rawSegments: [] as any[],
           duration: Number(recording.duration) || 0,
-          status: 'queued',
+          status: 'queued' as const,
           uploaded: true,
           attempts: 0,
           errorMessage: '',
@@ -456,7 +492,7 @@ export const useRecorderStore = create<any>()(
             recordingMessage: 'Audio przeslane. Oczekiwanie na przetwarzanie...',
           });
 
-          const started =
+          const startedRaw =
             nextItem.uploaded && nextItem.status === 'processing'
               ? await mediaService.getTranscriptionJobStatus(nextItem.recordingId)
               : canReuseRemoteUpload &&
@@ -469,6 +505,11 @@ export const useRecorderStore = create<any>()(
                     meeting: target,
                     rawSegments: nextItem.rawSegments,
                   });
+          const started = normalizeTranscriptionResponse(
+            startedRaw as ExtendedMediaTranscriptionResponse
+          );
+          const transcriptionProviderId = started.providerId || '';
+          const transcriptionProviderLabel = started.providerLabel || transcriptionProviderId;
 
           get().updateQueueItem(nextItem.recordingId, {
             pipelineGitSha: started?.pipelineGitSha || '',
@@ -505,7 +546,7 @@ export const useRecorderStore = create<any>()(
             }
           );
 
-          let transcription;
+          let transcription: TranscriptionStatusPayload;
           try {
             if (startStatus === 'done') {
               transcription = { ...started, pipelineStatus: 'done' };
@@ -515,12 +556,16 @@ export const useRecorderStore = create<any>()(
               let totalPollErrors = 0;
               const MAX_CONSECUTIVE_ERRORS = 20;
               const MAX_TOTAL_POLL_ERRORS = 30;
-              let finalTranscription = null;
+              let finalTranscription: TranscriptionStatusPayload | null = null;
               while (attempts < 120) {
                 attempts += 1;
-                let result;
+                let result: TranscriptionStatusPayload;
                 try {
-                  result = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+                  result = normalizeTranscriptionResponse(
+                    (await mediaService.getTranscriptionJobStatus(
+                      nextItem.recordingId
+                    )) as ExtendedMediaTranscriptionResponse
+                  );
                   consecutiveErrors = 0;
                 } catch (pollError: any) {
                   consecutiveErrors += 1;
@@ -605,9 +650,20 @@ export const useRecorderStore = create<any>()(
             if (unsubscribeProgress) unsubscribeProgress();
           }
 
-          const verifiedSegments = Array.isArray(transcription.verifiedSegments)
-            ? transcription.verifiedSegments
+          const verifiedSegments = Array.isArray(transcription.segments)
+            ? transcription.segments
             : [];
+          const reviewableSegments = verifiedSegments as Array<
+            TranscriptionStatusPayload['segments'][number] & {
+              verificationStatus?: 'review' | 'verified';
+            }
+          >;
+          const needsReviewCount = reviewableSegments.filter(
+            (segment) => segment.verificationStatus === 'review'
+          ).length;
+          const approvedCount = reviewableSegments.filter(
+            (segment) => segment.verificationStatus === 'verified'
+          ).length;
           if (setCurrentSegments) setCurrentSegments(verifiedSegments);
 
           const isEmptyTranscript =
@@ -616,10 +672,10 @@ export const useRecorderStore = create<any>()(
 
           if (isEmptyTranscript) {
             const emptyMessage = EMPTY_TRANSCRIPT_MESSAGE;
-            const emptyAnalysis = buildFallbackAnalysis(
-              'Nie wykryto wypowiedzi w nagraniu.',
-              transcription.diarization || { speakerNames: {}, speakerCount: 0 }
-            );
+            const emptyAnalysis = buildFallbackAnalysis('Nie wykryto wypowiedzi w nagraniu.', {
+              speakerNames: transcription.speakerNames || {},
+              speakerCount: transcription.speakerCount || 0,
+            });
             const recording = {
               id: nextItem.recordingId,
               createdAt: nextItem.createdAt || new Date().toISOString(),
@@ -641,12 +697,12 @@ export const useRecorderStore = create<any>()(
               pipelineBuildTime: transcription.pipelineBuildTime || '',
               audioQuality: transcription.audioQuality || nextItem.audioQuality || null,
               transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
-              speakerNames: transcription.diarization?.speakerNames || {},
-              speakerCount: transcription.diarization?.speakerCount || 0,
-              diarizationConfidence: transcription.diarization?.confidence || 0,
+              speakerNames: transcription.speakerNames || {},
+              speakerCount: transcription.speakerCount || 0,
+              diarizationConfidence: transcription.confidence || 0,
               reviewSummary: transcription.reviewSummary || { needsReview: 0, approved: 0 },
-              transcriptionProvider: transcription.providerId,
-              transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
+              transcriptionProvider: transcriptionProviderId,
+              transcriptionProviderLabel: transcriptionProviderLabel,
               pipelineStatus: 'done',
               storageMode: mediaService.mode === 'remote' ? 'remote' : 'indexeddb',
               analysis: emptyAnalysis,
@@ -695,14 +751,17 @@ export const useRecorderStore = create<any>()(
             analysis = await analyzeMeeting({
               meeting: target,
               segments: verifiedSegments,
-              speakerNames: transcription.diarization?.speakerNames || {},
+              speakerNames: transcription.speakerNames || {},
               diarization: transcription.diarization || {},
             });
           } catch (e) {
             console.error('Meeting analysis failed.', e);
             analysis = buildFallbackAnalysis(
               'Analiza AI nie powiodla sie. Zachowalismy transkrypcje i segmenty.',
-              transcription.diarization || { speakerNames: {}, speakerCount: 0 }
+              {
+                speakerNames: transcription.speakerNames || {},
+                speakerCount: transcription.speakerCount || 0,
+              }
             );
           }
 
@@ -711,15 +770,15 @@ export const useRecorderStore = create<any>()(
             createdAt: nextItem.createdAt || new Date().toISOString(),
             duration: nextItem.duration || 0,
             transcript: verifiedSegments,
-            speakerNames: analysis.speakerLabels || transcription.diarization?.speakerNames || {},
-            speakerCount: analysis.speakerCount || transcription.diarization?.speakerCount || 0,
-            diarizationConfidence: transcription.diarization?.confidence || 0,
+            speakerNames: analysis.speakerLabels || transcription.speakerNames || {},
+            speakerCount: analysis.speakerCount || transcription.speakerCount || 0,
+            diarizationConfidence: transcription.confidence || 0,
             reviewSummary: transcription.reviewSummary || {
-              needsReview: verifiedSegments.filter((s) => s.verificationStatus === 'review').length,
-              approved: verifiedSegments.filter((s) => s.verificationStatus === 'verified').length,
+              needsReview: needsReviewCount,
+              approved: approvedCount,
             },
-            transcriptionProvider: transcription.providerId,
-            transcriptionProviderLabel: transcription.providerLabel || transcription.providerId,
+            transcriptionProvider: transcriptionProviderId,
+            transcriptionProviderLabel: transcriptionProviderLabel,
             pipelineStatus: 'done',
             pipelineGitSha: transcription.pipelineGitSha || '',
             pipelineVersion: transcription.pipelineVersion || '',
@@ -751,9 +810,10 @@ export const useRecorderStore = create<any>()(
             analysisStatus: 'done',
             pipelineProgressPercent: doneSnapshot.progressPercent,
             pipelineStageLabel: doneSnapshot.stageLabel,
-            recordingMessage: recording.transcript.some((s) => s.verificationStatus === 'review')
-              ? 'Nagranie czeka czesciowo na review.'
-              : 'Nagranie zostalo przetworzone.',
+            recordingMessage:
+              needsReviewCount > 0
+                ? 'Nagranie czeka czesciowo na review.'
+                : 'Nagranie zostalo przetworzone.',
           });
         } catch (error) {
           const retryCount = nextItem.retryCount || 0;

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MICROSOFT_CLIENT_ID,
+  CALENDAR_SCOPES,
+  TASKS_SCOPES,
   initializeMsal,
   signInMicrosoft,
   signOutMicrosoft,
@@ -11,6 +13,8 @@ import {
   fetchMicrosoftTasks,
   createMicrosoftTask,
   renderMicrosoftSignInButton,
+  type MicrosoftTaskList,
+  type OutlookEvent,
 } from '../lib/microsoft';
 
 export default function useMicrosoftIntegrations({
@@ -25,17 +29,17 @@ export default function useMicrosoftIntegrations({
   onMicrosoftError,
 }) {
   const [microsoftCalendarStatus, setMicrosoftCalendarStatus] = useState('idle');
-  const [outlookCalendarEvents, setOutlookCalendarEvents] = useState([]);
+  const [outlookCalendarEvents, setOutlookCalendarEvents] = useState<OutlookEvent[]>([]);
   const [microsoftCalendarMessage, setMicrosoftCalendarMessage] = useState('');
   const [microsoftTasksStatus, setMicrosoftTasksStatus] = useState('idle');
-  const [microsoftTaskLists, setMicrosoftTaskLists] = useState([]);
+  const [microsoftTaskLists, setMicrosoftTaskLists] = useState<MicrosoftTaskList[]>([]);
   const [selectedMicrosoftTaskListId, setSelectedMicrosoftTaskListId] = useState('');
   const [microsoftTasksMessage, setMicrosoftTasksMessage] = useState('');
   const [microsoftCalendarLastSyncedAt, setMicrosoftCalendarLastSyncedAt] = useState('');
   const [microsoftTasksLastSyncedAt, setMicrosoftTasksLastSyncedAt] = useState('');
 
-  const microsoftButtonRef = useRef(null);
-  const msalInstanceRef = useRef(null);
+  const microsoftButtonRef = useRef<HTMLElement | null>(null);
+  const msalInstanceRef = useRef<any>(null);
   const microsoftCalendarTokenRef = useRef('');
   const microsoftTasksTokenRef = useRef('');
   const manualTasksRef = useRef(manualTasks);
@@ -107,7 +111,7 @@ export default function useMicrosoftIntegrations({
     };
   }, [microsoftEnabled, onMicrosoftError, onMicrosoftProfile]);
 
-  const loadOutlookMonthEvents = useCallback(async (accessToken, monthDate) => {
+  const loadOutlookMonthEvents = useCallback(async (accessToken: string, monthDate: Date) => {
     const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
     const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
     const payload = await fetchOutlookCalendarEvents(accessToken, {
@@ -375,6 +379,3 @@ export default function useMicrosoftIntegrations({
     setSelectedMicrosoftTaskListId,
   };
 }
-
-const CALENDAR_SCOPES = ['Calendars.ReadWrite', 'Calendars.Read'];
-const TASKS_SCOPES = ['Tasks.ReadWrite', 'Tasks.Read'];

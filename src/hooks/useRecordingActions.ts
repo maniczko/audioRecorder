@@ -12,6 +12,28 @@ export default function useRecordingActions({
   setSelectedMeetingId,
   setSelectedRecordingId,
 }) {
+  interface ReviewableTranscriptSegment {
+    id: string;
+    text?: string;
+    timestamp?: number;
+    endTimestamp?: number;
+    speakerId?: number | string;
+    rawConfidence?: number;
+    verificationScore?: number;
+    verificationStatus?: 'review' | 'verified';
+    verificationReasons?: string[];
+    verificationEvidence?: { comparisonText?: string };
+    [key: string]: any;
+  }
+
+  interface RecordingMarker {
+    id: string;
+    timestamp: number;
+    label: string;
+    note: string;
+    createdAt: string;
+  }
+
   function updateSelectedRecording(mutator) {
     if (!selectedMeeting || !selectedRecording) return;
 
@@ -19,7 +41,7 @@ export default function useRecordingActions({
       previous.map((meeting) => {
         if (meeting.id !== selectedMeeting.id) return meeting;
 
-        let nextSelectedRecording = null;
+        let nextSelectedRecording: any = null;
         const nextRecordings = (meeting.recordings || []).map((recording) => {
           if (recording.id !== selectedRecording.id) return recording;
           nextSelectedRecording = mutator(recording);
@@ -44,7 +66,7 @@ export default function useRecordingActions({
     );
   }
 
-  function buildTranscriptReviewSummary(transcript) {
+  function buildTranscriptReviewSummary(transcript: ReviewableTranscriptSegment[]) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
     return {
       needsReview: safeTranscript.filter((segment) => segment.verificationStatus === 'review')
@@ -54,7 +76,7 @@ export default function useRecordingActions({
     };
   }
 
-  function normalizeRecordingMarkers(markers = []) {
+  function normalizeRecordingMarkers(markers: any[] = []): RecordingMarker[] {
     return (Array.isArray(markers) ? markers : [])
       .map((marker, index) => {
         const timestamp = Number(marker?.timestamp);
@@ -67,7 +89,7 @@ export default function useRecordingActions({
           createdAt: marker?.createdAt || new Date().toISOString(),
         };
       })
-      .filter(Boolean)
+      .filter((marker): marker is RecordingMarker => Boolean(marker))
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 

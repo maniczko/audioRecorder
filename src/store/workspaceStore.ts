@@ -65,7 +65,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       switchWorkspace: (workspaceId) => {
         const { session } = get();
-        if (!workspaceId || workspaceId === session?.workspaceId) return;
+        if (
+          !workspaceId ||
+          !session?.userId ||
+          !session?.token ||
+          workspaceId === session.workspaceId
+        )
+          return;
         const nextSession = persistSessionSnapshot({ ...session, workspaceId });
         set({ session: nextSession });
       },

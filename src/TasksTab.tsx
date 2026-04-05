@@ -60,7 +60,7 @@ export default function TasksTab({
   const [viewMode, setViewMode] = useState(defaultView === 'kanban' ? 'kanban' : 'list');
   const [selectedListId, setSelectedListId] = useState('smart:all');
   const [selectedTaskId, setSelectedTaskId] = useState('');
-  const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('manual');
   const [groupBy, setGroupBy] = useState('none');
   const [query, setQuery] = useState('');
@@ -75,8 +75,8 @@ export default function TasksTab({
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: '', color: '#5a92ff', isDone: false });
   const dragTaskIdRef = useRef('');
-  const quickAddInputRef = useRef(null);
-  const searchInputRef = useRef(null);
+  const quickAddInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setViewMode(defaultView === 'kanban' ? 'kanban' : 'list');

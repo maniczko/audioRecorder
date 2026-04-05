@@ -28,7 +28,7 @@ function dayKey(date) {
 }
 
 function buildDays(anchorDate, count) {
-  const days = [];
+  const days: Date[] = [];
   for (let i = 0; i < count; i++) {
     const d = new Date(anchorDate);
     d.setDate(anchorDate.getDate() + i);
@@ -55,13 +55,13 @@ export default function TaskScheduleView({ tasks, selectedTask, onSelectTask, on
   const tasksWithDue = tasks.filter((t) => t.dueDate && !t.completed);
   const tasksWithoutDue = tasks.filter((t) => !t.dueDate && !t.completed);
 
-  const tasksByDay = new Map();
+  const tasksByDay = new Map<number, any[]>();
   tasksWithDue.forEach((t) => {
     const key = dayKey(new Date(t.dueDate));
     if (!tasksByDay.has(key)) {
       tasksByDay.set(key, []);
     }
-    tasksByDay.get(key).push(t);
+    tasksByDay.get(key)!.push(t);
   });
 
   function handleTaskDragStart(event, taskId) {

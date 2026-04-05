@@ -45,6 +45,7 @@ vi.mock('../services/stateService', () => ({
 vi.mock('../services/httpClient', () => ({
   probeRemoteApiHealth: (...args: any[]) => httpClientMock.probeRemoteApiHealth(...args),
   setPreviewRuntimeStatus: (...args: any[]) => httpClientMock.setPreviewRuntimeStatus(...args),
+  isCircuitBreakerOpen: () => false,
 }));
 
 vi.mock('../lib/workspace', () => ({

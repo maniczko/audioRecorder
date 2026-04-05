@@ -1,10 +1,10 @@
 ﻿# TASK QUEUE
 
-Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
+Ostatnie odswiezenie: `2026-04-05 14:03 Europe/Warsaw`
 
 ## Status odswiezenia
 
-- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-05T06-20-22-219Z.json` (`100` runow, `10` failed w oknie 7 dni)
+- `GitHub Actions`: odswiezone lokalnie na podstawie `github-errors/github-errors-2026-04-05T12-03-45-430Z.json` (`100` runow, `11` failed w oknie 7 dni)
 - `Railway`: odswiezone lokalnie na podstawie `railway-errors/railway-errors-2026-04-05T06-20-03-347Z.md` (`0` error linii w ostatnich `100` logach, `/health` = `ok`)
 - `Vercel`: odswiezenie zablokowane `2026-04-05` - `VERCEL_TOKEN` nieustawiony, a plugin Vercel zwraca `Auth required`
 - `Sentry`: odswiezenie zablokowane `2026-04-05` - `SENTRY_AUTH_TOKEN` nieustawiony
@@ -129,84 +129,91 @@ Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
 
 ## Nastepne kroki
 
-1. Zbic najwiekszy aktualny klaster z GitHub Actions: backendowe testy storage/Supabase z ostatnich `CI/CD Pipeline`.
-2. Domknac testowe mocki `workspaceService.saveWorkspaceState`, bo to wraca w wielu runach jako osobny czerwony sygnal.
-3. Zweryfikowac, czy `Configuration errors` oraz `Zbyt wiele prob` w backend testach sa realnym bugiem izolacji testow czy tylko hałasem z setupu.
-4. Potwierdzic po deployu backendu, ze `MON-07` zwraca odpowiedz z kolejnego providera zamiast fallbacku archiwum.
+1. Sprawdzic najnowszy fail `TypeScript type check` dla commitu `c596784`, bo to jest teraz swiezy blocker na `main`.
+2. Zbic najwiekszy aktualny klaster z GitHub Actions: backendowe testy storage/Supabase z ostatnich `CI/CD Pipeline`.
+3. Domknac testowe mocki `workspaceService.saveWorkspaceState`, bo to wraca w wielu runach jako osobny czerwony sygnal.
+4. Zweryfikowac, czy `Configuration errors` oraz `Zbyt wiele prob` w backend testach sa realnym bugiem izolacji testow czy tylko hałasem z setupu.
 5. Uzyskac dostep do `VERCEL_TOKEN` albo aktywnej sesji pluginu Vercel, a dla Sentry do `SENTRY_AUTH_TOKEN`, zeby odswiezyc brakujace monitory.
 
 ## Swiezy snapshot bledow
 
-<!-- Refreshed on 2026-04-05T06:20:22.182Z -->
+<!-- Refreshed on 2026-04-05T12:03:45.403Z -->
 
-### GitHub Actions Errors (aktualny snapshot: 10 failed runow)
+### GitHub Actions Errors (aktualny snapshot: 11 failed runow)
 
-<!-- Auto-generated on 2026-04-05T10:24:57.855Z -->
+- **GH-AUTO-2026-04-05-1** — Investigate fresh TypeScript typecheck failure on `main`
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
+  - **Owner:** `Codex`
+  - **Zakres:** nowy fail po commicie `c596784` z `2026-04-05T11:59:38Z`
+  - **Error:** job `Quality Checks`, step `TypeScript type check` zakonczyl sie fail, ale parser nie wyciagnal jeszcze konkretnej linii z logu
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055758
+  - **Notatka:** to jest obecnie najnowszy czerwony sygnal na `main`; trzeba otworzyc pelny log joba i spisac konkretny blad TS
 
-### GitHub Actions Errors (10 found)
-
-- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
-  - **Error:** Job "Quality Checks" step "TypeScript type check" failed
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219132
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
-
-- **GH-AUTO-2026-04-05-2** — Fix Optimized CI failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
-  - **Error:** Job "typecheck" step "Run TypeScript" failed
+- **GH-AUTO-2026-04-05-2** — Investigate mirrored typecheck failure in `Optimized CI`
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> Optimized CI -> typecheck`
+  - **Owner:** `Codex`
+  - **Zakres:** ten sam commit `2f61a73`, `2026-04-05T10:01:35Z`
+  - **Error:** job `typecheck`, step `Run TypeScript` zakonczyl sie fail bez sparsowanej linii bledu
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219137
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
+  - **Notatka:** najpewniej ten sam root cause co w `CI/CD Pipeline`, ale warto potwierdzic czy to nie dwa rozne tsconfig pathy
 
-- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T08:35:33.5768743Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T08:35:33.7422086Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T08:35:33.7512216Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T08:35:33.5768743Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T08:35:33.7422086Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+- **GH-AUTO-2026-04-05-3** — Fix repeated backend Supabase storage regression failures
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie co najmniej od `2026-04-04T19:24:09Z` do `2026-04-05T08:34:24Z` w wielu runach backendowych
+  - **Error:** `AssertionError: promise rejected "Error: Supabase Storage not available (client or storage module missing)."` oraz powiazane asercje o oczekiwanych kluczach storage (`rec_test.webm`, `rec_test-123.webm`, `recordings/rec1.webm`)
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
+  - **Notatka:** to nadal najwiekszy stabilny klaster czerwonych testow backendu
 
-- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T06:57:53.4251083Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T06:57:53.2159190Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T06:57:53.4086649Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23996372344
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
+- **GH-AUTO-2026-04-05-4** — Fix missing `workspaceService.saveWorkspaceState` in backend tests
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** powtarza sie w kolejnych runach backendowych z `main`, m.in. `f61a91d`, `26ce5a7`, `d79d3f0`
+  - **Error:** `APP ERROR STACK TypeError: workspaceService.saveWorkspaceState is not a function`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
+  - **Notatka:** wyglada na niespojny mock lub stub w testach/perf routes, nie na blad produkcyjnego runtime
 
-- **GH-AUTO-2026-04-05-5** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T04:32:29.1134740Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T04:32:28.8946949Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T04:32:29.1010294Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
-  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23994268683
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
+- **GH-AUTO-2026-04-05-5** — Triage backend test isolation for config and rate-limit failures
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** wraca seryjnie w backend suite w tych samych runach co storage fail
+  - **Error:** `Configuration errors:` oraz `Error: Zbyt wiele prob. Limit: 20 żądań/min. Sprobuj ponownie za 60s.`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
+  - **Notatka:** trzeba odroznic prawdziwy bug konfiguracji od oczekiwanego outputu testow negatywnych albo wycieku global state miedzy testami
 
-- **GH-AUTO-2026-04-05-6** — Fix Auto Security Patches failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
-  - **Error:** 2026-04-05T02:28:33.4737775Z [22m[39m[VoiceLog] auto-send error: Error: Network down
+- **GH-AUTO-2026-04-05-6** — Reduce noisy expected stderr in backend tests
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** linie powtarzaja sie w wielu backend runach i zaszumiaja raport
+  - **Error:** `embedTextChunks failed: Error: embed failed`, `Gemini image gen error: 503 overloaded`, `Gemini image gen error: 400 Invalid request`, `Nie masz dostepu do tego workspace.`
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
+  - **Notatka:** same logi wygladaja jak oczekiwane scenariusze negatywne, ale utrudniaja parserowi znalezienie prawdziwej przyczyny faila
+
+- **GH-AUTO-2026-04-05-7** — Investigate `Auto Security Patches` network failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions -> Auto Security Patches -> security-patch`
+  - **Owner:** `Qwen`
+  - **Error:** `[VoiceLog] auto-send error: Error: Network down`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
-  - **Created:** 2026-04-05T10:24:57.855Z
-  - **Priority:** High
+  - **Notatka:** osobny blad automatu PR/security; nie wyglada na ten sam klaster co backend tests
 
-- **GH-AUTO-2026-04-05-7** — Fix CI/CD Pipeline failure
-  - **Status:** todo
-  - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-05T01:31:16.2633460Z [22m[39m[ERROR]...
-  - **Error:** 2026-04-05T01:31:16.0712316Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-05T01:31:16.2539527Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is o...
+- **GH-AUTO-2026-04-05-8** — Historical backend failure cluster still visible in 7-day window
+  - **Status:** `verify`
+  - **Source:** `GitHub Actions -> CI/CD Pipeline / Backend Tests`
+  - **Owner:** `Codex`
+  - **Zakres:** starsze runy `23991650900`, `23988814696`, `23986838289`, `23986667563`, `23985883483`
+  - **Error:** ten sam zestaw sygnalow co teraz: storage/Supabase assertions, `workspaceService.saveWorkspaceState`, `Configuration errors`, `Zbyt wiele prob`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23991650900
+  - **Notatka:** potwierdza, ze to nie jednorazowy fail po ostatnim deployu, tylko utrwalony regres testowy
   - **Created:** 2026-04-05T10:24:57.855Z
   - **Priority:** High
+  - **Notatka:** potwierdza, ze to nie jednorazowy fail po ostatnim deployu, tylko utrwalony regres testowy
 
 - **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
   - **Status:** todo
@@ -247,5 +254,3 @@ Ostatnie odswiezenie: `2026-04-05 08:27 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055763
   - **Created:** 2026-04-05T12:37:25.908Z
   - **Priority:** High
-
-

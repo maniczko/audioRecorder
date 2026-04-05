@@ -13,6 +13,14 @@ import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from '../l
 import { buildGoogleCalendarUrl } from '../lib/calendar';
 
 export default function useUI() {
+  type DisplayRecordingLike = {
+    id?: string;
+    transcript: any[];
+    speakerNames: Record<string, string>;
+    speakerCount?: number;
+    analysis: any;
+  };
+
   const uiState = useUIStore();
   const workspace = useWorkspaceStore();
   // We use the useMeetings hook to get derived task columns and helper methods
@@ -68,13 +76,15 @@ export default function useUI() {
         }
       : null;
 
-  const displayRecording = liveRecording || meetings.selectedRecording;
+  const displayRecording = (liveRecording ||
+    meetings.selectedRecording ||
+    null) as DisplayRecordingLike | null;
   const displaySpeakerNames = useMemo(
     () => displayRecording?.speakerNames || meetings.selectedMeeting?.speakerNames || {},
     [displayRecording?.speakerNames, meetings.selectedMeeting?.speakerNames]
   );
   const studioAnalysis =
-    meetings.selectedRecording?.analysis || meetings.selectedMeeting?.analysis || null;
+    (meetings.selectedRecording as any)?.analysis || meetings.selectedMeeting?.analysis || null;
 
   const selectedRecordingAudioUrl = meetings.selectedRecording
     ? recorder.audioUrls[meetings.selectedRecording.id]
@@ -136,7 +146,7 @@ export default function useUI() {
     if (!displayRecording) return;
     downloadTextFile(
       `${slugifyExportTitle(meetings.selectedMeeting?.title)}-transcript.txt`,
-      displayRecording.transcript
+      (displayRecording.transcript || [])
         .map(
           (segment: any) =>
             `[${formatDuration(segment.timestamp)}] ${displaySpeakerNames[String(segment.speakerId)] || `Speaker ${Number(segment.speakerId) + 1}`}: ${segment.text}`
