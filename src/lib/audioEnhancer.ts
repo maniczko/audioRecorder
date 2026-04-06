@@ -214,6 +214,116 @@ export async function enhanceAudioQuality(
 }
 
 /**
+ * Re-encode an AudioBuffer to WebM/Opus (or best supported format) via MediaRecorder.
+ * Falls back to WAV if MediaRecorder is unavailable.
+ */
+function reencode(buffer: AudioBuffer, targetBitrate = 128000): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (typeof MediaRecorder === 'undefined') {
+      // Fallback: return WAV if no MediaRecorder (unlikely in modern browsers)
+      resolve(bufferToWave(buffer, 0, buffer.length));
+      return;
+    }
+
+    const ctx = new AudioContext({ sampleRate: buffer.sampleRate });
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    const dest = ctx.createMediaStreamDestination();
+    source.connect(dest);
+
+    const preferredTypes = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+    ];
+    const mimeType = preferredTypes.find((t) => MediaRecorder.isTypeSupported(t)) || '';
+
+    const recorder = new MediaRecorder(dest.stream, {
+      ...(mimeType ? { mimeType } : {}),
+      audioBitsPerSecond: targetBitrate,
+    });
+
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+    recorder.onstop = () => {
+      ctx.close().catch(() => {});
+      resolve(new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' }));
+    };
+    recorder.onerror = (e) => {
+      ctx.close().catch(() => {});
+      reject(e);
+    };
+
+    recorder.start();
+    source.start();
+
+    // Stop recording when the buffer finishes playing
+    source.onended = () => {
+      // Small delay to ensure all data is flushed
+      setTimeout(() => {
+        if (recorder.state !== 'inactive') recorder.stop();
+      }, 100);
+    };
+  });
+}
+
+/**
+ * Enhance audio quality and re-encode to compressed format (WebM/Opus).
+ * Runs entirely in the browser — zero server cost.
+ *
+ * Pipeline: decode → high-pass filter → spectral noise reduction → noise gate → re-encode to Opus
+ */
+export async function enhanceAndReencode(
+  audioBlob: Blob,
+  options: {
+    removeNoise?: boolean;
+    removeClicks?: boolean;
+    normalizeVolume?: boolean;
+    targetBitrate?: number;
+  } = {}
+): Promise<Blob> {
+  const {
+    removeNoise = true,
+    removeClicks: removeClicksOption = false,
+    normalizeVolume = true,
+    targetBitrate = 128000,
+  } = options;
+
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const audioContext = new AudioContext();
+  let enhancedBuffer: AudioBuffer;
+
+  try {
+    enhancedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  } catch {
+    // Cannot decode (e.g. already compressed in unsupported format) — return original
+    audioContext.close().catch(() => {});
+    return audioBlob;
+  }
+
+  if (removeNoise) {
+    enhancedBuffer = await applyHighPassFilter(enhancedBuffer, 80);
+    enhancedBuffer = await applySpectralNoiseReduction(enhancedBuffer, 0.6);
+  }
+
+  if (removeClicksOption) {
+    enhancedBuffer = removeClicks(enhancedBuffer);
+  }
+
+  if (normalizeVolume) {
+    enhancedBuffer = await applyNoiseGate(enhancedBuffer, -35);
+  }
+
+  audioContext.close().catch(() => {});
+
+  return reencode(enhancedBuffer, targetBitrate);
+}
+
+/**
  * Convert AudioBuffer to WAV blob
  */
 function bufferToWave(abuffer: AudioBuffer, offset: number, len: number): Blob {

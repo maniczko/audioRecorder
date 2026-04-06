@@ -13,6 +13,7 @@ import { analyzeMeeting } from '../lib/analysis';
 import { createMediaService } from '../services/mediaService';
 import { getPreviewRuntimeStatus } from '../services/httpClient';
 import { filterSilence } from '../audio/vadFilter';
+import { enhanceAndReencode } from '../lib/audioEnhancer';
 import {
   normalizeMediaTranscriptionResponse,
   type MediaTranscriptionResponse,
@@ -432,6 +433,19 @@ export const useRecorderStore = create<any>()(
               }
             } catch (_) {
               /* fallback to original */
+            }
+
+            // Audio quality enhancement: high-pass filter + spectral noise reduction + noise gate
+            // then re-encode to WebM/Opus. Runs entirely in the browser — zero server cost.
+            try {
+              set({ pipelineStageLabel: 'Poprawa jakości audio…' });
+              uploadBlob = await enhanceAndReencode(uploadBlob as Blob, {
+                removeNoise: true,
+                normalizeVolume: true,
+                targetBitrate: 128000,
+              });
+            } catch (_) {
+              /* fallback to pre-enhancement blob */
             }
 
             const uploadSnapshot = getPipelineSnapshot(
