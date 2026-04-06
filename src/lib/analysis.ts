@@ -481,7 +481,7 @@ function buildAnthropicPrompt(
     'Your job:',
     "1. Replace generic labels (like 'Speaker 1') with ACTUAL names used during the meeting (e.g. if someone says 'Hi Adam', rename them to 'Adam'). Use these exact names for ANY task assignment ('owner' property).",
     "2. Estimate their DISC personality traits (0-100) based on communication style, inside their 'participantInsights.personality'.",
-    '3. Summarize the meeting in Polish.',
+    '3. Summarize the meeting in Polish. Write a DETAILED, thorough summary (minimum 5-8 sentences) that covers: key discussion topics in detail, main arguments and counter-arguments presented, conclusions reached, and any important context. Do NOT write a brief one-liner — the summary should read like a proper meeting report paragraph.',
     '4. Extract decisions, action items, tasks, follow-ups, answers to needs.',
     '5. Classify the meeting and extract rich intelligence fields.',
     '6. Add a developmental feedback block for the whole meeting only. Do not score individual participants.',

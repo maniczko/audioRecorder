@@ -625,3 +625,36 @@
 .ff-search-bar input::placeholder {
   color: rgba(255, 255, 255, 0.3);
 }
+
+/* ─── Smaller checkbox for transcript segment selection ─── */
+.fireflies-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.fireflies-select:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.fireflies-select input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent, #75d6c4);
+  flex-shrink: 0;
+}
+
+/* ─── Compact tag markers in transcript ─── */
+.transcript-segment-tag {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  line-height: 1.3;
+}

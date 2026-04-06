@@ -2055,13 +2055,15 @@ export default function StudioMeetingView({
                                         summary: e.target.value,
                                       }))
                                     }
-                                    rows={4}
-                                    placeholder="Wpisz podsumowanie..."
+                                    rows={8}
+                                    placeholder="Wpisz szczegółowe podsumowanie spotkania..."
                                     autoFocus
                                     style={{ marginTop: 8 }}
                                   />
                                 ) : (
-                                  <span>{studioAnalysis.summary}</span>
+                                  <span style={{ display: 'block', marginTop: 4 }}>
+                                    {studioAnalysis.summary}
+                                  </span>
                                 )}
                               </div>
                             </li>

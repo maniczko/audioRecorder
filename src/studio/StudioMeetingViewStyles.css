@@ -1861,6 +1861,38 @@
   color: var(--text-muted, #7c7c8c);
   white-space: pre-line;
   display: block;
+  line-height: 1.7;
+}
+
+/* Make the main summary card taller and more prominent */
+.summary-hero .summary-highlight:first-child {
+  padding: 16px 18px;
+  background: rgba(8, 18, 28, 0.85);
+  border-color: rgba(117, 214, 196, 0.12);
+}
+
+.summary-hero .summary-highlight:first-child .summary-highlight-body {
+  display: block;
+}
+
+.editable-analysis-textarea {
+  width: 100%;
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-main, #fff);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.editable-analysis-textarea:focus {
+  outline: none;
+  border-color: rgba(117, 214, 196, 0.4);
+  box-shadow: 0 0 0 2px rgba(117, 214, 196, 0.1);
 }
 
 .summary-story-copy {

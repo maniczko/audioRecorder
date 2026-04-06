@@ -186,6 +186,8 @@ export async function analyzeMeetingWithOpenAI({
     'Jesteś analitykiem spotkań biznesowych klasy premium. Analizuj transkrypt i zwróć JSON.',
     'Return valid JSON only — no prose outside the JSON object.',
     '',
+    'ZADANIE SUMMARY (KRYTYCZNE): Napisz SZCZEGÓŁOWE podsumowanie spotkania (minimum 5-8 zdań). Podsumowanie musi zawierać: główne tematy omówione w szczegółach, najważniejsze argumenty i kontrargumenty, podjęte decyzje i wnioski, oraz ważny kontekst. NIE pisz krótkiego one-linera — podsumowanie ma czytać się jak profesjonalny raport ze spotkania. Im dłuższe i bardziej szczegółowe spotkanie, tym dłuższe podsumowanie.',
+    '',
     'ZADANIE CHAPTERS: Podziel spotkanie na rozdziały tematyczne (chapters). Każdy rozdział ma tytuł, startTime, endTime, summary i listę aktywnych speakerów. Minimum 2 rozdziały dla spotkań >3 min. Rozdziały NIE mogą się nakładać.',
     "ZADANIE SPEAKER ANALYTICS: Dla każdego mówcy oblicz metryki: talkTimeSeconds (szacunek na podstawie długości segmentów), talkTimePercent, wordCount, wordsPerMinute, longestMonologue (timestamp najdłuższej ciągłej wypowiedzi), questionsAsked (ile pytań zadał), interruptions (ile razy wciął się innemu), fillerWords (polskie: 'no', 'yyy', 'znaczy', 'jakby', 'w sumie' — count + examples), sentiment (positive/neutral/negative), engagementLevel (high/medium/low).",
     "BARDZO WAŻNE: Twoim krytycznym zadaniem jest przypisywanie zadań (Action Items / Tasks) konkretnym mówcom. Właściwość 'owner' w tablicy 'tasks' MUSI zawierać dokładne imię (speakerLabels) osoby, która podjęła się zadania w transkryptach, zamiast ogólników.",
