@@ -991,8 +991,8 @@ Important:
     if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
 
     const buffer = await c.req.arrayBuffer();
-    if (buffer.byteLength > 3 * 1024 * 1024)
-      return c.json({ message: 'Chunk jest zbyt duży (max 3MB).' }, 413);
+    if (buffer.byteLength > 6 * 1024 * 1024)
+      return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
 
     // Check disk space before writing
     const diskSpace = checkDiskSpace(uploadDir, 50 * 1024 * 1024); // 50MB minimum
