@@ -20,6 +20,7 @@ import {
 } from '../shared/contracts';
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { RecordingPipelineStatus } from '../lib/recordingQueue';
+import { isTransportErrorMessage } from '../lib/transportErrors';
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -155,16 +156,7 @@ function toUserFacingQueueError(error: any) {
     return 'Brak autoryzacji do backendu. Zaloguj sie ponownie.';
   }
 
-  if (
-    errorMessage.includes('Failed to fetch') ||
-    errorMessage.includes('NetworkError') ||
-    errorMessage.includes('Load failed') ||
-    errorMessage.includes('ERR_FAILED') ||
-    errorMessage.includes('Application failed to respond') ||
-    errorMessage.includes('ROUTER_EXTERNAL_TARGET_CONNECTION_ERROR') ||
-    errorMessage.includes('Bad Gateway') ||
-    errorMessage.includes('HTTP 502')
-  ) {
+  if (errorMessage.includes('ERR_FAILED') || isTransportErrorMessage(errorMessage)) {
     if (getPreviewRuntimeStatus() === 'stale_runtime') {
       return 'Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.';
     }
@@ -206,16 +198,12 @@ function isExpectedDomainFailure(error: any) {
 }
 
 function isTransientNetworkError(error: any) {
-  const msg = normalizeErrorForMatching(error?.message);
+  const msg = String(error?.message || '');
   return (
-    msg.includes('failed to fetch') ||
-    msg.includes('networkerror') ||
-    msg.includes('load failed') ||
-    msg.includes('bad gateway') ||
-    msg.includes('http 502') ||
-    msg.includes('hostowany preview nie moze') ||
-    msg.includes('serwer chwilowo przeciazony pamieciowo') ||
-    msg.includes('serwer jest przeciazony')
+    isTransportErrorMessage(msg) ||
+    normalizeErrorForMatching(msg).includes('http 502') ||
+    normalizeErrorForMatching(msg).includes('serwer chwilowo przeciazony pamieciowo') ||
+    normalizeErrorForMatching(msg).includes('serwer jest przeciazony')
   );
 }
 
@@ -493,6 +481,7 @@ export const useRecorderStore = create<any>()(
             status: 'processing',
             uploaded: true,
             errorMessage: '',
+            processingStartedAt: new Date().toISOString(),
           });
 
           const processingSnapshot = getPipelineSnapshot(
@@ -720,6 +709,8 @@ export const useRecorderStore = create<any>()(
               pipelineStatus: 'done',
               storageMode: mediaService.mode === 'remote' ? 'remote' : 'indexeddb',
               analysis: emptyAnalysis,
+              processingStartedAt: nextItem.processingStartedAt || null,
+              processingEndedAt: new Date().toISOString(),
             };
 
             const emptyAttached = attachCompletedRecording(target.id, recording);
@@ -801,6 +792,8 @@ export const useRecorderStore = create<any>()(
             transcriptionDiagnostics: transcription.transcriptionDiagnostics || null,
             storageMode: mediaService.mode === 'remote' ? 'remote' : 'indexeddb',
             analysis,
+            processingStartedAt: nextItem.processingStartedAt || null,
+            processingEndedAt: new Date().toISOString(),
           };
 
           const attached = attachCompletedRecording(target.id, recording);

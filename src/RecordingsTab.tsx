@@ -5,6 +5,7 @@ import Modal from './shared/Modal';
 import { formatDateTime } from './lib/storage';
 import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
+import { ProcessingTimer } from './components/ProcessingTimer';
 import './RecordingsTabStyles.css';
 
 import { Input } from './ui/Input';
@@ -210,8 +211,50 @@ function getLatestRecording(selectedMeeting) {
   );
 }
 
+function buildOptimisticMeetingFromQueueItem(item) {
+  const snapshot =
+    item?.meetingSnapshot && typeof item.meetingSnapshot === 'object' ? item.meetingSnapshot : null;
+  return {
+    id: item.meetingId || item.recordingId,
+    workspaceId: snapshot?.workspaceId || item.workspaceId || '',
+    title: item.meetingTitle || snapshot?.title || 'Nowy import',
+    startsAt: item.createdAt || '',
+    createdAt: item.createdAt || '',
+    durationMinutes: Number(snapshot?.durationMinutes) || Number(item.durationMinutes) || 0,
+    speakerCount: 0,
+    tags: [],
+    latestRecordingId: item.recordingId,
+    isOptimisticImport: true,
+    processingStartedAt: item.processingStartedAt || undefined,
+    recordings: [
+      {
+        id: item.recordingId,
+        createdAt: item.createdAt || '',
+        duration: Number(item.duration) || 0,
+        pipelineStatus: item.status || 'queued',
+        transcriptionStatus: item.status || 'queued',
+        transcriptOutcome: '',
+        processingStartedAt: item.processingStartedAt || undefined,
+        processingEndedAt: item.status === 'done' ? new Date().toISOString() : undefined,
+      },
+    ],
+  };
+}
+
+function mergeMeetingsWithPendingImports(userMeetings = [], recordingQueue = []) {
+  const meetings = Array.isArray(userMeetings) ? userMeetings : [];
+  const queue = Array.isArray(recordingQueue) ? recordingQueue : [];
+  const knownMeetingIds = new Set(meetings.map((meeting) => meeting?.id).filter(Boolean));
+  const optimisticImports = queue
+    .filter((item) => item?.meetingId && !knownMeetingIds.has(item.meetingId))
+    .map((item) => buildOptimisticMeetingFromQueueItem(item));
+
+  return [...optimisticImports, ...meetings];
+}
+
 function UnifiedLibrary({
   userMeetings,
+  recordingQueue,
   selectedMeeting,
   selectMeeting,
   setActiveTab,
@@ -243,7 +286,8 @@ function UnifiedLibrary({
 
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
-    userMeetings.forEach((m) => {
+    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    meetingsWithImports.forEach((m) => {
       if (Array.isArray(m.tags)) {
         m.tags.forEach((t) => {
           if (t && t.trim()) tags.add(t.trim());
@@ -251,11 +295,12 @@ function UnifiedLibrary({
       }
     });
     return Array.from(tags).sort();
-  }, [userMeetings]);
+  }, [recordingQueue, userMeetings]);
 
   const allParticipants = React.useMemo(() => {
     const parts = new Set<string>();
-    userMeetings.forEach((m) => {
+    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    meetingsWithImports.forEach((m) => {
       if (m.owner) parts.add(m.owner.trim());
       if (Array.isArray(m.guests)) {
         m.guests.forEach((g) => {
@@ -264,7 +309,7 @@ function UnifiedLibrary({
       }
     });
     return Array.from(parts).sort();
-  }, [userMeetings]);
+  }, [recordingQueue, userMeetings]);
 
   const [sortConfig, setSortConfig] = React.useState<{
     key: 'startsAt' | 'title' | 'durationMinutes' | 'recordingsCount' | 'speakerCount';
@@ -284,7 +329,8 @@ function UnifiedLibrary({
   };
 
   const sortedAndFiltered = React.useMemo(() => {
-    return [...userMeetings]
+    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    return [...meetingsWithImports]
       .filter((m) => {
         if (dateFilter) {
           const d = m.startsAt || m.createdAt;
@@ -338,7 +384,15 @@ function UnifiedLibrary({
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [userMeetings, searchQuery, dateFilter, tagFilter, participantFilter, sortConfig]);
+  }, [
+    recordingQueue,
+    userMeetings,
+    searchQuery,
+    dateFilter,
+    tagFilter,
+    participantFilter,
+    sortConfig,
+  ]);
 
   const [isDragging, setIsDragging] = React.useState(false);
   const dragCounter = React.useRef(0);
@@ -677,7 +731,9 @@ function UnifiedLibrary({
           </div>
         </div>
       </div>
-      <RecordingsStatsBar meetings={userMeetings} />
+      <RecordingsStatsBar
+        meetings={mergeMeetingsWithPendingImports(userMeetings, recordingQueue)}
+      />
       <div className="studio-recordings-table-wrap">
         {sortedAndFiltered.length ? (
           <table className="studio-recordings-table">
@@ -729,6 +785,7 @@ function UnifiedLibrary({
                     : null}
                 </th>
                 <th style={{ width: '10%' }}>Status</th>
+                <th style={{ width: '12%' }}>Czas przetwarzania</th>
                 <th style={{ width: '19%' }}>Tagi</th>
                 <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
               </tr>
@@ -774,6 +831,39 @@ function UnifiedLibrary({
                   </td>
                   <td>
                     <AiStatusBadge meeting={m} />
+                  </td>
+                  <td style={{ color: 'var(--muted)' }}>
+                    {m.processingStartedAt ? (
+                      <ProcessingTimer
+                        startedAt={m.processingStartedAt}
+                        className="recording-processing-timer"
+                        prefix={false}
+                      />
+                    ) : m.recordings?.length > 0 ? (
+                      // Compute total processing time from completed recordings
+                      (() => {
+                        const completedRecording = m.recordings.find(
+                          (r) =>
+                            r.pipelineStatus === 'done' || r.transcriptionStatus === 'completed'
+                        );
+                        const rec = completedRecording as Record<string, unknown> | undefined;
+                        if (rec?.processingEndedAt && rec?.processingStartedAt) {
+                          const start = new Date(rec.processingStartedAt as string).getTime();
+                          const end = new Date(rec.processingEndedAt as string).getTime();
+                          const elapsed = Math.max(0, end - start);
+                          const totalSeconds = Math.floor(elapsed / 1000);
+                          const minutes = Math.floor(totalSeconds / 60);
+                          const seconds = totalSeconds % 60;
+                          if (minutes > 0) {
+                            return `${minutes} min ${seconds} s`;
+                          }
+                          return `${seconds} s`;
+                        }
+                        return '—';
+                      })()
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td>
                     <div
@@ -1100,6 +1190,7 @@ export default function RecordingsTab(props) {
                     progressPercent={progressPercent}
                     stageLabel={stageLabel}
                     errorMessage={item.errorMessage}
+                    processingStartedAt={item.processingStartedAt}
                     onRetry={
                       (item.status === 'failed' || item.status === 'failed_permanent') &&
                       retryRecordingQueueItem
@@ -1121,6 +1212,7 @@ export default function RecordingsTab(props) {
       <main className="recordings-tab-content">
         <UnifiedLibrary
           userMeetings={userMeetings}
+          recordingQueue={recordingQueue}
           selectedMeeting={selectedMeeting}
           selectMeeting={selectMeeting}
           setActiveTab={setActiveTab}

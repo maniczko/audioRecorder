@@ -26,15 +26,15 @@
 }
 
 .card.sm {
-  max-width: 440px;
+  max-width: min(440px, calc(100vw - 24px));
 }
 
 .card.md {
-  max-width: 600px;
+  max-width: min(600px, calc(100vw - 24px));
 }
 
 .card.lg {
-  max-width: 780px;
+  max-width: min(780px, calc(100vw - 24px));
 }
 
 .card.danger {
@@ -59,9 +59,11 @@
 }
 
 .closeBtn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted, var(--text-2, #94a3b8));

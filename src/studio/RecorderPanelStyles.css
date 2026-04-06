@@ -173,3 +173,20 @@
   animation: bar-bounce 0.15s ease-out;
   transition: height 0.08s ease-out;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Recorder Panel                               */
+/* ================================================================ */
+@media (max-width: 480px) {
+  .visualizer {
+    min-height: 80px;
+  }
+
+  .visualizer-bars {
+    height: 56px;
+  }
+
+  .recorder-body {
+    gap: 12px;
+  }
+}

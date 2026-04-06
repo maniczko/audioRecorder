@@ -155,6 +155,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         fi
     fi
     
+    log_info "Uruchamianie release guard (testy krytyczne + build)..."
+    if ! pnpm run test:release:guard; then
+        log_error "Release guard nie przeszedl. Push zostal zablokowany."
+        exit 1
+    fi
+
     # Push
     if git push origin "$CURRENT_BRANCH"; then
         log_success "Push zakończony sukcesem!"

@@ -146,7 +146,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
-  width: 360px;
+  width: min(360px, calc(100vw - 32px));
   max-height: 80vh;
   overflow-y: auto;
   z-index: var(--z-index-popover, 600);

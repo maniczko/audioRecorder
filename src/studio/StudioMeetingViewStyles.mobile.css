@@ -107,3 +107,24 @@
     display: none;
   }
 }
+
+/* ================================================================ */
+/* ff-player-bar compact on mobile                                  */
+/* ================================================================ */
+@media (max-width: 768px) {
+  .ff-player-bar {
+    padding: 10px 16px;
+    min-height: 56px;
+  }
+
+  .ff-player-main {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ff-player-bar {
+    padding: 8px 12px;
+    min-height: 48px;
+  }
+}

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import RecordingsTab from './RecordingsTab';
 import { ToastProvider } from './shared/Toast';
 
@@ -142,5 +142,49 @@ describe('RecordingsTab', () => {
       selectedMeeting.recordings[0]
     );
     expect(screen.getByText(/Chunki z tekstem: 0\/2/i)).toBeInTheDocument();
+  });
+
+  test('Regression: pending import is visible in the main list before meetings store catches up', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={mockMeetings}
+          recordingQueue={[
+            {
+              id: 'rec_import',
+              recordingId: 'rec_import',
+              meetingId: 'meeting_import',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import: Nowe nagranie',
+              meetingSnapshot: {
+                id: 'meeting_import',
+                workspaceId: 'ws1',
+                title: 'Import: Nowe nagranie',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'queued',
+              uploaded: false,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: '',
+              createdAt: '2026-04-06T08:00:00.000Z',
+              updatedAt: '2026-04-06T08:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    const table = screen.getByRole('table');
+    const titleCell = within(table).getByText('Import: Nowe nagranie');
+    expect(titleCell).toBeInTheDocument();
+    const importRow = titleCell.closest('tr');
+    expect(importRow).not.toBeNull();
+    expect(within(importRow as HTMLElement).getByText('W toku')).toBeInTheDocument();
   });
 });

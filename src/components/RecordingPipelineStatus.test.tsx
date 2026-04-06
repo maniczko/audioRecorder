@@ -220,4 +220,24 @@ describe('RecordingPipelineStatus', () => {
     const spinner = container.querySelector('.status-spinner');
     expect(spinner).toBeNull();
   });
+
+  test('shows processing timer when processingStartedAt is provided', () => {
+    const { container } = render(
+      <RecordingPipelineStatus
+        status="processing"
+        progressMessage="Processing..."
+        processingStartedAt="2026-04-06T12:00:00.000Z"
+      />
+    );
+    const timer = container.querySelector('.pipeline-processing-timer');
+    expect(timer).toBeInTheDocument();
+  });
+
+  test('does not show processing timer when processingStartedAt is not provided', () => {
+    const { container } = render(
+      <RecordingPipelineStatus status="processing" progressMessage="Processing..." />
+    );
+    const timer = container.querySelector('.pipeline-processing-timer');
+    expect(timer).toBeNull();
+  });
 });

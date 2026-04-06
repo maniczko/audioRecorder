@@ -138,6 +138,22 @@ describe('useWorkspaceData', () => {
     expect(result.current.isHydratingRemoteState).toBe(false);
   });
 
+  test('Regression: #0 — tolerates partially hydrated meetings store state', () => {
+    workspaceState.users = undefined as any;
+    workspaceState.workspaces = undefined as any;
+    meetingsState.meetings = undefined as any;
+    meetingsState.manualTasks = undefined as any;
+    meetingsState.taskBoards = undefined as any;
+    meetingsState.calendarMeta = undefined as any;
+    meetingsState.vocabulary = undefined as any;
+
+    const { result } = renderHook(() => useWorkspaceData());
+
+    expect(result.current.userMeetings).toEqual([]);
+    expect(workspaceState.setUsers).not.toHaveBeenCalled();
+    expect(workspaceState.setWorkspaces).not.toHaveBeenCalled();
+  });
+
   test('applies remote workspace state through store setters', () => {
     workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
 
@@ -329,6 +345,36 @@ describe('useWorkspaceData', () => {
     expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith(
       'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.'
     );
+    unmount();
+  });
+
+  test('treats preview connection timeout as expected transport failure', async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
+    httpClientMock.probeRemoteApiHealth.mockRejectedValue(
+      new Error('timeout exceeded when trying to connect')
+    );
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'preview-deployment.vercel.app' },
+    });
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+    });
+
+    expect(warnSpy).not.toHaveBeenCalledWith(
+      'Hosted preview health probe failed.',
+      expect.anything()
+    );
+    expect(meetingsState.setWorkspaceMessage).toHaveBeenCalledWith(
+      'Hostowany preview nie moze polaczyc sie z backendem. Odswiez strone lub otworz najnowszy deploy.'
+    );
+    expect(stateServiceMock.bootstrap).not.toHaveBeenCalled();
     unmount();
   });
 

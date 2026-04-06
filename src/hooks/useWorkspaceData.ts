@@ -15,6 +15,7 @@ import {
   normalizeWorkspaceState,
   serializeWorkspaceState,
 } from '../shared/contracts';
+import { isConnectionTimeoutErrorMessage, isTransportErrorMessage } from '../lib/transportErrors';
 
 const REMOTE_PULL_COOLDOWN_MS = 25000;
 const BOOTSTRAP_RECOVERY_DELAY_MS = 10000;
@@ -27,23 +28,17 @@ const HOSTED_PREVIEW_STALE_MESSAGE =
   'Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.';
 
 function isBackendUnavailableMessage(message = '') {
-  const normalized = String(message || '').toLowerCase();
   return (
-    normalized.includes('nieaktualny wzgledem backendu') ||
-    normalized.includes('backend jest chwilowo niedostepny') ||
-    normalized.includes('application failed to respond') ||
-    normalized.includes('router_external_target_connection_error') ||
-    normalized.includes('bad gateway') ||
-    normalized.includes('target connection error') ||
-    normalized.includes('upstream') ||
-    normalized.includes('failed to fetch') ||
-    normalized.includes('networkerror') ||
-    normalized.includes('load failed') ||
-    normalized.includes('http 502') ||
-    normalized.includes('browser offline') ||
-    normalized.includes('name not resolved') ||
-    normalized.includes('internet disconnected') ||
-    normalized.includes('health probe cooldown active')
+    String(message || '')
+      .toLowerCase()
+      .includes('nieaktualny wzgledem backendu') ||
+    String(message || '')
+      .toLowerCase()
+      .includes('http 502') ||
+    String(message || '')
+      .toLowerCase()
+      .includes('browser offline') ||
+    isTransportErrorMessage(message)
   );
 }
 
@@ -65,6 +60,18 @@ export default function useWorkspaceData() {
     setVocabulary,
     setWorkspaceMessage,
   } = useMeetingsStore();
+
+  const safeUsers = Array.isArray(users) ? users : [];
+  const safeWorkspaces = Array.isArray(workspaces) ? workspaces : [];
+  const safeMeetings = Array.isArray(meetings) ? meetings : [];
+  const safeManualTasks = Array.isArray(manualTasks) ? manualTasks : [];
+  const safeTaskBoards =
+    taskBoards && typeof taskBoards === 'object' && !Array.isArray(taskBoards) ? taskBoards : {};
+  const safeCalendarMeta =
+    calendarMeta && typeof calendarMeta === 'object' && !Array.isArray(calendarMeta)
+      ? calendarMeta
+      : {};
+  const safeVocabulary = Array.isArray(vocabulary) ? vocabulary : [];
 
   const stateService = useMemo(() => createStateService(), []);
   const syncTimerRef = useRef<number | null>(null);
@@ -189,7 +196,8 @@ export default function useWorkspaceData() {
       const rawMessage = String((error as any)?.message || '');
       const errorMessage = rawMessage.toLowerCase();
       const isAbortError = errorName.includes('abort') || errorMessage.includes('aborted');
-      const isExpectedTransportFailure = isBackendUnavailableMessage(rawMessage);
+      const isExpectedTransportFailure =
+        isBackendUnavailableMessage(rawMessage) || isConnectionTimeoutErrorMessage(rawMessage);
       if (!isAbortError && !isExpectedTransportFailure) {
         logRemoteErrorOnce('Hosted preview health probe failed.', error);
       }
@@ -205,7 +213,7 @@ export default function useWorkspaceData() {
   // Migration effect - run when source data changes
   useEffect(() => {
     // Create a unique key for this migration state to avoid re-applying
-    const migrationKey = `${users.length}-${workspaces.length}-${meetings.length}-${manualTasks.length}-${Object.keys(taskBoards).length}-${session?.token || ''}`;
+    const migrationKey = `${safeUsers.length}-${safeWorkspaces.length}-${safeMeetings.length}-${safeManualTasks.length}-${Object.keys(safeTaskBoards).length}-${session?.token || ''}`;
 
     // Skip if we already applied this exact migration
     if (migrationAppliedRef.current === migrationKey) {
@@ -213,11 +221,11 @@ export default function useWorkspaceData() {
     }
 
     const migration = migrateWorkspaceData({
-      users,
-      workspaces,
-      meetings,
-      manualTasks,
-      taskBoards,
+      users: safeUsers,
+      workspaces: safeWorkspaces,
+      meetings: safeMeetings,
+      manualTasks: safeManualTasks,
+      taskBoards: safeTaskBoards,
       session,
     });
 
@@ -237,7 +245,7 @@ export default function useWorkspaceData() {
     setManualTasks(migration.manualTasks);
     setTaskBoards(migration.taskBoards);
     setSession(migration.session);
-  }, [users, workspaces, meetings, manualTasks, taskBoards, session]);
+  }, [safeUsers, safeWorkspaces, safeMeetings, safeManualTasks, safeTaskBoards, session]);
 
   useEffect(() => {
     if (stateService?.mode !== 'remote') {
@@ -335,12 +343,12 @@ export default function useWorkspaceData() {
     }
 
     const payload = {
-      meetings,
-      manualTasks,
+      meetings: safeMeetings,
+      manualTasks: safeManualTasks,
       taskState,
-      taskBoards,
-      calendarMeta,
-      vocabulary,
+      taskBoards: safeTaskBoards,
+      calendarMeta: safeCalendarMeta,
+      vocabulary: safeVocabulary,
     };
     const nextState = normalizeWorkspaceState(payload);
     const nextSnapshot = serializeWorkspaceState(nextState);
@@ -376,17 +384,17 @@ export default function useWorkspaceData() {
     };
   }, [
     applyRemoteTransportCooldown,
-    calendarMeta,
-    vocabulary,
+    safeCalendarMeta,
+    safeVocabulary,
     currentWorkspaceId,
     isHydratingRemoteState,
     logRemoteErrorOnce,
-    manualTasks,
-    meetings,
+    safeManualTasks,
+    safeMeetings,
     pushWorkspaceMessage,
     session?.token,
     stateService,
-    taskBoards,
+    safeTaskBoards,
     taskState,
   ]);
 
@@ -506,14 +514,14 @@ export default function useWorkspaceData() {
   const userMeetings = useMemo(
     () =>
       currentWorkspaceId
-        ? [...meetings]
+        ? [...safeMeetings]
             .filter((meeting) => meeting.workspaceId === currentWorkspaceId)
             .sort(
               (left, right) =>
                 new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
             )
         : [],
-    [currentWorkspaceId, meetings]
+    [currentWorkspaceId, safeMeetings]
   );
 
   const pauseRemotePull = useCallback((durationMs = 3000) => {

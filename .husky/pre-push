@@ -1,16 +1,16 @@
 #!/bin/sh
 
-# Pre-push hook - runs tests before allowing push
-# This prevents pushing code with failing tests
+# Pre-push hook - runs release guard before allowing push
+# This prevents pushing code with failing critical checks
 
-echo "Running server tests before push..."
-npm run test:server:retry
+echo "Running release guard before push..."
+pnpm run test:release:guard
 
 if [ $? -ne 0 ]; then
-  echo "❌ Server tests failed! Push blocked."
-  echo "Fix the failing tests and try again."
+  echo "Release guard failed! Push blocked."
+  echo "Fix the failing checks and try again."
   exit 1
 fi
 
-echo "✅ Server tests passed! Push allowed."
+echo "Release guard passed! Push allowed."
 exit 0

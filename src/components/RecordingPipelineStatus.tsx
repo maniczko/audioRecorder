@@ -1,6 +1,7 @@
 import React from 'react';
 import './RecordingPipelineStatus.css';
 import { ProgressBar } from './ProgressBar';
+import { ProcessingTimer } from './ProcessingTimer';
 
 interface RecordingPipelineStatusProps {
   status: string;
@@ -10,6 +11,8 @@ interface RecordingPipelineStatusProps {
   stageLabel?: string;
   onRetry?: () => void;
   className?: string;
+  /** ISO timestamp when processing started — shows elapsed time during processing */
+  processingStartedAt?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,6 +33,7 @@ export function RecordingPipelineStatus({
   stageLabel = '',
   onRetry,
   className = '',
+  processingStartedAt,
 }: RecordingPipelineStatusProps) {
   const isFailed = status === 'failed';
   const inProgress = ['uploading', 'queued', 'processing', 'diarization'].includes(status);
@@ -68,6 +72,12 @@ export function RecordingPipelineStatus({
           {stageLabel && progressMessage && stageLabel !== progressMessage ? (
             <span className="pipeline-progress-subtext">{progressMessage}</span>
           ) : null}
+          {processingStartedAt && (
+            <ProcessingTimer
+              startedAt={processingStartedAt}
+              className="pipeline-processing-timer"
+            />
+          )}
         </div>
       )}
 

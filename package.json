@@ -59,6 +59,10 @@
   "scripts": {
     "start": "vite",
     "start:server": "tsx server/index.ts",
+    "dashboard": "pnpm run test:generate && start scripts/test-dashboard.html",
+    "dashboard:open": "start scripts/test-dashboard.html",
+    "test:generate": "node scripts/generate-test-results.js",
+    "test:with-report": "npx vitest run --reporter=json --outputFile=reports/vitest-results.json && pnpm run test:generate && pnpm run dashboard:open",
     "start:server:watch": "tsx --watch server/index.ts",
     "start:server:datadog": "DD_APM_ENABLED=true tsx --require ./server/datadog.ts server/index.ts",
     "start:server:newrelic": "NEW_RELIC_ENABLED=true tsx --require ./newrelic.cjs server/index.ts",
@@ -132,6 +136,7 @@
     "test:server": "vitest run -c server/vitest.config.ts",
     "test:server:retry": "vitest run -c server/vitest.config.ts --retry=3",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
+    "test:release:guard": "pnpm run test:server:retry && pnpm exec vitest run src/services/httpClient.test.ts src/hooks/useWorkspaceData.test.tsx src/store/recorderStore.test.ts scripts/validate-husky-hooks.test.ts --coverage.enabled=false && pnpm run build",
     "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/assign-task-agents.test.ts scripts/task-agent-runner.test.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

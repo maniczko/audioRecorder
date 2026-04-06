@@ -682,3 +682,68 @@ describe('Regression: Issue #0 — circuit breaker prevents retry storms', () =>
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+// ----------------------------------------------------------------
+// Issue #0 - Vercel preview timeout message bypasses transport guards
+// Date: 2026-04-06
+// Bug: the platform error text "timeout exceeded when trying to connect"
+//      was not classified as a transport failure, so the client skipped
+//      friendly messaging, probe retries and higher-level cooldown logic.
+// Fix: treat connection-timeout variants as transport failures everywhere.
+// ----------------------------------------------------------------
+describe('Regression: Issue #0 - timeout exceeded when trying to connect is treated as transport failure', () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    vi.useFakeTimers();
+    resetCircuitBreaker();
+    resetProbeDedup();
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.useRealTimers();
+    resetCircuitBreaker();
+  });
+
+  it('normalizes Vercel proxy timeout responses to backend unavailable', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ message: 'timeout exceeded when trying to connect' }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    }) as any;
+
+    const error = await apiRequest('/state/bootstrap', { retries: 0 }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
+      'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'
+    );
+    expect((error as Error & { status: number }).status).toBe(500);
+  });
+
+  it('retries health probe when Vercel reports timeout exceeded when trying to connect', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('timeout exceeded when trying to connect'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ status: 'ok', gitSha: 'abc123' }),
+        text: () => Promise.resolve('{"status":"ok","gitSha":"abc123"}'),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      });
+
+    const promise = probeRemoteApiHealth(fetchMock as any, 2);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    await expect(promise).resolves.toEqual({ status: 'ok', gitSha: 'abc123' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});

@@ -553,7 +553,8 @@
   align-items: center;
   justify-content: stretch;
   padding: 16px 32px;
-  height: 120px;
+  height: auto;
+  min-height: 64px;
   background: var(--bg-panel-strong, rgba(7, 17, 27, 0.94));
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -812,12 +813,13 @@
   left: 0;
   z-index: 200;
   min-width: 200px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  max-width: min(320px, calc(100vw - 32px));
+  background: var(--bg-panel, #1e293b);
+  border: 1px solid var(--surface-stroke, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.13),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   padding: 4px 0;
   animation: ff-dropdown-in 0.12s ease;

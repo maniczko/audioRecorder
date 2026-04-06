@@ -494,6 +494,48 @@ describe('recorderStore', () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('queued');
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - Vercel proxy timeouts were treated as permanent failures
+  // Date: 2026-04-06
+  // Bug: "timeout exceeded when trying to connect" was not classified as a
+  //      transient network error, so queue items failed immediately instead
+  //      of backing off and retrying after preview/backend transport outages.
+  // Fix: classify proxy connection timeouts as transient and requeue.
+  // -----------------------------------------------------------------
+  test('Regression: retries queue item when Vercel proxy times out connecting to backend', async () => {
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
+
+    mocks.createMediaService.mockReturnValue({
+      mode: 'remote',
+      persistRecordingAudio: vi.fn().mockResolvedValue({}),
+      startTranscriptionJob: vi
+        .fn()
+        .mockRejectedValue(new Error('timeout exceeded when trying to connect')),
+      subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+    });
+
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        { recordingId: 'rec_proxy_timeout', status: 'queued', uploaded: false, retryCount: 0 },
+      ],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
+
+    const queueItem = useRecorderStore.getState().recordingQueue[0];
+    expect(queueItem.status).toBe('queued');
+    expect(queueItem.retryCount).toBe(1);
+    expect(queueItem.backoffUntil).toBeGreaterThan(Date.now());
+    expect(queueItem.lastErrorMessage).toBe(
+      'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'
+    );
+    expect(queueItem.errorMessage).toBe('');
+    expect(useRecorderStore.getState().analysisStatus).toBe('queued');
+  });
+
   test('maps empty-stt-output failures to a recording quality message', async () => {
     mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 

@@ -10,7 +10,9 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(type *)",
+      "Bash(git stash)"
     ]
   },
   "$version": 3

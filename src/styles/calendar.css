@@ -649,6 +649,59 @@
 
 .calendar-week-view {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Calendar (2026-04-06)                        */
+/* ================================================================ */
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 56px;
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+
+  .calendar-weekday {
+    padding: 6px 4px;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+  }
+
+  .calendar-day .calendar-event-pill {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-day {
+    min-height: 44px;
+    padding: 4px;
+    font-size: 0.75rem;
+  }
+
+  /* Hide event details in cells, show dot indicator only */
+  .calendar-day .calendar-event-pill span {
+    display: none;
+  }
+
+  .calendar-day .calendar-event-pill {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    border-radius: 50%;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .calendar-weekday {
+    padding: 4px 2px;
+    font-size: 0.6rem;
+  }
 }
 
 .primary-button:not(:disabled):hover,

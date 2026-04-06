@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceLog Test Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+      color: #1a202c;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .timestamp {
+      color: #718096;
+      font-size: 0.9rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .stat-card h3 {
+      font-size: 0.85rem;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card.pass .value { color: #48bb78; }
+    .stat-card.fail .value { color: #f56565; }
+    .stat-card.skip .value { color: #ed8936; }
+    .stat-card.total .value { color: #667eea; }
+    .stat-card.coverage .value { color: #9f7aea; }
+
+    .stat-card .trend {
+      font-size: 0.9rem;
+      color: #4a5568;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .chart-card h3 {
+      margin-bottom: 1rem;
+      color: #2d3748;
+    }
+
+    .section {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+      margin-bottom: 1.5rem;
+      color: #2d3748;
+      font-size: 1.5rem;
+    }
+
+    .failures-list {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .failure-item {
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff5f5;
+      border-left: 4px solid #f56565;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .failure-item:hover {
+      background: #fed7d7;
+    }
+
+    .failure-item .file {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.25rem;
+    }
+
+    .failure-item .test {
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .failure-item .error {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      font-family: 'Courier New', monospace;
+      background: #fff;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: #e2e8f0;
+      border-radius: 1rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .badge.success { background: #c6f6d5; color: #22543d; }
+    .badge.danger { background: #fed7d7; color: #742a2a; }
+    .badge.warning { background: #feebc8; color: #7b341e; }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .file-tree {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+
+    .file-tree-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .file-tree-item:hover {
+      background: #f7fafc;
+    }
+
+    @media (max-width: 768px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧪 VoiceLog Test Dashboard</h1>
+      <div class="timestamp" id="timestamp"></div>
+      <div style="margin-top: 1rem;">
+        <span id="status-badge" class="badge"></span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="location.reload()">🔄 Refresh</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Report</button>
+      <a href="coverage/frontend/index.html" class="btn btn-secondary">📊 Coverage Report</a>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="section">
+      <h2>📈 Test Results Overview</h2>
+      <div class="progress-bar">
+        <div id="pass-rate-bar" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Test Distribution</h3>
+        <canvas id="tests-chart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Coverage by Category</h3>
+        <canvas id="coverage-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="section" id="failures-section" style="display: none;">
+      <h2>❌ Failed Tests (<span id="fail-count"></span>)</h2>
+      <div class="failures-list" id="failures-list"></div>
+    </div>
+
+    <div class="section">
+      <h2>📁 Test Files by Status</h2>
+      <div class="file-tree" id="file-tree"></div>
+    </div>
+  </div>
+
+  <script>
+    // Load test results
+    async function loadDashboard() {
+      try {
+        const response = await fetch('test-results.json');
+        const data = await response.json();
+        renderDashboard(data);
+      } catch (error) {
+        console.error('Failed to load test results:', error);
+        document.getElementById('timestamp').textContent = '⚠️ No test results found. Run tests first: pnpm test';
+      }
+    }
+
+    function renderDashboard(data) {
+      const { summary, files, failures } = data;
+      const passRate = ((summary.passed / summary.total) * 100).toFixed(1);
+
+      // Timestamp
+      document.getElementById('timestamp').textContent = 
+        `Last updated: ${new Date(data.timestamp).toLocaleString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`;
+
+      // Status badge
+      const badge = document.getElementById('status-badge');
+      if (summary.failed === 0) {
+        badge.className = 'badge success';
+        badge.textContent = '✓ ALL TESTS PASSING';
+      } else {
+        badge.className = 'badge danger';
+        badge.textContent = `✗ ${summary.failed} TESTS FAILING`;
+      }
+
+      // Stats cards
+      const statsGrid = document.getElementById('stats-grid');
+      statsGrid.innerHTML = `
+        <div class="stat-card total">
+          <h3>Total Tests</h3>
+          <div class="value">${summary.total}</div>
+          <div class="trend">across ${files.length} files</div>
+        </div>
+        <div class="stat-card pass">
+          <h3>Passed</h3>
+          <div class="value">${summary.passed}</div>
+          <div class="trend">${passRate}% success rate</div>
+        </div>
+        <div class="stat-card fail">
+          <h3>Failed</h3>
+          <div class="value">${summary.failed}</div>
+          <div class="trend">${summary.failed > 0 ? 'needs attention' : 'perfect! 🎉'}</div>
+        </div>
+        <div class="stat-card skip">
+          <h3>Skipped</h3>
+          <div class="value">${summary.skipped || 0}</div>
+          <div class="trend">${summary.skipped > 0 ? 'review needed' : 'none'}</div>
+        </div>
+      `;
+
+      // Pass rate bar
+      const bar = document.getElementById('pass-rate-bar');
+      bar.style.width = `${passRate}%`;
+      bar.textContent = `${passRate}% Passed`;
+      if (passRate < 70) {
+        bar.style.background = 'linear-gradient(90deg, #f56565 0%, #e53e3e 100%)';
+      } else if (passRate < 90) {
+        bar.style.background = 'linear-gradient(90deg, #ed8936 0%, #dd6b20 100%)';
+      }
+
+      // Tests chart
+      const testsCtx = document.getElementById('tests-chart').getContext('2d');
+      new Chart(testsCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Passed', 'Failed', 'Skipped'],
+          datasets: [{
+            data: [summary.passed, summary.failed, summary.skipped || 0],
+            backgroundColor: ['#48bb78', '#f56565', '#ed8936'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+
+      // Coverage chart (placeholder - would need coverage data)
+      const coverageCtx = document.getElementById('coverage-chart').getContext('2d');
+      new Chart(coverageCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Frontend', 'Backend'],
+          datasets: [{
+            label: 'Coverage %',
+            data: [data.coverage?.frontend || 55, data.coverage?.backend || 65],
+            backgroundColor: ['#667eea', '#9f7aea'],
+            borderWidth: 0,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+
+      // Failures list
+      if (failures.length > 0) {
+        document.getElementById('failures-section').style.display = 'block';
+        document.getElementById('fail-count').textContent = failures.length;
+        
+        const failuresList = document.getElementById('failures-list');
+        failuresList.innerHTML = failures.map(f => `
+          <div class="failure-item">
+            <div class="file">${f.file}</div>
+            <div class="test">${f.test}</div>
+            <div class="error">${f.error || 'Assertion failed'}</div>
+          </div>
+        `).join('');
+      }
+
+      // File tree
+      const fileTree = document.getElementById('file-tree');
+      const sortedFiles = files.sort((a, b) => {
+        if (a.failed > 0 && b.failed === 0) return -1;
+        if (a.failed === 0 && b.failed > 0) return 1;
+        return a.file.localeCompare(b.file);
+      });
+
+      fileTree.innerHTML = sortedFiles.map(f => `
+        <div class="file-tree-item">
+          <span>${f.failed > 0 ? '❌' : '✅'} ${f.file}</span>
+          <span>
+            ${f.failed > 0 
+              ? `<span style="color: #f56565; font-weight: 600;">${f.failed} failed</span>` 
+              : `<span style="color: #48bb78;">${f.passed} passed</span>`
+            }
+          </span>
+        </div>
+      `).join('');
+    }
+
+    // Initialize
+    loadDashboard();
+  </script>
+</body>
+</html>

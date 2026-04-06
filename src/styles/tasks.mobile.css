@@ -34,9 +34,22 @@
     padding: 16px;
   }
 
+  /* Kanban board - horizontal scroll with snap */
+  .kanban-board {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
   /* Kanban cards - stacked */
   .kanban-column {
-    min-width: 100%;
+    min-width: 85vw;
+    max-width: 85vw;
+    flex-shrink: 0;
+    scroll-snap-align: start;
   }
 
   .kanban-card {

@@ -126,3 +126,19 @@
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+.pipeline-processing-timer {
+  font-size: 0.72rem;
+  color: var(--text-3, #8f97ab);
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pipeline-processing-timer::before {
+  content: '⏱';
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+

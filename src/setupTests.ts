@@ -255,133 +255,118 @@ vi.mock('idb-keyval', () => ({
   update: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ── React Context mocks ──────────────────────────────────────────────
-// Global mocks for context hooks so tests don't crash when providers
-// are absent. Uses the @ alias which matches how modules are imported
-// throughout the codebase. Individual test files can override with
-// their own vi.mock calls if they need specific behavior.
+// ── react-virtuoso mock ──────────────────────────────────────────────
+// Virtual list component used throughout the app
+vi.mock('react-virtuoso', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as object),
+    Virtuoso: ({ data, itemContent, style }: any) => {
+      return React.createElement(
+        'div',
+        { style },
+        (data as any[]).map((item, index) =>
+          React.createElement('div', { key: index }, itemContent(index, item))
+        )
+      );
+    },
+  };
+});
 
-// RecorderContext mock
-const mockRecorderCtx = {
-  isRecording: false,
-  recordingMeetingId: null,
-  currentSegments: [],
-  audioUrls: {},
-  audioHydrationErrors: {},
-  audioHydrationStatusByRecordingId: {},
-  hydrateRecordingAudio: vi.fn(),
-  clearAudioHydrationError: vi.fn(),
-  startRecording: vi.fn(),
-  stopRecording: vi.fn(),
-  pauseRecording: vi.fn(),
-  resumeRecording: vi.fn(),
-  retryRecording: vi.fn(),
-  liveText: '',
-  liveTranscriptEnabled: false,
-  setLiveTranscriptEnabled: vi.fn(),
-  recordPermission: 'prompt',
-  speechRecognitionSupported: true,
-  elapsed: 0,
-  visualBars: new Array(20).fill(4),
-  voiceActivityStatus: 'idle',
-  silenceCountdown: null,
-  resetSilenceTimer: vi.fn(),
-  isPaused: false,
-  analysisStatus: 'idle',
-  activeQueueItem: null,
-  selectedMeetingQueue: [],
-  recordingMessage: '',
-  pipelineProgressPercent: 0,
-  pipelineStageLabel: '',
-  setRecordingMessage: vi.fn(),
-  retryRecordingQueueItem: vi.fn(),
-  retryStoredRecording: vi.fn(),
-  normalizeRecording: vi.fn(),
-};
+// ── Global useToast mock ─────────────────────────────────────────────
+// Toast notifications used throughout the app
+vi.mock('./shared/Toast', async (importOriginal) => {
+  const actual = await importOriginal();
+  const noopToast = {
+    show: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  };
+  return {
+    ...(actual as object),
+    useToast: () => noopToast,
+  };
+});
 
-vi.mock('@/context/RecorderContext', () => ({
-  RecorderProvider: ({ children }: any) => children,
-  useRecorderCtx: () => mockRecorderCtx,
-}));
+// ── Test Helper Utilities ────────────────────────────────────────────
+// These utilities help prevent common test issues:
+// - act() warnings from React 19
+// - Timer deadlocks with fakeTimers
+// - State update race conditions
 
-// GoogleContext mock
-const mockGoogleCtx = {
-  googleEnabled: false,
-  calendarEvents: [],
-  upcomingReminders: [],
-  googleCalendarEvents: [],
-  resetGoogleSession: vi.fn(),
-};
+/**
+ * Waits for all pending promises and microtasks to settle.
+ * Use this instead of manual waitFor when you just need to flush the queue.
+ *
+ * Example:
+ * ```ts
+ * await act(async () => {
+ *   hook.result.current.someAction();
+ * });
+ * await flushMicrotasks();
+ * expect(hook.result.current.state).toBe(expected);
+ * ```
+ */
+export async function flushMicrotasks() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => queueMicrotask(resolve));
+}
 
-vi.mock('@/context/GoogleContext', () => ({
-  GoogleProvider: ({ children }: any) => children,
-  useGoogleCtx: () => mockGoogleCtx,
-}));
+/**
+ * Safely enables fake timers with automatic cleanup.
+ * Prevents the common issue where timers aren't restored after tests.
+ *
+ * Example:
+ * ```ts
+ * describe('my test', () => {
+ *   const { advanceTime } = useFakeTimersSafely();
+ *
+ *   it('does something with timers', () => {
+ *     advanceTime(5000);
+ *     expect(something).toBe(expected);
+ *   });
+ * });
+ * ```
+ */
+export function useFakeTimersSafely() {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
 
-// WorkspaceContext mock
-const mockWorkspaceCtx = {
-  currentUser: { id: 'test-user', name: 'Test User', email: 'test@test.com' },
-  currentWorkspaceId: 'test-workspace',
-  currentWorkspaceMembers: [],
-  currentWorkspaceRole: 'admin',
-  currentWorkspacePermissions: { canEditWorkspace: true, canRecordAudio: true },
-  availableWorkspaces: [],
-  switchWorkspace: vi.fn(),
-  logout: vi.fn(),
-  updateWorkspaceMemberRole: vi.fn(),
-};
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-vi.mock('@/context/WorkspaceContext', () => ({
-  WorkspaceProvider: ({ children }: any) => children,
-  useWorkspaceCtx: () => mockWorkspaceCtx,
-}));
+  return {
+    /** Advance timers by specified milliseconds */
+    advanceTime: (ms: number) => vi.advanceTimersByTime(ms),
+    /** Run all pending timers */
+    runAllTimers: () => vi.runAllTimers(),
+    /** Run only timers that were scheduled before this call */
+    runOnlyPendingTimers: () => vi.runOnlyPendingTimers(),
+  };
+}
 
-// MeetingsContext mock
-const mockMeetingsCtx = {
-  userMeetings: [],
-  meetingTasks: [],
-  peopleProfiles: [],
-  selectedMeeting: null,
-  selectedRecording: null,
-  selectedRecordingId: '',
-  setSelectedRecordingId: vi.fn(),
-  taskNotifications: [],
-  calendarMeta: {},
-  selectMeeting: vi.fn(),
-  startNewMeetingDraft: vi.fn(),
-  syncLinkedGoogleCalendarEvents: vi.fn(),
-  createTaskFromComposer: vi.fn(),
-  resetSelectionState: vi.fn(),
-  taskColumns: [],
-  taskTags: [],
-};
-
-vi.mock('@/context/MeetingsContext', () => ({
-  MeetingsProvider: ({ children }: any) => children,
-  useMeetingsCtx: () => mockMeetingsCtx,
-}));
-
-// Store mocks
-vi.mock('@/store/uiStore', () => ({
-  useUIStore: vi.fn(() => ({
-    activeTab: 'studio',
-    setActiveTab: vi.fn(),
-    commandPaletteOpen: false,
-    setCommandPaletteOpen: vi.fn(),
-    notificationState: { items: [], unreadCount: 0, dismissedIds: [] },
-    notificationPermission: 'default',
-    setNotificationCenterOpen: vi.fn(),
-    dismissNotification: vi.fn(),
-    deliverBrowserNotifications: vi.fn(),
-    studioHomeSignal: false,
-    triggerStudioHome: vi.fn(),
-    setPendingTaskId: vi.fn(),
-    setPendingPersonId: vi.fn(),
-    tabHistory: [],
-  })),
-}));
-
-vi.mock('@/store/workspaceStore', () => ({
-  useWorkspaceStore: vi.fn(() => mockWorkspaceCtx),
-  useWorkspaceSelectors: vi.fn(() => mockWorkspaceCtx),
-}));
+/**
+ * Mock implementation helper that creates consistent store mocks.
+ * Prevents issues where individual test mocks miss required fields.
+ *
+ * Example:
+ * ```ts
+ * const mockStore = createMockStore({
+ *   someField: 'value',
+ *   someAction: vi.fn(),
+ * });
+ * ```
+ */
+export function createMockStore<T extends Record<string, any>>(
+  overrides: Partial<T>,
+  defaults: T
+): T {
+  return {
+    ...defaults,
+    ...overrides,
+  };
+}

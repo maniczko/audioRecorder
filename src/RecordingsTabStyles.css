@@ -2,7 +2,7 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 20px;
-  width: 380px;
+  width: min(380px, calc(100vw - 32px));
   background: rgba(8, 22, 36, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -145,6 +145,13 @@
 .studio-recordings-table tbody tr:last-child td {
   border-bottom: none;
 }
+
+.recording-processing-timer {
+  font-size: 0.78rem;
+  color: var(--text-3, #8f97ab);
+  font-variant-numeric: tabular-nums;
+}
+
 
 .recordings-library {
   margin: 0 0 24px;

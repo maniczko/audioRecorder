@@ -40,6 +40,8 @@ export interface RecordingQueueItem {
   pipelineBuildTime?: string;
   audioQuality?: unknown;
   transcriptionDiagnostics?: unknown;
+  /** Timestamp (ISO string) when processing started — used to compute elapsed processing time */
+  processingStartedAt?: string;
 }
 
 interface CreateRecordingQueueItemInput {

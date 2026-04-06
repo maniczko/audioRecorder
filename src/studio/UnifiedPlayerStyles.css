@@ -644,3 +644,72 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* ================================================================ */
+/* MOBILE RESPONSIVE - Unified Player                               */
+/* ================================================================ */
+@media (max-width: 768px) {
+  .unified-player-bar {
+    gap: 8px;
+    padding: 10px 12px;
+    min-height: 52px;
+    flex-wrap: wrap;
+  }
+
+  .uplayer-speaker-chip {
+    display: none;
+  }
+
+  .uplayer-speed-btn {
+    display: none;
+  }
+
+  .uplayer-time-cur,
+  .uplayer-time-total {
+    font-size: 0.72rem;
+    min-width: 32px;
+  }
+
+  .uplayer-track {
+    gap: 6px;
+  }
+
+  .uplayer-scrubber::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    margin-top: -8px;
+  }
+
+  .uplayer-scrubber::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  .uplayer-gain-meter {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .unified-player-bar {
+    gap: 6px;
+    padding: 8px;
+    min-height: 48px;
+  }
+
+  .uplayer-play-btn,
+  .uplayer-record-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .uplayer-stop-btn {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+  }
+
+  .uplayer-elapsed {
+    font-size: 0.9rem;
+    min-width: 44px;
+  }
+}

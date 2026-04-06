@@ -1,6 +1,7 @@
 import { API_BASE_URL, apiBaseUrlConfigured } from './config';
 import { readLegacySession, readWorkspacePersistedSession } from '../lib/sessionStorage';
 import { getHostedRuntimeBuildId, isHostedPreviewHost } from '../runtime/browserRuntime';
+import { isTransportErrorMessage } from '../lib/transportErrors';
 
 const unauthorizedHandlers = new Set();
 let previewRuntimeStatus = 'unknown';
@@ -69,22 +70,7 @@ function isHostedPreviewRuntime() {
 }
 
 function isTransportFailureMessage(message = '') {
-  const normalized = String(message || '').toLowerCase();
-  return (
-    normalized.includes('upstream') ||
-    normalized.includes('failed to fetch') ||
-    normalized.includes('networkerror') ||
-    normalized.includes('load failed') ||
-    normalized.includes('bad gateway') ||
-    normalized.includes('target connection error') ||
-    normalized.includes('application failed to respond') ||
-    normalized.includes('router_external_target_connection_error') ||
-    normalized.includes('name not resolved') ||
-    normalized.includes('internet disconnected') ||
-    normalized.includes('health probe cooldown active') ||
-    normalized.includes('aborted') ||
-    normalized.includes('the operation was aborted')
-  );
+  return isTransportErrorMessage(message);
 }
 
 function browserIsOffline() {
@@ -269,11 +255,7 @@ async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
       lastError = error as Error;
 
       const msg = String((error as any)?.message || '').toLowerCase();
-      const isRetryable =
-        msg.includes('abort') ||
-        msg.includes('failed to fetch') ||
-        msg.includes('networkerror') ||
-        msg.includes('load failed');
+      const isRetryable = msg.includes('abort') || isTransportErrorMessage(msg);
       if (isRetryable && attempt < maxRetries) {
         const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000);
         console.warn(
@@ -354,13 +336,7 @@ async function fetchWithRetry(
 
       // Check if it's a network error that should be retried
       const errorMessage = String(error?.message || '').toLowerCase();
-      const isRetryable =
-        errorMessage.includes('failed to fetch') ||
-        errorMessage.includes('networkerror') ||
-        errorMessage.includes('load failed') ||
-        errorMessage.includes('aborted') ||
-        errorMessage.includes('upstream') ||
-        errorMessage.includes('bad gateway');
+      const isRetryable = isTransportErrorMessage(errorMessage);
 
       if (isRetryable && attempt < maxRetries) {
         const delayMs = Math.min(1000 * Math.pow(2, attempt), 15000);

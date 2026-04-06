@@ -288,9 +288,9 @@ describe('mediaService', () => {
       });
 
       expect(result.storageMode).toBe('remote');
-      expect(chunkSizes.length).toBe(4);
-      expect(chunkSizes.every((size) => size <= 3 * 1024 * 1024)).toBe(true);
-      expect(chunkSizes).toEqual([3, 3, 3, 2].map((mb) => mb * 1024 * 1024));
+      expect(chunkSizes.length).toBe(3);
+      expect(chunkSizes.every((size) => size <= 5 * 1024 * 1024)).toBe(true);
+      expect(chunkSizes).toEqual([5, 5, 1].map((mb) => mb * 1024 * 1024));
       expect(mockApiRequest).toHaveBeenCalledWith(
         '/media/recordings/rec-1/audio/finalize',
         expect.objectContaining({
@@ -298,7 +298,7 @@ describe('mediaService', () => {
           body: expect.objectContaining({
             workspaceId: 'ws-5',
             meetingId: 'mt-3',
-            total: 4,
+            total: 3,
           }),
         })
       );

@@ -117,3 +117,26 @@
   opacity: 0.85;
   transform: scale(0.97);
 }
+
+/* Mobile: position toast above player bar */
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: 150px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: 140px;
+    right: 8px;
+    left: 8px;
+  }
+
+  .toast {
+    font-size: 0.82rem;
+    padding: 10px 12px;
+  }
+}

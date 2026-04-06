@@ -72,6 +72,15 @@ select {
   }
 }
 
+/* Safe area insets for all mobile screens (not just <480px) */
+@media (max-width: 768px) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Ultra-compact mobile (max 480px) */
 @media (max-width: 480px) {
   /* Allow margin collapse for better spacing */
@@ -105,13 +114,6 @@ select {
   html {
     overflow-x: hidden;
     width: 100%;
-  }
-
-  /* Safe area insets for notched devices */
-  body {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 
   /* Smaller text on tiny screens */
@@ -171,6 +173,49 @@ select {
   /* Hide extra spacing */
   .spacer {
     display: none;
+  }
+
+  /* Reduce player bar impact in landscape */
+  .ff-player-bar {
+    padding: 8px 16px;
+    min-height: 48px;
+  }
+
+  /* Reduce modal height */
+  .card {
+    max-height: 85vh;
+  }
+
+  /* Compact header */
+  .modern-header {
+    height: 44px;
+  }
+}
+
+/* ================================================================ */
+/* scroll-padding for fixed player bar (all viewports)              */
+/* ================================================================ */
+html {
+  scroll-padding-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  html {
+    scroll-padding-bottom: 64px;
+  }
+}
+
+/* ================================================================ */
+/* Minimum font size — accessibility (mobile)                       */
+/* ================================================================ */
+@media (max-width: 768px) {
+  .ff-speaker-avatar,
+  .kanban-avatar,
+  .uplayer-speaker-chip,
+  .calendar-event-pill,
+  .notification-tone,
+  .mini-day {
+    font-size: max(0.7rem, 11px);
   }
 }
 
