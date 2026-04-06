@@ -568,4 +568,89 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-06T04:40:07.954Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-06T09:01:45.000Z -->
+
+### GitHub Actions Errors (9 found)
+
+- **GH-AUTO-2026-04-06-1** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-06T08:28:58.2897392Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2936700Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2964514Z ##[error]TypeError: Can...
+  - **Error:** 2026-04-06T08:28:58.2897392Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2936700Z ##[error]TypeError: Cannot read properties of undefined (reading 'l...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24024793231
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-2** — Fix Bundle Size Monitor failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Bundle Size Monitor. Szczegoly: 2026-04-06T07:19:22.2042108Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:22.2092193Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:22.2042108Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:22.2092193Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905275
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-3** — Fix AI Auto-Fix failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: AI Auto-Fix. Szczegoly: 2026-04-06T07:19:38.7699328Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:38.7749729Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:38.7699328Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:38.7749729Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905270
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-4** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-06T07:19:49.8283118Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:49.8323982Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:49.8283118Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:49.8323982Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905284
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-5** — Fix E2E Playwright Tests failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-06T07:19:50.9462368Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:50.9500811Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:50.9462368Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:50.9500811Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905279
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-6** — Fix Code Review failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:36.4829465Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:36.4879667Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:36.4829465Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:36.4879667Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-7** — Fix Code Review failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:27.6848977Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:27.6882134Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:19:27.6848977Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:27.6882134Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-8** — Fix Code Review failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:25.6673459Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:25.6705170Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:20:25.6673459Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:25.6705170Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-06-9** — Fix Code Review failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:26.0817229Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:26.0846645Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-06T07:20:26.0817229Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:26.0846645Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
+  - **Created:** 2026-04-06T09:01:45.000Z
+  - **Priority:** High
+
 
