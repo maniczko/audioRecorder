@@ -74,7 +74,7 @@ jobs:
 
       - name: Commit fixes
         if: steps.lint.outputs.lint_status == '0' || steps.format.outputs.format_status == '0'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: auto-fix ESLint and format errors'
           branch: ${{ github.head_ref }}

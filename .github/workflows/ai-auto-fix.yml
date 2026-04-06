@@ -78,7 +78,7 @@ jobs:
 
       - name: Commit auto-fixes
         if: steps.git-check.outputs.has_changes == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: auto-fix lint and formatting issues [skip ci]'
           commit_options: '--no-verify'
