@@ -497,8 +497,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect(data.message).toContain('Za dużo chunków');
       });
 
-      it('returns 413 when chunk > 3MB', async () => {
-        const largeChunk = Buffer.alloc(3 * 1024 * 1024 + 1, 0);
+      it('returns 413 when chunk > 6MB', async () => {
+        const largeChunk = Buffer.alloc(6 * 1024 * 1024 + 1, 0);
         const res = await app.request('/media/recordings/rec1/audio/chunk?index=0&total=5', {
           method: 'PUT',
           headers: {
