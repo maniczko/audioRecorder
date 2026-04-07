@@ -106,7 +106,10 @@ jobs:
               ``,
               ...sections,
               `---`,
-              `*Auto-created by \`ci-failure-triage\` workflow. Gemini High automatycznie naprawia.*`,
+              `*Auto-created by \`ci-failure-triage\` workflow.*`,
+              ``,
+              `> ⚠️ **Auto-fix jest wyłączony** (issue #437). PRy generowane przez AI nie rozwiązywały problemów i tworzyły nieskończoną pętlę.`,
+              `> Wymagana ręczna naprawa failing tests.`,
             ].join('\n');
 
             core.setOutput('title', `[CI] Fix failing tests after \`${shaShort}\`: ${jobNames}`);
@@ -172,8 +175,20 @@ jobs:
             core.summary.addRaw(`## 🤖 GPT fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
             await core.summary.write();
 
+      - name: Check if auto-fix is disabled
+        id: check_autofix
+        if: steps.check_dup.outputs.result == 'create'
+        uses: actions/github-script@v8
+        with:
+          result-encoding: string
+          script: |
+            // Auto-fix is disabled to prevent infinite PR loops.
+            // See: https://github.com/maniczko/audioRecorder/issues/437
+            console.log('Auto-fix is DISABLED — only creating issue, not triggering GPT fix.');
+            return 'disabled';
+
       - name: Trigger GPT Auto-Fix workflow
-        if: steps.check_dup.outputs.result == 'create' && steps.create_issue.outputs.issue_number != ''
+        if: steps.check_autofix.outputs.result != 'disabled' && steps.check_dup.outputs.result == 'create' && steps.create_issue.outputs.issue_number != ''
         uses: actions/github-script@v8
         env:
           ISSUE_TITLE: ${{ steps.build_issue.outputs.title }}
