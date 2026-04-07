@@ -5,6 +5,7 @@ import {
   applySpectralNoiseReduction,
   removeClicks,
   enhanceAudioQuality,
+  enhanceAndReencode,
 } from './audioEnhancer';
 
 // Mock OfflineAudioContext and related Web Audio API
@@ -289,6 +290,31 @@ describe('audioEnhancer', () => {
       expect(mono.numberOfChannels).toBe(1);
       expect(stereo.numberOfChannels).toBe(2);
       expect(multi.numberOfChannels).toBe(6);
+    });
+  });
+
+  describe('enhanceAndReencode', () => {
+    it('is an exported async function', () => {
+      expect(typeof enhanceAndReencode).toBe('function');
+    });
+
+    it('returns original blob when decodeAudioData fails', async () => {
+      const fakeBlob = new Blob(['not-audio-data'], { type: 'audio/webm' });
+
+      const mockClose = vi.fn().mockResolvedValue(undefined);
+      const mockDecodeAudioData = vi.fn().mockRejectedValue(new Error('Cannot decode'));
+
+      class MockAudioContext {
+        decodeAudioData = mockDecodeAudioData;
+        close = mockClose;
+      }
+      vi.stubGlobal('AudioContext', MockAudioContext);
+
+      const result = await enhanceAndReencode(fakeBlob);
+      expect(result).toBe(fakeBlob);
+      expect(mockClose).toHaveBeenCalled();
+
+      vi.unstubAllGlobals();
     });
   });
 });

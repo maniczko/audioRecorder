@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   filterSilence: vi.fn((blob: Blob) =>
     Promise.resolve({ blob, originalDurationS: 10, filteredDurationS: 10, removedS: 0 })
   ),
+  enhanceAndReencode: vi.fn((blob: Blob) => Promise.resolve(blob)),
 }));
 
 // Mock modules - these are hoisted
@@ -31,6 +32,11 @@ vi.mock('../services/httpClient', () => ({
 // VAD filter: return original blob (no silence removed) in tests
 vi.mock('../audio/vadFilter', () => ({
   filterSilence: mocks.filterSilence,
+}));
+
+// Audio enhancer: pass-through in tests
+vi.mock('../lib/audioEnhancer', () => ({
+  enhanceAndReencode: mocks.enhanceAndReencode,
 }));
 
 describe('recorderStore', () => {
@@ -711,6 +717,59 @@ describe('recorderStore', () => {
       expect(queueItem).toBeDefined();
       expect(queueItem!.status).toBe('failed');
       expect(queueItem!.errorMessage).toContain('Nie znaleziono spotkania');
+    });
+  });
+
+  describe('Regression: audio enhancement bitrate', () => {
+    test('enhanceAndReencode is called with targetBitrate 64000 to prevent 413 on Vercel', async () => {
+      const { useRecorderStore } = await import('./recorderStore');
+
+      const blob = new Blob([new Uint8Array(1024)], { type: 'audio/webm' });
+      mocks.getAudioBlob.mockResolvedValue(blob);
+      mocks.enhanceAndReencode.mockResolvedValue(blob);
+
+      const mockPersist = vi.fn().mockResolvedValue({ storageMode: 'remote', audioQuality: null });
+      const mockStartTranscription = vi.fn().mockResolvedValue({
+        pipelineStatus: 'done',
+        verifiedSegments: [],
+        diarization: {},
+        providerId: 'test',
+        providerLabel: 'test',
+      });
+      mocks.createMediaService.mockReturnValue({
+        mode: 'remote',
+        persistRecordingAudio: mockPersist,
+        startTranscriptionJob: mockStartTranscription,
+        getTranscriptionJobStatus: vi.fn(),
+        subscribeToTranscriptionProgress: vi.fn(() => () => {}),
+      });
+
+      useRecorderStore.setState({
+        recordingQueue: [
+          {
+            recordingId: 'rec_bitrate_test',
+            meetingId: 'mt1',
+            status: 'pending',
+            addedAt: Date.now(),
+            attempts: 0,
+            uploaded: false,
+            workspaceId: 'ws1',
+          },
+        ],
+      });
+
+      await useRecorderStore
+        .getState()
+        .processQueue(
+          () => ({ id: 'mt1', workspaceId: 'ws1' }),
+          vi.fn().mockReturnValue(true),
+          vi.fn()
+        );
+
+      expect(mocks.enhanceAndReencode).toHaveBeenCalledWith(
+        expect.any(Blob),
+        expect.objectContaining({ targetBitrate: 64000 })
+      );
     });
   });
 });

@@ -210,7 +210,7 @@ function createRemoteMediaService() {
     async persistRecordingAudio(recordingId, blob, options: any = {}) {
       const { workspaceId = '', meetingId = '', onProgress } = options;
       const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
-      const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB — fewer round-trips, backend allows up to 6MB
+      const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB — must stay under Vercel's ~4.5 MB serverless payload limit
       const MAX_UPLOAD_SIZE = 500 * 1024 * 1024; // 500 MB — matches server finalize limit
 
       if (blob && blob.size > MAX_UPLOAD_SIZE) {

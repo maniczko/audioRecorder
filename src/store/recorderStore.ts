@@ -430,7 +430,7 @@ export const useRecorderStore = create<any>()(
               uploadBlob = await enhanceAndReencode(uploadBlob as Blob, {
                 removeNoise: true,
                 normalizeVolume: true,
-                targetBitrate: 128000,
+                targetBitrate: 64000,
               });
             } catch (_) {
               /* fallback to pre-enhancement blob */

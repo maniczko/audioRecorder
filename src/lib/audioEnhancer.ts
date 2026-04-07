@@ -217,7 +217,7 @@ export async function enhanceAudioQuality(
  * Re-encode an AudioBuffer to WebM/Opus (or best supported format) via MediaRecorder.
  * Falls back to WAV if MediaRecorder is unavailable.
  */
-function reencode(buffer: AudioBuffer, targetBitrate = 128000): Promise<Blob> {
+function reencode(buffer: AudioBuffer, targetBitrate = 64000): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (typeof MediaRecorder === 'undefined') {
       // Fallback: return WAV if no MediaRecorder (unlikely in modern browsers)
@@ -290,7 +290,7 @@ export async function enhanceAndReencode(
     removeNoise = true,
     removeClicks: removeClicksOption = false,
     normalizeVolume = true,
-    targetBitrate = 128000,
+    targetBitrate = 64000,
   } = options;
 
   const arrayBuffer = await audioBlob.arrayBuffer();
