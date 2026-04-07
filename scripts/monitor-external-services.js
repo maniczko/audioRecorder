@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
+import { parseRailwayDeploymentsPayload, RAILWAY_DEPLOYMENTS_QUERY } from './railway-status.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -266,11 +267,9 @@ async function getRailwayStatus() {
     // Check for Railway config files
     const railwayJson = path.join(rootDir, 'railway.json');
     const railwayToml = path.join(rootDir, 'railway.toml');
-
     const hasConfig = fs.existsSync(railwayJson) || fs.existsSync(railwayToml);
-
     // Check for Railway environment variables
-    const hasRailwayEnv = !!(process.env.RAILWAY_TOKEN || process.env.RAILWAY_PROJECT_ID);
+    const hasRailwayEnv = !!(process.env.RAILWAY_TOKEN && process.env.RAILWAY_PROJECT_ID);
 
     if (!hasConfig && !hasRailwayEnv) {
       return {
@@ -280,13 +279,57 @@ async function getRailwayStatus() {
       };
     }
 
-    // If Railway is configured but no API token
+    if (!hasRailwayEnv) {
+      return {
+        status: hasConfig ? 'config-only' : 'not-configured',
+        configured: true,
+        has_token: false,
+        deployments: [],
+        last_deployment: null,
+        note: 'Set RAILWAY_TOKEN and RAILWAY_PROJECT_ID to get deployment status',
+      };
+    }
+
+    // Fetch deployments from Railway API
+    const token = process.env.RAILWAY_TOKEN;
+    const projectId = process.env.RAILWAY_PROJECT_ID;
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const api = async (query, variables = {}) => {
+      const res = await fetch(`https://backboard.railway.app/graphql/v2`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, variables })
+      });
+      if (!res.ok) throw new Error(`Railway API: ${res.status}`);
+      return res.json();
+    };
+
+    let deployments = [];
+    let lastDeployment = null;
+    let note;
+    let apiError = null;
+    try {
+      const data = await api(RAILWAY_DEPLOYMENTS_QUERY, { input: { projectId } });
+      const parsed = parseRailwayDeploymentsPayload(data);
+      deployments = parsed.deployments;
+      lastDeployment = parsed.lastDeployment;
+      note = parsed.note;
+      apiError = parsed.apiError;
+    } catch (e) {
+      deployments = [];
+      lastDeployment = null;
+      note = `Railway API request failed: ${e.message}`;
+      apiError = e.message;
+    }
+
     return {
-      status: hasRailwayEnv ? 'configured' : 'config-only',
+      status: deployments.length > 0 ? 'connected' : 'configured',
       configured: true,
-      has_token: hasRailwayEnv,
-      last_deployment: null,
-      note: 'Set RAILWAY_TOKEN to get deployment status',
+      has_token: true,
+      deployments,
+      last_deployment: lastDeployment,
+      note,
+      api_error: apiError,
     };
   } catch (error) {
     return { status: 'error', error: error.message };

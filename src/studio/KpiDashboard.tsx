@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { VercelDeploymentsChart } from './VercelDeploymentsChart';
 import { buildWorkspaceKpiDashboard } from '../lib/kpi';
 import './KpiDashboardStyles.css';
 
@@ -126,6 +127,11 @@ export default function KpiDashboard({ workspaceName, meetings, tasks }: any) {
           </div>
         )}
       </div>
+
+      {/* Vercel Deployments Chart (from window.EXTERNAL_SERVICES_DATA) */}
+      {typeof window !== 'undefined' && window.EXTERNAL_SERVICES_DATA?.vercel?.stats?.daily && (
+        <VercelDeploymentsChart stats={window.EXTERNAL_SERVICES_DATA.vercel.stats} />
+      )}
     </section>
   );
 }

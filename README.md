@@ -176,6 +176,30 @@ npm run test:smoke
 
 Workflowy Vercela wymagaja trzech sekretow GitHub Actions:
 
+## Railway Deployment & Monitoring
+
+Do monitorowania statusu deploymentu Railway oraz logów produkcyjnych:
+
+1. Wygeneruj token na https://railway.app/dashboard/account/tokens
+2. Ustaw w `.env`:
+
+   ```env
+   RAILWAY_TOKEN=rwpk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   RAILWAY_PROJECT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+   ```
+
+3. Uruchom ponownie backend lub skrypt monitorujący:
+
+   ```bash
+   node scripts/monitor-external-services.js
+   ```
+
+4. Status Railway pojawi się w dashboardzie (tab "Services") oraz w pliku `scripts/external-services.json`.
+
+**Uwaga:**
+- Jeśli nie ustawisz RAILWAY_TOKEN, status będzie widoczny jako "Config" bez szczegółów deploymentu.
+- RAILWAY_PROJECT_ID jest opcjonalny (przy wielu projektach).
+
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`

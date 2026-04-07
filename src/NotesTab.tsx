@@ -387,7 +387,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.decisions.map((d, i) => (
-                <li key={i}>{d}</li>
+                <li key={d+String(i)}>{d}</li>
               ))}
             </ul>
           </div>
@@ -401,7 +401,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.actionItems.map((a, i) => (
-                <li key={i}>{a}</li>
+                <li key={a+String(i)}>{a}</li>
               ))}
             </ul>
           </div>
@@ -415,7 +415,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.followUps.map((f, i) => (
-                <li key={i}>{f}</li>
+                <li key={f+String(i)}>{f}</li>
               ))}
             </ul>
           </div>
@@ -429,7 +429,7 @@ function NoteDetail({
             </div>
             <div className="notes-answers-grid">
               {note.answersToNeeds.map((item, i) => (
-                <div key={i} className="notes-answer-card">
+                <div key={(item.need||'')+(item.answer||'')+String(i)} className="notes-answer-card">
                   {item.need && <strong>{item.need}</strong>}
                   {item.answer && <p>{item.answer}</p>}
                 </div>
@@ -445,8 +445,8 @@ function NoteDetail({
               Markery audio ({note.markers.length})
             </div>
             <div className="notes-markers-list">
-              {note.markers.map((m) => (
-                <div key={m.id} className="notes-marker-item">
+              {note.markers.map((m, i) => (
+                <div key={m.id || m.label + String(i)} className="notes-marker-item">
                   <span className="notes-marker-time">
                     {String(Math.floor(Number(m.timestamp || 0) / 60)).padStart(2, '0')}:
                     {String(Math.floor(Number(m.timestamp || 0) % 60)).padStart(2, '0')}
@@ -469,7 +469,7 @@ function NoteDetail({
             </div>
             <div className="notes-attendees">
               {note.attendees.map((a, i) => (
-                <span key={i} className="notes-attendee-chip">
+                <span key={a+String(i)} className="notes-attendee-chip">
                   {a}
                 </span>
               ))}

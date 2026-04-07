@@ -8,6 +8,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { initDatabase, getDatabase } from '../../database.ts';
 import { fileURLToPath } from 'node:url';
+import { logger } from '../../logger.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -227,6 +228,40 @@ describe('Database - Additional Coverage Tests', () => {
       // Should not throw
       await expect(db.deleteMediaAsset('nonexistent', 'ws1')).resolves.toBeUndefined();
     });
+
+    test('Regression: #0 — ignores missing legacy audio files without warning noise', async () => {
+      if (!(await tablesExist())) return;
+
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const recordingId = 'rec_missing_legacy_file';
+      const missingPath = path.join(testUploadDir, 'missing-legacy-file.wav');
+
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`,
+        [
+          recordingId,
+          'ws1',
+          'm1',
+          'user1',
+          missingPath,
+          'audio/wav',
+          123,
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ]
+      );
+
+      await db.deleteMediaAsset(recordingId, 'ws1');
+
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Failed to delete legacy audio file'),
+        expect.anything(),
+        expect.anything()
+      );
+    });
   });
 
   describe('saveAudioQualityDiagnostics()', () => {
@@ -405,6 +440,60 @@ describe('Database - Additional Coverage Tests', () => {
       expect(profiles.filter((p: any) => p.id === 'vp_test5')).toHaveLength(0);
 
       unlinkSpy.mockRestore();
+    });
+
+    test('Regression: #0 — ignores missing voice profile files without Sentry noise', async () => {
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const missingPath = path.join(testUploadDir, 'missing-voice-profile.wav');
+
+      await db._execute(
+        `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, threshold, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'vp_missing_audio',
+          'u1',
+          'ws1',
+          'Speaker',
+          missingPath,
+          '[]',
+          1,
+          0.82,
+          new Date().toISOString(),
+        ]
+      );
+
+      await db.deleteVoiceProfile('vp_missing_audio', 'ws1');
+
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Failed to delete voice profile audio'),
+        expect.anything(),
+        expect.anything()
+      );
+    });
+  });
+
+  describe('checkHealth()', () => {
+    test('Regression: #0 — health-check failures stay out of Sentry noise', async () => {
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const originalSendToWorker = db._sendToWorker;
+
+      try {
+        db._sendToWorker = vi.fn().mockRejectedValue(new Error('database offline'));
+
+        await expect(db.checkHealth()).resolves.toEqual({
+          ok: false,
+          status: 'database offline',
+          type: 'sqlite',
+        });
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          '[DB] Health check failed:',
+          'database offline',
+          { sentry: false }
+        );
+      } finally {
+        db._sendToWorker = originalSendToWorker;
+      }
     });
   });
 

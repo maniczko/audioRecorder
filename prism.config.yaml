@@ -1,0 +1,13 @@
+# Prism Mock Server Configuration
+# Run: prism mock docs/openapi.yaml
+
+info:
+  title: VoiceLog API Mock
+  version: 1.0.0
+
+mock:
+  dynamic: true
+  validateRequest: true
+  validateResponse: true
+
+cors: true

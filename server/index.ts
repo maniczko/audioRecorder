@@ -13,6 +13,7 @@ import * as speakerEmbedder from './speakerEmbedder.ts';
 import { resolveServerPort } from './runtime.ts';
 import { initSentry } from './sentry.ts';
 import { classifyDiskSpace, DISK_SPACE_BLOCK_UPLOAD_BYTES } from './lib/diskSpace.ts';
+import { handleServerListenError } from './lib/serverErrorHandling.ts';
 
 initSentry();
 
@@ -206,8 +207,16 @@ if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
   bootstrap()
     .then(({ server, db }) => {
       logger.info(`Attempting to listen on ${HOST}:${PORT}...`);
-      server.on('error', (error) => {
-        logger.error('SERVER ERROR:', error);
+      server.on('error', async (error) => {
+        const result = handleServerListenError(error, HOST, PORT, logger);
+        if (result.shouldExit) {
+          try {
+            await db.shutdown();
+          } catch (_) {
+            // Best effort shutdown to avoid leaving workers around on failed boot.
+          }
+          process.exit(1);
+        }
       });
       server.listen(PORT, HOST, () => {
         logger.info(`VoiceLog API listening on http://${HOST}:${PORT} (test-ready architecture)`);

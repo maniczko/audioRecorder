@@ -125,3 +125,13 @@ github-errors/
 railway-errors/
 sentry-errors/
 vercel-errors/
+
+# Generated artifacts (agent/CI output)
+*-test-output.txt
+reports/
+scripts/external-services.js
+scripts/external-services.json
+scripts/test-results.js
+scripts/test-results.json
+scripts/test-dashboard-pro.html
+scripts/test-dashboard-standalone.html

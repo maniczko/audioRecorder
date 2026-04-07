@@ -575,7 +575,7 @@ export default function PeopleTab({
                   type="button"
                   key={profile.id}
                   className={selectedPerson?.id === profile.id ? 'person-row active' : 'person-row'}
-                  onClick={() => setSelectedPersonId(profile.id)}
+                  onClick={typeof setSelectedPersonId === 'function' ? () => setSelectedPersonId(profile.id) : undefined}
                 >
                   <div>
                     <strong>{profile.name}</strong>

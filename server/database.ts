@@ -83,6 +83,31 @@ function _cleanupOldLocalFiles(uploadDir: string): void {
   }
 }
 
+function _deleteFileIfPresent(
+  filePath: string,
+  warningPrefix: string,
+  warningCode: string = 'FILE_DELETE_FAILED'
+): void {
+  if (!filePath) return;
+
+  try {
+    fs.unlinkSync(filePath);
+  } catch (error: any) {
+    if (error?.code === 'ENOENT') {
+      return;
+    }
+
+    logger.warn(
+      `${warningPrefix} ${filePath}:`,
+      {
+        message: error?.message || String(error),
+        code: error?.code || warningCode,
+      },
+      { sentry: false }
+    );
+  }
+}
+
 function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffer): string {
   fs.mkdirSync(uploadDir, { recursive: true });
   const localPath = path.join(uploadDir, filename);
@@ -302,7 +327,7 @@ export class Database {
         return { ok: true, status: 'ok', type: 'sqlite' };
       }
     } catch (error: any) {
-      logger.error('[DB] Health check failed:', error.message);
+      logger.error('[DB] Health check failed:', error.message, { sentry: false });
       return { ok: false, status: error.message, type: this.type };
     }
   }
@@ -1272,14 +1297,7 @@ export class Database {
       await deleteAudioFromStorage(asset.file_path);
     } else if (asset.file_path) {
       // Legacy local file path cleanup
-      try {
-        fs.unlinkSync(asset.file_path);
-      } catch (error: any) {
-        logger.warn(
-          `[database] Failed to delete legacy audio file ${asset.file_path}:`,
-          error.message
-        );
-      }
+      _deleteFileIfPresent(asset.file_path, '[database] Failed to delete legacy audio file');
     }
 
     await this._execute('DELETE FROM media_assets WHERE id = ? AND workspace_id = ?', [
@@ -1595,14 +1613,7 @@ export class Database {
       workspaceId,
     ]);
     if (row && row.audio_path) {
-      try {
-        fs.unlinkSync(row.audio_path);
-      } catch (error: any) {
-        logger.warn(
-          `[database] Failed to delete voice profile audio ${row.audio_path}:`,
-          error.message
-        );
-      }
+      _deleteFileIfPresent(row.audio_path, '[database] Failed to delete voice profile audio');
     }
     await this._execute('DELETE FROM voice_profiles WHERE id = ? AND workspace_id = ?', [
       id,

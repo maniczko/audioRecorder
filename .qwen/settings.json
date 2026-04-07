@@ -21,7 +21,10 @@
       "Bash(git pull *)",
       "Bash(powershell *)",
       "Bash(tasklist *)",
-      "Bash(pnpm add *)"
+      "Bash(pnpm add *)",
+      "Bash(pnpm test *)",
+      "Bash(timeout *)",
+      "Bash(curl *)"
     ]
   },
   "$version": 3
