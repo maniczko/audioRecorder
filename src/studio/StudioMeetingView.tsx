@@ -758,6 +758,7 @@ export default function StudioMeetingView({
   const [taskDraft, setTaskDraft] = useState({
     title: '',
     description: '',
+    notes: '',
     owner: '',
     assignedTo: [],
     group: '',
@@ -3069,12 +3070,6 @@ export default function StudioMeetingView({
                       ludzi.
                     </p>
                   </div>
-                  <div className="analysis-shell-metrics" aria-label="Zadania">
-                    <div className="analysis-shell-metric">
-                      <strong>{safeArray(meetingTasks).length}</strong>
-                      <span>zadan</span>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="panel-body tasks-panel-body">
@@ -3109,6 +3104,7 @@ export default function StudioMeetingView({
                       setTaskDraft({
                         title: '',
                         description: '',
+                        notes: '',
                         owner: '',
                         assignedTo: [],
                         group: '',

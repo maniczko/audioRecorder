@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Calendar, User, Flag, Tag, Layers, Bell, Star, FolderOpen } from 'lucide-react';
+import {
+  Plus,
+  Calendar,
+  User,
+  Flag,
+  Tag,
+  Layers,
+  Bell,
+  Star,
+  FolderOpen,
+  FileText,
+  AlignLeft,
+} from 'lucide-react';
 import TagInput from '../shared/TagInput';
+import MentionTextarea from '../shared/MentionTextarea';
 import { TASK_PRIORITIES } from '../lib/tasks';
 import { Input } from '../ui/Input';
 import './TaskDetailsPanelStyles.css';
@@ -16,6 +29,8 @@ export interface TaskDraft {
   reminderAt: string;
   tags: string;
   important: boolean;
+  description: string;
+  notes: string;
 }
 
 interface TaskCreateFormProps {
@@ -54,6 +69,8 @@ export default function TaskCreateForm({
       ? (initialDraft.tags as string[]).join(', ')
       : initialDraft.tags || '',
     important: initialDraft.important || false,
+    description: initialDraft.description || '',
+    notes: initialDraft.notes || '',
   });
 
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -270,6 +287,45 @@ export default function TaskCreateForm({
               </label>
             </div>
           </div>
+        </div>
+
+        {/* --- Content group: Opis + Notatka --- */}
+        <div className="todo-detail-group todo-detail-group--content">
+          <label className="todo-detail-row note-row">
+            <div className="todo-row-label-container">
+              <span className="todo-row-icon" aria-hidden="true">
+                <FileText size={18} />
+              </span>
+              <span className="todo-row-label">Opis</span>
+            </div>
+            <MentionTextarea
+              rows={3}
+              value={draft.description}
+              onChange={(event) =>
+                setDraft((previous) => ({ ...previous, description: event.target.value }))
+              }
+              placeholder="Dodaj opis zadania..."
+              suggestions={peopleOptions.map((p) => (typeof p === 'string' ? p : p))}
+            />
+          </label>
+
+          <label className="todo-detail-row note-row">
+            <div className="todo-row-label-container">
+              <span className="todo-row-icon" aria-hidden="true">
+                <AlignLeft size={18} />
+              </span>
+              <span className="todo-row-label">Notatka</span>
+            </div>
+            <MentionTextarea
+              rows={4}
+              value={draft.notes}
+              onChange={(event) =>
+                setDraft((previous) => ({ ...previous, notes: event.target.value }))
+              }
+              placeholder="Dodaj notatkę..."
+              suggestions={peopleOptions.map((p) => (typeof p === 'string' ? p : p))}
+            />
+          </label>
         </div>
       </div>
 
