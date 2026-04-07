@@ -47,7 +47,9 @@ function _resolveWritableUploadDir(preferredDir: string): string {
       if (candidate !== normalizedPreferred) {
         logger.warn(
           `[database] Preferred upload dir ${normalizedPreferred} is NOT writable. ` +
-            `Falling back to: ${candidate}. WARNING: If this is an ephemeral path, files will be lost on restart.`
+            `Falling back to: ${candidate}. WARNING: If this is an ephemeral path, files will be lost on restart.`,
+          {},
+          { sentry: false }
         );
       }
       return candidate;
@@ -1106,9 +1108,13 @@ export class Database {
       if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
         throw err;
       }
-      logger.warn('[database] Supabase upload failed, falling back to local:', {
-        message: err.message,
-      });
+      logger.warn(
+        '[database] Supabase upload failed, falling back to local:',
+        {
+          message: err.message,
+        },
+        { sentry: false }
+      );
       storagePath = _writeLocalAudioFile(this.uploadDir, `${safeRecordingId}${extension}`, buffer);
     }
 
@@ -1203,9 +1209,13 @@ export class Database {
       if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
         throw err;
       }
-      logger.warn('[database] Supabase upload from path failed, falling back to local:', {
-        message: err.message,
-      });
+      logger.warn(
+        '[database] Supabase upload from path failed, falling back to local:',
+        {
+          message: err.message,
+        },
+        { sentry: false }
+      );
       fs.mkdirSync(this.uploadDir, { recursive: true });
       storagePath = path.join(this.uploadDir, `${safeRecordingId}${extension}`);
       if (path.resolve(storagePath) !== path.resolve(filePath)) {

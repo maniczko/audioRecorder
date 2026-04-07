@@ -111,27 +111,6 @@ if (!crypto.getRandomValues) {
 }
 
 // ── IndexedDB mock (for idb-keyval) ──────────────────────────────────
-const mockIDBRequest = () => ({
-  result: null,
-  error: null,
-  onsuccess: null,
-  onerror: null,
-});
-const mockIDBTransaction = () => ({
-  objectStore: vi.fn(() => ({
-    get: vi.fn(() => mockIDBRequest()),
-    put: vi.fn(() => mockIDBRequest()),
-    delete: vi.fn(() => mockIDBRequest()),
-    clear: vi.fn(() => mockIDBRequest()),
-  })),
-  oncomplete: null,
-  onerror: null,
-});
-const mockIDBDatabase = () => ({
-  transaction: vi.fn(() => mockIDBTransaction()),
-  close: vi.fn(),
-  objectStoreNames: { contains: vi.fn(() => true) },
-});
 const mockIDBOpenDBRequest = () => ({
   result: null,
   error: null,
@@ -311,7 +290,7 @@ vi.mock('./shared/Toast', async (importOriginal) => {
  */
 export async function flushMicrotasks() {
   await new Promise((resolve) => setTimeout(resolve, 0));
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise<void>((resolve) => queueMicrotask(() => resolve()));
 }
 
 /**

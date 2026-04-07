@@ -16,6 +16,106 @@ export interface RecordingQueueMeetingLike {
   title?: string;
 }
 
+function normalizeMeetingResolverValue(value: unknown) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function getQueueMeetingSnapshot(item: unknown): RecordingQueueMeetingLike | null {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const snapshot = (item as { meetingSnapshot?: RecordingQueueMeetingLike | null }).meetingSnapshot;
+  if (snapshot && typeof snapshot === 'object') {
+    return snapshot;
+  }
+
+  const candidate = item as RecordingQueueMeetingLike;
+  if (candidate.id || candidate.workspaceId || candidate.title) {
+    return candidate;
+  }
+
+  return null;
+}
+
+function getQueueMeetingId(item: unknown) {
+  if (!item || typeof item !== 'object') {
+    return '';
+  }
+
+  const candidate = item as { meetingId?: string; id?: string };
+  return String(candidate.meetingId || candidate.id || '');
+}
+
+function getQueueWorkspaceId(item: unknown, snapshot: RecordingQueueMeetingLike | null) {
+  if (!item || typeof item !== 'object') {
+    return String(snapshot?.workspaceId || '');
+  }
+
+  const candidate = item as { workspaceId?: string };
+  return String(candidate.workspaceId || snapshot?.workspaceId || '');
+}
+
+function getQueueMeetingTitle(item: unknown, snapshot: RecordingQueueMeetingLike | null) {
+  if (!item || typeof item !== 'object') {
+    return String(snapshot?.title || '');
+  }
+
+  const candidate = item as { meetingTitle?: string };
+  return String(candidate.meetingTitle || snapshot?.title || '');
+}
+
+export function findLiveMeetingForQueueItem<
+  TMeeting extends RecordingQueueMeetingLike & {
+    id?: string;
+    workspaceId?: string;
+    title?: string;
+  },
+>(meetings: TMeeting[] = [], item: unknown): TMeeting | null {
+  const snapshot = getQueueMeetingSnapshot(item);
+  const requestedId = getQueueMeetingId(item) || String(snapshot?.id || '');
+  if (requestedId) {
+    const exactMatch = meetings.find((meeting) => String(meeting?.id || '') === requestedId);
+    if (exactMatch) {
+      return exactMatch;
+    }
+  }
+
+  const workspaceId = getQueueWorkspaceId(item, snapshot);
+  const normalizedTitle = normalizeMeetingResolverValue(getQueueMeetingTitle(item, snapshot));
+  if (!normalizedTitle) {
+    return null;
+  }
+
+  const scopedCandidates = meetings.filter((meeting) => {
+    const meetingTitle = normalizeMeetingResolverValue(meeting?.title);
+    if (meetingTitle !== normalizedTitle) {
+      return false;
+    }
+
+    if (!workspaceId) {
+      return true;
+    }
+
+    return String(meeting?.workspaceId || '') === workspaceId;
+  });
+
+  return scopedCandidates.length === 1 ? scopedCandidates[0] : null;
+}
+
+export function resolveQueueMeetingContext<
+  TMeeting extends RecordingQueueMeetingLike & {
+    id?: string;
+    workspaceId?: string;
+    title?: string;
+  },
+>(meetings: TMeeting[] = [], item: unknown): TMeeting | RecordingQueueMeetingLike | null {
+  return findLiveMeetingForQueueItem(meetings, item) || getQueueMeetingSnapshot(item) || null;
+}
+
 export interface RecordingQueueItem {
   id: string;
   recordingId: string;

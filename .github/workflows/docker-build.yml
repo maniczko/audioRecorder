@@ -20,17 +20,17 @@ jobs:
 
       - name: Check disk space
         run: |
-          echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
-          echo "â•‘  đź’ľ Checking Disk Space                                   â•‘"
-          echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•ť"
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  💾 Checking Disk Space                                   ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
           df -h
           echo ""
           AVAILABLE=$(df / | tail -1 | awk '{print $4}')
           echo "Available space: ${AVAILABLE}K"
           if [ "$AVAILABLE" -lt "10000000" ]; then
-            echo "âš ď¸Ź  Warning: Less than 10GB available!"
+            echo "⚠️  Warning: Less than 10GB available!"
           else
-            echo "âś… Disk space OK"
+            echo "✅ Disk space OK"
           fi
 
       - name: Set up Docker Buildx
@@ -57,28 +57,28 @@ jobs:
 
       - name: Verify Docker image size
         run: |
-          echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
-          echo "â•‘  đź“¦ Docker Image Size                                     â•‘"
-          echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•ť"
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  📦 Docker Image Size                                     ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
           docker images voicelog:test
           SIZE=$(docker images voicelog:test --format "{{.Size}}")
           echo "Image size: $SIZE"
 
       - name: Verify binaries present in image
         run: |
-          echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
-          echo "â•‘  đź”§ Verifying Binaries                                    â•‘"
-          echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•ť"
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  🔧 Verifying Binaries                                    ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
 
           # Check Node.js (required) - use shell entrypoint to run command
           echo "Checking Node.js..."
-          docker run --rm --entrypoint /bin/sh voicelog:test -c "node --version" || (echo "âťŚ Node.js not found" && exit 1)
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "node --version" || (echo "❌ Node.js not found" && exit 1)
 
           # Note: pnpm is only in the build stage, not in runtime (multi-stage Docker build)
 
           # Optional: Check ffmpeg if available
           echo "Checking ffmpeg (optional)..."
-          docker run --rm --entrypoint /bin/sh voicelog:test -c "ffmpeg -version 2>/dev/null | head -1" || echo "âš ď¸Ź  ffmpeg not found (optional)"
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "ffmpeg -version 2>/dev/null | head -1" || echo "⚠️  ffmpeg not found (optional)"
 
           echo ""
-          echo "âś… Core binaries verified!"
+          echo "✅ Core binaries verified!"

@@ -187,4 +187,46 @@ describe('RecordingsTab', () => {
     expect(importRow).not.toBeNull();
     expect(within(importRow as HTMLElement).getByText('W toku')).toBeInTheDocument();
   });
+
+  test('Regression: optimistic imports without owner, guests, or tags do not break filtering', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={mockMeetings}
+          recordingQueue={[
+            {
+              id: 'rec_import',
+              recordingId: 'rec_import',
+              meetingId: 'meeting_import',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import bez metadanych',
+              meetingSnapshot: {
+                id: 'meeting_import',
+                workspaceId: 'ws1',
+                title: 'Import bez metadanych',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'queued',
+              uploaded: false,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: '',
+              createdAt: '2026-04-06T08:00:00.000Z',
+              updatedAt: '2026-04-06T08:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    const searchInput = screen.getByPlaceholderText(/szukaj/i);
+    fireEvent.change(searchInput, { target: { value: 'Import bez metadanych' } });
+
+    expect(screen.getAllByText('Import bez metadanych').length).toBeGreaterThan(0);
+  });
 });

@@ -138,7 +138,7 @@
     "test:server:retry": "vitest run -c server/vitest.config.ts --retry=3",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
     "test:release:guard": "pnpm run test:server:retry && pnpm exec vitest run src/services/httpClient.test.ts src/hooks/useWorkspaceData.test.tsx src/store/recorderStore.test.ts scripts/validate-husky-hooks.test.ts --coverage.enabled=false && pnpm run build",
-    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/assign-task-agents.test.ts scripts/task-agent-runner.test.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts scripts/vercel-ignore-command.test.ts && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
+    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/assign-task-agents.test.ts scripts/task-agent-runner.test.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-github-workflows.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts scripts/vercel-ignore-command.test.ts && node scripts/validate-github-workflows.mjs && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:server": "tsc --project server/tsconfig.server.json --noEmit",
@@ -156,6 +156,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

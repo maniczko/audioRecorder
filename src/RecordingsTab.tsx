@@ -13,6 +13,44 @@ import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
 import TagBadge from './shared/TagBadge';
 import { Search, Filter, Upload, Clock, Mic2, Users, Brain } from 'lucide-react';
+import type { RecordingQueueItem, RecordingQueueMeetingLike } from './lib/recordingQueue';
+
+interface RecordingsTabRecording {
+  id?: string;
+  createdAt?: string;
+  duration?: number;
+  pipelineStatus?: string;
+  transcriptionStatus?: string;
+  transcriptOutcome?: string;
+  processingStartedAt?: string;
+  processingEndedAt?: string;
+  [key: string]: unknown;
+}
+
+interface RecordingsTabMeeting extends RecordingQueueMeetingLike {
+  startsAt?: string;
+  createdAt?: string;
+  durationMinutes?: number;
+  speakerCount?: number;
+  tags?: string[];
+  latestRecordingId?: string;
+  isOptimisticImport?: boolean;
+  processingStartedAt?: string;
+  recordings?: RecordingsTabRecording[];
+  owner?: string;
+  guests?: string[];
+  attendees?: string[];
+  analysis?: {
+    summary?: unknown;
+    decisions?: unknown[];
+  };
+  [key: string]: unknown;
+}
+
+type PendingImportQueueItem = Partial<RecordingQueueItem> & {
+  durationMinutes?: number;
+  status?: string;
+};
 
 function formatPipelineDiagnostics(item) {
   const details: string[] = [];
@@ -211,9 +249,11 @@ function getLatestRecording(selectedMeeting) {
   );
 }
 
-function buildOptimisticMeetingFromQueueItem(item) {
+function buildOptimisticMeetingFromQueueItem(item: PendingImportQueueItem): RecordingsTabMeeting {
   const snapshot =
-    item?.meetingSnapshot && typeof item.meetingSnapshot === 'object' ? item.meetingSnapshot : null;
+    item?.meetingSnapshot && typeof item.meetingSnapshot === 'object'
+      ? (item.meetingSnapshot as RecordingsTabMeeting)
+      : null;
   return {
     id: item.meetingId || item.recordingId,
     workspaceId: snapshot?.workspaceId || item.workspaceId || '',
@@ -241,7 +281,10 @@ function buildOptimisticMeetingFromQueueItem(item) {
   };
 }
 
-function mergeMeetingsWithPendingImports(userMeetings = [], recordingQueue = []) {
+function mergeMeetingsWithPendingImports(
+  userMeetings: RecordingsTabMeeting[] = [],
+  recordingQueue: PendingImportQueueItem[] = []
+): RecordingsTabMeeting[] {
   const meetings = Array.isArray(userMeetings) ? userMeetings : [];
   const queue = Array.isArray(recordingQueue) ? recordingQueue : [];
   const knownMeetingIds = new Set(meetings.map((meeting) => meeting?.id).filter(Boolean));
@@ -342,7 +385,9 @@ function UnifiedLibrary({
           if (!tagFilter.every((tf) => mt.includes(tf))) return false;
         }
         if (participantFilter && participantFilter.length > 0) {
-          const mParts = [m.owner, ...(m.guests || [])].filter(Boolean).map((p) => p.trim());
+          const mParts = [m.owner, ...(m.guests || [])]
+            .filter((participant): participant is string => Boolean(participant))
+            .map((participant) => participant.trim());
           if (!participantFilter.every((pf) => mParts.includes(pf))) return false;
         }
         if (searchQuery) {
@@ -375,8 +420,8 @@ function UnifiedLibrary({
             break;
           case 'startsAt':
           default:
-            aVal = new Date(a.startsAt || a.createdAt).valueOf();
-            bVal = new Date(b.startsAt || b.createdAt).valueOf();
+            aVal = new Date(a.startsAt || a.createdAt || '').valueOf();
+            bVal = new Date(b.startsAt || b.createdAt || '').valueOf();
             break;
         }
 
@@ -839,10 +884,11 @@ function UnifiedLibrary({
                         className="recording-processing-timer"
                         prefix={false}
                       />
-                    ) : m.recordings?.length > 0 ? (
+                    ) : (m.recordings?.length || 0) > 0 ? (
                       // Compute total processing time from completed recordings
                       (() => {
-                        const completedRecording = m.recordings.find(
+                        const recordings = Array.isArray(m.recordings) ? m.recordings : [];
+                        const completedRecording = recordings.find(
                           (r) =>
                             r.pipelineStatus === 'done' || r.transcriptionStatus === 'completed'
                         );
@@ -882,7 +928,10 @@ function UnifiedLibrary({
                       title="Usuń spotkanie i nagrania"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMeetingToDelete(m);
+                        setMeetingToDelete({
+                          id: String(m.id || ''),
+                          title: String(m.title || ''),
+                        });
                       }}
                       className="recordings-library-delete-btn"
                     >

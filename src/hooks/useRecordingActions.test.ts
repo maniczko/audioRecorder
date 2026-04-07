@@ -350,5 +350,35 @@ describe('useRecordingActions', () => {
       expect(mockSetSelectedMeetingId).not.toHaveBeenCalled();
       expect(mockSetSelectedRecordingId).not.toHaveBeenCalled();
     });
+
+    test('reattaches recording when the live meeting id changed after sync', () => {
+      const liveMeeting = {
+        ...baseMeeting,
+        id: 'm_remote',
+        workspaceId: 'ws1',
+        title: 'Ad hoc',
+      };
+
+      mockSetMeetings.mockImplementation((updater) => {
+        if (typeof updater === 'function') updater([liveMeeting]);
+      });
+
+      const { result } = setupHook(liveMeeting, liveMeeting.recordings[0]);
+      let returnValue: any;
+      act(() => {
+        returnValue = result.current.attachCompletedRecording(
+          { id: 'm_local', workspaceId: 'ws1', title: 'Ad hoc' },
+          {
+            id: 'r_synced',
+            transcript: [{ text: 'Recovered' }],
+            analysis: {},
+          }
+        );
+      });
+
+      expect(returnValue).toBe(true);
+      expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_remote');
+      expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_synced');
+    });
   });
 });

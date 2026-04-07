@@ -12,6 +12,7 @@ import * as audioPipeline from './audioPipeline.ts';
 import * as speakerEmbedder from './speakerEmbedder.ts';
 import { resolveServerPort } from './runtime.ts';
 import { initSentry } from './sentry.ts';
+import { classifyDiskSpace, DISK_SPACE_BLOCK_UPLOAD_BYTES } from './lib/diskSpace.ts';
 
 initSentry();
 
@@ -51,9 +52,11 @@ export async function bootstrap() {
     );
   }
 
+  const db = getDatabase();
+
   // Cleanup temp files and check disk space on startup
   try {
-    const uploadDir = config.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+    const uploadDir = db.uploadDir;
     const fs = await import('node:fs');
     const path = await import('node:path');
 
@@ -114,9 +117,9 @@ export async function bootstrap() {
       const stats = fs.statfsSync(uploadDir);
       const freeBytes = stats.bavail * stats.bsize;
       const freeGB = (freeBytes / 1024 / 1024 / 1024).toFixed(2);
+      const diskSpace = classifyDiskSpace(freeBytes);
 
-      if (freeBytes < 100 * 1024 * 1024) {
-        // Less than 100MB - CRITICAL
+      if (diskSpace.severity === 'critical') {
         logger.error(`[Bootstrap] CRITICAL: Disk space critically low! Only ${freeGB}GB free.`);
         logger.error(
           '[Bootstrap] Please clean up disk space or the server will fail to accept recordings.'
@@ -133,9 +136,12 @@ export async function bootstrap() {
         } catch (cleanupError) {
           logger.error('[Bootstrap] Automatic cleanup failed:', cleanupError);
         }
-      } else if (freeBytes < 500 * 1024 * 1024) {
-        // Less than 500MB
-        logger.warn(`[Bootstrap] WARNING: Disk space low. ${freeGB}GB free.`);
+      } else if (diskSpace.severity === 'warning') {
+        logger.warn(
+          `[Bootstrap] WARNING: Disk space low. ${freeGB}GB free. Uploads are still accepted above ${(DISK_SPACE_BLOCK_UPLOAD_BYTES / 1024 / 1024).toFixed(0)}MB free, but cleanup is recommended before the server reaches the hard limit.`,
+          {},
+          { sentry: false }
+        );
       } else {
         logger.info(`[Bootstrap] Disk space OK: ${freeGB}GB free.`);
       }
@@ -143,8 +149,6 @@ export async function bootstrap() {
   } catch (error) {
     logger.warn('[Bootstrap] Unable to check disk space:', error);
   }
-
-  const db = getDatabase();
   await db.init();
 
   // [PROD] Verify DB health on startup

@@ -33,7 +33,9 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -139,15 +141,15 @@ jobs:
                 issue_number: issues[0].number,
                 body: mdContent + `\n\n---\n\n**Total Errors:** ${errorCount}\n**Updated:** ${new Date().toISOString()}`,
               });
-              console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Updated existing Railway error report issue #' + issues[0].number);
+              console.log('✅ Updated existing Railway error report issue #' + issues[0].number);
             } else {
               // Create new issue
               const { data: issue } = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: 'Ă„â€ÄąĹźÄąË‡Ă˘â‚¬Ĺˇ Railway Error Report - ' + new Date().toISOString().split('T')[0],
+                title: '🚂 Railway Error Report - ' + new Date().toISOString().split('T')[0],
                 body: mdContent + `\n\n---\n\n**Total Errors:** ${errorCount}\n**Sample Errors:**\n\`\`\`json\n${JSON.stringify(sampleErrors, null, 2)}\n\`\`\``,
                 labels: ['railway-error', 'monitoring'],
               });
-              console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Created new Railway error report issue #' + issue.number);
+              console.log('✅ Created new Railway error report issue #' + issue.number);
             }

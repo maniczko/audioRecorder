@@ -1,0 +1,38 @@
+{
+  "mutate": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/*.spec.{ts,tsx}",
+    "!src/setupTests.ts",
+    "!src/main.tsx",
+    "!src/vite-env.d.ts",
+    "!**/node_modules/**"
+  ],
+  "testRunner": "vitest",
+  "reporters": [
+    "html"
+  ],
+  "htmlReporter": {
+    "baseDir": "mutation-reports"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": 50
+  },
+  "tempDirName": ".stryker-tmp",
+  "symlinkNodeModules": true,
+  "buildCommand": false,
+  "vitest": {
+    "configFile": "vitest.config.ts"
+  },
+  "ignorePatterns": [
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/*.d.ts",
+    "**/test*/**"
+  ],
+  "disableBail": true,
+  "dryRunTimeoutMinutes": 10
+}

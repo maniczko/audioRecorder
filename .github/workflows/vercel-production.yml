@@ -1,6 +1,6 @@
 name: Production Deployment (Vercel)
 
-# Trigger ONLY after CI Pipeline passes Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ never deploy broken code.
+# Trigger ONLY after CI Pipeline passes — never deploy broken code.
 on:
   workflow_run:
     workflows: ['CI/CD Pipeline']
@@ -34,7 +34,9 @@ jobs:
           node-version: 22
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile

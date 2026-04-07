@@ -1,5 +1,13 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const mockCaptureMessage = vi.fn();
+const mockCaptureException = vi.fn();
+
+vi.mock('@sentry/node', () => ({
+  captureMessage: mockCaptureMessage,
+  captureException: mockCaptureException,
+}));
+
 describe('logger.ts', () => {
   let originalSentryDsn: string | undefined;
 
@@ -11,6 +19,8 @@ describe('logger.ts', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    mockCaptureMessage.mockReset();
+    mockCaptureException.mockReset();
     if (originalSentryDsn !== undefined) {
       process.env.SENTRY_DSN = originalSentryDsn;
     } else {
@@ -77,5 +87,28 @@ describe('logger.ts', () => {
     logger.warn('careful');
     expect(errSpy).toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalled();
+  });
+
+  test('can suppress warn forwarding to Sentry for expected operational fallbacks', async () => {
+    process.env.SENTRY_DSN = 'https://test@o123.ingest.sentry.io/456';
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+
+    logger.warn('fallback warning', { source: 'storage' }, { sentry: false });
+
+    await Promise.resolve();
+    expect(mockCaptureMessage).not.toHaveBeenCalled();
+  });
+
+  test('can suppress error forwarding to Sentry when only local logging is desired', async () => {
+    process.env.SENTRY_DSN = 'https://test@o123.ingest.sentry.io/456';
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('../logger.ts');
+
+    logger.error('non-actionable error', null, { sentry: false });
+
+    await Promise.resolve();
+    expect(mockCaptureMessage).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 });

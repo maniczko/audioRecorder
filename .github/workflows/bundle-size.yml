@@ -24,7 +24,9 @@ jobs:
         if: github.event_name == 'pull_request_target'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -103,7 +105,7 @@ jobs:
             // Try to read from previous runs (simplified)
             // In production, you'd use GitHub API to compare with base branch
 
-            let comment = '## Ă„â€ÄąĹźĂ˘â‚¬Ĺ›Ă‚Â¦ Bundle Size Report\n\n';
+            let comment = '## 📦 Bundle Size Report\n\n';
             comment += '### Build Artifacts\n\n';
             comment += `| Type | Size |\n`;
             comment += `|------|------|\n`;
@@ -115,11 +117,11 @@ jobs:
               comment += '### Changes\n\n';
               
               if (totalSize > 500 * 1024) {
-                comment += 'Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… **Warning:** Bundle size is over 500KB\n\n';
+                comment += '⚠️ **Warning:** Bundle size is over 500KB\n\n';
               }
               
               if (totalSize > 1024 * 1024) {
-                comment += 'Ă„â€ÄąĹźÄąË‡Ă‚Â¨ **Critical:** Bundle size is over 1MB\n\n';
+                comment += '🚨 **Critical:** Bundle size is over 1MB\n\n';
               }
             }
 

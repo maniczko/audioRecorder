@@ -25,12 +25,16 @@ vi.mock('../store/recorderStore', () => ({
   useRecorderStore: () => mockStore,
 }));
 
-vi.mock('../lib/recordingQueue', () => ({
-  buildRecordingQueueSummary: vi.fn((queue) => ({ total: queue.length })),
-  getRecordingQueueForMeeting: vi.fn((queue, meetingId) =>
-    queue.filter((item) => item.meetingId === meetingId)
-  ),
-}));
+vi.mock('../lib/recordingQueue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/recordingQueue')>();
+  return {
+    ...actual,
+    buildRecordingQueueSummary: vi.fn((queue) => ({ total: queue.length })),
+    getRecordingQueueForMeeting: vi.fn((queue, meetingId) =>
+      queue.filter((item) => item.meetingId === meetingId)
+    ),
+  };
+});
 
 describe('useRecordingPipeline', () => {
   beforeEach(() => {
@@ -150,6 +154,35 @@ describe('useRecordingPipeline', () => {
       meetingSnapshot: { id: 'm_gone', title: 'Snapshot' },
     });
     expect(resolved).toEqual({ id: 'm_gone', title: 'Snapshot' });
+  });
+
+  test('resolveMeetingForQueueItem remaps stale snapshot ids to a live meeting in the same workspace', () => {
+    const userMeetingsRef = {
+      current: [{ id: 'm_remote', workspaceId: 'ws1', title: 'Ad hoc' }],
+    };
+
+    mockStore.recordingQueue = [
+      {
+        recordingId: 'r1',
+        meetingId: 'm_local',
+        workspaceId: 'ws1',
+        meetingTitle: 'Ad hoc',
+        meetingSnapshot: { id: 'm_local', workspaceId: 'ws1', title: 'Ad hoc' },
+      },
+    ];
+
+    renderHook(() =>
+      useRecordingPipeline({
+        userMeetingsRef,
+        attachCompletedRecording: vi.fn(),
+        setCurrentSegments: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const resolveFunction = mockStore.processQueue.mock.calls[0][0];
+    const resolved = resolveFunction(mockStore.recordingQueue[0]);
+    expect(resolved).toEqual({ id: 'm_remote', workspaceId: 'ws1', title: 'Ad hoc' });
   });
 
   test('resolveMeetingForQueueItem returns null when meeting and snapshot both absent', () => {

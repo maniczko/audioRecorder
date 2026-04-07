@@ -1,5 +1,6 @@
 import { createId } from '../lib/storage';
 import { attachRecording } from '../lib/meeting';
+import { findLiveMeetingForQueueItem } from '../lib/recordingQueue';
 import { apiRequest } from '../services/httpClient';
 import { remoteApiEnabled } from '../services/config';
 
@@ -361,11 +362,18 @@ export default function useRecordingActions({
   }
 
   function attachCompletedRecording(recordingMeetingId, recording) {
+    let resolvedMeetingId = '';
     let attached = false;
-    setMeetings((prev) =>
-      prev.map((m) => {
-        if (m.id !== recordingMeetingId) return m;
+    setMeetings((prev) => {
+      const resolvedMeeting =
+        findLiveMeetingForQueueItem(prev, recordingMeetingId) ||
+        prev.find((meeting) => meeting.id === recordingMeetingId) ||
+        null;
+
+      return prev.map((m) => {
+        if (m.id !== resolvedMeeting?.id) return m;
         attached = true;
+        resolvedMeetingId = m.id;
         const base = attachRecording(m, recording);
         return {
           ...base,
@@ -382,10 +390,10 @@ export default function useRecordingActions({
             },
           ],
         };
-      })
-    );
+      });
+    });
     if (!attached) return false;
-    setSelectedMeetingId(recordingMeetingId);
+    setSelectedMeetingId(resolvedMeetingId);
     setSelectedRecordingId(recording.id);
     return true;
   }

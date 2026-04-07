@@ -17,6 +17,7 @@ import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
 import type { MediaAsset } from '../lib/types.ts';
 import { getMemoryPressure } from '../lib/serverUtils.ts';
+import { DISK_SPACE_BLOCK_UPLOAD_BYTES } from '../lib/diskSpace.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -103,11 +104,11 @@ async function downloadAudioFromStorageCandidates(
 
 /**
  * Checks available disk space and returns true if there's enough space.
- * Returns false if disk space is critically low (<100MB free).
+ * Returns false if disk space is critically low for accepting new uploads.
  */
 function checkDiskSpace(
   uploadDir: string,
-  minBytes: number = 100 * 1024 * 1024
+  minBytes: number = DISK_SPACE_BLOCK_UPLOAD_BYTES
 ): { ok: boolean; freeBytes?: number } {
   try {
     const stats = typeof statfsSync === 'function' ? statfsSync(uploadDir) : null;
@@ -995,7 +996,7 @@ Important:
       return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
 
     // Check disk space before writing
-    const diskSpace = checkDiskSpace(uploadDir, 50 * 1024 * 1024); // 50MB minimum
+    const diskSpace = checkDiskSpace(uploadDir, DISK_SPACE_BLOCK_UPLOAD_BYTES);
     if (!diskSpace.ok) {
       const { logger } = await import('../logger.ts');
       logger.error(`[ENOSPC] Disk space critically low: ${diskSpace.freeBytes} bytes free`);

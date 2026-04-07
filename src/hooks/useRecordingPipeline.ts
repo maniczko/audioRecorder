@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { useRecorderStore } from '../store/recorderStore';
-import { buildRecordingQueueSummary, getRecordingQueueForMeeting } from '../lib/recordingQueue';
+import {
+  buildRecordingQueueSummary,
+  getRecordingQueueForMeeting,
+  resolveQueueMeetingContext,
+} from '../lib/recordingQueue';
 
 export default function useRecordingPipeline({
   userMeetingsRef,
@@ -11,11 +15,7 @@ export default function useRecordingPipeline({
   const store = useRecorderStore();
 
   const resolveMeetingForQueueItem = useCallback(
-    (item) => {
-      return (
-        userMeetingsRef.current.find((m) => m.id === item.meetingId) || item.meetingSnapshot || null
-      );
-    },
+    (item) => resolveQueueMeetingContext(userMeetingsRef.current, item),
     [userMeetingsRef]
   );
 

@@ -19,7 +19,9 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -47,10 +49,10 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## Ă„â€ÄąĹźĂ˘â‚¬Ĺ›Ă˘â‚¬Ä… Changelog
+            ## 📋 Changelog
 
             See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 
-            ## Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Automated Release
+            ## 🤖 Automated Release
 
             This release was automatically generated from git tags.

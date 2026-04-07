@@ -1,10 +1,12 @@
 import {
   buildRecordingQueueSummary,
   createRecordingQueueItem,
+  findLiveMeetingForQueueItem,
   getNextPendingRecordingQueueItem,
   getNextProcessableRecordingQueueItem,
   getRecordingQueueForMeeting,
   normalizeRecordingPipelineStatus,
+  resolveQueueMeetingContext,
   updateRecordingQueueItem,
 } from './recordingQueue';
 
@@ -71,6 +73,19 @@ describe('recordingQueue helpers', () => {
     expect(item.workspaceId).toBe('');
     expect(item.meetingTitle).toBe('Spotkanie');
     expect(item.meetingSnapshot).toBeNull();
+  });
+
+  test('finds a live meeting by workspace and title when the snapshot id changed after sync', () => {
+    const item = createRecordingQueueItem({
+      recordingId: 'recording_3',
+      meetingId: 'meeting_local',
+      meeting: { id: 'meeting_local', workspaceId: 'workspace_1', title: 'Ad hoc' },
+    });
+
+    const meetings = [{ id: 'meeting_remote', workspaceId: 'workspace_1', title: 'Ad hoc' }];
+
+    expect(findLiveMeetingForQueueItem(meetings, item)).toEqual(meetings[0]);
+    expect(resolveQueueMeetingContext(meetings, item)).toEqual(meetings[0]);
   });
 
   test('returns the next processable pending item based on a predicate', () => {
