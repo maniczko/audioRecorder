@@ -31,10 +31,10 @@ jobs:
       - name: Run pnpm audit fix
         id: audit
         run: |
-          echo "Ä‘Ĺşâ€ťĹ¤ Scanning for vulnerabilities..."
+          echo "Ă„â€ÄąĹźĂ˘â‚¬ĹĄÄąÂ¤ Scanning for vulnerabilities..."
           pnpm audit --json > audit-report.json || true
 
-          echo "Ä‘Ĺşâ€ťÂ§ Auto-fixing vulnerabilities..."
+          echo "Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ Auto-fixing vulnerabilities..."
           pnpm update --prod || true
 
           # Check if there are changes
@@ -47,7 +47,7 @@ jobs:
       - name: Run tests after security fix
         if: steps.audit.outputs.has_changes == 'true'
         run: |
-          echo "Ä‘ĹşÂ§Ĺž Running tests after security fix..."
+          echo "Ă„â€ÄąĹźĂ‚Â§ÄąĹľ Running tests after security fix..."
           pnpm run test:smart-retry || true
 
       - name: Create Pull Request
@@ -61,7 +61,7 @@ jobs:
           delete-branch: true
           title: 'chore: auto-fix security vulnerabilities'
           body: |
-            ## Ä‘Ĺşâ€ťâ€™ Auto Security Patch
+            ## Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ˘â‚¬â„˘ Auto Security Patch
 
             This PR was automatically generated to fix security vulnerabilities.
 
@@ -101,17 +101,17 @@ jobs:
             const vulnCount = '${{ steps.audit.outputs.vuln_count }}';
             const hasChanges = '${{ steps.audit.outputs.has_changes }}' === 'true';
 
-            let comment = '## Ä‘Ĺşâ€ťâ€™ Security Scan Report\n\n';
+            let comment = '## Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ˘â‚¬â„˘ Security Scan Report\n\n';
 
             if (vulnCount > 0) {
-              comment += `### Ă˘ĹˇÂ ÄŹÂ¸Ĺą Vulnerabilities Found: ${vulnCount}\n\n`;
+              comment += `### Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… Vulnerabilities Found: ${vulnCount}\n\n`;
               
               if (hasChanges) {
-                comment += '### Ă˘Ĺ›â€¦ Auto-Fix Applied\n\n';
+                comment += '### Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Auto-Fix Applied\n\n';
                 comment += 'I\'ve automatically fixed the vulnerabilities by updating dependencies.\n\n';
                 comment += 'A pull request has been created with the fixes.\n\n';
               } else {
-                comment += '### Ă˘ĹˇÂ ÄŹÂ¸Ĺą Manual Fix Required\n\n';
+                comment += '### Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… Manual Fix Required\n\n';
                 comment += 'Some vulnerabilities couldn\'t be automatically fixed.\n\n';
                 comment += '### Next Steps:\n';
                 comment += '1. Run `npm audit` to see detailed report\n';
@@ -119,7 +119,7 @@ jobs:
                 comment += '3. Review and update vulnerable packages manually\n\n';
               }
             } else {
-              comment += '### Ă˘Ĺ›â€¦ No Vulnerabilities Found!\n\n';
+              comment += '### Ä‚ËÄąâ€şĂ˘â‚¬Â¦ No Vulnerabilities Found!\n\n';
               comment += 'Your dependencies are secure.\n\n';
             }
 
@@ -137,7 +137,7 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: `Ä‘Ĺşâ€ťâ€™ Security: ${vulnCount} vulnerabilities found`,
+                title: `Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ˘â‚¬â„˘ Security: ${vulnCount} vulnerabilities found`,
                 body: comment,
                 labels: ['security', 'automated']
               });

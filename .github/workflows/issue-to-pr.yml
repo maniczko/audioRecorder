@@ -66,31 +66,31 @@ jobs:
 
             // Create a simple fix based on issue type
             if (issueTitle.includes('typo') || issueTitle.includes('typo')) {
-              console.log('Ä‘Ĺşâ€ťÂ§ This appears to be a typo fix issue');
+              console.log('Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ This appears to be a typo fix issue');
               // For typo fixes, we would need AI to analyze and fix
             }
 
             if (issueTitle.includes('format') || issueTitle.includes('prettier')) {
-              console.log('Ä‘Ĺşâ€ťÂ§ This appears to be a formatting issue');
+              console.log('Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ This appears to be a formatting issue');
               // Run prettier fix
               const { execSync } = require('child_process');
               try {
                 execSync('pnpm run format', { stdio: 'inherit' });
-                console.log('Ă˘Ĺ›â€¦ Formatting auto-fixed');
+                console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Formatting auto-fixed');
               } catch (error) {
-                console.log('Ă˘ĹˇÂ ÄŹÂ¸Ĺą Formatting fix failed');
+                console.log('Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… Formatting fix failed');
               }
             }
 
             if (issueTitle.includes('lint') || issueTitle.includes('eslint')) {
-              console.log('Ä‘Ĺşâ€ťÂ§ This appears to be a linting issue');
+              console.log('Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ This appears to be a linting issue');
               // Run lint fix
               const { execSync } = require('child_process');
               try {
                 execSync('pnpm run lint:fix', { stdio: 'inherit' });
-                console.log('Ă˘Ĺ›â€¦ Linting auto-fixed');
+                console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Linting auto-fixed');
               } catch (error) {
-                console.log('Ă˘ĹˇÂ ÄŹÂ¸Ĺą Linting fix failed');
+                console.log('Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… Linting fix failed');
               }
             }
 
@@ -119,7 +119,7 @@ jobs:
           branch: ${{ steps.create-branch.outputs.branch_name }}
           title: 'fix: Auto-fix for #${{ github.event.issue.number }} - ${{ github.event.issue.title }}'
           body: |
-            ## Ä‘ĹşÂ¤â€“ Auto-Fix Pull Request
+            ## Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Auto-Fix Pull Request
 
             This PR was automatically generated to fix issue #${{ github.event.issue.number }}.
 
@@ -147,10 +147,10 @@ jobs:
           script: |
             const hasChanges = '${{ steps.git-check.outputs.has_changes }}' === 'true';
 
-            let comment = '## Ä‘ĹşÂ¤â€“ Auto-Fix Bot\n\n';
+            let comment = '## Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Auto-Fix Bot\n\n';
 
             if (hasChanges) {
-              comment += '### Ă˘Ĺ›â€¦ Auto-Fix Applied!\n\n';
+              comment += '### Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Auto-Fix Applied!\n\n';
               comment += 'I\'ve analyzed this issue and created an automated fix.\n\n';
               comment += '### Next Steps:\n';
               comment += '1. Review the automatically created PR\n';
@@ -158,7 +158,7 @@ jobs:
               comment += '3. Merge if everything looks good\n\n';
               comment += '---\n*This is an automated comment from the Auto-Fix Bot.*\n';
             } else {
-              comment += '### Ă˘ĹˇÂ ÄŹÂ¸Ĺą Manual Fix Required\n\n';
+              comment += '### Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… Manual Fix Required\n\n';
               comment += 'I\'ve analyzed this issue but couldn\'t automatically fix it.\n\n';
               comment += '### Reason:\n';
               comment += 'This issue requires manual intervention or the fix is too complex for automation.\n\n';

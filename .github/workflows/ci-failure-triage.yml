@@ -41,7 +41,7 @@ jobs:
             const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
             const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
 
-            // ── 1. Get all jobs in this run ──────────────────────────────────
+            // â”€â”€ 1. Get all jobs in this run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const { data: jobsData } = await github.rest.actions.listJobsForWorkflowRun({
               owner, repo, run_id: runId, per_page: 50,
             });
@@ -49,19 +49,19 @@ jobs:
             const failingJobs = jobsData.jobs.filter(j => j.conclusion === 'failure');
 
             if (failingJobs.length === 0) {
-              console.log('No individual failing jobs found — run may have been cancelled.');
+              console.log('No individual failing jobs found â€” run may have been cancelled.');
               core.setOutput('skip', 'true');
               return '';
             }
 
-            // ── 2. For each failing job: failing steps + annotations ─────────
+            // â”€â”€ 2. For each failing job: failing steps + annotations â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const sections = [];
             let annotationCount = 0;
 
             for (const job of failingJobs) {
               const failingSteps = (job.steps || []).filter(s => s.conclusion === 'failure');
 
-              let section = `### ❌ ${job.name}\n`;
+              let section = `### âťŚ ${job.name}\n`;
               if (failingSteps.length > 0) {
                 section += `**Failing steps:** ${failingSteps.map(s => `\`${s.name}\``).join(', ')}\n\n`;
               }
@@ -100,7 +100,7 @@ jobs:
               `|---|---|`,
               `| **Commit** | [\`${shaShort}\`](${commitUrl}) |`,
               `| **Failing jobs** | ${jobNames} |`,
-              `| **CI Run** | [Zobacz pełne logi](${runUrl}) |`,
+              `| **CI Run** | [Zobacz peĹ‚ne logi](${runUrl}) |`,
               ``,
               `## Details`,
               ``,
@@ -132,7 +132,7 @@ jobs:
             });
             const dup = data.find(i => i.title.includes(sha));
             if (dup) {
-              console.log(`Duplicate issue #${dup.number} found for ${sha} — skipping.`);
+              console.log(`Duplicate issue #${dup.number} found for ${sha} â€” skipping.`);
               return 'skip';
             }
             return 'create';
@@ -144,7 +144,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const labels = [
-              { name: 'ci-failure', color: 'e4e669', description: 'CI pipeline failure — GPT auto-fix triggered' },
+              { name: 'ci-failure', color: 'e4e669', description: 'CI pipeline failure â€” GPT auto-fix triggered' },
             ];
             for (const label of labels) {
               try { await github.rest.issues.getLabel({ owner, repo, name: label.name }); }
@@ -169,7 +169,7 @@ jobs:
             });
             console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
             core.setOutput('issue_number', String(issue.data.number));
-            core.summary.addRaw(`## 🤖 GPT fix task created\n[#${issue.data.number} — ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
+            core.summary.addRaw(`## đź¤– GPT fix task created\n[#${issue.data.number} â€” ${process.env.ISSUE_TITLE}](${issue.data.html_url})`);
             await core.summary.write();
 
       - name: Trigger GPT Auto-Fix workflow
@@ -218,7 +218,7 @@ jobs:
             const task = [
               ``,
               `- \`${newId}\` [P1] \`todo\` - Fix failing CI after \`${sha}\`: ${process.env.JOB_NAMES}`,
-              `  - Cel: przywrocic zielone CI — naprawic failujace testy po ostatnim commicie.`,
+              `  - Cel: przywrocic zielone CI â€” naprawic failujace testy po ostatnim commicie.`,
               `  - Zakres: ${process.env.JOB_NAMES}. [Logi CI](${runUrl}).`,
             ].join('\n');
 

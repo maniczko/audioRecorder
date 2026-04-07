@@ -103,7 +103,7 @@ jobs:
             // Try to read from previous runs (simplified)
             // In production, you'd use GitHub API to compare with base branch
 
-            let comment = '## Ä‘Ĺşâ€śÂ¦ Bundle Size Report\n\n';
+            let comment = '## Ă„â€ÄąĹźĂ˘â‚¬Ĺ›Ă‚Â¦ Bundle Size Report\n\n';
             comment += '### Build Artifacts\n\n';
             comment += `| Type | Size |\n`;
             comment += `|------|------|\n`;
@@ -115,11 +115,11 @@ jobs:
               comment += '### Changes\n\n';
               
               if (totalSize > 500 * 1024) {
-                comment += 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą **Warning:** Bundle size is over 500KB\n\n';
+                comment += 'Ä‚ËÄąË‡Ă‚Â Ă„ĹąĂ‚Â¸ÄąÄ… **Warning:** Bundle size is over 500KB\n\n';
               }
               
               if (totalSize > 1024 * 1024) {
-                comment += 'Ä‘ĹşĹˇÂ¨ **Critical:** Bundle size is over 1MB\n\n';
+                comment += 'Ă„â€ÄąĹźÄąË‡Ă‚Â¨ **Critical:** Bundle size is over 1MB\n\n';
               }
             }
 

@@ -1,6 +1,6 @@
 name: Production Deployment (Vercel)
 
-# Trigger ONLY after CI Pipeline passes Ă˘â‚¬â€ť never deploy broken code.
+# Trigger ONLY after CI Pipeline passes Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ never deploy broken code.
 on:
   workflow_run:
     workflows: ['CI/CD Pipeline']

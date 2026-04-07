@@ -47,10 +47,10 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## Ä‘Ĺşâ€śâ€ą Changelog
+            ## Ă„â€ÄąĹźĂ˘â‚¬Ĺ›Ă˘â‚¬Ä… Changelog
 
             See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
 
-            ## Ä‘ĹşÂ¤â€“ Automated Release
+            ## Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś Automated Release
 
             This release was automatically generated from git tags.

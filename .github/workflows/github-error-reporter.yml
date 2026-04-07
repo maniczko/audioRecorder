@@ -93,7 +93,7 @@ jobs:
 
               // Build assignees suggestion hint
               const assigneesHint = contributors.length > 0
-                ? '\n\n---\nÄ‘Ĺşâ€™Ë‡ **Sugerowane osoby do przypisania:** ' +
+                ? '\n\n---\nĂ„â€ÄąĹźĂ˘â‚¬â„˘Ă‹â€ˇ **Sugerowane osoby do przypisania:** ' +
                   contributors.map(c => '@' + c.login).join(', ')
                 : '';
 
@@ -114,19 +114,19 @@ jobs:
                   body: mdFile + assigneesHint,
                 });
 
-                console.log('Ă˘Ĺ›â€¦ Updated existing error report issue #' + issues[0].number);
+                console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Updated existing error report issue #' + issues[0].number);
               } else {
                 // Create new issue
                 const { data: issue } = await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  title: 'Ä‘ĹşĹˇÂ¨ GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
+                  title: 'Ă„â€ÄąĹźÄąË‡Ă‚Â¨ GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
                   body: mdFile + assigneesHint,
                   labels: ['automated-error-report', 'ci/cd'],
                 });
 
-                console.log('Ă˘Ĺ›â€¦ Created new error report issue #' + issue.number);
+                console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Created new error report issue #' + issue.number);
               }
             } else {
-              console.log('Ă˘Ĺ›â€¦ No failures found, no issue needed');
+              console.log('Ä‚ËÄąâ€şĂ˘â‚¬Â¦ No failures found, no issue needed');
             }

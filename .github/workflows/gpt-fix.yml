@@ -28,6 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -37,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue comment "${{ inputs.issue_number }}" \
-            --body "🤖 Gemini odebrał zadanie. Analizuję błędy i przygotowuję PR..." \
+            --body "đź¤– Gemini odebraĹ‚ zadanie. AnalizujÄ™ bĹ‚Ä™dy i przygotowujÄ™ PR..." \
             --repo "${{ github.repository }}"
 
       - name: Create fix branch
@@ -93,7 +94,7 @@ jobs:
 
             Instructions:
             1. Analyze the errors carefully
-            2. Fix ONLY the root cause — do NOT suppress errors
+            2. Fix ONLY the root cause â€” do NOT suppress errors
             3. If a file imports a missing package (e.g. bun:sqlite), change the import
             4. If tables are missing in tests, fix the test setup/migrations
             5. Make MINIMAL targeted changes
@@ -104,7 +105,7 @@ jobs:
 
             If nothing needs to change, respond: NO_CHANGES`;
 
-            // Use GitHub Models (free, no extra API key needed — uses GITHUB_TOKEN)
+            // Use GitHub Models (free, no extra API key needed â€” uses GITHUB_TOKEN)
             const response = await fetch(
               'https://models.inference.ai.azure.com/chat/completions',
               {
@@ -151,7 +152,7 @@ jobs:
                 if (currentFile && currentLines.length > 0 && !currentFile.startsWith('.github')) {
                   fs.mkdirSync(path.dirname(currentFile), { recursive: true });
                   fs.writeFileSync(currentFile, currentLines.join('\n'));
-                  console.log(`✅ Applied fix to ${currentFile}`);
+                  console.log(`âś… Applied fix to ${currentFile}`);
                   changesApplied++;
                 }
                 currentFile = header[1].trim();
@@ -164,7 +165,7 @@ jobs:
             if (currentFile && currentLines.length > 0 && !currentFile.startsWith('.github')) {
               fs.mkdirSync(path.dirname(currentFile), { recursive: true });
               fs.writeFileSync(currentFile, currentLines.join('\n'));
-              console.log(`✅ Applied fix to ${currentFile}`);
+              console.log(`âś… Applied fix to ${currentFile}`);
               changesApplied++;
             }
 
@@ -213,11 +214,11 @@ jobs:
 
           if echo "$PR_URL" | grep -q "github.com"; then
             gh issue comment "${{ inputs.issue_number }}" \
-              --body "✅ PR gotowy do review: ${PR_URL}" \
+              --body "âś… PR gotowy do review: ${PR_URL}" \
               --repo "${{ github.repository }}"
           else
             gh issue comment "${{ inputs.issue_number }}" \
-              --body "✅ Zmiany wypchnięte na branch \`${BRANCH}\`. PR nie udało się utworzyć automatycznie — utwórz go ręcznie: https://github.com/${{ github.repository }}/compare/${BRANCH}" \
+              --body "âś… Zmiany wypchniÄ™te na branch \`${BRANCH}\`. PR nie udaĹ‚o siÄ™ utworzyÄ‡ automatycznie â€” utwĂłrz go rÄ™cznie: https://github.com/${{ github.repository }}/compare/${BRANCH}" \
               --repo "${{ github.repository }}"
             echo "PR creation failed but branch was pushed. Exiting successfully."
           fi
@@ -228,5 +229,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue comment "${{ inputs.issue_number }}" \
-            --body "⚠️ AI nie znalazło automatycznej poprawki. Wymaga ręcznej analizy: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
+            --body "âš ď¸Ź AI nie znalazĹ‚o automatycznej poprawki. Wymaga rÄ™cznej analizy: [CI logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})." \
             --repo "${{ github.repository }}"

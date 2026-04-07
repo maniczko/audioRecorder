@@ -61,12 +61,12 @@ jobs:
       - name: Auto-fix ESLint errors
         if: steps.lint.outputs.has_errors == 'true'
         run: |
-          echo "Ä‘Ĺşâ€ťÂ§ Auto-fixing ESLint errors..."
+          echo "Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ Auto-fixing ESLint errors..."
           pnpm run lint:fix || true
 
       - name: Auto-fix formatting
         run: |
-          echo "Ä‘Ĺşâ€ťÂ§ Auto-fixing formatting..."
+          echo "Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â§ Auto-fixing formatting..."
           pnpm run format || true
 
       - name: Check for changes
@@ -88,7 +88,7 @@ jobs:
       - name: Run tests after fix
         if: steps.git-check.outputs.has_changes == 'true'
         run: |
-          echo "Ä‘ĹşÂ§Ĺž Running tests after auto-fix..."
+          echo "Ă„â€ÄąĹźĂ‚Â§ÄąĹľ Running tests after auto-fix..."
           pnpm run test:smart-retry || true
 
       - name: Comment on PR
@@ -103,7 +103,7 @@ jobs:
             const hasLintErrors = lintErrors.trim().length > 0;
             const hasTypeErrors = typeErrors.trim().length > 0;
 
-            let comment = '## Ä‘ĹşÂ¤â€“ AI Auto-Fix Report\n\n';
+            let comment = '## Ă„â€ÄąĹźĂ‚Â¤Ă˘â‚¬â€ś AI Auto-Fix Report\n\n';
 
             if (hasLintErrors || hasTypeErrors) {
               comment += '### Issues Found:\n\n';
@@ -123,12 +123,12 @@ jobs:
               }
               
               comment += '### Actions Taken:\n';
-              comment += '- Ă˘Ĺ›â€¦ Auto-fixed ESLint errors\n';
-              comment += '- Ă˘Ĺ›â€¦ Auto-fixed formatting issues\n';
-              comment += '- Ă˘Ĺ›â€¦ Ran tests after fixes\n\n';
+              comment += '- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Auto-fixed ESLint errors\n';
+              comment += '- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Auto-fixed formatting issues\n';
+              comment += '- Ä‚ËÄąâ€şĂ˘â‚¬Â¦ Ran tests after fixes\n\n';
               comment += '---\n*This is an automated comment. Please review the changes.*\n';
             } else {
-              comment += '### Ă˘Ĺ›â€¦ No Issues Found!\n\n';
+              comment += '### Ä‚ËÄąâ€şĂ˘â‚¬Â¦ No Issues Found!\n\n';
               comment += 'Your code passes all lint and type checks.\n\n';
               comment += '---\n*This is an automated comment.*\n';
             }

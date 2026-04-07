@@ -245,7 +245,7 @@ jobs:
               taskQueue = fs.readFileSync('./TASK_QUEUE.md', 'utf8');
             } catch (_) {
               taskQueue =
-                '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### Ä‘Ĺşâ€ťÂ´ Wysoki priorytet\n\n';
+                '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â´ Wysoki priorytet\n\n';
             }
 
             let taskDone = '';
@@ -285,7 +285,7 @@ jobs:
                 const taskNum = `GH-AUTO-${dateStr}-${taskNumber++}`;
                 const workflowName = error.workflow || 'Unknown Workflow';
                 const errorMsg = error.message || error.line || 'Unknown error';
-                newTasks += `- **${taskNum}** Ă˘â‚¬â€ť Fix ${workflowName} failure\n`;
+                newTasks += `- **${taskNum}** Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ Fix ${workflowName} failure\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** GitHub Actions\n`;
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('GitHub Actions', workflowName, errorMsg)}\n`;
@@ -303,7 +303,7 @@ jobs:
               newRwErrors.forEach((error) => {
                 const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || 'Unknown Railway error';
-                newTasks += `- **${taskNum}** Ă˘â‚¬â€ť Fix Railway error\n`;
+                newTasks += `- **${taskNum}** Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ Fix Railway error\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Railway\n`;
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('Railway', 'Blad runtime lub deployu', errorMsg)}\n`;
@@ -320,7 +320,7 @@ jobs:
               newVlErrors.forEach((error) => {
                 const taskNum = `VL-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.text || 'Unknown Vercel error';
-                newTasks += `- **${taskNum}** Ă˘â‚¬â€ť Fix Vercel deployment error\n`;
+                newTasks += `- **${taskNum}** Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ Fix Vercel deployment error\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Vercel\n`;
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('Vercel', 'Blad buildu lub deploymentu', errorMsg)}\n`;
@@ -339,7 +339,7 @@ jobs:
                 const taskNum = `ST-AUTO-${dateStr}-${taskNumber++}`;
                 const title = error.title || 'Unknown Sentry error';
                 const errorMsg = error.message || title;
-                newTasks += `- **${taskNum}** Ă˘â‚¬â€ť Fix Sentry error: ${title}\n`;
+                newTasks += `- **${taskNum}** Ä‚ËĂ˘â€šÂ¬Ă˘â‚¬ĹĄ Fix Sentry error: ${title}\n`;
                 newTasks += `  - **Status:** todo\n`;
                 newTasks += `  - **Source:** Sentry (${error.project || 'unknown'})\n`;
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription(`Sentry/${error.project || 'unknown'}`, title, errorMsg)}\n`;
@@ -360,7 +360,7 @@ jobs:
               return;
             }
 
-            const preferredAnchors = ['### Ä‘Ĺşâ€ťÂ´ Wysoki priorytet', '## Aktualne Zadania', '## Otwarta kolejka'];
+            const preferredAnchors = ['### Ă„â€ÄąĹźĂ˘â‚¬ĹĄĂ‚Â´ Wysoki priorytet', '## Aktualne Zadania', '## Otwarta kolejka'];
             let insertIndex = -1;
             let anchorLength = 0;
 
