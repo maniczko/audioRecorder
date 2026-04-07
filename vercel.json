@@ -2,7 +2,7 @@
   "buildCommand": "pnpm run build:fix",
   "outputDirectory": "build",
   "framework": "vite",
-  "ignoreCommand": "if [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then exit 0; fi; git diff --quiet HEAD^ HEAD ./src ./public ./package.json ./pnpm-lock.yaml ./index.html ./vite.config.js ./vercel.json",
+  "ignoreCommand": "node scripts/vercel-ignore-command.mjs",
   "rewrites": [
     {
       "source": "/health",

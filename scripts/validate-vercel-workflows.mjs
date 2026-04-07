@@ -114,6 +114,12 @@ assertMatch(
 assertMatch(
   vercelConfig,
   vercelConfigPath,
+  'tested Vercel ignore command script',
+  /"ignoreCommand"\s*:\s*"node scripts\/vercel-ignore-command\.mjs"/m
+);
+assertMatch(
+  vercelConfig,
+  vercelConfigPath,
   'no-store header for root shell',
   /"source"\s*:\s*"\/"[\s\S]*?"Cache-Control"[\s\S]*?"no-store,\s*max-age=0"/m
 );
