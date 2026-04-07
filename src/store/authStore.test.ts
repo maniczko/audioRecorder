@@ -162,4 +162,246 @@ describe('authStore', () => {
     expect(useAuthStore.getState().authError).toBe('');
     expect(useAuthStore.getState().googleAuthMessage).toBe('');
   });
+
+  test('setAuthError sets error message', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.getState().setAuthError('Test error');
+
+    expect(useAuthStore.getState().authError).toBe('Test error');
+  });
+
+  test('setGoogleAuthMessage sets google message', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.getState().setGoogleAuthMessage('Google message');
+
+    expect(useAuthStore.getState().googleAuthMessage).toBe('Google message');
+  });
+
+  test('setResetDraft merges partial updates', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.getState().setResetDraft({ email: 'test@test.com' });
+
+    expect(useAuthStore.getState().resetDraft.email).toBe('test@test.com');
+  });
+
+  test('setProfileDraft merges partial updates', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.getState().setProfileDraft({ name: 'John' });
+
+    expect(useAuthStore.getState().profileDraft.name).toBe('John');
+  });
+
+  test('setPasswordDraft merges partial updates', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.getState().setPasswordDraft({ currentPassword: 'old' });
+
+    expect(useAuthStore.getState().passwordDraft.currentPassword).toBe('old');
+  });
+
+  test('requestResetCode succeeds', async () => {
+    mocks.requestPasswordReset.mockResolvedValue({
+      users: [{ id: 'u1' }],
+      recoveryCode: '123456',
+      expiresAt: '2024-01-15T10:00:00Z',
+    });
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      resetDraft: { email: 'test@test.com', code: '', newPassword: '', confirmPassword: '' },
+    });
+
+    await useAuthStore.getState().requestResetCode();
+
+    expect(mocks.requestPasswordReset).toHaveBeenCalled();
+    expect(useAuthStore.getState().resetPreviewCode).toBe('123456');
+    expect(useAuthStore.getState().resetMessage).toContain('Kod resetu');
+  });
+
+  test('requestResetCode handles failure', async () => {
+    mocks.requestPasswordReset.mockRejectedValue(new Error('User not found'));
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      resetDraft: { email: 'notfound@test.com', code: '', newPassword: '', confirmPassword: '' },
+    });
+
+    await useAuthStore.getState().requestResetCode();
+
+    expect(useAuthStore.getState().authError).toBe('User not found');
+  });
+
+  test('completeReset succeeds', async () => {
+    mocks.resetPasswordWithCode.mockResolvedValue([{ id: 'u1', email: 'test@test.com' }]);
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      resetDraft: {
+        email: 'test@test.com',
+        code: '123456',
+        newPassword: 'newpass',
+        confirmPassword: 'newpass',
+      },
+    });
+
+    await useAuthStore.getState().completeReset();
+
+    expect(mocks.resetPasswordWithCode).toHaveBeenCalled();
+    expect(useAuthStore.getState().resetMessage).toContain('Haslo zostalo zmienione');
+    expect(useAuthStore.getState().authMode).toBe('login');
+  });
+
+  test('completeReset handles failure', async () => {
+    mocks.resetPasswordWithCode.mockRejectedValue(new Error('Invalid code'));
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      resetDraft: {
+        email: 'test@test.com',
+        code: 'wrong',
+        newPassword: 'newpass',
+        confirmPassword: 'newpass',
+      },
+    });
+
+    await useAuthStore.getState().completeReset();
+
+    expect(useAuthStore.getState().authError).toBe('Invalid code');
+  });
+
+  test('handleGoogleProfile succeeds', async () => {
+    mocks.upsertGoogleUser.mockResolvedValue({
+      user: { id: 'u1', email: 'google@test.com' },
+      workspaces: [{ id: 'ws1' }],
+      token: 'google-token',
+      workspaceId: 'ws1',
+    });
+
+    const { useAuthStore } = await import('./authStore');
+
+    await useAuthStore.getState().handleGoogleProfile({
+      email: 'google@test.com',
+      name: 'Google User',
+    });
+
+    expect(mocks.upsertGoogleUser).toHaveBeenCalled();
+    expect(useAuthStore.getState().googleAuthMessage).toContain('Zalogowano przez Google');
+    expect(useAuthStore.getState().authError).toBe('');
+  });
+
+  test('handleGoogleProfile handles failure', async () => {
+    mocks.upsertGoogleUser.mockRejectedValue(new Error('Google auth failed'));
+
+    const { useAuthStore } = await import('./authStore');
+
+    await useAuthStore.getState().handleGoogleProfile({
+      email: 'google@test.com',
+      name: 'Google User',
+    });
+
+    expect(useAuthStore.getState().googleAuthMessage).toBe('Google auth failed');
+  });
+
+  test('saveProfile succeeds with array result', async () => {
+    mocks.updateUserProfile.mockResolvedValue([{ id: 'u1', name: 'Updated Name' }]);
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      profileDraft: { name: 'Updated Name', role: 'admin', company: 'Test Co' },
+    });
+
+    await useAuthStore.getState().saveProfile({ id: 'u1' });
+
+    expect(mocks.updateUserProfile).toHaveBeenCalled();
+    expect(useAuthStore.getState().profileMessage).toBe('Profil zapisany.');
+  });
+
+  test('saveProfile succeeds with users object result', async () => {
+    mocks.updateUserProfile.mockResolvedValue({
+      users: [{ id: 'u1', name: 'Updated Name' }],
+    });
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      profileDraft: { name: 'Updated Name' },
+    });
+
+    await useAuthStore.getState().saveProfile({ id: 'u1' });
+
+    expect(useAuthStore.getState().profileMessage).toBe('Profil zapisany.');
+  });
+
+  test('saveProfile handles failure', async () => {
+    mocks.updateUserProfile.mockRejectedValue(new Error('Update failed'));
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      profileDraft: { name: 'Updated Name' },
+    });
+
+    await useAuthStore.getState().saveProfile({ id: 'u1' });
+
+    expect(useAuthStore.getState().securityMessage).toBe('Update failed');
+  });
+
+  test('saveProfile does nothing without currentUser', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    await useAuthStore.getState().saveProfile(null);
+
+    expect(mocks.updateUserProfile).not.toHaveBeenCalled();
+  });
+
+  test('updatePassword succeeds', async () => {
+    mocks.changeUserPassword.mockResolvedValue([{ id: 'u1' }]);
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      passwordDraft: { currentPassword: 'old', newPassword: 'new', confirmPassword: 'new' },
+    });
+
+    await useAuthStore.getState().updatePassword({ id: 'u1' });
+
+    expect(mocks.changeUserPassword).toHaveBeenCalled();
+    expect(useAuthStore.getState().securityMessage).toBe('Haslo zostalo zmienione.');
+    expect(useAuthStore.getState().passwordDraft).toEqual({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+  });
+
+  test('updatePassword handles failure', async () => {
+    mocks.changeUserPassword.mockRejectedValue(new Error('Wrong password'));
+
+    const { useAuthStore } = await import('./authStore');
+
+    useAuthStore.setState({
+      passwordDraft: { currentPassword: 'wrong', newPassword: 'new', confirmPassword: 'new' },
+    });
+
+    await useAuthStore.getState().updatePassword({ id: 'u1' });
+
+    expect(useAuthStore.getState().securityMessage).toBe('Wrong password');
+  });
+
+  test('updatePassword does nothing without currentUser', async () => {
+    const { useAuthStore } = await import('./authStore');
+
+    await useAuthStore.getState().updatePassword(null);
+
+    expect(mocks.changeUserPassword).not.toHaveBeenCalled();
+  });
 });

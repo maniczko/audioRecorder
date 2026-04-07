@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
 import { useErrorLogStore } from '../store/errorLogStore';
 import './ErrorBoundaryStyles.css';
 
@@ -25,6 +26,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     console.error(`[ErrorBoundary:${this.props.label || 'App'}]`, error, info?.componentStack);
     this.setState({ info });
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info?.componentStack } },
+    });
     try {
       useErrorLogStore.getState().addError({
         type: 'react-boundary',

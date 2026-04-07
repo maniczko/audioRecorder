@@ -4,10 +4,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '@fontsource-variable/geist';
 import './index.css';
+import { initSentry } from './sentry';
 import App from './App';
 import { registerServiceWorker } from './pwa';
 import { prepareHostedRuntime } from './runtime/browserRuntime';
 import reportWebVitals from './reportWebVitals';
+
+initSentry();
 
 document.documentElement.setAttribute(
   'data-theme',

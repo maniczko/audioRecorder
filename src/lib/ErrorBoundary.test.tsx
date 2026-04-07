@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import * as Sentry from '@sentry/react';
 import ErrorBoundary from './ErrorBoundary';
 
 const originalConsoleError = console.error;
+
+vi.mock('@sentry/react', () => ({
+  captureException: vi.fn(),
+}));
 
 beforeEach(() => {
   console.error = vi.fn();
@@ -51,6 +56,29 @@ describe('ErrorBoundary', () => {
     );
 
     expect(screen.getByText('CustomComponent')).toBeInTheDocument();
+  });
+
+  it('reports render errors to Sentry with component stack', () => {
+    const ThrowError = () => {
+      throw new Error('Sentry test error');
+    };
+
+    render(
+      <ErrorBoundary {...defaultProps}>
+        <ThrowError />
+      </ErrorBoundary>
+    );
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        contexts: {
+          react: {
+            componentStack: expect.any(String),
+          },
+        },
+      })
+    );
   });
 
   it('displays error details in dev mode', () => {
