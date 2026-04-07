@@ -34,11 +34,14 @@ describe('sentry.ts', () => {
     // NODE_ENV is 'test' in vitest environment
     const { initSentry } = await import('../sentry.js');
     initSentry();
-    expect(mockSentryInit).toHaveBeenCalledWith({
-      dsn: 'https://test@o123.ingest.sentry.io/456',
-      tracesSampleRate: 0.1,
-      environment: 'test',
-    });
+    expect(mockSentryInit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dsn: 'https://test@o123.ingest.sentry.io/456',
+        tracesSampleRate: 0.1,
+        environment: 'test',
+        integrations: expect.any(Function),
+      })
+    );
   });
 
   test('uses NODE_ENV for environment', async () => {
