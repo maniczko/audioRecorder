@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 import TaskCreateForm from './TaskCreateForm';
 
@@ -23,6 +22,30 @@ vi.mock('../shared/TagInput', () => ({
           onChange={(e) => onChange([...tags, e.target.value])}
         />
       </div>
+    );
+  },
+}));
+
+vi.mock('../shared/MentionTextarea', () => ({
+  default: function MockMentionTextarea({
+    value,
+    placeholder,
+    onChange,
+    rows,
+  }: {
+    value: string;
+    placeholder: string;
+    onChange: (e: any) => void;
+    rows: number;
+  }) {
+    return (
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        rows={rows}
+        onChange={onChange}
+        data-testid="mock-mention-textarea"
+      />
     );
   },
 }));
@@ -59,25 +82,32 @@ describe('TaskCreateForm', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders all form fields', () => {
+  it('renders all form fields matching TaskDetailsPanel', () => {
     render(<TaskCreateForm {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('Dodaj zadanie (N)...')).toBeInTheDocument();
-    expect(screen.getByText('Osoba')).toBeInTheDocument();
-    expect(screen.getByText('Grupa')).toBeInTheDocument();
     expect(screen.getByText('Termin')).toBeInTheDocument();
-    expect(screen.getByText('Przypomnienie')).toBeInTheDocument();
+    expect(screen.getByText('Osoba')).toBeInTheDocument();
     expect(screen.getByText('Priorytet')).toBeInTheDocument();
-    expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Tagi')).toBeInTheDocument();
-    expect(screen.getByText('Ważne')).toBeInTheDocument();
+    expect(screen.getByText('Opis')).toBeInTheDocument();
+    expect(screen.getByText('Notatka')).toBeInTheDocument();
+  });
+
+  it('does not render fields absent from TaskDetailsPanel', () => {
+    render(<TaskCreateForm {...defaultProps} />);
+
+    expect(screen.queryByText('Przypomnienie')).not.toBeInTheDocument();
+    expect(screen.queryByText('Status')).not.toBeInTheDocument();
+    expect(screen.queryByText('Grupa')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ważne')).not.toBeInTheDocument();
   });
 
   it('hides quick-add row when showQuickAdd is false', () => {
     render(<TaskCreateForm {...defaultProps} showQuickAdd={false} />);
 
     expect(screen.queryByPlaceholderText('Dodaj zadanie (N)...')).not.toBeInTheDocument();
-    // Advanced fields still visible
+    // Fields still visible
     expect(screen.getByText('Osoba')).toBeInTheDocument();
     expect(screen.getByText('Priorytet')).toBeInTheDocument();
   });
@@ -126,19 +156,6 @@ describe('TaskCreateForm', () => {
     expect(titleInput.value).toBe('');
   });
 
-  it('renders board columns as status options', () => {
-    render(<TaskCreateForm {...defaultProps} />);
-
-    const statusSelect = screen.getByDisplayValue('Do zrobienia');
-    expect(statusSelect).toBeInTheDocument();
-
-    const options = statusSelect.querySelectorAll('option');
-    expect(options).toHaveLength(3);
-    expect(options[0].textContent).toBe('Do zrobienia');
-    expect(options[1].textContent).toBe('W toku');
-    expect(options[2].textContent).toBe('Gotowe');
-  });
-
   it('renders priority options', () => {
     render(<TaskCreateForm {...defaultProps} />);
 
@@ -148,16 +165,12 @@ describe('TaskCreateForm', () => {
 
   it('uses initialDraft values', () => {
     render(
-      <TaskCreateForm
-        {...defaultProps}
-        initialDraft={{ title: 'Wstępny', priority: 'high', group: 'Sprint 1' }}
-      />
+      <TaskCreateForm {...defaultProps} initialDraft={{ title: 'Wstępny', priority: 'high' }} />
     );
 
     const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...') as HTMLInputElement;
     expect(titleInput.value).toBe('Wstępny');
     expect(screen.getByDisplayValue('Wysoki')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Sprint 1')).toBeInTheDocument();
   });
 
   it('shows cancel button when showCancel and onCancel provided', () => {
@@ -191,45 +204,23 @@ describe('TaskCreateForm', () => {
     expect(submitButton).not.toBeDisabled();
   });
 
-  it('changes group via input', () => {
+  it('includes description and notes in submitted draft', () => {
     const onSubmit = vi.fn();
     render(<TaskCreateForm {...defaultProps} onSubmit={onSubmit} />);
 
-    const groupInput = screen.getByPlaceholderText('np. Sprint 14');
-    fireEvent.change(groupInput, { target: { value: 'Sprint 5' } });
+    const textareas = screen.getAllByTestId('mock-mention-textarea');
+    fireEvent.change(textareas[0], { target: { value: 'Opis zadania' } });
+    fireEvent.change(textareas[1], { target: { value: 'Notatka do zadania' } });
 
     const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...');
     fireEvent.change(titleInput, { target: { value: 'Task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
 
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ group: 'Sprint 5' }));
-  });
-
-  it('changes status via select', () => {
-    const onSubmit = vi.fn();
-    render(<TaskCreateForm {...defaultProps} onSubmit={onSubmit} />);
-
-    const statusSelect = screen.getByDisplayValue('Do zrobienia');
-    fireEvent.change(statusSelect, { target: { value: 'done' } });
-
-    const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...');
-    fireEvent.change(titleInput, { target: { value: 'Task' } });
-    fireEvent.keyDown(titleInput, { key: 'Enter' });
-
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ status: 'done' }));
-  });
-
-  it('toggles important checkbox', () => {
-    const onSubmit = vi.fn();
-    render(<TaskCreateForm {...defaultProps} onSubmit={onSubmit} />);
-
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
-
-    const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...');
-    fireEvent.change(titleInput, { target: { value: 'Task' } });
-    fireEvent.keyDown(titleInput, { key: 'Enter' });
-
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ important: true }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'Opis zadania',
+        notes: 'Notatka do zadania',
+      })
+    );
   });
 });

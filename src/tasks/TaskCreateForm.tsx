@@ -1,17 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  Plus,
-  Calendar,
-  User,
-  Flag,
-  Tag,
-  Layers,
-  Bell,
-  Star,
-  FolderOpen,
-  FileText,
-  AlignLeft,
-} from 'lucide-react';
+import { Plus, Calendar, User, Flag, Tag, FileText, AlignLeft } from 'lucide-react';
 import TagInput from '../shared/TagInput';
 import MentionTextarea from '../shared/MentionTextarea';
 import { TASK_PRIORITIES } from '../lib/tasks';
@@ -126,7 +114,7 @@ export default function TaskCreateForm({
         </div>
       )}
 
-      {/* Form fields — same layout as TaskDetailsPanel */}
+      {/* Form fields — identical to TaskDetailsPanel */}
       <div className="todo-detail-form">
         <div className="todo-detail-group">
           {/* Termin */}
@@ -142,24 +130,6 @@ export default function TaskCreateForm({
                 value={draft.dueDate}
                 onChange={(event) =>
                   setDraft((previous) => ({ ...previous, dueDate: event.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Przypomnienie */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Przypomnienie">
-              <Bell size={18} />
-            </span>
-            <span className="todo-row-label">Przypomnienie</span>
-            <div className="todo-detail-row-fill">
-              <Input
-                className="todo-detail-unified-field"
-                type="datetime-local"
-                value={draft.reminderAt}
-                onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, reminderAt: event.target.value }))
                 }
               />
             </div>
@@ -205,48 +175,6 @@ export default function TaskCreateForm({
             </div>
           </div>
 
-          {/* Status */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Status">
-              <Layers size={18} />
-            </span>
-            <span className="todo-row-label">Status</span>
-            <div className="todo-detail-row-fill">
-              <select
-                className="todo-detail-unified-field"
-                value={draft.status}
-                onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, status: event.target.value }))
-                }
-              >
-                {boardColumns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Grupa */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Grupa">
-              <FolderOpen size={18} />
-            </span>
-            <span className="todo-row-label">Grupa</span>
-            <div className="todo-detail-row-fill">
-              <Input
-                className="todo-detail-unified-field"
-                list="task-groups-list"
-                value={draft.group}
-                onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, group: event.target.value }))
-                }
-                placeholder="np. Sprint 14"
-              />
-            </div>
-          </div>
-
           {/* Tagi */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" aria-hidden="true" title="Tagi">
@@ -265,26 +193,6 @@ export default function TaskCreateForm({
                 }
                 placeholder="Dodaj tag..."
               />
-            </div>
-          </div>
-
-          {/* Ważne */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Ważne">
-              <Star size={18} />
-            </span>
-            <span className="todo-row-label">Ważne</span>
-            <div className="todo-detail-row-fill">
-              <label className="todo-inline-check" style={{ margin: 0, minHeight: 'auto' }}>
-                <input
-                  type="checkbox"
-                  checked={draft.important}
-                  onChange={(event) =>
-                    setDraft((previous) => ({ ...previous, important: event.target.checked }))
-                  }
-                />
-                <span>{draft.important ? 'Tak' : 'Nie'}</span>
-              </label>
             </div>
           </div>
         </div>
