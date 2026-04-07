@@ -666,4 +666,98 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-06T20:30:06.143Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-07T15:06:08.287Z -->
+
+### GitHub Actions Errors (10 found)
+
+- **GH-AUTO-2026-04-07-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:49:51.1420120Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+  - **Error:** 2026-04-07T14:49:51.1420120Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24087734167
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:03:33.2808656Z ##[error]Error: ENOENT: no such file or directory, open 'docs/openapi.yaml' Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: 'docs/openapi.yaml' }
+  - **Error:** 2026-04-07T14:03:33.2808656Z ##[error]Error: ENOENT: no such file or directory, open 'docs/openapi.yaml' Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: 'docs/openapi.yaml' }
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24085490375
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-3** — Fix E2E Playwright Tests failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-07T13:46:04.1243244Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:04.1270118Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:04.1243244Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:04.1270118Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738034
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-4** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T13:46:06.0024742Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:06.0052889Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:06.0024742Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:06.0052889Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738065
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-5** — Fix Backend Production Smoke failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Backend Production Smoke. Szczegoly: 2026-04-07T13:46:03.8834920Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:03.8865362Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:03.8834920Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:03.8865362Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738032
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-6** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9867054Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9931987Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:11.9867054Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9931987Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-7** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.7989690Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.8043279Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:11.7989690Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.8043279Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-8** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.5439963Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.5493153Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:11.5439963Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.5493153Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-9** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:17.2360648Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:17.2389119Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:17.2360648Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:17.2389119Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-10** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9831402Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9877184Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Error:** 2026-04-07T13:46:11.9831402Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9877184Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
+  - **Created:** 2026-04-07T15:06:08.287Z
+  - **Priority:** High
+
 
