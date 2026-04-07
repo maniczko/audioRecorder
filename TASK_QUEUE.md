@@ -760,4 +760,44 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-07T16:55:41.666Z -->
+
+### GitHub Actions Errors (4 found)
+
+- **GH-AUTO-2026-04-07-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:43:38.0780564Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T16:43:38.0804353Z TimeoutError: page.click: Time...
+  - **Error:** 2026-04-07T16:43:38.0780564Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24092839124
+  - **Created:** 2026-04-07T16:55:41.666Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:09:33.8172054Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+  - **Error:** 2026-04-07T16:09:33.8172054Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24091572365
+  - **Created:** 2026-04-07T16:55:41.666Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:50:30.5983147Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+  - **Error:** 2026-04-07T15:50:30.5983147Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24090689868
+  - **Created:** 2026-04-07T16:55:41.666Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:07:53.5665633Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+  - **Error:** 2026-04-07T15:07:53.5665633Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24088642224
+  - **Created:** 2026-04-07T16:55:41.666Z
+  - **Priority:** High
+
 
