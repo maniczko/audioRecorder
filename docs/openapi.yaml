@@ -1,0 +1,578 @@
+openapi: "3.0.3"
+info:
+  title: VoiceLog API
+  description: API specification for VoiceLog meeting intelligence platform
+  version: "1.0.0"
+  contact:
+    name: VoiceLog Team
+    email: support@voicelog.local
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://api.voicelog.app
+    description: Production server
+
+paths:
+  /api/health:
+    get:
+      summary: Health check endpoint
+      tags:
+        - System
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service is unhealthy
+
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request body
+        "409":
+          description: User already exists
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /api/meetings:
+    get:
+      summary: List all meetings
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of meetings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meeting"
+        "401":
+          description: Unauthorized
+
+    post:
+      summary: Create a new meeting
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMeetingRequest"
+      responses:
+        "201":
+          description: Meeting created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meeting"
+        "400":
+          description: Invalid request body
+
+  /api/meetings/{id}:
+    get:
+      summary: Get meeting by ID
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Meeting details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meeting"
+        "404":
+          description: Meeting not found
+
+  /api/meetings/{id}/transcript:
+    get:
+      summary: Get meeting transcript
+      tags:
+        - Meetings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Meeting transcript
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptResponse"
+        "404":
+          description: Meeting not found
+
+  /api/meetings/{id}/analysis:
+    get:
+      summary: Get meeting AI analysis
+      tags:
+        - Meetings
+        - AI
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Meeting analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingAnalysis"
+        "404":
+          description: Meeting not found
+
+  /api/ai/ask:
+    post:
+      summary: Ask AI a question about meetings
+      tags:
+        - AI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIAskRequest"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIAskResponse"
+
+  /api/tasks:
+    get:
+      summary: List all tasks
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+    post:
+      summary: Create a new task
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /api/users/profile:
+    get:
+      summary: Get current user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+
+    put:
+      summary: Update user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        workspaceMode:
+          type: string
+          enum: [create, join]
+        workspaceName:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+        workspaceId:
+          type: string
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/Workspace"
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+
+    Workspace:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+
+    Meeting:
+      type: object
+      required:
+        - id
+        - title
+        - startsAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        attendees:
+          type: array
+          items:
+            type: string
+        analysis:
+          $ref: "#/components/schemas/MeetingAnalysis"
+        transcript:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranscriptSegment"
+
+    CreateMeetingRequest:
+      type: object
+      required:
+        - title
+        - startsAt
+      properties:
+        title:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          default: 30
+        tags:
+          type: array
+          items:
+            type: string
+
+    TranscriptResponse:
+      type: object
+      properties:
+        transcript:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranscriptSegment"
+        speakerNames:
+          type: object
+          additionalProperties:
+            type: string
+
+    TranscriptSegment:
+      type: object
+      properties:
+        speakerId:
+          type: integer
+        text:
+          type: string
+        timestamp:
+          type: number
+        verificationStatus:
+          type: string
+          enum: [pending, review, verified]
+
+    MeetingAnalysis:
+      type: object
+      properties:
+        summary:
+          type: string
+        decisions:
+          type: array
+          items:
+            type: string
+        actionItems:
+          type: array
+          items:
+            type: string
+        feedback:
+          $ref: "#/components/schemas/MeetingFeedback"
+
+    MeetingFeedback:
+      type: object
+      properties:
+        scores:
+          type: object
+        insights:
+          type: array
+          items:
+            type: string
+
+    AIAskRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+        meetingIds:
+          type: array
+          items:
+            type: string
+
+    AIAskResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/Meeting"
+
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in-progress, review, done]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        assignee:
+          $ref: "#/components/schemas/User"
+        dueDate:
+          type: string
+          format: date
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          default: todo
+        priority:
+          type: string
+          default: medium
+        assigneeId:
+          type: string
+        dueDate:
+          type: string
+          format: date
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        preferences:
+          type: object
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        bio:
+          type: string
+        preferences:
+          type: object
