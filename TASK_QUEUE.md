@@ -813,4 +813,44 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T19:00:59.770Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-07T20:43:43.877Z -->
+
+### GitHub Actions Errors (4 found)
+
+- **GH-AUTO-2026-04-07-1** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "format" step "Check formatting" failed
+  - **Error:** Job "format" step "Check formatting" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24099736266
+  - **Created:** 2026-04-07T20:43:43.877Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-2** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T19:16:13.9116885Z Error: Invalid status code: 128 2026-04-07T19:16:13.9121510Z Error: Invalid status code: 128
+  - **Error:** 2026-04-07T19:16:13.9116885Z Error: Invalid status code: 128 2026-04-07T19:16:13.9121510Z Error: Invalid status code: 128
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24099736262
+  - **Created:** 2026-04-07T20:43:43.877Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:08:03.3275413Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:08:03.3308370Z TimeoutError: page.click: Time...
+  - **Error:** 2026-04-07T19:08:03.3275413Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24099170018
+  - **Created:** 2026-04-07T20:43:43.877Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-07-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:06:01.8184636Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:06:01.8210669Z TimeoutError: page.click: Time...
+  - **Error:** 2026-04-07T19:06:01.8184636Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24099066861
+  - **Created:** 2026-04-07T20:43:43.877Z
+  - **Priority:** High
+
 
