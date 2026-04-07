@@ -38,9 +38,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 9
+      
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -95,9 +93,9 @@ jobs:
         id: report
         run: |
           echo "Workflow Summary:"
-          echo "- ESLint: ${{ steps.lint.outputs.lint_status == '0' && '✅ Fixed' || '⚠️ Some issues remain' }}"
-          echo "- Format: ${{ steps.format.outputs.format_status == '0' && '✅ Fixed' || '⚠️ Some issues remain' }}"
-          echo "- Tests: ${{ steps.tests.outputs.tests_status == '0' && '✅ All passing' || '⚠️ Some tests failing' }}"
+          echo "- ESLint: ${{ steps.lint.outputs.lint_status == '0' && 'Ă˘Ĺ›â€¦ Fixed' || 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some issues remain' }}"
+          echo "- Format: ${{ steps.format.outputs.format_status == '0' && 'Ă˘Ĺ›â€¦ Fixed' || 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some issues remain' }}"
+          echo "- Tests: ${{ steps.tests.outputs.tests_status == '0' && 'Ă˘Ĺ›â€¦ All passing' || 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some tests failing' }}"
 
       - name: Comment on PR with status
         if: github.event_name == 'pull_request'
@@ -112,7 +110,7 @@ jobs:
             const allPassing = lintStatus === 0 && formatStatus === 0 && testsStatus === 0;
 
             if (allPassing) {
-              console.log('✅ All checks passed');
+              console.log('Ă˘Ĺ›â€¦ All checks passed');
               return;
             }
 
@@ -123,18 +121,18 @@ jobs:
             });
 
             const existingComment = comments.find(c =>
-              c.body.includes('🔧 Auto-Fix Summary')
+              c.body.includes('Ä‘Ĺşâ€ťÂ§ Auto-Fix Summary')
             );
 
             const statusMessage = [
-              '## 🔧 Auto-Fix Summary',
+              '## Ä‘Ĺşâ€ťÂ§ Auto-Fix Summary',
               '',
-              `- **ESLint:** ${lintStatus === 0 ? '✅ Fixed' : '⚠️ Some issues'}`,
-              `- **Format:** ${formatStatus === 0 ? '✅ Fixed' : '⚠️ Some issues'}`,
-              `- **Tests:** ${testsStatus === 0 ? '✅ All passing' : '❌ Some failing'}`,
+              `- **ESLint:** ${lintStatus === 0 ? 'Ă˘Ĺ›â€¦ Fixed' : 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some issues'}`,
+              `- **Format:** ${formatStatus === 0 ? 'Ă˘Ĺ›â€¦ Fixed' : 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some issues'}`,
+              `- **Tests:** ${testsStatus === 0 ? 'Ă˘Ĺ›â€¦ All passing' : 'Ă˘ĹĄĹš Some failing'}`,
               '',
               hasFixes ? 'Fixes have been automatically committed.' : '',
-              testsStatus !== 0 ? '⚠️ Some tests are still failing. Please review and fix manually.' : '',
+              testsStatus !== 0 ? 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some tests are still failing. Please review and fix manually.' : '',
             ].filter(Boolean).join('\n');
 
             if (existingComment) {
@@ -156,9 +154,9 @@ jobs:
       - name: Fail workflow if critical checks failed
         if: failure() && (steps.lint.outcome == 'failure' || steps.tests.outcome == 'failure')
         run: |
-          echo "❌ Auto-fix workflow encountered failures:"
-          echo "- ESLint: ${{ steps.lint.outcome == 'success' && '✅ Fixed' || '⚠️ Issues remain' }}"
-          echo "- Tests: ${{ steps.tests.outcome == 'success' && '✅ Fixed' || '⚠️ Issues remain' }}"
+          echo "Ă˘ĹĄĹš Auto-fix workflow encountered failures:"
+          echo "- ESLint: ${{ steps.lint.outcome == 'success' && 'Ă˘Ĺ›â€¦ Fixed' || 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Issues remain' }}"
+          echo "- Tests: ${{ steps.tests.outcome == 'success' && 'Ă˘Ĺ›â€¦ Fixed' || 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Issues remain' }}"
           echo ""
           echo "Please review the logs and fix manually if needed."
           exit 1

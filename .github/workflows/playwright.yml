@@ -23,9 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 9
+      
 
       - uses: actions/setup-node@v6
         with:
@@ -34,21 +32,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "📦 Installing dependencies..."
+          echo "Ä‘Ĺşâ€śÂ¦ Installing dependencies..."
           pnpm install --frozen-lockfile
 
       - name: Install Playwright Browsers
         run: |
-          echo "🌐 Installing Playwright browsers..."
+          echo "Ä‘ĹşĹšÂ Installing Playwright browsers..."
           pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright tests
         id: tests
         continue-on-error: true
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  🎭 Running E2E Playwright Tests                          ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "Ă˘â€˘â€ťĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘â€”"
+          echo "Ă˘â€˘â€  Ä‘ĹşĹ˝Â­ Running E2E Playwright Tests                          Ă˘â€˘â€"
+          echo "Ă˘â€˘ĹˇĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ĹĄ"
           pnpm exec playwright test \
             --reporter=list \
             --reporter=html \
@@ -63,9 +61,9 @@ jobs:
         if: always()
         run: |
           if [ ${{ steps.tests.outcome }} == 'success' ]; then
-            echo "✅ All E2E tests passed!"
+            echo "Ă˘Ĺ›â€¦ All E2E tests passed!"
           else
-            echo "⚠️ Some E2E tests failed. Check artifacts for details."
+            echo "Ă˘ĹˇÂ ÄŹÂ¸Ĺą Some E2E tests failed. Check artifacts for details."
           fi
 
       - name: Upload Playwright Report

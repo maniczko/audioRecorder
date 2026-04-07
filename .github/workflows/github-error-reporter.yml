@@ -30,8 +30,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -95,7 +93,7 @@ jobs:
 
               // Build assignees suggestion hint
               const assigneesHint = contributors.length > 0
-                ? '\n\n---\n💡 **Sugerowane osoby do przypisania:** ' +
+                ? '\n\n---\nÄ‘Ĺşâ€™Ë‡ **Sugerowane osoby do przypisania:** ' +
                   contributors.map(c => '@' + c.login).join(', ')
                 : '';
 
@@ -116,19 +114,19 @@ jobs:
                   body: mdFile + assigneesHint,
                 });
 
-                console.log('✅ Updated existing error report issue #' + issues[0].number);
+                console.log('Ă˘Ĺ›â€¦ Updated existing error report issue #' + issues[0].number);
               } else {
                 // Create new issue
                 const { data: issue } = await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  title: '🚨 GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
+                  title: 'Ä‘ĹşĹˇÂ¨ GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
                   body: mdFile + assigneesHint,
                   labels: ['automated-error-report', 'ci/cd'],
                 });
 
-                console.log('✅ Created new error report issue #' + issue.number);
+                console.log('Ă˘Ĺ›â€¦ Created new error report issue #' + issue.number);
               }
             } else {
-              console.log('✅ No failures found, no issue needed');
+              console.log('Ă˘Ĺ›â€¦ No failures found, no issue needed');
             }

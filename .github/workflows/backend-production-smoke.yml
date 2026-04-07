@@ -19,9 +19,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 9
+      
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -31,9 +29,9 @@ jobs:
       - name: Smoke-check deployed backend health
         id: smoke
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  🚬 Starting Backend Production Smoke Test                ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "Ă˘â€˘â€ťĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘â€”"
+          echo "Ă˘â€˘â€  Ä‘ĹşĹˇÂ¬ Starting Backend Production Smoke Test                Ă˘â€˘â€"
+          echo "Ă˘â€˘ĹˇĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ÂĂ˘â€˘ĹĄ"
           echo ""
           echo "Configuration:"
           echo "  - URL: $SMOKE_TEST_URL"
@@ -96,12 +94,12 @@ jobs:
 
             const issue = await github.rest.issues.create({
               owner, repo,
-              title: `🚨 Production crash: backend unhealthy after deploy ${sha}`,
+              title: `Ä‘ĹşĹˇÂ¨ Production crash: backend unhealthy after deploy ${sha}`,
               labels: ['crash', 'production'],
               body: [
                 `## Backend production crash detected`,
                 ``,
-                `The smoke test failed — Railway did not respond with a healthy status after deploying commit [\`${sha}\`](${commitUrl}).`,
+                `The smoke test failed Ă˘â‚¬â€ť Railway did not respond with a healthy status after deploying commit [\`${sha}\`](${commitUrl}).`,
                 ``,
                 `| | |`,
                 `|---|---|`,
@@ -111,7 +109,7 @@ jobs:
                 `| **Railway** | [Dashboard](${railwayUrl}) |`,
                 ``,
                 `### Immediate checklist`,
-                `- [ ] Open Railway dashboard → Deploy Logs for this service`,
+                `- [ ] Open Railway dashboard Ă˘â€ â€™ Deploy Logs for this service`,
                 `- [ ] Identify the crash in the stack trace`,
                 `- [ ] Roll back to the previous Railway deployment if users are affected`,
                 `- [ ] Fix the root cause, push a new commit`,
@@ -122,5 +120,5 @@ jobs:
             });
 
             console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
-            core.summary.addRaw(`## 🚨 Production crash issue created\n[#${issue.data.number}](${issue.data.html_url})`);
+            core.summary.addRaw(`## Ä‘ĹşĹˇÂ¨ Production crash issue created\n[#${issue.data.number}](${issue.data.html_url})`);
             await core.summary.write();
