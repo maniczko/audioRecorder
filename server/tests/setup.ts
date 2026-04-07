@@ -40,6 +40,8 @@ const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
   if (
     filePath &&
     (filePath.endsWith('.sql') ||
+      filePath.endsWith('.yaml') ||
+      filePath.endsWith('.yml') ||
       filePath.endsWith('.sqlite') ||
       filePath.endsWith('.db') ||
       filePath.endsWith('.py') ||
@@ -49,9 +51,9 @@ const readFileSyncMock = vi.fn((filePath: string, options?: any) => {
   ) {
     return originalFs?.readFileSync(filePath, options) ?? Buffer.from('mocked');
   }
-  // If encoding is 'utf8' or options has encoding utf8, return string
+  // Accept both "utf8" and "utf-8" because Node callers use both forms.
   const encoding = typeof options === 'string' ? options : options?.encoding;
-  if (encoding === 'utf8') {
+  if (encoding === 'utf8' || encoding === 'utf-8') {
     return 'mocked content';
   }
   return Buffer.from('mocked');
