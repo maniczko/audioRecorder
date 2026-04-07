@@ -1947,8 +1947,8 @@ export default function StudioMeetingView({
           <div className="ff-panels">
             {studioAnalysisTab === 'summary' && (
               <section className="panel studio-analysis-summary-panel">
-                <div className="panel-header compact">
-                  <div>
+                <div className="panel-header compact analysis-shell-header">
+                  <div className="analysis-shell-copy">
                     <div className="eyebrow">AI ? podsumowanie</div>
                     <div className="analysis-edit-header">
                       <h2>Podsumowanie spotkania</h2>
@@ -1978,6 +1978,19 @@ export default function StudioMeetingView({
                           </button>
                         </div>
                       )}
+                    </div>
+                    <p className="soft-copy analysis-shell-description">
+                      Najwazniejsze wnioski, decyzje i kolejne kroki zebrane w jednym miejscu.
+                    </p>
+                  </div>
+                  <div className="analysis-shell-metrics" aria-label="Podsumowanie spotkania">
+                    <div className="analysis-shell-metric">
+                      <strong>{summaryBullets.length}</strong>
+                      <span>akcenty</span>
+                    </div>
+                    <div className="analysis-shell-metric">
+                      <strong>{safeArray(studioAnalysis?.decisions).length}</strong>
+                      <span>decyzje</span>
                     </div>
                   </div>
                 </div>
@@ -2509,27 +2522,49 @@ export default function StudioMeetingView({
             )}
             {studioAnalysisTab === 'needs' && (
               <section className="panel">
-                <div className="panel-header compact">
-                  <div>
+                <div className="panel-header compact needs-panel-header">
+                  <div className="needs-panel-intro">
+                    <div className="eyebrow">Co warto uchwycic w rozmowie</div>
                     <h2>Potrzeby i obawy</h2>
+                    <p className="soft-copy needs-panel-copy">
+                      Zbierz sygnaly, ktore pomagaja lepiej zrozumiec priorytety, napiecia i
+                      gotowosc do decyzji.
+                    </p>
+                  </div>
+                  <div className="needs-panel-stats" aria-label="Podsumowanie potrzeb i obaw">
+                    <div className="needs-stat-pill needs-stat-pill--needs">
+                      <strong>{safeArray(selectedMeeting?.needs).length}</strong>
+                      <span>potrzeby</span>
+                    </div>
+                    <div className="needs-stat-pill needs-stat-pill--concerns">
+                      <strong>{safeArray(selectedMeeting?.concerns).length}</strong>
+                      <span>obawy</span>
+                    </div>
                   </div>
                 </div>
-                <div className="brief-columns two-col">
-                  <div className="brief-col">
-                    <div className="brief-col-head">
-                      <span className="brief-col-label">Potrzeby</span>
+                <div className="brief-columns two-col needs-grid">
+                  <article className="brief-col needs-card needs-card--needs">
+                    <div className="brief-col-head needs-card-head">
+                      <div className="needs-card-heading">
+                        <span className="brief-col-label">Potrzeby</span>
+                        <h3>Co jest teraz wazne</h3>
+                        <p className="soft-copy needs-card-copy">
+                          Wypisz oczekiwania, motywacje i rzeczy, ktore rozmowca chce osiagnac.
+                        </p>
+                      </div>
                       <button
                         type="button"
-                        className="what-matters-add-btn"
+                        className="what-matters-add-btn needs-card-add-btn"
                         onClick={() => setAddNeedOpen((v) => !v)}
                         title="Dodaj potrzebę"
                       >
-                        +
+                        <span aria-hidden="true">+</span>
+                        Dodaj
                       </button>
                     </div>
                     {addNeedOpen && (
                       <form
-                        className="what-matters-add-form"
+                        className="what-matters-add-form needs-card-form"
                         onSubmit={(e) => {
                           e.preventDefault();
                           if (!needDraft.trim()) return;
@@ -2550,35 +2585,57 @@ export default function StudioMeetingView({
                           onChange={(e) => setNeedDraft(e.target.value)}
                           placeholder="np. Potrzebuję wybudować dom"
                         />
-                        <button type="submit" className="ghost-button">
+                        <button type="submit" className="ghost-button needs-card-submit">
                           Dodaj
                         </button>
                       </form>
                     )}
-                    <ul className="clean-list">
-                      {(selectedMeeting?.needs || []).length ? (
-                        selectedMeeting?.needs.map((item) => <li key={item}>{item}</li>)
+                    <ul className="clean-list needs-token-list">
+                      {safeArray(selectedMeeting?.needs).length ? (
+                        safeArray(selectedMeeting?.needs).map((item) => (
+                          <li key={item} className="needs-token needs-token--needs">
+                            <span className="needs-token-bullet" aria-hidden="true" />
+                            <span>{item}</span>
+                          </li>
+                        ))
                       ) : (
-                        <li className="soft-copy">Brak potrzeb.</li>
+                        <li className="needs-empty-state needs-empty-state--needs">
+                          <span className="needs-empty-icon" aria-hidden="true">
+                            +
+                          </span>
+                          <div>
+                            <strong>Brak potrzeb</strong>
+                            <p className="soft-copy">
+                              Dodaj to, co dla tej osoby jest aktualnie najwazniejsze.
+                            </p>
+                          </div>
+                        </li>
                       )}
                     </ul>
-                  </div>
+                  </article>
 
-                  <div className="brief-col">
-                    <div className="brief-col-head">
-                      <span className="brief-col-label">Obawy</span>
+                  <article className="brief-col needs-card needs-card--concerns">
+                    <div className="brief-col-head needs-card-head">
+                      <div className="needs-card-heading">
+                        <span className="brief-col-label">Obawy</span>
+                        <h3>Co moze blokowac decyzje</h3>
+                        <p className="soft-copy needs-card-copy">
+                          Zanotuj ryzyka, watpliwosci i bariery, ktore warto adresowac dalej.
+                        </p>
+                      </div>
                       <button
                         type="button"
-                        className="what-matters-add-btn concern"
+                        className="what-matters-add-btn concern needs-card-add-btn"
                         onClick={() => setAddConcernOpen((v) => !v)}
                         title="Dodaj obawę"
                       >
-                        +
+                        <span aria-hidden="true">+</span>
+                        Dodaj
                       </button>
                     </div>
                     {addConcernOpen && (
                       <form
-                        className="what-matters-add-form"
+                        className="what-matters-add-form needs-card-form"
                         onSubmit={(e) => {
                           e.preventDefault();
                           if (!concernDraft.trim()) return;
@@ -2599,19 +2656,34 @@ export default function StudioMeetingView({
                           onChange={(e) => setConcernDraft(e.target.value)}
                           placeholder="np. Mam ograniczony budżet"
                         />
-                        <button type="submit" className="ghost-button">
+                        <button type="submit" className="ghost-button needs-card-submit">
                           Dodaj
                         </button>
                       </form>
                     )}
-                    <ul className="clean-list">
-                      {(selectedMeeting?.concerns || []).length ? (
-                        (selectedMeeting?.concerns || []).map((item) => <li key={item}>{item}</li>)
+                    <ul className="clean-list needs-token-list">
+                      {safeArray(selectedMeeting?.concerns).length ? (
+                        safeArray(selectedMeeting?.concerns).map((item) => (
+                          <li key={item} className="needs-token needs-token--concerns">
+                            <span className="needs-token-bullet" aria-hidden="true" />
+                            <span>{item}</span>
+                          </li>
+                        ))
                       ) : (
-                        <li className="soft-copy">Brak obaw.</li>
+                        <li className="needs-empty-state needs-empty-state--concerns">
+                          <span className="needs-empty-icon" aria-hidden="true">
+                            !
+                          </span>
+                          <div>
+                            <strong>Brak obaw</strong>
+                            <p className="soft-copy">
+                              Jesli pojawia sie opor albo ryzyko, zapisz je tutaj do dalszej pracy.
+                            </p>
+                          </div>
+                        </li>
                       )}
                     </ul>
-                  </div>
+                  </article>
                 </div>
 
                 {studioAnalysis?.answersToNeeds?.length > 0 && (
@@ -2633,10 +2705,20 @@ export default function StudioMeetingView({
 
             {studioAnalysisTab === 'profile' && (
               <section className="panel studio-psychological-profile-panel">
-                <div className="panel-header compact">
-                  <div>
+                <div className="panel-header compact analysis-shell-header">
+                  <div className="analysis-shell-copy">
                     <div className="eyebrow">AI — profile</div>
                     <h2>Profil psychologiczny</h2>
+                    <p className="soft-copy analysis-shell-description">
+                      Portrety uczestnikow, dynamika rozmowy i sygnaly, jak budowac lepsza
+                      wspolprace.
+                    </p>
+                  </div>
+                  <div className="analysis-shell-metrics" aria-label="Profil psychologiczny">
+                    <div className="analysis-shell-metric">
+                      <strong>{safeArray(studioAnalysis?.participantInsights).length}</strong>
+                      <span>profile</span>
+                    </div>
                   </div>
                 </div>
                 {studioAnalysis?.participantInsights?.length > 0 ? (
@@ -2835,13 +2917,13 @@ export default function StudioMeetingView({
 
             {studioAnalysisTab === 'feedback' && (
               <section className="panel studio-feedback-panel">
-                <div className="panel-header compact">
-                  <div>
+                <div className="panel-header compact analysis-shell-header">
+                  <div className="analysis-shell-copy">
                     <div className="eyebrow">AI — feedback</div>
                     <h2>Twój feedback</h2>
                   </div>
                   <div
-                    className="feedback-score-badge"
+                    className="feedback-score-badge analysis-shell-badge"
                     aria-label={`Ocena spotkania ${feedbackView.overallScore} na 10`}
                   >
                     {feedbackView.overallScore}/10
@@ -2978,16 +3060,27 @@ export default function StudioMeetingView({
             )}
             {studioAnalysisTab === 'tasks' && (
               <section className="panel studio-tasks-panel">
-                <div className="panel-header compact">
-                  <div>
+                <div className="panel-header compact analysis-shell-header">
+                  <div className="analysis-shell-copy">
+                    <div className="eyebrow">Plan dzialania</div>
                     <h2>Zadania</h2>
+                    <p className="soft-copy analysis-shell-description">
+                      Zamien ustalenia ze spotkania w konkretne zadania i przypisz je od razu do
+                      ludzi.
+                    </p>
+                  </div>
+                  <div className="analysis-shell-metrics" aria-label="Zadania">
+                    <div className="analysis-shell-metric">
+                      <strong>{safeArray(meetingTasks).length}</strong>
+                      <span>zadan</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="panel-body">
+                <div className="panel-body tasks-panel-body">
                   <button
                     type="button"
-                    className="primary-button"
+                    className="primary-button tasks-primary-action"
                     onClick={() => setIsAddingTask(true)}
                   >
                     + Dodaj zadanie

@@ -488,6 +488,36 @@ describe('StudioMeetingView', () => {
     expect(screen.getAllByText(/feedback/i).length).toBeGreaterThan(0);
   });
 
+  test('renders richer empty state in needs and concerns section', () => {
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Potrzeby i obawy/i }));
+
+    expect(screen.getByText(/Co warto uchwycic w rozmowie/i)).toBeInTheDocument();
+    expect(screen.getByText(/Co jest teraz wazne/i)).toBeInTheDocument();
+    expect(screen.getByText(/Co moze blokowac decyzje/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak potrzeb/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak obaw/i)).toBeInTheDocument();
+  });
+
+  test('renders descriptive headers across analysis tabs', () => {
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
+
+    expect(
+      screen.getByText(/Najwazniejsze wnioski, decyzje i kolejne kroki zebrane w jednym miejscu/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Profil psychologiczny/i }));
+    expect(
+      screen.getByText(/Portrety uczestnikow, dynamika rozmowy i sygnaly/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Zadania/i }));
+    expect(
+      screen.getByText(/Zamien ustalenia ze spotkania w konkretne zadania/i)
+    ).toBeInTheDocument();
+  });
+
   test('renders detailed feedback cards and category scores', () => {
     renderWithContext(
       <StudioMeetingView

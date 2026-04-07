@@ -112,6 +112,47 @@
 /* ff-player-bar compact on mobile                                  */
 /* ================================================================ */
 @media (max-width: 768px) {
+  .analysis-shell-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analysis-shell-metrics {
+    justify-content: flex-start;
+  }
+
+  .needs-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .needs-panel-stats {
+    justify-content: flex-start;
+  }
+
+  .needs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .needs-card {
+    padding: 18px 18px 16px;
+    border-radius: 18px;
+  }
+
+  .needs-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .needs-card-add-btn {
+    width: 100%;
+  }
+
+  .needs-empty-state {
+    min-height: unset;
+    padding: 16px;
+  }
+
   .ff-player-bar {
     padding: 10px 16px;
     min-height: 56px;
@@ -123,6 +164,20 @@
 }
 
 @media (max-width: 480px) {
+  .analysis-shell-metric {
+    min-width: calc(50% - 6px);
+  }
+
+  .needs-stat-pill {
+    min-width: calc(50% - 6px);
+  }
+
+  .needs-panel-copy,
+  .needs-card-copy,
+  .needs-empty-state p {
+    max-width: none;
+  }
+
   .ff-player-bar {
     padding: 8px 12px;
     min-height: 48px;

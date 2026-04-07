@@ -2019,15 +2019,24 @@
   background: #fbfcff;
 }
 
-.tasks-layout.ms-todo .todo-inline-check {
+.tasks-layout.ms-todo .todo-inline-check,
+.todo-inline-check {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #586c8b;
+  color: var(--text-muted, #586c8b);
+  cursor: pointer;
+  user-select: none;
+  min-height: auto;
 }
 
-.tasks-layout.ms-todo .todo-inline-check input {
+.tasks-layout.ms-todo .todo-inline-check input,
+.todo-inline-check input[type="checkbox"] {
   width: auto;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent, #75d6c4);
+  flex-shrink: 0;
 }
 
 .tasks-layout.ms-todo .todo-table-wrap {
