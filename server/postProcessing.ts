@@ -81,6 +81,7 @@ export async function analyzeMeetingWithOpenAI({
   segments = [],
   speakerNames = {},
 }: any = {}) {
+  if (!config.VOICELOG_ENABLE_MEETING_ANALYSIS) return null;
   if (!OPENAI_API_KEY || !segments.length) return null;
 
   const fmt = (s: number) => {

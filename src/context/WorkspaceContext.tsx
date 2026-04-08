@@ -1,7 +1,31 @@
 import { createContext, useContext } from 'react';
 import { useWorkspaceSelectors, useWorkspaceStore } from '../store/workspaceStore';
 
-const WorkspaceContext = createContext<any>(null);
+const defaultWorkspaceCtx = {
+  workspace: {
+    users: [],
+    setUsers: () => { },
+    workspaces: [],
+    setWorkspaces: () => { },
+    session: null,
+    setSession: () => { },
+    currentUser: null,
+    currentUserId: '',
+    currentWorkspace: null,
+    currentWorkspaceId: '',
+    currentWorkspaceMembers: [],
+    currentWorkspaceRole: null,
+    currentWorkspacePermissions: null,
+    isHydratingSession: false,
+    availableWorkspaces: [],
+    switchWorkspace: async () => { },
+    updateWorkspaceMemberRole: async () => { },
+    removeWorkspaceMember: async () => { },
+    logout: async () => { },
+  },
+};
+
+const WorkspaceContext = createContext(defaultWorkspaceCtx);
 
 export function WorkspaceProvider({ children }) {
   const selectors = useWorkspaceSelectors();
@@ -31,13 +55,9 @@ export function WorkspaceProvider({ children }) {
     },
   };
 
-  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
+  return <WorkspaceContext.Provider value={value as unknown as typeof defaultWorkspaceCtx}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspaceCtx() {
-  const ctx = useContext(WorkspaceContext);
-  if (!ctx) {
-    throw new Error('useWorkspaceCtx must be used within WorkspaceProvider');
-  }
-  return ctx;
+  return useContext(WorkspaceContext);
 }

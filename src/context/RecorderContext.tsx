@@ -3,7 +3,17 @@ import useRecorder from '../hooks/useRecorder';
 import useMeetings from '../hooks/useMeetings';
 
 type RecorderContextValue = ReturnType<typeof useRecorder>;
-const RecorderContext = createContext<RecorderContextValue | null>(null);
+
+const defaultRecorderCtx = {
+  recordingState: null,
+  startRecording: async () => { },
+  stopRecording: () => { },
+  pauseRecording: () => { },
+  resumeRecording: () => { },
+  deleteRecording: async () => { },
+} as unknown as RecorderContextValue;
+
+const RecorderContext = createContext<RecorderContextValue>(defaultRecorderCtx);
 
 export function RecorderProvider({ children }) {
   const meetings = useMeetings();
@@ -21,9 +31,5 @@ export function RecorderProvider({ children }) {
 }
 
 export function useRecorderCtx() {
-  const ctx = useContext(RecorderContext);
-  if (!ctx) {
-    throw new Error('useRecorderCtx must be used within RecorderProvider');
-  }
-  return ctx;
+  return useContext(RecorderContext);
 }

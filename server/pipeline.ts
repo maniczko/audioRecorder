@@ -199,12 +199,13 @@ async function runTranscriptionAttempt(
     // Run VAD and pyannote in parallel, then do STT
     notify(30, 'Równoległe przetwarzanie: VAD + diaryzacja...');
 
-    const usePyannote = VOICELOG_DIARIZER !== 'openai' && HF_TOKEN_SET;
+    const usePyannote = VOICELOG_DIARIZER !== 'openai' && HF_TOKEN_SET && !options.skipEarlyPyannote;
+    const useVAD = VAD_ENABLED && !options.skipChunkVAD;
 
     const [speechSegments, earlyPyannoteSegments] = await Promise.all([
       // 1. Silero VAD - silence detection
       (async () => {
-        if (!VAD_ENABLED) return null;
+        if (!useVAD) return null;
         notify(30, 'Silero VAD - optymalizacja ciszy...');
         return await runSileroVAD(transcribeFilePath, options.signal);
       })(),
@@ -621,7 +622,7 @@ async function runTranscriptionAttempt(
         ...(diarization as any).speakerGenders,
       };
       const voiceProfiles = options.voiceProfiles || [];
-      if (voiceProfiles.length && diarization.speakerCount > 0) {
+      if (voiceProfiles.length && diarization.speakerCount > 0 && !options.skipVoiceProfileMatch) {
         const speakerSegmentMap = new Map<string, any[]>();
         for (const seg of diarization.segments) {
           const sid = String(seg.speakerId);

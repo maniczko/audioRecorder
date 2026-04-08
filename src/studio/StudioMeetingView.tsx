@@ -669,7 +669,7 @@ export default function StudioMeetingView({
     );
   }, [selectedMeeting?.guests, selectedMeeting?.tags]);
 
-  const { meetings } = useMeetingsCtx();
+  const meetings = useMeetingsCtx();
   const updateMeeting = meetings?.updateMeeting;
   const setWorkspaceMessage = meetings?.setWorkspaceMessage;
   const normalizedWorkspaceMessage = String(workspaceMessage || '').toLowerCase();

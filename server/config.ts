@@ -57,15 +57,16 @@ const envSchema = z.object({
   STT_CONCURRENCY_LIMIT: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().optional())
     .default(2),
-  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('full'),
+  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('fast'),
   VOICELOG_STT_MODEL_FAST: z.string().default('whisper-1'), // Fast mode: whisper-1 for balance
   VOICELOG_STT_MODEL_FULL: z.string().default('gpt-4o-transcribe'), // Full mode: gpt-4o-transcribe for premium accuracy
   VOICELOG_CHUNK_OVERLAP_SECONDS: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().int().min(0).optional())
-    .default(5),
+    .default(2),
   VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === 'true', z.boolean()).default(true), // Enable adaptive overlap based on speech density
-  VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
+  VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
+  VOICELOG_ENABLE_MEETING_ANALYSIS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-3-5-haiku-latest'),
@@ -83,17 +84,17 @@ const envSchema = z.object({
 
   DIARIZATION_MODEL: z.string().default('pyannote/speaker-diarization-3.1'),
   SPEAKER_IDENTIFICATION_MODEL: z.string().default('microsoft/wavlm-base-plus-sv'),
-  VERIFICATION_MODEL: z.string().default('gpt-4o-transcribe'),
+  VERIFICATION_MODEL: z.string().default('whisper-1'),
 
   VOICELOG_DIARIZER: z.enum(['pyannote', 'openai', 'auto']).default('auto'),
   AUDIO_LANGUAGE: z.string().default('pl'),
   AUDIO_PREPROCESS: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
   VOICELOG_SILENCE_REMOVE: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
-  VOICELOG_PER_SPEAKER_NORM: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
+  VOICELOG_PER_SPEAKER_NORM: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   TRANSCRIPT_CORRECTION: z
     .preprocess((val) => val === 'true' || val === true, z.boolean())
-    .default(true),
-  VAD_ENABLED: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
+    .default(false),
+  VAD_ENABLED: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   WHISPER_PROMPT: z.string().optional(),
 
   DEBUG: z.preprocess((val) => val === 'true', z.boolean()).default(false),

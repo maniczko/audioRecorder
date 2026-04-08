@@ -27,6 +27,7 @@ export default class TranscriptionService extends EventEmitter {
   transcriptionJobs: Map<string, Promise<void>>;
   private _jobStartTimes: Map<string, number>;
   private _staleJobTimer: ReturnType<typeof setInterval> | null;
+  private _pendingQueue: Array<{ recordingId: string; asset: any; options: any }> = [];
 
   constructor(db: any, workspaceService: any, audioPipeline: any, speakerEmbedder: any) {
     super();
@@ -158,31 +159,25 @@ export default class TranscriptionService extends EventEmitter {
       return;
     }
 
-    // Reject new jobs when RSS exceeds threshold to prevent Railway OOM kills
+    // Queue jobs when at capacity or under memory pressure instead of rejecting
     const rss = process.memoryUsage().rss;
-    if (rss > TranscriptionService.RSS_LIMIT_BYTES) {
-      console.warn(
-        `[Pipeline] Rejecting job ${recordingId}: RSS ${(rss / 1024 / 1024).toFixed(0)}MB exceeds ${(TranscriptionService.RSS_LIMIT_BYTES / 1024 / 1024).toFixed(0)}MB limit`
-      );
-      await this.markTranscriptionFailure(
-        recordingId,
-        'Serwer chwilowo przeciążony pamięciowo — spróbuj ponownie za minutę.'
-      );
-      // Aggressive GC to try reclaiming memory before next retry arrives
-      if (typeof global.gc === 'function') global.gc();
-      return;
-    }
+    const atCapacity = this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS;
+    const memoryPressure = rss > TranscriptionService.RSS_LIMIT_BYTES;
 
-    // Reject new jobs when we're already at capacity to prevent OOM
-    if (this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS) {
-      console.warn(
-        `[Pipeline] Rejecting job ${recordingId}: ${this.transcriptionJobs.size} concurrent jobs (max ${TranscriptionService.MAX_CONCURRENT_JOBS})`
-      );
-      await this.markTranscriptionFailure(
-        recordingId,
-        'Serwer jest przeciążony — spróbuj ponownie za chwilę.'
-      );
-      if (typeof global.gc === 'function') global.gc();
+    if (atCapacity || memoryPressure) {
+      const reason = memoryPressure
+        ? `RSS ${(rss / 1024 / 1024).toFixed(0)}MB exceeds limit`
+        : `${this.transcriptionJobs.size} concurrent jobs (max ${TranscriptionService.MAX_CONCURRENT_JOBS})`;
+      // Avoid duplicate queue entries
+      if (!this._pendingQueue.some((item) => item.recordingId === recordingId)) {
+        this._pendingQueue.push({ recordingId, asset, options });
+        console.log(
+          `[Pipeline] Queued job ${recordingId} (${reason}). Queue size: ${this._pendingQueue.length}`
+        );
+      }
+      // Mark as queued in DB (not failed) so frontend shows "W toku" instead of error
+      await this.queueTranscription(recordingId, options);
+      if (memoryPressure && typeof global.gc === 'function') global.gc();
       return;
     }
 
@@ -195,8 +190,10 @@ export default class TranscriptionService extends EventEmitter {
           options.processingMode === 'full' || options.processingMode === 'fast'
             ? options.processingMode
             : config.VOICELOG_PROCESSING_MODE_DEFAULT;
-        const shouldRunPostprocess =
-          processingMode === 'fast' && config.VOICELOG_ENABLE_POSTPROCESS;
+        // Disabled: runEnhancementPostProcess re-runs the ENTIRE pipeline with full mode
+        // (re-downloads audio, re-preprocesses, re-transcribes with expensive model).
+        // This doubles processing time and cost. Users can request 'full' mode explicitly.
+        const shouldRunPostprocess = false;
         let localSourcePath = '';
         let cleanupLocalSource = async () => {};
 
@@ -317,10 +314,33 @@ export default class TranscriptionService extends EventEmitter {
         this._jobStartTimes.delete(recordingId);
         // Trigger GC to release native memory held by ffmpeg/audio buffers
         if (typeof global.gc === 'function') global.gc();
+        // Drain next queued job
+        this._drainQueue();
       });
 
     this.transcriptionJobs.set(recordingId, jobPromise);
     this._jobStartTimes.set(recordingId, Date.now());
+  }
+
+  private _drainQueue() {
+    if (this._pendingQueue.length === 0) return;
+    if (this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS) return;
+    const rss = process.memoryUsage().rss;
+    if (rss > TranscriptionService.RSS_LIMIT_BYTES) {
+      console.log(
+        `[Pipeline] Queue drain deferred: RSS ${(rss / 1024 / 1024).toFixed(0)}MB still above limit. ${this._pendingQueue.length} jobs waiting.`
+      );
+      if (typeof global.gc === 'function') global.gc();
+      setTimeout(() => this._drainQueue(), 5000);
+      return;
+    }
+    const next = this._pendingQueue.shift()!;
+    console.log(
+      `[Pipeline] Draining queued job ${next.recordingId}. Remaining: ${this._pendingQueue.length}`
+    );
+    this.ensureTranscriptionJob(next.recordingId, next.asset, next.options).catch((err) => {
+      console.error(`[Pipeline] Failed to start queued job ${next.recordingId}:`, err?.message);
+    });
   }
 
   async runEnhancementPostProcess(

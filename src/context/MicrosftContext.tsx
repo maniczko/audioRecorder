@@ -5,7 +5,20 @@ import { useAuthStore } from '../store/authStore';
 import useMeetings from '../hooks/useMeetings';
 
 type MicrosoftContextValue = ReturnType<typeof useMicrosoftIntegrations>;
-const MicrosoftContext = createContext<MicrosoftContextValue | null>(null);
+
+const defaultMicrosoftCtx = {
+  microsoftCalendarConnected: false,
+  connectMicrosoftCalendar: async () => { },
+  disconnectMicrosoft: async () => { },
+  microsoftCalendarEvents: [],
+  isMicrosoftLoading: false,
+  microsoftError: null,
+  setMicrosoftAuthMessage: () => { },
+  handleMicrosoftProfile: async () => { },
+  microsoftAuthMessage: '',
+} as unknown as MicrosoftContextValue;
+
+const MicrosoftContext = createContext<MicrosoftContextValue>(defaultMicrosoftCtx);
 
 export function MicrosoftProvider({ calendarMonth, children }) {
   const workspace = useWorkspaceSelectors();
@@ -28,9 +41,5 @@ export function MicrosoftProvider({ calendarMonth, children }) {
 }
 
 export function useMicrosoftCtx() {
-  const ctx = useContext(MicrosoftContext);
-  if (!ctx) {
-    throw new Error('useMicrosoftCtx must be used within MicrosoftProvider');
-  }
-  return ctx;
+  return useContext(MicrosoftContext);
 }

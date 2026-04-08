@@ -713,10 +713,17 @@ export const useRecorderStore = create<any>()(
               processingEndedAt: new Date().toISOString(),
             };
 
-            const emptyAttached = attachCompletedRecording(target.id, recording);
+            let emptyAttached = attachCompletedRecording(target.id, recording);
+            if (emptyAttached === false) {
+              // Retry attachment — meeting may not be hydrated yet (race condition)
+              for (let attempt = 0; attempt < 7 && !emptyAttached; attempt++) {
+                await new Promise((r) => setTimeout(r, 2000));
+                emptyAttached = attachCompletedRecording(target.id, recording);
+              }
+            }
             if (emptyAttached === false) {
               console.warn(
-                '[queue] Meeting not found when attaching empty-transcript recording',
+                '[queue] Meeting not found when attaching empty-transcript recording after retries',
                 nextItem.recordingId,
                 target.id
               );
@@ -796,10 +803,17 @@ export const useRecorderStore = create<any>()(
             processingEndedAt: new Date().toISOString(),
           };
 
-          const attached = attachCompletedRecording(target.id, recording);
+          let attached = attachCompletedRecording(target.id, recording);
+          if (attached === false) {
+            // Retry attachment — meeting may not be hydrated yet (race condition)
+            for (let attempt = 0; attempt < 7 && !attached; attempt++) {
+              await new Promise((r) => setTimeout(r, 2000));
+              attached = attachCompletedRecording(target.id, recording);
+            }
+          }
           if (attached === false) {
             console.warn(
-              '[queue] Meeting not found when attaching recording',
+              '[queue] Meeting not found when attaching recording after retries',
               nextItem.recordingId,
               target.id
             );

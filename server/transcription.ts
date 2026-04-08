@@ -714,7 +714,7 @@ export async function transcribeInChunks(
           }
 
           let chunkSpeech: any = null;
-          if (VAD_ENABLED) {
+          if (VAD_ENABLED && !options.skipChunkVAD) {
             const tmpVad = path.join(os.tmpdir(), `vadsilero_${crypto.randomUUID()}.wav`);
             fs.writeFileSync(tmpVad, buffer);
             chunkSpeech = await runSileroVAD(tmpVad, options.signal);

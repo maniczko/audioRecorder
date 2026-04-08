@@ -5,7 +5,26 @@ import { useAuthStore } from '../store/authStore';
 import useMeetings from '../hooks/useMeetings';
 
 type GoogleContextValue = ReturnType<typeof useGoogleIntegrations>;
-const GoogleContext = createContext<GoogleContextValue | null>(null);
+
+const defaultGoogleCtx = {
+  googleCalendarConnected: false,
+  googleTasksConnected: false,
+  connectGoogleCalendar: async () => { },
+  connectGoogleTasks: async () => { },
+  disconnectGoogle: async () => { },
+  googleCalendarEvents: [],
+  googleTaskLists: [],
+  selectedGoogleTaskListId: '',
+  setSelectedGoogleTaskListId: () => { },
+  resolveGoogleTaskConflict: async () => { },
+  isGoogleLoading: false,
+  googleError: null,
+  setGoogleAuthMessage: () => { },
+  handleGoogleProfile: async () => { },
+  googleAuthMessage: '',
+} as unknown as GoogleContextValue;
+
+const GoogleContext = createContext<GoogleContextValue>(defaultGoogleCtx);
 
 export function GoogleProvider({ calendarMonth, children }) {
   const workspace = useWorkspaceSelectors();
@@ -28,9 +47,5 @@ export function GoogleProvider({ calendarMonth, children }) {
 }
 
 export function useGoogleCtx() {
-  const ctx = useContext(GoogleContext);
-  if (!ctx) {
-    throw new Error('useGoogleCtx must be used within GoogleProvider');
-  }
-  return ctx;
+  return useContext(GoogleContext);
 }
