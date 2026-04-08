@@ -3,8 +3,8 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
 import { MeetingsProvider, useMeetingsCtx } from './MeetingsContext';
 
-const mocks = vi.hoisted(() => ({
-  meetings: {
+vi.mock('../hooks/useMeetings', () => ({
+  default: () => ({
     userMeetings: [{ id: 'm1', title: 'Demo meeting' }],
     createAdHocMeeting: () => ({ id: 'm2' }),
     selectedMeetingId: 'm1',
@@ -77,11 +77,7 @@ const mocks = vi.hoisted(() => ({
     autoCreateVoiceProfile: () => {},
     renameTag: () => {},
     deleteTag: () => {},
-  },
-}));
-
-vi.mock('../hooks/useMeetings', () => ({
-  default: () => mocks.meetings,
+  }),
 }));
 
 describe('MeetingsContext', () => {
