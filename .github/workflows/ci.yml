@@ -121,6 +121,8 @@ jobs:
 
       - name: Run unit tests
         run: pnpm test -- --coverage --reporter=junit --outputFile=reports/junit.xml
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v6
