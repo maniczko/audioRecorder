@@ -1981,8 +1981,8 @@
 }
 
 .tasks-layout.ms-todo .todo-task-circle {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   border: 1.5px solid #507aff;
   background: #ffffff;
@@ -1999,11 +1999,11 @@
 .tasks-layout.ms-todo .todo-task-circle.completed::after {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 2px;
-  width: 6px;
-  height: 9px;
-  border: 2px solid #fff;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 7px;
+  border: 1.5px solid #fff;
   border-top: none;
   border-left: none;
   transform: rotate(42deg);
