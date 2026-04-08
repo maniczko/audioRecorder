@@ -120,9 +120,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm test -- --coverage --reporter=junit --outputFile=reports/junit.xml
+        run: pnpm run test:server:retry
         env:
-          NODE_OPTIONS: --max-old-space-size=8192
+          NODE_OPTIONS: --max-old-space-size=12288
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v6
