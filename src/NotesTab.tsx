@@ -387,7 +387,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.decisions.map((d, i) => (
-                <li key={d+String(i)}>{d}</li>
+                <li key={d + String(i)}>{d}</li>
               ))}
             </ul>
           </div>
@@ -401,7 +401,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.actionItems.map((a, i) => (
-                <li key={a+String(i)}>{a}</li>
+                <li key={a + String(i)}>{a}</li>
               ))}
             </ul>
           </div>
@@ -415,7 +415,7 @@ function NoteDetail({
             </div>
             <ul className="notes-section-list">
               {note.followUps.map((f, i) => (
-                <li key={f+String(i)}>{f}</li>
+                <li key={f + String(i)}>{f}</li>
               ))}
             </ul>
           </div>
@@ -429,7 +429,10 @@ function NoteDetail({
             </div>
             <div className="notes-answers-grid">
               {note.answersToNeeds.map((item, i) => (
-                <div key={(item.need||'')+(item.answer||'')+String(i)} className="notes-answer-card">
+                <div
+                  key={(item.need || '') + (item.answer || '') + String(i)}
+                  className="notes-answer-card"
+                >
                   {item.need && <strong>{item.need}</strong>}
                   {item.answer && <p>{item.answer}</p>}
                 </div>
@@ -469,7 +472,7 @@ function NoteDetail({
             </div>
             <div className="notes-attendees">
               {note.attendees.map((a, i) => (
-                <span key={a+String(i)} className="notes-attendee-chip">
+                <span key={a + String(i)} className="notes-attendee-chip">
                   {a}
                 </span>
               ))}

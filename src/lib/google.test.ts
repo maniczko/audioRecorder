@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * google lib tests - comprehensive coverage
- * 
+ *
  * Tests for Google integration utilities
  */
 

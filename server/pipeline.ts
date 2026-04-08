@@ -199,7 +199,8 @@ async function runTranscriptionAttempt(
     // Run VAD and pyannote in parallel, then do STT
     notify(30, 'Równoległe przetwarzanie: VAD + diaryzacja...');
 
-    const usePyannote = VOICELOG_DIARIZER !== 'openai' && HF_TOKEN_SET && !options.skipEarlyPyannote;
+    const usePyannote =
+      VOICELOG_DIARIZER !== 'openai' && HF_TOKEN_SET && !options.skipEarlyPyannote;
     const useVAD = VAD_ENABLED && !options.skipChunkVAD;
 
     const [speechSegments, earlyPyannoteSegments] = await Promise.all([

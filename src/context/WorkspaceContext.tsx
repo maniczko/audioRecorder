@@ -4,11 +4,11 @@ import { useWorkspaceSelectors, useWorkspaceStore } from '../store/workspaceStor
 const defaultWorkspaceCtx = {
   workspace: {
     users: [],
-    setUsers: () => { },
+    setUsers: () => {},
     workspaces: [],
-    setWorkspaces: () => { },
+    setWorkspaces: () => {},
     session: null,
-    setSession: () => { },
+    setSession: () => {},
     currentUser: null,
     currentUserId: '',
     currentWorkspace: null,
@@ -18,10 +18,10 @@ const defaultWorkspaceCtx = {
     currentWorkspacePermissions: null,
     isHydratingSession: false,
     availableWorkspaces: [],
-    switchWorkspace: async () => { },
-    updateWorkspaceMemberRole: async () => { },
-    removeWorkspaceMember: async () => { },
-    logout: async () => { },
+    switchWorkspace: async () => {},
+    updateWorkspaceMemberRole: async () => {},
+    removeWorkspaceMember: async () => {},
+    logout: async () => {},
   },
 };
 
@@ -55,7 +55,11 @@ export function WorkspaceProvider({ children }) {
     },
   };
 
-  return <WorkspaceContext.Provider value={value as unknown as typeof defaultWorkspaceCtx}>{children}</WorkspaceContext.Provider>;
+  return (
+    <WorkspaceContext.Provider value={value as unknown as typeof defaultWorkspaceCtx}>
+      {children}
+    </WorkspaceContext.Provider>
+  );
 }
 
 export function useWorkspaceCtx() {

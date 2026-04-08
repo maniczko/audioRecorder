@@ -66,7 +66,9 @@ const envSchema = z.object({
   VOICELOG_ADAPTIVE_OVERLAP: z.preprocess((val) => val === 'true', z.boolean()).default(true), // Enable adaptive overlap based on speech density
   VOICELOG_ENABLE_CHUNK_VAD: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   VOICELOG_ENABLE_POSTPROCESS: z.preprocess((val) => val !== 'false', z.boolean()).default(true),
-  VOICELOG_ENABLE_MEETING_ANALYSIS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  VOICELOG_ENABLE_MEETING_ANALYSIS: z
+    .preprocess((val) => val === 'true', z.boolean())
+    .default(false),
 
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-3-5-haiku-latest'),

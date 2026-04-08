@@ -70,11 +70,17 @@ function AiTaskSuggestionsPanel({
   useEffect(() => {
     const recId = selectedRecording?.id;
     const hasTranscript = (selectedRecording?.transcript?.length ?? 0) > 0;
-    if (apiKey && recId && hasTranscript && status === 'idle' && autoTriggeredRef.current !== recId) {
+    if (
+      apiKey &&
+      recId &&
+      hasTranscript &&
+      status === 'idle' &&
+      autoTriggeredRef.current !== recId
+    ) {
       autoTriggeredRef.current = recId;
       handleGenerate();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRecording?.id, selectedRecording?.transcript?.length, apiKey, status]);
 
   if (!apiKey) {

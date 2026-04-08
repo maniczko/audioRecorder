@@ -6,11 +6,11 @@ type RecorderContextValue = ReturnType<typeof useRecorder>;
 
 const defaultRecorderCtx = {
   recordingState: null,
-  startRecording: async () => { },
-  stopRecording: () => { },
-  pauseRecording: () => { },
-  resumeRecording: () => { },
-  deleteRecording: async () => { },
+  startRecording: async () => {},
+  stopRecording: () => {},
+  pauseRecording: () => {},
+  resumeRecording: () => {},
+  deleteRecording: async () => {},
 } as unknown as RecorderContextValue;
 
 const RecorderContext = createContext<RecorderContextValue>(defaultRecorderCtx);

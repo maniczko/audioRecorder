@@ -8,13 +8,13 @@ type MicrosoftContextValue = ReturnType<typeof useMicrosoftIntegrations>;
 
 const defaultMicrosoftCtx = {
   microsoftCalendarConnected: false,
-  connectMicrosoftCalendar: async () => { },
-  disconnectMicrosoft: async () => { },
+  connectMicrosoftCalendar: async () => {},
+  disconnectMicrosoft: async () => {},
   microsoftCalendarEvents: [],
   isMicrosoftLoading: false,
   microsoftError: null,
-  setMicrosoftAuthMessage: () => { },
-  handleMicrosoftProfile: async () => { },
+  setMicrosoftAuthMessage: () => {},
+  handleMicrosoftProfile: async () => {},
   microsoftAuthMessage: '',
 } as unknown as MicrosoftContextValue;
 

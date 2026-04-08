@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * microsoft lib tests - comprehensive coverage
- * 
+ *
  * Tests for Microsoft Graph integration utilities
  */
 
@@ -125,9 +125,9 @@ describe('microsoft lib - comprehensive tests', () => {
         getAllAccounts: vi.fn().mockReturnValue([]),
       };
 
-      await expect(
-        getMicrosoftAccessToken(mockMsalInstance, CALENDAR_SCOPES)
-      ).rejects.toThrow('No Microsoft account signed in');
+      await expect(getMicrosoftAccessToken(mockMsalInstance, CALENDAR_SCOPES)).rejects.toThrow(
+        'No Microsoft account signed in'
+      );
     });
 
     it('returns access token when account exists', async () => {

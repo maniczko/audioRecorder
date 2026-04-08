@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * analysis lib tests - comprehensive coverage
- * 
+ *
  * Tests for analysis utilities and functions
  */
 
@@ -27,9 +27,9 @@ const mocks = vi.hoisted(() => ({
     scores: { clarity: 90 },
     insights: ['Normalized feedback'],
   }),
-  normalizeTasks: vi.fn().mockReturnValue([
-    { title: 'Task 1', owner: 'Alice', priority: 'medium' },
-  ]),
+  normalizeTasks: vi
+    .fn()
+    .mockReturnValue([{ title: 'Task 1', owner: 'Alice', priority: 'medium' }]),
   validateAnalysisResponse: vi.fn().mockReturnValue({ valid: true }),
   parseAiResponse: vi.fn().mockReturnValue({
     summary: 'Test summary',

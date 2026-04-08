@@ -13,6 +13,7 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
   process.env.OPENAI_API_KEY = openAiKey;
   process.env.VOICELOG_OPENAI_BASE_URL = baseUrl;
   process.env.VOICELOG_DEBUG = 'false';
+  process.env.VOICELOG_ENABLE_MEETING_ANALYSIS = 'true';
 
   // Mock logger and speakerEmbedder before loading audioPipeline
   vi.doMock('../logger.ts', () => ({

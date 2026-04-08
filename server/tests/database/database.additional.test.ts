@@ -486,11 +486,9 @@ describe('Database - Additional Coverage Tests', () => {
           type: 'sqlite',
         });
 
-        expect(errorSpy).toHaveBeenCalledWith(
-          '[DB] Health check failed:',
-          'database offline',
-          { sentry: false }
-        );
+        expect(errorSpy).toHaveBeenCalledWith('[DB] Health check failed:', 'database offline', {
+          sentry: false,
+        });
       } finally {
         db._sendToWorker = originalSendToWorker;
       }

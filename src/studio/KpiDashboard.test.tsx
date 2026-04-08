@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  * KpiDashboard component tests
- * 
+ *
  * Basic tests for KPI dashboard component
  */
 
