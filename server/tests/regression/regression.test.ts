@@ -1260,7 +1260,7 @@ describe('Regression: #0 — OOM: TranscriptionService rejects jobs when RSS exc
     process.memoryUsage = originalMemoryUsage;
   });
 
-  test('ensureTranscriptionJob rejects when RSS > RSS_LIMIT_BYTES', async () => {
+  test('ensureTranscriptionJob queues job when RSS > RSS_LIMIT_BYTES', async () => {
     vi.resetModules();
 
     const { default: TranscriptionService } =
@@ -1268,6 +1268,7 @@ describe('Regression: #0 — OOM: TranscriptionService rejects jobs when RSS exc
 
     const mockDb = {
       markTranscriptionFailure: vi.fn().mockResolvedValue(undefined),
+      queueTranscription: vi.fn().mockResolvedValue(undefined),
       getWorkspaceState: vi.fn().mockResolvedValue({ vocabulary: [] }),
       markTranscriptionProcessing: vi.fn().mockResolvedValue(undefined),
     };
@@ -1288,12 +1289,9 @@ describe('Regression: #0 — OOM: TranscriptionService rejects jobs when RSS exc
 
     await svc.ensureTranscriptionJob('rec-oom-test', { workspace_id: 'ws1' }, {});
 
-    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
-      'rec-oom-test',
-      expect.stringContaining('przeciążony pamięciowo'),
-      null,
-      null
-    );
+    // Job should be queued (not failed) when under memory pressure
+    expect(mockDb.queueTranscription).toHaveBeenCalledWith('rec-oom-test', {});
+    expect(mockDb.markTranscriptionFailure).not.toHaveBeenCalled();
     expect(svc.transcriptionJobs.has('rec-oom-test')).toBe(false);
   });
 
@@ -1462,6 +1460,7 @@ describe('Regression: #0 — Undici keep-alive leak: OpenAI fetch headers includ
         VOICELOG_OPENAI_API_KEY: 'test-key',
         OPENAI_API_KEY: 'test-key',
         VOICELOG_OPENAI_BASE_URL: 'https://api.openai.com/v1',
+        VOICELOG_ENABLE_MEETING_ANALYSIS: true,
       },
     }));
 
