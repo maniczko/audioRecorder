@@ -208,6 +208,95 @@ vi.mock('./shared/Toast', async (importOriginal) => {
   };
 });
 
+// ── Global hooks mock ────────────────────────────────────────────────
+// Mock complex hooks that have many dependencies to simplify component testing
+const hooksMocks = vi.hoisted(() => ({
+  useMeetings: vi.fn(() => ({
+    userMeetings: [],
+    selectedMeeting: null,
+    selectedMeetingId: null,
+    selectedRecordingId: null,
+    selectedRecording: null,
+    isDetachedMeetingDraft: false,
+    activeStoredMeetingDraft: null,
+    meetingDraft: null,
+    taskBoards: {},
+    taskState: {},
+    manualTasks: [],
+    meetingTasks: [],
+    calendarMeta: {},
+    peopleProfiles: [],
+    personNotes: {},
+    taskColumns: [],
+    taskPeople: [],
+    taskTags: [],
+    taskNotifications: [],
+    workspaceActivity: [],
+    workspaceMessage: '',
+    isHydratingRemoteState: false,
+    createMeetingDirect: vi.fn(),
+    saveMeeting: vi.fn(),
+    updateMeeting: vi.fn(),
+    deleteMeeting: vi.fn(),
+    selectMeeting: vi.fn(),
+    setSelectedMeetingId: vi.fn(),
+    setSelectedRecordingId: vi.fn(),
+    resetSelectionState: vi.fn(),
+    setMeetingDraft: vi.fn(),
+    setMeetings: vi.fn(),
+    setManualTasks: vi.fn(),
+    setTaskBoards: vi.fn(),
+    setTaskState: vi.fn(),
+    setCalendarMeta: vi.fn(),
+    setWorkspaceMessage: vi.fn(),
+    startNewMeetingDraft: vi.fn(),
+    clearMeetingDraft: vi.fn(),
+    applyCalendarSyncSnapshot: vi.fn(),
+    updateCalendarEntryMeta: vi.fn(),
+    createManualNote: vi.fn(),
+    addMeetingComment: vi.fn(),
+    updatePersonNotes: vi.fn(),
+    analyzePersonPsychProfile: vi.fn(),
+    syncLinkedGoogleCalendarEvents: vi.fn(),
+    attachCompletedRecording: vi.fn(),
+    deleteRecordingAndMeeting: vi.fn(),
+    addRecordingMarker: vi.fn(),
+    updateRecordingMarker: vi.fn(),
+    deleteRecordingMarker: vi.fn(),
+    assignSpeakerToTranscriptSegments: vi.fn(),
+    renameSpeaker: vi.fn(),
+    mergeTranscriptSegments: vi.fn(),
+    splitTranscriptSegment: vi.fn(),
+    updateTranscriptSegment: vi.fn(),
+    updateTask: vi.fn(),
+    deleteTask: vi.fn(),
+    bulkUpdateTasks: vi.fn(),
+    bulkDeleteTasks: vi.fn(),
+    moveTaskToColumn: vi.fn(),
+    reorderTask: vi.fn(),
+    rescheduleTask: vi.fn(),
+    createTaskFromComposer: vi.fn(),
+    addTaskColumn: vi.fn(),
+    removeTaskColumn: vi.fn(),
+    changeTaskColumn: vi.fn(),
+    rescheduleMeeting: vi.fn(),
+    autoCreateVoiceProfile: vi.fn(),
+    renameTag: vi.fn(),
+    deleteTag: vi.fn(),
+    createAdHocMeeting: vi.fn(() => ({ id: 'mock-meeting' })),
+    pauseRemotePull: vi.fn(),
+  })),
+}));
+
+vi.mock('@/hooks/useMeetings', () => ({
+  default: hooksMocks.useMeetings,
+}));
+
+// Also mock with relative path for tests that use relative imports
+vi.mock('./hooks/useMeetings', () => ({
+  default: hooksMocks.useMeetings,
+}));
+
 // ── Service Worker mock ──────────────────────────────────────────────
 if (!navigator.serviceWorker) {
   Object.defineProperty(navigator, 'serviceWorker', {
