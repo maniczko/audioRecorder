@@ -16,12 +16,13 @@ jobs:
   vercel-production:
     runs-on: ubuntu-latest
     name: Deploy Production
-    # Skip if triggered by a failed CI run (workflow_dispatch always runs)
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PNPM_HOME: /home/runner/.local/share/pnpm
+    # Skip if triggered by a failed CI run (workflow_dispatch always runs)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -38,9 +39,11 @@ jobs:
 
       - name: Install Vercel CLI
         run: |
-          export PNPM_HOME="/home/runner/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
           pnpm add -g vercel@latest
+
+      - name: Add pnpm bin to PATH for all subsequent steps
+        run: echo "$PNPM_HOME" >> $GITHUB_PATH
 
       - name: Validate Vercel secrets
         shell: bash
