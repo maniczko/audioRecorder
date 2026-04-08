@@ -1,259 +1,830 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VoiceLog — Test Report</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceLog — Test Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#f8f9fb;
-  --surface:#fff;
-  --border:#e5e7eb;
-  --text:#111827;
-  --text2:#6b7280;
-  --text3:#9ca3af;
-  --accent:#4f46e5;
-  --accent-light:#eef2ff;
-  --green:#059669;
-  --green-bg:#ecfdf5;
-  --red:#dc2626;
-  --red-bg:#fef2f2;
-  --amber:#d97706;
-  --amber-bg:#fffbeb;
-  --blue:#2563eb;
-  --blue-bg:#eff6ff;
-  --purple:#7c3aed;
-  --purple-bg:#f5f3ff;
-  --r:12px;
-  --r-sm:8px;
-}
-
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
-
-/* ── Shell ── */
-.shell{max-width:1280px;margin:0 auto;padding:24px 32px 64px}
-
-/* ── Header bar ── */
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-.topbar h1{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
-.topbar h1 span{color:var(--accent)}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.topbar-date{font-size:.78rem;color:var(--text3)}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;font-size:.78rem;font-weight:600;border:1px solid}
-.chip-ok{background:var(--green-bg);color:var(--green);border-color:#bbf7d0}
-.chip-err{background:var(--red-bg);color:var(--red);border-color:#fecaca}
-
-/* ── Tabs ── */
-.tabs{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
-.tab{padding:9px 20px;border-radius:var(--r-sm);font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text2);background:transparent;border:none;transition:all .15s}
-.tab:hover{color:var(--text);background:#f3f4f6}
-.tab.active{background:var(--accent);color:#fff}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-
-/* ── KPI row ── */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px}
-.kpi-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:600;margin-bottom:6px}
-.kpi-val{font-size:2rem;font-weight:800;line-height:1;margin-bottom:4px}
-.kpi-sub{font-size:.78rem;color:var(--text2)}
-.kpi-bar{height:4px;background:#f3f4f6;border-radius:100px;margin-top:10px;overflow:hidden}
-.kpi-bar-fill{height:100%;border-radius:100px;transition:width .8s ease}
-
-/* ── Cards ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px;overflow:hidden}
-.card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
-.card-title{font-size:.95rem;font-weight:700}
-.card-sub{font-size:.78rem;color:var(--text3)}
-
-/* ── Score ── */
-.score-wrap{display:flex;gap:40px;align-items:center}
-.score-ring{position:relative;width:140px;height:140px;flex-shrink:0}
-.score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.score-ring .lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.score-ring .lbl .n{font-size:2.2rem;font-weight:800;line-height:1}
-.score-ring .lbl .s{font-size:.72rem;color:var(--text3);margin-top:2px}
-.score-dims{flex:1;display:flex;flex-direction:column;gap:12px}
-.dim-row{display:flex;align-items:center;gap:12px}
-.dim-label{width:160px;font-size:.8rem;color:var(--text2)}
-.dim-bar{flex:1;height:6px;background:#f3f4f6;border-radius:100px;overflow:hidden}
-.dim-bar-fill{height:100%;border-radius:100px}
-.dim-val{width:36px;text-align:right;font-size:.82rem;font-weight:700}
-
-/* ── Grid ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.g2>.card{min-width:0;overflow:hidden}
-
-/* ── Category cards ── */
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.cat{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px}
-.cat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cat-name{font-weight:700;font-size:.88rem}
-.cat-files{font-size:.72rem;color:var(--text3)}
-.cat-nums{display:flex;gap:12px;font-size:.78rem;margin-top:6px}
-.cat-nums span{display:inline-flex;align-items:center;gap:3px}
-.cat-bar{height:4px;background:#f3f4f6;border-radius:100px;margin-top:10px;overflow:hidden}
-
-/* ── Table ── */
-.tbl-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-sm)}
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{position:sticky;top:0;z-index:2;background:var(--bg);text-align:left;padding:10px 14px;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);font-weight:600;border-bottom:1px solid var(--border)}
-.tbl td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:.82rem}
-.tbl tr:hover td{background:#fafbfc}
-.tbl .fn{font-family:'SF Mono','Fira Code',monospace;font-size:.76rem;color:var(--text2)}
-.pill{display:inline-block;padding:1px 9px;border-radius:100px;font-size:.72rem;font-weight:600}
-.pill-g{background:var(--green-bg);color:var(--green)}
-.pill-r{background:var(--red-bg);color:var(--red)}
-.pill-a{background:var(--amber-bg);color:var(--amber)}
-.pill-b{background:var(--blue-bg);color:var(--blue)}
-
-/* ── Failures ── */
-.fail{background:var(--red-bg);border-left:3px solid var(--red);padding:14px 18px;border-radius:0 var(--r-sm) var(--r-sm) 0;margin-bottom:10px}
-.fail-f{color:var(--red);font-weight:700;font-size:.82rem;margin-bottom:3px}
-.fail-t{font-weight:600;margin-bottom:6px;font-size:.88rem}
-.fail-e{background:rgba(0,0,0,.04);padding:8px 12px;border-radius:var(--r-sm);font-family:monospace;font-size:.76rem;color:var(--red);overflow-x:auto;max-height:100px;overflow-y:auto}
-
-/* ── Recommendations ── */
-.rec{display:flex;gap:14px;padding:14px 18px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px}
-.rec:hover{border-color:var(--accent)}
-.rec-p{width:30px;height:30px;border-radius:var(--r-sm);font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.rec-p.p1{background:var(--red-bg);color:var(--red)}
-.rec-p.p2{background:var(--amber-bg);color:var(--amber)}
-.rec-p.p3{background:var(--blue-bg);color:var(--blue)}
-.rec-p.p4{background:var(--purple-bg);color:var(--purple)}
-.rec-title{font-weight:700;font-size:.85rem;margin-bottom:2px}
-.rec-desc{font-size:.78rem;color:var(--text2)}
-.rec-tag{display:inline-block;margin-top:4px;font-size:.68rem;font-weight:600;padding:1px 7px;border-radius:4px}
-.rec-tag.hi{background:var(--green-bg);color:var(--green)}
-.rec-tag.md{background:var(--amber-bg);color:var(--amber)}
-.rec-tag.lo{background:var(--blue-bg);color:var(--blue)}
-
-/* ── Services ── */
-.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.svc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px}
-.svc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.svc-name{font-weight:700;font-size:.88rem}
-.svc-met{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.svc-m{background:var(--surface);padding:8px 10px;border-radius:6px}
-.svc-ml{font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text3)}
-.svc-mv{font-size:.88rem;font-weight:700;margin-top:1px}
-
-/* ── Btns ── */
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}
-.btn{padding:8px 16px;border-radius:var(--r-sm);font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.btn:hover{background:var(--bg);color:var(--text);border-color:#d1d5db}
-
-/* ── Responsive ── */
-@media(max-width:1024px){.kpi-row{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
-@media(max-width:640px){.shell{padding:16px}.kpi-row{grid-template-columns:1fr}.cat-grid{grid-template-columns:1fr}.topbar{flex-direction:column;align-items:flex-start;gap:12px}}
-@media print{.tabs,.btn-row{display:none}.tab-panel{display:block!important}.tab-panel+.tab-panel{page-break-before:always}}
-
-.ch-wrap{position:relative;width:100%}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:100px}
-</style>
-</head>
-<body>
-<div class="shell" id="app">
-  <div style="text-align:center;padding:80px 0;color:var(--text3)">Loading...</div>
-</div>
-
-<script>window.TEST_DATA=null;window.EXTERNAL_SERVICES_DATA=null;</script>
-<script src="test-results.js"></script>
-<script src="external-services.js"></script>
-
-<script>
-const $=s=>document.querySelector(s);
-const pct=(a,b)=>b>0?a/b*100:0;
-const f1=n=>n.toFixed(1);
-const fI=n=>n.toLocaleString('pl-PL');
-const rc=r=>r>=95?'var(--green)':r>=80?'var(--blue)':r>=60?'var(--amber)':'var(--red)';
-const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
-
-// ── Metrics ──
-function calc(data){
-  const s=data.summary, ff=data.files||[], cov=data.coverage||{};
-  const passRate=pct(s.passed,s.total), failRate=pct(s.failed,s.total), skipRate=pct(s.skipped,s.total);
-  const fpRate=pct(ff.filter(x=>x.failed===0).length,ff.length);
-  const avgCov=cov.lines||cov.statements||0;
-  const durs=ff.map(x=>x.duration||0).filter(d=>d>0);
-  const totalDur=durs.reduce((a,b)=>a+b,0);
-  const slow=[...ff].sort((a,b)=>(b.duration||0)-(a.duration||0)).slice(0,10);
-  const cats=categorize(ff);
-
-  // 6-dim scoring
-  const dims={
-    passRate:{l:'Pass Rate',w:25,s:Math.min(100,passRate*1.05)},
-    coverage:{l:'Code Coverage',w:25,s:Math.min(100,avgCov)},
-    reliability:{l:'Reliability',w:20,s:s.failed===0?100:Math.max(0,100-s.failed*10)},
-    fileHealth:{l:'File Health',w:10,s:fpRate},
-    skipDisc:{l:'Skip Discipline',w:10,s:Math.max(0,100-skipRate*3)},
-    breadth:{l:'Test Breadth',w:10,s:Math.min(100,ff.length*.9)},
-  };
-  let total=0;Object.values(dims).forEach(d=>{total+=d.s*(d.w/100)});
-  total=Math.round(Math.min(100,Math.max(0,total)));
-
-  let mat;
-  if(total>=90)mat={lv:5,lb:'Optimized',c:'var(--green)'};
-  else if(total>=75)mat={lv:4,lb:'Managed',c:'var(--blue)'};
-  else if(total>=60)mat={lv:3,lb:'Defined',c:'var(--amber)'};
-  else if(total>=40)mat={lv:2,lb:'Developing',c:'var(--amber)'};
-  else mat={lv:1,lb:'Initial',c:'var(--red)'};
-
-  let grade;
-  if(total>=93)grade='A+';else if(total>=85)grade='A';
-  else if(total>=78)grade='B+';else if(total>=70)grade='B';
-  else if(total>=63)grade='C+';else if(total>=55)grade='C';
-  else if(total>=45)grade='D';else grade='F';
-
-  // extra KPIs
-  const testsPerFile=ff.length>0?(s.total/ff.length):0;
-  const defectDensity=ff.length>0?(s.failed/ff.length):0;
-  const mttr=totalDur>0?(totalDur/Math.max(1,durs.length)):0; // avg duration as proxy
-
-  return {passRate,failRate,skipRate,fpRate,avgCov,totalDur,slow,cats,dims,total,mat,grade,testsPerFile,defectDensity,mttr};
-}
-
-function categorize(files){
-  const d={
-    hooks:{n:'Hooks',i:'🪝',p:/(\/hooks\/|use[A-Z])/},
-    components:{n:'Components',i:'🧩',p:/\/components\//},
-    stores:{n:'Stores',i:'💾',p:/(\/store\/|Store)/},
-    services:{n:'Services',i:'⚙️',p:/(\/services\/|Service)/},
-    context:{n:'Context',i:'🌐',p:/\/context\//},
-    utils:{n:'Utilities',i:'🛠️',p:/(\/lib\/|util)/},
-    pages:{n:'Pages/Tabs',i:'📄',p:/(Tab|Page|Screen)/},
-    studio:{n:'Studio',i:'🎙️',p:/\/studio\//},
-  };
-  const c={};
-  Object.keys(d).forEach(k=>{c[k]={...d[k],f:[],pa:0,fa:0,sk:0}});
-  c.other={n:'Other',i:'📦',f:[],pa:0,fa:0,sk:0};
-  files.forEach(f=>{
-    let ok=false;
-    for(const[k,def]of Object.entries(d)){
-      if(def.p.test(f.file)){c[k].f.push(f);c[k].pa+=f.passed;c[k].fa+=f.failed;c[k].sk+=f.skipped||0;ok=true;break;}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
     }
-    if(!ok){c.other.f.push(f);c.other.pa+=f.passed;c.other.fa+=f.failed;c.other.sk+=f.skipped||0;}
-  });
-  return c;
-}
 
-// ── Render ──
-function render(data){
-  const m=calc(data), s=data.summary;
-  const ts=new Date(data.timestamp).toLocaleString('pl-PL',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-  const ok=s.failed===0;
+    :root {
+      --bg: #f8f9fb;
+      --surface: #fff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text2: #6b7280;
+      --text3: #9ca3af;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --green: #059669;
+      --green-bg: #ecfdf5;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --purple: #7c3aed;
+      --purple-bg: #f5f3ff;
+      --r: 12px;
+      --r-sm: 8px;
+    }
 
-  $('#app').innerHTML=`
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh
+    }
+
+    /* ── Shell ── */
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 32px 64px
+    }
+
+    /* ── Header bar ── */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px
+    }
+
+    .topbar h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.02em
+    }
+
+    .topbar h1 span {
+      color: var(--accent)
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .topbar-date {
+      font-size: .78rem;
+      color: var(--text3)
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: .78rem;
+      font-weight: 600;
+      border: 1px solid
+    }
+
+    .chip-ok {
+      background: var(--green-bg);
+      color: var(--green);
+      border-color: #bbf7d0
+    }
+
+    .chip-err {
+      background: var(--red-bg);
+      color: var(--red);
+      border-color: #fecaca
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      padding: 4px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow-x: auto
+    }
+
+    .tab {
+      padding: 9px 20px;
+      border-radius: var(--r-sm);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      color: var(--text2);
+      background: transparent;
+      border: none;
+      transition: all .15s
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: #f3f4f6
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff
+    }
+
+    .tab-panel {
+      display: none
+    }
+
+    .tab-panel.active {
+      display: block
+    }
+
+    /* ── KPI row ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px
+    }
+
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px 22px
+    }
+
+    .kpi-label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text3);
+      font-weight: 600;
+      margin-bottom: 6px
+    }
+
+    .kpi-val {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px
+    }
+
+    .kpi-sub {
+      font-size: .78rem;
+      color: var(--text2)
+    }
+
+    .kpi-bar {
+      height: 4px;
+      background: #f3f4f6;
+      border-radius: 100px;
+      margin-top: 10px;
+      overflow: hidden
+    }
+
+    .kpi-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width .8s ease
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 24px;
+      margin-bottom: 16px;
+      overflow: hidden
+    }
+
+    .card-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px
+    }
+
+    .card-title {
+      font-size: .95rem;
+      font-weight: 700
+    }
+
+    .card-sub {
+      font-size: .78rem;
+      color: var(--text3)
+    }
+
+    /* ── Score ── */
+    .score-wrap {
+      display: flex;
+      gap: 40px;
+      align-items: center
+    }
+
+    .score-ring {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      flex-shrink: 0
+    }
+
+    .score-ring svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg)
+    }
+
+    .score-ring .lbl {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center
+    }
+
+    .score-ring .lbl .n {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1
+    }
+
+    .score-ring .lbl .s {
+      font-size: .72rem;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .score-dims {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .dim-row {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .dim-label {
+      width: 160px;
+      font-size: .8rem;
+      color: var(--text2)
+    }
+
+    .dim-bar {
+      flex: 1;
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 100px;
+      overflow: hidden
+    }
+
+    .dim-bar-fill {
+      height: 100%;
+      border-radius: 100px
+    }
+
+    .dim-val {
+      width: 36px;
+      text-align: right;
+      font-size: .82rem;
+      font-weight: 700
+    }
+
+    /* ── Grid ── */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    .g2>.card {
+      min-width: 0;
+      overflow: hidden
+    }
+
+    /* ── Category cards ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px
+    }
+
+    .cat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 16px
+    }
+
+    .cat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px
+    }
+
+    .cat-name {
+      font-weight: 700;
+      font-size: .88rem
+    }
+
+    .cat-files {
+      font-size: .72rem;
+      color: var(--text3)
+    }
+
+    .cat-nums {
+      display: flex;
+      gap: 12px;
+      font-size: .78rem;
+      margin-top: 6px
+    }
+
+    .cat-nums span {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px
+    }
+
+    .cat-bar {
+      height: 4px;
+      background: #f3f4f6;
+      border-radius: 100px;
+      margin-top: 10px;
+      overflow: hidden
+    }
+
+    /* ── Table ── */
+    .tbl-wrap {
+      max-height: 480px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm)
+    }
+
+    .tbl {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    .tbl th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--bg);
+      text-align: left;
+      padding: 10px 14px;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text3);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .tbl td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: .82rem
+    }
+
+    .tbl tr:hover td {
+      background: #fafbfc
+    }
+
+    .tbl .fn {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .76rem;
+      color: var(--text2)
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 1px 9px;
+      border-radius: 100px;
+      font-size: .72rem;
+      font-weight: 600
+    }
+
+    .pill-g {
+      background: var(--green-bg);
+      color: var(--green)
+    }
+
+    .pill-r {
+      background: var(--red-bg);
+      color: var(--red)
+    }
+
+    .pill-a {
+      background: var(--amber-bg);
+      color: var(--amber)
+    }
+
+    .pill-b {
+      background: var(--blue-bg);
+      color: var(--blue)
+    }
+
+    /* ── Failures ── */
+    .fail {
+      background: var(--red-bg);
+      border-left: 3px solid var(--red);
+      padding: 14px 18px;
+      border-radius: 0 var(--r-sm) var(--r-sm) 0;
+      margin-bottom: 10px
+    }
+
+    .fail-f {
+      color: var(--red);
+      font-weight: 700;
+      font-size: .82rem;
+      margin-bottom: 3px
+    }
+
+    .fail-t {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: .88rem
+    }
+
+    .fail-e {
+      background: rgba(0, 0, 0, .04);
+      padding: 8px 12px;
+      border-radius: var(--r-sm);
+      font-family: monospace;
+      font-size: .76rem;
+      color: var(--red);
+      overflow-x: auto;
+      max-height: 100px;
+      overflow-y: auto
+    }
+
+    /* ── Recommendations ── */
+    .rec {
+      display: flex;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      margin-bottom: 8px
+    }
+
+    .rec:hover {
+      border-color: var(--accent)
+    }
+
+    .rec-p {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--r-sm);
+      font-size: .68rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .rec-p.p1 {
+      background: var(--red-bg);
+      color: var(--red)
+    }
+
+    .rec-p.p2 {
+      background: var(--amber-bg);
+      color: var(--amber)
+    }
+
+    .rec-p.p3 {
+      background: var(--blue-bg);
+      color: var(--blue)
+    }
+
+    .rec-p.p4 {
+      background: var(--purple-bg);
+      color: var(--purple)
+    }
+
+    .rec-title {
+      font-weight: 700;
+      font-size: .85rem;
+      margin-bottom: 2px
+    }
+
+    .rec-desc {
+      font-size: .78rem;
+      color: var(--text2)
+    }
+
+    .rec-tag {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px
+    }
+
+    .rec-tag.hi {
+      background: var(--green-bg);
+      color: var(--green)
+    }
+
+    .rec-tag.md {
+      background: var(--amber-bg);
+      color: var(--amber)
+    }
+
+    .rec-tag.lo {
+      background: var(--blue-bg);
+      color: var(--blue)
+    }
+
+    /* ── Services ── */
+    .svc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px
+    }
+
+    .svc {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 16px
+    }
+
+    .svc-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px
+    }
+
+    .svc-name {
+      font-weight: 700;
+      font-size: .88rem
+    }
+
+    .svc-met {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px
+    }
+
+    .svc-m {
+      background: var(--surface);
+      padding: 8px 10px;
+      border-radius: 6px
+    }
+
+    .svc-ml {
+      font-size: .66rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--text3)
+    }
+
+    .svc-mv {
+      font-size: .88rem;
+      font-weight: 700;
+      margin-top: 1px
+    }
+
+    /* ── Btns ── */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: var(--r-sm);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      transition: all .15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .btn:hover {
+      background: var(--bg);
+      color: var(--text);
+      border-color: #d1d5db
+    }
+
+    /* ── Responsive ── */
+    @media(max-width:1024px) {
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .g2 {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media(max-width:640px) {
+      .shell {
+        padding: 16px
+      }
+
+      .kpi-row {
+        grid-template-columns: 1fr
+      }
+
+      .cat-grid {
+        grid-template-columns: 1fr
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px
+      }
+    }
+
+    @media print {
+
+      .tabs,
+      .btn-row,
+      #refresh-indicator {
+        display: none
+      }
+
+      .tab-panel {
+        display: block !important
+      }
+
+      .tab-panel+.tab-panel {
+        page-break-before: always
+      }
+    }
+
+    /* ── Refresh Indicator ── */
+    #refresh-indicator {
+      animation: slideIn 0.3s ease;
+    }
+
+    #refresh-indicator button:hover {
+      filter: brightness(0.95);
+      transform: translateY(-1px);
+    }
+
+    #refresh-indicator button:active {
+      transform: translateY(0);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .ch-wrap {
+      position: relative;
+      width: 100%
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 100px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell" id="app">
+    <div style="text-align:center;padding:80px 0;color:var(--text3)">Loading...</div>
+  </div>
+
+  <script>window.TEST_DATA = null; window.EXTERNAL_SERVICES_DATA = null;</script>
+  <script src="test-results.js"></script>
+  <script src="external-services.js"></script>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const pct = (a, b) => b > 0 ? a / b * 100 : 0;
+    const f1 = n => n.toFixed(1);
+    const fI = n => n.toLocaleString('pl-PL');
+    const rc = r => r >= 95 ? 'var(--green)' : r >= 80 ? 'var(--blue)' : r >= 60 ? 'var(--amber)' : 'var(--red)';
+    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML };
+
+    // ── Metrics ──
+    function calc(data) {
+      const s = data.summary, ff = data.files || [], cov = data.coverage || {};
+      const passRate = pct(s.passed, s.total), failRate = pct(s.failed, s.total), skipRate = pct(s.skipped, s.total);
+      const fpRate = pct(ff.filter(x => x.failed === 0).length, ff.length);
+      const avgCov = cov.lines || cov.statements || 0;
+      const durs = ff.map(x => x.duration || 0).filter(d => d > 0);
+      const totalDur = durs.reduce((a, b) => a + b, 0);
+      const slow = [...ff].sort((a, b) => (b.duration || 0) - (a.duration || 0)).slice(0, 10);
+      const cats = categorize(ff);
+
+      // 6-dim scoring
+      const dims = {
+        passRate: { l: 'Pass Rate', w: 25, s: Math.min(100, passRate * 1.05) },
+        coverage: { l: 'Code Coverage', w: 25, s: Math.min(100, avgCov) },
+        reliability: { l: 'Reliability', w: 20, s: s.failed === 0 ? 100 : Math.max(0, 100 - s.failed * 10) },
+        fileHealth: { l: 'File Health', w: 10, s: fpRate },
+        skipDisc: { l: 'Skip Discipline', w: 10, s: Math.max(0, 100 - skipRate * 3) },
+        breadth: { l: 'Test Breadth', w: 10, s: Math.min(100, ff.length * .9) },
+      };
+      let total = 0; Object.values(dims).forEach(d => { total += d.s * (d.w / 100) });
+      total = Math.round(Math.min(100, Math.max(0, total)));
+
+      let mat;
+      if (total >= 90) mat = { lv: 5, lb: 'Optimized', c: 'var(--green)' };
+      else if (total >= 75) mat = { lv: 4, lb: 'Managed', c: 'var(--blue)' };
+      else if (total >= 60) mat = { lv: 3, lb: 'Defined', c: 'var(--amber)' };
+      else if (total >= 40) mat = { lv: 2, lb: 'Developing', c: 'var(--amber)' };
+      else mat = { lv: 1, lb: 'Initial', c: 'var(--red)' };
+
+      let grade;
+      if (total >= 93) grade = 'A+'; else if (total >= 85) grade = 'A';
+      else if (total >= 78) grade = 'B+'; else if (total >= 70) grade = 'B';
+      else if (total >= 63) grade = 'C+'; else if (total >= 55) grade = 'C';
+      else if (total >= 45) grade = 'D'; else grade = 'F';
+
+      // extra KPIs
+      const testsPerFile = ff.length > 0 ? (s.total / ff.length) : 0;
+      const defectDensity = ff.length > 0 ? (s.failed / ff.length) : 0;
+      const mttr = totalDur > 0 ? (totalDur / Math.max(1, durs.length)) : 0; // avg duration as proxy
+
+      return { passRate, failRate, skipRate, fpRate, avgCov, totalDur, slow, cats, dims, total, mat, grade, testsPerFile, defectDensity, mttr };
+    }
+
+    function categorize(files) {
+      const d = {
+        hooks: { n: 'Hooks', i: '🪝', p: /(\/hooks\/|use[A-Z])/ },
+        components: { n: 'Components', i: '🧩', p: /\/components\// },
+        stores: { n: 'Stores', i: '💾', p: /(\/store\/|Store)/ },
+        services: { n: 'Services', i: '⚙️', p: /(\/services\/|Service)/ },
+        context: { n: 'Context', i: '🌐', p: /\/context\// },
+        utils: { n: 'Utilities', i: '🛠️', p: /(\/lib\/|util)/ },
+        pages: { n: 'Pages/Tabs', i: '📄', p: /(Tab|Page|Screen)/ },
+        studio: { n: 'Studio', i: '🎙️', p: /\/studio\// },
+      };
+      const c = {};
+      Object.keys(d).forEach(k => { c[k] = { ...d[k], f: [], pa: 0, fa: 0, sk: 0 } });
+      c.other = { n: 'Other', i: '📦', f: [], pa: 0, fa: 0, sk: 0 };
+      files.forEach(f => {
+        let ok = false;
+        for (const [k, def] of Object.entries(d)) {
+          if (def.p.test(f.file)) { c[k].f.push(f); c[k].pa += f.passed; c[k].fa += f.failed; c[k].sk += f.skipped || 0; ok = true; break; }
+        }
+        if (!ok) { c.other.f.push(f); c.other.pa += f.passed; c.other.fa += f.failed; c.other.sk += f.skipped || 0; }
+      });
+      return c;
+    }
+
+    // ── Render ──
+    function render(data) {
+      const m = calc(data), s = data.summary;
+      const ts = new Date(data.timestamp).toLocaleString('pl-PL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const ok = s.failed === 0;
+
+      $('#app').innerHTML = `
     <!-- Topbar -->
     <div class="topbar">
       <h1>VoiceLog <span>Test Report</span></h1>
       <div class="topbar-right">
-        <div class="chip ${ok?'chip-ok':'chip-err'}">${ok?'✓ All passing':'✗ '+s.failed+' failures'}</div>
+        <div class="chip ${ok ? 'chip-ok' : 'chip-err'}">${ok ? '✓ All passing' : '✗ ' + s.failed + ' failures'}</div>
         <div class="topbar-date">${ts}</div>
       </div>
     </div>
@@ -291,43 +862,44 @@ function render(data){
 
     <!-- Actions -->
     <div class="btn-row" style="margin-top:24px">
-      <button class="btn" onclick="window.print()">Print / PDF</button>
-      <button class="btn" onclick="exportJSON()">Export JSON</button>
-      <a href="coverage/frontend/index.html" class="btn">Coverage Report</a>
+      <button class="btn" onclick="window.print()">🖨️ Print / PDF</button>
+      <button class="btn" onclick="exportJSON()">📥 Export JSON</button>
+      <button class="btn" onclick="manualRefresh()">↻ Refresh Data</button>
+      <a href="../coverage/frontend/index.html" class="btn" id="coverage-link">📊 Coverage Report</a>
     </div>
   `;
 
-  initTabs();
-  try{renderOverview(data,m,s)}catch(e){console.error('Overview:',e)}
-  try{renderCategories(m)}catch(e){console.error('Categories:',e)}
-  try{renderFiles(data,m)}catch(e){console.error('Files:',e)}
-  try{renderPerformance(data,m)}catch(e){console.error('Performance:',e)}
-  try{renderRecs(data,m)}catch(e){console.error('Recommendations:',e)}
-  try{renderSvcs()}catch(e){console.error('Services:',e)}
-}
+      initTabs();
+      try { renderOverview(data, m, s) } catch (e) { console.error('Overview:', e) }
+      try { renderCategories(m) } catch (e) { console.error('Categories:', e) }
+      try { renderFiles(data, m) } catch (e) { console.error('Files:', e) }
+      try { renderPerformance(data, m) } catch (e) { console.error('Performance:', e) }
+      try { renderRecs(data, m) } catch (e) { console.error('Recommendations:', e) }
+      try { renderSvcs() } catch (e) { console.error('Services:', e) }
+    }
 
-// ── Tabs ──
-function initTabs(){
-  document.querySelectorAll('.tab').forEach(t=>{
-    t.addEventListener('click',()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      document.getElementById('p-'+t.dataset.tab).classList.add('active');
-    });
-  });
-}
+    // ── Tabs ──
+    function initTabs() {
+      document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+          t.classList.add('active');
+          document.getElementById('p-' + t.dataset.tab).classList.add('active');
+        });
+      });
+    }
 
-// ── Overview ──
-function renderOverview(data,m,s){
-  // KPIs — 4 most important
-  const kpis=[
-    {l:'PASS RATE',v:f1(m.passRate)+'%',sub:`${fI(s.passed)} / ${fI(s.total)} tests`,c:'var(--green)',pct:m.passRate},
-    {l:'QUALITY SCORE',v:m.grade,sub:`${m.total}/100 · Level ${m.mat.lv} ${m.mat.lb}`,c:m.mat.c,pct:m.total},
-    {l:'CODE COVERAGE',v:m.avgCov+'%',sub:m.avgCov>=55?'Above 55% threshold':'Below 55% threshold',c:m.avgCov>=55?'var(--green)':'var(--red)',pct:m.avgCov},
-    {l:'DEFECTS',v:fI(s.failed),sub:s.failed===0?'Zero defects — clean suite':`${f1(m.defectDensity)} per file`,c:s.failed===0?'var(--green)':'var(--red)',pct:s.failed===0?100:Math.max(0,100-s.failed*5)},
-  ];
-  $('#kpi-row').innerHTML=kpis.map(k=>`
+    // ── Overview ──
+    function renderOverview(data, m, s) {
+      // KPIs — 4 most important
+      const kpis = [
+        { l: 'PASS RATE', v: f1(m.passRate) + '%', sub: `${fI(s.passed)} / ${fI(s.total)} tests`, c: 'var(--green)', pct: m.passRate },
+        { l: 'QUALITY SCORE', v: m.grade, sub: `${m.total}/100 · Level ${m.mat.lv} ${m.mat.lb}`, c: m.mat.c, pct: m.total },
+        { l: 'CODE COVERAGE', v: m.avgCov + '%', sub: m.avgCov >= 55 ? 'Above 55% threshold' : 'Below 55% threshold', c: m.avgCov >= 55 ? 'var(--green)' : 'var(--red)', pct: m.avgCov },
+        { l: 'DEFECTS', v: fI(s.failed), sub: s.failed === 0 ? 'Zero defects — clean suite' : `${f1(m.defectDensity)} per file`, c: s.failed === 0 ? 'var(--green)' : 'var(--red)', pct: s.failed === 0 ? 100 : Math.max(0, 100 - s.failed * 5) },
+      ];
+      $('#kpi-row').innerHTML = kpis.map(k => `
     <div class="kpi">
       <div class="kpi-label">${k.l}</div>
       <div class="kpi-val" style="color:${k.c}">${k.v}</div>
@@ -336,9 +908,9 @@ function renderOverview(data,m,s){
     </div>
   `).join('');
 
-  // Score ring + Distribution chart
-  const R=56,CL=2*Math.PI*R,off=CL-(m.total/100)*CL;
-  $('#overview-g2').innerHTML=`
+      // Score ring + Distribution chart
+      const R = 56, CL = 2 * Math.PI * R, off = CL - (m.total / 100) * CL;
+      $('#overview-g2').innerHTML = `
     <div class="card">
       <div class="card-h"><div class="card-title">Quality Score Breakdown</div><div class="card-sub">6-dimension analysis</div></div>
       <div class="score-wrap">
@@ -351,7 +923,7 @@ function renderOverview(data,m,s){
           <div class="lbl"><div class="n" style="color:${m.mat.c}">${m.total}</div><div class="s">${m.grade}</div></div>
         </div>
         <div class="score-dims">
-          ${Object.values(m.dims).map(d=>`
+          ${Object.values(m.dims).map(d => `
             <div class="dim-row">
               <div class="dim-label">${d.l} <span style="color:var(--text3);font-size:.68rem">(${d.w}%)</span></div>
               <div class="dim-bar"><div class="dim-bar-fill" style="width:${d.s}%;background:${rc(d.s)}"></div></div>
@@ -367,30 +939,30 @@ function renderOverview(data,m,s){
       <div style="display:flex;gap:20px;justify-content:center;margin-top:14px;font-size:.78rem;color:var(--text2)">
         <span><b style="color:var(--green)">${fI(s.passed)}</b> passed</span>
         <span><b style="color:var(--red)">${fI(s.failed)}</b> failed</span>
-        <span><b style="color:var(--amber)">${fI(s.skipped||0)}</b> skipped</span>
+        <span><b style="color:var(--amber)">${fI(s.skipped || 0)}</b> skipped</span>
       </div>
     </div>
   `;
 
-  new Chart($('#dist-ch'),{
-    type:'doughnut',
-    data:{labels:['Passed','Failed','Skipped'],datasets:[{data:[s.passed,s.failed,s.skipped||0],backgroundColor:['#059669','#dc2626','#d97706'],borderWidth:0,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false}}}
-  });
-}
+      new Chart($('#dist-ch'), {
+        type: 'doughnut',
+        data: { labels: ['Passed', 'Failed', 'Skipped'], datasets: [{ data: [s.passed, s.failed, s.skipped || 0], backgroundColor: ['#059669', '#dc2626', '#d97706'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false } } }
+      });
+    }
 
-// ── Categories ──
-function renderCategories(m){
-  const cats=Object.values(m.cats).filter(c=>c.f.length>0);
-  const panel=$('#p-categories');
+    // ── Categories ──
+    function renderCategories(m) {
+      const cats = Object.values(m.cats).filter(c => c.f.length > 0);
+      const panel = $('#p-categories');
 
-  // summary KPIs
-  const totalCats=cats.length;
-  const perfect=cats.filter(c=>c.fa===0).length;
-  const sorted=cats.sort((a,b)=>pct(b.pa,b.pa+b.fa)-pct(a.pa,a.pa+a.fa));
-  const worst=cats.sort((a,b)=>{const ra=pct(a.pa,a.pa+a.fa),rb=pct(b.pa,b.pa+b.fa);return ra-rb;})[0];
+      // summary KPIs
+      const totalCats = cats.length;
+      const perfect = cats.filter(c => c.fa === 0).length;
+      const sorted = cats.sort((a, b) => pct(b.pa, b.pa + b.fa) - pct(a.pa, a.pa + a.fa));
+      const worst = cats.sort((a, b) => { const ra = pct(a.pa, a.pa + a.fa), rb = pct(b.pa, b.pa + b.fa); return ra - rb; })[0];
 
-  panel.innerHTML=`
+      panel.innerHTML = `
     <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
       <div class="kpi">
         <div class="kpi-label">CATEGORIES</div>
@@ -404,16 +976,16 @@ function renderCategories(m){
       </div>
       <div class="kpi">
         <div class="kpi-label">LOWEST PASS RATE</div>
-        <div class="kpi-val" style="color:${rc(pct(worst.pa,worst.pa+worst.fa))}">${f1(pct(worst.pa,worst.pa+worst.fa))}%</div>
+        <div class="kpi-val" style="color:${rc(pct(worst.pa, worst.pa + worst.fa))}">${f1(pct(worst.pa, worst.pa + worst.fa))}%</div>
         <div class="kpi-sub">${worst.n}</div>
       </div>
     </div>
     <div class="card">
       <div class="card-h"><div class="card-title">Categories Breakdown</div></div>
       <div class="cat-grid">
-        ${cats.sort((a,b)=>(b.pa+b.fa)-(a.pa+a.fa)).map(c=>{
-          const t=c.pa+c.fa,r=pct(c.pa,t);
-          return `<div class="cat">
+        ${cats.sort((a, b) => (b.pa + b.fa) - (a.pa + a.fa)).map(c => {
+        const t = c.pa + c.fa, r = pct(c.pa, t);
+        return `<div class="cat">
             <div class="cat-top"><div class="cat-name">${c.i} ${c.n}</div><div class="cat-files">${c.f.length} files</div></div>
             <div class="cat-nums">
               <span style="color:var(--green)">✓ ${c.pa}</span>
@@ -423,40 +995,41 @@ function renderCategories(m){
             <div class="cat-bar"><div style="height:100%;width:${r}%;background:${rc(r)};border-radius:100px"></div></div>
             <div style="text-align:right;font-size:.72rem;font-weight:700;margin-top:4px;color:${rc(r)}">${f1(r)}%</div>
           </div>`;
-        }).join('')}
+      }).join('')}
       </div>
     </div>
     <div class="card">
       <div class="card-h"><div class="card-title">Pass Rate Comparison</div></div>
-      <div class="ch-wrap" style="height:${Math.max(200,sorted.length*36)}px"><canvas id="cat-chart"></canvas></div>
+      <div class="ch-wrap" style="height:${Math.max(200, sorted.length * 36)}px"><canvas id="cat-chart"></canvas></div>
     </div>
   `;
 
-  new Chart($('#cat-chart'),{
-    type:'bar',
-    data:{labels:sorted.map(c=>c.n),datasets:[{data:sorted.map(c=>pct(c.pa,c.pa+c.fa)),backgroundColor:sorted.map(c=>{const r=pct(c.pa,c.pa+c.fa);return r>=95?'#059669':r>=80?'#2563eb':'#d97706';}),borderRadius:6,barThickness:28}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      scales:{x:{beginAtZero:true,max:100,ticks:{color:'#9ca3af',callback:v=>v+'%'},grid:{color:'#f3f4f6'}},y:{ticks:{color:'#6b7280'},grid:{display:false}}},
-      plugins:{legend:{display:false}}
+      new Chart($('#cat-chart'), {
+        type: 'bar',
+        data: { labels: sorted.map(c => c.n), datasets: [{ data: sorted.map(c => pct(c.pa, c.pa + c.fa)), backgroundColor: sorted.map(c => { const r = pct(c.pa, c.pa + c.fa); return r >= 95 ? '#059669' : r >= 80 ? '#2563eb' : '#d97706'; }), borderRadius: 6, barThickness: 28 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          scales: { x: { beginAtZero: true, max: 100, ticks: { color: '#9ca3af', callback: v => v + '%' }, grid: { color: '#f3f4f6' } }, y: { ticks: { color: '#6b7280' }, grid: { display: false } } },
+          plugins: { legend: { display: false } }
+        }
+      });
     }
-  });
-}
 
-// ── Files ──
-function renderFiles(data,m){
-  const sorted=[...data.files].sort((a,b)=>{
-    if(a.failed>0&&b.failed===0)return -1;if(a.failed===0&&b.failed>0)return 1;
-    return(b.duration||0)-(a.duration||0);
-  });
-  const panel=$('#p-files');
-  const failFiles=data.files.filter(f=>f.failed>0).length;
-  const skipOnly=data.files.filter(f=>f.passed===0&&f.failed===0&&(f.skipped||0)>0).length;
+    // ── Files ──
+    function renderFiles(data, m) {
+      const sorted = [...data.files].sort((a, b) => {
+        if (a.failed > 0 && b.failed === 0) return -1; if (a.failed === 0 && b.failed > 0) return 1;
+        return (b.duration || 0) - (a.duration || 0);
+      });
+      const panel = $('#p-files');
+      const failFiles = data.files.filter(f => f.failed > 0).length;
+      const skipOnly = data.files.filter(f => f.passed === 0 && f.failed === 0 && (f.skipped || 0) > 0).length;
 
-  panel.innerHTML=`
+      panel.innerHTML = `
     <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
       <div class="kpi"><div class="kpi-label">TOTAL FILES</div><div class="kpi-val" style="color:var(--accent)">${data.files.length}</div><div class="kpi-sub">Test files</div></div>
-      <div class="kpi"><div class="kpi-label">ALL PASSING</div><div class="kpi-val" style="color:var(--green)">${data.files.length-failFiles-skipOnly}</div><div class="kpi-sub">Files with green tests</div></div>
-      <div class="kpi"><div class="kpi-label">FAILING</div><div class="kpi-val" style="color:var(--red)">${failFiles}</div><div class="kpi-sub">${failFiles===0?'None!':'Needs fix'}</div></div>
+      <div class="kpi"><div class="kpi-label">ALL PASSING</div><div class="kpi-val" style="color:var(--green)">${data.files.length - failFiles - skipOnly}</div><div class="kpi-sub">Files with green tests</div></div>
+      <div class="kpi"><div class="kpi-label">FAILING</div><div class="kpi-val" style="color:var(--red)">${failFiles}</div><div class="kpi-sub">${failFiles === 0 ? 'None!' : 'Needs fix'}</div></div>
       <div class="kpi"><div class="kpi-label">SKIP-ONLY</div><div class="kpi-val" style="color:var(--amber)">${skipOnly}</div><div class="kpi-sub">All tests skipped</div></div>
     </div>
     <div class="card">
@@ -465,54 +1038,54 @@ function renderFiles(data,m){
         <table class="tbl"><thead><tr>
           <th style="width:28px"></th><th>File</th><th style="text-align:center">Pass</th><th style="text-align:center">Fail</th><th style="text-align:center">Skip</th><th style="text-align:right">Time</th>
         </tr></thead><tbody>
-          ${sorted.map(f=>{
-            const ok=f.failed===0,dur=(f.duration||0)/1000;
-            const allSkip=f.passed===0&&f.failed===0&&(f.skipped||0)>0;
-            return `<tr>
-              <td>${ok?(allSkip?'⏭':'✅'):'❌'}</td>
-              <td class="fn">${f.file.replace(/\\\\/g,'/')}</td>
+          ${sorted.map(f => {
+        const ok = f.failed === 0, dur = (f.duration || 0) / 1000;
+        const allSkip = f.passed === 0 && f.failed === 0 && (f.skipped || 0) > 0;
+        return `<tr>
+              <td>${ok ? (allSkip ? '⏭' : '✅') : '❌'}</td>
+              <td class="fn">${f.file.replace(/\\\\/g, '/')}</td>
               <td style="text-align:center"><span class="pill pill-g">${f.passed}</span></td>
-              <td style="text-align:center"><span class="pill ${f.failed>0?'pill-r':'pill-g'}">${f.failed}</span></td>
-              <td style="text-align:center"><span class="pill ${(f.skipped||0)>0?'pill-a':'pill-g'}">${f.skipped||0}</span></td>
-              <td style="text-align:right;font-family:monospace;font-size:.78rem;color:${dur>5?'var(--red)':dur>2?'var(--amber)':'var(--text3)'}">${dur.toFixed(2)}s</td>
+              <td style="text-align:center"><span class="pill ${f.failed > 0 ? 'pill-r' : 'pill-g'}">${f.failed}</span></td>
+              <td style="text-align:center"><span class="pill ${(f.skipped || 0) > 0 ? 'pill-a' : 'pill-g'}">${f.skipped || 0}</span></td>
+              <td style="text-align:right;font-family:monospace;font-size:.78rem;color:${dur > 5 ? 'var(--red)' : dur > 2 ? 'var(--amber)' : 'var(--text3)'}">${dur.toFixed(2)}s</td>
             </tr>`;
-          }).join('')}
+      }).join('')}
         </tbody></table>
       </div>
     </div>
-    ${data.failures.length>0?`
+    ${data.failures.length > 0 ? `
     <div class="card">
       <div class="card-h"><div class="card-title" style="color:var(--red)">Failed Tests</div><div class="card-sub">${data.failures.length} failures</div></div>
-      ${data.failures.map(f=>`
+      ${data.failures.map(f => `
         <div class="fail">
           <div class="fail-f">${esc(f.file)}</div>
-          <div class="fail-t">${esc(f.test||f.fullName||'Unknown')}</div>
-          ${f.error?`<div class="fail-e">${esc(f.error)}</div>`:''}
+          <div class="fail-t">${esc(f.test || f.fullName || 'Unknown')}</div>
+          ${f.error ? `<div class="fail-e">${esc(f.error)}</div>` : ''}
         </div>
       `).join('')}
-    </div>`:''}
+    </div>`: ''}
   `;
-}
+    }
 
-// ── Performance ──
-function renderPerformance(data,m){
-  const durs=data.files.map(f=>f.duration||0).filter(d=>d>0);
-  const totalSec=durs.reduce((a,b)=>a+b,0)/1000;
-  const avgSec=durs.length>0?totalSec/durs.length:0;
-  const maxSec=durs.length>0?Math.max(...durs)/1000:0;
-  const slow5=durs.filter(d=>d>5000).length;
+    // ── Performance ──
+    function renderPerformance(data, m) {
+      const durs = data.files.map(f => f.duration || 0).filter(d => d > 0);
+      const totalSec = durs.reduce((a, b) => a + b, 0) / 1000;
+      const avgSec = durs.length > 0 ? totalSec / durs.length : 0;
+      const maxSec = durs.length > 0 ? Math.max(...durs) / 1000 : 0;
+      const slow5 = durs.filter(d => d > 5000).length;
 
-  const panel=$('#p-performance');
-  panel.innerHTML=`
+      const panel = $('#p-performance');
+      panel.innerHTML = `
     <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
       <div class="kpi"><div class="kpi-label">TOTAL RUNTIME</div><div class="kpi-val" style="color:var(--accent)">${totalSec.toFixed(1)}s</div><div class="kpi-sub">All test files</div></div>
       <div class="kpi"><div class="kpi-label">AVG PER FILE</div><div class="kpi-val" style="color:var(--blue)">${avgSec.toFixed(2)}s</div><div class="kpi-sub">${durs.length} active files</div></div>
-      <div class="kpi"><div class="kpi-label">SLOWEST FILE</div><div class="kpi-val" style="color:${maxSec>5?'var(--red)':'var(--amber)'}">${maxSec.toFixed(2)}s</div><div class="kpi-sub">${m.slow[0]?.file.replace(/\\\\/g,'/').split('/').pop()||'—'}</div></div>
-      <div class="kpi"><div class="kpi-label">FILES > 5s</div><div class="kpi-val" style="color:${slow5>0?'var(--red)':'var(--green)'}">${slow5}</div><div class="kpi-sub">${slow5===0?'All fast!':'Consider optimizing'}</div></div>
+      <div class="kpi"><div class="kpi-label">SLOWEST FILE</div><div class="kpi-val" style="color:${maxSec > 5 ? 'var(--red)' : 'var(--amber)'}">${maxSec.toFixed(2)}s</div><div class="kpi-sub">${m.slow[0]?.file.replace(/\\\\/g, '/').split('/').pop() || '—'}</div></div>
+      <div class="kpi"><div class="kpi-label">FILES > 5s</div><div class="kpi-val" style="color:${slow5 > 0 ? 'var(--red)' : 'var(--green)'}">${slow5}</div><div class="kpi-sub">${slow5 === 0 ? 'All fast!' : 'Consider optimizing'}</div></div>
     </div>
     <div class="card">
       <div class="card-h"><div class="card-title">Slowest Test Files</div><div class="card-sub">Top 10 by duration</div></div>
-      <div class="ch-wrap" style="height:${Math.max(200,m.slow.length*32)}px"><canvas id="dur-chart"></canvas></div>
+      <div class="ch-wrap" style="height:${Math.max(200, m.slow.length * 32)}px"><canvas id="dur-chart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-h"><div class="card-title">Duration Distribution</div></div>
@@ -520,56 +1093,66 @@ function renderPerformance(data,m){
     </div>
   `;
 
-  new Chart($('#dur-chart'),{
-    type:'bar',
-    data:{labels:m.slow.map(f=>f.file.replace(/\\\\/g,'/').split('/').pop()),
-      datasets:[{data:m.slow.map(f=>(f.duration||0)/1000),
-        backgroundColor:m.slow.map(f=>(f.duration||0)>5000?'#dc2626':(f.duration||0)>2000?'#d97706':'#2563eb'),
-        borderRadius:6,barThickness:22}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      scales:{x:{beginAtZero:true,ticks:{color:'#9ca3af',callback:v=>v+'s'},grid:{color:'#f3f4f6'}},y:{ticks:{color:'#6b7280',font:{size:10}},grid:{display:false}}},
-      plugins:{legend:{display:false}}}
-  });
+      new Chart($('#dur-chart'), {
+        type: 'bar',
+        data: {
+          labels: m.slow.map(f => f.file.replace(/\\\\/g, '/').split('/').pop()),
+          datasets: [{
+            data: m.slow.map(f => (f.duration || 0) / 1000),
+            backgroundColor: m.slow.map(f => (f.duration || 0) > 5000 ? '#dc2626' : (f.duration || 0) > 2000 ? '#d97706' : '#2563eb'),
+            borderRadius: 6, barThickness: 22
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          scales: { x: { beginAtZero: true, ticks: { color: '#9ca3af', callback: v => v + 's' }, grid: { color: '#f3f4f6' } }, y: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { display: false } } },
+          plugins: { legend: { display: false } }
+        }
+      });
 
-  // histogram
-  const buckets=[0,0,0,0,0]; // <0.5s, 0.5-1s, 1-2s, 2-5s, >5s
-  durs.forEach(d=>{const s=d/1000;if(s<0.5)buckets[0]++;else if(s<1)buckets[1]++;else if(s<2)buckets[2]++;else if(s<5)buckets[3]++;else buckets[4]++;});
-  new Chart($('#hist-chart'),{
-    type:'bar',
-    data:{labels:['<0.5s','0.5–1s','1–2s','2–5s','>5s'],
-      datasets:[{data:buckets,backgroundColor:['#059669','#059669','#2563eb','#d97706','#dc2626'],borderRadius:6,barThickness:40}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{y:{beginAtZero:true,ticks:{color:'#9ca3af',stepSize:1},grid:{color:'#f3f4f6'}},x:{ticks:{color:'#6b7280'},grid:{display:false}}},
-      plugins:{legend:{display:false}}}
-  });
-}
+      // histogram
+      const buckets = [0, 0, 0, 0, 0]; // <0.5s, 0.5-1s, 1-2s, 2-5s, >5s
+      durs.forEach(d => { const s = d / 1000; if (s < 0.5) buckets[0]++; else if (s < 1) buckets[1]++; else if (s < 2) buckets[2]++; else if (s < 5) buckets[3]++; else buckets[4]++; });
+      new Chart($('#hist-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['<0.5s', '0.5–1s', '1–2s', '2–5s', '>5s'],
+          datasets: [{ data: buckets, backgroundColor: ['#059669', '#059669', '#2563eb', '#d97706', '#dc2626'], borderRadius: 6, barThickness: 40 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#f3f4f6' } }, x: { ticks: { color: '#6b7280' }, grid: { display: false } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
 
-// ── Recommendations ──
-function renderRecs(data,m){
-  const s=data.summary, recs=[];
-  if(m.avgCov<55)recs.push({p:'p1',t:'Increase Code Coverage',d:`Current ${m.avgCov}%. Target ≥55% frontend, ≥65% backend. Run <code>npx vitest run --coverage</code>.`,i:'hi',il:'HIGH IMPACT'});
-  else if(m.avgCov<75)recs.push({p:'p2',t:'Push Coverage Higher',d:`${m.avgCov}% is OK, target 75%+ for production confidence.`,i:'md',il:'MEDIUM'});
-  if(s.failed>0)recs.push({p:'p1',t:'Fix Failing Tests',d:`${s.failed} failing. Each drops Reliability by 10pts.`,i:'hi',il:'HIGH IMPACT'});
-  if((s.skipped||0)>20)recs.push({p:'p2',t:'Address Skipped Tests',d:`${s.skipped} skipped (${f1(m.skipRate)}%). Fix or remove — each is tech debt.`,i:'md',il:'MEDIUM'});
-  const slow5=data.files.filter(f=>(f.duration||0)>5000);
-  if(slow5.length>0)recs.push({p:'p3',t:'Optimize Slow Tests',d:`${slow5.length} files >5s. Lazy imports, smaller scope, mock heavy deps.`,i:'md',il:'MEDIUM'});
-  recs.push({p:'p3',t:'Add E2E Tests',d:'Playwright config exists, zero results. Cover login, record, playback flows.',i:'hi',il:'HIGH IMPACT'});
-  recs.push({p:'p3',t:'Automate a11y Tests',d:'AuthScreen.a11y.test.tsx all-skipped. Enable with @axe-core/react.',i:'md',il:'MEDIUM'});
-  recs.push({p:'p4',t:'Mutation Testing',d:'Stryker Mutator validates test effectiveness beyond line coverage.',i:'md',il:'MEDIUM'});
-  recs.push({p:'p4',t:'Visual Regression',d:'Playwright + screenshot comparison for UI stability.',i:'lo',il:'LOW'});
-  recs.push({p:'p4',t:'API Contract Testing',d:'Use openapi.yaml with Pact/Prism to prevent frontend-backend drift.',i:'lo',il:'LOW'});
+    // ── Recommendations ──
+    function renderRecs(data, m) {
+      const s = data.summary, recs = [];
+      if (m.avgCov < 55) recs.push({ p: 'p1', t: 'Increase Code Coverage', d: `Current ${m.avgCov}%. Target ≥55% frontend, ≥65% backend. Run <code>npx vitest run --coverage</code>.`, i: 'hi', il: 'HIGH IMPACT' });
+      else if (m.avgCov < 75) recs.push({ p: 'p2', t: 'Push Coverage Higher', d: `${m.avgCov}% is OK, target 75%+ for production confidence.`, i: 'md', il: 'MEDIUM' });
+      if (s.failed > 0) recs.push({ p: 'p1', t: 'Fix Failing Tests', d: `${s.failed} failing. Each drops Reliability by 10pts.`, i: 'hi', il: 'HIGH IMPACT' });
+      if ((s.skipped || 0) > 20) recs.push({ p: 'p2', t: 'Address Skipped Tests', d: `${s.skipped} skipped (${f1(m.skipRate)}%). Fix or remove — each is tech debt.`, i: 'md', il: 'MEDIUM' });
+      const slow5 = data.files.filter(f => (f.duration || 0) > 5000);
+      if (slow5.length > 0) recs.push({ p: 'p3', t: 'Optimize Slow Tests', d: `${slow5.length} files >5s. Lazy imports, smaller scope, mock heavy deps.`, i: 'md', il: 'MEDIUM' });
+      recs.push({ p: 'p3', t: 'Add E2E Tests', d: 'Playwright config exists, zero results. Cover login, record, playback flows.', i: 'hi', il: 'HIGH IMPACT' });
+      recs.push({ p: 'p3', t: 'Automate a11y Tests', d: 'AuthScreen.a11y.test.tsx all-skipped. Enable with @axe-core/react.', i: 'md', il: 'MEDIUM' });
+      recs.push({ p: 'p4', t: 'Mutation Testing', d: 'Stryker Mutator validates test effectiveness beyond line coverage.', i: 'md', il: 'MEDIUM' });
+      recs.push({ p: 'p4', t: 'Visual Regression', d: 'Playwright + screenshot comparison for UI stability.', i: 'lo', il: 'LOW' });
+      recs.push({ p: 'p4', t: 'API Contract Testing', d: 'Use openapi.yaml with Pact/Prism to prevent frontend-backend drift.', i: 'lo', il: 'LOW' });
 
-  const panel=$('#p-recommendations');
-  panel.innerHTML=`
+      const panel = $('#p-recommendations');
+      panel.innerHTML = `
     <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
       <div class="kpi"><div class="kpi-label">TOTAL ITEMS</div><div class="kpi-val" style="color:var(--accent)">${recs.length}</div><div class="kpi-sub">Improvement actions</div></div>
-      <div class="kpi"><div class="kpi-label">CRITICAL (P1)</div><div class="kpi-val" style="color:var(--red)">${recs.filter(r=>r.p==='p1').length}</div><div class="kpi-sub">Highest priority</div></div>
-      <div class="kpi"><div class="kpi-label">HIGH IMPACT</div><div class="kpi-val" style="color:var(--green)">${recs.filter(r=>r.i==='hi').length}</div><div class="kpi-sub">Best ROI</div></div>
-      <div class="kpi"><div class="kpi-label">QUICK WINS</div><div class="kpi-val" style="color:var(--blue)">${recs.filter(r=>r.p==='p3'||r.p==='p4').length}</div><div class="kpi-sub">P3+P4 items</div></div>
+      <div class="kpi"><div class="kpi-label">CRITICAL (P1)</div><div class="kpi-val" style="color:var(--red)">${recs.filter(r => r.p === 'p1').length}</div><div class="kpi-sub">Highest priority</div></div>
+      <div class="kpi"><div class="kpi-label">HIGH IMPACT</div><div class="kpi-val" style="color:var(--green)">${recs.filter(r => r.i === 'hi').length}</div><div class="kpi-sub">Best ROI</div></div>
+      <div class="kpi"><div class="kpi-label">QUICK WINS</div><div class="kpi-val" style="color:var(--blue)">${recs.filter(r => r.p === 'p3' || r.p === 'p4').length}</div><div class="kpi-sub">P3+P4 items</div></div>
     </div>
     <div class="card">
       <div class="card-h"><div class="card-title">Improvement Roadmap</div><div class="card-sub">Sorted by priority</div></div>
-      ${recs.map(r=>`
+      ${recs.map(r => `
         <div class="rec">
           <div class="rec-p ${r.p}">${r.p.toUpperCase()}</div>
           <div style="flex:1">
@@ -581,64 +1164,64 @@ function renderRecs(data,m){
       `).join('')}
     </div>
   `;
-}
+    }
 
-// ── Services ──
-function renderSvcs(){
-  const svc=window.EXTERNAL_SERVICES_DATA;
-  const panel=$('#p-services');
-  if(!svc){panel.innerHTML=`<div class="card"><div class="card-h"><div class="card-title">External Services</div></div><div style="text-align:center;padding:24px;color:var(--text3)">No data. Run: <code>node scripts/monitor-external-services.js</code></div></div>`;return;}
-  const gh=svc.github||{},se=svc.sentry||{},rw=svc.railway||{},ve=svc.vercel||{};
-  const sb=s=>s==='connected'?'<span class="pill pill-g">Connected</span>':(s==='local-only'||s===true||s==='configured'||s==='config-only')?'<span class="pill pill-a">Config</span>':'<span class="pill pill-b">N/A</span>';
-  const ago=d=>{if(!d)return'—';const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<60)return m+'m ago';if(m<1440)return Math.floor(m/60)+'h ago';return Math.floor(m/1440)+'d ago';};
-  const wfIcon=s=>s==='success'?'✅':s==='failure'?'❌':s==='skipped'?'⏭':'❓';
-  const wfPill=s=>s==='success'?'pill-g':s==='failure'?'pill-r':s==='skipped'?'pill-a':'pill-b';
+    // ── Services ──
+    function renderSvcs() {
+      const svc = window.EXTERNAL_SERVICES_DATA;
+      const panel = $('#p-services');
+      if (!svc) { panel.innerHTML = `<div class="card"><div class="card-h"><div class="card-title">External Services</div></div><div style="text-align:center;padding:24px;color:var(--text3)">No data. Run: <code>node scripts/monitor-external-services.js</code></div></div>`; return; }
+      const gh = svc.github || {}, se = svc.sentry || {}, rw = svc.railway || {}, ve = svc.vercel || {};
+      const sb = s => s === 'connected' ? '<span class="pill pill-g">Connected</span>' : (s === 'local-only' || s === true || s === 'configured' || s === 'config-only') ? '<span class="pill pill-a">Config</span>' : '<span class="pill pill-b">N/A</span>';
+      const ago = d => { if (!d) return '—'; const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000); if (m < 60) return m + 'm ago'; if (m < 1440) return Math.floor(m / 60) + 'h ago'; return Math.floor(m / 1440) + 'd ago'; };
+      const wfIcon = s => s === 'success' ? '✅' : s === 'failure' ? '❌' : s === 'skipped' ? '⏭' : '❓';
+      const wfPill = s => s === 'success' ? 'pill-g' : s === 'failure' ? 'pill-r' : s === 'skipped' ? 'pill-a' : 'pill-b';
 
-  // GitHub data
-  const act=gh.actions||{};
-  const runs=act.recent_runs||[];
-  const latest=act.latest_by_workflow||[];
-  const issues=(gh.issues||{}).open||[];
-  const prs=(gh.pull_requests||{}).open||[];
-  const repo=gh.repo||{};
+      // GitHub data
+      const act = gh.actions || {};
+      const runs = act.recent_runs || [];
+      const latest = act.latest_by_workflow || [];
+      const issues = (gh.issues || {}).open || [];
+      const prs = (gh.pull_requests || {}).open || [];
+      const repo = gh.repo || {};
 
-  // Stats
-  const successCount=runs.filter(r=>r.status==='success').length;
-  const failCount=runs.filter(r=>r.status==='failure').length;
-  const skipCount=runs.filter(r=>r.status==='skipped').length;
+      // Stats
+      const successCount = runs.filter(r => r.status === 'success').length;
+      const failCount = runs.filter(r => r.status === 'failure').length;
+      const skipCount = runs.filter(r => r.status === 'skipped').length;
 
-  // Sentry data
-  const sentryIssues=(se.issues||[]);
-  const sentryStats=se.stats||null;
+      // Sentry data
+      const sentryIssues = (se.issues || []);
+      const sentryStats = se.stats || null;
 
-  panel.innerHTML=`
+      panel.innerHTML = `
     <!-- Top KPIs -->
     <div class="kpi-row" style="margin-bottom:20px">
-      <div class="kpi"><div class="kpi-label">GITHUB STATUS</div><div class="kpi-val" style="color:${gh.status==='connected'?'var(--green)':'var(--amber)'}">🐙 ${gh.status==='connected'?'Live':'Offline'}</div><div class="kpi-sub">${repo.full_name||'maniczko/audioRecorder'}</div></div>
-      <div class="kpi"><div class="kpi-label">CI SUCCESS RATE</div><div class="kpi-val" style="color:${(act.success_rate||0)>=60?'var(--green)':'var(--red)'}"><span style="font-size:1.6rem">${act.success_rate||0}%</span></div><div class="kpi-sub">${fI(act.total_runs||0)} total runs</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${act.success_rate||0}%;background:${(act.success_rate||0)>=60?'var(--green)':'var(--red)'}"></div></div></div>
-      <div class="kpi"><div class="kpi-label">OPEN ISSUES</div><div class="kpi-val" style="color:${issues.length>10?'var(--red)':issues.length>0?'var(--amber)':'var(--green)'}"><span style="font-size:1.6rem">${issues.length}</span></div><div class="kpi-sub">${prs.length} open PRs</div></div>
-      <div class="kpi"><div class="kpi-label">SENTRY</div><div class="kpi-val" style="color:${se.status==='connected'?'var(--green)':se.configured?'var(--amber)':'var(--text3)'}">🔴 ${se.status==='connected'?'Live':se.configured?'Config':'Off'}</div><div class="kpi-sub">${sentryIssues.length>0?sentryIssues.length+' unresolved':se.note||'Not configured'}</div></div>
+      <div class="kpi"><div class="kpi-label">GITHUB STATUS</div><div class="kpi-val" style="color:${gh.status === 'connected' ? 'var(--green)' : 'var(--amber)'}">🐙 ${gh.status === 'connected' ? 'Live' : 'Offline'}</div><div class="kpi-sub">${repo.full_name || 'maniczko/audioRecorder'}</div></div>
+      <div class="kpi"><div class="kpi-label">CI SUCCESS RATE</div><div class="kpi-val" style="color:${(act.success_rate || 0) >= 60 ? 'var(--green)' : 'var(--red)'}"><span style="font-size:1.6rem">${act.success_rate || 0}%</span></div><div class="kpi-sub">${fI(act.total_runs || 0)} total runs</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${act.success_rate || 0}%;background:${(act.success_rate || 0) >= 60 ? 'var(--green)' : 'var(--red)'}"></div></div></div>
+      <div class="kpi"><div class="kpi-label">OPEN ISSUES</div><div class="kpi-val" style="color:${issues.length > 10 ? 'var(--red)' : issues.length > 0 ? 'var(--amber)' : 'var(--green)'}"><span style="font-size:1.6rem">${issues.length}</span></div><div class="kpi-sub">${prs.length} open PRs</div></div>
+      <div class="kpi"><div class="kpi-label">SENTRY</div><div class="kpi-val" style="color:${se.status === 'connected' ? 'var(--green)' : se.configured ? 'var(--amber)' : 'var(--text3)'}">🔴 ${se.status === 'connected' ? 'Live' : se.configured ? 'Config' : 'Off'}</div><div class="kpi-sub">${sentryIssues.length > 0 ? sentryIssues.length + ' unresolved' : se.note || 'Not configured'}</div></div>
     </div>
 
     <!-- GitHub Actions: Latest per workflow -->
-    ${gh.status==='connected'?`
+    ${gh.status === 'connected' ? `
     <div class="card">
       <div class="card-h"><div class="card-title">🐙 GitHub Actions — Latest per Workflow</div><div class="card-sub">Last run: ${ago(act.last_run)}</div></div>
       <div class="tbl-wrap" style="max-height:360px">
         <table class="tbl"><thead><tr>
           <th style="width:28px"></th><th>Workflow</th><th style="text-align:center">Status</th><th>Branch</th><th style="text-align:right">Duration</th><th style="text-align:right">When</th>
         </tr></thead><tbody>
-          ${latest.map(r=>{
-            const dur=r.duration_ms?r.duration_ms/1000:0;
-            return `<tr style="cursor:pointer" onclick="window.open('${esc(r.url)}','_blank')">
+          ${latest.map(r => {
+        const dur = r.duration_ms ? r.duration_ms / 1000 : 0;
+        return `<tr style="cursor:pointer" onclick="window.open('${esc(r.url)}','_blank')">
               <td>${wfIcon(r.status)}</td>
               <td style="font-weight:600;font-size:.82rem">${esc(r.name)}</td>
               <td style="text-align:center"><span class="pill ${wfPill(r.status)}">${r.status}</span></td>
               <td class="fn">${esc(r.branch)}</td>
-              <td style="text-align:right;font-family:monospace;font-size:.78rem">${dur>=60?Math.round(dur/60)+'m':dur.toFixed(0)+'s'}</td>
+              <td style="text-align:right;font-family:monospace;font-size:.78rem">${dur >= 60 ? Math.round(dur / 60) + 'm' : dur.toFixed(0) + 's'}</td>
               <td style="text-align:right;font-size:.76rem;color:var(--text3)">${ago(r.updated_at)}</td>
             </tr>`;
-          }).join('')}
+      }).join('')}
         </tbody></table>
       </div>
     </div>
@@ -652,38 +1235,38 @@ function renderSvcs(){
       <div class="card">
         <div class="card-h"><div class="card-title">Open Issues (${issues.length})</div><div class="card-sub">${prs.length} PRs</div></div>
         <div style="max-height:250px;overflow-y:auto">
-          ${issues.length===0?'<div style="text-align:center;padding:20px;color:var(--text3)">No open issues 🎉</div>':''}
-          ${issues.slice(0,15).map(i=>`
+          ${issues.length === 0 ? '<div style="text-align:center;padding:20px;color:var(--text3)">No open issues 🎉</div>' : ''}
+          ${issues.slice(0, 15).map(i => `
             <div style="display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${esc(i.url)}','_blank')">
               <span style="color:var(--green);font-weight:700;font-size:.78rem">#${i.number}</span>
               <span style="flex:1;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.title)}</span>
-              ${i.labels.map(l=>`<span class="pill pill-b" style="font-size:.66rem">${esc(l)}</span>`).join('')}
+              ${i.labels.map(l => `<span class="pill pill-b" style="font-size:.66rem">${esc(l)}</span>`).join('')}
               <span style="font-size:.72rem;color:var(--text3);white-space:nowrap">${ago(i.updated_at)}</span>
             </div>
           `).join('')}
-          ${issues.length>15?`<div style="text-align:center;padding:8px;font-size:.78rem;color:var(--text3)">+${issues.length-15} more</div>`:''}
+          ${issues.length > 15 ? `<div style="text-align:center;padding:8px;font-size:.78rem;color:var(--text3)">+${issues.length - 15} more</div>` : ''}
         </div>
       </div>
     </div>
 
-    ${prs.length>0?`
+    ${prs.length > 0 ? `
     <div class="card">
       <div class="card-h"><div class="card-title">Open Pull Requests (${prs.length})</div></div>
       <div class="tbl-wrap" style="max-height:250px">
         <table class="tbl"><thead><tr>
           <th style="width:60px">PR</th><th>Title</th><th>Author</th><th style="text-align:right">When</th>
         </tr></thead><tbody>
-          ${prs.map(p=>`<tr style="cursor:pointer" onclick="window.open('${esc(p.url)}','_blank')">
+          ${prs.map(p => `<tr style="cursor:pointer" onclick="window.open('${esc(p.url)}','_blank')">
             <td><span class="pill pill-g">#${p.number}</span></td>
-            <td style="font-size:.82rem">${p.draft?'📝 ':''}${esc(p.title)}</td>
-            <td class="fn">${esc(p.author||'')}</td>
+            <td style="font-size:.82rem">${p.draft ? '📝 ' : ''}${esc(p.title)}</td>
+            <td class="fn">${esc(p.author || '')}</td>
             <td style="text-align:right;font-size:.76rem;color:var(--text3)">${ago(p.updated_at)}</td>
           </tr>`).join('')}
         </tbody></table>
       </div>
     </div>
-    `:''}
-    `:`
+    `: ''}
+    `: `
     <div class="card"><div style="text-align:center;padding:32px;color:var(--text3)">
       <div style="font-size:1.2rem;margin-bottom:8px">🐙 GitHub not connected</div>
       <div>Set <code>GITHUB_TOKEN</code> in .env and run <code>node scripts/monitor-external-services.js</code></div>
@@ -691,38 +1274,38 @@ function renderSvcs(){
     `}
 
     <!-- Sentry -->
-    ${se.status==='connected'?`
+    ${se.status === 'connected' ? `
     <div class="card">
-      <div class="card-h"><div class="card-title">🔴 Sentry — Unresolved Issues (${sentryIssues.length})</div><div class="card-sub">${sentryStats?sentryStats.events_7d+' events (7d)':'—'}</div></div>
-      ${sentryIssues.length===0?'<div style="text-align:center;padding:20px;color:var(--green)">No unresolved errors 🎉</div>':''}
+      <div class="card-h"><div class="card-title">🔴 Sentry — Unresolved Issues (${sentryIssues.length})</div><div class="card-sub">${sentryStats ? sentryStats.events_7d + ' events (7d)' : '—'}</div></div>
+      ${sentryIssues.length === 0 ? '<div style="text-align:center;padding:20px;color:var(--green)">No unresolved errors 🎉</div>' : ''}
       <div class="tbl-wrap" style="max-height:300px">
         <table class="tbl"><thead><tr>
           <th>Issue</th><th style="text-align:center">Level</th><th style="text-align:center">Events</th><th style="text-align:center">Users</th><th style="text-align:right">Last Seen</th>
         </tr></thead><tbody>
-          ${sentryIssues.map(i=>{
-            const lvPill=i.level==='error'?'pill-r':i.level==='warning'?'pill-a':'pill-b';
-            return `<tr style="cursor:pointer" onclick="window.open('${esc(i.url||'')}','_blank')">
-              <td style="font-size:.82rem;font-weight:600">${esc(i.title)}<div class="fn" style="margin-top:2px">${esc(i.culprit||'')}</div></td>
+          ${sentryIssues.map(i => {
+        const lvPill = i.level === 'error' ? 'pill-r' : i.level === 'warning' ? 'pill-a' : 'pill-b';
+        return `<tr style="cursor:pointer" onclick="window.open('${esc(i.url || '')}','_blank')">
+              <td style="font-size:.82rem;font-weight:600">${esc(i.title)}<div class="fn" style="margin-top:2px">${esc(i.culprit || '')}</div></td>
               <td style="text-align:center"><span class="pill ${lvPill}">${i.level}</span></td>
-              <td style="text-align:center;font-weight:700">${fI(i.count||0)}</td>
-              <td style="text-align:center">${i.userCount||0}</td>
+              <td style="text-align:center;font-weight:700">${fI(i.count || 0)}</td>
+              <td style="text-align:center">${i.userCount || 0}</td>
               <td style="text-align:right;font-size:.76rem;color:var(--text3)">${ago(i.lastSeen)}</td>
             </tr>`;
-          }).join('')}
+      }).join('')}
         </tbody></table>
       </div>
-      ${sentryStats?`
+      ${sentryStats ? `
       <div style="margin-top:16px">
         <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Events per Day (7d)</div>
         <div class="ch-wrap" style="height:160px"><canvas id="sentry-chart"></canvas></div>
       </div>
-      `:''}
+      `: ''}
     </div>
-    `:`
+    `: `
     <div class="card">
       <div class="card-h"><div class="card-title">🔴 Sentry</div>${sb(se.status)}</div>
       <div style="text-align:center;padding:24px;color:var(--text3)">
-        ${se.configured?'DSN configured. Add <code>SENTRY_AUTH_TOKEN</code>, <code>SENTRY_ORG</code>, <code>SENTRY_PROJECT</code> to .env for live error data.':'Not configured. Add <code>SENTRY_DSN</code> to .env.'}
+        ${se.configured ? 'DSN configured. Add <code>SENTRY_AUTH_TOKEN</code>, <code>SENTRY_ORG</code>, <code>SENTRY_PROJECT</code> to .env for live error data.' : 'Not configured. Add <code>SENTRY_DSN</code> to .env.'}
       </div>
     </div>
     `}
@@ -732,57 +1315,146 @@ function renderSvcs(){
       <div class="card">
         <div class="card-h"><div class="card-title">🚂 Railway</div>${sb(rw.status)}</div>
         <div class="svc-met">
-          <div class="svc-m"><div class="svc-ml">Token</div><div class="svc-mv">${rw.has_token?'✓':'✗'}</div></div>
-          <div class="svc-m"><div class="svc-ml">Config</div><div class="svc-mv">${rw.configured?'✓':'✗'}</div></div>
+          <div class="svc-m"><div class="svc-ml">Token</div><div class="svc-mv">${rw.has_token ? '✓' : '✗'}</div></div>
+          <div class="svc-m"><div class="svc-ml">Config</div><div class="svc-mv">${rw.configured ? '✓' : '✗'}</div></div>
         </div>
-        ${rw.note?`<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${rw.note}</div>`:''}
+        ${rw.note ? `<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${rw.note}</div>` : ''}
       </div>
       <div class="card">
         <div class="card-h"><div class="card-title">▲ Vercel</div>${sb(ve.status)}</div>
         <div class="svc-met">
-          <div class="svc-m"><div class="svc-ml">Project</div><div class="svc-mv">${ve.project_name||'N/A'}</div></div>
-          <div class="svc-m"><div class="svc-ml">Framework</div><div class="svc-mv">${ve.framework||'Vite'}</div></div>
+          <div class="svc-m"><div class="svc-ml">Project</div><div class="svc-mv">${ve.project_name || 'N/A'}</div></div>
+          <div class="svc-m"><div class="svc-ml">Framework</div><div class="svc-mv">${ve.framework || 'Vite'}</div></div>
         </div>
-        ${ve.note?`<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${ve.note}</div>`:''}
+        ${ve.note ? `<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${ve.note}</div>` : ''}
       </div>
     </div>
   `;
 
-  // GitHub Runs doughnut chart
-  if(gh.status==='connected'&&runs.length>0){
-    new Chart($('#gh-runs-chart'),{
-      type:'doughnut',
-      data:{labels:['Success','Failure','Skipped'],datasets:[{data:[successCount,failCount,skipCount],backgroundColor:['#059669','#dc2626','#d97706'],borderWidth:0,hoverOffset:6}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:11}}}}}
+      // GitHub Runs doughnut chart
+      if (gh.status === 'connected' && runs.length > 0) {
+        new Chart($('#gh-runs-chart'), {
+          type: 'doughnut',
+          data: { labels: ['Success', 'Failure', 'Skipped'], datasets: [{ data: [successCount, failCount, skipCount], backgroundColor: ['#059669', '#dc2626', '#d97706'], borderWidth: 0, hoverOffset: 6 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } } } }
+        });
+      }
+
+      // Sentry daily chart
+      if (se.status === 'connected' && sentryStats && sentryStats.daily) {
+        new Chart($('#sentry-chart'), {
+          type: 'bar',
+          data: { labels: sentryStats.daily.map(d => d.date.slice(5)), datasets: [{ data: sentryStats.daily.map(d => d.events), backgroundColor: '#dc2626', borderRadius: 4, barThickness: 20 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#f3f4f6' } }, x: { ticks: { color: '#6b7280' }, grid: { display: false } } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+    }
+
+    // ── Export ──
+    function exportJSON() {
+      const b = new Blob([JSON.stringify(window.TEST_DATA, null, 2)], { type: 'application/json' });
+      const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u;
+      a.download = `voicelog-tests-${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(u);
+    }
+
+    // ── Refresh ──
+    let refreshTimer = null;
+    let autoRefreshEnabled = true;
+    let refreshInterval = 30000; // 30 seconds
+
+    function showRefreshIndicator() {
+      let indicator = document.getElementById('refresh-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'refresh-indicator';
+        indicator.style.cssText = 'position:fixed;bottom:20px;right:20px;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;font-size:.78rem;';
+        indicator.innerHTML = `
+      <span id="refresh-status" style="color:var(--text2)">Auto-refresh: ON</span>
+      <button id="refresh-toggle" onclick="toggleAutoRefresh()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-size:.72rem;font-weight:600;">PAUSE</button>
+      <button id="manual-refresh-btn" onclick="manualRefresh()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;font-size:.72rem;font-weight:600;">↻ Now</button>
+    `;
+        document.body.appendChild(indicator);
+      }
+    }
+
+    function toggleAutoRefresh() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      const status = document.getElementById('refresh-status');
+      const btn = document.getElementById('refresh-toggle');
+      if (status) status.textContent = `Auto-refresh: ${autoRefreshEnabled ? 'ON' : 'OFF'}`;
+      if (btn) btn.textContent = autoRefreshEnabled ? 'PAUSE' : 'RESUME';
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      } else {
+        stopAutoRefresh();
+      }
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      if (autoRefreshEnabled) {
+        refreshTimer = setInterval(() => loadDashboardData(), refreshInterval);
+      }
+    }
+
+    function stopAutoRefresh() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
+    }
+
+    function manualRefresh() {
+      const btn = document.getElementById('manual-refresh-btn');
+      if (btn) {
+        btn.style.transform = 'rotate(360deg)';
+        btn.style.transition = 'transform 0.5s ease';
+        setTimeout(() => { btn.style.transform = ''; btn.style.transition = ''; }, 500);
+      }
+      loadDashboardData();
+    }
+
+    async function loadDashboardData() {
+      // Try to reload test-results.js dynamically
+      try {
+        const response = await fetch('test-results.json?' + Date.now());
+        if (response.ok) {
+          const newData = await response.json();
+          window.TEST_DATA = newData;
+          render(window.TEST_DATA);
+        }
+      } catch (e) {
+        console.warn('Auto-refresh failed, using cached data');
+      }
+    }
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.TEST_DATA) {
+        render(window.TEST_DATA);
+        showRefreshIndicator();
+        startAutoRefresh();
+        return;
+      }
+      fetch('test-results.json').then(r => r.json()).then(data => {
+        window.TEST_DATA = data;
+        render(data);
+        showRefreshIndicator();
+        startAutoRefresh();
+      }).catch(() => {
+        $('#app').innerHTML = '<div style="text-align:center;padding:80px 0"><h2>No test data</h2><p style="color:var(--text2)">Run: <code>pnpm run test:with-report</code></p></div>';
+      });
     });
-  }
 
-  // Sentry daily chart
-  if(se.status==='connected'&&sentryStats&&sentryStats.daily){
-    new Chart($('#sentry-chart'),{
-      type:'bar',
-      data:{labels:sentryStats.daily.map(d=>d.date.slice(5)),datasets:[{data:sentryStats.daily.map(d=>d.events),backgroundColor:'#dc2626',borderRadius:4,barThickness:20}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        scales:{y:{beginAtZero:true,ticks:{color:'#9ca3af'},grid:{color:'#f3f4f6'}},x:{ticks:{color:'#6b7280'},grid:{display:false}}},
-        plugins:{legend:{display:false}}}
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      stopAutoRefresh();
     });
-  }
-}
-
-// ── Export ──
-function exportJSON(){
-  const b=new Blob([JSON.stringify(window.TEST_DATA,null,2)],{type:'application/json'});
-  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;
-  a.download=`voicelog-tests-${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(u);
-}
-
-// ── Init ──
-document.addEventListener('DOMContentLoaded',()=>{
-  if(window.TEST_DATA){render(window.TEST_DATA);return;}
-  fetch('test-results.json').then(r=>r.json()).then(render).catch(()=>{
-    $('#app').innerHTML='<div style="text-align:center;padding:80px 0"><h2>No test data</h2><p style="color:var(--text2)">Run: <code>pnpm run test:with-report</code></p></div>';
-  });
-});
-</script>
+  </script>
 </body>
+
 </html>
