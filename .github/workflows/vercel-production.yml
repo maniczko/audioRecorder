@@ -38,9 +38,8 @@ jobs:
 
       - name: Install Vercel CLI
         run: |
-          corepack enable
-          pnpm setup
-          source ~/.bashrc 2>/dev/null || true
+          export PNPM_HOME="/home/runner/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
           pnpm add -g vercel@latest
 
       - name: Validate Vercel secrets
