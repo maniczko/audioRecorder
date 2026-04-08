@@ -985,4 +985,80 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T10:54:29.169Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-08T13:16:23.302Z -->
+
+### GitHub Actions Errors (8 found)
+
+- **GH-AUTO-2026-04-08-1** — Fix Production Deployment (Vercel) failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Production Deployment (Vercel). Szczegoly: Job "Deploy Production" step "Install Vercel CLI" failed
+  - **Error:** Job "Deploy Production" step "Install Vercel CLI" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24136643152
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T12:57:19.5634530Z ##[error...
+  - **Error:** 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24136432167
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:48:37.5772772Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-08T12:48:37.5806225Z TimeoutError: page.click: Time...
+  - **Error:** 2026-04-08T12:48:37.5772772Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24135899161
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:04:11.2659406Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:05:28.3109712Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T12:05:28.3110754Z ERROR: Coverage for...
+  - **Error:** 2026-04-08T12:04:11.2659406Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:05:28.3109712Z ERROR: Coverage for lines (52.13%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24134224839
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-5** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T11:48:59.1931601Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:50:09.7946814Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T11:50:09.7947687Z ERROR: Coverage for...
+  - **Error:** 2026-04-08T11:48:59.1931601Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:50:09.7946814Z ERROR: Coverage for lines (52.13%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24133676436
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-6** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T11:49:15.6158609Z ##[error...
+  - **Error:** 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24133676375
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-7** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', …(3) ]
+  - **Error:** 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', …(3) ]
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24131740530
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-8** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:58:04.3577611Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:58:04.3592173Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:58:04.3597444Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:59:43.3670443Z ##[er...
+  - **Error:** 2026-04-08T10:58:04.3577611Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:58:04.3592173Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:58:04.3597444Z ##[error]Error: T...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24131740525
+  - **Created:** 2026-04-08T13:16:23.302Z
+  - **Priority:** High
+
 
