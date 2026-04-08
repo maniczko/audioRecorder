@@ -259,15 +259,12 @@ describe('WorkspaceContext', () => {
   });
 
   describe('useWorkspaceCtx', () => {
-    it('throws error when used outside WorkspaceProvider', () => {
-      // Suppress console.error for this test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('returns safe defaults when used outside WorkspaceProvider', () => {
+      const { result } = renderHook(() => useWorkspaceCtx());
 
-      expect(() => {
-        renderHook(() => useWorkspaceCtx());
-      }).toThrow('useWorkspaceCtx must be used within WorkspaceProvider');
-
-      consoleSpy.mockRestore();
+      expect(result.current.workspace).toBeDefined();
+      expect(result.current.workspace.users).toEqual([]);
+      expect(result.current.workspace.currentWorkspace).toBeNull();
     });
 
     it('returns context value when used within WorkspaceProvider', () => {

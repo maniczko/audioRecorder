@@ -217,14 +217,12 @@ describe('RecorderContext', () => {
   });
 
   describe('useRecorderCtx', () => {
-    it('throws error when used outside RecorderProvider', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('returns safe defaults when used outside RecorderProvider', () => {
+      const { result } = renderHook(() => useRecorderCtx());
 
-      expect(() => {
-        renderHook(() => useRecorderCtx());
-      }).toThrow('useRecorderCtx must be used within RecorderProvider');
-
-      consoleSpy.mockRestore();
+      expect(result.current).toBeDefined();
+      expect(result.current.recordingState).toBeNull();
+      expect(typeof result.current.startRecording).toBe('function');
     });
 
     it('returns recorder context when used within RecorderProvider', () => {
