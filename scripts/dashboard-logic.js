@@ -715,6 +715,88 @@ function renderExternalServices() {
   const railway = services.railway || {};
   const vercel = services.vercel || {};
 
+  // Helper: filter failed deployments
+  const isRailwayFailure = (d) => d.status && !['SUCCESS','SUCCESSFUL','SUCCEEDED','COMPLETED','DEPLOYED','LIVE','BUILDING','QUEUED','INITIALIZING','IN_PROGRESS'].includes(d.status.toUpperCase());
+  const isVercelError = (d) => d.state && d.state.toUpperCase() === 'ERROR';
+
+  const railwayFailures = (railway.deployments || []).filter(isRailwayFailure).slice(0, 20);
+  const vercelFailures = (vercel.deployments || []).filter(isVercelError).slice(0, 20);
+
+  const railCard = `
+      <div class="service-card">
+        <div class="service-header">
+          <div class="service-name">🚂 Railway</div>
+          <span class="service-status-badge ${railway.configured ? 'configured' : 'not-configured'}">
+            ${railway.configured ? '● Configured' : '○ Not Configured'}
+          </span>
+        </div>
+        <div class="service-metrics">
+          <div class="service-metric">
+            <div class="service-metric-label">Token Configured</div>
+            <div class="service-metric-value" style="color: ${railway.has_token ? 'var(--success)' : 'var(--warning)'};">
+              ${railway.has_token ? '✓ Yes' : '⚠ No'}
+            </div>
+          </div>
+          <div class="service-metric">
+            <div class="service-metric-label">Deployments</div>
+            <div class="service-metric-value">${(railway.deployments||[]).length}</div>
+          </div>
+        </div>
+        ${railway.note ? `<div class="service-note">💡 ${railway.note}</div>` : ''}
+        ${railwayFailures.length > 0 ? `
+        <details style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+          <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--danger);">❌ ${railwayFailures.length} failed deployments</summary>
+          <div style="margin-top:8px; max-height:200px; overflow-y:auto;">
+            ${railwayFailures.map(d => `
+              <div style="padding:6px 10px; background:var(--danger-bg); border-radius:6px; margin-bottom:4px; font-size:0.78rem;">
+                <div style="font-weight:600;">${d.name || d.id || 'Unknown'}</div>
+                <div style="color:var(--danger);">${d.status}</div>
+                ${d.created ? `<div style="color:var(--text-muted); font-size:0.72rem;">${new Date(d.created).toLocaleString('pl-PL')}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </details>` : ''}
+      </div>`;
+
+  const vercelCard = `
+      <div class="service-card">
+        <div class="service-header">
+          <div class="service-name">▲ Vercel</div>
+          <span class="service-status-badge ${vercel.configured ? 'configured' : 'not-configured'}">
+            ${vercel.configured ? '● Configured' : '○ Not Configured'}
+          </span>
+        </div>
+        <div class="service-metrics">
+          <div class="service-metric">
+            <div class="service-metric-label">Project</div>
+            <div class="service-metric-value">${vercel.project_name || 'N/A'}</div>
+          </div>
+          <div class="service-metric">
+            <div class="service-metric-label">Framework</div>
+            <div class="service-metric-value">${vercel.framework || 'N/A'}</div>
+          </div>
+          <div class="service-metric">
+            <div class="service-metric-label">Deployments</div>
+            <div class="service-metric-value">${(vercel.deployments||[]).length}</div>
+          </div>
+        </div>
+        ${vercel.note ? `<div class="service-note">💡 ${vercel.note}</div>` : ''}
+        ${vercelFailures.length > 0 ? `
+        <details style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+          <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--danger);">❌ ${vercelFailures.length} failed deployments</summary>
+          <div style="margin-top:8px; max-height:200px; overflow-y:auto;">
+            ${vercelFailures.map(d => `
+              <div style="padding:6px 10px; background:var(--danger-bg); border-radius:6px; margin-bottom:4px; font-size:0.78rem;">
+                <div style="font-weight:600;">${d.name || d.uid || 'Unknown'}</div>
+                <div style="color:var(--danger);">${d.state}</div>
+                ${d.error ? `<div style="color:var(--danger); font-size:0.72rem; margin-top:2px;">${d.error}</div>` : ''}
+                ${d.createdAt ? `<div style="color:var(--text-muted); font-size:0.72rem;">${new Date(d.createdAt).toLocaleString('pl-PL')}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </details>` : ''}
+      </div>`;
+
   container.innerHTML = `
     <div class="services-grid">
       <!-- GitHub Actions -->
@@ -738,6 +820,18 @@ function renderExternalServices() {
           </div>
         </div>
         ${github.note ? `<div class="service-note">💡 ${github.note}</div>` : ''}
+        ${github.issues && github.issues.total_open > 0 ? `
+        <details style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+          <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--warning);">⚠ ${github.issues.total_open} open issues</summary>
+          <div style="margin-top:8px; max-height:200px; overflow-y:auto;">
+            ${(github.issues.open||[]).slice(0,20).map(i => `
+              <div style="padding:6px 10px; background:var(--warning-bg); border-radius:6px; margin-bottom:4px; font-size:0.78rem;">
+                <a href="${i.url}" target="_blank" style="text-decoration:none;color:inherit;font-weight:600;">#${i.number} ${i.title}</a>
+                <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">${i.labels.map(l=>'<span style="background:rgba(0,0,0,0.06);padding:0 4px;border-radius:3px;font-size:0.68rem;">'+l+'</span>').join(' ')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </details>` : ''}
       </div>
 
       <!-- Sentry -->
@@ -756,58 +850,27 @@ function renderExternalServices() {
             </div>
           </div>
           <div class="service-metric">
-            <div class="service-metric-label">API Access</div>
-            <div class="service-metric-value" style="color: ${sentry.has_dsn ? 'var(--warning)' : 'var(--text-muted)'};">
-              ${sentry.has_dsn ? '⚠ Limited' : '○ None'}
-            </div>
+            <div class="service-metric-label">Unresolved Issues</div>
+            <div class="service-metric-value">${sentry.total_unresolved || sentry.issues?.length || 0}</div>
           </div>
         </div>
         ${sentry.note ? `<div class="service-note">💡 ${sentry.note}</div>` : ''}
+        ${sentry.issues && sentry.issues.length > 0 ? `
+        <details style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+          <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--danger);">🔥 ${sentry.issues.length} issues</summary>
+          <div style="margin-top:8px; max-height:200px; overflow-y:auto;">
+            ${sentry.issues.slice(0,20).map(i => `
+              <div style="padding:6px 10px; background:var(--danger-bg); border-radius:6px; margin-bottom:4px; font-size:0.78rem;">
+                <a href="${i.url}" target="_blank" style="text-decoration:none;color:inherit;font-weight:600;">${i.title}</a>
+                <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">${i.count} occurrences · ${i.level}</div>
+              </div>
+            `).join('')}
+          </div>
+        </details>` : ''}
       </div>
 
-      <!-- Railway -->
-      <div class="service-card">
-        <div class="service-header">
-          <div class="service-name">🚂 Railway</div>
-          <span class="service-status-badge ${railway.configured ? 'configured' : 'not-configured'}">
-            ${railway.configured ? '● Configured' : '○ Not Configured'}
-          </span>
-        </div>
-        <div class="service-metrics">
-          <div class="service-metric">
-            <div class="service-metric-label">Token Configured</div>
-            <div class="service-metric-value" style="color: ${railway.has_token ? 'var(--success)' : 'var(--warning)'};">
-              ${railway.has_token ? '✓ Yes' : '⚠ No'}
-            </div>
-          </div>
-          <div class="service-metric">
-            <div class="service-metric-label">Deployments</div>
-            <div class="service-metric-value">N/A</div>
-          </div>
-        </div>
-        ${railway.note ? `<div class="service-note">💡 ${railway.note}</div>` : ''}
-      </div>
-
-      <!-- Vercel -->
-      <div class="service-card">
-        <div class="service-header">
-          <div class="service-name">▲ Vercel</div>
-          <span class="service-status-badge ${vercel.configured ? 'configured' : 'not-configured'}">
-            ${vercel.configured ? '● Configured' : '○ Not Configured'}
-          </span>
-        </div>
-        <div class="service-metrics">
-          <div class="service-metric">
-            <div class="service-metric-label">Project</div>
-            <div class="service-metric-value">${vercel.project_name || 'N/A'}</div>
-          </div>
-          <div class="service-metric">
-            <div class="service-metric-label">Framework</div>
-            <div class="service-metric-value">${vercel.framework || 'N/A'}</div>
-          </div>
-        </div>
-        ${vercel.note ? `<div class="service-note">💡 ${vercel.note}</div>` : ''}
-      </div>
+      ${railCard}
+      ${vercelCard}
     </div>
 
     ${
