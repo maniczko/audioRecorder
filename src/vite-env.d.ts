@@ -23,3 +23,16 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// External services data injected at runtime for Vercel stats
+interface ExternalServicesData {
+  vercel?: {
+    stats?: {
+      daily: { date: string; deployments: number }[];
+    };
+  };
+}
+
+interface Window {
+  EXTERNAL_SERVICES_DATA?: ExternalServicesData;
+}

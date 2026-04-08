@@ -130,7 +130,7 @@ export default function KpiDashboard({ workspaceName, meetings, tasks }: any) {
 
       {/* Vercel Deployments Chart (from window.EXTERNAL_SERVICES_DATA) */}
       {typeof window !== 'undefined' && window.EXTERNAL_SERVICES_DATA?.vercel?.stats?.daily && (
-        <VercelDeploymentsChart stats={window.EXTERNAL_SERVICES_DATA.vercel.stats} />
+        <VercelDeploymentsChart stats={{ daily: window.EXTERNAL_SERVICES_DATA.vercel.stats.daily }} />
       )}
     </section>
   );
