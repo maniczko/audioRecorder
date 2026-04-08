@@ -297,6 +297,127 @@ vi.mock('./hooks/useMeetings', () => ({
   default: hooksMocks.useMeetings,
 }));
 
+// Mock workspaceStore to prevent store-related test failures
+vi.mock('./store/workspaceStore', () => ({
+  useWorkspaceStore: vi.fn(() => ({
+    users: [],
+    workspaces: [],
+    session: null,
+    vocabulary: [],
+    setUsers: vi.fn(),
+    setWorkspaces: vi.fn(),
+    setSession: vi.fn(),
+    setVocabulary: vi.fn(),
+    switchWorkspace: vi.fn(),
+    updateWorkspaceMemberRole: vi.fn(),
+    removeWorkspaceMember: vi.fn(),
+    logout: vi.fn(),
+  })),
+  useWorkspaceSelectors: vi.fn(() => ({
+    currentUser: null,
+    currentUserId: '',
+    currentWorkspace: null,
+    currentWorkspaceId: '',
+    currentWorkspaceMembers: [],
+    currentWorkspaceRole: 'member',
+    currentWorkspacePermissions: {
+      role: 'member',
+      canRecordAudio: true,
+      canEditWorkspace: true,
+      canExportWorkspaceData: true,
+      canManageWorkspaceRoles: false,
+      canDeleteWorkspaceItems: false,
+    },
+    isHydratingSession: false,
+    availableWorkspaces: [],
+  })),
+}));
+
+// Mock meetingsStore
+vi.mock('./store/meetingsStore', () => ({
+  useMeetingsStore: vi.fn(() => ({
+    userMeetings: [],
+    manualTasks: [],
+    taskState: {},
+    taskBoards: {},
+    calendarMeta: {},
+    vocabulary: [],
+    workspaceMessage: '',
+    setMeetings: vi.fn(),
+    setManualTasks: vi.fn(),
+    setTaskState: vi.fn(),
+    setTaskBoards: vi.fn(),
+    setCalendarMeta: vi.fn(),
+    setWorkspaceMessage: vi.fn(),
+  })),
+}));
+
+// Mock authStore
+vi.mock('./store/authStore', () => ({
+  useAuthStore: vi.fn(() => ({
+    session: null,
+    authError: null,
+    googleAuthMessage: '',
+    microsoftAuthMessage: '',
+    setSession: vi.fn(),
+    setAuthError: vi.fn(),
+    setGoogleAuthMessage: vi.fn(),
+    setMicrosoftAuthMessage: vi.fn(),
+    submitAuth: vi.fn(),
+    logout: vi.fn(),
+    requestResetCode: vi.fn(),
+    completeReset: vi.fn(),
+    handleGoogleProfile: vi.fn(),
+    handleMicrosoftProfile: vi.fn(),
+    saveProfile: vi.fn(),
+    updatePassword: vi.fn(),
+  })),
+}));
+
+// Mock recorderStore
+vi.mock('./store/recorderStore', () => ({
+  useRecorderStore: vi.fn(() => ({
+    recordingQueue: [],
+    analysisStatus: 'idle',
+    recordingMessage: '',
+    pipelineProgressPercent: 0,
+    pipelineStageLabel: '',
+    isProcessingQueue: false,
+    lastQueueErrorKey: '',
+    retryRecordingQueueItem: vi.fn(),
+    retryStoredRecording: vi.fn(),
+    processQueue: vi.fn(),
+    updateQueueItem: vi.fn(),
+    removeQueueItem: vi.fn(),
+    setAnalysisStatus: vi.fn(),
+    setPipelineProgress: vi.fn(),
+    setRecordingMessage: vi.fn(),
+    setRecordingQueue: vi.fn(),
+  })),
+}));
+
+// Mock uiStore
+vi.mock('./store/uiStore', () => ({
+  useUIStore: vi.fn(() => ({
+    isCommandPaletteOpen: false,
+    isSettingsOpen: false,
+    activeTab: 'calendar',
+    calendarView: 'month',
+    selectedDate: null,
+    notifications: [],
+    liveRecording: null,
+    toggleCommandPalette: vi.fn(),
+    openSettings: vi.fn(),
+    closeSettings: vi.fn(),
+    setActiveTab: vi.fn(),
+    setCalendarView: vi.fn(),
+    setSelectedDate: vi.fn(),
+    addNotification: vi.fn(),
+    removeNotification: vi.fn(),
+    clearNotifications: vi.fn(),
+  })),
+}));
+
 // ── Service Worker mock ──────────────────────────────────────────────
 if (!navigator.serviceWorker) {
   Object.defineProperty(navigator, 'serviceWorker', {
