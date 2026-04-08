@@ -37,7 +37,11 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Install Vercel CLI
-        run: pnpm install -g vercel@latest
+        run: |
+          corepack enable
+          pnpm setup
+          source ~/.bashrc 2>/dev/null || true
+          pnpm add -g vercel@latest
 
       - name: Validate Vercel secrets
         shell: bash
