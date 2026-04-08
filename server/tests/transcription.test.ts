@@ -285,11 +285,9 @@ describe('TranscriptionService', () => {
       mockSpeakerEmbedder
     );
 
-    // Simulate two long-running jobs by manually inserting promises
+    // Simulate a long-running job by manually inserting a promise (MAX_CONCURRENT_JOBS = 1)
     let resolveJob1!: () => void;
-    let resolveJob2!: () => void;
     service.transcriptionJobs.set('rec_a', new Promise<void>((r) => (resolveJob1 = r)));
-    service.transcriptionJobs.set('rec_b', new Promise<void>((r) => (resolveJob2 = r)));
 
     const asset = { id: 'asset_3', file_path: 'test.wav', workspace_id: 'ws_1' };
     await service.ensureTranscriptionJob('rec_c', asset, {});
@@ -306,6 +304,5 @@ describe('TranscriptionService', () => {
 
     // Cleanup
     resolveJob1();
-    resolveJob2();
   });
 });

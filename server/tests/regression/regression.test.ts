@@ -1274,7 +1274,7 @@ describe('Regression: #0 — OOM: TranscriptionService rejects jobs when RSS exc
 
     const svc = new TranscriptionService(mockDb, {}, {}, {});
 
-    // Simulate RSS exceeding threshold (1.5GB > 1GB limit)
+    // Simulate RSS exceeding threshold (1.5GB > 1.2GB limit)
     process.memoryUsage = Object.assign(
       () => ({
         rss: 1_500_000_000,

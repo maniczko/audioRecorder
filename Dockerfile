@@ -76,7 +76,7 @@ ENV FFMPEG_BINARY=ffmpeg
 ENV PYTHON_BINARY=python3
 ENV VOICELOG_DB_PATH=/data/voicelog.sqlite
 ENV VOICELOG_UPLOAD_DIR=/data/uploads
-ENV NODE_OPTIONS="--max-old-space-size=768 --expose-gc"
+ENV NODE_OPTIONS="--max-old-space-size=1024 --expose-gc"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

@@ -150,8 +150,8 @@ export default class TranscriptionService extends EventEmitter {
     );
   }
 
-  static MAX_CONCURRENT_JOBS = 2;
-  static RSS_LIMIT_BYTES = 1_000_000_000; // 1 GB — reject new jobs above this to prevent OOM kills
+  static MAX_CONCURRENT_JOBS = 1;
+  static RSS_LIMIT_BYTES = 1_200_000_000; // 1.2 GB — reject new jobs above this to prevent OOM kills
 
   async ensureTranscriptionJob(recordingId: string, asset: any, options: any) {
     if (!recordingId || this.transcriptionJobs.has(recordingId)) {
@@ -168,6 +168,8 @@ export default class TranscriptionService extends EventEmitter {
         recordingId,
         'Serwer chwilowo przeciążony pamięciowo — spróbuj ponownie za minutę.'
       );
+      // Aggressive GC to try reclaiming memory before next retry arrives
+      if (typeof global.gc === 'function') global.gc();
       return;
     }
 
@@ -180,6 +182,7 @@ export default class TranscriptionService extends EventEmitter {
         recordingId,
         'Serwer jest przeciążony — spróbuj ponownie za chwilę.'
       );
+      if (typeof global.gc === 'function') global.gc();
       return;
     }
 
