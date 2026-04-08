@@ -936,4 +936,53 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T08:58:25.328Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-08T10:54:29.169Z -->
+
+### GitHub Actions Errors (5 found)
+
+- **GH-AUTO-2026-04-08-1** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:10:32.8577943Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:10:32.8589273Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:10:32.8591995Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:12:04.0205344Z ##[er...
+  - **Error:** 2026-04-08T10:10:32.8577943Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:10:32.8589273Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:10:32.8591995Z ##[error]Error: T...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24129905644
+  - **Created:** 2026-04-08T10:54:29.169Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:59:58.9900330Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T09:59:58.9911446Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T09:59:58.9914569Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:01:41.6357301Z ##[er...
+  - **Error:** 2026-04-08T09:59:58.9900330Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T09:59:58.9911446Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T09:59:58.9914569Z ##[error]Error: T...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24129472711
+  - **Created:** 2026-04-08T10:54:29.169Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "Prettier check" failed
+  - **Error:** Job "Quality Checks" step "Prettier check" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24128290765
+  - **Created:** 2026-04-08T10:54:29.169Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-4** — Fix Auto-Fix Test Failures failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T09:34:17.0297679Z Error: Invalid status code: 128 2026-04-08T09:34:17.0301258Z Error: Invalid status code: 128
+  - **Error:** 2026-04-08T09:34:17.0297679Z Error: Invalid status code: 128 2026-04-08T09:34:17.0301258Z Error: Invalid status code: 128
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24128290749
+  - **Created:** 2026-04-08T10:54:29.169Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-08-5** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:31:42.4426499Z ##[error]TypeError: Cannot read properties of undefined (reading 'userMeetings') 2026-04-08T09:31:42.4437112Z ##[error]TypeError: Cannot read properties of undefined (reading 'createAdHocMeeting') 2026-04-08T09:31:42.4439236Z ##[er...
+  - **Error:** 2026-04-08T09:31:42.4426499Z ##[error]TypeError: Cannot read properties of undefined (reading 'userMeetings') 2026-04-08T09:31:42.4437112Z ##[error]TypeError: Cannot read properties of undefined (read...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24128290740
+  - **Created:** 2026-04-08T10:54:29.169Z
+  - **Priority:** High
+
 
