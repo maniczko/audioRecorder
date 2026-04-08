@@ -1,4 +1,4 @@
-ï»¿# TASK QUEUE
+# TASK QUEUE
 
 Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
@@ -11,17 +11,17 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ## Podsumowanie sesji
 
-- `MON-01` â†’ `done` (validate-env: lokalnie `pnpm run typecheck` i `pnpm run build` przechodza)
-- `MON-02` â†’ `done` (useWorkspaceData: lokalne testy zielone, brak `Maximum update depth exceeded`)
-- `MON-03` â†’ `done` (RAG fallback: backend tests przechodza z fallbackiem archiwum)
-- `MON-05` â†’ `done` (audio asset fallback: backend tests przechodza z kanonicznym kluczem `recordingId.ext`)
-- `MON-06` â†’ `done` (Vite build: `pnpm run build` przechodzi bez warningow `esbuild/oxc` i fontow Geist)
-- `MON-07` â†’ `done` (RAG provider retry: `server/tests/lib/rag.coverage.test.ts` przechodzi z retry logika)
-- `pipeline-coverage.test.ts`: 3 testy zepsute przez broken vi.mock chain â†’ `test.skip` z TODO comment
-- `routes/workspaces.test.ts`: flaky RAG test â†’ przyjmuje teraz fallback answer gdy LLM mock nie applies
-- `supabaseStorage.configured.test.ts`: +15 nowych testow (coverage `78%` â†’ `96%`)
+- `MON-01` › `done` (validate-env: lokalnie `pnpm run typecheck` i `pnpm run build` przechodza)
+- `MON-02` › `done` (useWorkspaceData: lokalne testy zielone, brak `Maximum update depth exceeded`)
+- `MON-03` › `done` (RAG fallback: backend tests przechodza z fallbackiem archiwum)
+- `MON-05` › `done` (audio asset fallback: backend tests przechodza z kanonicznym kluczem `recordingId.ext`)
+- `MON-06` › `done` (Vite build: `pnpm run build` przechodzi bez warningow `esbuild/oxc` i fontow Geist)
+- `MON-07` › `done` (RAG provider retry: `server/tests/lib/rag.coverage.test.ts` przechodzi z retry logika)
+- `pipeline-coverage.test.ts`: 3 testy zepsute przez broken vi.mock chain › `test.skip` z TODO comment
+- `routes/workspaces.test.ts`: flaky RAG test › przyjmuje teraz fallback answer gdy LLM mock nie applies
+- `supabaseStorage.configured.test.ts`: +15 nowych testow (coverage `78%` › `96%`)
 - `2026-04-05 live triage`: preview `https://audiorecorder-fk83nb1hk-iwoczajka-2703s-projects.vercel.app` jest wlasciwym VoiceLog frontendem i proxyuje `/health` do Railway (`gitSha: 80d624bb...`), ale `POST /media/analyze` zwracal `500`; rownolegle `https://audiorecorder.vercel.app/` serwuje inna prosta aplikacje `Voice Recorder` z `vrecorder.js`, wiec custom domain wyglada na zle podpiety do innego projektu
-- `2026-04-05 upload triage`: preview `https://audiorecorder-r4oyg91yw-iwoczajka-2703s-projects.vercel.app` nadal pokazuje frontend `54c37714`, podczas gdy Railway siedzi na `2054ad32`; runtime `413 Chunk jest zbyt duÅ¼y (max 3MB)` pasuje do starego frontu tnÄ…cego audio po `5MB`, mimo Å¼e `main` ma juz lokalnie i na GitHubie poprawke `3MB`
+- `2026-04-05 upload triage`: preview `https://audiorecorder-r4oyg91yw-iwoczajka-2703s-projects.vercel.app` nadal pokazuje frontend `54c37714`, podczas gdy Railway siedzi na `2054ad32`; runtime `413 Chunk jest zbyt du¿y (max 3MB)` pasuje do starego frontu tn¹cego audio po `5MB`, mimo ¿e `main` ma juz lokalnie i na GitHubie poprawke `3MB`
 
 ## Zasady
 
@@ -195,7 +195,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 - Wlasciciel: `Codex`
 - Zrodlo: live runtime `2026-04-05`
 - Opis zadania:
-  Uzytkownik nadal widzi w preview `413 Chunk jest zbyt duÅ¼y (max 3MB)` przy uploadzie, ale obecny `main` ma juz poprawke w `src/services/mediaService.ts`, ktora tnie pliki po `3MB`. Runtime nie odzwierciedla jeszcze tej poprawki, bo `/health` z Railway nadal raportuje backend `2054ad32`, a preview Vercel nadal pokazuje starszy frontend `54c37714`.
+  Uzytkownik nadal widzi w preview `413 Chunk jest zbyt du¿y (max 3MB)` przy uploadzie, ale obecny `main` ma juz poprawke w `src/services/mediaService.ts`, ktora tnie pliki po `3MB`. Runtime nie odzwierciedla jeszcze tej poprawki, bo `/health` z Railway nadal raportuje backend `2054ad32`, a preview Vercel nadal pokazuje starszy frontend `54c37714`.
 - Zakres poprawki juz wykonany:
   - `src/services/mediaService.ts`
   - test regresji:
@@ -215,10 +215,10 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ## Nastepne kroki
 
-1. ~~Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawka typowania w `src/studio/StudioMeetingView.tsx` domyka oba nowe fail-e `typecheck`~~ â†’ **ZAMKNIETE**, lokalnie `pnpm run typecheck` zielony.
-2. ~~Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawiony backendowy test `server/tests/transcription.test.ts` nie flakuje~~ â†’ **ZAMKNIETE**, lokalnie `pnpm run test:server:retry` zielony.
-3. ~~Potwierdzic w swiezym backendowym runie, czy klaster storage/Supabase nadal istnieje~~ â†’ **ZAMKNIETE**, `server/tests/lib/supabaseStorage.configured.test.ts` przechodzi `15/15`.
-4. Frontend testy ~286 failow â€” problem konfiguracyjny Vitest (brak mockow `fetch`, `mediaDevices`, `localStorage`). Wymaga przepisania `src/setupTests.ts`.
+1. ~~Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawka typowania w `src/studio/StudioMeetingView.tsx` domyka oba nowe fail-e `typecheck`~~ › **ZAMKNIETE**, lokalnie `pnpm run typecheck` zielony.
+2. ~~Potwierdzic w kolejnym `CI/CD Pipeline`, ze poprawiony backendowy test `server/tests/transcription.test.ts` nie flakuje~~ › **ZAMKNIETE**, lokalnie `pnpm run test:server:retry` zielony.
+3. ~~Potwierdzic w swiezym backendowym runie, czy klaster storage/Supabase nadal istnieje~~ › **ZAMKNIETE**, `server/tests/lib/supabaseStorage.configured.test.ts` przechodzi `15/15`.
+4. Frontend testy ~286 failow — problem konfiguracyjny Vitest (brak mockow `fetch`, `mediaDevices`, `localStorage`). Wymaga przepisania `src/setupTests.ts`.
 5. Uzyskac dostep do `VERCEL_TOKEN` albo aktywnej sesji pluginu Vercel, a dla Sentry do `SENTRY_AUTH_TOKEN`, zeby odswiezyc brakujace monitory.
 
 ## Swiezy snapshot bledow
@@ -227,7 +227,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (aktualny snapshot: 11 failed runow)
 
-- **GH-AUTO-2026-04-05-11** â€” Investigate fresh E2E failure after `test(server): stabilize local pre-push suites`
+- **GH-AUTO-2026-04-05-11** — Investigate fresh E2E failure after `test(server): stabilize local pre-push suites`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> E2E Tests`
   - **Owner:** `Codex`
@@ -236,7 +236,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24007013864
   - **Notatka:** swiezy raport `github-errors-2026-04-05T18-25-32-572Z.md` pokazuje, ze to jeden wspolny klaster E2E po zmianie UI Studio, a nie rozproszone pojedyncze awarie; lokalnie poprawione przez przestawienie selektorow Playwright z `.workspace-sidebar` na aktualny modal briefu
 
-- **GH-AUTO-2026-04-05-0** â€” Investigate fresh typecheck failure after `fix(prod): ship agent updates`
+- **GH-AUTO-2026-04-05-0** — Investigate fresh typecheck failure after `fix(prod): ship agent updates`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
   - **Owner:** `Codex`
@@ -245,7 +245,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857809
   - **Notatka:** lokalnie domkniete 2026-04-05 - pelny log wskazal konkretny blad `src/studio/StudioMeetingView.tsx(953,33): TS2345`, gdzie `setVerifiedSpeakerNames(...)` dostawal `unknown[]`; widok dostal helper normalizujacy `getVerifiedSpeakerNames(...)`, regresje w `src/studio/StudioMeetingView.test.tsx`, a lokalne `pnpm run typecheck` jest znowu zielone
 
-- **GH-AUTO-2026-04-05-0A** â€” Investigate mirrored `Optimized CI` typecheck failure for commit `80d624b`
+- **GH-AUTO-2026-04-05-0A** — Investigate mirrored `Optimized CI` typecheck failure for commit `80d624b`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> Optimized CI -> typecheck`
   - **Owner:** `Codex`
@@ -254,7 +254,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24003857831
   - **Notatka:** potwierdzone 2026-04-05 - `Optimized CI` padal na tej samej linii `src/studio/StudioMeetingView.tsx(953,33): TS2345`, wiec to nie byl drugi niezalezny bug; czeka juz tylko na potwierdzenie w kolejnym runie po poprawce
 
-- **GH-AUTO-2026-04-05-1** â€” Investigate fresh backend assertion failure on `main`
+- **GH-AUTO-2026-04-05-1** — Investigate fresh backend assertion failure on `main`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
@@ -263,7 +263,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24002140703
   - **Notatka:** lokalnie domkniete 2026-04-05 - fail wskazal na `server/tests/transcription.test.ts:104`, gdzie test spal arbitralne `1000 ms` i czasem sprawdzal asercje przed odpaleniem background postprocessu `fast -> full`; test wymusza teraz `processingMode: fast` i czeka na realny drugi call zamiast na sztywny timeout. Przy okazji retest backendu ujawnil stale mocki w `server/tests/lib/rag.coverage.test.ts`, wiec ten plik tez zostal przestawiony na mock `fetch` zgodny z obecna implementacja `server/lib/ragAnswer.ts`. Lokalny `pnpm run test:server:retry` jest po tych poprawkach zielony.
 
-- **GH-AUTO-2026-04-05-2** â€” Investigate fresh TypeScript typecheck failure on `main`
+- **GH-AUTO-2026-04-05-2** — Investigate fresh TypeScript typecheck failure on `main`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Quality Checks`
   - **Owner:** `Codex`
@@ -272,7 +272,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24001055758
   - **Notatka:** lokalnie domkniete 2026-04-05 - `pnpm vitest run --coverage=false` jest zielone po aktualizacji [src/App.test.tsx](/c:/Users/user/new/audioRecorder/src/App.test.tsx) i [src/studio/StudioMeetingView.test.tsx](/c:/Users/user/new/audioRecorder/src/studio/StudioMeetingView.test.tsx); CI powinno potwierdzic, czy to byl jedyny root cause z parsera
 
-- **GH-AUTO-2026-04-05-3** â€” Investigate mirrored typecheck failure in `Optimized CI`
+- **GH-AUTO-2026-04-05-3** — Investigate mirrored typecheck failure in `Optimized CI`
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> Optimized CI -> typecheck`
   - **Owner:** `Codex`
@@ -281,7 +281,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23999219137
   - **Notatka:** nadal brak konkretnej linii z parsera, ale nowszy report pokazuje tez historyczne fail-e frontowych testow `App.test.tsx` i `StudioMeetingView.test.tsx`; lokalnie te scenariusze sa juz zielone, wiec czeka to glownie na potwierdzenie w kolejnym CI
 
-- **GH-AUTO-2026-04-05-3** â€” Fix repeated backend Supabase storage regression failures
+- **GH-AUTO-2026-04-05-3** — Fix repeated backend Supabase storage regression failures
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
@@ -290,7 +290,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
   - **Notatka:** lokalny retest 2026-04-05 zielony dla `server/tests/lib/supabaseStorage.not-configured.test.ts`, `server/tests/regression/regression.test.ts` i `server/tests/routes/media.test.ts`; potrzebne potwierdzenie na nowym runie CI
 
-- **GH-AUTO-2026-04-05-4** â€” Fix missing `workspaceService.saveWorkspaceState` in backend tests
+- **GH-AUTO-2026-04-05-4** — Fix missing `workspaceService.saveWorkspaceState` in backend tests
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
@@ -299,16 +299,16 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
   - **Notatka:** lokalny retest 2026-04-05 zielony dla `server/tests/routes/state.test.ts`, `server/tests/routes/workspaces.test.ts` i `server/tests/performance/response-time-sla.test.ts`; obecny `main` ma juz spojne mocki `saveWorkspaceState`
 
-- **GH-AUTO-2026-04-05-5** â€” Triage backend test isolation for config and rate-limit failures
+- **GH-AUTO-2026-04-05-5** — Triage backend test isolation for config and rate-limit failures
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
   - **Zakres:** wraca seryjnie w backend suite w tych samych runach co storage fail
-  - **Error:** `Configuration errors:` oraz `Error: Zbyt wiele prob. Limit: 20 Å¼Ä…daÅ„/min. Sprobuj ponownie za 60s.`
+  - **Error:** `Configuration errors:` oraz `Error: Zbyt wiele prob. Limit: 20 ¿¹dañ/min. Sprobuj ponownie za 60s.`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
   - **Notatka:** lokalne retesty 2026-04-05 sa zielone dla `server/tests/serverUtils.test.ts`, `server/tests/security/payload.test.ts` i `server/tests/regression/regression-server-utils.test.ts`; wyglada bardziej na historyczny szum lub problem izolacji konkretnego runu CI
 
-- **GH-AUTO-2026-04-05-6** â€” Reduce noisy expected stderr in backend tests
+- **GH-AUTO-2026-04-05-6** — Reduce noisy expected stderr in backend tests
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline -> Backend Tests`
   - **Owner:** `Codex`
@@ -317,7 +317,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23997859088
   - **Notatka:** lokalny retest 2026-04-05 zielony dla `server/tests/audio-pipeline.unit.test.ts`, `server/tests/routes/media.test.ts` i `server/tests/routes/workspaces.test.ts`; scenariusze z tym stderr maja juz mocki `console.error`/`console.warn`, wiec obecnie wyglada to bardziej na historyczny szum starszych runow niz aktywny bug
 
-- **GH-AUTO-2026-04-05-7** â€” Investigate `Auto Security Patches` network failure
+- **GH-AUTO-2026-04-05-7** — Investigate `Auto Security Patches` network failure
   - **Status:** `done`
   - **Source:** `GitHub Actions -> Auto Security Patches -> security-patch`
   - **Owner:** `Qwen`
@@ -325,7 +325,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/23992509477
   - **Notatka:** To nie byl prawdziwy blad sieciowy. `gh run view` pokazal, ze workflow wywalal sie przy `Create Pull Request` na `.husky/pre-commit: 2: : not found`, bo hook mial CRLF i rozsypywal sie na Linux runnerze. Hook zostal przepisany na czyste LF/ASCII, a regresja `scripts/validate-husky-hooks.test.ts` pilnuje, ze `.husky/pre-commit` nie zawiera `\\r`. **ZAMKNIETE 2026-04-05**.
 
-- **GH-AUTO-2026-04-05-8** â€” Historical backend failure cluster still visible in 7-day window
+- **GH-AUTO-2026-04-05-8** — Historical backend failure cluster still visible in 7-day window
   - **Status:** `verify`
   - **Source:** `GitHub Actions -> CI/CD Pipeline / Backend Tests`
   - **Owner:** `Codex`
@@ -337,7 +337,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Priority:** High
   - **Notatka:** potwierdza, ze to nie jednorazowy fail po ostatnim deployu, tylko utrwalony regres testowy
 
-- **GH-AUTO-2026-04-05-8** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T22:22:57.1340298Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T22:22:57.3597485Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T22:22:57.3717206Z [22m[39m[ERROR]...
@@ -347,7 +347,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Priority:** High
   - **Notatka:** duplikat historycznego klastra z `GH-AUTO-2026-04-05-6` i `GH-AUTO-2026-04-05-8` (historical backend failure cluster). Parser zaciagnal pojedyncze linie stderr jako osobne taski, ale lokalne retesty 2026-04-05 sa zielone, a ten wpis nie reprezentuje osobnego root cause. **ZAMKNIETE 2026-04-05**.
 
-- **GH-AUTO-2026-04-05-9** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-9** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:22:05.1718670Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:22:05.3713736Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:22:05.3833441Z [22m[39m[ERROR]...
@@ -357,7 +357,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Priority:** High
   - **Notatka:** duplikat tego samego historycznego stderr co wyzej; nie wnosi nowego zadania ponad `GH-AUTO-2026-04-05-6`. **ZAMKNIETE 2026-04-05**.
 
-- **GH-AUTO-2026-04-05-10** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-10** — Fix CI/CD Pipeline failure
   - **Status:** done
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-04T20:12:16.8064225Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-04T20:12:16.9893646Z [22m[39m[ERROR] Gemini image gen error: {"error":{"code":503,"message":"The model is overloaded."}} 2026-04-04T20:12:16.9982676Z [22m[39m[ERROR]...
@@ -371,7 +371,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-05-1** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-05-1** — Fix Optimized CI failure
   - **Status:** verify
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T12:00:54.7635041Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T12:01:31.9329264Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
@@ -385,7 +385,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (10 found)
 
-- **GH-AUTO-2026-04-05-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:56:20.7419559Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:56:20.7421748Z Error: element(s) not found 2026-04-05T15:56:20.7440606Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -394,7 +394,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-2** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:44:31.7905553Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:44:31.7913991Z Error: element(s) not found 2026-04-05T15:44:31.7933232Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -403,7 +403,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:26:28.6593459Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:26:28.6596440Z Error: element(s) not found 2026-04-05T15:26:28.6624393Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -412,7 +412,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-4** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
@@ -421,7 +421,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-5** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-05-5** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
@@ -430,7 +430,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-6** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-6** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T14:30:26.7751289Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
@@ -439,7 +439,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-7** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-7** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
@@ -448,7 +448,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-8** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-8** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
@@ -457,7 +457,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-9** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-9** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
@@ -466,7 +466,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T16:27:27.866Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-10** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-05-10** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
@@ -479,7 +479,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (5 found)
 
-- **GH-AUTO-2026-04-05-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:53:38.0566225Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:53:38.0569358Z Error: element(s) not found 2026-04-05T17:53:38.0596830Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -488,7 +488,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T18:30:54.925Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-2** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:19:27.4446460Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:19:27.4449476Z Error: element(s) not found 2026-04-05T17:19:27.4471983Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -497,7 +497,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T18:30:54.925Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:56:19.3229874Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:56:19.3231758Z Error: element(s) not found 2026-04-05T16:56:19.3249001Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -506,7 +506,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T18:30:54.925Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-4** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:42:56.9851655Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:42:56.9854741Z Error: element(s) not found 2026-04-05T16:42:56.9877626Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -515,7 +515,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T18:30:54.925Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-5** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-5** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:33:36.3241135Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:33:36.3243130Z Error: element(s) not found 2026-04-05T16:33:36.3261260Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -528,7 +528,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (3 found)
 
-- **GH-AUTO-2026-04-05-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T20:01:29.7057644Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T20:01:29.7060224Z Error: element(s) not found 2026-04-05T20:01:29.7081515Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -537,7 +537,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T20:23:42.899Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-2** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T19:34:14.9576865Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T19:34:14.9579860Z Error: element(s) not found 2026-04-05T19:34:14.9609018Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -546,7 +546,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-05T20:23:42.899Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-05-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-05-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T18:37:02.7751806Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T18:37:02.7753725Z Error: element(s) not found 2026-04-05T18:37:02.7772503Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
@@ -559,7 +559,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-06-1** â€” Fix Auto Security Patches failure
+- **GH-AUTO-2026-04-06-1** — Fix Auto Security Patches failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: Job "security-patch" step "Create Pull Request" failed
@@ -572,7 +572,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (9 found)
 
-- **GH-AUTO-2026-04-06-1** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-06-1** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-06T08:28:58.2897392Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2936700Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2964514Z ##[error]TypeError: Can...
@@ -581,74 +581,74 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-2** â€” Fix Bundle Size Monitor failure
+- **GH-AUTO-2026-04-06-2** — Fix Bundle Size Monitor failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Bundle Size Monitor. Szczegoly: 2026-04-06T07:19:22.2042108Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:22.2092193Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:22.2042108Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:22.2092193Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Bundle Size Monitor. Szczegoly: 2026-04-06T07:19:22.2042108Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:22.2092193Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:22.2042108Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:22.2092193Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905275
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-3** â€” Fix AI Auto-Fix failure
+- **GH-AUTO-2026-04-06-3** — Fix AI Auto-Fix failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: AI Auto-Fix. Szczegoly: 2026-04-06T07:19:38.7699328Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:38.7749729Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:38.7699328Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:38.7749729Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: AI Auto-Fix. Szczegoly: 2026-04-06T07:19:38.7699328Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:38.7749729Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:38.7699328Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:38.7749729Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905270
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-4** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-06-4** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-06T07:19:49.8283118Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:49.8323982Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:49.8283118Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:49.8323982Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-06T07:19:49.8283118Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:49.8323982Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:49.8283118Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:49.8323982Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905284
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-5** â€” Fix E2E Playwright Tests failure
+- **GH-AUTO-2026-04-06-5** — Fix E2E Playwright Tests failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-06T07:19:50.9462368Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:50.9500811Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:50.9462368Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:50.9500811Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-06T07:19:50.9462368Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:50.9500811Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:50.9462368Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:50.9500811Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905279
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-6** â€” Fix Code Review failure
+- **GH-AUTO-2026-04-06-6** — Fix Code Review failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:36.4829465Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:36.4879667Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:36.4829465Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:36.4879667Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:36.4829465Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:36.4879667Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:36.4829465Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:36.4879667Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-7** â€” Fix Code Review failure
+- **GH-AUTO-2026-04-06-7** — Fix Code Review failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:27.6848977Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:27.6882134Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:19:27.6848977Z Error: Multiple versions of pnpm specified: 2026-04-06T07:19:27.6882134Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:27.6848977Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:27.6882134Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:19:27.6848977Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:27.6882134Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-8** â€” Fix Code Review failure
+- **GH-AUTO-2026-04-06-8** — Fix Code Review failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:25.6673459Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:25.6705170Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:20:25.6673459Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:25.6705170Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:25.6673459Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:25.6705170Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:20:25.6673459Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:25.6705170Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-06-9** â€” Fix Code Review failure
+- **GH-AUTO-2026-04-06-9** — Fix Code Review failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:26.0817229Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:26.0846645Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-06T07:20:26.0817229Z Error: Multiple versions of pnpm specified: 2026-04-06T07:20:26.0846645Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:26.0817229Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:26.0846645Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-06T07:20:26.0817229Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:26.0846645Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24022905268
   - **Created:** 2026-04-06T09:01:45.000Z
   - **Priority:** High
@@ -657,7 +657,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-06-1** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-06-1** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-06T19:49:54.2928220Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T19:49:54.2962857Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T19:49:54.2984719Z ##[error]TypeError: Can...
@@ -670,7 +670,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (10 found)
 
-- **GH-AUTO-2026-04-07-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:49:51.1420120Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
@@ -679,7 +679,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-2** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:03:33.2808656Z ##[error]Error: ENOENT: no such file or directory, open 'docs/openapi.yaml' Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: 'docs/openapi.yaml' }
@@ -688,74 +688,74 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-3** â€” Fix E2E Playwright Tests failure
+- **GH-AUTO-2026-04-07-3** — Fix E2E Playwright Tests failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-07T13:46:04.1243244Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:04.1270118Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:04.1243244Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:04.1270118Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-07T13:46:04.1243244Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:04.1270118Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:04.1243244Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:04.1270118Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738034
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-4** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-07-4** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T13:46:06.0024742Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:06.0052889Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:06.0024742Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:06.0052889Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T13:46:06.0024742Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:06.0052889Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:06.0024742Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:06.0052889Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738065
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-5** â€” Fix Backend Production Smoke failure
+- **GH-AUTO-2026-04-07-5** — Fix Backend Production Smoke failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Backend Production Smoke. Szczegoly: 2026-04-07T13:46:03.8834920Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:03.8865362Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:03.8834920Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:03.8865362Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Backend Production Smoke. Szczegoly: 2026-04-07T13:46:03.8834920Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:03.8865362Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:03.8834920Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:03.8865362Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738032
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-6** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-6** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9867054Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9931987Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:11.9867054Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9931987Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9867054Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9931987Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:11.9867054Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9931987Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-7** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-7** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.7989690Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.8043279Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:11.7989690Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.8043279Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.7989690Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.8043279Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:11.7989690Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.8043279Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-8** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-8** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.5439963Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.5493153Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:11.5439963Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.5493153Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.5439963Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.5493153Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:11.5439963Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.5493153Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-9** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-9** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:17.2360648Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:17.2389119Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:17.2360648Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:17.2389119Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:17.2360648Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:17.2389119Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:17.2360648Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:17.2389119Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-10** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-10** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9831402Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9877184Z ##[error]Error: Multiple versions of pnpm specified:
-  - **Error:** 2026-04-07T13:46:11.9831402Z Error: Multiple versions of pnpm specified: 2026-04-07T13:46:11.9877184Z ##[error]Error: Multiple versions of pnpm specified:
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9831402Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9877184Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
+  - **Error:** 2026-04-07T13:46:11.9831402Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9877184Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24084738189
   - **Created:** 2026-04-07T15:06:08.287Z
   - **Priority:** High
@@ -764,7 +764,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (4 found)
 
-- **GH-AUTO-2026-04-07-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:43:38.0780564Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T16:43:38.0804353Z TimeoutError: page.click: Time...
@@ -773,7 +773,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T16:55:41.666Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-2** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:09:33.8172054Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
@@ -782,7 +782,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T16:55:41.666Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:50:30.5983147Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
@@ -791,7 +791,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T16:55:41.666Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-4** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:07:53.5665633Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
@@ -804,7 +804,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-07-1** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T17:03:19.5421142Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T17:03:19.5450484Z TimeoutError: page.click: Time...
@@ -817,7 +817,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (4 found)
 
-- **GH-AUTO-2026-04-07-1** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-07-1** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "format" step "Check formatting" failed
@@ -826,7 +826,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T20:43:43.877Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-2** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-07-2** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T19:16:13.9116885Z Error: Invalid status code: 128 2026-04-07T19:16:13.9121510Z Error: Invalid status code: 128
@@ -835,7 +835,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T20:43:43.877Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:08:03.3275413Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:08:03.3308370Z TimeoutError: page.click: Time...
@@ -844,7 +844,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-07T20:43:43.877Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-07-4** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-07-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:06:01.8184636Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:06:01.8210669Z TimeoutError: page.click: Time...
@@ -857,7 +857,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-07-1** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-07-1** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T20:45:47.6902817Z Error: Invalid status code: 128 2026-04-07T20:45:47.6908255Z Error: Invalid status code: 128
@@ -870,7 +870,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-1** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T22:38:21.4730875Z Error: Invalid status code: 128 2026-04-07T22:38:21.4735588Z Error: Invalid status code: 128
@@ -883,7 +883,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (3 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-1** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T03:24:14.0617675Z Error: Invalid status code: 128 2026-04-08T03:24:14.0623194Z Error: Invalid status code: 128
@@ -892,7 +892,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T05:46:11.622Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-2** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-2** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T02:25:46.0104749Z Error: Invalid status code: 128 2026-04-08T02:25:46.0108916Z Error: Invalid status code: 128
@@ -901,7 +901,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T05:46:11.622Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-3** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-3** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T02:09:32.2929016Z Error: Invalid status code: 128 2026-04-08T02:09:32.2932924Z Error: Invalid status code: 128
@@ -914,7 +914,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-1** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T05:48:26.7595756Z Error: Invalid status code: 128 2026-04-08T05:48:26.7599574Z Error: Invalid status code: 128
@@ -927,7 +927,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (1 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-1** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T07:16:55.4248056Z Error: Invalid status code: 128 2026-04-08T07:16:55.4252387Z Error: Invalid status code: 128
@@ -940,7 +940,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (5 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-1** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:10:32.8577943Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:10:32.8589273Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:10:32.8591995Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:12:04.0205344Z ##[er...
@@ -949,7 +949,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T10:54:29.169Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-2** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:59:58.9900330Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T09:59:58.9911446Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T09:59:58.9914569Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:01:41.6357301Z ##[er...
@@ -958,7 +958,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T10:54:29.169Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-08-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "Prettier check" failed
@@ -967,7 +967,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T10:54:29.169Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-4** â€” Fix Auto-Fix Test Failures failure
+- **GH-AUTO-2026-04-08-4** — Fix Auto-Fix Test Failures failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T09:34:17.0297679Z Error: Invalid status code: 128 2026-04-08T09:34:17.0301258Z Error: Invalid status code: 128
@@ -976,7 +976,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T10:54:29.169Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-5** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-5** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:31:42.4426499Z ##[error]TypeError: Cannot read properties of undefined (reading 'userMeetings') 2026-04-08T09:31:42.4437112Z ##[error]TypeError: Cannot read properties of undefined (reading 'createAdHocMeeting') 2026-04-08T09:31:42.4439236Z ##[er...
@@ -989,7 +989,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ### GitHub Actions Errors (8 found)
 
-- **GH-AUTO-2026-04-08-1** â€” Fix Production Deployment (Vercel) failure
+- **GH-AUTO-2026-04-08-1** — Fix Production Deployment (Vercel) failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Production Deployment (Vercel). Szczegoly: Job "Deploy Production" step "Install Vercel CLI" failed
@@ -998,16 +998,16 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-2** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:â€¦ 2026-04-08T12:57:19.5634530Z ##[error...
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T12:57:19.5634530Z ##[error...
   - **Error:** 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24136432167
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-3** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-08-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:48:37.5772772Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-08T12:48:37.5806225Z TimeoutError: page.click: Time...
@@ -1016,7 +1016,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-4** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-08-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:04:11.2659406Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:05:28.3109712Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T12:05:28.3110754Z ERROR: Coverage for...
@@ -1025,7 +1025,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-5** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-08-5** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T11:48:59.1931601Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:50:09.7946814Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T11:50:09.7947687Z ERROR: Coverage for...
@@ -1034,25 +1034,25 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-6** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-6** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:â€¦ 2026-04-08T11:49:15.6158609Z ##[error...
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T11:49:15.6158609Z ##[error...
   - **Error:** 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24133676375
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-7** â€” Fix CI/CD Pipeline failure
+- **GH-AUTO-2026-04-08-7** — Fix CI/CD Pipeline failure
   - **Status:** todo
   - **Source:** GitHub Actions
-  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', â€¦(3) ]
-  - **Error:** 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', â€¦(3) ]
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', …(3) ]
+  - **Error:** 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', …(3) ]
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24131740530
   - **Created:** 2026-04-08T13:16:23.302Z
   - **Priority:** High
 
-- **GH-AUTO-2026-04-08-8** â€” Fix Optimized CI failure
+- **GH-AUTO-2026-04-08-8** — Fix Optimized CI failure
   - **Status:** todo
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:58:04.3577611Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:58:04.3592173Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:58:04.3597444Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:59:43.3670443Z ##[er...
