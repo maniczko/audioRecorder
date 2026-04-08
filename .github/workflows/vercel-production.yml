@@ -32,10 +32,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-
+      - run: corepack enable
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 

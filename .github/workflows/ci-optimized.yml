@@ -69,11 +69,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
         name: Run ESLint
@@ -87,11 +86,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
         name: Run TypeScript
@@ -105,11 +103,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run format:check
         name: Check formatting
@@ -123,11 +120,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:smart-retry
         name: Run tests with retry
@@ -147,11 +143,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:coverage
         name: Run coverage
@@ -170,11 +165,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
         name: Run pnpm audit
@@ -189,11 +183,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
         name: Build project
@@ -212,11 +205,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run docs:generate 2>/dev/null || echo "No docs script found"
         name: Generate docs

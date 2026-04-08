@@ -15,11 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - uses: reviewdog/action-eslint@v1
         with:
@@ -32,11 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:coverage
       - uses: codecov/codecov-action@v6
@@ -49,11 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - uses: preactjs/compressed-size-action@v3
@@ -66,11 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'pnpm'
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
         continue-on-error: true
