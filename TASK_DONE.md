@@ -2,6 +2,21 @@
 
 ## Zrealizowane Zadania
 
+## [2026-04-08] Production Deployment — Vercel successful
+
+Status: `done` ✅
+
+### Deployment URL:
+- **Production**: https://voicelog-audiorecorder.vercel.app
+- **Preview**: https://audiorecorder-ix7pccz7h-iwoczajka-2703s-projects.vercel.app
+- **Railway Backend**: https://audiorecorder-production.up.railway.app/health
+
+### Fix applied:
+- **Vercel CLI install** — switched from `pnpm add -g` to `npm install -g` (pnpm global has PATH issues on GitHub Actions)
+- **Commit**: `942793d7`
+
+---
+
 ## [2026-04-08] CI/CD Pipeline — Massive CI error cleanup session
 
 Status: `done` ✅
