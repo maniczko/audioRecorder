@@ -9,12 +9,12 @@ const defaultMeetingsCtx = {
     isHydratingRemoteState: false,
     createMeetingDirect: async () => {},
     deleteMeeting: async () => {},
-    updateMeeting: async () => {},
+    updateMeeting: async (..._args: any[]) => {},
     createManualNote: async () => {},
-    updateCalendarEntryMeta: async () => {},
+    updateCalendarEntryMeta: async (..._args: any[]) => {},
     getCalendarEntryMeta: () => null,
     deleteRecordingAndMeeting: async () => {},
-    normalizeRecording: async () => {},
+    normalizeRecording: async (..._args: any[]) => {},
     selectedMeetingId: null,
     selectedRecordingId: null,
     selectedRecording: null,
@@ -39,7 +39,7 @@ const defaultMeetingsCtx = {
     setTaskBoards: () => {},
     setTaskState: () => {},
     setCalendarMeta: () => {},
-    setWorkspaceMessage: () => {},
+    setWorkspaceMessage: (..._args: any[]) => {},
     startNewMeetingDraft: () => {},
     clearMeetingDraft: () => {},
     selectMeeting: () => {},
@@ -73,7 +73,7 @@ const defaultMeetingsCtx = {
     syncLinkedGoogleCalendarEvents: async () => {},
     applyCalendarSyncSnapshot: () => {},
   },
-};
+} as unknown as { meetings: ReturnType<typeof useMeetings> };
 
 const MeetingsContext = createContext(defaultMeetingsCtx);
 
