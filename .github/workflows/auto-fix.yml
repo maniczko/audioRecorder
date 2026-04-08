@@ -37,6 +37,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
 
       - name: Setup Node.js
@@ -47,6 +48,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Configure git for commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run ESLint auto-fix
         id: lint
@@ -70,13 +76,15 @@ jobs:
           pnpm run test:retry && echo "tests_status=0" >> $GITHUB_OUTPUT || echo "tests_status=1" >> $GITHUB_OUTPUT
 
       - name: Commit fixes
-        if: steps.lint.outputs.lint_status == '0' || steps.format.outputs.format_status == '0'
+        if: (steps.lint.outputs.lint_status == '0' || steps.format.outputs.format_status == '0') && github.event_name == 'push'
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: auto-fix ESLint and format errors'
-          branch: ${{ github.head_ref }}
+          branch: ${{ github.ref_name }}
           file_pattern: '*.ts *.tsx *.js *.jsx src/**/* server/**/*'
           commit_options: '--no-verify'
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
 
       - name: Upload test failure report
         if: steps.tests.outputs.tests_failed == 'true'
