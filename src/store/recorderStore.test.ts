@@ -39,15 +39,21 @@ vi.mock('../lib/audioEnhancer', () => ({
   enhanceAndReencode: mocks.enhanceAndReencode,
 }));
 
-describe('recorderStore', () => {
+// Increase timeout for processQueue tests (complex async operations)
+describe('recorderStore', { timeout: 30000 }, () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(async () => {
     localStorage.clear();
     vi.useFakeTimers();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Stub indexedDB to prevent hanging in jsdom (getAudioBlob uses it internally)
+    vi.stubGlobal('indexedDB', undefined);
+    vi.stubGlobal('navigator', { onLine: true, userAgent: 'jsdom' });
 
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
