@@ -1366,8 +1366,20 @@
 
     <div class="card" style="margin-top:16px">
       <div class="card-h"><div class="card-title">🚂 Railway</div>${sb(rw.status)}</div>
-      ${rw.note ? `<div style="padding:16px;font-size:.82rem;color:var(--text3)">${rw.note}</div>` : ''}
-      ${rw.api_error ? `<div style="padding:16px;font-size:.78rem;color:var(--red)">⚠ API Error: ${esc(rw.api_error)}</div>` : ''}
+      ${rw.note ? `<div style="padding:12px 16px;font-size:.82rem;color:var(--text3)">${rw.note}</div>` : ''}
+      ${rw.api_error ? `<div style="padding:12px 16px;font-size:.78rem;color:var(--red)">⚠ API Error: ${esc(rw.api_error)}</div>` : ''}
+      ${rw.health ? `
+      <div style="padding:12px 16px;border-top:1px solid var(--border)">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Health Status</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:.78rem">
+          <div><span style="color:var(--text3)">Database:</span> <span style="color:${rw.health.db === 'connected' ? 'var(--green)' : 'var(--red)'}">${rw.health.db}</span></div>
+          <div><span style="color:var(--text3)">Supabase:</span> <span style="color:${rw.health.supabaseRemote ? 'var(--green)' : 'var(--amber)'}">${rw.health.supabaseRemote ? 'connected' : 'disconnected'}</span></div>
+          <div><span style="color:var(--text3)">Uptime:</span> ${Math.floor(rw.health.uptime / 3600)}h ${Math.floor((rw.health.uptime % 3600) / 60)}m</div>
+          <div><span style="color:var(--text3)">Git SHA:</span> <span class="fn" style="font-size:.72rem">${(rw.health.gitSha || '').slice(0, 7)}</span></div>
+          <div><span style="color:var(--text3)">Build:</span> ${rw.health.buildTime ? new Date(rw.health.buildTime).toLocaleDateString('pl-PL') : 'N/A'}</div>
+          <div><span style="color:var(--text3)">Memory:</span> ${rw.health.memory ? rw.health.memory.rss : 'N/A'}</div>
+        </div>
+      </div>` : ''}
       ${rwLastDep ? `
       <div style="padding:16px;border-top:1px solid var(--border)">
         <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Last Deployment</div>
