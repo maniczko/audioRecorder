@@ -1301,3 +1301,44 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-09T13:21:53.953Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-09T15:20:47.391Z -->
+
+### GitHub Actions Errors (4 found)
+
+- **GH-AUTO-2026-04-09-1** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-09T14:38:10.3698227Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T14:39:25.0957992Z ERROR: Coverage for lines (50.57%) does not meet global threshold (55%) 2026-04-09T14:39:25.0958794Z ERROR: Coverage for...
+  - **Error:** 2026-04-09T14:38:10.3698227Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T14:39:25.0957992Z ERROR: Coverage for lines (50.57%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24196073901
+  - **Created:** 2026-04-09T15:20:47.391Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-2** — Fix Optimized CI failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-09T13:53:15.9797376Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T13:54:22.6064630Z ERROR: Coverage for lines (50.57%) does not meet global threshold (55%) 2026-04-09T13:54:22.6065250Z ERROR: Coverage for...
+  - **Error:** 2026-04-09T13:53:15.9797376Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T13:54:22.6064630Z ERROR: Coverage for lines (50.57%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24193906814
+  - **Created:** 2026-04-09T15:20:47.391Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T13:23:44.7555420Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Error:** 2026-04-09T13:23:44.7555420Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24192495196
+  - **Created:** 2026-04-09T15:20:47.391Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T13:23:45.7717971Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7733718Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7739189Z #...
+  - **Error:** 2026-04-09T13:23:45.7717971Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7733718Z ##[error]AssertionError: expected {} to have property "C...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24192495196
+  - **Created:** 2026-04-09T15:20:47.391Z
+  - **Priority:** High
+
+
