@@ -1,3 +1,4 @@
+```typescript
 // Global test setup - runs before all tests
 import { vi } from 'vitest';
 import path from 'node:path';
@@ -107,57 +108,17 @@ export const __mockFs = {
   statfsSync: statfsSyncMock,
 };
 
-(global as any).__mockFs = __mockFs;
-
-// Mock node:fs globally before any test files are loaded
-vi.mock('node:fs', async () => {
-  const actualFs = await vi.importActual('node:fs');
-  originalFs = actualFs;
-
-  const mockFs = {
-    existsSync: existsSyncMock,
-    createReadStream: createReadStreamMock,
-    createWriteStream: (actualFs as any).createWriteStream,
-    statSync: statSyncMock,
-    readFileSync: readFileSyncMock,
-    writeFileSync: writeFileSyncMock,
-    unlinkSync: unlinkSyncMock,
-    mkdirSync: mkdirSyncMock,
-    renameSync: renameSyncMock,
-    readdirSync: readdirSyncMock,
-    rmSync: rmSyncMock,
-    statfsSync: statfsSyncMock,
-  };
-  // Also expose as default for compatibility with `import fs from 'node:fs'`
-  return {
-    ...mockFs,
-    default: mockFs,
-  };
-});
-
-// Mock node:child_process globally
-vi.mock('node:child_process', () => ({
-  exec: vi.fn((cmd, opts, callback) => {
-    // Default implementation - can be overridden in tests
-    if (callback) callback(null, '', '');
-    return { stdout: { on: vi.fn() }, on: vi.fn() };
-  }),
-  spawn: vi.fn(() => {
-    const child = new EventEmitter();
-    child.stdout = new EventEmitter();
-    child.stdout.setEncoding = vi.fn();
-    // Emit close immediately by default - can be overridden in tests
-    setTimeout(() => child.emit('close', 0), 0);
-    return child;
-  }),
-  execSync: vi.fn(),
-  spawnSync: vi.fn(),
-}));
-
-// Add type for global state
-declare global {
-  var __TEST_FS_STATE__: {
-    existsSync: boolean;
-    statSyncSize: number;
-  };
-}
+// Store original fs functions
+originalFs = {
+  existsSync: vi.spyOn(require('fs'), 'existsSync'),
+  statSync: vi.spyOn(require('fs'), 'statSync'),
+  readFileSync: vi.spyOn(require('fs'), 'readFileSync'),
+  writeFileSync: vi.spyOn(require('fs'), 'writeFileSync'),
+  unlinkSync: vi.spyOn(require('fs'), 'unlinkSync'),
+  mkdirSync: vi.spyOn(require('fs'), 'mkdirSync'),
+  renameSync: vi.spyOn(require('fs'), 'renameSync'),
+  readdirSync: vi.spyOn(require('fs'), 'readdirSync'),
+  rmSync: vi.spyOn(require('fs'), 'rmSync'),
+  statfsSync: vi.spyOn(require('fs'), 'statfsSync'),
+};
+```
