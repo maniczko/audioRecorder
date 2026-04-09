@@ -260,7 +260,7 @@ async function getSentryStatus() {
 
 /**
  * Get Railway deployment status
- * Railway doesn't have a simple public API, so we check local config
+ * Railway API requires valid token; fallback to health check if API fails.
  */
 async function getRailwayStatus() {
   try {
@@ -279,57 +279,73 @@ async function getRailwayStatus() {
       };
     }
 
-    if (!hasRailwayEnv) {
-      return {
-        status: hasConfig ? 'config-only' : 'not-configured',
-        configured: true,
-        has_token: false,
-        deployments: [],
-        last_deployment: null,
-        note: 'Set RAILWAY_TOKEN and RAILWAY_PROJECT_ID to get deployment status',
+    // If we have a token, try Railway GraphQL API first
+    if (hasRailwayEnv) {
+      const token = process.env.RAILWAY_TOKEN;
+      const projectId = process.env.RAILWAY_PROJECT_ID;
+      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+      const api = async (query, variables = {}) => {
+        const res = await fetch(`https://backboard.railway.app/graphql/v2`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ query, variables })
+        });
+        if (!res.ok) throw new Error(`Railway API: ${res.status}`);
+        return res.json();
       };
+
+      try {
+        const data = await api(RAILWAY_DEPLOYMENTS_QUERY, { input: { projectId } });
+        const parsed = parseRailwayDeploymentsPayload(data);
+
+        // If API returned an error (e.g., not authorized), fall back to health check
+        if (parsed.apiError) {
+          console.log(`⚠️  Railway API error: ${parsed.note}. Falling back to health check.`);
+        } else {
+          // API succeeded — return deployment data
+          return {
+            status: parsed.deployments.length > 0 ? 'connected' : 'configured',
+            configured: true,
+            has_token: true,
+            deployments: parsed.deployments,
+            last_deployment: parsed.lastDeployment,
+            note: parsed.note,
+            api_error: parsed.apiError,
+          };
+        }
+      } catch (e) {
+        // API request failed — try fallback health check
+        console.log(`⚠️  Railway API request failed: ${e.message}. Falling back to health check.`);
+      }
     }
 
-    // Fetch deployments from Railway API
-    const token = process.env.RAILWAY_TOKEN;
-    const projectId = process.env.RAILWAY_PROJECT_ID;
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-    const api = async (query, variables = {}) => {
-      const res = await fetch(`https://backboard.railway.app/graphql/v2`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ query, variables })
-      });
-      if (!res.ok) throw new Error(`Railway API: ${res.status}`);
-      return res.json();
-    };
+    // Fallback: check Railway backend health endpoint
+    // Always use production Railway URL for monitoring (not local dev server)
+    const RAILWAY_URL = 'https://audiorecorder-production.up.railway.app/health';
 
-    let deployments = [];
-    let lastDeployment = null;
-    let note;
-    let apiError = null;
+    let healthStatus = null;
     try {
-      const data = await api(RAILWAY_DEPLOYMENTS_QUERY, { input: { projectId } });
-      const parsed = parseRailwayDeploymentsPayload(data);
-      deployments = parsed.deployments;
-      lastDeployment = parsed.lastDeployment;
-      note = parsed.note;
-      apiError = parsed.apiError;
+      const res = await fetch(RAILWAY_URL, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        healthStatus = await res.json();
+      }
     } catch (e) {
-      deployments = [];
-      lastDeployment = null;
-      note = `Railway API request failed: ${e.message}`;
-      apiError = e.message;
+      // Health check failed
     }
 
     return {
-      status: deployments.length > 0 ? 'connected' : 'configured',
-      configured: true,
-      has_token: true,
-      deployments,
-      last_deployment: lastDeployment,
-      note,
-      api_error: apiError,
+      status: healthStatus ? 'connected' : (hasConfig ? 'config-only' : 'not-configured'),
+      configured: hasConfig || !!process.env.RAILWAY_TOKEN,
+      has_token: hasRailwayEnv,
+      deployments: [],
+      last_deployment: null,
+      health: healthStatus,
+      note: healthStatus
+        ? `Backend healthy: ${healthStatus.status || 'ok'}`
+        : (hasRailwayEnv
+          ? `Railway API token is not authorized. Run \`railway link\` or get a new token at https://railway.app/dashboard/account/tokens`
+          : 'Railway config files exist. Add RAILWAY_TOKEN for full deployment status.'),
+      api_error: healthStatus ? null : 'Railway API not authorized — using health fallback',
     };
   } catch (error) {
     return { status: 'error', error: error.message };
