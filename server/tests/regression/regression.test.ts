@@ -1456,13 +1456,15 @@ describe('Regression: #0 — Undici keep-alive leak: OpenAI fetch headers includ
       };
     });
 
-    // Stub env vars before importing - config reads these at module load time
-    vi.stubEnv('VOICELOG_OPENAI_API_KEY', 'test-key');
-    vi.stubEnv('OPENAI_API_KEY', 'test-key');
-    vi.stubEnv('VOICELOG_OPENAI_BASE_URL', 'https://api.openai.com/v1');
-    vi.stubEnv('VOICELOG_ENABLE_MEETING_ANALYSIS', 'true');
+    vi.doMock('../../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'test-key',
+        OPENAI_API_KEY: 'test-key',
+        VOICELOG_OPENAI_BASE_URL: 'https://api.openai.com/v1',
+        VOICELOG_ENABLE_MEETING_ANALYSIS: true,
+      },
+    }));
 
-    // Now import - config will read the stubbed env vars
     const { analyzeMeetingWithOpenAI } = await import('../../postProcessing.ts');
 
     await analyzeMeetingWithOpenAI({
@@ -1472,9 +1474,6 @@ describe('Regression: #0 — Undici keep-alive leak: OpenAI fetch headers includ
     });
 
     expect(capturedHeaders).toHaveProperty('Connection', 'close');
-
-    // Clean up stubbed env vars
-    vi.unstubAllEnvs();
   });
 });
 

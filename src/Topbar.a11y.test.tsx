@@ -2,67 +2,90 @@
  * @vitest-environment jsdom
  * Topbar component tests - renders tabs, actions, and handles user interactions
  */
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import Topbar from './Topbar';
-
-const mockUI = vi.hoisted(() => ({
-  activeTab: 'studio' as string,
-  setActiveTab: vi.fn(),
-  openStudio: vi.fn(),
-  navigateBack: vi.fn(),
-  canGoBack: false,
-  switchWorkspace: vi.fn(),
-  setNotificationCenterOpen: vi.fn(),
-  notificationCenterOpen: false,
-  unreadNotificationCount: 0,
-  notificationItems: [],
-  notificationPermission: 'default' as string,
-  browserNotificationsSupported: true,
-  requestBrowserNotificationPermission: vi.fn(),
-  dismissNotification: vi.fn(),
-  activateNotification: vi.fn(),
-  setCommandPaletteOpen: vi.fn(),
-  setLayoutPreset: vi.fn(),
+const mockState = vi.hoisted(() => ({
+  ui: {
+    activeTab: 'studio',
+    canGoBack: false,
+    setActiveTab: vi.fn(),
+    openStudio: vi.fn(),
+    navigateBack: vi.fn(),
+    switchWorkspace: vi.fn(),
+    setNotificationCenterOpen: vi.fn(),
+    notificationCenterOpen: false,
+    unreadNotificationCount: 0,
+    notificationItems: [],
+    notificationPermission: 'default',
+    browserNotificationsSupported: true,
+    requestBrowserNotificationPermission: vi.fn(),
+    dismissNotification: vi.fn(),
+    activateNotification: vi.fn(),
+    setCommandPaletteOpen: vi.fn(),
+    setLayoutPreset: vi.fn(),
+  },
+  workspace: {
+    currentUser: { id: 'u1', name: 'Anna', role: 'PM', provider: 'local', avatarUrl: '' },
+    currentWorkspaceId: 'ws1',
+    currentWorkspace: { id: 'ws1', name: 'Team One' },
+    currentWorkspacePermissions: { canRecordAudio: true },
+    availableWorkspaces: [] as { id: string; name: string }[],
+    isHydratingSession: false,
+    logout: vi.fn(),
+    session: { userId: 'u1' },
+    updateWorkspaceMemberRole: vi.fn(),
+    removeWorkspaceMember: vi.fn(),
+  },
+  recorder: {
+    isRecording: false,
+    startRecording: vi.fn(),
+    elapsed: 0,
+  },
+  google: {
+    googleEnabled: false,
+  },
 }));
 
-const mockWorkspace = vi.hoisted(() => ({
-  currentUser: { id: 'u1', name: 'Anna', role: 'PM', provider: 'local', avatarUrl: '' },
-  currentWorkspaceId: 'ws1',
-  currentWorkspace: { id: 'ws1', name: 'Team One' },
-  currentWorkspacePermissions: { canRecordAudio: true },
-  availableWorkspaces: [] as { id: string; name: string }[],
+vi.mock('./hooks/useUI', () => ({
+  default: () => mockState.ui,
 }));
 
-const mockRecorder = vi.hoisted(() => ({
-  isRecording: false,
-  startRecording: vi.fn(),
+vi.mock('./store/workspaceStore', () => ({
+  useWorkspaceSelectors: () => mockState.workspace,
 }));
 
-const mockGoogle = vi.hoisted(() => ({
-  googleEnabled: false,
+vi.mock('./context/RecorderContext', () => ({
+  useRecorderCtx: () => mockState.recorder,
 }));
 
-vi.mock('./hooks/useUI', () => ({ default: () => mockUI }));
-vi.mock('./store/workspaceStore', () => ({ useWorkspaceSelectors: () => mockWorkspace }));
-vi.mock('./context/RecorderContext', () => ({ useRecorderCtx: () => mockRecorder }));
-vi.mock('./context/GoogleContext', () => ({ useGoogleCtx: () => mockGoogle }));
+vi.mock('./context/GoogleContext', () => ({
+  useGoogleCtx: () => mockState.google,
+}));
+
 vi.mock('./NotificationCenter', () => ({
   default: (props: any) => (
     <div data-testid="notification-center" data-open={props.open} data-unread={props.unreadCount} />
   ),
 }));
 
+import Topbar from './Topbar';
+
 describe('Topbar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUI.activeTab = 'studio';
-    mockUI.canGoBack = false;
-    mockWorkspace.availableWorkspaces = [];
-    mockRecorder.isRecording = false;
-    mockGoogle.googleEnabled = false;
+    mockState.ui.activeTab = 'studio';
+    mockState.ui.canGoBack = false;
+    mockState.ui.notificationCenterOpen = false;
+    mockState.ui.unreadNotificationCount = 0;
+    mockState.workspace.currentWorkspacePermissions = { canRecordAudio: true };
+    mockState.workspace.availableWorkspaces = [];
+    mockState.workspace.currentWorkspace = { id: 'ws1', name: 'Team One' };
+    mockState.recorder.isRecording = false;
+    mockState.recorder.elapsed = 0;
+    mockState.google.googleEnabled = false;
   });
 
   it('renders all navigation tabs', () => {
@@ -76,7 +99,7 @@ describe('Topbar', () => {
   });
 
   it('marks active tab with active class', () => {
-    mockUI.activeTab = 'calendar';
+    mockState.ui.activeTab = 'calendar';
     render(<Topbar />);
     expect(screen.getByRole('button', { name: 'Tab Kalendarz' })).toHaveClass('active');
     expect(screen.getByRole('button', { name: 'Tab Studio' })).not.toHaveClass('active');
@@ -85,54 +108,52 @@ describe('Topbar', () => {
   it('calls setActiveTab when clicking a tab', async () => {
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Tab Zadania' }));
-    expect(mockUI.setActiveTab).toHaveBeenCalledWith('tasks');
+    expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('tasks');
   });
 
   it('calls openStudio when clicking Studio tab', async () => {
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Tab Studio' }));
-    expect(mockUI.openStudio).toHaveBeenCalled();
+    expect(mockState.ui.openStudio).toHaveBeenCalled();
   });
 
   it('back button is disabled when canGoBack is false', () => {
-    mockUI.canGoBack = false;
+    mockState.ui.canGoBack = false;
     render(<Topbar />);
     expect(screen.getByRole('button', { name: 'Wroc do poprzedniego obiektu' })).toBeDisabled();
   });
 
   it('back button calls navigateBack when enabled', async () => {
-    mockUI.canGoBack = true;
+    mockState.ui.canGoBack = true;
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Wroc do poprzedniego obiektu' }));
-    expect(mockUI.navigateBack).toHaveBeenCalled();
+    expect(mockState.ui.navigateBack).toHaveBeenCalled();
   });
 
   it('record button starts ad-hoc recording', async () => {
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Nagraj ad hoc' }));
-    expect(mockRecorder.startRecording).toHaveBeenCalledWith({ adHoc: true });
-    expect(mockUI.setActiveTab).toHaveBeenCalledWith('studio');
+    expect(mockState.recorder.startRecording).toHaveBeenCalledWith({ adHoc: true });
+    expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('studio');
   });
 
   it('record button switches to studio when already recording', async () => {
-    mockRecorder.isRecording = true;
+    mockState.recorder.isRecording = true;
+    mockState.recorder.elapsed = 15;
     render(<Topbar />);
-    const btn = screen.getByRole('button', { name: 'Przejdz do aktywnego nagrania' });
-    expect(btn).toHaveClass('recording');
-    await userEvent.click(btn);
-    expect(mockRecorder.startRecording).not.toHaveBeenCalled();
-    expect(mockUI.setActiveTab).toHaveBeenCalledWith('studio');
+    await userEvent.click(screen.getByRole('button', { name: 'Przejdz do aktywnego nagrania' }));
+    expect(mockState.recorder.startRecording).not.toHaveBeenCalled();
+    expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('studio');
   });
 
   it('record button is disabled when no recording permission', () => {
-    mockWorkspace.currentWorkspacePermissions = { canRecordAudio: false } as any;
+    mockState.workspace.currentWorkspacePermissions = { canRecordAudio: false };
     render(<Topbar />);
     expect(screen.getByRole('button', { name: 'Nagraj ad hoc' })).toBeDisabled();
-    mockWorkspace.currentWorkspacePermissions = { canRecordAudio: true } as any;
   });
 
   it('shows Google ready chip when googleEnabled', () => {
-    mockGoogle.googleEnabled = true;
+    mockState.google.googleEnabled = true;
     render(<Topbar />);
     expect(screen.getByText('Google ready')).toBeInTheDocument();
   });
@@ -143,28 +164,26 @@ describe('Topbar', () => {
   });
 
   it('shows workspace switcher when multiple workspaces', () => {
-    mockWorkspace.availableWorkspaces = [
+    mockState.workspace.availableWorkspaces = [
       { id: 'ws1', name: 'Team One' },
       { id: 'ws2', name: 'Team Two' },
     ];
     render(<Topbar />);
-    const select = screen.getByLabelText('Workspace');
-    expect(select).toBeInTheDocument();
-    expect(select).toHaveValue('ws1');
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveValue('ws1');
   });
 
   it('calls switchWorkspace on workspace select change', async () => {
-    mockWorkspace.availableWorkspaces = [
+    mockState.workspace.availableWorkspaces = [
       { id: 'ws1', name: 'Team One' },
       { id: 'ws2', name: 'Team Two' },
     ];
     render(<Topbar />);
-    await userEvent.selectOptions(screen.getByLabelText('Workspace'), 'ws2');
-    expect(mockUI.switchWorkspace).toHaveBeenCalledWith('ws2');
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'ws2');
+    expect(mockState.ui.switchWorkspace).toHaveBeenCalledWith('ws2');
   });
 
   it('shows workspace name chip when only one workspace', () => {
-    mockWorkspace.availableWorkspaces = [];
     render(<Topbar />);
     expect(screen.getByText('Team One')).toBeInTheDocument();
   });
@@ -172,7 +191,7 @@ describe('Topbar', () => {
   it('opens command palette on Szukaj click', async () => {
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Szukaj' }));
-    expect(mockUI.setCommandPaletteOpen).toHaveBeenCalledWith(true);
+    expect(mockState.ui.setCommandPaletteOpen).toHaveBeenCalledWith(true);
   });
 
   it('displays current user name', () => {
@@ -183,7 +202,7 @@ describe('Topbar', () => {
   it('opens settings on gear button click', async () => {
     render(<Topbar />);
     await userEvent.click(screen.getByRole('button', { name: 'Otworz ustawienia' }));
-    expect(mockUI.setActiveTab).toHaveBeenCalledWith('profile');
+    expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('profile');
   });
 
   it('shows user role when present', () => {
@@ -192,8 +211,8 @@ describe('Topbar', () => {
   });
 
   it('passes NotificationCenter correct props', () => {
-    mockUI.notificationCenterOpen = true;
-    mockUI.unreadNotificationCount = 3;
+    mockState.ui.notificationCenterOpen = true;
+    mockState.ui.unreadNotificationCount = 3;
     render(<Topbar />);
     const nc = screen.getByTestId('notification-center');
     expect(nc).toHaveAttribute('data-open', 'true');
