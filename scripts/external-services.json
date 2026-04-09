@@ -5,10 +5,10 @@
       "full_name": "maniczko/audioRecorder",
       "stars": 0,
       "forks": 0,
-      "open_issues": 36,
+      "open_issues": 48,
       "default_branch": "main",
       "language": "TypeScript",
-      "updated_at": "2026-04-08T05:46:17Z"
+      "updated_at": "2026-04-09T05:46:30Z"
     },
     "actions": {
       "recent_runs": [
@@ -16,181 +16,181 @@
           "name": "Task Queue Auto Assign",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:49:28Z",
-          "updated_at": "2026-04-08T05:49:39Z",
-          "duration_ms": 11000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120105973"
+          "created_at": "2026-04-09T05:51:10Z",
+          "updated_at": "2026-04-09T05:51:18Z",
+          "duration_ms": 8000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174789676"
         },
         {
           "name": "Production Deployment (Vercel)",
           "status": "skipped",
           "branch": "main",
-          "created_at": "2026-04-08T05:48:17Z",
-          "updated_at": "2026-04-08T05:48:18Z",
+          "created_at": "2026-04-09T05:48:27Z",
+          "updated_at": "2026-04-09T05:48:28Z",
           "duration_ms": 1000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120070113"
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174707292"
         },
         {
           "name": "CI Failure Triage",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:48:17Z",
-          "updated_at": "2026-04-08T05:48:26Z",
-          "duration_ms": 9000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120070109"
+          "created_at": "2026-04-09T05:48:27Z",
+          "updated_at": "2026-04-09T05:48:37Z",
+          "duration_ms": 10000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174707271"
         },
         {
           "name": "Backend Production Smoke",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:46:39Z",
-          "duration_ms": 25000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010946"
-        },
-        {
-          "name": "Optimized CI",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:46:53Z",
-          "duration_ms": 39000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010876"
-        },
-        {
-          "name": "Docker Build",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:47:40Z",
-          "duration_ms": 86000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010859"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:46:56Z",
+          "duration_ms": 33000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646008"
         },
         {
           "name": "CI/CD Pipeline",
           "status": "failure",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:48:15Z",
-          "duration_ms": 121000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010869"
-        },
-        {
-          "name": "Auto-Fix Test Failures",
-          "status": "failure",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:48:30Z",
-          "duration_ms": 136000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010861"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:25Z",
+          "duration_ms": 122000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646011"
         },
         {
           "name": "E2E Playwright Tests",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:51:41Z",
-          "duration_ms": 327000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010860"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:17Z",
+          "duration_ms": 114000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646030"
+        },
+        {
+          "name": "Auto-Fix Test Failures",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:58Z",
+          "duration_ms": 155000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646014"
+        },
+        {
+          "name": "Optimized CI",
+          "status": "failure",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:53:32Z",
+          "duration_ms": 429000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646009"
+        },
+        {
+          "name": "Docker Build",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:55:06Z",
+          "duration_ms": 523000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646028"
+        },
+        {
+          "name": "CI Failure Triage",
+          "status": "skipped",
+          "branch": "main",
+          "created_at": "2026-04-09T04:45:53Z",
+          "updated_at": "2026-04-09T04:45:54Z",
+          "duration_ms": 1000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172886385"
+        },
+        {
+          "name": "Production Deployment (Vercel)",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:45:53Z",
+          "updated_at": "2026-04-09T04:46:55Z",
+          "duration_ms": 62000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172886395"
+        },
+        {
+          "name": "Backend Production Smoke",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:41:53Z",
+          "duration_ms": 35000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761887"
+        },
+        {
+          "name": "Docker Build",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:42:20Z",
+          "duration_ms": 62000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761886"
+        },
+        {
+          "name": "Optimized CI",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:42:11Z",
+          "duration_ms": 53000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761892"
+        },
+        {
+          "name": "E2E Playwright Tests",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:43:06Z",
+          "duration_ms": 108000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761919"
+        },
+        {
+          "name": "Auto-Fix Test Failures",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:43:45Z",
+          "duration_ms": 147000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761888"
+        },
+        {
+          "name": "CI/CD Pipeline",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T04:41:18Z",
+          "updated_at": "2026-04-09T04:45:51Z",
+          "duration_ms": 273000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172761881"
         },
         {
           "name": "Error Monitor & Task Creator",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:45:07Z",
-          "updated_at": "2026-04-08T05:46:18Z",
-          "duration_ms": 71000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24119976683"
-        },
-        {
-          "name": "Production Deployment (Vercel)",
-          "status": "skipped",
-          "branch": "main",
-          "created_at": "2026-04-08T03:24:02Z",
-          "updated_at": "2026-04-08T03:24:04Z",
-          "duration_ms": 2000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115960605"
-        },
-        {
-          "name": "CI Failure Triage",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T03:24:02Z",
-          "updated_at": "2026-04-08T03:24:13Z",
-          "duration_ms": 11000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115960615"
-        },
-        {
-          "name": "Backend Production Smoke",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:22:36Z",
-          "duration_ms": 29000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906766"
-        },
-        {
-          "name": "CI/CD Pipeline",
-          "status": "failure",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:24:00Z",
-          "duration_ms": 113000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906765"
-        },
-        {
-          "name": "Auto-Fix Test Failures",
-          "status": "failure",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:24:18Z",
-          "duration_ms": 131000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906776"
-        },
-        {
-          "name": "Optimized CI",
-          "status": "failure",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:24:20Z",
-          "duration_ms": 133000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906783"
-        },
-        {
-          "name": "E2E Playwright Tests",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:27:47Z",
-          "duration_ms": 340000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906763"
-        },
-        {
-          "name": "Docker Build",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T03:22:07Z",
-          "updated_at": "2026-04-08T03:28:09Z",
-          "duration_ms": 362000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115906777"
+          "created_at": "2026-04-09T04:40:31Z",
+          "updated_at": "2026-04-09T04:41:20Z",
+          "duration_ms": 49000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172740777"
         },
         {
           "name": "Task Queue Auto Assign",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T02:52:49Z",
-          "updated_at": "2026-04-08T02:52:56Z",
-          "duration_ms": 7000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24115100603"
+          "created_at": "2026-04-09T02:47:34Z",
+          "updated_at": "2026-04-09T02:47:42Z",
+          "duration_ms": 8000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24169708851"
         },
         {
           "name": "Railway Error Reporter",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T02:33:59Z",
-          "updated_at": "2026-04-08T02:34:28Z",
-          "duration_ms": 29000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24114588857"
+          "created_at": "2026-04-09T02:29:27Z",
+          "updated_at": "2026-04-09T02:30:13Z",
+          "duration_ms": 46000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24169240053"
         }
       ],
       "latest_by_workflow": [
@@ -198,108 +198,254 @@
           "name": "Task Queue Auto Assign",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:49:28Z",
-          "updated_at": "2026-04-08T05:49:39Z",
-          "duration_ms": 11000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120105973"
+          "created_at": "2026-04-09T05:51:10Z",
+          "updated_at": "2026-04-09T05:51:18Z",
+          "duration_ms": 8000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174789676"
         },
         {
           "name": "Production Deployment (Vercel)",
           "status": "skipped",
           "branch": "main",
-          "created_at": "2026-04-08T05:48:17Z",
-          "updated_at": "2026-04-08T05:48:18Z",
+          "created_at": "2026-04-09T05:48:27Z",
+          "updated_at": "2026-04-09T05:48:28Z",
           "duration_ms": 1000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120070113"
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174707292"
         },
         {
           "name": "CI Failure Triage",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:48:17Z",
-          "updated_at": "2026-04-08T05:48:26Z",
-          "duration_ms": 9000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120070109"
+          "created_at": "2026-04-09T05:48:27Z",
+          "updated_at": "2026-04-09T05:48:37Z",
+          "duration_ms": 10000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174707271"
         },
         {
           "name": "Backend Production Smoke",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:46:39Z",
-          "duration_ms": 25000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010946"
-        },
-        {
-          "name": "Optimized CI",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:46:53Z",
-          "duration_ms": 39000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010876"
-        },
-        {
-          "name": "Docker Build",
-          "status": "success",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:47:40Z",
-          "duration_ms": 86000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010859"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:46:56Z",
+          "duration_ms": 33000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646008"
         },
         {
           "name": "CI/CD Pipeline",
           "status": "failure",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:48:15Z",
-          "duration_ms": 121000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010869"
-        },
-        {
-          "name": "Auto-Fix Test Failures",
-          "status": "failure",
-          "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:48:30Z",
-          "duration_ms": 136000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010861"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:25Z",
+          "duration_ms": 122000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646011"
         },
         {
           "name": "E2E Playwright Tests",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:46:14Z",
-          "updated_at": "2026-04-08T05:51:41Z",
-          "duration_ms": 327000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24120010860"
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:17Z",
+          "duration_ms": 114000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646030"
+        },
+        {
+          "name": "Auto-Fix Test Failures",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:48:58Z",
+          "duration_ms": 155000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646014"
+        },
+        {
+          "name": "Optimized CI",
+          "status": "failure",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:53:32Z",
+          "duration_ms": 429000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646009"
+        },
+        {
+          "name": "Docker Build",
+          "status": "success",
+          "branch": "main",
+          "created_at": "2026-04-09T05:46:23Z",
+          "updated_at": "2026-04-09T05:55:06Z",
+          "duration_ms": 523000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24174646028"
         },
         {
           "name": "Error Monitor & Task Creator",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T05:45:07Z",
-          "updated_at": "2026-04-08T05:46:18Z",
-          "duration_ms": 71000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24119976683"
+          "created_at": "2026-04-09T04:40:31Z",
+          "updated_at": "2026-04-09T04:41:20Z",
+          "duration_ms": 49000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24172740777"
         },
         {
           "name": "Railway Error Reporter",
           "status": "success",
           "branch": "main",
-          "created_at": "2026-04-08T02:33:59Z",
-          "updated_at": "2026-04-08T02:34:28Z",
-          "duration_ms": 29000,
-          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24114588857"
+          "created_at": "2026-04-09T02:29:27Z",
+          "updated_at": "2026-04-09T02:30:13Z",
+          "duration_ms": 46000,
+          "url": "https://github.com/maniczko/audioRecorder/actions/runs/24169240053"
         }
       ],
-      "total_runs": 4157,
-      "success_rate": 65,
-      "last_run": "2026-04-08T05:49:39Z"
+      "total_runs": 4396,
+      "success_rate": 80,
+      "last_run": "2026-04-09T05:51:18Z"
     },
     "issues": {
       "open": [
+        {
+          "number": 462,
+          "title": "[CI] Fix failing tests after `56c62f21`: Backend Tests, Unit Tests",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-09T05:48:34Z",
+          "updated_at": "2026-04-09T05:48:34Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/462"
+        },
+        {
+          "number": 440,
+          "title": "🚂 Railway Error Report - 2026-04-07",
+          "state": "open",
+          "labels": [
+            "monitoring",
+            "railway-error"
+          ],
+          "created_at": "2026-04-07T19:06:05Z",
+          "updated_at": "2026-04-09T02:30:09Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/440"
+        },
+        {
+          "number": 461,
+          "title": "Auto Error Report: 10 GitHub + 1 Railway + 0 Vercel + 0 Sentry (2026-04-09)",
+          "state": "open",
+          "labels": [
+            "auto-generated-error",
+            "monitoring",
+            "priority-high"
+          ],
+          "created_at": "2026-04-09T02:00:04Z",
+          "updated_at": "2026-04-09T02:00:04Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/461"
+        },
+        {
+          "number": 460,
+          "title": "[CI] Fix failing tests after `05b05d2f`: E2E Tests",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T12:48:50Z",
+          "updated_at": "2026-04-08T23:52:51Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/460"
+        },
+        {
+          "number": 459,
+          "title": "[CI] Fix failing tests after `c3314818`: Unit Tests",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T12:05:52Z",
+          "updated_at": "2026-04-08T12:05:52Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/459"
+        },
+        {
+          "number": 458,
+          "title": "[CI] Fix failing tests after `d549895b`: Unit Tests",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T11:50:25Z",
+          "updated_at": "2026-04-08T11:50:25Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/458"
+        },
+        {
+          "number": 457,
+          "title": "[CI] Fix failing tests after `52cde6ce`: Backend Tests, Unit Tests",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T10:59:10Z",
+          "updated_at": "2026-04-08T10:59:10Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/457"
+        },
+        {
+          "number": 456,
+          "title": "[CI] Fix failing tests after `5a2c4272`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T10:56:46Z",
+          "updated_at": "2026-04-08T10:56:46Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/456"
+        },
+        {
+          "number": 455,
+          "title": "[CI] Fix failing tests after `7a45714e`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T10:10:27Z",
+          "updated_at": "2026-04-08T10:10:27Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/455"
+        },
+        {
+          "number": 454,
+          "title": "[CI] Fix failing tests after `bf79fe50`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T09:59:46Z",
+          "updated_at": "2026-04-08T09:59:46Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/454"
+        },
+        {
+          "number": 453,
+          "title": "[CI] Fix failing tests after `6f7dcda4`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T09:31:40Z",
+          "updated_at": "2026-04-08T09:31:40Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/453"
+        },
+        {
+          "number": 452,
+          "title": "[CI] Fix failing tests after `9bea5993`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T09:00:35Z",
+          "updated_at": "2026-04-08T09:00:35Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/452"
+        },
+        {
+          "number": 451,
+          "title": "[CI] Fix failing tests after `d73fe681`: Quality Checks",
+          "state": "open",
+          "labels": [
+            "ci-failure"
+          ],
+          "created_at": "2026-04-08T07:17:19Z",
+          "updated_at": "2026-04-08T07:17:19Z",
+          "url": "https://github.com/maniczko/audioRecorder/issues/451"
+        },
         {
           "number": 450,
           "title": "[CI] Fix failing tests after `5f6b305e`: Quality Checks",
@@ -321,18 +467,6 @@
           "created_at": "2026-04-08T03:24:09Z",
           "updated_at": "2026-04-08T03:24:09Z",
           "url": "https://github.com/maniczko/audioRecorder/issues/449"
-        },
-        {
-          "number": 440,
-          "title": "🚂 Railway Error Report - 2026-04-07",
-          "state": "open",
-          "labels": [
-            "monitoring",
-            "railway-error"
-          ],
-          "created_at": "2026-04-07T19:06:05Z",
-          "updated_at": "2026-04-08T02:34:25Z",
-          "url": "https://github.com/maniczko/audioRecorder/issues/440"
         },
         {
           "number": 448,
@@ -460,7 +594,7 @@
           "url": "https://github.com/maniczko/audioRecorder/issues/437"
         }
       ],
-      "total_open": 14
+      "total_open": 26
     },
     "pull_requests": {
       "open": [
@@ -649,6 +783,39 @@
     "has_dsn": true,
     "issues": [
       {
+        "id": "110754044",
+        "title": "[Bootstrap] Failed to reset orphaned jobs:",
+        "culprit": "",
+        "level": "error",
+        "count": "1",
+        "userCount": 0,
+        "firstSeen": "2026-04-09T06:03:36.580000Z",
+        "lastSeen": "2026-04-09T06:03:36.580000Z",
+        "url": "https://vatlar.sentry.io/issues/110754044/"
+      },
+      {
+        "id": "108741745",
+        "title": "[Bootstrap] Please clean up disk space or the server will fail to accept recordings.",
+        "culprit": "",
+        "level": "error",
+        "count": "116",
+        "userCount": 0,
+        "firstSeen": "2026-03-30T19:52:43.917000Z",
+        "lastSeen": "2026-04-09T06:03:36.445000Z",
+        "url": "https://vatlar.sentry.io/issues/108741745/"
+      },
+      {
+        "id": "110754046",
+        "title": "[Bootstrap] CRITICAL: Disk space critically low! Only 0.00GB free.",
+        "culprit": "",
+        "level": "error",
+        "count": "1",
+        "userCount": 0,
+        "firstSeen": "2026-04-09T06:03:36.444000Z",
+        "lastSeen": "2026-04-09T06:03:36.444000Z",
+        "url": "https://vatlar.sentry.io/issues/110754046/"
+      },
+      {
         "id": "110339117",
         "title": "[database] Failed to delete legacy audio file /app/server/data/uploads/recording_lm9membx_mnlvu9d2.wav:",
         "culprit": "DELETE /media/recordings/recording_lm9membx_mnlvu9d2",
@@ -748,17 +915,6 @@
         "url": "https://vatlar.sentry.io/issues/108741747/"
       },
       {
-        "id": "108741745",
-        "title": "[Bootstrap] Please clean up disk space or the server will fail to accept recordings.",
-        "culprit": "",
-        "level": "error",
-        "count": "115",
-        "userCount": 0,
-        "firstSeen": "2026-03-30T19:52:43.917000Z",
-        "lastSeen": "2026-04-07T11:27:43.759000Z",
-        "url": "https://vatlar.sentry.io/issues/108741745/"
-      },
-      {
         "id": "108741744",
         "title": "[Bootstrap] CRITICAL: Disk space critically low! Only 0.08GB free.",
         "culprit": "",
@@ -845,37 +1001,11 @@
         "firstSeen": "2026-04-04T12:44:44.306000Z",
         "lastSeen": "2026-04-04T12:44:44.306000Z",
         "url": "https://vatlar.sentry.io/issues/109789362/"
-      },
-      {
-        "id": "109714736",
-        "title": "[database] Failed to delete legacy audio file /app/server/data/uploads/recording_mjre3l34_mnj1plcn.wav:",
-        "culprit": "DELETE /media/recordings/recording_mjre3l34_mnj1plcn",
-        "level": "warning",
-        "count": "1",
-        "userCount": 0,
-        "firstSeen": "2026-04-03T22:24:55.583000Z",
-        "lastSeen": "2026-04-03T22:24:55.583000Z",
-        "url": "https://vatlar.sentry.io/issues/109714736/"
-      },
-      {
-        "id": "109714726",
-        "title": "[database] Failed to delete legacy audio file /app/server/data/uploads/recording_kdybbzj1_mnj5hbsy.webm:",
-        "culprit": "DELETE /media/recordings/recording_kdybbzj1_mnj5hbsy",
-        "level": "warning",
-        "count": "1",
-        "userCount": 0,
-        "firstSeen": "2026-04-03T22:24:53.957000Z",
-        "lastSeen": "2026-04-03T22:24:53.957000Z",
-        "url": "https://vatlar.sentry.io/issues/109714726/"
       }
     ],
     "stats": {
-      "events_7d": 311,
+      "events_7d": 274,
       "daily": [
-        {
-          "date": "2026-04-01",
-          "events": 37
-        },
         {
           "date": "2026-04-02",
           "events": 32
@@ -903,6 +1033,10 @@
         {
           "date": "2026-04-08",
           "events": 0
+        },
+        {
+          "date": "2026-04-09",
+          "events": 0
         }
       ]
     },
@@ -924,18 +1058,18 @@
     "project_name": "audioRecorder",
     "framework": "vite",
     "last_deployment": {
-      "uid": "dpl_BzCLuZkegBRhikRcDhR1Q5h9yebH",
+      "uid": "dpl_HEBgUNQ89GieW4xo1CzDxkdDzveM",
       "name": "audiorecorder",
-      "url": "audiorecorder-k97udbbnb-iwoczajka-2703s-projects.vercel.app",
+      "url": "audiorecorder-kb5kf053r-iwoczajka-2703s-projects.vercel.app",
       "state": "CANCELED",
       "meta": {
-        "githubCommitAuthorName": "github-actions[bot]",
-        "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-        "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+        "githubCommitAuthorName": "iwo",
+        "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+        "githubCommitMessage": "fix(tests): fix Connection: close header test using vi.stubEnv",
         "githubCommitOrg": "maniczko",
         "githubCommitRef": "main",
         "githubCommitRepo": "audioRecorder",
-        "githubCommitSha": "5f6b305e8d83cda7bd3bf55bdd86873f1cfb50d4",
+        "githubCommitSha": "56c62f2164eea9c0a5486a06e169fea9d60d4d5e",
         "githubDeployment": "1",
         "githubOrg": "maniczko",
         "githubRepo": "audioRecorder",
@@ -944,23 +1078,1130 @@
         "githubRepoId": "1181560704",
         "githubRepoVisibility": "public",
         "githubHost": "github.com",
-        "githubCommitAuthorLogin": "github-actions[bot]",
-        "repoPushedAt": "1775627172000",
+        "githubCommitAuthorLogin": "maniczko",
+        "repoPushedAt": "1775713581000",
         "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
       },
-      "created": 1775627175262,
-      "createdAt": 1775627175262,
-      "ready": 1775627185757,
-      "buildingAt": 1775627176633,
+      "created": 1775713584809,
+      "createdAt": 1775713584809,
+      "ready": 1775713592185,
+      "buildingAt": 1775713586039,
       "creator": {
         "uid": "Q81uX4MNP2YarhQd32Slyh4K",
         "email": "iwo.czajka@gmail.com",
         "username": "iwoczajka-2703",
-        "githubLogin": "github-actions[bot]"
+        "githubLogin": "maniczko"
       },
-      "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/BzCLuZkegBRhikRcDhR1Q5h9yebH"
+      "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/HEBgUNQ89GieW4xo1CzDxkdDzveM"
     },
     "deployments": [
+      {
+        "uid": "dpl_HEBgUNQ89GieW4xo1CzDxkdDzveM",
+        "name": "audiorecorder",
+        "url": "audiorecorder-kb5kf053r-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(tests): fix Connection: close header test using vi.stubEnv",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "56c62f2164eea9c0a5486a06e169fea9d60d4d5e",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775713581000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775713584809,
+        "createdAt": 1775713584809,
+        "ready": 1775713592185,
+        "buildingAt": 1775713586039,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/HEBgUNQ89GieW4xo1CzDxkdDzveM"
+      },
+      {
+        "uid": "dpl_BXbfCxzbiciw2kxbVbQM2dJJFsCD",
+        "name": "audiorecorder",
+        "url": "audiorecorder-pw7xvw3l8-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "HEAD",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "43c7b30398ac2371a2142a4a19b12253bfc3c91d",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "gitDirty": "1"
+        },
+        "created": 1775710004367,
+        "createdAt": 1775710004367,
+        "ready": 1775710010335,
+        "buildingAt": 1775710006432,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/BXbfCxzbiciw2kxbVbQM2dJJFsCD"
+      },
+      {
+        "uid": "dpl_Aauedy8RiVRYS8xn1VmpQ9dCisGw",
+        "name": "audiorecorder",
+        "url": "audiorecorder-6yzu5tpd8-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "43c7b30398ac2371a2142a4a19b12253bfc3c91d",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775709676000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775709679550,
+        "createdAt": 1775709679550,
+        "ready": 1775709686674,
+        "buildingAt": 1775709680712,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Aauedy8RiVRYS8xn1VmpQ9dCisGw"
+      },
+      {
+        "uid": "dpl_DjCdfPw41jSLxoyNbZDUm9NH6LMe",
+        "name": "audiorecorder",
+        "url": "audiorecorder-h9219fdws-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "HEAD",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "98b4217f38ebb92f1f34ccbd231d67cff16e79aa",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "gitDirty": "1"
+        },
+        "created": 1775676945561,
+        "createdAt": 1775676945561,
+        "ready": 1775676951138,
+        "buildingAt": 1775676947629,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DjCdfPw41jSLxoyNbZDUm9NH6LMe"
+      },
+      {
+        "uid": "dpl_DKLi64U85WMHx4sDwPWZXEwyUaD7",
+        "name": "audiorecorder",
+        "url": "audiorecorder-kh8349wg9-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "98b4217f38ebb92f1f34ccbd231d67cff16e79aa",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775675598000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775675600478,
+        "createdAt": 1775675600478,
+        "ready": 1775675608561,
+        "buildingAt": 1775675602209,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DKLi64U85WMHx4sDwPWZXEwyUaD7"
+      },
+      {
+        "uid": "dpl_J9uixSGBRUa7kTYdaHQ1y4v3ScxS",
+        "name": "audiorecorder",
+        "url": "audiorecorder-g24qsuwfq-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: lower coverage thresholds and skip 8 failing frontend tests",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "HEAD",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d2146d6e4585954cd757d79e45e43a32371e2d5d",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "gitDirty": "1"
+        },
+        "created": 1775675317415,
+        "createdAt": 1775675317415,
+        "ready": 1775675323943,
+        "buildingAt": 1775675319679,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/J9uixSGBRUa7kTYdaHQ1y4v3ScxS"
+      },
+      {
+        "uid": "dpl_AJsQCV1yosXhev4mWKU816bYgqKL",
+        "name": "audiorecorder",
+        "url": "audiorecorder-fdtjzu35o-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: lower coverage thresholds and skip 8 failing frontend tests",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d2146d6e4585954cd757d79e45e43a32371e2d5d",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775674947000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775674950457,
+        "createdAt": 1775674950457,
+        "ready": 1775674959043,
+        "buildingAt": 1775674952110,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/AJsQCV1yosXhev4mWKU816bYgqKL"
+      },
+      {
+        "uid": "dpl_9wW2HtW4CKNVFdiNK5JNDxG9BM5Y",
+        "name": "audiorecorder",
+        "url": "audiorecorder-qz8bmyrxn-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip 8 failing frontend tests blocking Optimized CI",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "HEAD",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "56f053fb36c789a5ba62baba60b02abc12834859",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "gitDirty": "1"
+        },
+        "created": 1775671958221,
+        "createdAt": 1775671958221,
+        "ready": 1775671964312,
+        "buildingAt": 1775671960515,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/9wW2HtW4CKNVFdiNK5JNDxG9BM5Y"
+      },
+      {
+        "uid": "dpl_6CWRwaH3xFa7hQzRL45kionn5oQ9",
+        "name": "audiorecorder",
+        "url": "audiorecorder-h20vyf25a-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip 8 failing frontend tests blocking Optimized CI",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "56f053fb36c789a5ba62baba60b02abc12834859",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775671324000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775671326925,
+        "createdAt": 1775671326925,
+        "ready": 1775671347329,
+        "buildingAt": 1775671328625,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/6CWRwaH3xFa7hQzRL45kionn5oQ9"
+      },
+      {
+        "uid": "dpl_W7aRFgBJsLryksRyykv87AGu2AWN",
+        "name": "audiorecorder",
+        "url": "audiorecorder-ix7pccz7h-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): use npm instead of pnpm for global Vercel CLI install",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "HEAD",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "7d5c994b24cee230be568ca327c369cbb5bacff5",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "gitDirty": "1"
+        },
+        "created": 1775669029801,
+        "createdAt": 1775669029801,
+        "ready": 1775669034614,
+        "buildingAt": 1775669031111,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/W7aRFgBJsLryksRyykv87AGu2AWN"
+      },
+      {
+        "uid": "dpl_HUKQ1WYgiaBqFgpykYaTKVxcfUG1",
+        "name": "audiorecorder",
+        "url": "audiorecorder-piu2sf95e-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): use npm instead of pnpm for global Vercel CLI install",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "7d5c994b24cee230be568ca327c369cbb5bacff5",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775668646000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775668649131,
+        "createdAt": 1775668649131,
+        "ready": 1775668657938,
+        "buildingAt": 1775668650532,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/HUKQ1WYgiaBqFgpykYaTKVxcfUG1"
+      },
+      {
+        "uid": "dpl_BPNeepuRZQLkKYwfuJ18hm7p79je",
+        "name": "audiorecorder",
+        "url": "audiorecorder-7hdc885j5-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d69aa557ad75763dcf11a0b05e0ba083e79c8fb2",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775660869000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775660872680,
+        "createdAt": 1775660872680,
+        "ready": 1775660880755,
+        "buildingAt": 1775660874075,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/BPNeepuRZQLkKYwfuJ18hm7p79je"
+      },
+      {
+        "uid": "dpl_GD76z3zrv9KSt8MM2qGYTHvAJxbK",
+        "name": "audiorecorder",
+        "url": "audiorecorder-g20x0lxyg-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): fix Vercel CLI install by exporting PNPM_HOME directly",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "416c23e0be1ecf06af2f6f3546fd41366ac0bad3",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775660207000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775660209978,
+        "createdAt": 1775660209978,
+        "ready": 1775660217620,
+        "buildingAt": 1775660212257,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/GD76z3zrv9KSt8MM2qGYTHvAJxbK"
+      },
+      {
+        "uid": "dpl_SxNYSj5JJSm8Q5Jtyr2RwdqacxPH",
+        "name": "audiorecorder",
+        "url": "audiorecorder-ml7msmrgs-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): fix Vercel CLI installation in production deployment",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "f6442fc545e5dc82addfca87377f411fee93a6ae",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775659129000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775659132622,
+        "createdAt": 1775659132622,
+        "ready": 1775659140567,
+        "buildingAt": 1775659134207,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/SxNYSj5JJSm8Q5Jtyr2RwdqacxPH"
+      },
+      {
+        "uid": "dpl_7zAnFgu92pWwzv4FX3BK8kMq2DRF",
+        "name": "audiorecorder",
+        "url": "audiorecorder-fhrfbm0s3-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "docs: update TASK_QUEUE and TASK_DONE with session summary",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "96f6aa46f8c2c621b74bf4acbe634e2a4be17735",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775657740000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775657752410,
+        "createdAt": 1775657752410,
+        "ready": 1775657760276,
+        "buildingAt": 1775657753699,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/7zAnFgu92pWwzv4FX3BK8kMq2DRF"
+      },
+      {
+        "uid": "dpl_42nBNTTm8zMWbjkVfDUrx7QfSEPa",
+        "name": "audiorecorder",
+        "url": "audiorecorder-2597j31lt-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip authStore and meetingsStore tests due to Zustand 5 API removal",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "90964dd6df57ae95b257444e84a4f7b89ecd7a0d",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775657024000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775657026934,
+        "createdAt": 1775657026934,
+        "ready": 1775657052916,
+        "buildingAt": 1775657029282,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/42nBNTTm8zMWbjkVfDUrx7QfSEPa"
+      },
+      {
+        "uid": "dpl_4ayQtbga5XhNALSEa41MWLC8xJa7",
+        "name": "audiorecorder",
+        "url": "audiorecorder-lua5iucg0-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip uiStore and recorderStore tests due to Zustand 5 setState removal",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "2de2bc2e75b354a0e87a89ff0f4d6c23536f9498",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775656228000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775656231825,
+        "createdAt": 1775656231825,
+        "ready": 1775656254193,
+        "buildingAt": 1775656233998,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/4ayQtbga5XhNALSEa41MWLC8xJa7"
+      },
+      {
+        "uid": "dpl_BS52Ms8zzKhN89kkzxwJTgSyGpv5",
+        "name": "audiorecorder",
+        "url": "audiorecorder-3o7padh8u-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "docs: update TASK_DONE.md with 2026-04-08 CI cleanup session",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "419f678eb31e886183085326058d02757ce0e259",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775655285000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775655288342,
+        "createdAt": 1775655288342,
+        "ready": 1775655296384,
+        "buildingAt": 1775655289753,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/BS52Ms8zzKhN89kkzxwJTgSyGpv5"
+      },
+      {
+        "uid": "dpl_34YEGt1ybdPEKBhbnCwTpMXJq7kJ",
+        "name": "audiorecorder",
+        "url": "audiorecorder-6d1md4qdq-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "0997df1a52eb66f20b7ceafb6bc58439897a2fd1",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775654184000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775654187020,
+        "createdAt": 1775654187020,
+        "ready": 1775654196459,
+        "buildingAt": 1775654188851,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/34YEGt1ybdPEKBhbnCwTpMXJq7kJ"
+      },
+      {
+        "uid": "dpl_6Vdm51QZJQazuRzcpEQu92EmKPdJ",
+        "name": "audiorecorder",
+        "url": "audiorecorder-mjl24igu7-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip workspaceStore tests due to Zustand 5 setState removal",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "9f7ecdac9bfea4ed1e0eb80bb363d1c13684c8f1",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775653986000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775653989261,
+        "createdAt": 1775653989261,
+        "ready": 1775654011037,
+        "buildingAt": 1775653990459,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/6Vdm51QZJQazuRzcpEQu92EmKPdJ"
+      },
+      {
+        "uid": "dpl_76AVLsMFdWxe1sP9Qy22vVPVkbid",
+        "name": "audiorecorder",
+        "url": "audiorecorder-7gipdi4pm-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test(e2e): skip visual regression tests until baselines exist",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d46c543fb03e2d9fc84c0a8502bec04436b33afd",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775652888000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775652890445,
+        "createdAt": 1775652890445,
+        "ready": 1775652900310,
+        "buildingAt": 1775652892441,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/76AVLsMFdWxe1sP9Qy22vVPVkbid"
+      },
+      {
+        "uid": "dpl_78Fis3Gyy7qhBG7kBNNdFpHSmxEf",
+        "name": "audiorecorder",
+        "url": "audiorecorder-8x00gwkc8-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): switch unit tests to backend-only to avoid frontend OOM",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "05b05d2fc15768e124a0d6f8080121b9ce7661f7",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775652142000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775652145651,
+        "createdAt": 1775652145651,
+        "ready": 1775652156084,
+        "buildingAt": 1775652147339,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/78Fis3Gyy7qhBG7kBNNdFpHSmxEf"
+      },
+      {
+        "uid": "dpl_645Dz4cvz8nP5UnuU951w14Gjdym",
+        "name": "audiorecorder",
+        "url": "audiorecorder-drkl1x1h9-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): increase Node.js heap size for unit tests to 8GB",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "c33148184f2b315ff338665e53b03055d59397f8",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775649661000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775649663779,
+        "createdAt": 1775649663779,
+        "ready": 1775649672983,
+        "buildingAt": 1775649665159,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/645Dz4cvz8nP5UnuU951w14Gjdym"
+      },
+      {
+        "uid": "dpl_CjcwfFnhY5k4seadPNfiCYuTcHNB",
+        "name": "audiorecorder",
+        "url": "audiorecorder-1jn076cxo-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "test: skip flaky transcription tests blocking CI",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d549895b0c63d857f1b4c1cd35f6fc537e35d957",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775648800000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775648803255,
+        "createdAt": 1775648803255,
+        "ready": 1775648824674,
+        "buildingAt": 1775648804467,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/CjcwfFnhY5k4seadPNfiCYuTcHNB"
+      },
+      {
+        "uid": "dpl_DXuhVgDoiNmLn5Dt5MfPgnhF6kJ2",
+        "name": "audiorecorder",
+        "url": "audiorecorder-8i0mzj0ry-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(types): fix MeetingsContext default value signatures",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "52cde6ceb5a7d17a52b8a7a8e152bc646bd8a3b2",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775645742000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775645744626,
+        "createdAt": 1775645744626,
+        "ready": 1775645768857,
+        "buildingAt": 1775645748312,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DXuhVgDoiNmLn5Dt5MfPgnhF6kJ2"
+      },
+      {
+        "uid": "dpl_9DTPLCKp9gFVPgLXPfoWH7aVTHCc",
+        "name": "audiorecorder",
+        "url": "audiorecorder-h267yp5pn-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "5a2c42725b1ede22d3c0aa89e62dfeb0ab3dce22",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775645669000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775645672748,
+        "createdAt": 1775645672748,
+        "ready": 1775645679320,
+        "buildingAt": 1775645673988,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/9DTPLCKp9gFVPgLXPfoWH7aVTHCc"
+      },
+      {
+        "uid": "dpl_G1Up9PD1W2ZMHiS4gVUzFqUMU6H5",
+        "name": "audiorecorder",
+        "url": "audiorecorder-avrrd02gg-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(types): fix MeetingsContext access in StudioMeetingView",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "7a45714e1a3a1bf7b52fb6af81b149991b0806a7",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775642896000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775642899503,
+        "createdAt": 1775642899503,
+        "ready": 1775642921538,
+        "buildingAt": 1775642900910,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/G1Up9PD1W2ZMHiS4gVUzFqUMU6H5"
+      },
+      {
+        "uid": "dpl_6A2E2hfoKHeeMEXAiDD65VuTT8MB",
+        "name": "audiorecorder",
+        "url": "audiorecorder-kfcwgdnge-iwoczajka-2703s-projects.vercel.app",
+        "state": "READY",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(pipeline): stabilize, speed up, and reduce costs of transcription pipeline\n\n- Queue jobs instead of rejecting when at capacity (server-side pending queue)\n- Retry meeting attachment up to 7x to fix \"Meeting not found\" race condition\n- Wire skipChunkVAD/skipEarlyPyannote/skipVoiceProfileMatch options in pipeline\n- Disable dead code: VAD (vad.py missing), pyannote (always null), per-speaker norm\n- Eliminate double pipeline run (runEnhancementPostProcess was re-running full STT)\n- Switch defaults: fast mode, whisper-1 fallback, overlap 2s, no LLM correction\n- Add VOICELOG_ENABLE_MEETING_ANALYSIS env var (default: false)\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "bf79fe50d4c9110e5cbab13eac5783f4b7cea903",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775642257000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775642259692,
+        "createdAt": 1775642259692,
+        "ready": 1775642281285,
+        "buildingAt": 1775642260885,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/6A2E2hfoKHeeMEXAiDD65VuTT8MB"
+      },
+      {
+        "uid": "dpl_29jUHmPQPLoRztQhuLd8f6Ahg3ue",
+        "name": "audiorecorder",
+        "url": "audiorecorder-4stqy3vax-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "iwo",
+          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
+          "githubCommitMessage": "fix(ci): resolve git error 128 in Auto-Fix workflow",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "6f7dcda4d7c3643837ab86c7bec2e4338fa2e8cf",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "maniczko",
+          "repoPushedAt": "1775640561000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775640563590,
+        "createdAt": 1775640563590,
+        "ready": 1775640572341,
+        "buildingAt": 1775640564857,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "maniczko"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/29jUHmPQPLoRztQhuLd8f6Ahg3ue"
+      },
+      {
+        "uid": "dpl_DjDeMVNmBfgYKEsFTHtkhhBnbwVU",
+        "name": "audiorecorder",
+        "url": "audiorecorder-haywvri6r-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "9bea5993e6a10a34f167c358fa7ca69b99a79beb",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775638706000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775638709272,
+        "createdAt": 1775638709272,
+        "ready": 1775638718041,
+        "buildingAt": 1775638710560,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DjDeMVNmBfgYKEsFTHtkhhBnbwVU"
+      },
+      {
+        "uid": "dpl_FcT8yzqWFoGjR1DYoTjWTLEmdRuw",
+        "name": "audiorecorder",
+        "url": "audiorecorder-nucii2p6y-iwoczajka-2703s-projects.vercel.app",
+        "state": "CANCELED",
+        "meta": {
+          "githubCommitAuthorName": "github-actions[bot]",
+          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
+          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
+          "githubCommitOrg": "maniczko",
+          "githubCommitRef": "main",
+          "githubCommitRepo": "audioRecorder",
+          "githubCommitSha": "d73fe681f8ae163b51ad93e05b034724048460a4",
+          "githubDeployment": "1",
+          "githubOrg": "maniczko",
+          "githubRepo": "audioRecorder",
+          "githubRepoOwnerType": "User",
+          "githubCommitRepoId": "1181560704",
+          "githubRepoId": "1181560704",
+          "githubRepoVisibility": "public",
+          "githubHost": "github.com",
+          "githubCommitAuthorLogin": "github-actions[bot]",
+          "repoPushedAt": "1775632499000",
+          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
+        },
+        "created": 1775632502317,
+        "createdAt": 1775632502317,
+        "ready": 1775632512712,
+        "buildingAt": 1775632504045,
+        "creator": {
+          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
+          "email": "iwo.czajka@gmail.com",
+          "username": "iwoczajka-2703",
+          "githubLogin": "github-actions[bot]"
+        },
+        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/FcT8yzqWFoGjR1DYoTjWTLEmdRuw"
+      },
       {
         "uid": "dpl_BzCLuZkegBRhikRcDhR1Q5h9yebH",
         "name": "audiorecorder",
@@ -3524,1183 +4765,22 @@
           "githubLogin": "maniczko"
         },
         "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/EZWgUEPCoyChgWvQznSgKb14UpKu"
-      },
-      {
-        "uid": "dpl_DQK5qkfonvE6DNvCRXUky6Hy4EwA",
-        "name": "audiorecorder",
-        "url": "audiorecorder-2owpvmdzn-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "test(server): add supabaseStorage configured tests (+15 tests)",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "32b140db31bbaab384ef40fc5bbcd0700505bacc",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775403514000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775403516525,
-        "createdAt": 1775403516525,
-        "ready": 1775403525622,
-        "buildingAt": 1775403517632,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DQK5qkfonvE6DNvCRXUky6Hy4EwA"
-      },
-      {
-        "uid": "dpl_FCqvMx8MKsAHLJLav7eJfT1Cxwd8",
-        "name": "audiorecorder",
-        "url": "audiorecorder-r4oyg91yw-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "feat(studio): verified voice profile badge on speaker avatars and update task queue\n\n- Add green verified dot on speaker avatars in transcript when voice profile exists\n- Fetch /voice-profiles on StudioMeetingView mount to build verifiedSpeakerNames set\n- Update TASK_QUEUE.md\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "54c3771467b31ff92d5c837532bb7796148f16a4",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775402404000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775402407040,
-        "createdAt": 1775402407040,
-        "ready": 1775402427304,
-        "buildingAt": 1775402408314,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/FCqvMx8MKsAHLJLav7eJfT1Cxwd8"
-      },
-      {
-        "uid": "dpl_DC18Fd8C72FyX7Ak6wWVpjUbkdnz",
-        "name": "audiorecorder",
-        "url": "audiorecorder-5gjvfp6m7-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-387-1775400548",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "593d3231e7b094d28beafdb0fd615b0c7df84d20",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "388",
-          "repoPushedAt": "1775400560000",
-          "branchAlias": "audiorecorder-git-gpt-fix-387-1-afa814-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775400562531,
-        "createdAt": 1775400562531,
-        "ready": 1775400568524,
-        "buildingAt": 1775400563758,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/DC18Fd8C72FyX7Ak6wWVpjUbkdnz"
-      },
-      {
-        "uid": "dpl_J2kxrQXWhjc5n9BmR62oWdB17jnV",
-        "name": "audiorecorder",
-        "url": "audiorecorder-90papzny4-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "fix(prod): ship agent updates",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "80d624bb2a7771d42fbef4281ab73d379eaaeef3",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775400410000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775400411966,
-        "createdAt": 1775400411966,
-        "ready": 1775400432971,
-        "buildingAt": 1775400413090,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/J2kxrQXWhjc5n9BmR62oWdB17jnV"
-      },
-      {
-        "uid": "dpl_6ShWLcXerNv7aMHtSq5w16HZDz6S",
-        "name": "audiorecorder",
-        "url": "audiorecorder-9lakfn1d3-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-385-1775399517",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "3bfedb2b1d4a96662a645b0306e20b49b02f5085",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775399528000",
-          "branchAlias": "audiorecorder-git-gpt-fix-385-1-aeb948-iwoczajka-2703s-projects.vercel.app",
-          "githubPrId": "386"
-        },
-        "created": 1775399530046,
-        "createdAt": 1775399530046,
-        "ready": 1775399537760,
-        "buildingAt": 1775399531291,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/6ShWLcXerNv7aMHtSq5w16HZDz6S"
-      },
-      {
-        "uid": "dpl_7tFjgYpCpqxgW66eUGTzmWzf9dQ9",
-        "name": "audiorecorder",
-        "url": "audiorecorder-ildzo3ikp-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "f519d362f4f24e22e319cf9d2479af132894d4fa",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775399328000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775399331238,
-        "createdAt": 1775399331238,
-        "ready": 1775399339653,
-        "buildingAt": 1775399332699,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/7tFjgYpCpqxgW66eUGTzmWzf9dQ9"
-      },
-      {
-        "uid": "dpl_Dq5jEgKB47Zcdxz6DsieL6a1KSTh",
-        "name": "audiorecorder",
-        "url": "audiorecorder-cv2hrvasp-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-383-1775394559",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "19c5b4108fd3e7bf6ca520c5375f1b51b81b0bce",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "384",
-          "repoPushedAt": "1775394568000",
-          "branchAlias": "audiorecorder-git-gpt-fix-383-1-b910e6-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775394571225,
-        "createdAt": 1775394571225,
-        "ready": 1775394581897,
-        "buildingAt": 1775394572800,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Dq5jEgKB47Zcdxz6DsieL6a1KSTh"
-      },
-      {
-        "uid": "dpl_Cd66RVzT181gcELnuwJZ9ZMwdKm3",
-        "name": "audiorecorder",
-        "url": "audiorecorder-fk83nb1hk-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "fix(app): ship typecheck and queue updates",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "148f687077c48f88e1d6dbaef951d9ba943f3f82",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775394374000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775394377594,
-        "createdAt": 1775394377594,
-        "ready": 1775394397389,
-        "buildingAt": 1775394378821,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Cd66RVzT181gcELnuwJZ9ZMwdKm3"
-      },
-      {
-        "uid": "dpl_RzU5Wg2V7PDiZEN1eibXRDEdq1AC",
-        "name": "audiorecorder",
-        "url": "audiorecorder-jgfanlwum-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-381-1775392782",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "df38ca0d23f6a61feb1af778281f37358dab5046",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "382",
-          "repoPushedAt": "1775392801000",
-          "branchAlias": "audiorecorder-git-gpt-fix-381-1-201970-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775392804115,
-        "createdAt": 1775392804115,
-        "ready": 1775392812435,
-        "buildingAt": 1775392805720,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/RzU5Wg2V7PDiZEN1eibXRDEdq1AC"
-      },
-      {
-        "uid": "dpl_Bvkzn3xzeC3yLbvpsbAD85rHhXPK",
-        "name": "audiorecorder",
-        "url": "audiorecorder-pq7105smd-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "0555dc78db422b4d23ea520a67653dd4e54ae857",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775392646000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775392648677,
-        "createdAt": 1775392648677,
-        "ready": 1775392655626,
-        "buildingAt": 1775392650002,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Bvkzn3xzeC3yLbvpsbAD85rHhXPK"
-      },
-      {
-        "uid": "dpl_EfFXYRzVFu5LCa52JDstakxGQiQL",
-        "name": "audiorecorder",
-        "url": "audiorecorder-12u9sebl8-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-379-1775390504",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "6d26fc7f8626da97538627c6e7470d40ffbe298f",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "380",
-          "repoPushedAt": "1775390521000",
-          "branchAlias": "audiorecorder-git-gpt-fix-379-1-8c0d97-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775390524202,
-        "createdAt": 1775390524202,
-        "ready": 1775390531155,
-        "buildingAt": 1775390525328,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/EfFXYRzVFu5LCa52JDstakxGQiQL"
-      },
-      {
-        "uid": "dpl_BV393Nn4tdGq22DLESoAPUpG2pyA",
-        "name": "audiorecorder",
-        "url": "audiorecorder-eboczpn0l-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "test(server): align rag fallback expectations",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "c596784a0436a54d4b821f0d3323f0adf8d8582b",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775390376000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775390378517,
-        "createdAt": 1775390378517,
-        "ready": 1775390385452,
-        "buildingAt": 1775390379768,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/BV393Nn4tdGq22DLESoAPUpG2pyA"
-      },
-      {
-        "uid": "dpl_AnuAmMj8PKwrpDQ629aFomAPnGLT",
-        "name": "audiorecorder",
-        "url": "audiorecorder-6u7sfexd7-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-377-1775384843",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "489559c87133cf87797aaca705ef635dbf57d68b",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "378",
-          "repoPushedAt": "1775384859000",
-          "branchAlias": "audiorecorder-git-gpt-fix-377-1-3c1ee5-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775384861837,
-        "createdAt": 1775384861837,
-        "ready": 1775384868773,
-        "buildingAt": 1775384862992,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/AnuAmMj8PKwrpDQ629aFomAPnGLT"
-      },
-      {
-        "uid": "dpl_HyCgKMtUCtbAiT1GuncbWA3zSA64",
-        "name": "audiorecorder",
-        "url": "audiorecorder-hxwjq4iuz-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "68e85b0ecce33653c277ef3ea970dc58c1b8ba0e",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775384698000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775384700915,
-        "createdAt": 1775384700915,
-        "ready": 1775384709562,
-        "buildingAt": 1775384702522,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/HyCgKMtUCtbAiT1GuncbWA3zSA64"
-      },
-      {
-        "uid": "dpl_EtH5uvmZ8JQrL61dVaMNtotH3Nmt",
-        "name": "audiorecorder",
-        "url": "audiorecorder-e2r5h5kld-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "test(server): restore pipeline coverage mocks",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "2f61a736cd909da31936c77a325dcce710a315d3",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775383293000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775383295819,
-        "createdAt": 1775383295819,
-        "ready": 1775383316069,
-        "buildingAt": 1775383296946,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/EtH5uvmZ8JQrL61dVaMNtotH3Nmt"
-      },
-      {
-        "uid": "dpl_Cvc39tswDhjwzG3XfGWMjPLismjh",
-        "name": "audiorecorder",
-        "url": "audiorecorder-hz0wklm2z-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "f61a91dc6ff37d08e1139cef5ad205a9114b1e99",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775378062000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775378065434,
-        "createdAt": 1775378065434,
-        "ready": 1775378078221,
-        "buildingAt": 1775378066704,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Cvc39tswDhjwzG3XfGWMjPLismjh"
-      },
-      {
-        "uid": "dpl_GKYudCw11nKby1voCvX7hcoeZwEU",
-        "name": "audiorecorder",
-        "url": "audiorecorder-e0lzzman8-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "26ce5a72f3d040db24785a418f8b57593e2b1929",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775372190000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775372192937,
-        "createdAt": 1775372192937,
-        "ready": 1775372199247,
-        "buildingAt": 1775372194369,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/GKYudCw11nKby1voCvX7hcoeZwEU"
-      },
-      {
-        "uid": "dpl_Fxt7fpZJCb5SxT1Thu55ae4sTruf",
-        "name": "audiorecorder",
-        "url": "audiorecorder-11ac60cdd-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "d79d3f0d0d223c38237079704daa15cb9d89d856",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775363466000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775363468864,
-        "createdAt": 1775363468864,
-        "ready": 1775363475307,
-        "buildingAt": 1775363469946,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Fxt7fpZJCb5SxT1Thu55ae4sTruf"
-      },
-      {
-        "uid": "dpl_Bstg5xykJCV7Cj3eVXjon81m2NCG",
-        "name": "audiorecorder",
-        "url": "audiorecorder-bfnk785k6-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "9f347be880ab6654ce63709b9f9a4e92b8b0c443",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775352597000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775352600610,
-        "createdAt": 1775352600610,
-        "ready": 1775352607908,
-        "buildingAt": 1775352601822,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Bstg5xykJCV7Cj3eVXjon81m2NCG"
-      },
-      {
-        "uid": "dpl_5mSxNKDQgtPUENjPxSEpjU6Eawvz",
-        "name": "audiorecorder",
-        "url": "audiorecorder-kl63akrw6-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "9ba951fadd5046f75bf829cf6826871fcddf65c4",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775341294000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775341297297,
-        "createdAt": 1775341297297,
-        "ready": 1775341303702,
-        "buildingAt": 1775341298507,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/5mSxNKDQgtPUENjPxSEpjU6Eawvz"
-      },
-      {
-        "uid": "dpl_69x8oJe9LVskgvE7Fr7172n5kFU2",
-        "name": "audiorecorder",
-        "url": "audiorecorder-9oq0z5goy-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "95175fa4904e69f210ba8eeffb7cf4b319c12e62",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775334033000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775334035713,
-        "createdAt": 1775334035713,
-        "ready": 1775334042442,
-        "buildingAt": 1775334037454,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/69x8oJe9LVskgvE7Fr7172n5kFU2"
-      },
-      {
-        "uid": "dpl_9KU1aPFnrLEv87C65M9eGZofiXey",
-        "name": "audiorecorder",
-        "url": "audiorecorder-j7yji76bs-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "chore(sync): synchronize latest user changes",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "a4fabdba247598693db936dadc3b0b5b62391c96",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775333433000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775333436431,
-        "createdAt": 1775333436431,
-        "ready": 1775333458771,
-        "buildingAt": 1775333437706,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/9KU1aPFnrLEv87C65M9eGZofiXey"
-      },
-      {
-        "uid": "dpl_Dm4v9QZmjV5kAP35ixM5N8uGd792",
-        "name": "audiorecorder",
-        "url": "audiorecorder-a84emqvvp-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "41898282+github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "Merge pull request #367 from maniczko/dependabot/npm_and_yarn/development-dependencies-775b6dc5ef\n\nchore(deps): bump the development-dependencies group across 1 directory with 8 updates",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "bdfdf2ca20b3e12ffdce10f03b34e333f6cb2c78",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775330653000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775330657930,
-        "createdAt": 1775330657930,
-        "ready": 1775330681334,
-        "buildingAt": 1775330659262,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Dm4v9QZmjV5kAP35ixM5N8uGd792"
-      },
-      {
-        "uid": "dpl_ERQF1EtJWfRkXjTairgXzPqYcLmy",
-        "name": "audiorecorder",
-        "url": "audiorecorder-7b81zkle9-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "dependabot[bot]",
-          "githubCommitAuthorEmail": "49699333+dependabot[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore(deps): bump the development-dependencies group across 1 directory with 8 updates\n\nBumps the development-dependencies group with 8 updates in the / directory:\n\n| Package | From | To |\n| --- | --- | --- |\n| [@playwright/test](https://github.com/microsoft/playwright) | `1.58.2` | `1.59.1` |\n| [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/HEAD/types/node) | `25.5.0` | `25.5.2` |\n| [@typescript-eslint/eslint-plugin](https://github.com/typescript-eslint/typescript-eslint/tree/HEAD/packages/eslint-plugin) | `8.57.2` | `8.58.0` |\n| [@typescript-eslint/parser](https://github.com/typescript-eslint/typescript-eslint/tree/HEAD/packages/parser) | `8.57.2` | `8.58.0` |\n| [esbuild](https://github.com/evanw/esbuild) | `0.27.4` | `0.28.0` |\n| [turbo](https://github.com/vercel/turborepo) | `2.9.0` | `2.9.3` |\n| [dd-trace](https://github.com/DataDog/dd-trace-js) | `5.93.0` | `5.94.0` |\n| [ts-jest](https://github.com/kulshekhar/ts-jest) | `29.4.6` | `29.4.9` |\n\n\n\nUpdates `@playwright/test` from 1.58",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "dependabot/npm_and_yarn/development-dependencies-775b6dc5ef",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "30ce9e2e91eb62efb3fe766c646315115ff1f5cc",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "dependabot[bot]",
-          "githubPrId": "367",
-          "repoPushedAt": "1775330645000",
-          "branchAlias": "audiorecorder-git-dependabot-np-b97dfc-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775330647796,
-        "createdAt": 1775330647796,
-        "ready": 1775330655194,
-        "buildingAt": 1775330649029,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "dependabot[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/ERQF1EtJWfRkXjTairgXzPqYcLmy"
-      },
-      {
-        "uid": "dpl_Gjnm3hZ1LfFoxd7gUXti8VsyfKpT",
-        "name": "audiorecorder",
-        "url": "audiorecorder-ik4c1skqv-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "fix(server): support multiple LLM providers for RAG and deduplicate snippets",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "38817ba3f6ee080794d988d066c7ea6a5b4fe02b",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775330328000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775330330592,
-        "createdAt": 1775330330592,
-        "ready": 1775330337682,
-        "buildingAt": 1775330331852,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/Gjnm3hZ1LfFoxd7gUXti8VsyfKpT"
-      },
-      {
-        "uid": "dpl_GsPkeHkArmW1yQghPnUtU5nAyvtD",
-        "name": "audiorecorder",
-        "url": "audiorecorder-32ls8w49m-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "test(workspaceStore): expand tests for bootstrap, removeWorkspaceMember, setters, edge cases",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "72cb81693f0e875fba75cecb376687b9aec2f0bc",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775328435000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775328437358,
-        "createdAt": 1775328437358,
-        "ready": 1775328454546,
-        "buildingAt": 1775328438678,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/GsPkeHkArmW1yQghPnUtU5nAyvtD"
-      },
-      {
-        "uid": "dpl_2C3xA4SSatrFtTnXWnA5B9yY9H7x",
-        "name": "audiorecorder",
-        "url": "audiorecorder-9ik1lwcah-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-363-1775327561",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "5255a766ba18063645e8903c26a39f285d85f7b7",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775327572000",
-          "branchAlias": "audiorecorder-git-gpt-fix-363-1-adf483-iwoczajka-2703s-projects.vercel.app",
-          "githubPrId": "364"
-        },
-        "created": 1775327574033,
-        "createdAt": 1775327574033,
-        "ready": 1775327580238,
-        "buildingAt": 1775327575142,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/2C3xA4SSatrFtTnXWnA5B9yY9H7x"
-      },
-      {
-        "uid": "dpl_2SNTTht2zQQssPiXdoikYQRpF3rm",
-        "name": "audiorecorder",
-        "url": "audiorecorder-nrk6s0suo-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "chore: auto-create tasks for 11 errors",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "dacf469bd57bb9c9ba4dede82d6e2fbf2d9996e6",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "repoPushedAt": "1775327436000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775327439233,
-        "createdAt": 1775327439233,
-        "ready": 1775327445526,
-        "buildingAt": 1775327440394,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/2SNTTht2zQQssPiXdoikYQRpF3rm"
-      },
-      {
-        "uid": "dpl_4YQs8tgd8mu8DDcnKRQH1dU9wAsY",
-        "name": "audiorecorder",
-        "url": "audiorecorder-e4xxefjqd-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-361-1775326853",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "acbea961ab540560988f5f63f7d17eb6339bd099",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "362",
-          "repoPushedAt": "1775326863000",
-          "branchAlias": "audiorecorder-git-gpt-fix-361-1-fc20fd-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775326866576,
-        "createdAt": 1775326866576,
-        "ready": 1775326872279,
-        "buildingAt": 1775326867761,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/4YQs8tgd8mu8DDcnKRQH1dU9wAsY"
-      },
-      {
-        "uid": "dpl_C2c455kCrL9RpRzPMyaTfTw4FaaE",
-        "name": "audiorecorder",
-        "url": "audiorecorder-dij07x4oo-iwoczajka-2703s-projects.vercel.app",
-        "state": "READY",
-        "meta": {
-          "githubCommitAuthorName": "iwo",
-          "githubCommitAuthorEmail": "iwo.czajka@gmail.com",
-          "githubCommitMessage": "feat(workspace): add removeWorkspaceMember to store, extend transcription helper tests",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "main",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "4444392263aa8d4d9b1e696c65135dcca04ea8ae",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "maniczko",
-          "repoPushedAt": "1775326724000",
-          "branchAlias": "audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775326727291,
-        "createdAt": 1775326727291,
-        "ready": 1775326748366,
-        "buildingAt": 1775326729062,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "maniczko"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/C2c455kCrL9RpRzPMyaTfTw4FaaE"
-      },
-      {
-        "uid": "dpl_98h4SQzTPcdE7jSKXpU2RbpgwQiT",
-        "name": "audiorecorder",
-        "url": "audiorecorder-c569aijjj-iwoczajka-2703s-projects.vercel.app",
-        "state": "CANCELED",
-        "meta": {
-          "githubCommitAuthorName": "github-actions[bot]",
-          "githubCommitAuthorEmail": "github-actions[bot]@users.noreply.github.com",
-          "githubCommitMessage": "fix(ci): auto-fix failing tests via Gemini [skip ci]",
-          "githubCommitOrg": "maniczko",
-          "githubCommitRef": "gpt-fix-359-1775322762",
-          "githubCommitRepo": "audioRecorder",
-          "githubCommitSha": "83223d78b79e78498b339012d9abb584dba089ca",
-          "githubDeployment": "1",
-          "githubOrg": "maniczko",
-          "githubRepo": "audioRecorder",
-          "githubRepoOwnerType": "User",
-          "githubCommitRepoId": "1181560704",
-          "githubRepoId": "1181560704",
-          "githubRepoVisibility": "public",
-          "githubHost": "github.com",
-          "githubCommitAuthorLogin": "github-actions[bot]",
-          "githubPrId": "360",
-          "repoPushedAt": "1775322772000",
-          "branchAlias": "audiorecorder-git-gpt-fix-359-1-8898f3-iwoczajka-2703s-projects.vercel.app"
-        },
-        "created": 1775322775201,
-        "createdAt": 1775322775201,
-        "ready": 1775322781603,
-        "buildingAt": 1775322776377,
-        "creator": {
-          "uid": "Q81uX4MNP2YarhQd32Slyh4K",
-          "email": "iwo.czajka@gmail.com",
-          "username": "iwoczajka-2703",
-          "githubLogin": "github-actions[bot]"
-        },
-        "inspectorUrl": "https://vercel.com/iwoczajka-2703s-projects/audiorecorder/98h4SQzTPcdE7jSKXpU2RbpgwQiT"
       }
     ],
     "stats": {
       "deployments_7d": 100,
       "daily": [
         {
-          "date": "2026-04-02",
-          "deployments": 0
-        },
-        {
           "date": "2026-04-03",
           "deployments": 0
         },
         {
           "date": "2026-04-04",
-          "deployments": 12
+          "deployments": 0
         },
         {
           "date": "2026-04-05",
-          "deployments": 30
+          "deployments": 11
         },
         {
           "date": "2026-04-06",
@@ -4712,10 +4792,14 @@
         },
         {
           "date": "2026-04-08",
-          "deployments": 4
+          "deployments": 32
+        },
+        {
+          "date": "2026-04-09",
+          "deployments": 3
         }
       ]
     }
   },
-  "timestamp": "2026-04-08T06:41:56.537Z"
+  "timestamp": "2026-04-09T06:05:20.019Z"
 }
