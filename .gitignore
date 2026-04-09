@@ -74,6 +74,8 @@ test-results/
 *_test_fail*.txt
 *_test_log*.txt
 *_log.txt
+server-coverage.txt
+topbar-debug*.txt
 auth_test_fail*.txt
 config_test_fail*.txt
 fe_test_output*.txt

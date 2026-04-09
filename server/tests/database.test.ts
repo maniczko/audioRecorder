@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
-import fs from 'node:fs';
+import * as os from 'node:os';
 import { initDatabase, getDatabase } from '../database.ts';
 import { fileURLToPath } from 'node:url';
 
@@ -9,9 +9,12 @@ const __dirname = path.dirname(__filename);
 
 describe('Database (Async Worker SQLite)', () => {
   let db: any;
-  const testUploadDir = path.resolve(__dirname, 'test_uploads_db_layer');
+  let realFs: typeof import('node:fs');
+  let testUploadDir: string;
 
   beforeAll(async () => {
+    realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+    testUploadDir = realFs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-db-test-'));
     db = initDatabase({ dbPath: ':memory:', uploadDir: testUploadDir });
     await db.init();
   }, 60000);
@@ -20,9 +23,9 @@ describe('Database (Async Worker SQLite)', () => {
     if (db) {
       await db.shutdown();
     }
-    if (fs.existsSync(testUploadDir)) {
+    if (realFs.existsSync(testUploadDir)) {
       try {
-        fs.rmSync(testUploadDir, { recursive: true, force: true });
+        realFs.rmSync(testUploadDir, { recursive: true, force: true });
       } catch (err) {
         // Ignore locked file EPERM on Windows test runner
       }
