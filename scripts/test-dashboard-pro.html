@@ -1310,26 +1310,86 @@
     </div>
     `}
 
-    <!-- Railway & Vercel summary row -->
-    <div class="g2">
-      <div class="card">
-        <div class="card-h"><div class="card-title">🚂 Railway</div>${sb(rw.status)}</div>
-        <div class="svc-met">
-          <div class="svc-m"><div class="svc-ml">Token</div><div class="svc-mv">${rw.has_token ? '✓' : '✗'}</div></div>
-          <div class="svc-m"><div class="svc-ml">Config</div><div class="svc-mv">${rw.configured ? '✓' : '✗'}</div></div>
-        </div>
-        ${rw.note ? `<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${rw.note}</div>` : ''}
+    <!-- Railway & Vercel full deployment data -->
+    ${ve.status === 'connected' ? `
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><div class="card-title">▲ Vercel Deployments (${veDeps.length})</div><div class="card-sub">${veReady.length} ready, ${veCanceled.length} canceled</div></div>
+      ${veStats.total_deployments ? `<div style="display:flex;gap:16px;margin-bottom:16px;font-size:.78rem;color:var(--text2)">
+        <span><b style="color:var(--green)">${veReady.length}</b> ready</span>
+        <span><b style="color:var(--amber)">${veCanceled.length}</b> canceled</span>
+        <span><b>${veStats.total_deployments || veDeps.length}</b> total</span>
+      </div>` : ''}
+      <div class="tbl-wrap" style="max-height:400px">
+        <table class="tbl"><thead><tr>
+          <th style="width:28px"></th><th>URL</th><th>State</th><th>Commit</th><th>Message</th><th style="text-align:right">When</th>
+        </tr></thead><tbody>
+          ${veDeps.slice(0, 30).map(d => {
+        const msg = (d.meta && d.meta.githubCommitMessage) || '';
+        const shortMsg = msg.length > 60 ? msg.slice(0, 60) + '…' : msg;
+        const sha = (d.meta && d.meta.githubCommitSha) || '';
+        return `<tr style="cursor:pointer" onclick="window.open('https://${esc(d.url)}','_blank')">
+              <td>${depStateIcon(d.state)}</td>
+              <td class="fn" style="font-size:.74rem">${fmtUrl(d.url)}</td>
+              <td style="text-align:center"><span class="pill ${depStatePill(d.state)}">${d.state}</span></td>
+              <td class="fn">${shortSha(sha)}</td>
+              <td style="font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px" title="${esc(msg)}">${esc(shortMsg)}</td>
+              <td style="text-align:right;font-size:.76rem;color:var(--text3);white-space:nowrap">${fmtTs(d.created)}</td>
+            </tr>`;
+      }).join('')}
+        </tbody></table>
       </div>
-      <div class="card">
-        <div class="card-h"><div class="card-title">▲ Vercel</div>${sb(ve.status)}</div>
-        <div class="svc-met">
-          <div class="svc-m"><div class="svc-ml">Project</div><div class="svc-mv">${ve.project_name || 'N/A'}</div></div>
-          <div class="svc-m"><div class="svc-ml">Framework</div><div class="svc-mv">${ve.framework || 'Vite'}</div></div>
+      ${veDeps.length > 30 ? `<div style="text-align:center;padding:8px;font-size:.78rem;color:var(--text3)">+${veDeps.length - 30} more deployments</div>` : ''}
+      ${ve.stats && ve.stats.daily ? `
+      <div style="margin-top:16px">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Deployments per Day (7d)</div>
+        <div class="ch-wrap" style="height:160px"><canvas id="vercel-dep-chart"></canvas></div>
+      </div>` : ''}
+    </div>
+    `: ''}
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><div class="card-title">🚂 Railway</div>${sb(rw.status)}</div>
+      ${rw.note ? `<div style="padding:16px;font-size:.82rem;color:var(--text3)">${rw.note}</div>` : ''}
+      ${rw.api_error ? `<div style="padding:16px;font-size:.78rem;color:var(--red)">⚠ API Error: ${esc(rw.api_error)}</div>` : ''}
+      ${rwLastDep ? `
+      <div style="padding:16px;border-top:1px solid var(--border)">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Last Deployment</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:.78rem">
+          <div><span style="color:var(--text3)">Status:</span> ${depStatePill(rwLastDep.state || 'unknown')} ${rwLastDep.state || 'N/A'}</div>
+          <div><span style="color:var(--text3)">Domain:</span> <a href="https://${esc(rwLastDep.domain || '')}" target="_blank" style="color:var(--accent)">${fmtUrl(rwLastDep.domain || '')}</a></div>
+          <div><span style="color:var(--text3)">When:</span> ${fmtTs(rwLastDep.createdAt || rwLastDep.created)}</div>
         </div>
-        ${ve.note ? `<div style="margin-top:8px;font-size:.72rem;color:var(--text3)">${ve.note}</div>` : ''}
-      </div>
+      </div>` : ''}
+      ${rwDeps.length > 0 ? `
+      <div style="padding:16px;border-top:1px solid var(--border)">
+        <div style="font-weight:600;font-size:.82rem;margin-bottom:8px">Recent Deployments (${rwDeps.length})</div>
+        <div class="tbl-wrap" style="max-height:250px">
+          <table class="tbl"><thead><tr>
+            <th>State</th><th>Domain</th><th style="text-align:right">When</th>
+          </tr></thead><tbody>
+            ${rwDeps.slice(0, 10).map(d => `<tr>
+              <td><span class="pill ${depStatePill(d.state || 'unknown')}">${d.state || 'N/A'}</span></td>
+              <td class="fn">${fmtUrl(d.domain || '')}</td>
+              <td style="text-align:right;font-size:.76rem;color:var(--text3)">${fmtTs(d.createdAt || d.created)}</td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : ''}
     </div>
   `;
+
+      // Vercel deployments per day chart
+      if (ve.status === 'connected' && ve.stats && ve.stats.daily) {
+        new Chart($('#vercel-dep-chart'), {
+          type: 'bar',
+          data: { labels: ve.stats.daily.map(d => d.date.slice(5)), datasets: [{ data: ve.stats.daily.map(d => d.deployments), backgroundColor: '#7c3aed', borderRadius: 4, barThickness: 20 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#f3f4f6' } }, x: { ticks: { color: '#6b7280' }, grid: { display: false } } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
 
       // GitHub Runs doughnut chart
       if (gh.status === 'connected' && runs.length > 0) {
