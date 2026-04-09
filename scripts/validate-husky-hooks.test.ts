@@ -12,6 +12,13 @@ describe('husky hooks', () => {
     expect(content.includes('\r')).toBe(false);
   });
 
+  it('does not fail when a commit stages no js or ts files', () => {
+    const hookPath = path.resolve('.husky/pre-commit');
+    const content = readFileSync(hookPath, 'utf8');
+
+    expect(content).toContain("grep -E '\\.(ts|tsx|js|jsx)$' || true");
+  });
+
   it('runs the release guard from pre-push hook', () => {
     const hookPath = path.resolve('.husky/pre-push');
     const content = readFileSync(hookPath, 'utf8');

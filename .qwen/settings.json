@@ -24,7 +24,11 @@
       "Bash(pnpm add *)",
       "Bash(pnpm test *)",
       "Bash(timeout *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(open)",
+      "Bash(.write)",
+      "Bash(sort)",
+      "Bash(rm *)"
     ]
   },
   "$version": 3
