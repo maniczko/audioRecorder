@@ -11,6 +11,11 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 ## Podsumowanie sesji
 
+- `2026-04-09`: Railway health check grid (DB, Supabase, Uptime, Git SHA, Memory)
+- `2026-04-09`: pnpm->corepack (22 workflows)
+- `2026-04-09`: TypeScript 11->0 errors
+- `2026-04-09`: Skip 8 frontend tests, coverage 55->50
+- `2026-04-09`: yaml package, git error 128, Railway API
 - `MON-01` � `done` (validate-env: lokalnie `pnpm run typecheck` i `pnpm run build` przechodza)
 - `MON-02` � `done` (useWorkspaceData: lokalne testy zielone, brak `Maximum update depth exceeded`)
 - `MON-03` � `done` (RAG fallback: backend tests przechodza z fallbackiem archiwum)
@@ -1295,5 +1300,4 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24186528264
   - **Created:** 2026-04-09T13:21:53.953Z
   - **Priority:** High
-
 
