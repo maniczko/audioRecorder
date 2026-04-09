@@ -1194,4 +1194,44 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-09T07:18:22.427Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-09T09:04:46.137Z -->
+
+### GitHub Actions Errors (4 found)
+
+- **GH-AUTO-2026-04-09-1** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T08:32:28.1817416Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Error:** 2026-04-09T08:32:28.1817416Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24180550485
+  - **Created:** 2026-04-09T09:04:46.137Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-2** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T08:32:30.2028390Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2044658Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2049749Z #...
+  - **Error:** 2026-04-09T08:32:30.2028390Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2044658Z ##[error]AssertionError: expected {} to have property "C...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24180550485
+  - **Created:** 2026-04-09T09:04:46.137Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T07:20:14.0299115Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0309809Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0313226Z #...
+  - **Error:** 2026-04-09T07:20:14.0299115Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0309809Z ##[error]AssertionError: expected {} to have property "C...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24177727728
+  - **Created:** 2026-04-09T09:04:46.137Z
+  - **Priority:** High
+
+- **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T07:20:06.0741945Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Error:** 2026-04-09T07:20:06.0741945Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24177727728
+  - **Created:** 2026-04-09T09:04:46.137Z
+  - **Priority:** High
+
 
