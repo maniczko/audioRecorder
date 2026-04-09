@@ -1194,6 +1194,23 @@
       const sentryIssues = (se.issues || []);
       const sentryStats = se.stats || null;
 
+      // Vercel deployments
+      const veDeps = ve.deployments || [];
+      const veReady = veDeps.filter(d => d.state === 'READY');
+      const veCanceled = veDeps.filter(d => d.state === 'CANCELED');
+      const veStats = ve.stats || {};
+
+      // Railway data
+      const rwDeps = rw.deployments || [];
+      const rwLastDep = rw.last_deployment || null;
+
+      // Deployment helpers
+      const depStatePill = s => s === 'READY' ? 'pill-g' : s === 'CANCELED' ? 'pill-a' : s === 'ERROR' ? 'pill-r' : 'pill-b';
+      const depStateIcon = s => s === 'READY' ? '✅' : s === 'CANCELED' ? '⏭' : s === 'BUILDING' ? '🔨' : s === 'ERROR' ? '❌' : '❓';
+      const fmtTs = ts => ts ? ago(new Date(ts)) : '—';
+      const fmtUrl = url => url ? url.replace('https://', '') : 'N/A';
+      const shortSha = sha => sha ? sha.slice(0, 7) : '—';
+
       panel.innerHTML = `
     <!-- Top KPIs -->
     <div class="kpi-row" style="margin-bottom:20px">
@@ -1314,10 +1331,10 @@
     ${ve.status === 'connected' ? `
     <div class="card" style="margin-top:16px">
       <div class="card-h"><div class="card-title">▲ Vercel Deployments (${veDeps.length})</div><div class="card-sub">${veReady.length} ready, ${veCanceled.length} canceled</div></div>
-      ${veStats.total_deployments ? `<div style="display:flex;gap:16px;margin-bottom:16px;font-size:.78rem;color:var(--text2)">
+      ${veStats.deployments_7d ? `<div style="display:flex;gap:16px;margin-bottom:16px;font-size:.78rem;color:var(--text2)">
         <span><b style="color:var(--green)">${veReady.length}</b> ready</span>
         <span><b style="color:var(--amber)">${veCanceled.length}</b> canceled</span>
-        <span><b>${veStats.total_deployments || veDeps.length}</b> total</span>
+        <span><b>${veStats.deployments_7d || veDeps.length}</b> total (7d)</span>
       </div>` : ''}
       <div class="tbl-wrap" style="max-height:400px">
         <table class="tbl"><thead><tr>
