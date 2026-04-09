@@ -1132,4 +1132,17 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-08T19:13:17.449Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-09T04:41:16.041Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-09-1** — Fix Auto Security Patches failure
+  - **Status:** todo
+  - **Source:** GitHub Actions
+  - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: 2026-04-09T02:07:27.5721748Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T02:08:37.3963649Z ERROR: Coverage for lines (50.66%) does not meet global threshold (55%) 2026-04-09T02:08:37.3964318Z ERROR: Coverage for...
+  - **Error:** 2026-04-09T02:07:27.5721748Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T02:08:37.3963649Z ERROR: Coverage for lines (50.66%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24168623587
+  - **Created:** 2026-04-09T04:41:16.041Z
+  - **Priority:** High
+
 
