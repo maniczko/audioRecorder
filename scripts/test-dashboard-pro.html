@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoiceLog — Test Report</title>
+  <link rel="icon" href="data:,">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -814,10 +815,19 @@
     }
 
     // ── Render ──
+    function syncExternalServicesData(data) {
+      const embeddedServices = data && data.external_services ? data.external_services : null;
+      if (embeddedServices) {
+        window.EXTERNAL_SERVICES_DATA = embeddedServices;
+      }
+      return window.EXTERNAL_SERVICES_DATA || null;
+    }
+
     function render(data) {
       const m = calc(data), s = data.summary;
       const ts = new Date(data.timestamp).toLocaleString('pl-PL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const ok = s.failed === 0;
+      syncExternalServicesData(data);
 
       $('#app').innerHTML = `
     <!-- Topbar -->
@@ -875,7 +885,7 @@
       try { renderFiles(data, m) } catch (e) { console.error('Files:', e) }
       try { renderPerformance(data, m) } catch (e) { console.error('Performance:', e) }
       try { renderRecs(data, m) } catch (e) { console.error('Recommendations:', e) }
-      try { renderSvcs() } catch (e) { console.error('Services:', e) }
+      try { renderSvcs(data) } catch (e) { console.error('Services:', e) }
     }
 
     // ── Tabs ──
@@ -1167,8 +1177,11 @@
     }
 
     // ── Services ──
-    function renderSvcs() {
-      const svc = window.EXTERNAL_SERVICES_DATA;
+    function renderSvcs(data) {
+      const svc =
+        syncExternalServicesData(data) ||
+        (window.TEST_DATA && window.TEST_DATA.external_services) ||
+        null;
       const panel = $('#p-services');
       if (!svc) { panel.innerHTML = `<div class="card"><div class="card-h"><div class="card-title">External Services</div></div><div style="text-align:center;padding:24px;color:var(--text3)">No data. Run: <code>node scripts/monitor-external-services.js</code></div></div>`; return; }
       const gh = svc.github || {}, se = svc.sentry || {}, rw = svc.railway || {}, ve = svc.vercel || {};
@@ -1184,11 +1197,15 @@
       const issues = (gh.issues || {}).open || [];
       const prs = (gh.pull_requests || {}).open || [];
       const repo = gh.repo || {};
+      const snapshotTime = svc.timestamp || act.last_run || null;
 
       // Stats
       const successCount = runs.filter(r => r.status === 'success').length;
       const failCount = runs.filter(r => r.status === 'failure').length;
       const skipCount = runs.filter(r => r.status === 'skipped').length;
+      const currentSuccessCount = latest.filter(r => r.status === 'success').length;
+      const currentFailCount = latest.filter(r => r.status === 'failure').length;
+      const currentSkipCount = latest.filter(r => r.status === 'skipped').length;
 
       // Sentry data
       const sentryIssues = (se.issues || []);
@@ -1242,6 +1259,12 @@
         </tbody></table>
       </div>
     </div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:.78rem;color:var(--text2)">
+        <span id="gh-current-successes"><b style="color:var(--green)">${currentSuccessCount}</b> current green</span>
+        <span id="gh-current-failures"><b style="color:${currentFailCount > 0 ? 'var(--red)' : 'var(--green)'}">${currentFailCount}</b> current failures</span>
+        <span id="gh-current-skipped"><b style="color:var(--amber)">${currentSkipCount}</b> skipped</span>
+      </div>
 
     <!-- Recent Runs Chart -->
     <div class="g2">
@@ -1508,16 +1531,39 @@
     }
 
     async function loadDashboardData() {
-      // Try to reload test-results.js dynamically
+      let newData = null;
+      let externalServices = null;
+
       try {
         const response = await fetch('test-results.json?' + Date.now());
         if (response.ok) {
-          const newData = await response.json();
-          window.TEST_DATA = newData;
-          render(window.TEST_DATA);
+          newData = await response.json();
+          externalServices = newData.external_services || null;
         }
       } catch (e) {
-        console.warn('Auto-refresh failed, using cached data');
+        console.warn('Auto-refresh failed for test-results.json, trying services snapshot');
+      }
+
+      if (!externalServices) {
+        try {
+          const servicesResponse = await fetch('external-services.json?' + Date.now());
+          if (servicesResponse.ok) {
+            externalServices = await servicesResponse.json();
+          }
+        } catch (e) {
+          console.warn('Auto-refresh failed for external-services.json, using cached data');
+        }
+      }
+
+      if (newData) {
+        window.TEST_DATA = newData;
+      }
+      if (externalServices) {
+        window.EXTERNAL_SERVICES_DATA = externalServices;
+      }
+
+      if (window.TEST_DATA) {
+        render(window.TEST_DATA);
       }
     }
 
@@ -1527,9 +1573,10 @@
         render(window.TEST_DATA);
         showRefreshIndicator();
         startAutoRefresh();
+        loadDashboardData();
         return;
       }
-      fetch('test-results.json').then(r => r.json()).then(data => {
+      fetch('test-results.json?' + Date.now()).then(r => r.json()).then(data => {
         window.TEST_DATA = data;
         render(data);
         showRefreshIndicator();

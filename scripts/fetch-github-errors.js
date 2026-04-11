@@ -98,6 +98,48 @@ async function fetchWorkflowRuns() {
   return response.data.workflow_runs;
 }
 
+function getWorkflowKey(run) {
+  return run.name || String(run.workflow_id || run.id || 'unknown-workflow');
+}
+
+export function partitionWorkflowFailures(runs) {
+  const latestByWorkflow = new Map();
+
+  for (const run of runs) {
+    const key = getWorkflowKey(run);
+    const currentLatest = latestByWorkflow.get(key);
+
+    if (
+      !currentLatest ||
+      new Date(run.created_at).getTime() > new Date(currentLatest.created_at).getTime()
+    ) {
+      latestByWorkflow.set(key, run);
+    }
+  }
+
+  const activeFailures = [];
+  const resolvedFailures = [];
+
+  for (const run of runs) {
+    if (run.conclusion !== 'failure') {
+      continue;
+    }
+
+    const latestRun = latestByWorkflow.get(getWorkflowKey(run));
+    if (latestRun && latestRun.id === run.id) {
+      activeFailures.push(run);
+    } else {
+      resolvedFailures.push(run);
+    }
+  }
+
+  return {
+    activeFailures,
+    resolvedFailures,
+    latestByWorkflow: Array.from(latestByWorkflow.values()),
+  };
+}
+
 // Fetch job logs
 async function fetchJobLogs(jobId, jobName) {
   console.log(`  📄 Fetching logs for job: ${jobName}`);
@@ -196,6 +238,7 @@ function parseErrors(logs) {
 
 // Generate error report
 function generateReport(runs, jobs, logs) {
+  const failureState = partitionWorkflowFailures(runs);
   const report = {
     generated: new Date().toISOString(),
     repository: `${config.owner}/${config.repo}`,
@@ -203,14 +246,24 @@ function generateReport(runs, jobs, logs) {
     summary: {
       totalRuns: runs.length,
       failedRuns: runs.filter((r) => r.conclusion === 'failure').length,
+      activeFailedRuns: failureState.activeFailures.length,
+      resolvedFailedRuns: failureState.resolvedFailures.length,
       cancelledRuns: runs.filter((r) => r.conclusion === 'cancelled').length,
       successfulRuns: runs.filter((r) => r.conclusion === 'success').length,
     },
     failures: [],
+    resolvedFailures: failureState.resolvedFailures.map((run) => ({
+      runId: run.id,
+      runName: run.name || run.workflow_id,
+      branch: run.head_branch,
+      commit: run.head_sha.substring(0, 7),
+      createdAt: run.created_at,
+      htmlUrl: run.html_url,
+    })),
   };
 
-  // Process failed runs
-  const failedRuns = runs.filter((r) => r.conclusion === 'failure');
+  // Process only currently active failures per workflow
+  const failedRuns = failureState.activeFailures;
 
   for (const run of failedRuns) {
     const runJobs = jobs.filter((j) => j.run_id === run.id);
@@ -269,12 +322,14 @@ function saveReport(report) {
   markdown += `| Metric | Count |\n`;
   markdown += `|--------|-------|\n`;
   markdown += `| Total Runs | ${report.summary.totalRuns} |\n`;
-  markdown += `| Failed Runs | ${report.summary.failedRuns} |\n`;
+  markdown += `| Failed Runs (7d) | ${report.summary.failedRuns} |\n`;
+  markdown += `| Active Failed Workflows | ${report.summary.activeFailedRuns} |\n`;
+  markdown += `| Resolved Historical Failures | ${report.summary.resolvedFailedRuns} |\n`;
   markdown += `| Cancelled Runs | ${report.summary.cancelledRuns} |\n`;
   markdown += `| Successful Runs | ${report.summary.successfulRuns} |\n\n`;
 
   if (report.failures.length > 0) {
-    markdown += `## Failures\n\n`;
+    markdown += `## Active Failures\n\n`;
 
     for (const failure of report.failures) {
       markdown += `### ${failure.runName}\n\n`;
@@ -303,6 +358,16 @@ function saveReport(report) {
   } else {
     markdown += `## ✅ No Failures\n\n`;
     markdown += `All workflow runs succeeded in the last ${config.daysBack} days!\n\n`;
+  }
+
+  if (report.resolvedFailures.length > 0) {
+    markdown += `## Resolved Historical Failures\n\n`;
+
+    for (const failure of report.resolvedFailures) {
+      markdown += `- **${failure.runName}** (${failure.commit}) on \`${failure.branch}\` at ${failure.createdAt} — ${failure.htmlUrl}\n`;
+    }
+
+    markdown += `\n`;
   }
 
   fs.writeFileSync(mdFilepath, markdown);
@@ -383,8 +448,9 @@ async function main() {
     const runs = await fetchWorkflowRuns();
     console.log(`✓ Found ${runs.length} workflow runs\n`);
 
-    // Fetch jobs for failed runs
-    const failedRuns = runs.filter((r) => r.conclusion === 'failure');
+    // Fetch jobs only for currently active failed workflows
+    const { activeFailures, resolvedFailures } = partitionWorkflowFailures(runs);
+    const failedRuns = activeFailures;
     const jobs = [];
     const logs = [];
 
@@ -423,9 +489,13 @@ async function main() {
     console.log('\n✅ Done!\n');
 
     // Report results (always exit 0 — this script is a reporter, not a gate)
-    if (report.summary.failedRuns > 0) {
+    if (report.summary.activeFailedRuns > 0) {
       console.log(
-        `⚠️  ${report.summary.failedRuns} workflow(s) failed in the last ${config.daysBack} days`
+        `⚠️  ${report.summary.activeFailedRuns} workflow(s) currently failing; ${report.summary.resolvedFailedRuns} historical failure(s) already resolved in the last ${config.daysBack} days`
+      );
+    } else if (resolvedFailures.length > 0) {
+      console.log(
+        `✅ No active workflow failures. ${resolvedFailures.length} historical failure(s) in the last ${config.daysBack} days are already resolved by newer runs`
       );
     } else {
       console.log(`✅ All workflows passed in the last ${config.daysBack} days`);
@@ -438,4 +508,6 @@ async function main() {
 }
 
 // Run
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}
