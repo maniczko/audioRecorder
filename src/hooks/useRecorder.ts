@@ -119,12 +119,13 @@ export default function useRecorder({
   });
 
   useEffect(() => {
+    if (isHydratingRemoteState) return;
     const recordingId = selectedMeeting?.latestRecordingId || selectedMeeting?.recordings?.[0]?.id;
     if (!recordingId) return;
     if (hydration.audioUrls?.[recordingId]) return;
     if (hydration.audioHydrationStatusByRecordingId?.[recordingId] === 'error') return;
     hydration.hydrateRecordingAudio(recordingId, { priority: true }).catch(() => {});
-  }, [hydration, selectedMeeting]);
+  }, [hydration, isHydratingRemoteState, selectedMeeting]);
 
   // 3. Hardware & Recording Control
   const hardware = useAudioHardware({

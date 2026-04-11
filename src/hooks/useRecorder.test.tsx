@@ -387,4 +387,72 @@ describe('useRecorder', () => {
     expect(result_queue[0].meetingSnapshot).toEqual(meetingHint);
     expect(result_queue[0].meetingId).toBe('new_m');
   });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - persisted selected meeting triggered audio fetch before
+  //            remote workspace bootstrap finished.
+  // Date: 2026-04-11
+  // Bug: useRecorder auto-hydrated selected recording immediately even
+  //      while useWorkspaceData was still replacing persisted meetings
+  //      with the fresh backend snapshot, causing stale recordingId 404s.
+  // Fix: skip automatic hydration while remote workspace state is still
+  //      hydrating, then allow hydration once bootstrap completes.
+  // -----------------------------------------------------------------
+  test('Regression: skips auto-hydration while remote workspace state is hydrating', () => {
+    hydrationState.audioUrls = {};
+    hydrationState.audioHydrationErrors = {};
+    hydrationState.audioHydrationStatusByRecordingId = {};
+    hydrationState.hydrateRecordingAudio = vi.fn().mockResolvedValue(null);
+
+    const staleMeeting = {
+      id: 'm-stale',
+      latestRecordingId: 'recording_n21cnnw2_mnpfre9n',
+      recordings: [{ id: 'recording_n21cnnw2_mnpfre9n' }],
+    };
+
+    renderHook(() =>
+      useRecorder({
+        selectedMeeting: staleMeeting,
+        userMeetings: [staleMeeting],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: true,
+      })
+    );
+
+    expect(hydrationState.hydrateRecordingAudio).not.toHaveBeenCalled();
+  });
+
+  test('Regression: hydrates selected recording after remote workspace hydration completes', () => {
+    hydrationState.audioUrls = {};
+    hydrationState.audioHydrationErrors = {};
+    hydrationState.audioHydrationStatusByRecordingId = {};
+    hydrationState.hydrateRecordingAudio = vi.fn().mockResolvedValue(null);
+
+    const meeting = {
+      id: 'm-fresh',
+      latestRecordingId: 'rec-ready',
+      recordings: [{ id: 'rec-ready' }],
+    };
+
+    const { rerender } = renderHook(
+      ({ isHydratingRemoteState }) =>
+        useRecorder({
+          selectedMeeting: meeting,
+          userMeetings: [meeting],
+          createAdHocMeeting: vi.fn(),
+          attachCompletedRecording: vi.fn(),
+          isHydratingRemoteState,
+        }),
+      { initialProps: { isHydratingRemoteState: true } }
+    );
+
+    expect(hydrationState.hydrateRecordingAudio).not.toHaveBeenCalled();
+
+    rerender({ isHydratingRemoteState: false });
+
+    expect(hydrationState.hydrateRecordingAudio).toHaveBeenCalledWith('rec-ready', {
+      priority: true,
+    });
+  });
 });
