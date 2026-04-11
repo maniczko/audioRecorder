@@ -27,11 +27,15 @@ function getAgentForTask(taskBlock) {
 }
 
 function isTodoStatus(line) {
-  return /Status:\s*`todo`/i.test(line) || /\*\*Status:\*\*\s*`todo`/i.test(line);
+  return /Status:\s*(?:`todo`|todo)\s*$/i.test(line) || /\*\*Status:\*\*\s*(?:`todo`|todo)\s*$/i.test(line);
 }
 
 function hasOwnerLine(lines) {
-  return lines.some((line) => /Wlasciciel:\s*`[^`]+`/i.test(line) || /\*\*Owner:\*\*\s*`[^`]+`/i.test(line));
+  return lines.some(
+    (line) =>
+      /Wlasciciel:\s*(?:`[^`]+`|[A-Za-z][A-Za-z0-9_-]*)\s*$/i.test(line) ||
+      /\*\*Owner:\*\*\s*(?:`[^`]+`|[A-Za-z][A-Za-z0-9_-]*)\s*$/i.test(line)
+  );
 }
 
 function assignOwnerToActiveTask(blockLines) {

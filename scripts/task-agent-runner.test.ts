@@ -111,4 +111,45 @@ describe('task-agent-runner', () => {
     expect(result.dispatches).toHaveLength(2);
     expect(writes[writes.length - 1]).toContain('Dispatch status');
   });
+
+  it('does not dispatch manual escalation tasks', async () => {
+    vi.resetModules();
+    const queue = `- **GH-AUTO-2026-04-11-7** â€” Investigate Railway outage
+  - **Status:** \`todo\`
+  - **Owner:** \`Qwen\`
+  - **Automation:** \`escalate\`
+  - **Dispatch mode:** \`manual_only\``;
+
+    const writes: string[] = [];
+    const readFileSync = vi.fn().mockImplementation(() => {
+      if (writes.length > 0) return writes[writes.length - 1];
+      return queue;
+    });
+    const writeFileSync = vi.fn().mockImplementation((_file, content) => {
+      writes.push(content);
+    });
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+
+    const fsMock = {
+      readFileSync,
+      writeFileSync,
+    };
+
+    vi.doMock('node:fs', () => ({ default: fsMock, ...fsMock }));
+
+    const { runTaskAgentCycle: freshCycle } = await import('./task-agent-runner.mjs');
+
+    const result = await freshCycle({
+      taskQueuePath: 'TASK_QUEUE.md',
+      env: {
+        TASK_AGENT_QWEN_WEBHOOK_URL: 'https://example.test/qwen',
+      },
+      fetchImpl,
+    });
+
+    expect(result.assigned).toEqual([]);
+    expect(result.dispatches).toEqual([]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
+  });
 });

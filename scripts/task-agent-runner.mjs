@@ -79,33 +79,47 @@ function parseTaskBlocks(markdown) {
 
 function extractField(task, fieldName) {
   const escapedFieldName = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const fieldRegex =
+  const fieldRegexes =
     fieldName === 'owner'
-      ? /(?:Wlasciciel|Owner):\s*`([^`]+)`|\*\*(?:Owner|Wlasciciel):\*\*\s*`([^`]+)`/i
-      : new RegExp(`(?:${escapedFieldName}:|\\*\\*${escapedFieldName}:\\*\\*)\\s*` + '([^`]+)`', 'i');
+      ? [
+          /(?:Wlasciciel|Owner):\s*(?:`([^`]+)`|([^\r\n`]+))\s*$/i,
+          /\*\*(?:Owner|Wlasciciel):\*\*\s*(?:`([^`]+)`|([^\r\n`]+))\s*$/i,
+        ]
+      : [
+          new RegExp(`(?:${escapedFieldName}:|\\*\\*${escapedFieldName}:\\*\\*)\\s*(?:\`([^\\\`]+)\`|([^\\r\\n\\\`]+))\\s*$`, 'i'),
+        ];
 
   for (const line of task.lines) {
-    const match = line.match(fieldRegex);
-    if (match) return match[1] || match[2];
+    for (const fieldRegex of fieldRegexes) {
+      const match = line.match(fieldRegex);
+      if (match) {
+        return (match[1] || match[2] || match[3] || match[4] || '').trim();
+      }
+    }
   }
   return null;
 }
 
 function getTaskStatus(task) {
-  for (const line of task.lines) {
-    const match = line.match(/Status:\s*`([^`]+)`/i) || line.match(/\*\*Status:\*\*\s*`([^`]+)`/i);
-    if (match) return match[1].toLowerCase();
-  }
-  return null;
+  return extractField(task, 'Status')?.toLowerCase() || null;
 }
 
 function hasDispatchMetadata(task) {
   return task.lines.some(
-    (line) => /Dispatch status:\s*`[^`]+`/i.test(line) || /\*\*Dispatch status:\*\*\s*`[^`]+`/i.test(line)
+    (line) =>
+      /Dispatch status:\s*(?:`[^`]+`|[^\r\n`]+)\s*$/i.test(line) ||
+      /\*\*Dispatch status:\*\*\s*(?:`[^`]+`|[^\r\n`]+)\s*$/i.test(line)
   );
 }
 
 function isDispatchableTask(task) {
+  const automation = extractField(task, 'Automation')?.toLowerCase() || '';
+  const dispatchMode = extractField(task, 'Dispatch mode')?.toLowerCase() || '';
+
+  if (automation === 'escalate' || dispatchMode === 'manual_only') {
+    return false;
+  }
+
   return getTaskStatus(task) === 'todo' && Boolean(extractField(task, 'owner')) && !hasDispatchMetadata(task);
 }
 
@@ -115,6 +129,8 @@ function buildTaskPayload(task) {
     title: task.title,
     owner: extractField(task, 'owner'),
     status: getTaskStatus(task),
+    automation: extractField(task, 'Automation'),
+    dispatchMode: extractField(task, 'Dispatch mode'),
     body: task.lines.join('\n'),
     format: task.format,
     sourceFile: TASK_QUEUE_PATH,

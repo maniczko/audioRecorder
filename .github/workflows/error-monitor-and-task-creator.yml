@@ -232,6 +232,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { classifyError } = require('./scripts/error-remediation.cjs');
             const errors = JSON.parse(fs.readFileSync('./error-analysis.json', 'utf8'));
             const timestamp = new Date().toISOString();
             const dateStr = timestamp.split('T')[0];
@@ -270,6 +271,15 @@ jobs:
               return `${source}: ${summary}. Szczegoly: ${context}`;
             }
 
+            function appendRoutingMetadata(classification) {
+              return (
+                `  - **Automation:** \`${classification.automation}\`\n` +
+                `  - **Dispatch mode:** \`${classification.dispatchMode}\`\n` +
+                `  - **Priority:** \`${classification.priority}\`\n` +
+                `  - **Routing reason:** ${cleanInline(classification.reason, 180)}\n`
+              );
+            }
+
             let newTasks = `\n<!-- Auto-generated on ${timestamp} -->\n`;
             let taskNumber = 1;
             let addedCount = 0;
@@ -281,14 +291,20 @@ jobs:
                 const taskNum = `GH-AUTO-${dateStr}-${taskNumber++}`;
                 const workflowName = error.workflow || 'Unknown Workflow';
                 const errorMsg = error.message || error.line || 'Unknown error';
+                const classification = classifyError({
+                  source: 'github',
+                  workflow: workflowName,
+                  message: errorMsg,
+                });
                 newTasks += `- **${taskNum}** — Fix ${workflowName} failure\n`;
-                newTasks += `  - **Status:** todo\n`;
-                newTasks += `  - **Source:** GitHub Actions\n`;
+                newTasks += `  - **Status:** \`todo\`\n`;
+                newTasks += `  - **Source:** \`GitHub Actions\`\n`;
+                newTasks += appendRoutingMetadata(classification);
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('GitHub Actions', workflowName, errorMsg)}\n`;
                 newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
                 if (error.url) newTasks += `  - **Link:** ${error.url}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
-                newTasks += `  - **Priority:** High\n\n`;
+                newTasks += '\n';
                 addedCount += 1;
               });
             }
@@ -299,13 +315,19 @@ jobs:
               newRwErrors.forEach((error) => {
                 const taskNum = `RW-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.message || 'Unknown Railway error';
+                const classification = classifyError({
+                  source: 'railway',
+                  workflow: 'Railway runtime',
+                  message: errorMsg,
+                });
                 newTasks += `- **${taskNum}** — Fix Railway error\n`;
-                newTasks += `  - **Status:** todo\n`;
-                newTasks += `  - **Source:** Railway\n`;
+                newTasks += `  - **Status:** \`todo\`\n`;
+                newTasks += `  - **Source:** \`Railway\`\n`;
+                newTasks += appendRoutingMetadata(classification);
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('Railway', 'Blad runtime lub deployu', errorMsg)}\n`;
                 newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
-                newTasks += `  - **Priority:** High\n\n`;
+                newTasks += '\n';
                 addedCount += 1;
               });
             }
@@ -316,14 +338,20 @@ jobs:
               newVlErrors.forEach((error) => {
                 const taskNum = `VL-AUTO-${dateStr}-${taskNumber++}`;
                 const errorMsg = error.text || 'Unknown Vercel error';
+                const classification = classifyError({
+                  source: 'vercel',
+                  workflow: 'Vercel deployment',
+                  message: errorMsg,
+                });
                 newTasks += `- **${taskNum}** — Fix Vercel deployment error\n`;
-                newTasks += `  - **Status:** todo\n`;
-                newTasks += `  - **Source:** Vercel\n`;
+                newTasks += `  - **Status:** \`todo\`\n`;
+                newTasks += `  - **Source:** \`Vercel\`\n`;
+                newTasks += appendRoutingMetadata(classification);
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription('Vercel', 'Blad buildu lub deploymentu', errorMsg)}\n`;
                 newTasks += `  - **Error:** ${cleanInline(errorMsg, 200)}\n`;
                 if (error.deploymentId) newTasks += `  - **Deployment:** ${error.deploymentId}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
-                newTasks += `  - **Priority:** High\n\n`;
+                newTasks += '\n';
                 addedCount += 1;
               });
             }
@@ -335,9 +363,15 @@ jobs:
                 const taskNum = `ST-AUTO-${dateStr}-${taskNumber++}`;
                 const title = error.title || 'Unknown Sentry error';
                 const errorMsg = error.message || title;
+                const classification = classifyError({
+                  source: 'sentry',
+                  workflow: title,
+                  message: errorMsg,
+                });
                 newTasks += `- **${taskNum}** — Fix Sentry error: ${title}\n`;
-                newTasks += `  - **Status:** todo\n`;
-                newTasks += `  - **Source:** Sentry (${error.project || 'unknown'})\n`;
+                newTasks += `  - **Status:** \`todo\`\n`;
+                newTasks += `  - **Source:** \`Sentry (${error.project || 'unknown'})\`\n`;
+                newTasks += appendRoutingMetadata(classification);
                 newTasks += `  - **Opis zadania:** ${buildTaskDescription(`Sentry/${error.project || 'unknown'}`, title, errorMsg)}\n`;
                 newTasks += `  - **Type:** ${error.type || 'unknown'}\n`;
                 newTasks += `  - **Message:** ${cleanInline(errorMsg, 200)}\n`;
@@ -346,7 +380,7 @@ jobs:
                 if (error.lastSeen) newTasks += `  - **Last Seen:** ${error.lastSeen}\n`;
                 if (error.url) newTasks += `  - **Link:** ${error.url}\n`;
                 newTasks += `  - **Created:** ${timestamp}\n`;
-                newTasks += `  - **Priority:** High\n\n`;
+                newTasks += '\n';
                 addedCount += 1;
               });
             }

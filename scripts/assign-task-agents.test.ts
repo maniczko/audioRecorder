@@ -75,6 +75,18 @@ describe('assignTaskAgents', () => {
     expect(result.markdown).toContain('  - **Owner:** `Qwen`');
   });
 
+  it('assigns owners to legacy snapshot tasks without backticks in metadata', () => {
+    const input = `- **GH-AUTO-2026-04-11-1** â€” Fix Vercel deployment error
+  - **Status:** todo
+  - **Source:** Vercel
+  - **Priority:** High`;
+
+    const result = assignTaskAgents(input);
+
+    expect(result.assignments).toEqual([{ taskId: 'GH-AUTO-2026-04-11-1', agent: 'Qwen' }]);
+    expect(result.markdown).toContain('  - **Owner:** `Qwen`');
+  });
+
   it('keeps active and snapshot tasks separate without section headers', () => {
     const input = `### MON-15 - Backend task
 
