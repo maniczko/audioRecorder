@@ -624,6 +624,71 @@ export class Database {
     );
   }
 
+  async _reconcileWorkspaceMeetingRecordings(workspaceId: string, meetings: any[] = []) {
+    const safeMeetings = Array.isArray(meetings) ? meetings : [];
+    const recordingIds = [
+      ...new Set(
+        safeMeetings.flatMap((meeting: any) =>
+          (Array.isArray(meeting?.recordings) ? meeting.recordings : [])
+            .map((recording: any) => String(recording?.id || recording?.recordingId || '').trim())
+            .filter(Boolean)
+        )
+      ),
+    ];
+
+    if (!recordingIds.length) {
+      return { meetings: safeMeetings, changed: false };
+    }
+
+    const placeholders = recordingIds.map(() => '?').join(', ');
+    const rows = await this._query(
+      `SELECT id FROM media_assets WHERE workspace_id = ? AND id IN (${placeholders})`,
+      [workspaceId, ...recordingIds]
+    );
+    const existingIds = new Set(
+      rows.map((row: any) => String(row?.id || '').trim()).filter(Boolean)
+    );
+
+    let changed = false;
+    const nextMeetings = safeMeetings.map((meeting: any) => {
+      const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+      if (!recordings.length) {
+        return meeting;
+      }
+
+      const filteredRecordings = recordings.filter((recording: any) => {
+        const recordingId = String(recording?.id || recording?.recordingId || '').trim();
+        return Boolean(recordingId) && existingIds.has(recordingId);
+      });
+      const currentLatestRecordingId = String(meeting?.latestRecordingId || '').trim();
+      const nextLatestRecordingId =
+        currentLatestRecordingId &&
+        filteredRecordings.some(
+          (recording: any) =>
+            String(recording?.id || recording?.recordingId || '').trim() ===
+            currentLatestRecordingId
+        )
+          ? currentLatestRecordingId
+          : String(filteredRecordings[0]?.id || filteredRecordings[0]?.recordingId || '').trim();
+
+      if (
+        filteredRecordings.length === recordings.length &&
+        currentLatestRecordingId === nextLatestRecordingId
+      ) {
+        return meeting;
+      }
+
+      changed = true;
+      return {
+        ...meeting,
+        recordings: filteredRecordings,
+        latestRecordingId: nextLatestRecordingId || null,
+      };
+    });
+
+    return { meetings: nextMeetings, changed };
+  }
+
   async getWorkspaceState(workspaceId: string): Promise<WorkspaceState> {
     let row = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [
       workspaceId,
@@ -632,8 +697,20 @@ export class Database {
       await this.ensureWorkspaceState(workspaceId);
       row = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [workspaceId]);
     }
+    const meetings = this._safeJsonParse(row.meetings_json, []);
+    const reconciled = await this._reconcileWorkspaceMeetingRecordings(workspaceId, meetings);
+
+    if (reconciled.changed) {
+      const timestamp = this.nowIso();
+      await this._execute(
+        'UPDATE workspace_state SET meetings_json = ?, updated_at = ? WHERE workspace_id = ?',
+        [JSON.stringify(reconciled.meetings), timestamp, workspaceId]
+      );
+      row.updated_at = timestamp;
+    }
+
     return {
-      meetings: this._safeJsonParse(row.meetings_json, []),
+      meetings: reconciled.meetings,
       manualTasks: this._safeJsonParse(row.manual_tasks_json, []),
       taskState: this._safeJsonParse(row.task_state_json, {}),
       taskBoards: this._safeJsonParse(row.task_boards_json, {}),

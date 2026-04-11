@@ -321,6 +321,47 @@ describe('Database - Additional Coverage Tests', () => {
     });
   });
 
+  describe('Workspace state reconciliation', () => {
+    test('Regression: #0 — getWorkspaceState prunes orphaned recording references', async () => {
+      if (!(await tablesExist())) return;
+
+      await db.upsertMediaAsset({
+        recordingId: 'rec_state_valid',
+        workspaceId: 'ws_state_cleanup',
+        meetingId: 'meeting_state_cleanup',
+        contentType: 'audio/webm',
+        buffer: Buffer.from('audio'),
+        createdByUserId: 'user1',
+      });
+
+      await db.saveWorkspaceState('ws_state_cleanup', {
+        meetings: [
+          {
+            id: 'meeting_state_cleanup',
+            workspaceId: 'ws_state_cleanup',
+            title: 'Cleanup test',
+            latestRecordingId: 'rec_state_orphan',
+            recordings: [
+              { id: 'rec_state_orphan', pipelineStatus: 'done' },
+              { id: 'rec_state_valid', pipelineStatus: 'done' },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState('ws_state_cleanup');
+      const meeting = state.meetings.find((item: any) => item.id === 'meeting_state_cleanup');
+
+      expect(meeting?.recordings).toEqual([{ id: 'rec_state_valid', pipelineStatus: 'done' }]);
+      expect(meeting?.latestRecordingId).toBe('rec_state_valid');
+    });
+  });
+
   // NOTE: saveTranscriptionResult test removed - function needs integration with existing database.test.ts
   // The functionality is already tested in database.test.ts "should persist pipeline metadata..." tests
 
