@@ -735,6 +735,7 @@
   </div>
 
   <script>window.TEST_DATA = null; window.EXTERNAL_SERVICES_DATA = null;</script>
+  <script src="dashboard-services.js"></script>
   <script src="test-results.js"></script>
   <script src="external-services.js"></script>
 
@@ -823,17 +824,64 @@
       return window.EXTERNAL_SERVICES_DATA || null;
     }
 
+    function parseIsoDate(value) {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function getLiveSnapshotMeta(data) {
+      const services = syncExternalServicesData(data);
+      const dashboardServices = window.DashboardServices;
+      const testTimestamp = parseIsoDate(data && data.timestamp);
+
+      if (!services || !dashboardServices || typeof dashboardServices.normalizeServicesData !== 'function') {
+        return {
+          activeErrors: null,
+          liveTimestamp: null,
+          staleSnapshot: false,
+          testTimestamp,
+        };
+      }
+
+      const normalized = dashboardServices.normalizeServicesData(services);
+      const latestRuns = normalized.github && normalized.github.latest ? normalized.github.latest : [];
+      const githubCurrentFailures = latestRuns.filter(run => run && run.status === 'failure').length;
+      const railwayFailures = normalized.railway && normalized.railway.failedDeployments ? normalized.railway.failedDeployments.length : 0;
+      const vercelFailures = normalized.vercel && normalized.vercel.failedDeployments ? normalized.vercel.failedDeployments.length : 0;
+      const sentryIssues = normalized.sentry && normalized.sentry.issues ? normalized.sentry.issues.length : 0;
+      const activeErrors = githubCurrentFailures + railwayFailures + vercelFailures + sentryIssues;
+      const liveTimestamp = parseIsoDate(normalized.timestamp || services.timestamp);
+      const staleSnapshot = Boolean(testTimestamp && liveTimestamp && (liveTimestamp.getTime() - testTimestamp.getTime()) > 6 * 60 * 60 * 1000);
+
+      return {
+        activeErrors,
+        liveTimestamp,
+        staleSnapshot,
+        testTimestamp,
+      };
+    }
+
     function render(data) {
       const m = calc(data), s = data.summary;
       const ts = new Date(data.timestamp).toLocaleString('pl-PL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const ok = s.failed === 0;
       syncExternalServicesData(data);
+      const live = getLiveSnapshotMeta(data);
+      const liveChip = live.activeErrors === null
+        ? ''
+        : `<div class="chip ${live.activeErrors === 0 ? 'chip-ok' : 'chip-err'}">${live.activeErrors === 0 ? 'Live monitor clean' : 'Live monitor: ' + live.activeErrors + ' active errors'}</div>`;
+      const staleChip = live.staleSnapshot
+        ? '<div class="chip" id="historical-snapshot-chip" style="background:rgba(217,119,6,.12);color:var(--amber);border:1px solid rgba(217,119,6,.25)">Historical test snapshot</div>'
+        : '';
 
       $('#app').innerHTML = `
     <!-- Topbar -->
     <div class="topbar">
       <h1>VoiceLog <span>Test Report</span></h1>
       <div class="topbar-right">
+        ${liveChip}
+        ${staleChip}
         <div class="chip ${ok ? 'chip-ok' : 'chip-err'}">${ok ? '✓ All passing' : '✗ ' + s.failed + ' failures'}</div>
         <div class="topbar-date">${ts}</div>
       </div>
