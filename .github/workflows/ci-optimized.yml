@@ -117,6 +117,8 @@ jobs:
     if: needs.changes.outputs.tests == 'true' || needs.changes.outputs.src == 'true' || needs.changes.outputs.package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=12288
 
     steps:
       - uses: actions/checkout@v6

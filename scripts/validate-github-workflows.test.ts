@@ -40,4 +40,25 @@ describe('GitHub workflows validation', () => {
 
     expect(suspiciousMojibakePattern.test(content)).toBe(false);
   });
+
+  it('gives optimized ci test job extra heap for the large Vitest suite', () => {
+    const workflowPath = path.join(workflowDir, 'ci-optimized.yml');
+    const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
+      jobs?: {
+        test?: {
+          env?: Record<string, string>;
+        };
+      };
+    } | null;
+
+    expect(parsed?.jobs?.test?.env?.NODE_OPTIONS).toBe('--max-old-space-size=12288');
+  });
+
+  it('passes exact SHA enforcement into backend smoke checks', () => {
+    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('REQUIRE_EXACT_GIT_SHA');
+    expect(content).toContain('require_exact_git_sha');
+  });
 });

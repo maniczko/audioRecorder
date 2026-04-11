@@ -54,6 +54,23 @@ describe('Railway deployment config', () => {
     expect(content).not.toMatch(/^\[deploy\.envs\]/m);
     expect(content).not.toMatch(/^\[volumes\]/m);
   });
+
+  it('does not redeploy Railway for frontend-only src changes', () => {
+    const content = readRailwayToml();
+
+    expect(content).not.toContain('src/**');
+  });
+
+  it('watches backend and deploy files that should trigger a Railway rollout', () => {
+    const content = readRailwayToml();
+
+    expect(content).toContain('server/*.ts');
+    expect(content).toContain('server/routes/**');
+    expect(content).toContain('server/http/**');
+    expect(content).toContain('server/scripts/**');
+    expect(content).toContain('Dockerfile');
+    expect(content).toContain('package.json');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────

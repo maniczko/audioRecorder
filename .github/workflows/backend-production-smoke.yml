@@ -19,6 +19,32 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Detect backend deploy-relevant changes
+        id: scope
+        shell: bash
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+          ZERO_SHA="0000000000000000000000000000000000000000"
+
+          if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "$ZERO_SHA" ]]; then
+            CHANGED_FILES="$(git show --pretty='' --name-only "$HEAD_SHA")"
+          else
+            CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$HEAD_SHA")"
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if echo "$CHANGED_FILES" | grep -Eq '^(server/|Dockerfile|package\.json|pnpm-lock\.yaml|railway\.toml|tsconfig\.json)'; then
+            echo "require_exact_git_sha=true" >> "$GITHUB_OUTPUT"
+            echo "Backend deploy should change on Railway for this push."
+          else
+            echo "require_exact_git_sha=false" >> "$GITHUB_OUTPUT"
+            echo "Frontend-only or non-backend push; Railway SHA drift stays informational."
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -44,6 +70,7 @@ jobs:
         env:
           SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
           EXPECTED_GIT_SHA: ${{ github.sha }}
+          REQUIRE_EXACT_GIT_SHA: ${{ steps.scope.outputs.require_exact_git_sha }}
           SMOKE_MAX_RETRIES: '10'
           SMOKE_WAIT_MS: '10000'
 

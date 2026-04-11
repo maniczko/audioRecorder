@@ -7,7 +7,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
-watchPatterns = ["server/*.ts", "server/*.py", "server/requirements.txt", "server/routes/**", "server/services/**", "server/lib/**", "server/stt/**", "server/http/**", "server/agents/**", "server/migrations/**", "server/package.json", "Dockerfile", "package.json", "pnpm-lock.yaml", "railway.toml", "tsconfig.json"]
+watchPatterns = ["server/*.ts", "server/*.py", "server/requirements.txt", "server/routes/**", "server/services/**", "server/lib/**", "server/stt/**", "server/http/**", "server/scripts/**", "server/agents/**", "server/migrations/**", "server/package.json", "Dockerfile", "package.json", "pnpm-lock.yaml", "railway.toml", "tsconfig.json"]
 
 [deploy]
 # No startCommand — Dockerfile CMD handles it: node server/index.js (via tini)
