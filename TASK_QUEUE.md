@@ -392,6 +392,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:56:20.7419559Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:56:20.7421748Z Error: element(s) not found 2026-04-05T15:56:20.7440606Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T15:56:20.7419559Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:56:20.7421748Z Error: element(s) not found 2026-04-05T15:56:20.7440...
@@ -401,6 +402,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-2** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:44:31.7905553Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:44:31.7913991Z Error: element(s) not found 2026-04-05T15:44:31.7933232Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T15:44:31.7905553Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:44:31.7913991Z Error: element(s) not found 2026-04-05T15:44:31.7933...
@@ -410,6 +412,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T15:26:28.6593459Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:26:28.6596440Z Error: element(s) not found 2026-04-05T15:26:28.6624393Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T15:26:28.6593459Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T15:26:28.6596440Z Error: element(s) not found 2026-04-05T15:26:28.6624...
@@ -419,6 +422,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-4** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "TypeScript type check" failed
   - **Error:** Job "Quality Checks" step "TypeScript type check" failed
@@ -428,6 +432,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-5** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "typecheck" step "Run TypeScript" failed
   - **Error:** Job "typecheck" step "Run TypeScript" failed
@@ -437,6 +442,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-6** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T14:30:26.7751289Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
   - **Error:** 2026-04-05T14:30:26.7751289Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
@@ -446,6 +452,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-7** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
   - **Error:** Job "Unit Tests" step "Run unit tests" failed
@@ -455,6 +462,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-8** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
   - **Error:** 2026-04-05T13:07:48.6649909Z ##[error]AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
@@ -464,6 +472,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-9** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Unit Tests" step "Run unit tests" failed
   - **Error:** Job "Unit Tests" step "Run unit tests" failed
@@ -473,6 +482,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-10** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Qwen`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /transkrypcja/i. This could be because the text is broken up by mu...
   - **Error:** 2026-04-05T13:07:33.8946230Z [22m[39m[VoiceLog] auto-send error: Error: Network down 2026-04-05T13:08:11.2049289Z ##[error]TestingLibraryElementError: Unable to find an element with the text: /trans...
@@ -486,6 +496,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:53:38.0566225Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:53:38.0569358Z Error: element(s) not found 2026-04-05T17:53:38.0596830Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T17:53:38.0566225Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:53:38.0569358Z Error: element(s) not found 2026-04-05T17:53:38.0596...
@@ -495,6 +506,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-2** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T17:19:27.4446460Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:19:27.4449476Z Error: element(s) not found 2026-04-05T17:19:27.4471983Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T17:19:27.4446460Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T17:19:27.4449476Z Error: element(s) not found 2026-04-05T17:19:27.4471...
@@ -504,6 +516,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:56:19.3229874Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:56:19.3231758Z Error: element(s) not found 2026-04-05T16:56:19.3249001Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T16:56:19.3229874Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:56:19.3231758Z Error: element(s) not found 2026-04-05T16:56:19.3249...
@@ -513,6 +526,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-4** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:42:56.9851655Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:42:56.9854741Z Error: element(s) not found 2026-04-05T16:42:56.9877626Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T16:42:56.9851655Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:42:56.9854741Z Error: element(s) not found 2026-04-05T16:42:56.9877...
@@ -522,6 +536,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-5** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T16:33:36.3241135Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:33:36.3243130Z Error: element(s) not found 2026-04-05T16:33:36.3261260Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T16:33:36.3241135Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T16:33:36.3243130Z Error: element(s) not found 2026-04-05T16:33:36.3261...
@@ -535,6 +550,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T20:01:29.7057644Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T20:01:29.7060224Z Error: element(s) not found 2026-04-05T20:01:29.7081515Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T20:01:29.7057644Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T20:01:29.7060224Z Error: element(s) not found 2026-04-05T20:01:29.7081...
@@ -544,6 +560,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-2** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T19:34:14.9576865Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T19:34:14.9579860Z Error: element(s) not found 2026-04-05T19:34:14.9609018Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T19:34:14.9576865Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T19:34:14.9579860Z Error: element(s) not found 2026-04-05T19:34:14.9609...
@@ -553,6 +570,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-05-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-05T18:37:02.7751806Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T18:37:02.7753725Z Error: element(s) not found 2026-04-05T18:37:02.7772503Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBe...
   - **Error:** 2026-04-05T18:37:02.7751806Z Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed 2026-04-05T18:37:02.7753725Z Error: element(s) not found 2026-04-05T18:37:02.7772...
@@ -566,6 +584,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-1** � Fix Auto Security Patches failure
   - **Status:** todo
+  - **Owner:** `Qwen`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: Job "security-patch" step "Create Pull Request" failed
   - **Error:** Job "security-patch" step "Create Pull Request" failed
@@ -579,6 +598,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-1** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-06T08:28:58.2897392Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2936700Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2964514Z ##[error]TypeError: Can...
   - **Error:** 2026-04-06T08:28:58.2897392Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T08:28:58.2936700Z ##[error]TypeError: Cannot read properties of undefined (reading 'l...
@@ -588,6 +608,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-2** � Fix Bundle Size Monitor failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Bundle Size Monitor. Szczegoly: 2026-04-06T07:19:22.2042108Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:22.2092193Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:22.2042108Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:22.2092193Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -597,6 +618,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-3** � Fix AI Auto-Fix failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: AI Auto-Fix. Szczegoly: 2026-04-06T07:19:38.7699328Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:38.7749729Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:38.7699328Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:38.7749729Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -606,6 +628,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-4** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-06T07:19:49.8283118Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:49.8323982Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:49.8283118Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:49.8323982Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -615,6 +638,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-5** � Fix E2E Playwright Tests failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-06T07:19:50.9462368Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:50.9500811Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:50.9462368Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:50.9500811Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -624,6 +648,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-6** � Fix Code Review failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:36.4829465Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:36.4879667Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:36.4829465Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:36.4879667Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -633,6 +658,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-7** � Fix Code Review failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:19:27.6848977Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:27.6882134Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:19:27.6848977Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:19:27.6882134Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -642,6 +668,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-8** � Fix Code Review failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:25.6673459Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:25.6705170Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:20:25.6673459Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:25.6705170Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -651,6 +678,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-9** � Fix Code Review failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-06T07:20:26.0817229Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:26.0846645Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-06T07:20:26.0817229Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-06T07:20:26.0846645Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -664,6 +692,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-06-1** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-06T19:49:54.2928220Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T19:49:54.2962857Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T19:49:54.2984719Z ##[error]TypeError: Can...
   - **Error:** 2026-04-06T19:49:54.2928220Z ##[error]TypeError: Cannot read properties of undefined (reading 'length') 2026-04-06T19:49:54.2962857Z ##[error]TypeError: Cannot read properties of undefined (reading 'l...
@@ -677,6 +706,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:49:51.1420120Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
   - **Error:** 2026-04-07T14:49:51.1420120Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
@@ -686,6 +716,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-2** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T14:03:33.2808656Z ##[error]Error: ENOENT: no such file or directory, open 'docs/openapi.yaml' Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: 'docs/openapi.yaml' }
   - **Error:** 2026-04-07T14:03:33.2808656Z ##[error]Error: ENOENT: no such file or directory, open 'docs/openapi.yaml' Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: 'docs/openapi.yaml' }
@@ -695,6 +726,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-3** � Fix E2E Playwright Tests failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: E2E Playwright Tests. Szczegoly: 2026-04-07T13:46:04.1243244Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:04.1270118Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:04.1243244Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:04.1270118Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -704,6 +736,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-4** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T13:46:06.0024742Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:06.0052889Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:06.0024742Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:06.0052889Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -713,6 +746,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-5** � Fix Backend Production Smoke failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Backend Production Smoke. Szczegoly: 2026-04-07T13:46:03.8834920Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:03.8865362Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:03.8834920Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:03.8865362Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -722,6 +756,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-6** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9867054Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9931987Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:11.9867054Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9931987Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -731,6 +766,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-7** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.7989690Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.8043279Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:11.7989690Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.8043279Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -740,6 +776,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-8** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.5439963Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.5493153Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:11.5439963Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.5493153Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -749,6 +786,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-9** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:17.2360648Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:17.2389119Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:17.2360648Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:17.2389119Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -758,6 +796,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-10** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-07T13:46:11.9831402Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9877184Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
   - **Error:** 2026-04-07T13:46:11.9831402Z Error: pnpm version conflicts (FIXED by corepack migration): 2026-04-07T13:46:11.9877184Z ##[error]Error: pnpm version conflicts (FIXED by corepack migration):
@@ -771,6 +810,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:43:38.0780564Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T16:43:38.0804353Z TimeoutError: page.click: Time...
   - **Error:** 2026-04-07T16:43:38.0780564Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
@@ -780,6 +820,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-2** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T16:09:33.8172054Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
   - **Error:** 2026-04-07T16:09:33.8172054Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
@@ -789,6 +830,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:50:30.5983147Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
   - **Error:** 2026-04-07T15:50:30.5983147Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
@@ -798,6 +840,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-4** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T15:07:53.5665633Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
   - **Error:** 2026-04-07T15:07:53.5665633Z ##[error]Error: Cannot find package 'yaml' imported from /home/runner/work/audioRecorder/audioRecorder/server/tests/contract/api-contract.test.ts Serialized Error: { code:...
@@ -811,6 +854,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-1** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T17:03:19.5421142Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T17:03:19.5450484Z TimeoutError: page.click: Time...
   - **Error:** 2026-04-07T17:03:19.5421142Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
@@ -824,6 +868,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-1** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: Job "format" step "Check formatting" failed
   - **Error:** Job "format" step "Check formatting" failed
@@ -833,6 +878,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-2** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T19:16:13.9116885Z Error: Invalid status code: 128 2026-04-07T19:16:13.9121510Z Error: Invalid status code: 128
   - **Error:** 2026-04-07T19:16:13.9116885Z Error: Invalid status code: 128 2026-04-07T19:16:13.9121510Z Error: Invalid status code: 128
@@ -842,6 +888,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:08:03.3275413Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:08:03.3308370Z TimeoutError: page.click: Time...
   - **Error:** 2026-04-07T19:08:03.3275413Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
@@ -851,6 +898,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-4** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-07T19:06:01.8184636Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-07T19:06:01.8210669Z TimeoutError: page.click: Time...
   - **Error:** 2026-04-07T19:06:01.8184636Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
@@ -864,6 +912,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-07-1** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T20:45:47.6902817Z Error: Invalid status code: 128 2026-04-07T20:45:47.6908255Z Error: Invalid status code: 128
   - **Error:** 2026-04-07T20:45:47.6902817Z Error: Invalid status code: 128 2026-04-07T20:45:47.6908255Z Error: Invalid status code: 128
@@ -877,6 +926,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-07T22:38:21.4730875Z Error: Invalid status code: 128 2026-04-07T22:38:21.4735588Z Error: Invalid status code: 128
   - **Error:** 2026-04-07T22:38:21.4730875Z Error: Invalid status code: 128 2026-04-07T22:38:21.4735588Z Error: Invalid status code: 128
@@ -890,6 +940,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T03:24:14.0617675Z Error: Invalid status code: 128 2026-04-08T03:24:14.0623194Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T03:24:14.0617675Z Error: Invalid status code: 128 2026-04-08T03:24:14.0623194Z Error: Invalid status code: 128
@@ -899,6 +950,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-2** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T02:25:46.0104749Z Error: Invalid status code: 128 2026-04-08T02:25:46.0108916Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T02:25:46.0104749Z Error: Invalid status code: 128 2026-04-08T02:25:46.0108916Z Error: Invalid status code: 128
@@ -908,6 +960,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-3** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T02:09:32.2929016Z Error: Invalid status code: 128 2026-04-08T02:09:32.2932924Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T02:09:32.2929016Z Error: Invalid status code: 128 2026-04-08T02:09:32.2932924Z Error: Invalid status code: 128
@@ -921,6 +974,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T05:48:26.7595756Z Error: Invalid status code: 128 2026-04-08T05:48:26.7599574Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T05:48:26.7595756Z Error: Invalid status code: 128 2026-04-08T05:48:26.7599574Z Error: Invalid status code: 128
@@ -934,6 +988,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T07:16:55.4248056Z Error: Invalid status code: 128 2026-04-08T07:16:55.4252387Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T07:16:55.4248056Z Error: Invalid status code: 128 2026-04-08T07:16:55.4252387Z Error: Invalid status code: 128
@@ -947,6 +1002,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:10:32.8577943Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:10:32.8589273Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:10:32.8591995Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:12:04.0205344Z ##[er...
   - **Error:** 2026-04-08T10:10:32.8577943Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:10:32.8589273Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:10:32.8591995Z ##[error]Error: T...
@@ -956,6 +1012,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-2** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:59:58.9900330Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T09:59:58.9911446Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T09:59:58.9914569Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:01:41.6357301Z ##[er...
   - **Error:** 2026-04-08T09:59:58.9900330Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T09:59:58.9911446Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T09:59:58.9914569Z ##[error]Error: T...
@@ -965,6 +1022,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: Job "Quality Checks" step "Prettier check" failed
   - **Error:** Job "Quality Checks" step "Prettier check" failed
@@ -974,6 +1032,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-4** � Fix Auto-Fix Test Failures failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto-Fix Test Failures. Szczegoly: 2026-04-08T09:34:17.0297679Z Error: Invalid status code: 128 2026-04-08T09:34:17.0301258Z Error: Invalid status code: 128
   - **Error:** 2026-04-08T09:34:17.0297679Z Error: Invalid status code: 128 2026-04-08T09:34:17.0301258Z Error: Invalid status code: 128
@@ -983,6 +1042,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-5** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T09:31:42.4426499Z ##[error]TypeError: Cannot read properties of undefined (reading 'userMeetings') 2026-04-08T09:31:42.4437112Z ##[error]TypeError: Cannot read properties of undefined (reading 'createAdHocMeeting') 2026-04-08T09:31:42.4439236Z ##[er...
   - **Error:** 2026-04-08T09:31:42.4426499Z ##[error]TypeError: Cannot read properties of undefined (reading 'userMeetings') 2026-04-08T09:31:42.4437112Z ##[error]TypeError: Cannot read properties of undefined (read...
@@ -996,6 +1056,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** � Fix Production Deployment (Vercel) failure
   - **Status:** todo
+  - **Owner:** `Qwen`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Production Deployment (Vercel). Szczegoly: Job "Deploy Production" step "Install Vercel CLI" failed
   - **Error:** Job "Deploy Production" step "Install Vercel CLI" failed
@@ -1005,6 +1066,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-2** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:� 2026-04-08T12:57:19.5634530Z ##[error...
   - **Error:** 2026-04-08T12:56:11.5326224Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:57:19.5149874Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
@@ -1014,6 +1076,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-3** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:48:37.5772772Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual. 2026-04-08T12:48:37.5806225Z TimeoutError: page.click: Time...
   - **Error:** 2026-04-08T12:48:37.5772772Z Error: A snapshot doesn't exist at /home/runner/work/audioRecorder/audioRecorder/tests/e2e/visual-regression.spec.ts-snapshots/main-app-chromium-linux.png, writing actual....
@@ -1023,6 +1086,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-4** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T12:04:11.2659406Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:05:28.3109712Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T12:05:28.3110754Z ERROR: Coverage for...
   - **Error:** 2026-04-08T12:04:11.2659406Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T12:05:28.3109712Z ERROR: Coverage for lines (52.13%) does not meet global thre...
@@ -1032,6 +1096,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-5** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T11:48:59.1931601Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:50:09.7946814Z ERROR: Coverage for lines (52.13%) does not meet global threshold (55%) 2026-04-08T11:50:09.7947687Z ERROR: Coverage for...
   - **Error:** 2026-04-08T11:48:59.1931601Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:50:09.7946814Z ERROR: Coverage for lines (52.13%) does not meet global thre...
@@ -1041,6 +1106,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-6** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:� 2026-04-08T11:49:15.6158609Z ##[error...
   - **Error:** 2026-04-08T11:48:07.8621367Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T11:49:15.5700396Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
@@ -1050,6 +1116,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-7** � Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', �(3) ]
   - **Error:** 2026-04-08T10:57:34.7678056Z ##[error]Error: Condition not met within 5000ms 2026-04-08T10:57:34.7689137Z ##[error]AssertionError: expected "vi.fn()" to be called with arguments: [ 'rec_c', �(3) ]
@@ -1059,6 +1126,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-8** � Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T10:58:04.3577611Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:58:04.3592173Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:58:04.3597444Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:59:43.3670443Z ##[er...
   - **Error:** 2026-04-08T10:58:04.3577611Z ##[error]ReferenceError: mockMeetings is not defined 2026-04-08T10:58:04.3592173Z ##[error]Error: Test timed out in 30000ms. 2026-04-08T10:58:04.3597444Z ##[error]Error: T...
@@ -1072,6 +1140,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** — Fix Production Deployment (Vercel) failure
   - **Status:** todo
+  - **Owner:** `Qwen`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Production Deployment (Vercel). Szczegoly: Job "Deploy Production" step "Pull Vercel Production Environment Information" failed
   - **Error:** Job "Deploy Production" step "Pull Vercel Production Environment Information" failed
@@ -1081,6 +1150,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T14:05:18.1633761Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T14:06:28.7467139Z ##[error]TypeError: Cannot read properties of undefined (reading 'dismissedIds') 2026-04-08T14:06:28.7484618Z ##[error]A...
   - **Error:** 2026-04-08T14:05:18.1633761Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T14:06:28.7467139Z ##[error]TypeError: Cannot read properties of undefined (rea...
@@ -1090,6 +1160,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-3** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T13:51:49.8512074Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T13:53:00.9362119Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T13:53:00.9569850Z ##[error...
   - **Error:** 2026-04-08T13:51:49.8512074Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T13:53:00.9362119Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
@@ -1099,6 +1170,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-4** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T13:36:11.0678864Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T13:37:22.6568147Z [90m157|[39m useAuthStore.setState({ authError: 'old error', googleAuthMessage:… 2026-04-08T13:37:22.6810548Z ##[error...
   - **Error:** 2026-04-08T13:36:11.0678864Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T13:37:22.6568147Z [90m157|[39m useAuthStore.setState({ authError: 'old error...
@@ -1112,6 +1184,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-1** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T19:03:52.0359832Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T19:05:01.9952109Z ERROR: Coverage for lines (50.58%) does not meet global threshold (55%) 2026-04-08T19:05:01.9952921Z ERROR: Coverage for...
   - **Error:** 2026-04-08T19:03:52.0359832Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T19:05:01.9952109Z ERROR: Coverage for lines (50.58%) does not meet global thre...
@@ -1121,6 +1194,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-2** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T18:03:38.1882380Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T18:04:49.2711755Z ERROR: Coverage for lines (50.58%) does not meet global threshold (55%) 2026-04-08T18:04:49.2712529Z ERROR: Coverage for...
   - **Error:** 2026-04-08T18:03:38.1882380Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T18:04:49.2711755Z ERROR: Coverage for lines (50.58%) does not meet global thre...
@@ -1130,6 +1204,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-08-3** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-08T17:18:49.8814444Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T17:20:00.6466301Z ##[error]TypeError: Cannot read properties of undefined (reading 'dismissedIds') 2026-04-08T17:20:00.6480448Z ##[error]A...
   - **Error:** 2026-04-08T17:18:49.8814444Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-08T17:20:00.6466301Z ##[error]TypeError: Cannot read properties of undefined (rea...
@@ -1143,6 +1218,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix Auto Security Patches failure
   - **Status:** todo
+  - **Owner:** `Qwen`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Auto Security Patches. Szczegoly: 2026-04-09T02:07:27.5721748Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T02:08:37.3963649Z ERROR: Coverage for lines (50.66%) does not meet global threshold (55%) 2026-04-09T02:08:37.3964318Z ERROR: Coverage for...
   - **Error:** 2026-04-09T02:07:27.5721748Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T02:08:37.3963649Z ERROR: Coverage for lines (50.66%) does not meet global thre...
@@ -1156,6 +1232,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T06:10:18.1397286Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T06:10:18.1397286Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1165,6 +1242,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T06:10:16.9961620Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T06:10:16.9972827Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T06:10:16.9976015Z #...
   - **Error:** 2026-04-09T06:10:16.9961620Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T06:10:16.9972827Z ##[error]AssertionError: expected {} to have property "C...
@@ -1174,6 +1252,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T05:48:08.8114728Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T05:48:08.8114728Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1183,6 +1262,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T05:48:11.3241381Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T05:48:11.3251875Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T05:48:11.3255510Z #...
   - **Error:** 2026-04-09T05:48:11.3241381Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T05:48:11.3251875Z ##[error]AssertionError: expected {} to have property "C...
@@ -1192,6 +1272,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-5** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-09T05:47:41.1203481Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T05:48:49.5904424Z ERROR: Coverage for lines (50.58%) does not meet global threshold (55%) 2026-04-09T05:48:49.5905094Z ERROR: Coverage for...
   - **Error:** 2026-04-09T05:47:41.1203481Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T05:48:49.5904424Z ERROR: Coverage for lines (50.58%) does not meet global thre...
@@ -1205,6 +1286,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T08:32:28.1817416Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T08:32:28.1817416Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1214,6 +1296,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T08:32:30.2028390Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2044658Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2049749Z #...
   - **Error:** 2026-04-09T08:32:30.2028390Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T08:32:30.2044658Z ##[error]AssertionError: expected {} to have property "C...
@@ -1223,6 +1306,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T07:20:14.0299115Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0309809Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0313226Z #...
   - **Error:** 2026-04-09T07:20:14.0299115Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T07:20:14.0309809Z ##[error]AssertionError: expected {} to have property "C...
@@ -1232,6 +1316,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T07:20:06.0741945Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T07:20:06.0741945Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1245,6 +1330,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T09:06:38.5848839Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T09:06:38.5848839Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1254,6 +1340,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T09:06:32.0705016Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T09:06:32.0714564Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T09:06:32.0717502Z #...
   - **Error:** 2026-04-09T09:06:32.0705016Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T09:06:32.0714564Z ##[error]AssertionError: expected {} to have property "C...
@@ -1267,6 +1354,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T11:13:29.4430099Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T11:13:29.4430099Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1276,6 +1364,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-2** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T11:13:32.1818825Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T11:13:32.1829738Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T11:13:32.1833154Z #...
   - **Error:** 2026-04-09T11:13:32.1818825Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T11:13:32.1829738Z ##[error]AssertionError: expected {} to have property "C...
@@ -1285,6 +1374,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T10:59:00.0963332Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T10:59:00.0963332Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1294,6 +1384,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T10:58:54.0409201Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T10:58:54.0418823Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T10:58:54.0421486Z #...
   - **Error:** 2026-04-09T10:58:54.0409201Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T10:58:54.0418823Z ##[error]AssertionError: expected {} to have property "C...
@@ -1307,6 +1398,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-1** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-09T14:38:10.3698227Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T14:39:25.0957992Z ERROR: Coverage for lines (50.57%) does not meet global threshold (55%) 2026-04-09T14:39:25.0958794Z ERROR: Coverage for...
   - **Error:** 2026-04-09T14:38:10.3698227Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T14:39:25.0957992Z ERROR: Coverage for lines (50.57%) does not meet global thre...
@@ -1316,6 +1408,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-2** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-09T13:53:15.9797376Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T13:54:22.6064630Z ERROR: Coverage for lines (50.57%) does not meet global threshold (55%) 2026-04-09T13:54:22.6065250Z ERROR: Coverage for...
   - **Error:** 2026-04-09T13:53:15.9797376Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-09T13:54:22.6064630Z ERROR: Coverage for lines (50.57%) does not meet global thre...
@@ -1325,6 +1418,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-3** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T13:23:44.7555420Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
   - **Error:** 2026-04-09T13:23:44.7555420Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close'
@@ -1334,6 +1428,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-09-4** — Fix CI/CD Pipeline failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: CI/CD Pipeline. Szczegoly: 2026-04-09T13:23:45.7717971Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7733718Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7739189Z #...
   - **Error:** 2026-04-09T13:23:45.7717971Z ##[error]AssertionError: expected {} to have property "Connection" with value 'close' 2026-04-09T13:23:45.7733718Z ##[error]AssertionError: expected {} to have property "C...
@@ -1347,6 +1442,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-11-1** — Fix Optimized CI failure
   - **Status:** todo
+  - **Owner:** `Codex`
   - **Source:** GitHub Actions
   - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-11T08:30:19.5197237Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T08:31:26.9471661Z ERROR: Coverage for lines (52.25%) does not meet global threshold (55%) 2026-04-11T08:31:26.9472664Z ERROR: Coverage for...
   - **Error:** 2026-04-11T08:30:19.5197237Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T08:31:26.9471661Z ERROR: Coverage for lines (52.25%) does not meet global thre...
