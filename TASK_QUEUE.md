@@ -1484,4 +1484,32 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24286573953
   - **Created:** 2026-04-11T16:33:44.506Z
 
+<!-- Auto-generated on 2026-04-11T18:40:45.100Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-11-1** — Fix Backend Production Smoke failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Backend Production Smoke. Szczegoly: Job "Verify Backend Production" step "Smoke-check deployed backend health" failed
+  - **Error:** Job "Verify Backend Production" step "Smoke-check deployed backend health" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24286952285
+  - **Created:** 2026-04-11T18:40:45.100Z
+
+- **GH-AUTO-2026-04-11-2** — Fix Optimized CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-11T16:47:41.9069834Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T16:52:44.3343903Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T16:57:43.7282661Z FATAL ERR...
+  - **Error:** 2026-04-11T16:47:41.9069834Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T16:52:44.3343903Z FATAL ERROR: Reached heap limit Allocation failed - JavaScri...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24286952269
+  - **Created:** 2026-04-11T18:40:45.100Z
+
 
