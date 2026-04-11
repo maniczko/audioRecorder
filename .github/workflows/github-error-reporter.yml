@@ -61,23 +61,33 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            // Find the latest markdown report
+            // Find the latest report payload
             const reportsDir = path.join(process.cwd(), 'github-errors');
             let mdFile = null;
+            let jsonReport = null;
 
             if (fs.existsSync(reportsDir)) {
               const files = fs.readdirSync(reportsDir)
                 .filter(f => f.endsWith('.md'))
                 .sort()
                 .reverse();
+              const jsonFiles = fs.readdirSync(reportsDir)
+                .filter(f => f.endsWith('.json'))
+                .sort()
+                .reverse();
 
               if (files.length > 0) {
                 mdFile = fs.readFileSync(path.join(reportsDir, files[0]), 'utf8');
               }
+
+              if (jsonFiles.length > 0) {
+                jsonReport = JSON.parse(fs.readFileSync(path.join(reportsDir, jsonFiles[0]), 'utf8'));
+              }
             }
 
-            // Check if there are failures
-            const hasFailures = mdFile && mdFile.includes('### Failed Workflows');
+            const activeFailures = Number(jsonReport?.summary?.activeFailedRuns || 0);
+            const resolvedFailures = Number(jsonReport?.summary?.resolvedFailedRuns || 0);
+            const hasFailures = activeFailures > 0;
 
             if (hasFailures) {
               // Fetch repository contributors for suggestions
