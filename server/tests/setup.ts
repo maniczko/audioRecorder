@@ -2,6 +2,7 @@
 import { vi } from 'vitest';
 import path from 'node:path';
 import { EventEmitter } from 'events';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
 // Mock Supabase credentials for tests
 process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -143,9 +144,10 @@ vi.mock('node:child_process', () => ({
     return { stdout: { on: vi.fn() }, on: vi.fn() };
   }),
   spawn: vi.fn(() => {
-    const child = new EventEmitter();
-    child.stdout = new EventEmitter();
-    child.stdout.setEncoding = vi.fn();
+    const child = new EventEmitter() as ChildProcessWithoutNullStreams;
+    child.stdout = Object.assign(new EventEmitter(), {
+      setEncoding: vi.fn(),
+    }) as unknown as ChildProcessWithoutNullStreams['stdout'];
     // Emit close immediately by default - can be overridden in tests
     setTimeout(() => child.emit('close', 0), 0);
     return child;

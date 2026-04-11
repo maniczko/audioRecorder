@@ -6,7 +6,7 @@ import type {
   TranscriptionDiagnostics,
   TranscriptionStatusPayload,
   WorkspaceState,
-} from './types';
+} from './types.js';
 
 export interface WorkspaceStatePayload {
   meetings: unknown[];

@@ -111,4 +111,30 @@ describe('datadog.ts', () => {
     await import('../datadog.js');
     expect(mockTracerInit).toHaveBeenCalledWith(expect.objectContaining({ profiling: false }));
   });
+
+  test('Regression: #0 - keeps runtime-only health blocklist on tracer init', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    await import('../datadog.js');
+
+    expect(mockTracerInit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blocklist: ['/health', '/ready', '/metrics'],
+      })
+    );
+  });
+
+  test('Regression: #0 - disables pg query text capture for security', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    await import('../datadog.js');
+
+    expect(mockTracerUse).toHaveBeenCalledWith(
+      'pg',
+      expect.objectContaining({
+        service: 'voicelog-db',
+        queryTextEnabled: false,
+      })
+    );
+  });
 });

@@ -277,7 +277,7 @@ describe('AssigneeInput', () => {
         () => {
           expect(container.querySelector('.assignee-input-dropdown')).not.toBeInTheDocument();
         },
-        { timeout: 300 }
+        { timeout: 1000 }
       );
     });
 

@@ -12,9 +12,12 @@ import tracer from 'dd-trace';
 const isProduction = process.env.NODE_ENV === 'production';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+type TracerInitOptions = NonNullable<Parameters<typeof tracer.init>[0]>;
+type TracerInitOptionsWithBlocklist = TracerInitOptions & { blocklist?: string[] };
+
 // Only initialize in production or when explicitly enabled
 if (isProduction || process.env.DD_APM_ENABLED === 'true') {
-  tracer.init({
+  const tracerOptions = Object.assign({} as TracerInitOptionsWithBlocklist, {
     // Service identification
     service: process.env.DD_SERVICE || 'voicelog-server',
     env: process.env.DD_ENV || process.env.NODE_ENV || 'production',
@@ -42,12 +45,12 @@ if (isProduction || process.env.DD_APM_ENABLED === 'true') {
     ],
 
     // Health endpoint - don't trace
-    // Note: blocklist is not in dd-trace types but is supported at runtime
-    blocklist: ['/health', '/ready', '/metrics'] as any,
-
     // Enable debug in development
     debug: isDevelopment,
   });
+  tracerOptions.blocklist = ['/health', '/ready', '/metrics'];
+
+  tracer.init(tracerOptions);
 
   // Instrument HTTP client
   tracer.use('http', {
@@ -60,10 +63,17 @@ if (isProduction || process.env.DD_APM_ENABLED === 'true') {
   });
 
   // Instrument PostgreSQL (if used)
+  const pgOptions = Object.assign(
+    {
+      service: 'voicelog-db',
+    },
+    {
+      // Supported at runtime, but missing from the plugin's published types.
+      queryTextEnabled: false,
+    }
+  );
   tracer.use('pg', {
-    service: 'voicelog-db',
-    // Note: queryTextEnabled is not in types but is supported at runtime
-    queryTextEnabled: false as any, // Don't log full queries for security
+    ...pgOptions,
   });
 
   // Instrument Hono framework

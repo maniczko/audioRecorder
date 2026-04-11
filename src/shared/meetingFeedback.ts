@@ -7,7 +7,7 @@ import type {
   MeetingRisk,
   MeetingTask,
   MeetingTension,
-} from './types';
+} from './types.js';
 
 export type MeetingFeedbackSpeakerStat = {
   speakerId?: string | number;
@@ -577,7 +577,7 @@ export function normalizeMeetingFeedback(
     categoryScores?: Partial<MeetingFeedbackCategoryScore>[];
   };
   const categoryMap = new Map<string, Partial<MeetingFeedbackCategoryScore>>();
-  safeArray(raw.categoryScores).forEach((item) => {
+  safeArray<Partial<MeetingFeedbackCategoryScore>>(raw.categoryScores).forEach((item) => {
     const key = cleanText(item?.key).toLowerCase();
     const label = cleanText(item?.label).toLowerCase();
     if (key) categoryMap.set(key, item);

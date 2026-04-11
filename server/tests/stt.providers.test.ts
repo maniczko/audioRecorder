@@ -211,6 +211,33 @@ describe('stt providers — HTTP behavior', () => {
     expect(file.type).toBe('audio/wav');
   });
 
+  it('Regression: #0 - preserves binary bytes when building Blob from Buffer input', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      text: async () => '{"text":"ok"}',
+      json: async () => ({ text: 'ok' }),
+    } as any);
+
+    const provider = makeProvider();
+    const inputBytes = Buffer.from([0, 1, 2, 255]);
+
+    await provider.transcribeAudio({
+      buffer: inputBytes,
+      filename: 'chunk.wav',
+      contentType: 'audio/wav',
+      fields: { model: 'gpt-4o-transcribe' },
+    });
+
+    const [, opts] = httpClientSpy.mock.calls[0];
+    const file = (opts?.body as FormData).get('file') as File;
+    const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+
+    expect(bytes).toEqual([0, 1, 2, 255]);
+  });
+
   it('createFormData appends array fields with [] suffix', async () => {
     const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,

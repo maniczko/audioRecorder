@@ -1,6 +1,10 @@
 import type { logger as loggerType } from '../logger.ts';
 
 type LoggerLike = typeof loggerType;
+type ListenErrno = NodeJS.ErrnoException & {
+  address?: string;
+  port?: number;
+};
 
 export function handleServerListenError(
   error: unknown,
@@ -8,7 +12,7 @@ export function handleServerListenError(
   port: number,
   logger: LoggerLike
 ): { shouldExit: boolean } {
-  const errno = error as NodeJS.ErrnoException | null;
+  const errno = error as ListenErrno | null;
 
   if (errno?.code === 'EADDRINUSE') {
     logger.warn(

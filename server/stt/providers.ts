@@ -74,6 +74,7 @@ function ensureValidSttFilename(filename: string): string {
 
 function createFormData(request: SttAudioRequest) {
   const audioBuffer = ensureAudioBuffer(request);
+  const audioBytes = Uint8Array.from(audioBuffer);
   const form = new FormData();
   const rawFilename =
     request.filename || (request.filePath ? path.basename(request.filePath) : 'audio.wav');
@@ -81,7 +82,7 @@ function createFormData(request: SttAudioRequest) {
 
   form.append(
     'file',
-    new Blob([audioBuffer], {
+    new Blob([audioBytes], {
       type: request.contentType || 'application/octet-stream',
     }),
     safeFilename

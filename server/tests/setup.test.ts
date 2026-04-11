@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { spawn } from 'node:child_process';
 
 import { describe, expect, it } from 'vitest';
 
@@ -8,5 +9,12 @@ describe('test setup fs mocks', () => {
 
     expect(typeof content).toBe('string');
     expect(content).toContain('openapi: "3.0.3"');
+  });
+
+  it('Regression: keeps spawn mock stdout available for streaming tests', () => {
+    const child = spawn('node', ['fake-script.js']);
+
+    expect(child.stdout).toBeDefined();
+    expect(typeof child.stdout?.setEncoding).toBe('function');
   });
 });

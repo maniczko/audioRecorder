@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import type { AiPersonProfileResponse, AiSuggestTasksResponse } from './contracts';
 import {
@@ -135,5 +137,24 @@ describe('shared contracts', () => {
       emptyReason: 'no_segments_from_stt',
       userMessage: 'Brak wypowiedzi.',
     });
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — shared ESM helpers break NodeNext typecheck without .js extensions
+  // Date: 2026-04-11
+  // Bug: shared modules imported ./types without explicit .js extensions,
+  //      which breaks TypeScript NodeNext/Node16 resolution during typecheck.
+  // Fix: keep explicit .js extensions in shared source imports.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: Issue #0 — shared modules keep explicit .js extensions', () => {
+    const sharedDir = path.resolve(process.cwd(), 'src/shared');
+    const contractsSource = fs.readFileSync(path.join(sharedDir, 'contracts.ts'), 'utf8');
+    const meetingFeedbackSource = fs.readFileSync(
+      path.join(sharedDir, 'meetingFeedback.ts'),
+      'utf8'
+    );
+
+    expect(contractsSource).toContain("from './types.js'");
+    expect(meetingFeedbackSource).toContain("from './types.js'");
   });
 });
