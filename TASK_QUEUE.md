@@ -1450,4 +1450,20 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Created:** 2026-04-11T08:39:50.927Z
   - **Priority:** High
 
+<!-- Auto-generated on 2026-04-11T14:34:47.212Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-11-1** — Fix Optimized CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-11T13:58:14.5317418Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T13:59:21.3940424Z ERROR: Coverage for lines (52.25%) does not meet global threshold (55%) 2026-04-11T13:59:21.3941434Z ERROR: Coverage for...
+  - **Error:** 2026-04-11T13:58:14.5317418Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-11T13:59:21.3940424Z ERROR: Coverage for lines (52.25%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24283957828
+  - **Created:** 2026-04-11T14:34:47.212Z
+
 
