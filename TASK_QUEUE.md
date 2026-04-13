@@ -1514,4 +1514,32 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24286952269
   - **Created:** 2026-04-11T18:40:45.100Z
 
+<!-- Auto-generated on 2026-04-13T09:53:03.858Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-13-1** — Fix Code Review failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-13T07:31:26.2217963Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-13T07:32:37.0177533Z ERROR: Coverage for lines (52.35%) does not meet global threshold (55%) 2026-04-13T07:32:37.0178319Z ERROR: Coverage for...
+  - **Error:** 2026-04-13T07:31:26.2217963Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-13T07:32:37.0177533Z ERROR: Coverage for lines (52.35%) does not meet global thre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24331200086
+  - **Created:** 2026-04-13T09:53:03.858Z
+
+- **GH-AUTO-2026-04-13-2** — Fix Optimized CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-13T07:33:53.9577850Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-13T07:38:47.7226420Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-13T07:43:50.9479103Z FATAL ERR...
+  - **Error:** 2026-04-13T07:33:53.9577850Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-13T07:38:47.7226420Z FATAL ERROR: Reached heap limit Allocation failed - JavaScri...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24331200048
+  - **Created:** 2026-04-13T09:53:03.858Z
+
 
