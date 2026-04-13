@@ -1,0 +1,25 @@
+{
+  "summary": "Tests failed after retries",
+  "totalAttempts": 3,
+  "failures": [
+    {
+      "attempt": 1,
+      "timestamp": "2026-04-13T02:34:49.412Z",
+      "error": "Command failed: vitest run --coverage.enabled=false",
+      "status": 1
+    },
+    {
+      "attempt": 2,
+      "timestamp": "2026-04-13T02:37:01.444Z",
+      "error": "Command failed: vitest run --coverage.enabled=false",
+      "status": 1
+    },
+    {
+      "attempt": 3,
+      "timestamp": "2026-04-13T02:39:10.989Z",
+      "error": "Command failed: vitest run --coverage.enabled=false",
+      "status": 1
+    }
+  ],
+  "timestamp": "2026-04-13T02:39:10.989Z"
+}
